@@ -1,0 +1,107 @@
+{
+    "nav": {
+        "dashboard": "ダッシュボード",
+        "projects": "プロジェクト",
+        "gallery": "ギャラリー",
+        "resources": "リソース",
+        "subscription": "サブスクリプション",
+        "pricing": "料金",
+        "signIn": "サインイン"
+    },
+    "profile": {
+        "title": "プロフィール設定",
+        "description": "映画的なアイデンティティを確認・更新",
+        "name": "氏名",
+        "email": "メールアドレス",
+        "language": "優先言語",
+        "avatar": "アバター",
+        "plan": "現在のプラン",
+        "upgrade": "プランをアップグレード",
+        "save": "変更を保存",
+        "cancel": "キャンセル",
+        "upload": "写真を変更"
+    },
+    "common": {
+        "logout": "ログアウト",
+        "profile": "マイプロフィール",
+        "password": "パスワード変更",
+        "updateSuccess": "更新に成功しました",
+        "failed": "アクションに失敗しました",
+        "generating": "生成中...",
+        "saving": "保存中...",
+        "save": "保存",
+        "cancel": "キャンセル",
+        "ok": "OK",
+        "warning": "警告",
+        "copy": "コピー"
+    },
+    "dashboard": {
+        "title": "ダッシュボード",
+        "manage": "映画AIプロジェクトを管理",
+        "startProject": "+ 新規プロジェクト",
+        "videosMonth": "今月のビデオ",
+        "storageUsed": "使用済みストレージ",
+        "membership": "現在のメンバーシップ",
+        "currentMembership": "現在のメンバーシップ",
+        "upgrade": "プランをアップグレード",
+        "recentProjects": "最近のプロジェクト",
+        "noProjects": "プロジェクトが見つかりません",
+        "bringVision": "AntFlowであなたの映画的なビジョンを形にしましょう。",
+        "createProject": "プロジェクト作成"
+    },
+    "projects": {
+        "title": "マイプロジェクト",
+        "description": "すべての映画AIプロジェクトを管理",
+        "newProject": "+ 新規プロジェクト",
+        "search": "プロジェクトを検索...",
+        "filterAll": "すべて",
+        "filterDraft": "下書き",
+        "filterCompleted": "完了",
+        "noProjects": "プロジェクトはまだありません",
+        "noProjectsDesc": "最初の映画の傑作を作り始めましょう",
+        "edit": "編集",
+        "delete": "削除",
+        "duplicate": "複製",
+        "confirmDelete": "このプロジェクトを削除してもよろしいですか？",
+        "loadFailed": "プロジェクトの読み込みに失敗しました",
+        "deleteSuccess": "プロジェクトを削除しました",
+        "deleteFailed": "プロジェクトの削除に失敗しました",
+        "duplicateSuccess": "プロジェクトを複製しました",
+        "duplicateFailed": "プロジェクトの複製に失敗しました",
+        "status": {
+            "draft": "下書き",
+            "completed": "完了",
+            "generating": "生成中",
+            "analyzing": "分析中",
+            "storyboard": "ストーリーボード"
+        },
+        "new": {
+            "title": "新規プロジェクト作成",
+            "subtitle": "ビデオプロジェクトの開始方法を選択してください",
+            "results": {
+                "analysis": {
+                    "summaryBar": "リソース分析",
+                    "isReady": "準備完了"
+                },
+                "brief": {
+                    "summaryBar": "クリエイティブ・ブリーフ"
+                },
+                "storyboard": {
+                    "summaryBar": "ストーリーボード",
+                    "isUpdated": "更新済み"
+                }
+            }
+        },
+        "editor": {
+            "messagePlaceholder": "メッセージを入力、@でメンション...",
+            "storyboard": {
+                "title": "ストーリーボード",
+                "keyElements": "主要要素",
+                "productionSegments": "制作セグメント",
+                "regenerateAi": "AIで再生成",
+                "regenerateAllFrames": "すべてのフレームを再生成",
+                "regenerateAllVideos": "すべてのビデオを再生成"
+            }
+        }
+    }
+}
