@@ -6,7 +6,7 @@ export interface IUser extends Document {
     passwordHash: string
     name: string
     avatar?: string
-    role: 'user' | 'admin'
+    role: 'user' | 'admin' | 'sys-admin'
     subscription: {
         plan: 'free' | 'pro' | 'enterprise'
         status: 'active' | 'cancelled' | 'expired'
@@ -27,6 +27,16 @@ export interface IUser extends Document {
         description: string
         timestamp: Date
     }>
+    emailVerified: boolean
+    language: 'en' | 'vi' | 'zh' | 'ja' | 'es'
+    isActive: boolean
+    notificationSettings: {
+        taskCompletion: boolean
+        largeTaskReminder: boolean
+        email: boolean
+        push: boolean
+        inApp: boolean
+    }
     socialAccounts: {
         youtube?: {
             accessToken: string
@@ -38,9 +48,12 @@ export interface IUser extends Document {
             pageId: string
         }
     }
-    emailVerified: boolean
-    preferredLanguage: 'en' | 'vi' | 'zh' | 'ja' | 'es'
-    isActive: boolean
+    oauthProviders?: {
+        google?: { id: string, email: string }
+        facebook?: { id: string, email: string }
+    }
+    resetPasswordToken?: string
+    resetPasswordExpires?: Date
     createdAt: Date
     updatedAt: Date
     comparePassword(candidatePassword: string): Promise<boolean>
@@ -69,7 +82,7 @@ const UserSchema = new Schema<IUser>(
         },
         role: {
             type: String,
-            enum: ['user', 'admin'],
+            enum: ['user', 'admin', 'sys-admin'],
             default: 'user'
         },
         subscription: {
@@ -113,11 +126,21 @@ const UserSchema = new Schema<IUser>(
                 pageId: String
             }
         },
+        oauthProviders: {
+            google: {
+                id: String,
+                email: String
+            },
+            facebook: {
+                id: String,
+                email: String
+            }
+        },
         emailVerified: {
             type: Boolean,
             default: false
         },
-        preferredLanguage: {
+        language: {
             type: String,
             enum: ['en', 'vi', 'zh', 'ja', 'es'],
             default: 'en'
@@ -125,7 +148,16 @@ const UserSchema = new Schema<IUser>(
         isActive: {
             type: Boolean,
             default: true
-        }
+        },
+        notificationSettings: {
+            taskCompletion: { type: Boolean, default: true },
+            largeTaskReminder: { type: Boolean, default: true },
+            email: { type: Boolean, default: true },
+            push: { type: Boolean, default: false },
+            inApp: { type: Boolean, default: true }
+        },
+        resetPasswordToken: String,
+        resetPasswordExpires: Date
     },
     {
         timestamps: true

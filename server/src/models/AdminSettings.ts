@@ -24,6 +24,21 @@ export interface IAdminSettings extends Document {
             facebook: { appId: string; appSecret: string }
             google: { clientId: string; clientSecret: string }
         }
+        media: {
+            giphy: { apiKey: string; enabled: boolean }
+            pexels: { apiKey: string; enabled: boolean }
+            unsplash: { apiKey: string; enabled: boolean }
+        }
+        antMedia: {
+            baseUrl: string
+            email: string
+            password: string
+            appName: string
+        }
+    }
+    oauthProviders: {
+        google: { enabled: boolean }
+        facebook: { enabled: boolean }
     }
     aiSettings: {
         providers: Array<{
@@ -31,13 +46,33 @@ export interface IAdminSettings extends Document {
             name: string
             apiKey: string
             baseUrl?: string
+            supportedTypes: string[] // 'text' | 'image' | 'video' | 'audio' | 'music'
             isActive: boolean
+            taskConfigs?: Map<string, {
+                endpoint: string
+                method: 'POST' | 'GET'
+                headers?: Record<string, string>
+                payloadTemplate?: string
+                responseMapping?: {
+                    text?: string
+                    url?: string
+                    b64?: string
+                    jobId?: string
+                }
+            }>
         }>
+        defaults: {
+            text: { providerId: string; modelId: string; creditCost: number }
+            image: { providerId: string; modelId: string; creditCost: number }
+            video: { providerId: string; modelId: string; creditCost: number }
+            audio: { providerId: string; modelId: string; creditCost: number } // TTS
+            music: { providerId: string; modelId: string; creditCost: number }
+        }
         models: Array<{
             id: string
             name: string
             providerId: string
-            type: 'image' | 'video' | 'audio' | 'text'
+            type: 'image' | 'video' | 'audio' | 'text' | 'music'
             creditCost: number
             isActive: boolean
         }>
@@ -56,7 +91,7 @@ export interface IAdminSettings extends Document {
             prioritySupport: boolean
         }
     }>
-    creditPackages: Array<{ // New: Credit packages
+    creditPackages: Array<{
         id: string
         name: string
         credits: number
@@ -64,6 +99,24 @@ export interface IAdminSettings extends Document {
         currency: string
         isActive: boolean
     }>
+    license: {
+        key: string
+        info: {
+            status: 'valid' | 'expired' | 'invalid'
+            type: 'trial' | 'free' | 'enterprise'
+            maxUsers: number
+            maxProjects: number
+            startDate?: Date
+            endDate?: Date
+            owner?: string
+            lastCheckedAt?: Date
+        }
+    }
+    whitelabel: {
+        appName: string
+        logo: string
+        favicon: string
+    }
     updatedAt: Date
 }
 
@@ -88,7 +141,8 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 accessKeyId: { type: String, default: '' },
                 secretAccessKey: { type: String, default: '' },
                 bucketName: { type: String, default: '' },
-                region: { type: String, default: 'us-east-1' }
+                region: { type: String, default: 'us-east-1' },
+                endpoint: { type: String, default: '' }
             },
             smtp: {
                 host: { type: String, default: 'smtp.gmail.com' },
@@ -102,7 +156,22 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
             social: {
                 facebook: { appId: { type: String, default: '' }, appSecret: { type: String, default: '' } },
                 google: { clientId: { type: String, default: '' }, clientSecret: { type: String, default: '' } }
+            },
+            media: {
+                giphy: { apiKey: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
+                pexels: { apiKey: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
+                unsplash: { apiKey: { type: String, default: '' }, enabled: { type: Boolean, default: false } }
+            },
+            antMedia: {
+                baseUrl: { type: String, default: '' },
+                email: { type: String, default: '' },
+                password: { type: String, default: '' },
+                appName: { type: String, default: 'WebRTCAppEE' }
             }
+        },
+        oauthProviders: {
+            google: { enabled: { type: Boolean, default: false } },
+            facebook: { enabled: { type: Boolean, default: false } }
         },
         aiSettings: {
             providers: [
@@ -111,15 +180,38 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                     name: String,
                     apiKey: String,
                     baseUrl: String,
-                    isActive: { type: Boolean, default: true }
+                    supportedTypes: { type: [String], default: [] },
+                    isActive: { type: Boolean, default: true },
+                    taskConfigs: {
+                        type: Map,
+                        of: new Schema({
+                            endpoint: String,
+                            method: { type: String, default: 'POST' },
+                            headers: { type: Schema.Types.Mixed }, // Support both Map and JSON string
+                            payloadTemplate: String,
+                            responseMapping: {
+                                text: String,
+                                url: String,
+                                b64: String,
+                                jobId: String
+                            }
+                        }, { _id: false })
+                    }
                 }
             ],
+            defaults: {
+                text: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-pro' }, creditCost: { type: Number, default: 1 } },
+                image: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-pro-vision' }, creditCost: { type: Number, default: 4 } },
+                video: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'veo-2.0' }, creditCost: { type: Number, default: 10 } },
+                audio: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'tts-1' }, creditCost: { type: Number, default: 1 } },
+                music: { providerId: { type: String, default: 'suno' }, modelId: { type: String, default: 'v3.5' }, creditCost: { type: Number, default: 5 } }
+            },
             models: [
                 {
                     id: String,
                     name: String,
                     providerId: String,
-                    type: { type: String, enum: ['image', 'video', 'audio', 'text'] },
+                    type: { type: String, enum: ['image', 'video', 'audio', 'text', 'music'] },
                     creditCost: { type: Number, default: 1 },
                     isActive: { type: Boolean, default: true }
                 }
@@ -150,7 +242,25 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 currency: { type: String, default: 'usd' },
                 isActive: { type: Boolean, default: true }
             }
-        ]
+        ],
+        license: {
+            key: { type: String, default: '' },
+            info: {
+                status: { type: String, default: 'invalid' }, // valid, expired, invalid
+                type: { type: String, default: 'trial' }, // trial, free, enterprise
+                maxUsers: { type: Number, default: 5 },
+                maxProjects: { type: Number, default: 10 },
+                startDate: Date,
+                endDate: Date,
+                owner: String,
+                lastCheckedAt: Date
+            }
+        },
+        whitelabel: {
+            appName: { type: String, default: 'AntFlow' },
+            logo: { type: String, default: '' }, // S3 path or URL
+            favicon: { type: String, default: '' }
+        }
     },
     {
         timestamps: { createdAt: false, updatedAt: true }
@@ -180,17 +290,34 @@ export const getAdminSettings = async () => {
                     fromEmail: 'noreply@flova.ai',
                     fromName: 'AntFlow'
                 },
-                social: { facebook: { appId: '', appSecret: '' }, google: { clientId: '', clientSecret: '' } }
+                social: { facebook: { appId: '', appSecret: '' }, google: { clientId: '', clientSecret: '' } },
+                media: { giphy: { apiKey: '', enabled: false }, pexels: { apiKey: '', enabled: false }, unsplash: { apiKey: '', enabled: false } },
+                antMedia: {
+                    baseUrl: '',
+                    email: '',
+                    password: '',
+                    appName: 'WebRTCAppEE'
+                }
             },
+            oauthProviders: { google: { enabled: false }, facebook: { enabled: false } },
             aiSettings: {
                 providers: [
-                    { id: 'google', name: 'Google Gemini', apiKey: '', isActive: true },
-                    { id: 'openai', name: 'OpenAI', apiKey: '', isActive: true },
-                    { id: 'midjourney', name: 'Midjourney', apiKey: '', isActive: true }
+                    { id: 'google', name: 'Google Gemini', apiKey: '', supportedTypes: ['text', 'image', 'video', 'audio'], isActive: true },
+                    { id: 'geminigen-ai', name: 'GeminiGen AI', apiKey: '', supportedTypes: ['text', 'image', 'video', 'audio'], isActive: true },
+                    { id: 'openai', name: 'OpenAI', apiKey: '', supportedTypes: ['text', 'image'], isActive: true },
+                    { id: 'suno', name: 'Suno', apiKey: '', supportedTypes: ['music'], isActive: true }
                 ],
+                defaults: {
+                    text: { providerId: 'google', modelId: 'gemini-1.5-flash', creditCost: 1 },
+                    image: { providerId: 'google', modelId: 'imagen-3.0', creditCost: 4 },
+                    video: { providerId: 'google', modelId: 'veo-2.0', creditCost: 10 },
+                    audio: { providerId: 'google', modelId: 'tts-1', creditCost: 1 },
+                    music: { providerId: 'suno', modelId: 'v3.5', creditCost: 5 }
+                },
                 models: [
-                    { id: 'gemini-pro', name: 'Gemini Pro', providerId: 'google', type: 'text', creditCost: 1, isActive: true },
-                    { id: 'dall-e-3', name: 'DALL-E 3', providerId: 'openai', type: 'image', creditCost: 5, isActive: true }
+                    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', providerId: 'google', type: 'text', creditCost: 1, isActive: true },
+                    { id: 'imagen-3.0', name: 'Imagen 3', providerId: 'google', type: 'image', creditCost: 4, isActive: true },
+                    { id: 'veo-2.0', name: 'Veo 2.0', providerId: 'google', type: 'video', creditCost: 10, isActive: true }
                 ]
             },
             s3: {
@@ -225,7 +352,21 @@ export const getAdminSettings = async () => {
                 { id: 'cp_2000', name: '2000 Credits', credits: 2000, price: 20, currency: 'usd', isActive: true },
                 { id: 'cp_5500', name: '5500 Credits', credits: 5500, price: 50, currency: 'usd', isActive: true },
                 { id: 'cp_12000', name: '12000 Credits', credits: 12000, price: 100, currency: 'usd', isActive: true }
-            ]
+            ],
+            license: {
+                key: '',
+                info: {
+                    status: 'invalid',
+                    type: 'trial',
+                    maxUsers: 5,
+                    maxProjects: 10
+                }
+            },
+            whitelabel: {
+                appName: 'AntFlow',
+                logo: '',
+                favicon: ''
+            }
         })
     }
 

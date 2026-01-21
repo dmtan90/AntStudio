@@ -148,6 +148,9 @@ export interface IProject extends Document {
     title: string
     description: string
     mode: 'topic' | 'upload'
+    aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
+    videoStyle: string
+    targetDuration: number
     input: {
         topic?: string
         scriptFile?: {
@@ -181,6 +184,8 @@ export interface IProject extends Document {
     finalVideo?: {
         s3Key: string
         s3Url: string
+        reviewKey?: string
+        reviewUrl?: string
         duration: number
         resolution: string
         fileSize: number
@@ -210,9 +215,6 @@ export interface IProject extends Document {
             status: string
         }
     }
-    aspectRatio?: '16:9' | '9:16' | '1:1' | '4:3'
-    videoStyle?: string
-    targetDuration?: number
     status: 'draft' | 'analyzing' | 'storyboard' | 'generating' | 'editing' | 'completed'
     chatHistory?: Array<{
         author: 'user' | 'ai' | 'system'
@@ -239,6 +241,7 @@ export interface IProject extends Document {
         metadata?: any
         createdAt: Date
     }>
+    advancedEditorState?: any
     scriptContent?: string
     createdAt: Date
     updatedAt: Date
@@ -346,6 +349,8 @@ const ProjectSchema = new Schema<IProject>(
         finalVideo: {
             s3Key: String,
             s3Url: String,
+            reviewKey: String,
+            reviewUrl: String,
             duration: Number,
             resolution: String,
             fileSize: Number,
@@ -414,6 +419,7 @@ const ProjectSchema = new Schema<IProject>(
                 createdAt: { type: Date, default: Date.now }
             }
         ],
+        advancedEditorState: { type: Schema.Types.Mixed, default: null },
         scriptContent: String
     },
     {

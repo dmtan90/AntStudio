@@ -1,0 +1,26 @@
+:root {
+  --el-color-primary: rgb(55, 0, 179);
+  --el-color-primary-light-3: rgba(55, 0, 179, 0.7);
+  --el-color-primary-light-5: rgba(55, 0, 179, 0.5);
+  --el-color-primary-light-7: rgba(55, 0, 179, 0.3);
+  --el-color-primary-light-8: rgba(55, 0, 179, 0.2);
+  --el-color-primary-light-9: rgba(55, 0, 179, 0.1);
+  --el-color-primary-dark-2: rgba(98, 0, 238, 0.2);
+
+  .el-segmented {
+    &.rounded {
+      --el-border-radius-base: 1rem;
+      border-radius: 1rem !important;
+    }
+  }
+}
+
+:root.dark {
+  --el-color-primary: rgba(98, 0, 238);
+  --el-color-primary-light-3: rgba(98, 0, 238, 0.7);
+  --el-color-primary-light-5: rgba(98, 0, 238, 0.5);
+  --el-color-primary-light-7: rgba(98, 0, 238, 0.3);
+  --el-color-primary-light-8: rgba(98, 0, 238, 0.2);
+  --el-color-primary-light-9: rgba(98, 0, 238, 0.1);
+  --el-color-primary-dark-2: rgba(98, 0, 238, 0.2);
+}

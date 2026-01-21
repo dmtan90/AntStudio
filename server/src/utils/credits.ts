@@ -1,6 +1,5 @@
-import { User } from '../models/User'
-import { getAdminSettings } from '../models/AdminSettings'
-import { createError } from 'h3'
+import { User } from '../models/User.js'
+import { getAdminSettings } from '../models/AdminSettings.js'
 
 export const CREDIT_PRICES = {
     IMAGE_GEN: 5,
@@ -13,28 +12,33 @@ export const CREDIT_PRICES = {
 /**
  * Resolves the credit cost for a specific action/model
  */
-export const getCreditCost = async (type: 'image' | 'video' | 'audio' | 'text', modelId?: string) => {
+export const getCreditCost = async (type: 'image' | 'video' | 'audio' | 'text' | 'music', modelId?: string) => {
     const settings = await getAdminSettings()
 
-    // 1. Try to find specific model cost
+    // 1. Check Task Defaults (Primary Source)
+    if (settings.aiSettings?.defaults?.[type]?.creditCost !== undefined) {
+        return settings.aiSettings.defaults[type].creditCost
+    }
+
+    // 2. Legacy: Try to find specific model cost if modelId provided
     if (modelId) {
         const model = settings.aiSettings?.models?.find(m => m.id === modelId && m.isActive)
         if (model) return model.creditCost
     }
 
-    // 2. Fallback to category defaults from settings
+    // 3. Legacy: Fallback to category defaults from old models list
     const categoryModels = settings.aiSettings?.models?.filter(m => m.type === type && m.isActive)
     if (categoryModels && categoryModels.length > 0) {
-        // Return average or first? Let's return the first active one as default for that category
         return categoryModels[0].creditCost
     }
 
-    // 3. Hardcoded fallbacks
+    // 4. Hardcoded fallbacks (Emergency)
     switch (type) {
         case 'image': return CREDIT_PRICES.IMAGE_GEN
         case 'video': return CREDIT_PRICES.VIDEO_GEN_PER_SECOND
-        case 'audio': return CREDIT_PRICES.MUSIC_GEN
+        case 'audio': return CREDIT_PRICES.VOICE_GEN
         case 'text': return CREDIT_PRICES.LLM_CHAT
+        case 'music': return CREDIT_PRICES.MUSIC_GEN
         default: return 1
     }
 }
@@ -46,7 +50,7 @@ export const getCreditCost = async (type: 'image' | 'video' | 'audio' | 'text', 
 export const deductCredits = async (userId: string, amount: number, description: string) => {
     const user = await User.findById(userId)
     if (!user) {
-        throw createError({ statusCode: 404, statusMessage: 'User not found' })
+        throw new Error('User not found')
     }
 
     // Initialize credits if missing
@@ -58,10 +62,7 @@ export const deductCredits = async (userId: string, amount: number, description:
     const totalAvailable = membership + balance + bonus + weekly
 
     if (totalAvailable < amount) {
-        throw createError({
-            statusCode: 402,
-            statusMessage: `Insufficient credits. Required: ${amount}, Available: ${totalAvailable}`
-        })
+        throw new Error(`Insufficient credits. Required: ${amount}, Available: ${totalAvailable}`)
     }
 
     // Deduction logic (Waterfall: Weekly -> Membership -> Balance -> Bonus)

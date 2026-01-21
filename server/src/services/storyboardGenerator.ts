@@ -1,5 +1,5 @@
-import { generateJSONWithGemini } from '../utils/gemini'
-import type { IProject } from '../models/Project'
+import { generateJSON } from '../utils/AIGenerator.js'
+import type { IProject } from '../models/Project.js'
 
 export interface StoryboardSegment {
     order: number
@@ -159,7 +159,7 @@ Return your storyboard in the following JSON format:
   "totalDuration": 120
 }`
 
-    const result = await generateJSONWithGemini<{ segments: any[] }>(
+    const result = await generateJSON<{ segments: any[] }>(
         prompt,
         'gemini-2.0-flash-exp'
     )

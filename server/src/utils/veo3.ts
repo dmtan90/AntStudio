@@ -15,18 +15,28 @@ export interface Veo3JobStatus {
   error?: string
 }
 
-import config from './config.js'
+import { configService } from './configService.js'
+import { aiManager } from './ai/AIServiceManager.js'
 
 /**
  * Initialize Veo 3 client
  */
 export const initializeVeo3 = () => {
-  if (!config.geminiApiKey) {
+  // Get from config service (DB or env)
+  // Note: Veo3 implementation in AI Manager might be different, 
+  // but here we are patching the existing standalone util.
+  // Ideally we should move this logic TO AIServiceManager, 
+  // but for now let's just make it use the dynamic config.
+  const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || process.env.GEMINI_API_KEY
+
+  if (!apiKey) {
     throw new Error('Google AI API key not configured')
   }
 
+  // Need endpoint from settings? Or just env?
+  // Currently endpoint is only in env VEO_API_ENDPOINT
   return {
-    apiKey: config.geminiApiKey,
+    apiKey,
     endpoint: process.env.VEO_API_ENDPOINT || 'https://aiplatform.googleapis.com/v1/veo3'
   }
 }
@@ -38,9 +48,33 @@ export const initializeVeo3 = () => {
 export const generateVideo = async (
   options: Veo3GenerateOptions
 ): Promise<{ jobId: string }> => {
+  // Ensure dynamic config is loaded
+  await configService.refresh()
+
+  // Check default provider
+  const videoDefault = configService.ai.defaults?.video
+  const defaultProvider = videoDefault?.providerId || 'google';
+  const defaultModelName = videoDefault?.modelId || 'veo-2.0'
+
+  // If NOT google, delegate to AI Manager (generic providers like GeminiGen AI)
+  if (defaultProvider !== 'google') {
+    try {
+      const result: any = await aiManager.generateVideo(options.prompt, defaultModelName, defaultProvider, {
+        ...options
+      });
+      const jobId = result.jobId || result.job_id || result.id || 'unknown';
+      return { jobId };
+    } catch (error) {
+      console.error("Generic Video Generation Failed, falling back to Google/Mock logic if applicable or throwing", error);
+      throw error;
+    }
+  }
+
   const client = initializeVeo3()
 
-  console.log(`🎬 Veo 3 generation: "${options.prompt.substring(0, 50)}..."`)
+  // Get default model form DB just for logging/future proofing
+
+  console.log(`🎬 Veo 3 generation (Model: ${defaultModelName}): "${options.prompt.substring(0, 50)}..."`)
   console.log(`🖼️ Start Frame: ${options.imageStart ? 'Yes' : 'No'}, End Frame: ${options.imageEnd ? 'Yes' : 'No'}, Characters: ${options.characterImages?.length || 0}`)
 
   // In real implementation, we would send these to Vertex AI / Google AI
@@ -150,3 +184,4 @@ export const generateMockVideo = async (
 
   return { jobId, s3Key: mockUrl }
 }
+

@@ -1,11 +1,12 @@
 import Stripe from 'stripe'
+import { configService } from './configService.js'
 
 export const getStripeClient = () => {
-    const config = useRuntimeConfig()
-    if (!config.stripeSecretKey) {
+    const stripeConfig = configService.stripe;
+    if (!stripeConfig.secretKey) {
         throw new Error('Stripe secret key not configured')
     }
-    return new Stripe(config.stripeSecretKey, {
+    return new Stripe(stripeConfig.secretKey, {
         apiVersion: '2023-10-16' as any
     })
 }

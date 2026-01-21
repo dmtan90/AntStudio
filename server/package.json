@@ -1,5 +1,5 @@
 {
-    "name": "flova-ai-server",
+    "name": "server",
     "version": "1.0.0",
     "type": "module",
     "main": "index.js",
@@ -11,11 +11,16 @@
     "dependencies": {
         "@aws-sdk/client-s3": "^3.966.0",
         "@aws-sdk/s3-request-presigner": "^3.966.0",
+        "@ffmpeg-installer/ffmpeg": "^1.1.0",
+        "@ffprobe-installer/ffprobe": "^2.1.2",
         "@genkit-ai/google-genai": "^1.27.0",
+        "axios": "^1.13.2",
         "bcrypt": "^6.0.0",
+        "cheerio": "^1.1.2",
         "cors": "^2.8.5",
         "dotenv": "^16.4.7",
         "express": "^4.21.0",
+        "fluent-ffmpeg": "^2.1.3",
         "genkit": "^1.27.0",
         "googleapis": "^170.0.0",
         "jsonwebtoken": "^9.0.3",

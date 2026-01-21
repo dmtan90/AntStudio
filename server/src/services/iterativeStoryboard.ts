@@ -1,5 +1,5 @@
-import { generateJSONWithGemini } from '../utils/gemini'
-import type { IProject } from '../models/Project'
+import { generateJSON } from '../utils/AIGenerator.js'
+import type { IProject } from '../models/Project.js'
 
 export interface StoryboardSegment {
     order: number
@@ -113,7 +113,7 @@ export const generateStoryboardIteratively = async (
           ]
         }`
 
-        const result = await generateJSONWithGemini<{ segments: any[] }>(blockPrompt, 'gemini-2.0-flash-exp')
+        const result = await generateJSON<{ segments: any[] }>(blockPrompt, 'gemini-2.0-flash-exp')
 
         if (!result.segments || result.segments.length === 0) break
 

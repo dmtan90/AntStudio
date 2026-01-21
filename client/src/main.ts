@@ -1,0 +1,48 @@
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+import { Toaster } from 'vue-sonner'
+import VueFlags from '@singleway/vueflags'
+
+import App from './App.vue'
+import router from './router'
+
+// Import global styles
+import './assets/scss/main.scss'
+import './assets/css/tailwind.css'
+
+// vidmate dependencies
+import { VueQueryPlugin } from '@tanstack/vue-query'
+import { DraggablePlugin } from '@braks/revue-draggable'
+import 'vue-color/style.css'
+import 'vue-sonner/style.css'
+import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
+import 'video-editor/styles/global.css'
+import 'video-editor/styles/element-plus.css'
+import 'video-editor/fabric/initialize'
+import { queryClient } from 'video-editor/config/queryClient'
+
+const app = createApp(App)
+
+// Pinia store
+app.use(createPinia())
+
+// Vue Router
+app.use(router)
+
+// Element Plus
+app.use(ElementPlus)
+
+// Vue Flags
+app.use(VueFlags, { iconPath: '/flags/' })
+
+// Toast component
+app.component('Toaster', Toaster)
+
+// vidmate plugins
+app.use(VueQueryPlugin, { queryClient })
+app.use(DraggablePlugin)
+
+app.mount('#app')

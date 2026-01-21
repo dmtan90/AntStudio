@@ -1,4 +1,4 @@
-import { Project } from '../models/Project'
+import { Project } from '../models/Project.js'
 
 export const logProjectEvent = async (
     projectId: string,

@@ -1,4 +1,5 @@
-import { generateJSONWithGemini } from '../utils/gemini'
+import { generateJSON } from '../utils/AIGenerator.js'
+import config from '../utils/config.js'
 
 export interface ScriptAnalysisResult {
   summary: string
@@ -78,6 +79,5 @@ Return your analysis in the following JSON format:
   "language": "Detected Language"
 }`
 
-  const config = useRuntimeConfig()
-  return await generateJSONWithGemini<ScriptAnalysisResult>(prompt, config.geminiModelTextAnalysis)
+  return await generateJSON<ScriptAnalysisResult>(prompt, config.geminiModelTextAnalysis)
 }

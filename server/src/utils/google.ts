@@ -1,20 +1,20 @@
 import { google } from 'googleapis'
 import { Buffer } from 'node:buffer'
+import config from './config.js'
 
 /**
  * Google OAuth 2.0 client utility
  */
 export const getGoogleAuthClient = () => {
-    const config = useRuntimeConfig()
 
-    if (!config.googleClientId || !config.googleClientSecret || !config.googleRedirectUri) {
+    if (!config.youtubeClientId || !config.youtubeClientSecret || !config.youtubeRedirectUri) {
         throw new Error('Google OAuth credentials not configured')
     }
 
     return new google.auth.OAuth2(
-        config.googleClientId,
-        config.googleClientSecret,
-        config.googleRedirectUri
+        config.youtubeClientId,
+        config.youtubeClientSecret,
+        config.youtubeRedirectUri
     )
 }
 

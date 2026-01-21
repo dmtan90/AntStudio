@@ -1,5 +1,5 @@
 {
-  "name": "flova-ai-monorepo",
+  "name": "antflow",
   "private": true,
   "scripts": {
     "dev:client": "pnpm --filter client dev",
@@ -8,5 +8,8 @@
     "build:client": "pnpm --filter client build",
     "build:server": "pnpm --filter server build",
     "install:all": "pnpm install"
+  },
+  "dependencies": {
+    "form-data": "^4.0.5"
   }
 }

@@ -1,11 +1,11 @@
 import axios from 'axios'
 import { Buffer } from 'node:buffer'
+import config from './config.js'
 
 /**
  * Facebook Graph API utility
  */
 export const getFacebookAuthUrl = (state: string) => {
-    const config = useRuntimeConfig()
 
     if (!config.facebookAppId || !config.facebookRedirectUri) {
         throw new Error('Facebook OAuth credentials not configured')
@@ -26,7 +26,6 @@ export const getFacebookAuthUrl = (state: string) => {
  * Exchange code for Facebook user access token
  */
 export const getFacebookUserToken = async (code: string) => {
-    const config = useRuntimeConfig()
 
     const response = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
         params: {
@@ -71,7 +70,7 @@ export const uploadToFacebook = async (options: {
     formData.append('title', options.title)
     formData.append('description', options.description)
 
-    const blob = new Blob([options.videoBuffer], { type: 'video/mp4' })
+    const blob = new Blob([options.videoBuffer as any], { type: 'video/mp4' })
     formData.append('source', blob)
 
     const response = await axios.post(`https://graph.facebook.com/v18.0/${options.pageId}/videos`, formData, {
