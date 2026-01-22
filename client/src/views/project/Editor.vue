@@ -4,6 +4,7 @@
   >
     <!-- Header Bar -->
     <ProjectEditorHeader 
+      v-if="editorMode !== 'studio'"
       :left-visible="isLeftVisible"
       :right-visible="isRightVisible"
       @toggle-left="isLeftVisible = !isLeftVisible"
@@ -225,7 +226,10 @@ const changeTab = (tab: string) => {
   activeTab.value = tab
 }
 
-const editorMode = ref('simple');
+const editorMode = computed({
+  get: () => projectStore.editorMode,
+  set: (val) => projectStore.editorMode = val as any
+})
 
 // Resizing Logic
 const startResizing = () => {
@@ -271,7 +275,7 @@ const handleExportAction = async (command: string) => {
 }
 
 const handleViewMode = (command: string) => {
-  editorMode.value = command
+  editorMode.value = command as any
   if(command == 'studio'){
     isRightVisible.value = false
   }

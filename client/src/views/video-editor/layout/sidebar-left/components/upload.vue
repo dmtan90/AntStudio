@@ -10,12 +10,15 @@ import { useEditorStore } from 'video-editor/store/editor';
 import { isImageLoaded } from 'video-editor/lib/utils';
 import { useMockStore } from 'video-editor/constants/mock';
 import { uploadAssetToS3 } from 'video-editor/api/upload';
+import { getFileUrl } from '@/utils/api';
+import { useUserMediaStore } from 'video-editor/hooks/use-user-media';
 
 import GMedia from '@/components/ui/GMedia.vue';
 import AudioItem from './AudioItem.vue';
 
 const editor = useEditorStore();
 const mock = useMockStore();
+const userMediaStore = useUserMediaStore();
 
 const uploadMutation = useMutation({
   mutationFn: async ({ file, type }: { type: "image" | "video" | "audio"; file: File }) => {
@@ -25,16 +28,23 @@ const uploadMutation = useMutation({
     console.log("uploadMutation", response, params);
     switch (params.type) {
       case "image":
-        mock.upload("image", response as any);
+        userMediaStore.refreshImages();
         break;
       case "video":
-        mock.upload("video", response as any);
+        userMediaStore.refreshVideos();
         break;
       case "audio":
-        mock.upload("audio", response as any);
+        userMediaStore.refreshAudios();
         break;
     }
   },
+});
+
+import { onMounted } from 'vue';
+onMounted(() => {
+  if (!userMediaStore.images.items.length) userMediaStore.loadImages();
+  if (!userMediaStore.videos.items.length) userMediaStore.loadVideos();
+  if (!userMediaStore.audios.items.length) userMediaStore.loadAudios();
 });
 
 const handleUpload = (options: any, type: "image" | "video" | "audio") => {
@@ -49,26 +59,40 @@ const handleUpload = (options: any, type: "image" | "video" | "audio") => {
   return promise;
 };
 
-const onAddImage = (source: string, thumbnail: string) => {
-  if (((editor.canvas as any).replacer.active as any)?.type === "image") {
-    const promise = (editor.canvas as any).replacer.replace(source, true);
-    toast.promise(promise, { loading: "The image is being replaced...", success: "The image has been replaced", error: "Ran into an error while replacing the image" });
-  } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
-    const promise = (editor.canvas as any).onAddImageFromSource(source);
-    toast.promise(promise, { loading: "The image is being loaded...", success: "The image has been added to artboard", error: "Ran into an error adding the image asset" });
-  } else {
-    const promise = (editor.canvas as any).onAddImageFromThumbnail(source, thumbnail);
-    toast.promise(promise, { error: "Ran into an error adding the image asset" });
+const onAddImage = async (source: string, thumbnail: string) => {
+  try {
+    const resolvedSource = await getFileUrl(source, { cached: true });
+
+    if (((editor.canvas as any).replacer.active as any)?.type === "image") {
+      const promise = (editor.canvas as any).replacer.replace(resolvedSource, true);
+      toast.promise(promise, { loading: "The image is being replaced...", success: "The image has been replaced", error: "Ran into an error while replacing the image" });
+    } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
+      const promise = (editor.canvas as any).onAddImageFromSource(resolvedSource);
+      toast.promise(promise, { loading: "The image is being loaded...", success: "The image has been added to artboard", error: "Ran into an error adding the image asset" });
+    } else {
+      const promise = (editor.canvas as any).onAddImageFromThumbnail(resolvedSource, thumbnail);
+      toast.promise(promise, { error: "Ran into an error adding the image asset" });
+    }
+  } catch (error) {
+    console.error('Failed to resolve image source:', error);
+    toast.error("Failed to load image asset");
   }
 };
 
-const onAddVideo = (source: string, thumbnail: string) => {
-  if (!thumbnail || !isImageLoaded(thumbnail as any)) {
-    const promise = (editor.canvas as any).onAddVideoFromSource(source);
-    toast.promise(promise, { loading: "The video asset is being loaded...", success: "The video asset has been added to artboard", error: "Ran into an error adding the video asset" });
-  } else {
-    const promise = (editor.canvas as any).onAddVideoFromThumbnail(source, thumbnail);
-    toast.promise(promise, { error: "Ran into an error adding the video asset" });
+const onAddVideo = async (source: string, thumbnail: string) => {
+  try {
+    const resolvedSource = await getFileUrl(source, { cached: true });
+
+    if (!thumbnail || !isImageLoaded(thumbnail as any)) {
+      const promise = (editor.canvas as any).onAddVideoFromSource(resolvedSource);
+      toast.promise(promise, { loading: "The video asset is being loaded...", success: "The video asset has been added to artboard", error: "Ran into an error adding the video asset" });
+    } else {
+      const promise = (editor.canvas as any).onAddVideoFromThumbnail(resolvedSource, thumbnail);
+      toast.promise(promise, { error: "Ran into an error adding the video asset" });
+    }
+  } catch (error) {
+    console.error('Failed to resolve video source:', error);
+    toast.error("Failed to load video asset");
   }
 };
 
@@ -77,122 +101,148 @@ const onAddVideo = (source: string, thumbnail: string) => {
 //   toast.promise(promise, { loading: "The audio asset is being loaded...", success: "The audio asset has been added to timeline", error: "Ran into an error adding the audio asset" });
 // };
 
-const onAddAudio = (audio: any) => {
-  const promise = (editor.canvas as any).onAddAudioFromSource(audio.source).then((element: any) => {
-    console.log(element);
-    (editor.canvas as any).audio.add(audio.source, audio.name, element.name);
-  });
-  toast.promise(promise, { loading: "The audio asset is being loaded...", success: "The audio asset has been added to artboard", error: "Ran into an error adding the audio asset" });
+const onAddAudio = async (audio: any) => {
+  try {
+    const resolvedSource = await getFileUrl(audio.source, { cached: true });
+    const promise = (editor.canvas as any).onAddAudioFromSource(resolvedSource).then((element: any) => {
+      (editor.canvas as any).audio.add(resolvedSource, audio.name, element.name);
+    });
+    toast.promise(promise, { loading: "The audio asset is being loaded...", success: "The audio asset has been added to artboard", error: "Ran into an error adding the audio asset" });
+  } catch (error) {
+    console.error('Failed to resolve audio source:', error);
+    toast.error("Failed to load audio asset");
+  }
 };
 
 </script>
 
 <template>
-  <div class="h-full w-full">
-    <div class="flex items-center justify-between h-14 border-b px-4">
-      <h2 class="font-semibold">Uploads</h2>
-      <el-button size="small" text bg circle class="bg-card h-7 w-7" @click="editor.setActiveSidebarLeft(null)">
+  <div class="h-full w-full flex flex-col cinematic-panel">
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5">
+      <h2 class="font-bold text-sm tracking-wider uppercase text-white/90">Uploads</h2>
+      <button
+        class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+        @click="editor.setActiveSidebarLeft(null)">
         <X :size="16" />
-      </el-button>
+      </button>
     </div>
-    <section class="sidebar-container pb-4">
-      <div class="px-3 pt-4">
-        <el-input placeholder="Search..." class="text-xs" >
+    <section class="flex-1 overflow-y-auto custom-scrollbar">
+      <div class="px-5 pt-4">
+        <el-input placeholder="Search assets..." class="cinematic-input">
           <template #prefix>
-            <Search :size="15" class="text-foreground/60" />
+            <Search :size="15" class="text-white/40" />
           </template>
         </el-input>
       </div>
-      <div class="px-3 flex flex-col divide-y">
-        <div class="flex flex-col gap-4 py-6">
-          <div class="flex items-center gap-2">
-            <h4 class="text-xs font-semibold line-clamp-1">Images</h4>
-            <el-upload
-              :show-file-list="false"
-              :http-request="(options) => handleUpload(options, 'image')"
-              accept="image/*"
-              class="ml-auto"
-            >
-              <el-button size="small" type="primary" text bg round class="h-7 ml-auto bg-card gap-1 pl-2">
-                <Plus :size="14" />
-                <span>Add File</span>
-              </el-button>
-            </el-upload>
-            <el-button size="small" link class="text-primary h-6 font-medium line-clamp-1 px-1.5">
-              See All
-            </el-button>
+      <div class="px-5 flex flex-col pb-10">
+
+        <!-- Images -->
+        <div class="flex flex-col gap-4 py-6 border-b border-white/5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Images</h4>
+            <div class="flex items-center gap-2">
+              <el-upload :show-file-list="false" :http-request="(options) => handleUpload(options, 'image')"
+                accept="image/*">
+                <button
+                  class="h-6 px-2.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-brand-primary hover:bg-brand-primary/20 transition-all">
+                  <Plus :size="10" :stroke-width="4" />
+                  <span>Upload</span>
+                </button>
+              </el-upload>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors">
+                See All
+              </button>
+            </div>
           </div>
-          <div class="flex gap-2.5 items-center overflow-x-scroll scrollbar-hidden relative">
-            <template v-if="mock.images.length">
-              <button v-for="({ source, thumbnail }) in mock.images" :key="source" @click="onAddImage(source, thumbnail)" class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md shadow-sm">
-                <GMedia :src="thumbnail" class="h-full w-full rounded-md transition-transform group-hover:scale-110 object-cover" />
+          <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
+            <template v-if="userMediaStore.images.items.length">
+              <button v-for="item in userMediaStore.images.items" :key="item._id"
+                @click="onAddImage(getFileUrl(item.url), getFileUrl(item.url))"
+                class="group shrink-0 h-20 w-20 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl shadow-sm hover:border-white/20 hover:bg-white/10 transition-all">
+                <GMedia :src="getFileUrl(item.url)"
+                  class="h-full w-full transition-transform group-hover:scale-110 object-cover opacity-80 group-hover:opacity-100" />
               </button>
             </template>
             <template v-else>
-              <el-skeleton v-for="(_, index) in 3" :key="index" animated class="h-16 flex-1 rounded-md" />
-              <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none">No Images</span>
+              <el-skeleton v-for="(_, index) in 3" :key="index" animated
+                class="h-20 w-20 shrink-0 rounded-xl !bg-white/5" />
             </template>
           </div>
         </div>
-        <div class="flex flex-col gap-4 py-6">
-          <div class="flex items-center gap-2">
-            <h4 class="text-xs font-semibold line-clamp-1">Videos</h4>
-            <el-upload
-              :show-file-list="false"
-              :http-request="(options) => handleUpload(options, 'video')"
-              accept="video/*"
-              class="ml-auto"
-            >
-              <el-button size="small" type="primary" text bg round class="h-7 ml-auto bg-card gap-1 pl-2">
-                <Plus :size="14" />
-                <span>Add File</span>
-              </el-button>
-            </el-upload>
-            <el-button size="small" link class="text-primary h-6 font-medium line-clamp-1 px-1.5">
-              See All
-            </el-button>
+
+        <!-- Videos -->
+        <div class="flex flex-col gap-4 py-6 border-b border-white/5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Videos</h4>
+            <div class="flex items-center gap-2">
+              <el-upload :show-file-list="false" :http-request="(options) => handleUpload(options, 'video')"
+                accept="video/*">
+                <button
+                  class="h-6 px-2.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-brand-primary hover:bg-brand-primary/20 transition-all">
+                  <Plus :size="10" :stroke-width="4" />
+                  <span>Upload</span>
+                </button>
+              </el-upload>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors">
+                See All
+              </button>
+            </div>
           </div>
-          <div class="flex gap-2.5 items-center overflow-x-scroll scrollbar-hidden relative">
-            <template v-if="mock.videos.length">
-              <button v-for="({ source, thumbnail }) in mock.videos" :key="source" @click="onAddVideo(source, thumbnail)" class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md shadow-sm">
-                <GMedia :src="thumbnail" class="h-full w-full rounded-md transition-transform group-hover:scale-110 object-cover" />
+          <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
+            <template v-if="userMediaStore.videos.items.length">
+              <button v-for="item in userMediaStore.videos.items" :key="item._id"
+                @click="onAddVideo(getFileUrl(item.url), '')"
+                class="group shrink-0 h-20 w-20 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl shadow-sm hover:border-white/20 hover:bg-white/10 transition-all">
+                <GMedia :src="getFileUrl(item.url)"
+                  class="h-full w-full transition-transform group-hover:scale-110 object-cover opacity-80 group-hover:opacity-100" />
               </button>
             </template>
             <template v-else>
-              <el-skeleton v-for="(_, index) in 3" :key="index" animated class="h-16 flex-1 rounded-md" />
-              <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none">No Videos</span>
+              <el-skeleton v-for="(_, index) in 3" :key="index" animated
+                class="h-20 w-20 shrink-0 rounded-xl !bg-white/5" />
             </template>
           </div>
         </div>
+
+        <!-- Audios -->
         <div class="flex flex-col gap-4 py-6">
-          <div class="flex items-center gap-2">
-            <h4 class="text-xs font-semibold line-clamp-1">Audios</h4>
-            <el-upload
-              :show-file-list="false"
-              :http-request="(options) => handleUpload(options, 'audio')"
-              accept="audio/*"
-              class="ml-auto"
-            >
-              <el-button size="small" type="primary" text bg round class="h-7 ml-auto bg-card gap-1 pl-2">
-                <Plus :size="14" />
-                <span>Add File</span>
-              </el-button>
-            </el-upload>
-            <el-button size="small" link class="text-primary h-6 font-medium line-clamp-1 px-1.5">
-              See All
-            </el-button>
+          <div class="flex items-center justify-between">
+            <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Audios</h4>
+            <div class="flex items-center gap-2">
+              <el-upload :show-file-list="false" :http-request="(options) => handleUpload(options, 'audio')"
+                accept="audio/*">
+                <button
+                  class="h-6 px-2.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-brand-primary hover:bg-brand-primary/20 transition-all">
+                  <Plus :size="10" :stroke-width="4" />
+                  <span>Upload</span>
+                </button>
+              </el-upload>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors">
+                See All
+              </button>
+            </div>
           </div>
-          <div class="flex gap-2.5 items-center overflow-x-scroll scrollbar-hidden relative">
-            <template v-if="mock.audios.length">
-              <AudioItem v-for="audio in mock.audios" :key="audio.source" :audio="audio" @click="onAddAudio(audio)" />
+          <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
+            <template v-if="userMediaStore.audios.items.length">
+              <div class="w-32 shrink-0" v-for="audio in userMediaStore.audios.items" :key="audio._id">
+                <AudioItem :audio="{ ...audio, source: audio.url, name: audio.fileName }"
+                  @click="onAddAudio({ ...audio, source: audio.url, name: audio.fileName })" />
+              </div>
             </template>
             <template v-else>
-              <el-skeleton v-for="(_, index) in 3" :key="index" animated class="h-16 flex-1 rounded-md" />
-              <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none">No Audios</span>
+              <el-skeleton v-for="(_, index) in 3" :key="index" animated
+                class="h-16 w-32 shrink-0 rounded-xl !bg-white/5" />
             </template>
           </div>
         </div>
+
       </div>
     </section>
   </div>
 </template>
+
+<style scoped>
+.fade-mask-r {
+  mask-image: linear-gradient(to right, black 0%, black 90%, transparent 100%);
+}
+</style>

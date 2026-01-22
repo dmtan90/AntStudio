@@ -130,4 +130,19 @@ export class AntMediaService {
             return false;
         }
     }
+
+    /**
+     * Get broadcast status
+     */
+    async getBroadcastStatus(streamId: string): Promise<any> {
+        try {
+            const response = await axios.get(`${this.apiBaseUrl}/broadcasts/${streamId}`, {
+                params: { app: this.app }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('[AntMedia] Failed to get broadcast status:', error);
+            return null;
+        }
+    }
 }

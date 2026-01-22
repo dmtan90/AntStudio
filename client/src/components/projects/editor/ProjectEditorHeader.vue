@@ -215,7 +215,10 @@ const user = computed(() => userStore.user)
 const isEditingTitle = ref(false)
 const editTitle = ref('')
 const titleInput = ref<any>(null)
-const editorMode = ref('simple');
+const editorMode = computed({
+  get: () => projectStore.editorMode,
+  set: (val) => projectStore.editorMode = val as any
+})
 
 const startEditing = () => {
   editTitle.value = project.value?.title || ''

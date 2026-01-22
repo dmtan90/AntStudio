@@ -12,8 +12,6 @@ import { cn } from 'video-editor/lib/utils';
 
 import { useMeasure } from 'video-editor/hooks/use-measure';
 
-import TimelineElementItem from './TimelineElementItem.vue';
-import TimelineAudioItem from './TimelineAudioItem.vue';
 import TimelineItem from './TimelineItem.vue';
 
 const SEEK_TIME_WIDTH = 42;
@@ -115,45 +113,71 @@ const onSelectTrack = (event: any, item: any) => {
 </script>
 
 <template>
-  <div :class="cn('flex flex-1 shrink select-none', editor.timelineOpen ? 'h-auto' : 'h-0 overflow-hidden appearance-none')">
-    <div class="bg-background shrink-0 w-2">
-      <div class="h-8 w-full bg-card/40 dark:bg-gray-900/40 flex justify-center items-center"></div>
+  <div
+    :class="cn('flex flex-1 shrink select-none', editor.timelineOpen ? 'h-auto' : 'h-0 overflow-hidden appearance-none')">
+    <!-- Left Sidebar Area -->
+    <div class="bg-[#050505] shrink-0 w-2 border-t border-r border-white/5">
+      <div class="h-8 w-full bg-[#050505] border-b border-white/5 flex justify-center items-center"></div>
     </div>
-    <div class="flex-1 flex flex-col bg-background shrink-0 overflow-x-scroll scrollbar-hidden relative" ref="containerRef">
-      <div class="h-8 absolute bg-card/40 dark:bg-gray-900/40" :style="{ width: `${trackBackgroundWidth}px` }" />
-      <div class="h-8 absolute bg-card dark:bg-gray-900 cursor-pointer" :style="{ width: `${trackWidth}px` }" @click="onClickSeekTime" />
-      <div class="h-8 absolute inset-0 flex items-center z-20 pointer-events-none">
+
+    <!-- Main Timeline Container -->
+    <div
+      class="flex-1 flex flex-col bg-[#080808] border-t border-white/5 shrink-0 overflow-x-auto custom-scrollbar relative"
+      ref="containerRef">
+      <!-- Ruler Area Background -->
+      <div class="h-8 absolute bg-[#0a0a0a] border-b border-white/5 z-0"
+        :style="{ width: `${trackBackgroundWidth}px` }" />
+
+      <!-- Clickable Seek Area -->
+      <div class="h-8 absolute cursor-pointer hover:bg-white/5 transition-colors z-30"
+        :style="{ width: `${trackWidth}px` }" @click="onClickSeekTime" />
+
+      <!-- Ruler Ticks and Numbers -->
+      <div class="h-8 absolute inset-0 flex items-center z-10 pointer-events-none">
         <template v-for="(_, index) in timelineAmount" :key="index">
-          <span v-if="index == 0 || index % 5 == 0" key="index" class="text-xxs shrink-0 cursor-pointer" :style="{ width: `${SEEK_TIME_WIDTH}px` }">
-            {{ index }}s
-          </span>
-          <span v-else key={index} class="text-xxs shrink-0 cursor-pointer text-gray-400" :style="{ width: `${SEEK_TIME_WIDTH}px` }">
-            •
-          </span>
+          <div v-if="index % 5 == 0"
+            class="flex flex-col items-start justify-end h-full px-1 border-l border-white/20 select-none group/tick transition-opacity"
+            :style="{ width: `${SEEK_TIME_WIDTH}px` }">
+            <span
+              class="text-[9px] font-mono font-black text-white/40 uppercase tracking-tighter leading-none pb-1 group-hover/tick:text-white transition-colors">{{
+              index }}s</span>
+            <div
+              class="h-1/2 w-px bg-white/20 group-hover/tick:bg-brand-primary group-hover/tick:h-full transition-all" />
+          </div>
+          <div v-else class="flex flex-col justify-end h-full px-0.5 border-l border-white/5 select-none"
+            :style="{ width: `${SEEK_TIME_WIDTH}px` }">
+            <div class="h-1/4 w-px bg-white/5" />
+          </div>
         </template>
       </div>
-      <VueDraggable
-        axis="x"
-        :x="seekTimeInSeconds * SEEK_TIME_WIDTH"
-        :w="1"
-        :z="999"
-        :resizable="false"
-        :onDrag="onDrag"
-        class="!h-full absolute top-0"
-      >
-        <div :class="cn('h-full w-1 bg-blue-400 dark:bg-primary z-20', disabled ? 'cursor-not-allowed' : 'cursor-ew-resize')" />
+
+      <!-- Playhead (Scrubber) -->
+      <VueDraggable axis="x" :x="seekTimeInSeconds * SEEK_TIME_WIDTH" :w="12" :z="999" :resizable="false"
+        :onDrag="onDrag" class="!h-full absolute top-0 -ml-[6px] transition-none">
+        <div
+          :class="cn('h-full w-px relative flex flex-col items-center group/playhead z-50', disabled ? 'cursor-not-allowed' : 'cursor-ew-resize')">
+          <!-- Playhead Line with Glow -->
+          <div class="absolute inset-y-0 w-px bg-brand-primary shadow-[0_0_15px_rgba(59,130,246,0.6)]" />
+
+          <!-- Playhead Handle -->
+          <div
+            class="w-2.5 h-2.5 bg-brand-primary rounded-full border border-[#050505] shadow-[0_0_10px_rgba(59,130,246,0.8)] z-50 -mt-1 hover:scale-125 hover:ring-4 hover:ring-brand-primary/20 transition-all duration-300" />
+
+          <!-- Active Playhead Indicator Tooltip (Optional, can be added later) -->
+        </div>
       </VueDraggable>
-      <div class="absolute top-8 py-2.5 bottom-0 overflow-y-scroll scrollbar-hidden flex flex-col gap-1" :style="{ width: `${trackBackgroundWidth}px` }">
-        <!--<TimelineElementItem v-for="element in [...elements].reverse()" :key="element.name" :element="element" :track-width="trackWidth" @click="(event) => onSelectTrack(event, element)"/>
-        <TimelineAudioItem v-for="audio in [...audio.elements].reverse()" :key="audio.id" :audio="audio" :track-width="trackWidth" @click="(event) => onSelectTrack(event, element)"/>
-        -->
+
+      <!-- Clip Tracks Area -->
+      <div class="absolute top-8 py-3 bottom-0 flex flex-col gap-1.5 overflow-y-auto custom-scrollbar bg-[#0a0a0a]/40"
+        :style="{ width: `${trackBackgroundWidth}px` }">
         <template v-for="element in [...elements].reverse()" :key="element.name">
-          <TimelineItem v-if="(element as any).meta && (element as any).meta.duration" :element="element" :track-width="trackWidth" :type="element.type" @click="(event) => onSelectTrack(event, element)"/>
+          <TimelineItem v-if="(element as any).meta && (element as any).meta.duration" :element="element"
+            :track-width="trackWidth" :type="element.type" @click="(event) => onSelectTrack(event, element)" />
         </template>
         <template v-for="element in [...audioElements].reverse()" :key="element.id">
-          <TimelineItem :element="element" :track-width="trackWidth" type="audio" @click="(event) => onSelectTrack(event, element)"/>
+          <TimelineItem :element="element" :track-width="trackWidth" type="audio"
+            @click="(event) => onSelectTrack(event, element)" />
         </template>
-        <!--<TimelineItem v-for="element in [...audio.elements].reverse()" :key="element.id" :element="element" :track-width="trackWidth" type="audio" @click="(event) => onSelectTrack(event, element)"/>-->
       </div>
     </div>
   </div>

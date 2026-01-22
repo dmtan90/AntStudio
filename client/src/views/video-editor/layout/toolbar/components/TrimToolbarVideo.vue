@@ -67,55 +67,76 @@ const style = computed(() => ({
 </script>
 
 <template>
-  <div class="flex items-center h-full w-full overflow-x-scroll scrollbar-hidden pr-12">
-    <div class="flex items-center gap-2">
-      <el-button type="primary" text bg circle>
-        <Play :size="15" class="" fill="#000000" />
-      </el-button>
-      <div class="relative">
-        <el-input class="h-8 text-xs w-24 pr-8" :model-value="floor(absoluteDuration, 1)" readonly />
-        <span class="absolute text-gray-500 text-xs right-2.5 top-1/2 -translate-y-1/2 font-medium">s</span>
+  <div class="flex items-center h-full w-full overflow-x-auto custom-scrollbar flex-nowrap pr-2 gap-6 px-1 py-1">
+    <div class="flex items-center gap-3">
+      <button class="h-9 w-9 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 text-white/50 hover:text-white flex items-center justify-center transition-all duration-300 active:scale-90 shadow-sm">
+        <Play :size="16" class="ml-0.5" fill="currentColor" />
+      </button>
+      <div class="relative bg-white/5 rounded-xl border border-white/5 h-9 flex items-center px-2 group transition-all duration-300 hover:border-white/10 hover:bg-white/10">
+        <el-input class="h-full text-[11px] font-bold w-20 cinematic-input-ghost" :model-value="floor(absoluteDuration, 1)" readonly />
+        <span class="text-white/30 text-[9px] font-black uppercase tracking-widest mr-1">s</span>
       </div>
     </div>
-    <div ref="containerRef" class="mx-6 flex-1 h-8 overflow-hidden relative rounded-md">
-      <div :class="cn('bg-background items-stretch bg-repeat-x bg-center shrink-0 h-full w-full')" :style="style" />
-      <div class="absolute inset-0 bg-black/40" />
+    
+    <div ref="containerRef" class="flex-1 h-10 overflow-hidden relative rounded-xl border border-white/10 bg-[#0a0a0a]/60 group/track transition-all duration-300 hover:border-white/20">
+      <div :class="cn('bg-background items-stretch bg-repeat-x bg-center shrink-0 h-full w-full opacity-30 group-hover/track:opacity-50 transition-opacity')" :style="style" />
+      <div class="absolute inset-0 bg-transparent" />
       <div class="absolute h-full top-0 flex">
         <VueDraggable
           axis="x"
           :x="data.trimStartX"
           :y="0"
           :w="handleWidth"
-          :h="32"
+          :h="40"
           :parent="true"
           :z="999"
           :resizable="false"
           class="!h-full"
           :onDrag="(x, y) => handleDragChange('trimStartX', x)">
-          <button class="absolute grid place-items-center h-full bg-primary rounded-l-md z-20" :style="{ width: `${handleWidth}px` }">
-            <ChevronLeft :size="14" :stroke-width="2.5" stroke="#ffffff" />
+          <button class="absolute grid place-items-center h-full bg-brand-primary rounded-l-lg z-20 cursor-ew-resize group/handle shadow-lg" :style="{ width: `${handleWidth}px` }">
+            <ChevronLeft :size="12" class="text-white group-hover/handle:scale-125 transition-transform" stroke-width="4" stroke="#ffffff" />
           </button>
         </VueDraggable>
-        <div class="h-full absolute border-t-2 border-b-2 border-primary mix-blend-overlay bg-gray-300 z-10" :style="{ left: `${data.trimStartX + handleWidth}px`, width: `${trackWidth}px` }"></div>
+        <div class="h-full absolute border-y-2 border-brand-primary mix-blend-screen bg-brand-primary/10 z-10 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]" :style="{ left: `${data.trimStartX + handleWidth}px`, width: `${trackWidth}px` }"></div>
         <VueDraggable
           axis="x"
           :x="data.trimEndX"
           :y="0"
           :w="handleWidth"
-          :h="32"
+          :h="40"
           :parent="true"
           :resizable="false"
           class="!h-full"
           :onDrag="(x, y) => handleDragChange('trimEndX', x)">
-          <button class="absolute grid place-items-center h-full bg-primary rounded-r-md z-20" :style="{ width: `${handleWidth}px` }">
-            <ChevronRight :size="14" :stroke-width="2.5" stroke="#ffffff" />
+          <button class="absolute grid place-items-center h-full bg-brand-primary rounded-r-lg z-20 cursor-ew-resize group/handle shadow-lg" :style="{ width: `${handleWidth}px` }">
+            <ChevronRight :size="12" class="text-white group-hover/handle:scale-125 transition-transform" stroke-width="4" stroke="#ffffff" />
           </button>
         </VueDraggable>
       </div>
     </div>
-    <el-button type="primary" text bg round class="gap-1.5 pl-2.5 hover:bg-primary/90" @click="handleChanges">
-      <Check :size="15" />
+
+    <button 
+        class="flex items-center gap-2.5 h-9 px-6 rounded-xl bg-brand-primary text-white transition-all duration-300 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-primary/20 hover:bg-brand-primary/90 hover:scale-[1.02] active:scale-95" 
+        @click="handleChanges"
+    >
+      <Check :size="16" stroke-width="4" />
       <span>Done</span>
-    </el-button>
+    </button>
   </div>
 </template>
+
+<style scoped>
+.cinematic-input-ghost :deep(.el-input__wrapper) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 4px;
+}
+.cinematic-input-ghost :deep(.el-input__inner) {
+  color: white;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 11px;
+  text-align: right;
+  padding-right: 4px;
+}
+</style>

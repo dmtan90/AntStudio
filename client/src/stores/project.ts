@@ -19,6 +19,7 @@ export const useProjectStore = defineStore('project', () => {
     const isProcessing = ref(false)
     const isGenerating = ref(false)
     const loadingList = ref(false)
+    const editorMode = ref<'simple' | 'studio'>('simple')
 
     // Getters
     const projectId = computed(() => currentProject.value?._id)
@@ -287,6 +288,23 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    async function generateVoiceover(id: string, segmentId: string, options: any) {
+        try {
+            const response = await api.post(`/projects/${id}/segments/${segmentId}/generate-voiceover`, options)
+            // Update local segment
+            if (currentProject.value?.storyboard?.segments) {
+                const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId)
+                if (segment) {
+                    segment.generatedAudio = response.data.data.generatedAudio
+                }
+            }
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     return {
         projects,
         currentProject,
@@ -309,10 +327,12 @@ export const useProjectStore = defineStore('project', () => {
         generateVisualPlan,
         generateAsset,
         uploadAsset,
+        generateVoiceover,
         assembleVideo,
         setProject,
         updateVisualAssetStatus,
         syncAssetToElements,
-        syncAllAssets
+        syncAllAssets,
+        editorMode
     }
 })

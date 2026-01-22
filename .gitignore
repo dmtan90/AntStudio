@@ -4,6 +4,10 @@
 .nuxt
 .nitro
 .cache
+_client
+_server
+_pages
+_video-editor
 dist
 
 # Node dependencies

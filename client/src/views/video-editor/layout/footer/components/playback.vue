@@ -162,118 +162,171 @@ const splitEnabled = computed(() => {
 </script>
 
 <template>
-  <div class="h-14 sm:h-16 px-4 flex items-center gap-8 justify-between border-b shrink-0 overflow-x-scroll scrollbar-hidden">
-    <div class="flex items-center gap-3.5">
-      <el-button size="large" circle type="primary" text :disabled="animations.previewing" @click="handleTimelineToggle">
-        <template v-if="timeline.playing">
-          <Pause :size="48" />
-        </template>
-        <template v-else>
-          <Play :size="48" />
-        </template>
-      </el-button>
-      <div class="text-xs tabular-nums hidden sm:inline">
-        <span>{{ formatMediaDuration(timeline.seek, false) }}</span>
-        <span class="mx-1">/</span>
-        <span>{{ formatMediaDuration(timeline.duration, false) }}</span>
+  <div class="h-14 sm:h-16 px-6 flex items-center gap-6 justify-between border-b border-white/5 shrink-0 overflow-x-auto custom-scrollbar flex-nowrap bg-[#0a0a0a]/50">
+    <div class="flex items-center gap-5">
+      <div class="relative group">
+        <div class="absolute inset-0 bg-brand-primary/20 blur-xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+        <button 
+          class="relative h-11 w-11 rounded-full flex items-center justify-center transition-all duration-500 !bg-brand-primary !text-white hover:!bg-brand-primary/90 hover:scale-105 shadow-[0_0_20px_rgba(var(--brand-primary-rgb),0.3)] hover:shadow-[0_0_30px_rgba(var(--brand-primary-rgb),0.5)] active:scale-90 disabled:opacity-30 z-10"
+          :disabled="animations.previewing"
+          @click="handleTimelineToggle"
+        >
+          <div class="absolute inset-0 rounded-full border border-white/20"></div>
+          <Pause v-if="timeline.playing" :size="22" fill="currentColor" class="!text-black" />
+          <Play v-else :size="22" fill="currentColor" class="!text-black" />
+        </button>
       </div>
-      <el-divider direction="vertical" class="h-8" v-if="active"/>
-      <div class="flex items-center gap-0" v-if="active">
-        <el-button-group>
-          <el-tooltip content="Split" placement="top" v-if="splitEnabled">
-            <el-button text round :icon="Split" @click="onSplitItem()" />
-          </el-tooltip>
-          <el-tooltip content="Split & Keep Left" placement="top" v-if="splitEnabled">
-            <el-button text round :icon="KeepLeft" @click="onSplitItem()" />
-          </el-tooltip>
-          <el-tooltip content="Split & Keep Right" placement="top" v-if="splitEnabled">
-            <el-button text round :icon="KeepRight" @click="onSplitItem()" />
-          </el-tooltip>
-          <el-tooltip content="Copy" placement="top" v-if="!active?.meta?.thumbnail">
-            <el-button text round :icon="Copy" @click="onCloneItem()" />
-          </el-tooltip>
-          <el-tooltip content="Delete" placement="top">
-            <el-button type="danger" text round :icon="Trash2Icon"  @click="onRemoveItem()" />
-          </el-tooltip>
-        </el-button-group>
+
+      <div class="flex items-center gap-2 font-mono tabular-nums select-none min-w-[140px] bg-white/5 px-3 py-1.5 rounded-xl border border-white/5 shadow-inner">
+        <span class="text-[14px] font-black text-white/90 drop-shadow-sm">{{ formatMediaDuration(timeline.seek, false) }}</span>
+        <span class="text-[10px] font-bold text-white/20 mx-0.5">/</span>
+        <span class="text-[11px] font-bold text-white/40">{{ formatMediaDuration(timeline.duration, false) }}</span>
+      </div>
+
+      <div class="w-px h-6 bg-white/10 shrink-0 mx-1" v-if="active"/>
+      
+      <div class="flex items-center gap-1.5" v-if="active">
+        <template v-if="splitEnabled">
+          <div class="flex items-center bg-white/5 rounded-xl border border-white/5 p-1 gap-1">
+            <el-tooltip content="Split Clip" placement="top" popper-class="cinematic-tooltip">
+              <button class="h-8 px-2.5 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-all active:scale-95" @click="onSplitItem()">
+                <Split :size="16" />
+              </button>
+            </el-tooltip>
+            <el-tooltip content="Split & Keep Left" placement="top" popper-class="cinematic-tooltip">
+              <button class="h-8 px-2.5 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-all active:scale-95" @click="onSplitItem()">
+                <KeepLeft :size="16" />
+              </button>
+            </el-tooltip>
+            <el-tooltip content="Split & Keep Right" placement="top" popper-class="cinematic-tooltip">
+              <button class="h-8 px-2.5 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-all active:scale-95" @click="onSplitItem()">
+                <KeepRight :size="16" />
+              </button>
+            </el-tooltip>
+          </div>
+        </template>
+        
+        <el-tooltip content="Duplicate Clip" placement="top" v-if="!active?.meta?.thumbnail" popper-class="cinematic-tooltip">
+           <button class="h-9 w-9 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 text-white/50 hover:text-white transition-all active:scale-95 shadow-sm" @click="onCloneItem()">
+            <Copy :size="16" />
+          </button>
+        </el-tooltip>
+        
+        <el-tooltip content="Delete Element" placement="top" popper-class="cinematic-tooltip">
+          <button class="h-9 w-9 flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:bg-red-500/10 hover:border-red-500/20 text-white/40 hover:text-red-500 transition-all active:scale-95 shadow-sm" @click="onRemoveItem()">
+            <Trash2Icon :size="16" />
+          </button>
+        </el-tooltip>
       </div>
     </div>
-    <div class="flex items-center gap-3">
-      <div class="gap-px hidden md:flex">
-        <el-popover placement="top" trigger="click" width="200px">
+    
+    <div class="flex items-center gap-5">
+      <div class="gap-4 hidden md:flex items-center">
+        <!-- Viewport Format Picker -->
+        <el-popover placement="top" trigger="click" width="280" popper-class="cinematic-popover p-0 overflow-hidden border-white/10">
           <template #reference>
-            <el-button type="primary" text bg round class="mx-3" :disabled="disabled" :icon="FullScreen">
-              <span>{{ currentFormat.ratio }}</span>
-            </el-button>
+            <button class="flex items-center gap-2.5 h-9 px-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/20 text-white/50 hover:text-white transition-all duration-300 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] disabled:opacity-30" :disabled="disabled">
+               <FullScreen :size="14" class="text-white/40 group-hover:text-white" />
+               <span class="text-[10px] font-black uppercase tracking-widest">{{ currentFormat.ratio }}</span>
+               <ChevronUp :size="12" class="opacity-20 group-hover:opacity-100 transition-opacity" />
+            </button>
           </template>
-          <div class="text-xs font-medium">Format</div>
-          <div class="grid grid-cols-2 gap-2 relative max-h-[250px] overflow-y-scroll scrollbar-hidden">
-            <div v-for="format in formats" :key="format.name" class="flex flex-col gap-2">
-              <el-tooltip :content="format.purpose" placement="top">
-                <button :class="cn('group shrink-0 border flex items-center justify-center overflow-hidden rounded-xl shadow-sm transition-colors hover:bg-card p-1.5', isFormat(format) ? 'bg-card' : '')" @click="resizeArtboards(format.dimensions)">
-                  <img :src="format.preview" class="object-contain h-full w-full" />
-                </button>
-              </el-tooltip>
-              <span class="text-xxs text-foreground/60 text-center">{{ format.name }}</span>
-            </div>
+          <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl">
+              <div class="px-5 py-3 border-b border-white/5 bg-white/5">
+                  <span class="text-[9px] font-bold text-white/40 uppercase tracking-[0.2em]">Viewport Canvas Format</span>
+              </div>
+              <div class="p-4 grid grid-cols-2 gap-3 max-h-[280px] overflow-y-auto custom-scrollbar">
+                <div v-for="format in formats" :key="format.name" class="flex flex-col gap-2 group cursor-pointer" @click="resizeArtboards(format.dimensions)">
+                  <el-tooltip :content="format.purpose" placement="top" popper-class="cinematic-tooltip">
+                    <div 
+                      :class="cn('w-full aspect-video border rounded-xl overflow-hidden transition-all p-2 flex items-center justify-center shadow-lg', isFormat(format) ? 'bg-brand-primary/10 border-brand-primary/40 ring-1 ring-brand-primary/20' : 'bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10')" 
+                    >
+                      <img :src="format.preview" class="object-contain max-h-full max-w-full opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </el-tooltip>
+                  <span class="text-[9px] font-bold text-white/30 text-center uppercase tracking-widest group-hover:text-white/60 transition-colors">{{ format.name }}</span>
+                </div>
+              </div>
           </div>
         </el-popover>
-        <el-button-group>
-          <el-button type="primary" text bg round @click="workspace.changeZoom(workspace?.zoom - 0.05)">
-            <ZoomOut :size="15" />
-          </el-button>
-          <el-dropdown class="float-left -mr-4" max-height="200px" @command="(percentage) => workspace.changeZoom(percentage / 100)">
-            <el-button type="primary" text bg>
-              <span class="font-medium">{{ Math.round(workspace?.zoom * 100) }}%</span>
-              <ChevronDown :size="15" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-for="percentage in [10, 15, 20, 25, 50, 75, 100, 125, 150, 175, 200, 250]" :key="percentage" :command="percentage">
-                  {{ percentage }}%
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-          <el-button type="primary" text bg round @click="workspace.changeZoom(workspace?.zoom + 0.05)">
-            <ZoomIn :size="16" />
-          </el-button>
-        </el-button-group>
+
+        <!-- Canvas Zoom Controls -->
+        <div class="flex items-center bg-white/5 rounded-xl border border-white/5 p-1 gap-1 shadow-sm">
+           <button class="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all active:scale-90" @click="workspace.changeZoom(workspace?.zoom - 0.05)">
+              <ZoomOut :size="14" />
+           </button>
+           
+           <el-dropdown max-height="240px" @command="(percentage) => workspace.changeZoom(percentage / 100)" trigger="click" popper-class="cinematic-dropdown">
+              <button class="h-7 px-3 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/90 hover:text-white transition-all text-[11px] font-bold font-mono tracking-tighter min-w-[54px] shadow-sm">
+                {{ Math.round(workspace?.zoom * 100) }}%
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu class="cinematic-dropdown-menu">
+                  <div class="px-4 py-2 text-[9px] font-bold text-white/20 uppercase tracking-widest border-b border-white/5 mb-1">Canvas Scale</div>
+                  <el-dropdown-item v-for="percentage in [10, 15, 20, 25, 50, 75, 100, 125, 150, 200, 300, 400]" :key="percentage" :command="percentage">
+                    <span class="text-[10px] font-bold font-mono py-1">{{ percentage }}%</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+           </el-dropdown>
+
+           <button class="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all active:scale-90" @click="workspace.changeZoom(workspace?.zoom + 0.05)">
+              <ZoomIn :size="14" />
+           </button>
+        </div>
       </div>
-      <div class="flex gap-0">
-        <el-popover placement="top-start" trigger="click" width="200px">
+
+      <div class="w-px h-6 bg-white/10 hidden md:block shrink-0" />
+
+      <!-- Project Duration -->
+      <div class="flex gap-0.5 relative group/dur shadow-sm">
+        <el-popover placement="top-start" trigger="click" width="280" popper-class="cinematic-popover p-0 overflow-hidden border-white/10">
           <template #reference>
-            <el-button type="primary" text bg round class="gap-1.5 rounded-r-none" :disabled="disabled">
-              <Timer :size="15" />
-              <span>Duration</span>
-            </el-button>
+            <button class="flex items-center gap-2.5 h-9 px-4 rounded-l-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 text-white/50 hover:text-white transition-all duration-300 disabled:opacity-30" :disabled="disabled">
+              <Timer :size="14" class="text-white/30" />
+              <span class="text-[10px] font-bold uppercase tracking-widest">Duration</span>
+            </button>
           </template>
-          <Label class="text-xs font-medium">Duration (s)</Label>
-          <div class="flex items-center justify-between gap-4">
-            <SliderInput :disabled="disabled" :model-value="duration" :min="MIN_DURATION" :max="MAX_DURATION" :step="5" @update:model-value="(value) => duration = value"/>
+          <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl">
+              <div class="px-5 py-3 border-b border-white/5 bg-white/5">
+                  <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest">Global Project Timeline</span>
+              </div>
+              <div class="p-5 flex flex-col gap-4">
+                 <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] font-black text-white/20 uppercase tracking-widest">Time Limit</span>
+                    <span class="text-[11px] font-bold font-mono text-white/60 bg-white/5 px-2 py-0.5 rounded-md">{{ duration.toFixed(1) }}s</span>
+                 </div>
+                 <SliderInput :disabled="disabled" :model-value="duration" :min="MIN_DURATION" :max="MAX_DURATION" :step="1" @update:model-value="(value) => duration = value"/>
+              </div>
           </div>
         </el-popover>
-        <el-dropdown @command="duration => timeline.set('duration', duration)">
-          <el-button type="primary" text bg round class="rounded-l-none" :disabled="disabled">
-            <ChevronUp :size="15" />
-          </el-button>
+        
+        <el-dropdown @command="d => timeline.set('duration', d)" trigger="click" popper-class="cinematic-dropdown">
+          <button class="flex items-center justify-center w-7 h-9 rounded-r-xl border border-white/5 bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all disabled:opacity-30" :disabled="disabled">
+            <ChevronUp :size="14" class="opacity-40" />
+          </button>
           <template #dropdown>
-            <el-dropdown-menu class="min-w-20">
-              <el-dropdown-item v-for="item in presetDurations" :key="item.value" :disabled="disabled || duration == item.value" :command="item.value" class="text-xs pl-2.5">
-                {{ item.label }}
+            <el-dropdown-menu class="cinematic-dropdown-menu min-w-[124px]">
+              <div class="px-4 py-2 text-[9px] font-bold text-white/20 uppercase tracking-widest border-b border-white/5 mb-1">Presets</div>
+              <el-dropdown-item v-for="item in presetDurations" :key="item.value" :disabled="disabled || duration == item.value" :command="item.value">
+                <span class="text-[10px] font-bold py-1">{{ item.label }}</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </div>
-      <el-tooltip content="Timeline" placement="top">
-        <el-button type="primary" text bg round class="gap-1.5 hover:active" @click="editor.onToggleTimeline()">
-          <GanttChart :size="15" />
-          <span>Timeline</span>
-          <span :class="cn(editor.timelineOpen ? 'rotate-180' : 'rotate-0')">
-            <ChevronUp :size="15" />
-          </span>
-        </el-button>
+
+      <!-- Timeline Panel Toggle -->
+      <el-tooltip content="Toggle Timeline Panel" placement="top" popper-class="cinematic-tooltip">
+        <button 
+          class="flex items-center gap-2.5 h-9 px-4 rounded-xl border border-transparent hover:bg-white/5 text-white/50 hover:text-white transition-all duration-300 shadow-sm group/btn active:scale-95" 
+          @click="editor.onToggleTimeline()"
+          :class="{ 'bg-white/10 border-white/10 text-brand-primary !text-brand-primary shadow-lg shadow-brand-primary/5': editor.timelineOpen }"
+        >
+          <GanttChart :size="16" class="transition-colors group-hover/btn:text-white" :class="editor.timelineOpen ? 'text-brand-primary' : 'text-white/40'" />
+          <span class="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Timeline</span>
+          <ChevronUp :size="14" class="transition-transform duration-500 opacity-30 group-hover/btn:opacity-100" :class="editor.timelineOpen ? 'rotate-180' : 'rotate-0'" />
+        </button>
       </el-tooltip>
     </div>
   </div>

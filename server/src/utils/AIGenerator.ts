@@ -352,3 +352,45 @@ export const generateMockVideo = async (
 
     return { jobId, s3Key: mockUrl }
 }
+
+// ============================================================================
+// AUDIO GENERATION (TTS)
+// ============================================================================
+
+/**
+ * Generate audio (TTS) and upload to S3
+ */
+export const generateAudio = async (
+    prompt: string,
+    projectId: string,
+    filename: string,
+    options: {
+        modelId?: string
+        providerId?: string
+        voice?: string
+        s3Key?: string
+    } = {}
+): Promise<{ s3Key: string; s3Url: string }> => {
+    try {
+        const result: any = await aiManager.generateAudio(prompt, options.modelId, options.providerId, {
+            voice: options.voice
+        });
+
+        if (!result?.media?.url) {
+            throw new Error('No audio URL returned from provider');
+        }
+
+        const buffer = await getFileBuffer(result.media.url);
+
+        let s3Key = options.s3Key;
+        if (!s3Key) {
+            s3Key = `projects/${projectId}/audio/${filename}.mp3`
+        }
+
+        const uploadResult = await uploadToS3(s3Key, buffer, 'audio/mpeg');
+        return { s3Key: uploadResult.key, s3Url: uploadResult.url };
+    } catch (error) {
+        console.error('Audio generation failed:', error);
+        throw error;
+    }
+}

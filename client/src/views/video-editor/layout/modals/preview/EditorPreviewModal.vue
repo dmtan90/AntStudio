@@ -19,9 +19,10 @@ const handleClose = () => {
 <template>
   <el-dialog
     :model-value="preview"
-    title="Preview Modal"
+    class="cinematic-dialog preview-dialog !p-0 overflow-hidden"
     @close="handleClose"
-    width="80%"
+    width="1000px"
+    destroy-on-close
   >
     <PreviewModalContent />
   </el-dialog>

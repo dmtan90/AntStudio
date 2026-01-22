@@ -12,7 +12,7 @@
           class="video-bg"
           :poster="heroBackground"
         >
-          <source src="https://storage.googleapis.com/pinhole-about-assets-prod-us/RNDR_TunnelVidoes_stretched_005_1440x1080.mp4" type="video/mp4">
+          <source :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/RNDR_TunnelVidoes_stretched_005_1440x1080.mp4')" type="video/mp4">
         </video>
         <div class="video-overlay"></div>
       </div>
@@ -49,7 +49,7 @@
               class="frame-video"
               :poster="heroBackground"
             >
-              <source src="https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4" type="video/mp4">
+              <source :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4')" type="video/mp4">
             </video>
             <div class="play-trigger">
               <play-one theme="filled" size="64" fill="#fff" />
@@ -83,7 +83,7 @@
                 <div class="feature-video-track">
                   <div v-for="(vid, vIdx) in currentFeature?.videos" :key="vIdx" class="feature-video-card glass">
                     <video autoplay muted loop playsinline class="card-video">
-                      <source :src="vid" type="video/mp4">
+                      <source :src="getFileUrl(vid)" type="video/mp4">
                     </video>
                   </div>
                 </div>
@@ -104,7 +104,7 @@
         <div class="partners-grid-v2">
           <div class="partner-card glass">
             <video autoplay muted loop playsinline class="partner-video">
-              <source src="https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4" type="video/mp4">
+              <source :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4')" type="video/mp4">
             </video>
             <div class="partner-info">
               <h3>Collaborating with the world's best creators</h3>
@@ -132,11 +132,11 @@
                 loop 
                 playsinline 
                 class="gallery-video"
-                :poster="img.src"
+                :poster="getFileUrl(img.src)"
               >
-                <source :src="img.video" type="video/mp4">
+                <source :src="getFileUrl(img.video)" type="video/mp4">
               </video>
-              <img v-else :src="img.src" :alt="img.title" />
+              <img v-else :src="getFileUrl(img.src)" :alt="img.title" />
             </div>
             <div class="img-caption">{{ img.title }}</div>
           </div>
@@ -169,12 +169,11 @@
           </div>
         </div>
 
-        <h3 class="pricing-divider">Credit Packages</h3>
+        <!-- Credit Packages -->
+        <!-- <h3 class="pricing-divider">Credit Packages</h3>
         <div class="pricing-grid credit-packages gap-0">
-          <!-- Credit Packages -->
           <div v-for="pkg in creditPackages" :key="pkg.id" class="price-item package-item text-center">
             <div class="price-header">
-              <!-- <div class="plan-name">{{ pkg.name }}</div> -->
               <div class="plan-price">${{ pkg.price }}</div>
             </div>
             <ul class="plan-features">
@@ -182,7 +181,7 @@
               <li>One-time purchase</li>
             </ul>
           </div>
-        </div>
+        </div> -->
 
         <div class="pricing-footer">
           <router-link to="/register" class="get-started-btn">Get Started</router-link>
@@ -212,6 +211,7 @@ import {
   Info,
   More
 } from '@icon-park/vue-next'
+import { getFileUrl } from '@/utils/api'
 
 import heroBackground from '@/assets/images/hero_background.png'
 import gallery7 from '@/assets/images/gallery_7.png'

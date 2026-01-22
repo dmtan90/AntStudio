@@ -78,41 +78,60 @@ const handleDelete = () => {
 </script>
 
 <template>
-  <div class="flex items-center h-full w-full overflow-x-scroll scrollbar-hidden">
-    <div class="flex items-center">
-      <el-button text bg round
-        :type="!selected?.visible ? '' : 'primary'"
-        :disabled="editor.sidebarRight === 'visual'" 
-        :class="cn('px-2.5 relative')"
-        @click="editor.setActiveSidebarRight(editor.sidebarRight === 'visual' ? null : 'visual')">
+  <div class="flex items-center h-full w-full overflow-x-auto custom-scrollbar flex-nowrap gap-3.5 px-1 py-1">
+    <div class="flex items-center gap-2">
+      <button 
+        class="cinematic-button !h-9 !px-4 !rounded-xl border-white/5 bg-white/5 flex items-center gap-2.5 group transition-all duration-300 shadow-sm"
+        :class="[
+          editor.sidebarRight === 'visual' ? 'bg-white/15 border-white/20 text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/10',
+          !selected?.visible ? 'opacity-40 grayscale pointer-events-none' : ''
+        ]"
+        @click="editor.setActiveSidebarRight(editor.sidebarRight === 'visual' ? null : 'visual')"
+      >
         <div class="relative">
-          <AudioWaveform :size="15" />
-          <div v-if="!selected?.visible" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-6 bg-card-foreground -rotate-45" />
+          <AudioWaveform :size="16" :class="editor.sidebarRight === 'visual' ? 'text-white' : 'text-white/40 group-hover:text-white'" />
+          <div v-if="!selected?.visible" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-400/80 -rotate-45" />
         </div>
-        <span>Visual</span>
-      </el-button>
+        <span class="text-[10px] font-bold uppercase tracking-widest">Visual</span>
+      </button>
+
       <template v-if="selected.visible">
-        <ToolbarFillOption class="mr-2.5"/>
-        <ToolbarStrokeOption class="mr-2.5"/>
+        <ToolbarFillOption />
+        <ToolbarStrokeOption />
         <ToolbarOpacityOption />
       </template>
-      <el-divider direction="vertical" class="h-8" />
-      <el-popover placement="bottom-start" width="250px">
+
+      <div class="w-px h-6 bg-white/10 shrink-0 mx-0.5" />
+
+      <el-popover placement="bottom-start" width="280" popper-class="cinematic-popover p-0 overflow-hidden border-white/10" trigger="click">
         <template #reference>
-          <el-button class="px-2.5" :icon="Volume2" text bg round>
-            <span>Volume</span>
-          </el-button>
+          <button class="cinematic-button !h-9 !px-4 !rounded-xl border-white/5 bg-white/5 flex items-center gap-2.5 group hover:bg-white/10 hover:border-white/10 transition-all duration-300 shadow-sm">
+            <Volume2 :size="16" :class="muted ? 'text-white/20' : 'text-white/40 group-hover:text-white'" class="transition-colors" />
+            <span class="text-[10px] font-bold uppercase tracking-widest text-white/70 group-hover:text-white">Volume</span>
+          </button>
         </template>
-        <Label class="text-xs font-medium">Volume (%)</Label>
-        <div class="flex items-center justify-between gap-2">
-          <SliderInput class="w-[calc(100% - 32px)]" :model-value="volume" :min="0" :max="100" :step="10" :disabled="muted" @update:model-value="(value) => volume = value"/>
-          <Toggle v-model="muted" circle class="" @toggle="value => muted = value">
-            <VolumeX :size="15" />
-          </Toggle>
+        <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl">
+            <div class="px-5 py-3 border-b border-white/5 bg-white/5">
+                <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest">Audio Controls</span>
+            </div>
+            <div class="p-5 flex flex-col gap-5">
+              <div class="flex flex-col gap-3">
+                <div class="flex justify-between items-center mb-1">
+                    <Label class="text-[10px] font-bold text-white/20 uppercase tracking-widest">Output Volume</Label>
+                    <span :class="cn('text-[10px] font-bold font-mono px-1.5 rounded transition-colors', muted ? 'text-white/20 bg-white/2' : 'text-white/60 bg-white/5')">{{ muted ? 'MUTED' : volume.toFixed(0) + '%' }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                  <SliderInput class="flex-1" :model-value="volume" :min="0" :max="100" :step="1" :disabled="muted" @update:model-value="(value) => volume = value"/>
+                  <Toggle v-model="muted" circle class="cinematic-toggle" @toggle="value => muted = value">
+                    <VolumeX :size="14" />
+                  </Toggle>
+                </div>
+              </div>
+            </div>
         </div>
       </el-popover>
     </div>
-    <el-divider direction="vertical" class="h-8" />
+    <div class="w-px h-6 bg-white/10 shrink-0 mx-1" />
     <ToolbarTimelineOption />
   </div>
 </template>

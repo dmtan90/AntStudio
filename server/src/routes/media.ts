@@ -79,7 +79,11 @@ router.get('/list', async (req: AuthRequest, res) => {
 
         const filter: any = { userId: req.user!.userId };
         if (purpose) {
-            filter.purpose = purpose;
+            if (purpose.includes(',')) {
+                filter.purpose = { $in: purpose.split(',') };
+            } else {
+                filter.purpose = purpose;
+            }
         }
 
         const skip = (page - 1) * limit;
@@ -133,6 +137,90 @@ router.delete('/:id', async (req: AuthRequest, res) => {
     } catch (error: any) {
         console.error('Delete media error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to delete media' });
+    }
+});
+
+// GET /api/media/proxy - Proxy external media to bypass CORS/CORP
+router.get('/proxy', async (req: Request, res: Response) => {
+    try {
+        const url = req.query.url as string;
+        if (!url) {
+            return res.status(400).json({ success: false, error: 'URL parameter is required' });
+        }
+
+        // Validate URL (basic security)
+        try {
+            const parsedUrl = new URL(url);
+            if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+                return res.status(400).json({ success: false, error: 'Invalid URL protocol' });
+            }
+        } catch (e) {
+            return res.status(400).json({ success: false, error: 'Invalid URL' });
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            return res.status(response.status).send(`Failed to fetch resource: ${response.statusText}`);
+        }
+
+        // Set Headers
+        // Critical: Set CORP header to allow embedding in COEP environments
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
+        // Forward content type
+        const contentType = response.headers.get('content-type');
+        if (contentType) {
+            res.setHeader('Content-Type', contentType);
+        }
+
+        // Stream the response body
+        // @ts-ignore
+        if (response.body && typeof response.body.pipe === 'function') {
+            // Node-fetch style
+            (response.body as any).pipe(res);
+        } else if (response.body) {
+            // Web streams style (native fetch in Node 18+)
+            const reader = response.body.getReader();
+            const stream = new ReadableStream({
+                start(controller) {
+                    return pump();
+                    function pump(): any {
+                        return reader.read().then(({ done, value }) => {
+                            if (done) {
+                                controller.close();
+                                return;
+                            }
+                            controller.enqueue(value);
+                            // Write to express response
+                            res.write(value);
+                            return pump();
+                        });
+                    }
+                }
+            });
+            // Wait for stream to finish
+            await new Promise((resolve) => {
+                const check = setInterval(() => {
+                    // This is a bit hacky for native fetch streaming to express
+                    // Better to use buffer for now if small, or standard readable stream conversion
+                }, 100);
+                // Actually, the above manual read/write loop works
+                reader.closed.then(() => {
+                    res.end();
+                    resolve(true);
+                });
+            });
+        } else {
+            const buffer = await response.arrayBuffer();
+            res.send(Buffer.from(buffer));
+        }
+
+    } catch (error: any) {
+        console.error('Proxy error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, error: error.message || 'Proxy failed' });
+        }
     }
 });
 

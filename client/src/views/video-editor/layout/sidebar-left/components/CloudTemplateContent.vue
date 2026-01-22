@@ -6,6 +6,7 @@ import { useEditorStore } from 'video-editor/store/editor';
 import { storeToRefs } from "pinia";
 import { usePublicTemplates } from 'video-editor/hooks/use-public-template';
 import { MoreOne, UpSquare, DownSquare, Copy, Delete, Newlybuild, Edit } from "@icon-park/vue-next";
+import { getFileUrl } from '@/utils/api'
 
 const editor = useEditorStore();
 const { dimension } = storeToRefs(editor);
@@ -94,29 +95,42 @@ const loadTemplate = (template: any, mode: string) => {
 </script>
 
 <template>
-  <div class="px-3 grid grid-cols-2 gap-4 relative overflow-x-scroll scrollbar-hidden max-h-[300px]" ref="templeteRef">
+  <div class="px-5 grid grid-cols-2 gap-4 relative overflow-y-auto custom-scrollbar max-h-[500px]" ref="templeteRef">
     <template v-if="!templates || !templates.length">
-      <el-skeleton v-for="(_, index) in 6" :key="index" :rows="2" animated class="w-full aspect-square rounded-md" />
-      <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 line-clamp-1">Loading...</span>
+      <el-skeleton v-for="(_, index) in 6" :key="index" animated class="w-full aspect-square rounded-xl !bg-white/5" />
+      <div v-if="!loading" class="absolute inset-0 flex items-center justify-center">
+        <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">No Templates Found</span>
+      </div>
     </template>
     <template v-else>
-      <template v-for="(template,index) in templates" :key="template.id">
-        <button v-if="template.pages.length > 0" class="relative w-full aspect-square rounded-md overflow-hidden group border relative" 
-        @click="loadTemplate(template, 'replace')"
-        @mouseover="templates[index].play = true" @mouseleave="templates[index].play = false">
-          <video v-if="templates[index].play" :src="template.pages[0].preview" class="absolute left-0 top-0 z-10 h-full w-full object-cover" autoplay loop />
-          <img :src="template.pages[0].thumbnail" :alt="template.name" class="group-hover:scale-110 transition-transform" />
-          <el-dropdown placement="bottom-end" class="absolute right-1 top-1 z-10" @command="(cmd) => loadTemplate(template, cmd)">
-            <el-button type="primary" text circle>
-              <MoreOne :size="15" />
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item :icon="Edit" command="replace">Replace scene</el-dropdown-item>
-                <el-dropdown-item :icon="Newlybuild" command="newScene">New scene</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+      <template v-for="(template, index) in templates" :key="template.id">
+        <button v-if="template.pages.length > 0" 
+          class="relative w-full aspect-square rounded-xl overflow-hidden group border border-white/5 bg-white/5 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] shadow-sm hover:shadow-xl hover:shadow-purple-500/5" 
+          @click="loadTemplate(template, 'replace')"
+          @mouseover="templates[index].play = true" 
+          @mouseleave="templates[index].play = false"
+        >
+          <video v-if="templates[index].play" :src="getFileUrl(template.pages[0].preview)" class="absolute left-0 top-0 z-10 h-full w-full object-cover" autoplay loop />
+          <img :src="getFileUrl(template.pages[0].thumbnail)" :alt="template.name" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
+          
+          <!-- Actions Menu -->
+          <div class="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+            <el-dropdown placement="bottom-end" @command="(cmd) => loadTemplate(template, cmd)">
+              <button class="w-7 h-7 rounded-lg bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary transition-all">
+                <MoreOne :size="14" />
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu class="cinematic-dropdown">
+                  <el-dropdown-item :icon="Edit" command="replace">Replace scene</el-dropdown-item>
+                  <el-dropdown-item :icon="Newlybuild" command="newScene">New scene</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+
+          <div class="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span class="text-[9px] font-bold text-white uppercase tracking-wider line-clamp-1">{{ template.name }}</span>
+          </div>
         </button>
       </template>
     </template>

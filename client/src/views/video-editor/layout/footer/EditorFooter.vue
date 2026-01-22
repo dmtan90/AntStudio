@@ -10,7 +10,7 @@ import SplitLine from './components/SplitLine.vue';
 
 const editor = useEditorStore();
 const isTablet = useIsTablet();
-const MAX_HEIGHT = 288;
+const MAX_HEIGHT = 500;
 
 const collapsed = computed(() => (isTablet ? 64 : 56));
 const expanded = ref(collapsed.value);
@@ -46,7 +46,7 @@ const footerHeight = computed({
   <footer
     v-if="editor?.canvas?.timeline"
     :style="{ height: footerHeight + 'px' }"
-    class="footer flex flex-col relative bg-card/75 sm:bg-card dark:bg-gray-900/40 sm:dark:bg-gray-900/30 shrink-0"
+    class="footer flex flex-col relative bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 shrink-0 z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
   >
     <SplitLine v-model:newHeight="footerHeight" 
       class="top-0 left-0 right-0 z-10" 
@@ -58,8 +58,4 @@ const footerHeight = computed({
 
 </template>
 
-<style>
-.footer {
-  
-}
-</style>
+

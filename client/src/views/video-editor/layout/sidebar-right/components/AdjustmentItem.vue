@@ -103,233 +103,191 @@ const activePopup2 = ref(false);
 </script>
 
 <template>
-  <div :class="cn('items-center grid grid-cols-12', active ? 'opacity-100' : 'opacity-50')">
-    <Label class="text-xs font-medium col-span-6">
-      <Toggle v-model="active" circle class="h-6 w-6 px-0 text-foreground shrink-0" @toggle="(value) => onToggle(value)">
-        <template v-if="active">
-          <Eye :size="12" />
-        </template>
-        <template v-else>
-          <EyeOff :size="12" />
-        </template>
-      </Toggle>
-      <span>{{ name }}</span>
-    </Label>
-    <div class="flex items-center col-span-6 gap-2" v-if="active">
-      <template v-if="name == 'RemoveColor'">
-        <el-popover
-          :visible="activePopup"
-          title="Remove Color"
-          placement="top"
-          width="250px"
-          :disabled="!active"
-          trigger="click"
-        >
-          <template #reference>
-            <el-button text class="ml-0 p-[5px] border-1 rounded-md" @click="activePopup = !activePopup">
-              <el-tag :color="removeColor.color" />
-            </el-button>
+  <div class="flex flex-col gap-3 group">
+    <div :class="cn('flex items-center justify-between transition-opacity duration-300', active ? 'opacity-100' : 'opacity-40')">
+      <div class="flex items-center gap-3">
+        <Toggle v-model="active" circle class="h-5 w-5 border-white/10" @toggle="(value) => onToggle(value)">
+          <template v-if="active">
+            <Eye :size="10" />
           </template>
-          <div class="items-center grid grid-cols-1 gap-2" ref="popup">
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Color' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-color-picker v-model="removeColor.color" :disabled="!active" color-format="hex" :predefine="colors" @change="onChange" />
-              </el-col>
-            </el-row>
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Opacity' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-slider :disabled="!active" :min="0" :max="1" :step="0.05" v-model="removeColor.alpha" @change="onChange" />
-              </el-col>
-            </el-row>
-          </div>
-        </el-popover>
-      </template>
-      <template v-else-if="name == 'BlendColor'">
-        <el-popover
-          :visible="activePopup"
-          title="Blend Color"
-          placement="top"
-          width="250px"
-          :disabled="!active"
-          trigger="click"
-        >
-          <template #reference>
-            <el-button text class="ml-0 p-[5px] border-1 rounded-md" @click="activePopup = !activePopup">
-              <el-tag :color="blendColor.color" />
-            </el-button>
+          <template v-else>
+            <EyeOff :size="10" />
           </template>
-          <div class="items-center grid grid-cols-1 gap-2">
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Mode' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-select class="w-full" v-model="blendColor.mode" @change="onChange">
-                  <el-option v-for="item in BlendModes" :key="item.value" :label="item.name" :value="item.value" />
-                </el-select>
-              </el-col>
-            </el-row>
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Color' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-color-picker v-model="blendColor.color" :disabled="!active" color-format="hex" :predefine="colors" @change="onChange" />
-              </el-col>
-            </el-row>
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Opacity' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-slider :disabled="!active" :min="0" :max="1" :step="0.05" v-model="blendColor.alpha" @change="onChange" />
-              </el-col>
-            </el-row>
-          </div>
-        </el-popover>
-      </template>
-      <template v-else-if="name == 'Grayscale'">
-        <el-select class="w-full" v-model="grayScale.mode" v-if="grayScale">
-          <el-option v-for="item in GrayScaleModes" :key="item.value" :label="item.name" :value="item.value" />
-        </el-select>
-      </template>
-      <template v-else-if="name == 'Noise'">
-        <el-slider :disabled="!active" :min="0" :max="1000" :step="10" v-model="intensity" />
-      </template>
-      <template v-else-if="name == 'Pixelate'">
-        <el-slider :disabled="!active" :min="0" :max="20" :step="1" v-model="intensity" />
-      </template>
-      <template v-else-if="name == 'Blur'">
-        <el-slider :disabled="!active" :min="0" :max="100" :step="5" v-model="intensity" />
-      </template>
-      <template v-else-if="!excludeSliders.includes(name)">
-        <el-slider :disabled="!active" :min="-100" :max="100" :step="1" v-model="intensity" @change="onChange"/>
-      </template>
+        </Toggle>
+        <span class="text-[11px] font-bold text-white/90 uppercase tracking-widest group-hover:text-brand-primary transition-colors cursor-default">{{ name }}</span>
+      </div>
+
+      <!-- Adjustment Controls -->
+      <div class="flex items-center gap-3" v-if="active">
+        <template v-if="name == 'RemoveColor'">
+          <el-popover
+            :visible="activePopup"
+            placement="bottom-end"
+            width="280px"
+            popper-class="cinematic-popover p-0 overflow-hidden border-white/10"
+            @hide="activePopup = false"
+          >
+            <template #reference>
+              <button class="w-8 h-8 rounded-lg border border-white/10 overflow-hidden shadow-sm hover:scale-110 transition-transform" :style="{ backgroundColor: removeColor.color }" @click="activePopup = !activePopup" />
+            </template>
+            
+            <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl">
+              <!-- Popover Header -->
+              <div class="px-5 py-3 border-b border-white/5 bg-white/5">
+                <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest">Remove Color</span>
+              </div>
+              
+              <div class="p-5 flex flex-col gap-6" ref="popup">
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Color</Label>
+                    <el-color-picker v-model="removeColor.color" color-format="hex" :predefine="colors" @change="onChange" />
+                  </div>
+                  <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Tolerance</Label>
+                        <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ (removeColor.alpha * 100).toFixed(0) }}%</span>
+                    </div>
+                    <el-slider :min="0" :max="1" :step="0.01" v-model="removeColor.alpha" @change="onChange" class="cinematic-slider" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+        </template>
+
+        <template v-else-if="name == 'BlendColor'">
+           <el-popover
+            :visible="activePopup"
+            placement="bottom-end"
+            width="280px"
+            popper-class="cinematic-popover p-0 overflow-hidden border-white/10"
+            @hide="activePopup = false"
+          >
+            <template #reference>
+              <button class="w-8 h-8 rounded-lg border border-white/10 overflow-hidden shadow-sm hover:scale-110 transition-transform" :style="{ backgroundColor: blendColor.color }" @click="activePopup = !activePopup" />
+            </template>
+            
+            <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl">
+              <div class="px-5 py-3 border-b border-white/5 bg-white/5">
+                <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest">Blend Controls</span>
+              </div>
+              
+              <div class="p-5 flex flex-col gap-6">
+                <div class="space-y-5">
+                  <div class="flex items-center justify-between gap-4">
+                    <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Mode</Label>
+                    <el-select class="cinematic-select w-32" popper-class="cinematic-popover" v-model="blendColor.mode" @change="onChange">
+                      <el-option v-for="item in BlendModes" :key="item.value" :label="item.name" :value="item.value" />
+                    </el-select>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Color</Label>
+                    <el-color-picker v-model="blendColor.color" color-format="hex" :predefine="colors" @change="onChange" />
+                  </div>
+                  <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Opacity</Label>
+                        <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ (blendColor.alpha * 100).toFixed(0) }}%</span>
+                    </div>
+                    <el-slider :min="0" :max="1" :step="0.01" v-model="blendColor.alpha" @change="onChange" class="cinematic-slider" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+        </template>
+
+        <template v-else-if="name == 'Grayscale'">
+          <el-select size="small" class="cinematic-select w-28" popper-class="cinematic-popover" v-model="grayScale.mode" v-if="grayScale" @change="onChange">
+            <el-option v-for="item in GrayScaleModes" :key="item.value" :label="item.name" :value="item.value" />
+          </el-select>
+        </template>
+
+        <template v-else-if="name == 'Noise' || name == 'Pixelate' || name == 'Blur' || !excludeSliders.includes(name)">
+            <span class="text-[10px] font-bold font-mono text-white/40 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">{{ intensity }}</span>
+        </template>
+      </div>
     </div>
+
+    <!-- Collapsible Intensity Slider for common adjustments -->
+    <div v-if="active && (name == 'Noise' || name == 'Pixelate' || name == 'Blur' || !excludeSliders.includes(name))" class="pl-8 pr-2">
+        <el-slider 
+            v-if="name == 'Noise'" 
+            :min="0" :max="1000" :step="10" 
+            v-model="intensity" 
+            class="cinematic-slider" 
+        />
+        <el-slider 
+            v-else-if="name == 'Pixelate'" 
+            :min="0" :max="20" :step="1" 
+            v-model="intensity" 
+            class="cinematic-slider" 
+        />
+        <el-slider 
+            v-else-if="name == 'Blur'" 
+            :min="0" :max="100" :step="1" 
+            v-model="intensity" 
+            class="cinematic-slider" 
+        />
+        <el-slider 
+            v-else-if="!excludeSliders.includes(name)" 
+            :min="-100" :max="100" :step="1" 
+            v-model="intensity" 
+            @change="onChange" 
+            class="cinematic-slider" 
+        />
+    </div>
+
+    <!-- Duotone Specific Controls -->
+    <template v-if="name == 'Duotone' && active && doutone">
+      <div class="flex flex-col gap-4 pl-8 py-3 bg-white/5 rounded-2xl border border-white/5 mt-1 mx-2 p-4">
+        <div class="flex items-center justify-between">
+          <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Light</Label>
+          <div class="flex items-center gap-3">
+             <el-popover placement="bottom-end" width="280px" popper-class="cinematic-popover p-0 overflow-hidden border-white/10" @hide="activePopup = false">
+                <template #reference>
+                   <button class="w-7 h-7 rounded-lg border border-white/10 shadow-sm" :style="{ backgroundColor: doutone[1].color }" @click="activePopup = !activePopup" />
+                </template>
+                <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl p-5 flex flex-col gap-5">
+                   <div class="flex items-center justify-between gap-4">
+                      <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Mode</Label>
+                      <el-select class="cinematic-select w-32" popper-class="cinematic-popover" v-model="doutone[1].mode" @change="onChange">
+                        <el-option v-for="item in BlendModes" :key="item.value" :label="item.name" :value="item.value" />
+                      </el-select>
+                   </div>
+                   <div class="flex items-center justify-between">
+                      <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Color</Label>
+                      <el-color-picker v-model="doutone[1].color" color-format="hex" :predefine="colors" @change="onChange" />
+                   </div>
+                </div>
+             </el-popover>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Dark</Label>
+          <div class="flex items-center gap-3">
+            <el-popover placement="bottom-end" width="280px" popper-class="cinematic-popover p-0 overflow-hidden border-white/10" @hide="activePopup2 = false">
+                <template #reference>
+                   <button class="w-7 h-7 rounded-lg border border-white/10 shadow-sm" :style="{ backgroundColor: doutone[2].color }" @click="activePopup2 = !activePopup2" />
+                </template>
+                <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl p-5 flex flex-col gap-5">
+                   <div class="flex items-center justify-between gap-4">
+                      <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Mode</Label>
+                      <el-select class="cinematic-select w-32" popper-class="cinematic-popover" v-model="doutone[2].mode" @change="onChange">
+                        <el-option v-for="item in BlendModes" :key="item.value" :label="item.name" :value="item.value" />
+                      </el-select>
+                   </div>
+                   <div class="flex items-center justify-between">
+                      <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Color</Label>
+                      <el-color-picker v-model="doutone[2].color" color-format="hex" :predefine="colors" @change="onChange" />
+                   </div>
+                </div>
+             </el-popover>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
-  <!--<template v-if="name == 'BlendColor' && active">
-    <div :class="cn('items-center grid grid-cols-12', active ? 'opacity-100' : 'opacity-50')">
-      <Label class="text-xs font-medium col-span-5">{{ 'Mode' }}</Label>
-      <div class="flex items-center col-span-7 gap-2">
-        <el-select class="w-full" v-model="blendMode">
-          <el-option v-for="item in BlendModes" :key="item.value" :label="item.name" :value="item.value" />
-        </el-select>
-      </div>
-    </div>
-    <div :class="cn('items-center grid grid-cols-12', active ? 'opacity-100' : 'opacity-50')">
-      <Label class="text-xs font-medium col-span-5">{{ 'Color' }}</Label>
-      <div class="flex items-center col-span-7 gap-2">
-        <el-color-picker v-model="blendColor" :disabled="!active" color-format="hex" :predefine="colors" />
-      </div>
-    </div>
-  </template>-->
-  <template v-if="name == 'Duotone' && active && doutone">
-    <div :class="cn('items-center grid grid-cols-12', active ? 'opacity-100' : 'opacity-50')">
-      <Label class="text-xs font-medium col-span-5">{{ 'Background' }}</Label>
-      <div class="flex items-center col-span-7 gap-2">
-        <el-popover
-          :visible="activePopup"
-          title="Background"
-          placement="top"
-          width="250px"
-          trigger="click"
-        >
-          <template #reference>
-            <el-button text class="p-[5px] border-1 rounded-md" @click="activePopup = !activePopup">
-              <el-tag :color="doutone[1].color" />
-            </el-button>
-          </template>
-          <div class="items-center grid grid-cols-1 gap-2" ref="popup">
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Mode' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-select class="w-full" v-model="doutone[1].mode" @change="onChange">
-                  <el-option v-for="item in BlendModes" :key="item.value" :label="item.name" :value="item.value" />
-                </el-select>
-              </el-col>
-            </el-row>
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Color' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-color-picker v-model="doutone[1].color" :disabled="!active" color-format="hex" :predefine="colors" @change="onChange" />
-              </el-col>
-            </el-row>
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Opacity' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-slider :disabled="!active" :min="0" :max="1" :step="0.05" v-model="doutone[1].alpha" @change="onChange" />
-              </el-col>
-            </el-row>
-          </div>
-        </el-popover>
-      </div>
-    </div>
-    <div :class="cn('items-center grid grid-cols-12', active ? 'opacity-100' : 'opacity-50')">
-      <Label class="text-xs font-medium col-span-5">{{ 'Overlay' }}</Label>
-      <div class="flex items-center col-span-7 gap-2">
-        <el-popover
-          :visible="activePopup2"
-          title="Overlay"
-          placement="top"
-          width="250px"
-          trigger="click"
-        >
-          <template #reference>
-            <el-button text class="p-[5px] border-1 rounded-md" @click="activePopup2 = !activePopup2">
-              <el-tag :color="doutone[2].color" />
-            </el-button>
-          </template>
-          <div class="items-center grid grid-cols-1 gap-2" ref="popup2">
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Mode' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-select class="w-full" v-model="doutone[2].mode" @change="onChange">
-                  <el-option v-for="item in BlendModes" :key="item.value" :label="item.name" :value="item.value" />
-                </el-select>
-              </el-col>
-            </el-row>
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Color' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-color-picker v-model="doutone[2].color" :disabled="!active" color-format="hex" :predefine="colors" @change="onChange" />
-              </el-col>
-            </el-row>
-            <el-row :gutter="10">
-              <el-col :span="12">
-                <Label class="text-xs font-medium col-span-5">{{ 'Opacity' }}</Label>
-              </el-col>
-              <el-col :span="12">
-                <el-slider :disabled="!active" :min="0" :max="1" :step="0.05" v-model="doutone[1].alpha" @change="onChange" />
-              </el-col>
-            </el-row>
-          </div>
-        </el-popover>
-      </div>
-    </div>
-  </template>
-  <!--<template v-if="name == 'RemoveColor' && active">
-    <div :class="cn('items-center grid grid-cols-12', active ? 'opacity-100' : 'opacity-50')">
-      <Label class="text-xs font-medium col-span-5">{{ 'Color' }}</Label>
-      <div class="flex items-center col-span-7 gap-2">
-        <el-color-picker v-model="removeColor" :disabled="!active" color-format="hex" :predefine="colors" />
-      </div>
-    </div>
-  </template>-->
-  <el-divider class="my-0"/>
 </template>

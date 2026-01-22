@@ -63,34 +63,58 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex items-center">
-    <el-button v-if="active && active.type != 'audio'"
-      :icon="Send" text bg round
-      :type="!activeAnim ? '' : 'primary'"
-      :disabled="editor.sidebarRight === 'animation'"
+  <div class="flex items-center gap-3.5 px-1 py-1">
+    <button v-if="active && active.type != 'audio'"
+      class="cinematic-button !h-9 !px-4 !rounded-xl border-white/5 flex items-center gap-2.5 group transition-all duration-300 shadow-sm"
+      :class="[
+        editor.sidebarRight === 'animation' ? 'bg-white/15 border-white/20 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white',
+        !activeAnim ? '' : '!text-brand-primary !border-brand-primary/20 !bg-brand-primary/10'
+      ]"
       @click="editor.setActiveSidebarRight(editor.sidebarRight === 'animation' ? null : 'animation')"
-      :class="cn('px-2.5')"
     >
-      <span>Animate</span>
-    </el-button>
-    <el-button
-      :icon="Layers" text bg round
-      :disabled="editor.sidebarRight === 'position'"
+      <Send :size="16" :class="activeAnim ? 'text-brand-primary' : 'text-white/40 group-hover:text-white'" />
+      <span class="text-[10px] font-bold uppercase tracking-widest">Animate</span>
+    </button>
+    
+    <button
+      class="cinematic-button !h-9 !px-4 !rounded-xl border-white/5 flex items-center gap-2.5 group transition-all duration-300 shadow-sm"
+      :class="[
+        editor.sidebarRight === 'position' ? 'bg-white/15 border-white/20 text-white shadow-lg' : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+      ]"
       @click="editor.setActiveSidebarRight(editor.sidebarRight === 'position' ? null : 'position')"
-      :class="cn('px-2.5')"
     >
-      <span>Position</span>
-    </el-button>
-    <el-popover placement="bottom-end" trigger="click" width="250px">
+      <Layers :size="16" class="text-white/40 group-hover:text-white transition-colors" />
+      <span class="text-[10px] font-bold uppercase tracking-widest">Position</span>
+    </button>
+
+    <el-popover placement="bottom-end" trigger="click" width="280" popper-class="cinematic-popover p-0 overflow-hidden border-white/10">
       <template #reference>
-        <el-button :icon="GanttChart" text bg round class="px-2.5">
-          <span>Timeline</span>
-        </el-button>
+        <button class="cinematic-button !h-9 !px-4 !rounded-xl border-white/5 bg-white/5 flex items-center gap-2.5 group transition-all duration-300 hover:bg-white/10 hover:border-white/10 text-white/50 hover:text-white shadow-sm">
+          <GanttChart :size="16" class="text-white/40 group-hover:text-white transition-colors" />
+          <span class="text-[10px] font-bold uppercase tracking-widest">Timeline</span>
+        </button>
       </template>
-      <span class="text-xs font-normal">Duration (s)</span>
-      <SliderInput :model-value="durationInSecond" :min="1" :max="timeline.duration / 1000" :step="0.25" @update:model-value="(value) => durationInSecond = value"/>
-      <span class="text-xs font-normal">Offset (s)</span>
-      <SliderInput :model-value="offsetInSecond" :min="0" :max="timeline.duration / 1000" :step="0.25" @update:model-value="(value) => offsetInSecond = value"/>
+      <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl">
+          <div class="px-5 py-3 border-b border-white/5 bg-white/5">
+              <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest">Timeline Management</span>
+          </div>
+          <div class="p-5 flex flex-col gap-6">
+            <div class="flex flex-col gap-3">
+               <div class="flex justify-between items-center mb-1">
+                   <Label class="text-[10px] font-bold text-white/20 uppercase tracking-widest">Duration</Label>
+                   <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ durationInSecond.toFixed(2) }}s</span>
+               </div>
+               <SliderInput :model-value="durationInSecond" :min="0.1" :max="timeline.duration / 1000" :step="0.05" @update:model-value="(value) => durationInSecond = value"/>
+            </div>
+            <div class="flex flex-col gap-3">
+               <div class="flex justify-between items-center mb-1">
+                   <Label class="text-[10px] font-bold text-white/20 uppercase tracking-widest">Offset</Label>
+                   <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ offsetInSecond.toFixed(2) }}s</span>
+               </div>
+               <SliderInput :model-value="offsetInSecond" :min="0" :max="timeline.duration / 1000" :step="0.05" @update:model-value="(value) => offsetInSecond = value"/>
+            </div>
+          </div>
+      </div>
     </el-popover>
   </div>
 </template>

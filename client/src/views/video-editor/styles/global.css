@@ -831,3 +831,150 @@
     mix-blend-mode: multiply;
   }
 }
+
+/* Cinematic UI Enhancements */
+.cinematic-panel {
+  background: rgba(10, 10, 10, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.cinematic-select .el-select__wrapper,
+.cinematic-input .el-input__wrapper,
+.cinematic-input-number .el-input__wrapper {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease !important;
+  border-radius: 8px !important;
+}
+
+.cinematic-select .el-select__wrapper:hover,
+.cinematic-select .el-select__wrapper.is-focused,
+.cinematic-input .el-input__wrapper:hover,
+.cinematic-input .el-input__wrapper.is-focus,
+.cinematic-input-number .el-input__wrapper:hover,
+.cinematic-input-number .el-input__wrapper.is-focus {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.cinematic-select .el-select__selection .el-select__selected-item,
+.cinematic-input .el-input__inner,
+.cinematic-input-number .el-input__inner {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 13px !important;
+}
+
+.cinematic-slider .el-slider__runway {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  height: 4px !important;
+}
+
+.cinematic-slider .el-slider__bar {
+  background-color: #3b82f6 !important;
+  height: 4px !important;
+}
+
+.cinematic-slider .el-slider__button {
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid #3b82f6 !important;
+  background-color: #0a0a0a !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.fade-mask-r {
+  mask-image: linear-gradient(to right, black 0%, black 90%, transparent 100%);
+}
+.cinematic-breadcrumb .el-breadcrumb__inner {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.cinematic-breadcrumb .el-breadcrumb__separator {
+  color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.cinematic-breadcrumb .el-breadcrumb__inner.is-link:hover {
+  color: #3b82f6 !important;
+}
+
+.cinematic-button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.cinematic-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.cinematic-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.cinematic-button.is-primary {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
+}
+
+.cinematic-button.is-primary:hover:not(:disabled) {
+  background: #2563eb !important;
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Cinematic Dialog & Popover */
+.el-dialog, .cinematic-popover {
+  background: rgba(15, 15, 15, 0.98) !important;
+  backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+}
+
+.el-dialog__header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 20px 25px !important;
+  margin-right: 0 !important;
+}
+
+.el-dialog__title {
+  color: white !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  font-size: 14px !important;
+}
+
+.el-dialog__body {
+  padding: 25px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.cinematic-popover {
+  padding: 0 !important;
+  overflow: hidden !important;
+}

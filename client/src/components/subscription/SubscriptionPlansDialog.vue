@@ -1,76 +1,95 @@
 <template>
   <GDialog
     v-model="visible"
-    title="Choose Your Plan"
     width="1200px"
     @close="handleClose"
   >
-    <div class="subscription-plans-dialog">
+    <template #header>
+      <div class="flex items-center gap-4">
+        <div class="h-10 w-1.5 bg-brand-primary rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+        <div class="flex flex-col">
+          <h3 class="text-xl font-black uppercase tracking-[0.2em] text-white/90">Expansion Plans</h3>
+          <span class="text-[11px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Scale your production with AI-powered features</span>
+        </div>
+      </div>
+    </template>
+
+    <div class="subscription-plans-dialog px-2">
       <!-- Billing Toggle -->
-      <div class="billing-toggle">
-        <span :class="{ active: billingPeriod === 'monthly' }">Monthly</span>
-        <el-switch v-model="isYearly" @change="toggleBilling" />
-        <span :class="{ active: billingPeriod === 'yearly' }">
-          Yearly
-          <span class="save-badge">Save 17%</span>
-        </span>
+      <div class="flex justify-center mb-12">
+        <div class="inline-flex items-center bg-black/40 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 gap-2">
+          <button 
+            @click="isYearly = false"
+            :class="cn('px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300', !isYearly ? 'bg-white/10 text-white shadow-lg' : 'text-white/30 hover:text-white/60')"
+          >
+            Monthly
+          </button>
+          <button 
+            @click="isYearly = true"
+            :class="cn('px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2', isYearly ? 'bg-brand-primary text-white shadow-[0_8px_20px_rgba(59,130,246,0.3)]' : 'text-white/30 hover:text-white/60')"
+          >
+            Annually
+            <span :class="cn('text-[8px] px-1.5 py-0.5 rounded-full font-black', isYearly ? 'bg-white text-brand-primary' : 'bg-brand-primary/20 text-brand-primary')">SAVE 17%</span>
+          </button>
+        </div>
       </div>
 
       <!-- Plans Grid -->
-      <div class="plans-grid justify-center">
+      <div class="plans-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div 
           v-for="plan in plans" 
           :key="plan.name"
-          class="plan-card"
-          :class="{ featured: plan.name === 'Pro' || plan.name === 'Enterprise' }"
+          :class="cn('plan-card relative flex flex-col bg-black/30 border border-white/5 rounded-[32px] p-8 transition-all duration-500 hover:bg-black/50 hover:-translate-y-2 ring-1 ring-white/5 group', 
+            (plan.name === 'Pro' || plan.name === 'Enterprise') ? 'border-brand-primary/30 bg-brand-primary/[0.03] shadow-[0_20px_50px_rgba(59,130,246,0.1)]' : '')"
         >
-          <div class="best-value-badge" v-if="plan.name === 'Pro'">Best Value</div>
-          <div class="plan-header">
-            <div class="plan-icon">{{ getPlanIcon(plan.name) }}</div>
-            <h3>{{ plan.name }}</h3>
-            <div class="plan-price">
-              <span class="currency">$</span>
-              <span class="amount">{{ isYearly ? Math.round(plan.yearlyPrice / 12) : plan.price }}</span>
-              <span class="period">/month{{ isYearly ? ', billed yearly' : '' }}</span>
+          <div v-if="plan.name === 'Pro'" class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-primary text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-[0_8px_20px_rgba(59,130,246,0.5)] z-10">
+            Recommended
+          </div>
+
+          <div class="plan-header text-center mb-8">
+            <div class="plan-icon text-4xl mb-4 grayscale group-hover:grayscale-0 transition-all duration-500 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+              {{ getPlanIcon(plan.name) }}
             </div>
-            <div class="plan-credits">{{ plan.features?.monthlyCredits?.toLocaleString() || 0 }} credits</div>
-            <div class="extra-credits" v-if="isYearly && plan.yearlyPrice > 0">
-              Save {{ Math.round((1 - (plan.yearlyPrice / (plan.price * 12))) * 100) }}%
+            <h3 class="text-xl font-black uppercase tracking-[0.2em] text-white mb-6">{{ plan.name }}</h3>
+            <div class="flex flex-col items-center gap-1">
+              <div class="plan-price flex items-baseline gap-1">
+                <span class="text-2xl font-black text-white/40 tracking-tighter">$</span>
+                <span class="text-5xl font-black text-white tabular-nums tracking-tighter">{{ isYearly ? Math.round(plan.yearlyPrice / 12) : plan.price }}</span>
+                <span class="text-[11px] font-bold text-white/30 uppercase tracking-widest pl-1">/mo</span>
+              </div>
+              <p class="text-[10px] font-bold text-brand-primary uppercase tracking-[0.2em] mt-2">{{ plan.features?.monthlyCredits?.toLocaleString() || 0 }} CREDITS</p>
             </div>
           </div>
           
-          <GButton 
+          <el-button 
             v-if="plan.price === 0" 
-            class="plan-btn" 
             disabled
+            class="cinematic-button !h-12 !w-full !rounded-2xl !bg-white/5 !border-white/10 !text-white/40 mb-8"
           >
-            Get started
-          </GButton>
-          <GButton 
+            <span class="text-xs font-black uppercase tracking-[0.2em]">CURRENT PLAN</span>
+          </el-button>
+          <el-button 
             v-else 
-            type="primary" 
-            class="plan-btn" 
-            :class="{ 'featured-btn': plan.name === 'Pro' }"
             @click="selectPlan(plan.name)"
+            :class="cn('cinematic-button !h-12 !w-full !rounded-2xl mb-8 group/btn !transition-all duration-300', 
+              plan.name === 'Pro' ? '!bg-brand-primary !text-white !border-transparent shadow-[0_8px_25px_rgba(59,130,246,0.3)] hover:!scale-105 active:!scale-95' : '!bg-white/5 !text-white !border-white/10 hover:!bg-white/10')"
           >
-            Upgrade
-          </GButton>
+            <span class="text-xs font-black uppercase tracking-[0.2em]">UPGRADE NOW</span>
+          </el-button>
 
-          <div class="plan-features">
+          <div class="plan-features grow space-y-8">
              <template v-if="getPlanFeatures(plan.name)">
-                <template v-for="(category, catName) in getPlanFeatures(plan.name)" :key="catName">
-                    <h4>{{ catName }}</h4>
-                    <ul>
-                    <li v-for="feat in category" :key="feat">{{ feat }}</li>
+                <div v-for="(category, catName) in getPlanFeatures(plan.name)" :key="catName" class="category">
+                    <h4 class="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-3">{{ catName }}</h4>
+                    <ul class="space-y-2.5">
+                      <li v-for="feat in category" :key="feat" class="flex items-start gap-2.5">
+                        <div class="mt-1 flex-shrink-0 w-3 h-3 rounded-full bg-brand-primary/20 flex items-center justify-center">
+                          <CheckIcon class="w-2 h-2 text-brand-primary" stroke-width="5" />
+                        </div>
+                        <span class="text-[11px] font-bold text-white/60 leading-relaxed">{{ feat }}</span>
+                      </li>
                     </ul>
-                </template>
-             </template>
-             <template v-else>
-                <h4>Features</h4>
-                <ul>
-                    <li>{{ plan.features?.monthlyCredits?.toLocaleString() }} Monthly Credits</li>
-                    <li>{{ plan.features?.prioritySupport ? 'Priority Support' : 'Standard Support' }}</li>
-                </ul>
+                </div>
              </template>
           </div>
         </div>
@@ -82,11 +101,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import GDialog from '@/components/ui/GDialog.vue'
-import GButton from '@/components/ui/GButton.vue'
 import { toast } from 'vue-sonner'
 import { useUserStore } from '@/stores/user'
 import { useConfigStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
+import { cn } from 'video-editor/lib/utils'
+import { Check as CheckIcon } from '@icon-park/vue-next'
 
 const userStore = useUserStore()
 const configStore = useConfigStore()
@@ -106,18 +126,14 @@ const visible = computed({
 const isYearly = ref(false)
 const billingPeriod = computed(() => isYearly.value ? 'yearly' : 'monthly')
 
-const toggleBilling = () => {
-  // Toggle handled by v-model
-}
-
 const selectPlan = async (plan: string) => {
   try {
     await userStore.createCheckoutSession({ 
       planName: plan, 
       billingPeriod: billingPeriod.value 
     })
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    toast.error(error.message || 'Upgrade failed')
   }
 }
 
@@ -127,7 +143,7 @@ const handleClose = () => {
 
 const getPlanIcon = (name: string) => {
     const icons: Record<string, string> = {
-        'Free': '',
+        'Free': '🌱',
         'Starter': '🔥',
         'Basic': '⚡',
         'Pro': '💎',
@@ -137,43 +153,37 @@ const getPlanIcon = (name: string) => {
 }
 
 const getPlanFeatures = (name: string) => {
-    // Hardcoded feature mapping to preserve UI richness while using dynamic plan data
     if (name === 'Free') {
         return {
-            'Creator Rewards': ['Weekly Bonus: 500', 'Invite Bonus: 50% of AI'],
-            'LLM': ['Gemini 2.0: 500'],
-            'Image Model': ['Flux.1 [dev]: 5'],
-            'Video Model(720P/5s)': ['Kling 1.6: 5']
+            'Rewards': ['Weekly Bonus: 500 Credits', 'Inviter Bonus: 50% AI Rewards'],
+            'AI Vision': ['Gemini 2.0 Pro Analysis', 'Flux.1 [dev] Image: 5 Generation'],
+            'Motion': ['Kling 1.6 Video: 5 Segment']
         }
     } else if (name === 'Starter') {
         return {
-            'Creator Rewards': ['Weekly Bonus: 500', 'Invite Bonus: 50% of AI'],
-            'LLM': ['Gemini 2.0: 500'],
-            'Image Model': ['Flux.1 [dev]: 14', 'See Pro (product)'],
-            'Video Model(720P/5s)': ['Kling 1.6: 5']
+            'Rewards': ['Weekly Bonus: 500 Credits', 'Inviter Bonus: 50% AI Rewards'],
+            'AI Vision': ['Gemini 2.0 Flash: 500 Credits', 'Flux.1 [dev]: 14 Generation'],
+            'Motion': ['Kling 1.6 Video: 10 Segment']
         }
     } else if (name === 'Basic') {
         return {
-            'Creator Rewards': ['Weekly Bonus: 500', 'Invite Bonus: 50% of AI'],
-            'LLM': ['Gemini 2.0: 500'],
-            'Image Model': ['Flux.1 [dev]: 14', 'See Pro (product)'],
-            'Video Model(720P/5s)': ['Kling 1.6: 5']
+            'Rewards': ['Weekly Bonus: 1000 Credits', 'Inviter Bonus: 70% AI Rewards'],
+            'AI Vision': ['Gemini 2.0 Flash: 2000 Credits', 'Flux.1 [dev]: 40 Generation'],
+            'Motion': ['Kling 1.6 Video: 30 Segment']
         }
     } else if (name === 'Pro') {
         return {
-             'Creator Rewards': ['Weekly Bonus: 500', 'Invite Bonus: 90% of AI'],
-            'LLM': ['Gemini 2.0: 500'],
-            'Image Model': ['Flux.1 [dev]: 14', 'See Pro (product)'],
-            'Video Model(720P/5s)': ['Kling 1.6: 5'],
-            'Usage Rights': ['Watermark-free Export', 'Commercial Use']
+            'Rewards': ['Weekly Bonus: 2500 Credits', 'Inviter Bonus: 90% AI Rewards'],
+            'AI Vision': ['Gemini 2.0 Pro: Priority Access', 'Flux.1 [pro]: Premium Quality'],
+            'Motion': ['Kling 1.6 Video: Unlimited HQ'],
+            'Rights': ['Watermark-free Overlays', 'Full Commercial License']
         }
     } else if (name === 'Enterprise') {
-         return {
-             'Creator Rewards': ['Weekly Bonus: 2000', 'Invite Bonus: 100% of AI'],
-            'LLM': ['Gemini 2.0: Unlimited'],
-            'Image Model': ['Flux.1 [dev]: Unlimited', 'See Pro (product)'],
-             'Video Model(720P/5s)': ['Kling 1.6: 50'],
-            'Usage Rights': ['Watermark-free Export', 'Commercial Use', 'API Access']
+        return {
+            'Rewards': ['Weekly Bonus: 10000 Credits', 'Inviter Bonus: 100% Rewards'],
+            'AI Vision': ['Unlimited Analysis API', 'Dedicated Model Training'],
+            'Motion': ['Custom SOTA Video Models'],
+            'Portal': ['Team Seat Management', 'White-label Player']
         }
     }
     return null
@@ -185,192 +195,9 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.subscription-plans-dialog {
-  padding: 20px 0;
-}
-
-.billing-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-bottom: 40px;
-
-  span {
-    font-size: 14px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.5);
-    transition: all 0.3s;
-
-    &.active {
-      color: #fff;
-    }
-
-    .save-badge {
-      display: inline-block;
-      margin-left: 8px;
-      padding: 2px 8px;
-      background: linear-gradient(135deg, #ffab00, #ff6d00);
-      border-radius: 12px;
-      font-size: 10px;
-      font-weight: 800;
-      color: #000;
-    }
-  }
-}
-
-.plans-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-
 .plan-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 24px;
-  position: relative;
-  transition: all 0.3s;
-
   &:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-4px);
-  }
-
-  &.featured {
-    border-color: #ffab00;
-    background: linear-gradient(135deg, rgba(255, 171, 0, 0.1), rgba(255, 109, 0, 0.05));
-  }
-
-  .best-value-badge {
-    position: absolute;
-    top: -12px;
-    right: 20px;
-    background: linear-gradient(135deg, #ffab00, #ff6d00);
-    color: #000;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-  }
-
-  .plan-header {
-    text-align: center;
-    margin-bottom: 20px;
-
-    .plan-icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-
-    h3 {
-      font-size: 20px;
-      font-weight: 800;
-      color: #fff;
-      margin-bottom: 16px;
-    }
-
-    .plan-price {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      margin-bottom: 8px;
-
-      .currency {
-        font-size: 20px;
-        font-weight: 700;
-        color: rgba(255, 255, 255, 0.7);
-      }
-
-      .amount {
-        font-size: 48px;
-        font-weight: 800;
-        color: #fff;
-        line-height: 1;
-        margin: 0 4px;
-      }
-
-      .period {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.5);
-      }
-    }
-
-    .plan-credits {
-      font-size: 14px;
-      font-weight: 700;
-      color: #ffab00;
-      margin-bottom: 8px;
-    }
-
-    .extra-credits {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.5);
-      line-height: 1.4;
-    }
-  }
-
-  .plan-btn {
-    width: 100%;
-    margin-bottom: 24px;
-
-    &.featured-btn {
-      background: linear-gradient(135deg, #ffab00, #ff6d00);
-      border: none;
-      color: #000;
-      font-weight: 800;
-
-      &:hover {
-        transform: scale(1.02);
-      }
-    }
-  }
-
-  .plan-features {
-    h4 {
-      font-size: 12px;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.7);
-      margin: 16px 0 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-
-      li {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
-        padding: 4px 0;
-        padding-left: 16px;
-        position: relative;
-
-        &::before {
-          content: '✓';
-          position: absolute;
-          left: 0;
-          color: #ffab00;
-          font-weight: 700;
-        }
-      }
-    }
-  }
-}
-
-@media (max-width: 1200px) {
-  .plans-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .plans-grid {
-    grid-template-columns: 1fr;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.05);
   }
 }
 </style>

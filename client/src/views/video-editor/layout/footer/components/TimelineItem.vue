@@ -29,7 +29,7 @@ const backgroundURL = ref("");
 const SEEK_TIME_WIDTH = 42;
 const HANDLE_WIDTH = 16;
 const HANDLE_HEIGHT = 40;
-const MIN_WIDTH = HANDLE_WIDTH*2;
+const MIN_WIDTH = HANDLE_WIDTH * 2;
 
 // const offset = ref(0);
 // const duration = ref(0);
@@ -39,12 +39,12 @@ const MIN_WIDTH = HANDLE_WIDTH*2;
 const timelineMs = computed(() => timeline.value?.duration ?? 5000);
 const disabled = computed(() => timeline.value?.playing || animations.value?.previewing);
 const baseId = computed(() => props.element?.id ?? props.element?.name ?? "");
-const offsetMs = computed(() => props.element?.meta?.offset ?? props.element?.offset*1000 ?? 0);
-const durationMs = computed(() => props.element?.meta?.duration ?? props.element?.timeline*1000 ?? 3000);
+const offsetMs = computed(() => props.element?.meta?.offset ?? props.element?.offset * 1000 ?? 0);
+const durationMs = computed(() => props.element?.meta?.duration ?? props.element?.timeline * 1000 ?? 3000);
 const offsetInSecond = computed(() => (offsetMs.value / 1000) * SEEK_TIME_WIDTH);
 const widthInSecond = computed(() => (durationMs.value / 1000) * SEEK_TIME_WIDTH);
 const backgroundWidth = computed(() => props.type == "audio" ? (props.element.timeline * SEEK_TIME_WIDTH) : (HANDLE_HEIGHT * (props.element.width! / props.element.height!)));
-const timelineInSecond = computed(() => (timelineMs.value / 1000)*SEEK_TIME_WIDTH);
+const timelineInSecond = computed(() => (timelineMs.value / 1000) * SEEK_TIME_WIDTH);
 // const offsetInSecond = ref(0);
 // const widthInSecond = ref(100);
 // const offsetInSecond = computed({
@@ -103,16 +103,16 @@ const drawElementAsBackground = debounce((element: fabric.Object) => {
 
 const computeSelected = () => {
   let isActive = false;
-  if (!active.value){
+  if (!active.value) {
     isActive = false;
   }
-  else if(FabricUtils.isActiveSelection(active.value)){
-    isActive = active.value?.objects?.some((object) => object.name === props.element.name)  
+  else if (FabricUtils.isActiveSelection(active.value)) {
+    isActive = active.value?.objects?.some((object) => object.name === props.element.name)
   }
-  else if(props.type == "audio"){
+  else if (props.type == "audio") {
     isActive = active.value?.id === props.element.id;
   }
-  else{
+  else {
     isActive = active.value?.name === props.element.name;
   };
   isSelected.value = isActive;
@@ -129,7 +129,7 @@ const computeStyle = () => {
   // else{
   //   backgroundWidth.value = 40 * (props.element.width! / props.element.height!);  
   // }
-  
+
   // const durationInSeconds = timelineMs.value / 1000;
   // trackWidth.value = durationInSeconds * SEEK_TIME_WIDTH;
 };
@@ -142,19 +142,19 @@ const computeUpdate = () => {
 
 const render = () => {
   const element = props.element;
-  if(!element){
+  if (!element) {
     return;
   }
 
   computeUpdate();
-  if(props.type == "audio"){
+  if (props.type == "audio") {
     const _audio = audio.value?.get(baseId.value);
     // console.log("render", _audio);
-    if(_audio){
-      drawWaveformFromAudio(_audio);  
+    if (_audio) {
+      drawWaveformFromAudio(_audio);
     }
   }
-  else{
+  else {
     drawElementAsBackground(element);
   }
 }
@@ -180,45 +180,45 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if(props.type == "audio"){
+  if (props.type == "audio") {
     URL.revokeObjectURL(backgroundURL.value);
     drawWaveformFromAudio.cancel();
   }
-  else{
+  else {
     drawElementAsBackground.cancel();
   }
 });
 
 const handleDragTrack = (x: number, y: number) => {
   console.log("handleDragTrack", x, y);
-  if(y < 0){
+  if (y < 0) {
     return false;
   }
 
   if (disabled.value || x < 0) return false;
   const newOffset = Math.floor((x / SEEK_TIME_WIDTH) * 1000);
-  
-  if(props.type == "audio"){
+
+  if (props.type == "audio") {
     const _audio = audio.value!.get(baseId.value);
-    if(_audio){
-      audio.value?.update(baseId.value, { offset: newOffset/1000 });
+    if (_audio) {
+      audio.value?.update(baseId.value, { offset: newOffset / 1000 });
       return true;
     }
   }
-  else{
+  else {
     const object = instance.value!.getItemByName(props.element.name);
     if (object) {
       canvas.value.onChangeObjectTimelineProperty(object, "offset", newOffset);
       return true;
     }
   }
-  
+
   return false;
 };
 
 const handleResizeTrack = (x: number, y: number, width: number, height: number) => {
   let status = handleDragTrack(x, y);
-  if(status){
+  if (status) {
     status = handleDragRightBar(width);
   }
   return status;
@@ -251,21 +251,21 @@ const handleDragRightBar = (value: number) => {
   console.log("handleDragRightBar", value);
   if (disabled.value) return false;
   const newDuration = Math.floor((value / SEEK_TIME_WIDTH) * 1000);// - offsetMs.value;
-  if(props.type == "audio"){
+  if (props.type == "audio") {
     const _audio = audio.value!.get(baseId.value);
-    if(_audio){
-      audio.value?.update(baseId.value, { timeline: newDuration/1000 });
+    if (_audio) {
+      audio.value?.update(baseId.value, { timeline: newDuration / 1000 });
       return true;
     }
   }
-  else{
+  else {
     const object = instance.value!.getItemByName(baseId.value);
     if (object) {
       canvas.value.onChangeObjectTimelineProperty(object, "duration", newDuration);
       return true;
     }
   }
-  
+
   return false;
 };
 
@@ -297,37 +297,54 @@ const resizeStop = (x: number, y: number, width: number, height: number) => {
 
 <template>
   <div class="h-10 overflow-visible shrink-0 relative">
-    <div class="parent-draggable" :style="{ width: `${timelineInSecond}px`, height: `${HANDLE_HEIGHT}px`, position: 'relative' }">
-      <VueDraggable
-        axis="x"
-        :parent="true"
-        :x="offsetInSecond"
-        :w="widthInSecond"
-        :h="HANDLE_HEIGHT"
-        :min-width="MIN_WIDTH"
-        :handles="['ml', 'mr']"
-        :active="isSelected"
-        :preventDeactivation="true"
-        @drag-stop="dragStop"
-        @resize-stop="resizeStop"
-      >
+    <div class="parent-draggable"
+      :style="{ width: `${timelineInSecond}px`, height: `${HANDLE_HEIGHT}px`, position: 'relative' }">
+      <VueDraggable axis="x" :parent="true" :x="offsetInSecond" :w="widthInSecond" :h="HANDLE_HEIGHT"
+        :min-width="MIN_WIDTH" :handles="['ml', 'mr']" :active="isSelected" :preventDeactivation="true"
+        @drag-stop="dragStop" @resize-stop="resizeStop" class="transition-none">
+        <!-- Left Handle -->
         <template #ml>
-          <button v-if="isSelected" class="flex items-center justify-center bg-primary absolute top-0 h-full z-10 rounded-l-lg cursor-ew-resize" :style="{ width: `${HANDLE_WIDTH}px` }">
-            <Minus v-if="!Math.round(offsetMs)" :size="15" class="text-white rotate-90" :stroke-width="2.5" />
-            <ChevronLeft v-else :size="15" class="text-white" :stroke-width="2.5" />
+          <button v-if="isSelected"
+            class="flex items-center justify-center bg-brand-primary absolute top-0 h-full z-10 rounded-l-xl cursor-ew-resize border-l border-t border-b border-white/20 shadow-xl group/handle transition-all duration-300 active:scale-95"
+            :style="{ width: `${HANDLE_WIDTH}px` }">
+            <Minus v-if="!Math.round(offsetMs)" :size="12"
+              class="text-white rotate-90 scale-75 group-hover/handle:scale-100" :stroke-width="4" />
+            <ChevronLeft v-else :size="12" class="text-white scale-75 group-hover/handle:scale-110" :stroke-width="4" />
           </button>
           <span v-else></span>
         </template>
-        <button :class="cn('track relative h-full w-full z-0 border-3 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing hover:visible-handles', isSelected ? 'border-primary' : 'border-gray-400')" :style="trackStyle">
-          <span :class="cn('absolute top-1 bg-foreground/50 text-card rounded-sm backdrop-blur-sm px-2 py-1 flex items-center gap-1.5 capitalize', isSelected ? 'left-5' : 'left-1')">
-            <ElementDescription :name="props.element.name" :type="props.type" />
-            <span class="text-xxs">{{ formatMediaDuration(durationMs, false) }}</span>
+
+        <!-- Main Clip Card -->
+        <button
+          :class="cn('track relative h-full w-full z-0 border-2 rounded-xl overflow-hidden cursor-grab active:cursor-grabbing hover:visible-handles transition-all duration-300 group/track', isSelected ? 'border-brand-primary bg-brand-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-white/5 hover:border-white/10 bg-white/5')"
+          :style="trackStyle">
+          <!-- Clip Content Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-r from-[#0a0a0a]/40 to-transparent pointer-events-none" />
+
+          <!-- Clip Info Badge -->
+          <span
+            :class="cn('absolute top-1.5 max-w-[calc(100%-24px)] bg-[#0a0a0a]/80 border border-white/5 text-white/90 rounded-lg backdrop-blur-md px-2.5 py-1 flex items-center gap-2 capitalize shadow-lg transition-all duration-300', isSelected ? 'left-6 ring-1 ring-white/10' : 'left-2')">
+            <ElementDescription :name="props.element.name" :type="props.type"
+              class="max-w-[120px] truncate text-[11px] font-black tracking-tight" />
+            <span
+              class="text-[10px] font-bold font-mono text-white/40 border-l border-white/10 pl-2 ml-0.5 tracking-tighter">{{
+                formatMediaDuration(durationMs, false) }}</span>
           </span>
+
+          <!-- Audio Waveform / Visual Indicator (Managed by trackStyle background) -->
+          <div v-if="props.type === 'audio'"
+            class="absolute inset-0 opacity-30 select-none group-hover/track:opacity-50 transition-opacity" />
         </button>
+
+        <!-- Right Handle -->
         <template #mr>
-          <button v-if="isSelected" class="inline-flex items-center justify-center bg-primary absolute top-0 h-full z-10 rounded-r-lg cursor-ew-resize" :style="{ width: `${HANDLE_WIDTH}px`, right: '0px' }">
-            <Minus v-if="durationMs + offsetMs >= canvas.timeline.duration" :size="15" class="text-white rotate-90" :stroke-width="2.5" />
-            <ChevronRight v-else :size="15" class="text-white" :stroke-width="2.5" />
+          <button v-if="isSelected"
+            class="inline-flex items-center justify-center bg-brand-primary absolute top-0 h-full z-10 rounded-r-xl cursor-ew-resize border-r border-t border-b border-white/20 shadow-xl group/handle transition-all duration-300 active:scale-95"
+            :style="{ width: `${HANDLE_WIDTH}px`, right: '0px' }">
+            <Minus v-if="durationMs + offsetMs >= canvas.timeline.duration" :size="12"
+              class="text-white rotate-90 scale-75 group-hover/handle:scale-100" :stroke-width="4" />
+            <ChevronRight v-else :size="12" class="text-white scale-75 group-hover/handle:scale-110"
+              :stroke-width="4" />
           </button>
           <span v-else></span>
         </template>
@@ -341,24 +358,36 @@ const resizeStop = (x: number, y: number, width: number, height: number) => {
   .vdr:has(.track) {
     .handle {
       button {
-        width: 5px !important;
+        width: 6px !important;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        opacity: 0.6;
       }
     }
   }
 
-  .vdr:has(.border-primary:hover) {
+  .vdr:has(.track.border-brand-primary) {
     .handle {
       button {
         width: 16px !important;
+        opacity: 1;
       }
     }
   }
 
-  .vdr:has(.handle:hover) {
+  .vdr:has(.track:hover) {
     .handle {
       button {
         width: 16px !important;
+        opacity: 0.9;
       }
+    }
+  }
+
+  /* Ensure handles are always visible when selected */
+  .vdr.active {
+    .handle button {
+      width: 16px !important;
+      opacity: 1 !important;
     }
   }
 }

@@ -199,19 +199,9 @@ export class AIServiceManager {
 
         try {
             if (providerId === 'google') {
-                // Native Google Veo implementation (if available in Genkit or via direct call logic mimicking CustomAdapter)
-                // For now, since Genkit might not have Veo, we might need to rely on CustomAIAdapter logic or special handling
-                // But wait, Veo3.ts had specific logic. Ideally we move that here?
-                // Or we return a "jobId" or similar.
-
-                // If the provider instance is Genkit, we might check if it supports it or just throw "Not Implemented via Genkit"
-                // and rely on veo3.ts's fallback?
-                // Actually, let's treat 'google' here as "we need to call Google Cloud directly".
-                // But since we want to unify, let's assume CustomAIAdapter-like behavior or throw.
                 throw new Error('Native Google Veo via Manager not fully implemented yet - use generic adapter or specific util')
             } else {
                 // Custom Adapter (GeminiGen AI, etc.)
-                // Expecting { jobId: string, ... } or similar
                 if (typeof provider.generateVideo !== 'function') {
                     throw new Error(`Provider ${providerId} does not support video generation`)
                 }
@@ -220,6 +210,35 @@ export class AIServiceManager {
             }
         } catch (error: any) {
             console.error(`AI Video Generation failed (${finalModelName}):`, error.message)
+            throw error
+        }
+    }
+
+    /**
+     * Generate Audio (TTS) using a specific model
+     */
+    public async generateAudio(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
+        const { provider, providerId, modelId } = await this.resolveProvider('audio', inputProviderId, inputModelName)
+        const finalModelName = modelId || inputModelName || 'tts-1' // Fallback
+
+        console.debug(`generateAudio [Provider: ${providerId}, Model: ${finalModelName}]`)
+
+        try {
+            if (providerId === 'google') {
+                // For now, treat Google TTS as a manual implementation or via CustomAdapter if configured
+                // If it's the native 'google' provider (Genkit), it might not have TTS built-in directly in the same way.
+                // We'll throw for now or assume its handled by a generic adapter if the user set it up that way.
+                throw new Error('Native Google TTS via Genkit not fully implemented yet - use a custom adapter for Google Cloud TTS')
+            } else {
+                // Custom Adapter
+                if (typeof provider.generateAudio !== 'function') {
+                    throw new Error(`Provider ${providerId} does not support audio generation`)
+                }
+                const result = await provider.generateAudio(prompt, finalModelName, options)
+                return result
+            }
+        } catch (error: any) {
+            console.error(`AI Audio Generation failed (${finalModelName}):`, error.message)
             throw error
         }
     }

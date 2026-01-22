@@ -94,6 +94,48 @@ function useGenerateCTASuggestions(product: EditorProduct, objective: string) {
   });
 }
 
+interface GenerateImageParams {
+  prompt: string;
+  style?: string;
+  aspectRatio?: string;
+}
+
+interface GenerateVoiceParams {
+  text: string;
+  voice: string;
+}
+
+interface GenerateVideoParams {
+  prompt: string;
+  duration?: number;
+  aspectRatio?: string;
+}
+
+async function generateImage(params: GenerateImageParams) {
+  const res = await api.post<{ success: boolean; data: { media: any; url: string } }>(`/ai/generate-image`, params);
+  return res.data;
+}
+
+async function generateVoice(params: GenerateVoiceParams) {
+  const res = await api.post<{ success: boolean; data: { media: any; url: string } }>(`/ai/generate-voice`, params);
+  return res.data;
+}
+
+async function generateVideo(params: GenerateVideoParams) {
+  const res = await api.post<{ success: boolean; data: { jobId: string } }>(`/ai/generate-video`, params);
+  return res.data;
+}
+
+async function checkVideoStatus(jobId: string) {
+  const res = await api.get<{ success: boolean; data: { status: string; progress?: number; videoUrl?: string; media?: any } }>(`/ai/video-status/${jobId}`);
+  return res.data;
+}
+
+async function generateCaptions(options: any) {
+  const res = await api.post<{ success: boolean; data: any }>(`/ai/generate-captions`, options);
+  return res.data;
+}
+
 export {
   generateCTA,
   generateDescription,
@@ -101,5 +143,10 @@ export {
   analyzeProduct,
   useGenerateCTASuggestions,
   useGenerateDescriptionSuggestions,
-  useGenerateHeadlineSuggestions
+  useGenerateHeadlineSuggestions,
+  generateImage,
+  generateVoice,
+  generateVideo,
+  checkVideoStatus,
+  generateCaptions
 };

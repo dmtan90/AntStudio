@@ -45,23 +45,37 @@ const handleClosePlugin = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
     <template v-if="!plugin">
-      <div class="flex items-center h-14 border-b px-4 gap-2.5">
-        <h2 class="font-semibold">AI Magic</h2>
-        <el-button circle :icon="X" class="ml-auto" @click="editor.setActiveSidebarRight(null)" />
+      <!-- Header -->
+      <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header">
+        <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700"></div>
+        <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">AI Magic</h2>
+        <button class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300 relative z-10" @click="editor.setActiveSidebarRight(null)">
+          <X :size="14" />
+        </button>
       </div>
-      <section class="sidebar-container px-4 py-4">
+      <!-- Content -->
+      <section class="flex-1 overflow-y-auto custom-scrollbar relative px-5 pt-6 pb-20">
+        <div class="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-50"></div>
         <AIPluginItems :on-select-plugin="handleSelectPlugin" />
+        <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-80"></div>
       </section>
     </template>
     <template v-else>
-      <div class="flex items-center h-14 border-b px-4 gap-2.5">
-        <h2 class="font-semibold">{{ label }}</h2>
-        <el-button circle :icon="X" class="ml-auto" @click="handleClosePlugin" />
+      <!-- Plugin Header -->
+      <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header">
+        <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700"></div>
+        <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">{{ label }}</h2>
+        <button class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300 relative z-10" @click="handleClosePlugin">
+          <X :size="14" />
+        </button>
       </div>
-      <section class="sidebar-container px-4 py-4">
+      <!-- Plugin Content -->
+      <section class="flex-1 overflow-y-auto custom-scrollbar relative px-5 pt-6 pb-20">
+         <div class="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-50"></div>
         <AIPluginItem :plugin="plugin" :on-select-plugin="handleSelectPlugin" />
+        <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-80"></div>
       </section>
     </template>
   </div>

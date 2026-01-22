@@ -290,9 +290,10 @@ export class Canvas {
     this.instance.add(placeholder);
     this.instance.setActiveObject(placeholder).requestRenderAll();
 
-    return createPromise<fabric.Image | null>((resolve, reject) => {
+    return createPromise<fabric.Image | null>(async (resolve, reject) => {
+      const resolvedSource = await getFileUrl(source, { cached: true });
       fabric.Image.fromURL(
-        source,
+        resolvedSource,
         (image) => {
           if (!this.instance!.contains(placeholder)) {
             return resolve(null);
@@ -370,9 +371,10 @@ export class Canvas {
     this.instance.add(placeholder);
     this.instance.setActiveObject(placeholder).requestRenderAll();
 
-    return createPromise<any>((resolve, reject) => {
+    return createPromise<any>(async (resolve, reject) => {
+      const resolvedSource = await getFileUrl(source, { cached: true });
       (fabric as any).Video.fromURL(
-        source,
+        resolvedSource,
         (video: any) => {
           if (!this.instance!.contains(placeholder)) {
             return;
@@ -451,9 +453,10 @@ export class Canvas {
     this.instance.add(placeholder);
     this.instance.setActiveObject(placeholder).requestRenderAll();
 
-    return createPromise<fabric.Gif | null>((resolve, reject) => {
+    return createPromise<fabric.Gif | null>(async (resolve, reject) => {
+      const resolvedSource = await getFileUrl(source, { cached: true });
       fabric.Gif.fromURL(
-        source,
+        resolvedSource,
         (image) => {
           if (!this.instance!.contains(placeholder)) {
             return resolve(null);
@@ -512,10 +515,11 @@ export class Canvas {
 
   async onAddAudioFromElement(element: EditorAudioElement, options?: fabric.IAudioOptions, skip = false, render = true) {
     //id, url, timeline, name, duration, muted: false, playing: false, trim: 0, offset: 0, volume: 1
-    return createPromise<fabric.Audio>((resolve, reject) => {
+    return createPromise<fabric.Audio>(async (resolve, reject) => {
       // console.log("onAddAudioFromElement", element);
+      const resolvedUrl = await getFileUrl(element.url, { cached: true });
       fabric.Audio.fromURL(
-        element.url,
+        resolvedUrl,
         (audio) => {
           if (!audio || !audio.audioElement) {
             return reject();

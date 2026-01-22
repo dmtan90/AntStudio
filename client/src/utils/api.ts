@@ -76,9 +76,23 @@ export function getFileUrl(path: string | undefined | null, options?: { cached?:
         const fetchOptions: RequestInit = {}
 
         // Only attach Authorization header if it's our own API (S3 proxy)
+        // Only attach Authorization header if it's our own API (S3 proxy)
         const isInternal = url.startsWith('/') || url.startsWith(window.location.origin)
         if (token && isInternal) {
             fetchOptions.headers = { 'Authorization': `Bearer ${token}` }
+        }
+
+        // Fix for CORS/CORP issues with external URLs (CloudFront, Pexels, etc.)
+        // If it's external and we want to cache/process it (likely for ffmpeg/canvas), verify CORS.
+        // If we suspect it might fail (or just to be safe), use our proxy.
+        if (!isInternal && options?.cached) {
+            // Route through our proxy which adds the correct Cross-Origin-Resource-Policy header
+            // This solves "net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+            const proxyUrl = `/api/media/proxy?url=${encodeURIComponent(url)}`
+            // Use proxy URL for fetching the blob
+            return blobCache.getBlobUrl(proxyUrl, true, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            }).then(blobUrl => blobUrl || url)
         }
 
         // Return the promise from blobCache

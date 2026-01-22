@@ -21,40 +21,52 @@ const handleLoadPromptSession = async (session: PromptSession) => {
 </script>
 
 <template>
-  <section class="sidebar-container py-4 px-3.5">
-    <el-input placeholder="Search..." class="text-xs" >
-      <template #prefix>
-        <Search :size="15" class="text-foreground/60" />
-      </template>
-    </el-input>
-    <div class="my-3.5">
-      <el-button size="small" class="gap-1 pl-2 w-full" @click="emit('create-session')">
-        <Plus :size="15" />
-        <span>Create Prompt</span>
-      </el-button>
+  <section class="sidebar-container pt-4 pb-10 px-5">
+    <div class="mb-6">
+      <el-input placeholder="Search sessions..." class="cinematic-input" >
+        <template #prefix>
+          <Search :size="15" class="text-white/40" />
+        </template>
+      </el-input>
     </div>
-    <div class="flex flex-col gap-1">
-      <div class="flex items-center justify-between gap-4">
-        <h4 class="text-xs font-semibold line-clamp-1">Sessions</h4>
-        <el-button size="small" type="text" class="text-primary h-6 font-medium line-clamp-1 px-1.5">
+
+    <div class="mb-8">
+      <button 
+        class="w-full h-9 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:bg-brand-primary/20 transition-all duration-300 shadow-sm" 
+        @click="emit('create-session')"
+      >
+        <Plus :size="12" :stroke-width="4" />
+        <span>New Prompt Session</span>
+      </button>
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Recent Sessions</h4>
+        <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors">
           See All
-        </el-button>
+        </button>
       </div>
-      <div class="flex flex-col">
-        <el-button v-for="session in editor.prompter.sessions.values()" :key="session.id" size="small" type="info" class="w-full h-auto py-2.5 px-4 gap-0.5 flex flex-col items-start" @click="handleLoadPromptSession(session)">
-          <span class="line-clamp-1">
-            <span class="font-semibold">Prompt: </span>
-            <span>{{ session.prompt }}</span>
-          </span>
-          <span class="line-clamp-1">
-            <span class="font-semibold">Duration: </span>
-            <span>{{ session.duration }}s</span>
-          </span>
-          <span class="line-clamp-1">
-            <span class="font-semibold">Format: </span>
-            <span class="capitalize">{{ session.format }}</span>
-          </span>
-        </el-button>
+
+      <div class="flex flex-col gap-3">
+        <button 
+          v-for="session in editor.prompter.sessions.values()" 
+          :key="session.id" 
+          class="group w-full p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 hover:scale-[1.02] transition-all duration-300 flex flex-col items-start gap-2 text-left shadow-sm hover:shadow-xl hover:shadow-purple-500/5 text-xs" 
+          @click="handleLoadPromptSession(session)"
+        >
+          <div class="w-full flex justify-between items-start gap-3">
+            <span class="font-bold text-white/90 line-clamp-2 leading-relaxed uppercase tracking-wide flex-1 text-[11px]">{{ session.prompt }}</span>
+            <span class="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/5 text-[9px] font-bold text-white/40 uppercase tracking-widest shrink-0">{{ session.format }}</span>
+          </div>
+          
+          <div class="flex items-center gap-4 mt-1">
+             <div class="flex items-center gap-1.5">
+                <span class="text-[9px] font-bold text-white/20 uppercase tracking-widest">Duration</span>
+                <span class="text-[10px] font-bold text-white/60 tracking-wider font-mono">{{ session.duration }}s</span>
+             </div>
+          </div>
+        </button>
       </div>
     </div>
   </section>

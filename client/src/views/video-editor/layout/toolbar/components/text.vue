@@ -160,104 +160,149 @@ const textAlignOptions = [
 </script>
 
 <template>
-  <div class="flex items-center h-full w-full overflow-x-scroll scrollbar-hidden text-toolbar">
+  <div class="flex items-center h-full w-full overflow-x-auto custom-scrollbar flex-nowrap gap-3.5 px-1 py-1">
+    <!-- Font Family Selector -->
     <div class="flex items-center gap-2">
-      <el-button :icon="Ligature"
-        text bg round
-        :class="cn('px-2.5', editor.sidebarRight === 'fonts' ? 'bg-card' : '')"
+      <button 
+        class="flex items-center gap-2.5 h-9 px-3.5 rounded-xl border border-white/5 bg-white/5 transition-all duration-300 min-w-[130px] max-w-[160px] group hover:border-white/20 hover:bg-white/10"
+        :class="{ '!bg-brand-primary/10 !border-brand-primary/30': editor.sidebarRight === 'fonts' }"
         @click="editor.setActiveSidebarRight(editor.sidebarRight === 'fonts' ? null : 'fonts')"
       >
-        <span class="text-start text-ellipsis whitespace-nowrap overflow-hidden w-20">{{ active.fontFamily || 'Inter' }}</span>
-        <ChevronDown :size="15" class="ml-auto shrink-0" />
-      </el-button>
-      <div class="relative" style="background-color: var(--el-fill-color-light); border-radius: 20px; --el-border-color: transparent; --el-border-radius-base: 20px;">
+        <span class="text-[11px] font-bold uppercase tracking-wider truncate flex-1 text-start" :class="editor.sidebarRight === 'fonts' ? 'text-brand-primary' : 'text-white/80'">
+            {{ active.fontFamily || 'Inter' }}
+        </span>
+        <ChevronDown :size="14" class="opacity-40 group-hover:opacity-100 transition-opacity" />
+      </button>
+
+      <!-- Font Size Input -->
+      <div class="relative flex items-center bg-white/5 rounded-xl border border-white/5 h-9 group transition-all duration-300 hover:border-white/10 hover:bg-white/10">
         <el-input-number 
-          class="!h-8 !w-25 text-xs stepper-hidden"
-          type="number" :controls="false" style="--el-input-bg-color: transparent"
-          v-model="fontSize">
-          <template #suffix>
-            <span class="mr-5 text-xs">px</span>
-          </template>
-        </el-input-number>
-        <el-dropdown class="!absolute right-1.5 top-1/2 -translate-y-1/2" @command="(value) => fontSize = value">
-          <el-button size="small" :icon="ChevronDown" plain circle style="--el-button-bg-color: transparent" />
+          class="!h-full !w-[75px] cinematic-input-number-ghost"
+          type="number" :controls="false"
+          v-model="fontSize"
+        />
+        <div class="absolute right-8 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white/30 pointer-events-none">PX</div>
+        
+        <el-dropdown class="!absolute right-0 top-1/2 -translate-y-1/2 h-full flex items-center pr-1" @command="(value) => fontSize = value" trigger="click">
+          <button class="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-all">
+             <ChevronDown :size="12" />
+          </button>
           <template #dropdown>
-            <el-dropdown-menu class="min-w-24 max-h-64 overflow-y-auto">
-              <el-dropdown-item v-for="size in fontSizes" :key="size" class="text-xs pl-2.5" :command="size">
-                {{ size }} px
+            <el-dropdown-menu class="min-w-[100px] max-h-64 overflow-y-auto cinematic-dropdown">
+              <el-dropdown-item v-for="size in fontSizes" :key="size" class="text-[10px] font-bold py-2 !justify-center" :command="size">
+                {{ size }} PX
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </div>
     </div>
-    <el-divider direction="vertical" class="h-8" />
-    <el-button-group class="flex">
-      <Toggle v-model="fontWeight" :icon="Bold" text bg round class="!h-8 !w-8" size="small" @toggle="value => fontWeight = value">
+
+    <div class="w-px h-6 bg-white/10 shrink-0" />
+
+    <!-- Text Formatting Toggles -->
+    <div class="flex items-center bg-white/5 rounded-xl border border-white/5 p-1 gap-1">
+      <Toggle v-model="fontWeight" :icon="Bold" class="cinematic-toggle" size="medium" @toggle="value => fontWeight = value" />
+      <Toggle v-model="fontStyle" :icon="Italic" class="cinematic-toggle" size="medium" @toggle="value => fontStyle = value" />
+      <Toggle v-model="underline" :icon="Underline" class="cinematic-toggle" size="medium" @toggle="value => underline = value" />
+    </div>
+
+    <div class="w-px h-6 bg-white/10 shrink-0" />
+
+    <!-- Text Alignment -->
+    <div class="flex items-center bg-white/5 rounded-xl border border-white/5 p-1 gap-1">
+       <button 
+         v-for="opt in textAlignOptions" 
+         :key="opt.value"
+         @click="textAlign = opt.value"
+         class="h-8 w-8 flex items-center justify-center rounded-lg transition-all duration-300 group"
+         :class="[textAlign === opt.value ? 'bg-brand-primary text-black shadow-lg shadow-brand-primary/20' : 'text-white/40 hover:text-white hover:bg-white/10']"
+       >
+         <component :is="opt.icon" :size="15" :stroke-width="4" />
+       </button>
+    </div>
+
+    <div class="w-px h-6 bg-white/10 shrink-0" />
+
+    <!-- Text Case -->
+    <div class="flex items-center bg-white/5 rounded-xl border border-white/5 p-1 gap-1">
+      <Toggle :modelValue="textTransform == 'uppercase'" class="cinematic-toggle w-10 !h-8" size="medium" @toggle="value => textTransform = value ? 'uppercase' : ''">
+        <span class="text-[10px] font-black tracking-tighter">ABC</span>
       </Toggle>
-      <Toggle v-model="fontStyle" :icon="Italic" text bg round class="!h-8 !w-8" size="small" @toggle="value => fontStyle = value">
+      <Toggle :modelValue="textTransform == 'lowercase'" class="cinematic-toggle w-10 !h-8" size="medium" @toggle="value => textTransform = value ? 'lowercase' : ''">
+        <span class="text-[10px] font-bold tracking-tighter">abc</span>
       </Toggle>
-      <Toggle v-model="underline" :icon="Underline" text bg round class="!h-8 !w-8" size="small" @toggle="value => underline = value">
-      </Toggle>
-    </el-button-group>
-    <el-divider direction="vertical" class="h-8" />
-    <el-segmented v-model="textAlign" :options="textAlignOptions" size="small" class="items-center flex-nowrap h-8">
-      <template #default="scope">
-        <div class="flex flex-col items-center gap-2 p-2">
-          <component :is="scope.item.icon" :size="15" class="px-0 py-0"/>
-        </div>
-      </template>
-    </el-segmented>
-    <el-divider direction="vertical" class="h-8" />
-    <el-button-group class="flex">
-      <Toggle :modelValue="textTransform == 'uppercase'" text bg round class="!h-8 !w-10" size="small" @toggle="value => textTransform = value ? 'uppercase' : ''">
-        <span>ABC</span>
-      </Toggle>
-      <Toggle :modelValue="textTransform == 'lowercase'" text bg round class="!h-8 !w-10" size="small" @toggle="value => textTransform = value ? 'lowercase' : ''">
-        <span>abc</span>
-      </Toggle>
-    </el-button-group>
-    <el-divider direction="vertical" class="h-8" />
-    <div class="flex items-center">
-      <el-popover placement="bottom" trigger="click" width="200px">
+    </div>
+
+    <div class="w-px h-6 bg-white/10 shrink-0" />
+
+    <!-- Spacing Popovers -->
+    <div class="flex items-center gap-1.5">
+      <el-popover placement="bottom" trigger="click" width="280" popper-class="cinematic-popover p-0 overflow-hidden border-white/10">
         <template #reference>
-          <el-button :icon="WholeWord" text bg round aria-label="letter-spacing" class="px-2.5" />
+          <button class="h-9 w-9 flex items-center justify-center rounded-xl bg-white/5 border border-transparent hover:bg-white/10 hover:border-white/10 text-white/50 hover:text-white transition-all">
+            <WholeWord :size="16" />
+          </button>
         </template>
-        <Label class="text-xs font-medium">Letter Spacing</Label>
-        <div class="flex items-center justify-between gap-4">
-          <SliderInput :model-value="charSpacing" :min="0" :max="100" :step="1" @update:model-value="(value) => charSpacing = value"/>
+        <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl">
+            <div class="px-5 py-3 border-b border-white/5 bg-white/5">
+                <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest">Character Spacing</span>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <div class="flex justify-between mb-1">
+                    <Label class="text-[10px] font-bold text-white/20 uppercase tracking-widest">Spacing</Label>
+                    <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ charSpacing }}</span>
+                </div>
+                <SliderInput :model-value="charSpacing" :min="0" :max="500" :step="1" @update:model-value="(value) => charSpacing = value"/>
+            </div>
         </div>
       </el-popover>
-      <el-popover placement="bottom" trigger="click" width="200px">
+      
+      <el-popover placement="bottom" trigger="click" width="280" popper-class="cinematic-popover p-0 overflow-hidden border-white/10">
         <template #reference>
-          <el-button :icon="ArrowDownZA" text bg round aria-label="line-height" class="px-2.5" />
+           <button class="h-9 w-9 flex items-center justify-center rounded-xl bg-white/5 border border-transparent hover:bg-white/10 hover:border-white/10 text-white/50 hover:text-white transition-all">
+            <ArrowDownZA :size="16" />
+          </button>
         </template>
-        <Label class="text-xs font-medium">Line Height</Label>
-        <div class="flex items-center justify-between gap-4">
-          <SliderInput :model-value="lineHeight" :min="0.5" :max="2.5" :step="0.02" @update:model-value="(value) => lineHeight = value"/>
+        <div class="bg-[#0d0d0d]/95 backdrop-blur-2xl">
+            <div class="px-5 py-3 border-b border-white/5 bg-white/5">
+                <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest">Line Height</span>
+            </div>
+            <div class="p-5 flex flex-col gap-4">
+                <div class="flex justify-between mb-1">
+                    <Label class="text-[10px] font-bold text-white/20 uppercase tracking-widest">Height Scale</Label>
+                    <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ lineHeight?.toFixed(2) }}</span>
+                </div>
+                <SliderInput :model-value="lineHeight" :min="0.5" :max="3.0" :step="0.01" @update:model-value="(value) => lineHeight = value"/>
+            </div>
         </div>
       </el-popover>
     </div>
-    <el-divider direction="vertical" class="h-8" />
-    <ToolbarFillOption />
-    <el-divider direction="vertical" class="h-8" />
-    <ToolbarStrokeOption />
-    <el-divider direction="vertical" class="h-8" />
-    <ToolbarOpacityOption />
-    <el-divider direction="vertical" class="h-8" />
-    <ToolbarTimelineOption />
+
+    <div class="w-px h-6 bg-white/10 shrink-0 mx-1" />
+    
+    <!-- Option Modules -->
+    <div class="flex items-center gap-1">
+        <ToolbarFillOption />
+        <ToolbarStrokeOption />
+        <ToolbarOpacityOption />
+        <ToolbarTimelineOption />
+    </div>
   </div>
 </template>
 
-<style>
-.text-toolbar {
-  .el-segmented {
-    --el-segmented-item-selected-color: var(--el-color-primary) !important;
-    --el-segmented-item-selected-bg-color: var(--el-fill-color-light) !important;
-    --el-border-radius-base: 16px !important;
-    .el-segmented__item {
-      padding: 1px !important;
-    }
-  }
+<style scoped>
+.cinematic-input-number-ghost :deep(.el-input__wrapper) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding-left: 12px;
+  padding-right: 28px;
+}
+.cinematic-input-number-ghost :deep(.el-input__inner) {
+  color: white;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 11px;
+  text-align: left;
 }
 </style>

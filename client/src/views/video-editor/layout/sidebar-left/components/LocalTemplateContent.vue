@@ -3,7 +3,7 @@ import { watch, computed, ref } from 'vue';
 import { useMutation } from '@tanstack/vue-query';
 import { toast } from 'vue-sonner';
 import { storeToRefs } from "pinia";
-
+import { getFileUrl } from '@/utils/api';
 import { Plus } from '@icon-park/vue-next';
 import { ElButton, ElSkeleton, ElUpload } from 'element-plus';
 
@@ -57,60 +57,39 @@ const handleLoadJSON = async (options: any) => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center gap-2">
-      <h4 class="text-xs font-semibold line-clamp-1">Templates</h4>
+    <div class="flex items-center justify-between">
+      <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Local Templates</h4>
       <el-upload
         :show-file-list="false"
         :http-request="handleLoadJSON"
         accept="application/json"
-        class="ml-auto"
       >
-        <el-button size="small" type="primary" text bg round class="h-7 ml-auto bg-card gap-1 pl-2">
-          <Plus :size="14" />
+        <button class="h-6 px-2.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-brand-primary hover:bg-brand-primary/20 transition-all">
+          <Plus :size="10" :stroke-width="4" />
           <span>Load JSON</span>
-        </el-button>
+        </button>
       </el-upload>
     </div>
-    <div class="grid grid-cols-2 gap-2.5 items-center overflow-y-scroll scrollbar-hidden relative">
+    
+    <div class="grid grid-cols-2 gap-4 items-center overflow-y-auto custom-scrollbar relative">
       <template v-if="templates.length">
-        <button v-for="template in templates" :key="template.id" class="w-full aspect-square rounded-md overflow-hidden group border" @click="loadTemplate(template, 'replace')">
-          <img :src="template.pages[0].thumbnail" :alt="template.name" class="group-hover:scale-110 transition-transform" />
+        <button v-for="template in templates" :key="template.id" 
+          class="w-full aspect-square rounded-xl overflow-hidden group border border-white/5 bg-white/5 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] shadow-sm hover:shadow-xl hover:shadow-purple-500/5" 
+          @click="loadTemplate(template, 'replace')"
+        >
+          <img :src="getFileUrl(template.pages[0].thumbnail)" :alt="template.name" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
+          
+          <div class="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span class="text-[9px] font-bold text-white uppercase tracking-wider line-clamp-1">{{ template.name }}</span>
+          </div>
         </button>
       </template>
       <template v-else>
-        <el-skeleton v-for="(_, index) in 6" :key="index" class="w-full aspect-square rounded-md" />
-        <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 line-clamp-1">No local templates</span>
+        <el-skeleton v-for="(_, index) in 4" :key="index" animated class="w-full aspect-square rounded-xl !bg-white/5" />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="text-[10px] font-bold text-white/20 uppercase tracking-widest">No local templates</span>
+        </div>
       </template>
     </div>
   </div>
-  <!--<div class="grid grid-cols-2 gap-x-4 gap-y-2 px-3">
-    <el-upload
-      :show-file-list="false"
-      :http-request="handleLoadJSON"
-      accept="application/json"
-      class="w-full"
-    >
-      <el-button text bg round class="h-7 bg-card gap-1 pl-2 w-full">
-        <Plus :size="14" />
-        <span>Load JSON</span>
-      </el-button>
-    </el-upload>
-    <el-button text bg round class="h-7 bg-card gap-1 pl-2 w-full opacity-50 pointer-events-none">
-      <label>
-        <Plus :size="14" />
-        <span>Load PSD</span>
-      </label>
-    </el-button>
-  </div>
-  <div class="px-3 grid grid-cols-2 gap-4 relative">
-    <template v-if="templates.length">
-      <button v-for="template in templates" :key="template.id" class="w-full aspect-square rounded-md overflow-hidden group border" @click="loadTemplate(template, 'replace')">
-        <img :src="template.pages[0].thumbnail" :alt="template.name" class="group-hover:scale-110 transition-transform" />
-      </button>
-    </template>
-    <template v-else>
-      <el-skeleton v-for="(_, index) in 6" :key="index" class="w-full aspect-square rounded-md" />
-      <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 line-clamp-1">No local templates</span>
-    </template>
-  </div>-->
 </template>

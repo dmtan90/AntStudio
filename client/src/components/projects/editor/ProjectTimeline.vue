@@ -257,6 +257,24 @@
                   <div v-for="i in 100" :key="i" class="w-0.5 bg-brand-primary rounded-full transition-all duration-300" :style="{ height: (30 + (i * 7) % 50) + '%' }"></div>
                 </div>
                 <span class="absolute left-2 text-[9px] text-brand-primary font-bold uppercase truncate pr-4">{{ t('projects.editor.timeline.dialogueSegment') }} {{ seg.order }}</span>
+
+                <!-- Voice Clip Status / Actions -->
+                <div v-if="!seg.generatedAudio || seg.generatedAudio.status !== 'completed'" class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity">
+                   <el-button 
+                      size="small" 
+                      class="!bg-brand-primary !text-black !border-none !text-[9px] !font-bold"
+                      :loading="seg.generatedAudio?.status === 'generating'"
+                      @click.stop="handleGenerateVoiceover(seg)"
+                   >
+                     {{ seg.generatedAudio?.status === 'generating' ? 'GENERATING...' : 'GENERATE VOICEOVER' }}
+                   </el-button>
+                </div>
+                <div v-else-if="seg.generatedAudio?.status === 'completed'" class="absolute bottom-1 right-1 pb-1 pr-1">
+                   <div class="flex items-center gap-1 bg-brand-primary/20 backdrop-blur-md border border-brand-primary/30 rounded px-1.5 py-0.5">
+                      <check theme="outline" size="10" class="text-brand-primary" />
+                      <span class="text-[8px] font-bold text-brand-primary uppercase">Ready</span>
+                   </div>
+                </div>
               </div>
             </div>
 
@@ -474,6 +492,29 @@ const updateTrimOffset = async () => {
 
 const updateFade = () => {
   toast.info(t('projects.editor.timeline.fadeUpdated'))
+}
+
+const handleGenerateVoiceover = async (seg: any) => {
+  if (!seg.voiceover) {
+    toast.error('No dialogue text found for this segment')
+    return
+  }
+
+  try {
+    const promise = projectStore.generateVoiceover(props.project._id, seg._id, {
+      voiceId: 'en-US-Neural2-J' // Default voice
+    })
+
+    toast.promise(promise, {
+      loading: `Generating voiceover for segment ${seg.order}...`,
+      success: `Voiceover generated successfully`,
+      error: (err) => err.response?.data?.error || 'Failed to generate voiceover'
+    })
+
+    await promise
+  } catch (error) {
+    console.error('Voiceover generation error:', error)
+  }
 }
 
 const toggleTimeline = () => {

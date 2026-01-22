@@ -92,6 +92,39 @@ export class AntMediaService {
             return null;
         }
     }
+
+    /**
+     * Add RTMP Endpoint for Restreaming (Simulcast)
+     */
+    async addEndpoint(streamId: string, rtmpUrl: string): Promise<boolean> {
+        try {
+            const response = await axios.post(`${this.apiBaseUrl}/broadcasts/${streamId}/endpoint`, {
+                rtmpUrl: rtmpUrl,
+                endpointServiceId: 'generic'
+            }, {
+                params: { app: this.app }
+            });
+            return response.data.success;
+        } catch (error) {
+            console.error('[AntMedia] Failed to add endpoint:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Stop a broadcast
+     */
+    async stopBroadcast(streamId: string): Promise<boolean> {
+        try {
+            const response = await axios.post(`${this.apiBaseUrl}/broadcasts/${streamId}/stop`, {}, {
+                params: { app: this.app }
+            });
+            return response.data.success;
+        } catch (error) {
+            console.error('[AntMedia] Failed to stop broadcast:', error);
+            return false;
+        }
+    }
 }
 
 export const antMediaService = new AntMediaService();

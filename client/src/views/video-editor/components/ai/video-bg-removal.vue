@@ -9,6 +9,7 @@ import Spinner from 'video-editor/components/ui/spinner.vue';
 import { rmbgAI, WEBGPU_MODEL_ID } from 'video-editor/models/rmbgAI';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from "pinia";
+import { getFileUrl } from '@/utils/api';
 
 const { selectionActive: selected, canvas, replacer, instance } = storeToRefs(useCanvasStore());
 
@@ -55,11 +56,13 @@ const handleRemoveBackground = async () => {
     loading.value = true;
     const sel = selected.value as any;
     const original = entry.value ? entry.value.original : sel.src;
+    const resolvedOriginal = await getFileUrl(original, { cached: true });
+
     if(!rmbgAI.getModelInfo().isLoaded){
       toast.info("Loading Background Remove Model");
       await rmbgAI.initializeModel(WEBGPU_MODEL_ID);
     }
-    const blob = await rmbgAI.removeVideoBackground(original, sel.name);
+    const blob = await rmbgAI.removeVideoBackground(resolvedOriginal, sel.name);
     if(!blob){
       toast.error("Unable to remove background from video");
       return;
@@ -96,15 +99,20 @@ const handleReplaceOriginal = () => {
   });
 };
 
-const handleRestoreOriginal = () => {
+const handleRestoreOriginal = async () => {
   if (!entry.value) return;
   const sel = selected.value as any;
   replacer.value?.mark((instance.value as any)?.getActiveObject());
-  replacer.value.replace(entry.value.original).then(() => {
-    rmbgAI.updateCacheEntry(sel.name, { usage: "original" });
-    toast.success("The selected video has been restored");
-    updateEntry();
-  });
+  try {
+    const resolvedOriginal = await getFileUrl(entry.value.original, { cached: true });
+    replacer.value.replace(resolvedOriginal).then(() => {
+      rmbgAI.updateCacheEntry(sel.name, { usage: "original" });
+      toast.success("The selected video has been restored");
+      updateEntry();
+    });
+  } catch (error) {
+    toast.error("Failed to restore original video");
+  }
 };
 
 const onDrag = (x: number, y: number) => {

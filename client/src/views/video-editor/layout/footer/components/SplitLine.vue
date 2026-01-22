@@ -110,34 +110,20 @@ function mouseDownHandler() {
 </script>
 
 <template>
-  <el-divider ref="lineElement" 
-    :direction="isVertical ? 'vertical' : 'horizontal'" 
-    class="resize-handler cursor-row-resize" 
+  <div ref="lineElement" 
+    :class="['resize-handler flex justify-center items-center relative z-50 group hover:bg-brand-primary/10 transition-all duration-300', isVertical ? 'cursor-col-resize w-1.5 h-full' : 'cursor-row-resize h-1.5 w-full']"
     @mousedown="mouseDownHandler">
-    <el-button size="default" type="primary" text bg circle>
-      <Sort :size="20" :class="isVertical ? 'rotate-90' : ''"/>
-    </el-button>
-  </el-divider>
+    <div :class="['absolute bg-white/5 transition-colors duration-300 group-hover:bg-brand-primary/50', isVertical ? 'w-px h-full' : 'h-px w-full']"></div>
+    
+    <!-- Drag Handle Indicator -->
+    <div :class="['absolute bg-white/10 rounded-full transition-all duration-300 group-hover:bg-brand-primary group-hover:scale-x-125 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]', isVertical ? 'h-8 w-1' : 'w-12 h-1']"></div>
+
+    <button class="flex items-center justify-center h-6 w-6 rounded-full bg-brand-primary text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 active:scale-90 select-none pointer-events-none z-10">
+      <Sort :size="12" :class="isVertical ? 'rotate-90' : ''" :stroke-width="5" />
+    </button>
+  </div>
 </template>
 
-<style>
-.resize-handler {
-  margin: 0px !important;
-  border-color: var(--el-color-primary) !important;
-  --el-border-color: var(--el-color-primary);
-  border-color: var(--el-color-primary) !important;
-  > .el-divider__text {
-    background-color: transparent !important;
-  }
-
-  .el-button {
-    opacity: 0;
-  }
-
-  &:hover {
-    .el-button {
-      opacity: 1;
-    }
-  }
-}
+<style scoped>
+/* No more element-plus overrides needed */
 </style>

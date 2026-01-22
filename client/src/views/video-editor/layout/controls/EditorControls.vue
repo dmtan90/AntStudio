@@ -82,126 +82,142 @@ const showControls = computed(() => {
 <template>
   <AnimatePresence>
     <Motion
-      :initial="{ opacity: 0 }" :animate="{ opacity: 1 }" :exit="{ opacity: 0 }"
+      :initial="{ opacity: 0, scale: 0.9, y: 10 }" :animate="{ opacity: 1, scale: 1, y: 0 }" :exit="{ opacity: 0, scale: 0.9, y: 10 }"
       v-if="showControls"
       :style="style"
-      class="absolute border bg-popover text-popover-foreground shadow rounded-full outline-none items-center divide-x flex -translate-x-1/2 z-20"
+      class="absolute bg-[#0a0a0a]/90 backdrop-blur-2xl border border-white/5 text-white shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-full outline-none items-center flex -translate-x-1/2 z-[100] p-1.5 gap-1.5 ring-1 ring-white/5"
     >
-      <div v-if="active.meta?.group" class="flex items-center p-1">
-        <el-button text round class="gap-1.5 h-7 px-2" @click="selection.selectMetaGroup(active.meta.group)">
-          <GroupIcon :size="14" />
-          <span>Select Group</span>
+      <!-- AI Magic Quick Action -->
+      <div v-if="(active.type === 'textbox' || active.type === 'image' || active.type === 'video')" class="flex items-center pl-1">
+        <el-button @click="editor.setActiveSidebarRight('ai')" class="cinematic-button !h-8 !px-4 !rounded-full !bg-brand-primary/20 !border-brand-primary/30 !text-brand-primary hover:!bg-brand-primary/40 hover:!text-white hover:!border-brand-primary/50 gap-2 !transition-all duration-300 group shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+          <SparklesIcon :size="14" class="group-hover:rotate-12 transition-transform" :stroke-width="4" />
+          <span class="text-[10px] font-black uppercase tracking-widest">AI Magic</span>
         </el-button>
+        <div class="w-px h-5 bg-white/10 mx-1.5" />
       </div>
 
-      <div v-if="(active.type === 'textbox' || active.type === 'image' || active.type === 'video')" class="flex items-center p-1">
-        <el-button text round class="gap-1.5 h-7 px-2" @click="editor.setActiveSidebarRight('ai')">
-          <SparklesIcon :size="14" />
-          <span>AI Magic</span>
-        </el-button>
+      <!-- Context Specific Actions -->
+      <div class="flex items-center gap-1">
+        <div v-if="active.meta?.group" class="flex items-center">
+          <el-button text class="cinematic-button !h-8 !px-3 !rounded-full gap-2" @click="selection.selectMetaGroup(active.meta.group)">
+            <GroupIcon :size="14" :stroke-width="4" />
+            <span class="text-[10px] font-black uppercase tracking-widest">Group</span>
+          </el-button>
+        </div>
+
+        <div v-if="FabricUtils.isTextboxElement(active)" class="flex items-center">
+          <el-button
+            v-if="active.isEditing"
+            text
+            class="cinematic-button !h-8 !px-3 !rounded-full gap-2 !bg-brand-primary/20 !text-brand-primary !border-brand-primary/20"
+            @click="canvas.onExitActiveTextboxEdit()"
+          >
+            <Check :size="14" :stroke-width="5" />
+            <span class="text-[10px] font-black uppercase tracking-widest">Done</span>
+          </el-button>
+          <el-button
+            v-else
+            text
+            class="cinematic-button !h-8 !px-3 !rounded-full gap-2"
+            @click="canvas.onEnterActiveTextboxEdit()"
+          >
+            <PencilIcon :size="14" :stroke-width="4" />
+            <span class="text-[10px] font-black uppercase tracking-widest">Edit</span>
+          </el-button>
+        </div>
+
+        <div v-else-if="active.type === 'image' || active.type === 'gif' || active.type === 'video'" class="flex items-center" @click="handleReplaceObject">
+          <el-button :class="cn('cinematic-button !h-8 !px-3 !rounded-full gap-2', canvas.replacer.active ? '!bg-brand-primary/20 !text-brand-primary !border-brand-primary/30' : '')" text>
+            <RepeatIcon :size="14" :stroke-width="4" />
+            <span class="text-[10px] font-black uppercase tracking-widest">Replace</span>
+          </el-button>
+        </div>
+
+        <div v-if="mode === 'creator'" class="flex items-center">
+          <el-dropdown :hide-on-click="false" max-height="250px" popper-class="cinematic-dropdown">
+            <el-button :class="cn('cinematic-button !h-8 !px-3 !rounded-full gap-2 transition-all', active.meta?.label ? '!bg-violet-600/20 !text-violet-400 !border-violet-500/30' : '')" text>
+              <LinkIcon :size="14" :stroke-width="4" />
+              <span class="text-[10px] font-black uppercase tracking-widest">Tag</span>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-for="placeholder in placeholders" :key="placeholder.value">
+                  <el-checkbox
+                    :model-value="active.meta?.label === placeholder.value"
+                    @change="(value) => canvas.onMarkActiveObjectAsPlaceholder(!value ? false : placeholder.value)"
+                  >
+                    {{ placeholder.label }}
+                  </el-checkbox>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </div>
 
-      <div v-if="FabricUtils.isTextboxElement(active)" class="flex items-center p-1">
-        <el-button
-          v-if="active.isEditing"
-          text round
-          class="gap-1.5 h-7 px-2"
-          @click="canvas.onExitActiveTextboxEdit()"
-        >
-          <Check :size="14" />
-          <span>Finish</span>
-        </el-button>
-        <el-button
-          v-else
-          text round
-          class="gap-1.5 h-7 px-2"
-          @click="canvas.onEnterActiveTextboxEdit()"
-        >
-          <PencilIcon :size="14" />
-          <span>Edit</span>
-        </el-button>
-      </div>
+      <div class="w-px h-5 bg-white/10 mx-0.5" />
 
-      <div v-else-if="active.type === 'image' || active.type === 'gif' || active.type === 'video'" class="flex items-center p-1" @click="handleReplaceObject">
-        <el-button :type="canvas.replacer.active ? 'info' : ''" text round class="gap-1.5 h-7 px-2 transition-none">
-          <RepeatIcon :size="14" />
-          <span>Replace</span>
-        </el-button>
-      </div>
-
-      <div v-if="mode === 'creator'" class="flex items-center p-1">
-        <el-dropdown :hide-on-click="false" max-height="200px">
-          <el-button text round :class="cn('gap-1.5 px-2 transition-none', active.meta?.label ? 'bg-violet-600 text-white hover:bg-violet-700 hover:text-white' : '')">
-            <LinkIcon :size="14" />
-            <span>Placeholder</span>
+      <!-- Layer & Position Tools -->
+      <div class="flex items-center gap-1 px-0.5">
+        <el-dropdown max-height="300px" popper-class="cinematic-dropdown overflow-hidden">
+          <el-button class="cinematic-button !h-8 !w-8 !p-0 !rounded-full">
+            <SendToBackIcon :size="14" :stroke-width="4" />
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item v-for="placeholder in placeholders" :key="placeholder.value">
-                <el-checkbox
-                  :model-value="active.meta?.label === placeholder.value"
-                  @change="(value) => canvas.onMarkActiveObjectAsPlaceholder(!value ? false : placeholder.value)"
-                >
-                  {{ placeholder.label }}
-                </el-checkbox>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-
-      <div class="flex items-center gap-0 p-1">
-        <el-button text circle class="h-7 w-7" @click="canvas.cloner.clone()" :disabled="active.meta?.thumbnail">
-          <Copy :size="14" />
-        </el-button>
-        <el-button type="danger" text circle class="h-7 w-7" @click="canvas.onDeleteActiveObject()">
-          <Trash2Icon :size="14" />
-        </el-button>
-      </div>
-
-      <div class="flex items-center gap-1 p-1">
-        <el-dropdown max-height="200px">
-          <el-button text circle class="h-7 w-7">
-            <SendToBackIcon :size="14" />
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item disabled class="text-xs">Move</el-dropdown-item>
+              <div class="px-3 py-2 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Arrangement</div>
               <el-dropdown-item
                 v-for="({ label, value, icon }) in move"
                 :key="value"
                 @click="canvas.alignment.changeActiveObjectLayer(value)"
-                class="text-xs"
-                :icon="icon"
+                class="gap-3 py-2"
               >
-                {{ label }}
+                <component :is="icon" :size="14" class="opacity-70" />
+                <span class="text-[11px] font-bold">{{ label }}</span>
               </el-dropdown-item>
-              <el-divider />
-              <el-dropdown-item disabled class="text-xs">Align to Page</el-dropdown-item>
+              <el-divider class="!my-1 !border-white/5" />
+              <div class="px-3 py-2 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Alignment</div>
               <el-dropdown-item
                 v-for="({ label, value, icon }) in align"
                 :key="value"
                 @click="canvas.alignment.alignActiveObjecToPage(value)"
-                class="text-xs"
-                :icon="icon"
+                class="gap-3 py-2"
               >
-                {{ label }}
+                <component :is="icon" :size="14" class="opacity-70" />
+                <span class="text-[11px] font-bold">{{ label }}</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-dropdown max-height="200px">
-          <el-button text circle class="h-7 w-7">
-            <FlipHorizontally :size="14" />
+
+        <el-dropdown max-height="300px" popper-class="cinematic-dropdown overflow-hidden">
+          <el-button class="cinematic-button !h-8 !w-8 !p-0 !rounded-full">
+            <FlipHorizontally :size="14" :stroke-width="4" />
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item disabled class="text-xs">Flip</el-dropdown-item>
-              <el-dropdown-item class="text-xs" :icon="FlipHorizontally">Horizontally</el-dropdown-item>
-              <el-dropdown-item class="text-xs" :icon="FlipVertically">Vertically</el-dropdown-item>
+              <div class="px-3 py-2 text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Transform</div>
+              <el-dropdown-item class="gap-3 py-2" :icon="FlipHorizontally" @click="canvas.instance.getActiveObject()?.set('flipX', !canvas.instance.getActiveObject()?.flipX).canvas?.requestRenderAll()">
+                <span class="text-[11px] font-bold">Flip Horizontal</span>
+              </el-dropdown-item>
+              <el-dropdown-item class="gap-3 py-2" :icon="FlipVertically" @click="canvas.instance.getActiveObject()?.set('flipY', !canvas.instance.getActiveObject()?.flipY).canvas?.requestRenderAll()">
+                <span class="text-[11px] font-bold">Flip Vertical</span>
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+      </div>
+
+      <div class="w-px h-5 bg-white/10 mx-0.5" />
+
+      <!-- Core Actions (Clone, Delete) -->
+      <div class="flex items-center gap-1 pr-1">
+        <el-button @click="canvas.cloner.clone()" :disabled="active.meta?.thumbnail" class="cinematic-button !h-8 !w-8 !p-0 !rounded-full group/clone">
+          <Copy :size="14" :stroke-width="4" class="group-hover:scale-110 transition-transform" />
+        </el-button>
+        <el-button @click="canvas.onDeleteActiveObject()" class="cinematic-button !h-8 !w-8 !p-0 !rounded-full !border-red-500/20 !text-red-400 hover:!bg-red-500/20 hover:!text-red-200 hover:!border-red-500/40 group/trash">
+          <Trash2Icon :size="14" :stroke-width="4" class="group-hover:scale-110 group-hover:rotate-6 transition-transform" />
+        </el-button>
       </div>
     </Motion>
   </AnimatePresence>

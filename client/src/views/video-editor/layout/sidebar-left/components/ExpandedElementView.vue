@@ -8,6 +8,7 @@ import { useGiphyGIFs } from 'video-editor/hooks/use-giphy-gifs';
 import { useGiphySticker } from 'video-editor/hooks/use-giphy-sticker';
 import { useEmoji } from 'video-editor/hooks/use-emoji';
 import { toast } from 'vue-sonner';
+import { getFileUrl } from '@/utils/api';
 
 const props = defineProps<{ match: string, query: string | null }>();
 
@@ -27,28 +28,42 @@ const onAddAbstractShape = (path: string, name: string) => {
   (editor.canvas as any).onAddAbstractShape(path, name);
 };
 
-const onAddGiphyVideo = (source: string, thumbnail: string) => {
-  if (((editor.canvas as any).replacer.active as any)?.type === "gif") {
-    const promise = (editor.canvas as any).replacer.replace(source, true);
-    toast.promise(promise, { loading: "The gif is being replaced...", success: "The gif has been replaced", error: "Ran into an error while replacing the gif" });
-  } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
-    const promise = (editor.canvas as any).onAddGifFromSource(source);
-    toast.promise(promise, { loading: "The gif asset is being loaded...", success: "The gif asset has been added to artboard", error: "Ran into an error adding the gif asset" });
-  } else {
-    toast.promise((editor.canvas as any).onAddGifFromThumbnail(source, thumbnail), { error: "Ran into an error adding the gif asset" });
+const onAddGiphyVideo = async (source: string, thumbnail: string) => {
+  try {
+    const resolvedSource = await getFileUrl(source, { cached: true });
+
+    if (((editor.canvas as any).replacer.active as any)?.type === "gif") {
+      const promise = (editor.canvas as any).replacer.replace(resolvedSource, true);
+      toast.promise(promise, { loading: "The gif is being replaced...", success: "The gif has been replaced", error: "Ran into an error while replacing the gif" });
+    } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
+      const promise = (editor.canvas as any).onAddGifFromSource(resolvedSource);
+      toast.promise(promise, { loading: "The gif asset is being loaded...", success: "The gif asset has been added to artboard", error: "Ran into an error adding the gif asset" });
+    } else {
+      toast.promise((editor.canvas as any).onAddGifFromThumbnail(resolvedSource, thumbnail), { error: "Ran into an error adding the gif asset" });
+    }
+  } catch (error) {
+    console.error('Failed to resolve gif source:', error);
+    toast.error("Failed to load gif asset");
   }
 };
 
-const onAddEmoji = (source: string, thumbnail: string, preload?: boolean) => {
-  if (((editor.canvas as any).replacer.active as any)?.type === "gif") {
-    const promise = (editor.canvas as any).replacer.replace(source, true);
-    toast.promise(promise, { loading: "The emoji is being replaced...", success: "The emoji has been replaced", error: "Ran into an error while replacing the emoji" });
-  } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
-    const promise = (editor.canvas as any).onAddGifFromSource(source);
-    toast.promise(promise, { loading: "The emoji is being loaded...", success: "The emoji has been added to artboard", error: "Ran into an error while adding the emoji" });
-  } else {
-    const promise = (editor.canvas as any).onAddGifFromThumbnail(source, thumbnail);
-    toast.promise(promise, { error: "Ran into an error while adding the emoji" });
+const onAddEmoji = async (source: string, thumbnail: string, preload?: boolean) => {
+  try {
+    const resolvedSource = await getFileUrl(source, { cached: true });
+
+    if (((editor.canvas as any).replacer.active as any)?.type === "gif") {
+      const promise = (editor.canvas as any).replacer.replace(resolvedSource, true);
+      toast.promise(promise, { loading: "The emoji is being replaced...", success: "The emoji has been replaced", error: "Ran into an error while replacing the emoji" });
+    } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
+      const promise = (editor.canvas as any).onAddGifFromSource(resolvedSource);
+      toast.promise(promise, { loading: "The emoji is being loaded...", success: "The emoji has been added to artboard", error: "Ran into an error while adding the emoji" });
+    } else {
+      const promise = (editor.canvas as any).onAddGifFromThumbnail(resolvedSource, thumbnail);
+      toast.promise(promise, { error: "Ran into an error while adding the emoji" });
+    }
+  } catch (error) {
+    console.error('Failed to resolve emoji source:', error);
+    toast.error("Failed to load emoji asset");
   }
 };
 
@@ -158,67 +173,58 @@ defineExpose({
 
 <template>
   <template v-if="match === 'basic'">
-    <button
-      v-for="({ name, path, klass, params }) in basic"
-      :key="name"
-      @click="onAddBasicShape(klass, params)"
-      class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-    >
-      <svg viewBox="0 0 48 48" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
+    <button v-for="({ name, path, klass, params }) in basic" :key="name" @click="onAddBasicShape(klass, params)"
+      class="group shrink-0 h-20 w-full border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 text-white/40 transition-all duration-300 shadow-sm hover:bg-white/10 hover:text-white hover:border-white/20 hover:scale-[1.05] hover:shadow-xl hover:shadow-brand-primary/20">
+      <svg viewBox="0 0 48 48" :aria-label="name" fill="currentColor"
+        class="h-full w-full transition-transform duration-500 group-hover:scale-110">
         <path :d="path" class="h-full" />
       </svg>
     </button>
   </template>
 
   <template v-else-if="match === 'abstract'">
-    <button
-      v-for="({ name, path, height, width, id }) in abstract"
-      :key="id"
-      @click="onAddAbstractShape(path, name)"
-      class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-    >
-      <svg :viewBox="`0 0 ${width} ${height}`" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
+    <button v-for="({ name, path, height, width, id }) in abstract" :key="id" @click="onAddAbstractShape(path, name)"
+      class="group shrink-0 h-20 w-full border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 text-white/40 transition-all duration-300 shadow-sm hover:bg-white/10 hover:text-white hover:border-white/20 hover:scale-[1.05] hover:shadow-xl hover:shadow-brand-primary/20">
+      <svg :viewBox="`0 0 ${width} ${height}`" :aria-label="name" fill="currentColor"
+        class="h-full w-full transition-transform duration-500 group-hover:scale-110">
         <path :d="path" class="h-full" />
       </svg>
     </button>
   </template>
 
   <template v-else-if="match === 'frames'">
-    <button
-      v-for="({ name, path, height, width, id }) in frames"
-      :key="id"
-      @click="onAddAbstractShape(path, name)"
-      class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-    >
-      <svg :viewBox="`0 0 ${width} ${height}`" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
+    <button v-for="({ name, path, height, width, id }) in frames" :key="id" @click="onAddAbstractShape(path, name)"
+      class="group shrink-0 h-20 w-full border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 text-white/40 transition-all duration-300 shadow-sm hover:bg-white/10 hover:text-white hover:border-white/20 hover:scale-[1.05] hover:shadow-xl hover:shadow-brand-primary/20">
+      <svg :viewBox="`0 0 ${width} ${height}`" :aria-label="name" fill="currentColor"
+        class="h-full w-full transition-transform duration-500 group-hover:scale-110">
         <path :d="path" class="h-full" />
       </svg>
     </button>
   </template>
 
   <template v-if="match === 'gifs'">
-    <button v-for="({ preview, details: { src } }, index) in gifs" :key="preview" 
-      @click="onAddGiphyVideo(src, preview)"
-      class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100">
-      <img :src="preview" crossOrigin="anonymous" class="h-full w-full rounded-md transition-transform group-hover:scale-110 object-cover" />
+    <button v-for="({ preview, details: { src } }, index) in gifs" :key="preview" @click="onAddGiphyVideo(src, preview)"
+      class="group shrink-0 h-20 w-full border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl shadow-sm transition-all duration-300 hover:bg-white/10 hover:border-white/20 hover:scale-[1.05] hover:shadow-xl hover:shadow-brand-primary/20">
+      <img :src="getFileUrl(preview)" crossOrigin="anonymous"
+        class="h-full w-full transition-transform duration-500 group-hover:scale-110 object-cover opacity-80 group-hover:opacity-100" />
     </button>
   </template>
 
   <template v-if="match === 'sticker'">
-    <button v-for="({ preview, details: { src } }, index) in stickers" :key="preview" 
+    <button v-for="({ preview, details: { src } }, index) in stickers" :key="preview"
       @click="onAddGiphyVideo(src, preview)"
-      class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100">
-      <img :src="preview" crossOrigin="anonymous" class="h-full w-full rounded-md transition-transform group-hover:scale-110 object-cover" />
+      class="group shrink-0 h-20 w-full border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl shadow-sm transition-all duration-300 hover:bg-white/10 hover:border-white/20 hover:scale-[1.05] hover:shadow-xl hover:shadow-brand-primary/20">
+      <img :src="getFileUrl(preview)" crossOrigin="anonymous"
+        class="h-full w-full transition-transform duration-500 group-hover:scale-110 object-cover opacity-80 group-hover:opacity-100" />
     </button>
   </template>
 
   <template v-if="match === 'emoji'">
-    <button v-for="({ preview, details: { src } }, index) in icons" :key="preview" 
-      @mouseover="icons[index].play = true" @mouseleave="icons[index].play = false"
-      @click="onAddEmoji(src, preview)"
-      class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100">
-      <img :src="icons[index].play ? src : preview" crossOrigin="anonymous" class="h-full w-full rounded-md transition-transform group-hover:scale-110 object-cover" />
+    <button v-for="({ preview, details: { src } }, index) in icons" :key="preview"
+      @mouseenter="icons[index].play = true" @mouseleave="icons[index].play = false" @click="onAddEmoji(src, preview)"
+      class="group shrink-0 h-20 w-full border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 transition-all duration-300 shadow-sm hover:bg-white/10 hover:border-white/20 hover:scale-[1.05] hover:shadow-xl hover:shadow-brand-primary/20">
+      <img :src="getFileUrl(icons[index].play ? src : preview)" crossOrigin="anonymous"
+        class="h-full w-full transition-transform duration-500 group-hover:scale-110 object-contain opacity-80 group-hover:opacity-100" />
     </button>
   </template>
-
 </template>

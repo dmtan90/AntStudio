@@ -41,9 +41,9 @@ const options = ref({
   url: '',
 })
 
-onMounted(async () => {
+onMounted(() => {
   if (props.audio.source) {
-    options.value.url = await getFileUrl(props.audio.source, { cached: true });
+    options.value.url = getFileUrl(props.audio.source);
   }
 });
 
@@ -80,39 +80,45 @@ const handlePlay = (event: MouseEvent) => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-2">
-    <button @click="onClick" v-loading="loading" class="group shrink-0 h-16 w-20 border overflow-hidden rounded-md shadow-sm relative">
-      <!--<img :src="audio.thumbnail" crossOrigin="anonymous" class="h-8 w-full rounded-md transition-transform group-hover:scale-110 object-cover" />-->
-      <WaveSurferPlayer class="h-8 w-full rounded-md transition-transform group-hover:scale-110 object-cover z-1" :options="options" @timeupdate="(time: number) => timeUpdateHandler(time)"
-        @ready="(duration: number) => readyHandler(duration)" @play="isPlaying = true" @pause="isPlaying = false" @waveSurfer="(ws: WaveSurfer) => readyWaveSurferHandler(ws)" />
-      <el-button :icon="isPlaying ? Pause : Play" size="default" text bg circle @click="handlePlay" class="text-[24px] absolute hidden group-hover:inline-flex left-[calc(50%-16px)] top-[calc(50%-16px)] z-3" />
-      <el-tag size="small" :type="isPlaying ? 'danger' : 'info'" effect="light" round class="absolute inline-flex group-hover:hidden right-[5px] top-[5px] z-2"> {{ isPlaying ? currentTime : totalDuration }}</el-tag>
-      <!--<div @click="handlePlay" class="absolute hidden group-hover:inline-flex items-center justify-between gap-2 bottom-1 left-1 right-1 text-card bg-foreground/50 pr-1.5 rounded-sm">
-        <el-button size="small" text circle @click="handlePlay" class="px-1.5 py-1 transition-transform hover:scale-125">
-          <template v-if="isPlaying">
-            <Pause :size="14" class="fill-card" />
-          </template>
-          <template v-else>
-            <Play :size="14" class="fill-card" />
-          </template>
-        </el-button>
-        <span class="text-xxs font-small">{{ totalDuration }}</span>
-        <div role="button" class="px-1.5 py-1 transition-transform hover:scale-125">
-          <template v-if="isPlaying">
-            <Pause :size="14" class="fill-card" />
-          </template>
-          <template v-else>
-            <Play :size="14" class="fill-card" />
-          </template>
-        </div>
-        <span class="text-xxs font-medium">{{ totalDuration }}</span>
-        <audio ref="audioRef">
-          <source :src="audio.source" />
-        </audio>
-      </div>-->
+  <div class="flex flex-col items-center gap-2 w-full group/audio">
+    <button @click="onClick" v-loading="loading" 
+      class="group shrink-0 h-16 w-full border border-white/5 bg-white/5 overflow-hidden rounded-xl shadow-sm relative transition-all duration-300 hover:bg-white/10 hover:border-white/10 hover:shadow-lg hover:shadow-purple-500/5">
+      
+      <div class="opacity-50 group-hover:opacity-100 transition-opacity px-2 flex items-center h-full">
+        <WaveSurferPlayer 
+          class="h-8 w-full rounded-md z-1" 
+          :options="options" 
+          @timeupdate="(time: number) => timeUpdateHandler(time)"
+          @ready="(duration: number) => readyHandler(duration)" 
+          @play="isPlaying = true" 
+          @pause="isPlaying = false" 
+          @waveSurfer="(ws: WaveSurfer) => readyWaveSurferHandler(ws)" 
+        />
+      </div>
+
+      <!-- Play Button Overlay -->
+      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
+        <el-button 
+          :icon="isPlaying ? Pause : Play" 
+          size="large" 
+          text 
+          bg 
+          circle 
+          @click="handlePlay" 
+          class="!bg-white/10 !backdrop-blur-md !border-white/20 !text-white hover:!bg-brand-primary hover:!border-brand-primary transition-all scale-90 group-hover:scale-100" 
+        />
+      </div>
+
+      <!-- Time Indicator -->
+      <div class="absolute right-2 top-2 z-20 px-1.5 py-0.5 rounded-full bg-black/40 backdrop-blur-sm border border-white/5 text-[10px] font-mono text-white/40 group-hover:text-white/90 transition-colors">
+          {{ isPlaying ? currentTime : totalDuration }}
+      </div>
     </button>
-    <el-tooltip :content="audio.name" placement="top">
-      <span class="text-xxs font-medium w-20 px-1 mx-auto whitespace-nowrap overflow-hidden text-ellipsis text-center">{{ audio.name }}</span>
+    
+    <el-tooltip :content="audio.name" placement="top" effect="dark">
+      <span class="text-[10px] font-bold uppercase tracking-wider w-full px-1 mx-auto whitespace-nowrap overflow-hidden text-ellipsis text-center text-white/40 group-hover/audio:text-white/90 transition-colors">
+        {{ audio.name }}
+      </span>
     </el-tooltip>
   </div>
 </template>

@@ -12,10 +12,10 @@ export interface UploadAsset {
   thumbnail: string;
 }
 
-async function upload(file: File | Blob, name: string): Promise<string> {
+async function upload(file: File | Blob, name: string, purpose: string = 'media'): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('purpose', 'media');
+  formData.append('purpose', purpose);
 
   const response = await api.post("/media/upload", formData, {
     headers: {
@@ -25,7 +25,7 @@ async function upload(file: File | Blob, name: string): Promise<string> {
 
   // Flova API returns { key, url, media } in data
   // We want the proxied URL for the editor
-  const key = response.data.key;
+  const key = response.data.data ? response.data.data.key : response.data.key; // Safe check
   return `/api/s3/${key}`;
 }
 
@@ -38,26 +38,32 @@ export async function uploadAssetToS3(file: File, type: "image" | "video" | "aud
   switch (type) {
     case "image": {
       const files = await Promise.all([compressImageFile(file), extractThumbnailFromImage(file)]);
-      const [source, thumbnail] = await Promise.all([upload(files[0], filename), upload(files[1], thumbname)]);
+      const [source, thumbnail] = await Promise.all([
+        upload(files[0], filename, 'image'),
+        upload(files[1], thumbname, 'thumbnail')
+      ]);
       return { source, thumbnail, name: file.name };
     }
 
     case "video": {
       const files = await Promise.all([compressVideoFile(toRaw(editor.ffmpeg), file), extractThumbnailFromVideo(file)]);
-      const [source, thumbnail] = await Promise.all([upload(files[0], filename), upload(files[1], thumbname)]);
+      const [source, thumbnail] = await Promise.all([
+        upload(files[0], filename, 'video'),
+        upload(files[1], thumbname, 'thumbnail')
+      ]);
       return { source, thumbnail, name: file.name };
     }
 
     case "audio": {
       const [source, { duration, thumbnail }] = await Promise.all([
-        upload(file, filename),
-        extractAudioWaveformFromAudioFile(file).then((waveform) => upload(waveform.thumbnail, thumbname).then((thumbnail) => ({ thumbnail, duration: waveform.duration }))),
+        upload(file, filename, 'audio'),
+        extractAudioWaveformFromAudioFile(file).then((waveform) => upload(waveform.thumbnail, thumbname, 'thumbnail').then((thumbnail) => ({ thumbnail, duration: waveform.duration }))),
       ]);
       return { source, duration, thumbnail, name: file.name };
     }
 
     case "thumbnail": {
-      const thumbnail = await upload(file, thumbname);
+      const thumbnail = await upload(file, thumbname, 'thumbnail');
       return { source: thumbnail, thumbnail: thumbnail, name: file.name };
     }
 

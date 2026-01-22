@@ -295,4 +295,34 @@ export class CustomAIAdapter {
 
         return result;
     }
+
+    /**
+     * Generate Audio (TTS)
+     */
+    async generateAudio(prompt: string, modelName: string, config: any = {}) {
+        const variables = {
+            prompt,
+            input: prompt,
+            model: modelName,
+            voice: config.voice || 'alloy',
+            ...config
+        };
+
+        const result = await this.executeTask('audio', variables, '/audio/speech', {
+            model: modelName,
+            input: prompt,
+            voice: variables.voice
+        });
+
+        // Mapped result
+        if (result.url || result.b64) {
+            return {
+                media: {
+                    url: result.b64 ? `data:audio/mpeg;base64,${result.b64}` : result.url
+                }
+            }
+        }
+
+        return result;
+    }
 }

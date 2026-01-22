@@ -473,6 +473,31 @@ router.post('/:id/stream', async (req: any, res: Response) => {
     }
 });
 
+// POST /api/projects/:id/stream/endpoint - Add RTMP endpoint for restreaming
+router.post('/:id/stream/endpoint', async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, data: null, error: 'Project not found' });
+
+        const { streamId, rtmpUrl } = req.body;
+        if (!streamId || !rtmpUrl) return res.status(400).json({ success: false, error: 'Stream ID and RTMP URL are required' });
+
+        const { antMediaService } = await import('../utils/antMedia.js');
+
+        const authenticated = await antMediaService.authenticate();
+        if (!authenticated) throw new Error("Failed to authenticate with Ant Media Server");
+
+        const success = await antMediaService.addEndpoint(streamId, rtmpUrl);
+        if (!success) throw new Error("Failed to add RTMP endpoint");
+
+        res.json({ success: true, data: { message: 'RTMP endpoint added successfully' } });
+    } catch (error: any) {
+        console.error('Add stream endpoint failed:', error);
+        res.status(500).json({ success: false, data: null, error: error.message });
+    }
+});
+
 // POST /api/projects/:id/vod - Upload as VoD asset to Ant Media
 router.post('/:id/vod', async (req: any, res: Response) => {
     try {
@@ -771,6 +796,74 @@ router.post('/:id/assets/generate', checkLicenseStatus, async (req: any, res: Re
         } catch (e) { /* ignore logging error */ }
 
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to generate asset' });
+    }
+});
+
+// POST /api/projects/:id/segments/:segmentId/generate-voiceover
+router.post('/:id/segments/:segmentId/generate-voiceover', checkLicenseStatus, async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const { id, segmentId } = req.params;
+        const { voiceId, providerId, modelId } = req.body;
+
+        const project = await Project.findOne({ _id: id, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        const segment = project.storyboard?.segments?.find((s: any) => s._id?.toString() === segmentId);
+        if (!segment) return res.status(404).json({ success: false, error: 'Segment not found' });
+
+        const text = segment.voiceover;
+        if (!text) return res.status(400).json({ success: false, error: 'Segment has no voiceover text' });
+
+        // Deduction
+        const { getCreditCost, deductCredits } = await import('../utils/credits.js');
+        const creditCost = await getCreditCost('audio');
+        await deductCredits(req.user!.userId, creditCost, `Generate Voiceover for segment ${segment.order}`);
+
+        // Update status to pending
+        segment.generatedAudio = {
+            s3Key: '',
+            s3Url: '',
+            status: 'generating',
+            generatedAt: new Date()
+        };
+        await project.save();
+
+        const { generateAudio } = await import('../utils/AIGenerator.js');
+        const { S3KeyGenerator } = await import('../utils/s3.js');
+
+        const filename = `seg_${segment.order}`;
+        const targetS3Key = S3KeyGenerator.audio(id, 'voice', filename, 'mp3');
+
+        const audioResult = await generateAudio(text, id, filename, {
+            providerId,
+            modelId,
+            voice: voiceId,
+            s3Key: targetS3Key
+        });
+
+        // Update status to completed
+        segment.generatedAudio = {
+            s3Key: audioResult.s3Key,
+            s3Url: audioResult.s3Url,
+            status: 'completed',
+            generatedAt: new Date()
+        };
+        await project.save();
+
+        const { logProjectEvent } = await import('../utils/projectLogger.js');
+        await logProjectEvent(id, {
+            role: 'system',
+            type: 'asset_gen',
+            content: `Generated voiceover for segment ${segment.order}.`,
+            metadata: { s3Key: audioResult.s3Key, segmentId }
+        });
+
+        res.json({ success: true, data: { generatedAudio: segment.generatedAudio } });
+
+    } catch (error: any) {
+        console.error('Voiceover generation failed:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate voiceover' });
     }
 });
 

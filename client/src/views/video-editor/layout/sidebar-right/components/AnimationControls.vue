@@ -64,99 +64,96 @@ watch(props, () => {
 </script>
 
 <template>
-  <div class="flex flex-col animation-controls">
-    <div class="flex items-center justify-between gap-6">
-      <Label :class="cn('text-xs shrink-0', disabled || animation?.disabled?.easing ? 'opacity-50' : 'opacity-100')">Easing</Label>
-      <el-select v-model="easing" :disabled="disabled || animation?.disabled?.easing" class="h-8 text-xs w-[100px] rounded">
+  <div class="flex flex-col animation-controls gap-5 bg-white/5 p-5 rounded-2xl border border-white/5 relative overflow-hidden group">
+    <!-- Background Glow -->
+    <div class="absolute -top-10 -right-10 w-32 h-32 bg-brand-primary/5 blur-[50px] rounded-full group-hover:bg-brand-primary/10 transition-all duration-700"></div>
+
+    <div class="flex items-center justify-between gap-4 relative z-10">
+      <Label :class="cn('text-[10px] font-bold text-white/40 uppercase tracking-widest', disabled || animation?.disabled?.easing ? 'opacity-30' : 'opacity-100')">Easing Type</Label>
+      <el-select v-model="easing" :disabled="disabled || animation?.disabled?.easing" class="cinematic-select w-[130px]" popper-class="cinematic-popover">
         <el-option v-for="e in easings" :key="e.value" :label="e.label" :value="e.value" />
       </el-select>
     </div>
+
     <template v-if="easing !== 'spring'">
-      <div class="flex items-center justify-between gap-6 mt-3">
-        <Label :class="cn('text-xs shrink-0', disabled || animation?.disabled?.duration ? 'opacity-50' : 'opacity-100')">Duration (s)</Label>
-        <el-input-number v-model="duration" :disabled="disabled || animation?.disabled?.duration" controls-position="right" :step="0.1" class="text-xs h-8 w-[100px] rounded" />
+      <div class="flex items-center justify-between gap-4 relative z-10">
+        <Label :class="cn('text-[10px] font-bold text-white/40 uppercase tracking-widest', disabled || animation?.disabled?.duration ? 'opacity-30' : 'opacity-100')">Duration (s)</Label>
+        <el-input-number v-model="duration" :disabled="disabled || animation?.disabled?.duration" controls-position="right" :step="0.1" :min="0" class="cinematic-input-number w-[130px]" />
       </div>
     </template>
+    
     <template v-else>
-      <div class="flex items-center justify-between gap-6 mt-3">
-        <Label :class="cn('text-xs shrink-0', disabled ? 'opacity-50' : 'opacity-100')">Physics</Label>
-        <el-popover width="250px" trigger="click" placement="bottom-end">
+      <div class="flex items-center justify-between gap-6 mt-1 relative z-10">
+        <Label :class="cn('text-[10px] font-bold text-white/40 uppercase tracking-widest', disabled ? 'opacity-30' : 'opacity-100')">Spring Physics</Label>
+        <el-popover width="300px" trigger="click" placement="bottom-end" popper-class="cinematic-popover p-0 overflow-hidden border-white/10">
           <template #reference>
-            <el-button plain round class="h-8 w-[100px] justify-between items-center">
-              <img :src="spring.graph" class="h-8 w-auto -scale-y-100" />
-              <ChevronUp class="w-4 h-4 opacity-50 shrink-0" />
-            </el-button>
+             <button :disabled="disabled" class="h-9 flex items-center justify-between gap-2 px-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all duration-300 w-[130px] shadow-sm disabled:opacity-30">
+               <img :src="spring.graph" class="h-5 w-auto -scale-y-100 opacity-60 group-hover:opacity-100" />
+               <ChevronUp class="w-3.5 h-3.5 text-white/20" />
+             </button>
           </template>
-          <section class="sidebar-container px-2">
-            <div class="bg-transparent-pattern rounded-sm overflow-hidden relative p-2">
-              <span class="absolute bottom-2 right-2 text-center text-xxs w-fit font-medium">Approximate Duration: {{ (spring.duration / 1000).toFixed(2) }} seconds</span>
-              <img :src="spring.graph" class="h-full w-auto -scale-y-100" />
+          
+          <section class="flex flex-col bg-[#0d0d0d]/95 backdrop-blur-2xl">
+            <!-- Popover Header -->
+            <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+                <span class="text-[10px] font-bold text-white/60 uppercase tracking-widest">Adjust Physics</span>
             </div>
-            <Label class="text-xs font-medium mt-6">Mass</Label>
-            <div class="flex items-center justify-between gap-4">
-              <SliderInput :min="1" :max="100" :step="1" :model-value="physics.mass" @update:model-value="(mass) => controls.changePhysics({ mass })" />
-              <!--<el-slider :min="1" :max="100" :model-value="physics.mass" @update:model-value="(mass) => controls.changePhysics({ mass })" />
-              <el-input-number
-                :min="1"
-                :max="100"
-                v-model="physics.mass"
-                @update:model-value="(value) => (+value < 1 || +value > 100 ? null : controls.changePhysics({ mass: +value }))"
-                class="h-8 w-20 text-xs"
-              />-->
-            </div>
-            <Label class="text-xs font-medium mt-4">Stiffness</Label>
-            <div class="flex items-center justify-between gap-4">
-              <SliderInput :min="1" :max="100" :step="1" :model-value="physics.stiffness" @update:model-value="(stiffness) => controls.changePhysics({ stiffness })" />
-              <!--<el-slider :min="1" :max="100" :model-value="physics.stiffness" @update:model-value="(stiffness) => controls.changePhysics({ stiffness })" />
-              <el-input-number
-                :min="1"
-                :max="100"
-                v-model="physics.stiffness"
-                @update:model-value="(value) => (+value < 1 || +value > 100 ? null : controls.changePhysics({ stiffness: +value }))"
-                class="h-8 w-20 text-xs"
-              />-->
-            </div>
-            <Label class="text-xs font-medium mt-4">Damping</Label>
-            <div class="flex items-center justify-between gap-4">
-              <SliderInput :min="1" :max="100" :step="1" :model-value="physics.damping" @update:model-value="(damping) => controls.changePhysics({ damping })" />
-              <!--<el-slider :min="1" :max="100" :model-value="physics.damping" @update:model-value="(damping) => controls.changePhysics({ damping })" />
-              <el-input-number
-                :min="1"
-                :max="100"
-                v-model="physics.damping"
-                @update:model-value="(value) => (+value < 1 || +value > 100 ? null : controls.changePhysics({ damping: +value }))"
-                class="h-8 w-20 text-xs"
-              />-->
-            </div>
-            <Label class="text-xs font-medium mt-4">Velocity</Label>
-            <div class="flex items-center justify-between gap-4">
-              <SliderInput :min="0" :max="100" :step="1" :model-value="physics.velocity" @update:model-value="(velocity) => controls.changePhysics({ velocity })" />
-              <!--<el-slider :min="0" :max="100" :model-value="physics.velocity" @update:model-value="(velocity) => controls.changePhysics({ velocity })" />
-              <el-input-number
-                :min="0"
-                :max="100"
-                v-model="physics.velocity"
-                @update:model-value="(value) => (+value < 0 || +value > 100 ? null : controls.changePhysics({ velocity: +value }))"
-                class="h-8 w-20 text-xs"
-              />-->
+
+            <div class="p-5 flex flex-col gap-6">
+                <!-- Graph Visualization -->
+                <div class="bg-black/60 rounded-xl overflow-hidden relative p-4 border border-white/5 h-36 flex items-center justify-center shadow-inner">
+                  <span class="absolute top-3 right-3 text-[9px] font-bold font-mono text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-2 py-0.5 rounded-md border border-brand-primary/20">{{ (spring.duration / 1000).toFixed(2) }}s</span>
+                  <img :src="spring.graph" class="h-full w-full object-contain -scale-y-100 opacity-80" />
+                </div>
+                
+                <div class="space-y-5">
+                   <div>
+                      <div class="flex justify-between mb-2">
+                          <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Mass</Label>
+                          <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ physics.mass }}</span>
+                      </div>
+                       <SliderInput :min="1" :max="100" :step="1" :model-value="physics.mass" @update:model-value="(mass) => controls.changePhysics({ mass })" />
+                   </div>
+                   
+                   <div>
+                      <div class="flex justify-between mb-2">
+                          <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Stiffness</Label>
+                           <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ physics.stiffness }}</span>
+                      </div>
+                      <SliderInput :min="1" :max="100" :step="1" :model-value="physics.stiffness" @update:model-value="(stiffness) => controls.changePhysics({ stiffness })" />
+                   </div>
+    
+                    <div>
+                      <div class="flex justify-between mb-2">
+                          <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Damping</Label>
+                           <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ physics.damping }}</span>
+                      </div>
+                      <SliderInput :min="1" :max="100" :step="1" :model-value="physics.damping" @update:model-value="(damping) => controls.changePhysics({ damping })" />
+                   </div>
+    
+                   <div>
+                      <div class="flex justify-between mb-2">
+                          <Label class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Velocity</Label>
+                           <span class="text-[10px] font-bold font-mono text-white/60 bg-white/5 px-1.5 rounded">{{ physics.velocity }}</span>
+                      </div>
+                      <SliderInput :min="0" :max="100" :step="1" :model-value="physics.velocity" @update:model-value="(velocity) => controls.changePhysics({ velocity })" />
+                   </div>
+                </div>
             </div>
           </section>
         </el-popover>
       </div>
     </template>
-    <div v-if="FabricUtils.isTextboxElement(selected)" class="flex items-center justify-between gap-6 mt-3">
-      <Label :class="cn('text-xs shrink-0', disabled || animation?.disabled?.text ? 'opacity-50' : 'opacity-100')">Text Animate</Label>
-      <el-select v-model="text" :disabled="disabled || animation?.disabled?.text || animation?.type !== 'textbox'" class="h-8 text-xs w-[100px] rounded">
+    
+    <div v-if="FabricUtils.isTextboxElement(selected)" class="flex items-center justify-between gap-4 relative z-10">
+      <Label :class="cn('text-[10px] font-bold text-white/40 uppercase tracking-widest', disabled || animation?.disabled?.text ? 'opacity-30' : 'opacity-100')">Text Style</Label>
+      <el-select v-model="text" :disabled="disabled || animation?.disabled?.text || (selected as any)?.type !== 'textbox'" class="cinematic-select w-[130px]" popper-class="cinematic-popover">
         <el-option v-for="type in ['letter', 'word', 'line']" :key="type" :label="upperFirst(type)" :value="type" />
       </el-select>
     </div>
   </div>
 </template>
 
-<style>
-  .animation-controls {
-    .rounded {
-      --el-border-radius-base: 16px;
-    }
-  }
+<style scoped>
+/* Scoped styles replaced global styles */
 </style>

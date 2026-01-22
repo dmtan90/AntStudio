@@ -57,14 +57,14 @@ const items = computed(() => {
       label: "Template",
       value: "template",
     },
+    // {
+    //   icon: Bot,
+    //   label: "GPT",
+    //   value: "prompt",
+    // },
     {
       icon: Bot,
-      label: "GPT",
-      value: "prompt",
-    },
-    {
-      icon: Bot,
-      label: "Gemini",
+      label: "Magic",
       value: "ai",
     },
     {
@@ -128,16 +128,17 @@ const handleDrawerClose = () => {
 
 <template>
   <template v-if="!isTablet">
-    <aside :class="cn('h-16 absolute bottom-0 left-0 bg-card dark:bg-gray-900/40 border-t border-t-border/25 flex items-center z-10 gap-2.5 w-screen overflow-x-scroll scrollbar-hidden px-1.5')">
+    <aside :class="cn('h-16 absolute bottom-0 left-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 flex items-center z-10 gap-2.5 w-screen overflow-x-scroll scrollbar-hidden px-1.5')">
       <button
         v-for="{ icon: Icon, label, value } in items"
         :key="value"
         :aria-label="value"
-        :class="cn('min-w-16 h-14 flex flex-col gap-2', editor.sidebarLeft === value ? 'text-primary' : 'text-foreground')"
+        :class="cn('min-w-16 h-14 flex flex-col items-center justify-center gap-1.5 transition-all duration-300', editor.sidebarLeft === value ? 'text-brand-primary' : 'text-white/40 hover:text-white')"
         @click="editor.setActiveSidebarLeft(editor.sidebarLeft === value ? null : value)"
       >
-        <component :is="Icon" :size="20" :stroke-width="1.5" />
-        <span class="text-xxs leading-none">{{ label }}</span>
+        <component :is="Icon" :size="20" :stroke-width="1.5" :class="editor.sidebarLeft === value ? 'scale-110' : ''" />
+        <span class="text-[9px] font-bold uppercase tracking-wider">{{ label }}</span>
+        <div v-if="editor.sidebarLeft === value" class="absolute bottom-0 w-8 h-0.5 bg-brand-primary rounded-t-full shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.5)]"></div>
       </button>
     </aside>
     <el-drawer :model-value="!!activeSidebarComponent" @update:model-value="handleDrawerClose" direction="ltr">
@@ -146,22 +147,25 @@ const handleDrawerClose = () => {
   </template>
 
   <template v-else>
-    <aside class="w-20 sidebar-wrapper scrollbar-hidden bg-card/75 dark:bg-gray-900/30 flex flex-col items-center py-2 border-r border-r-border/50 gap-2 shrink-0">
+    <aside class="w-18 sidebar-wrapper scrollbar-hidden bg-[#050505] flex flex-col items-center py-4 border-r border-white/5 gap-3 shrink-0 z-50 shadow-xl">
       <button
         v-for="{ icon: Icon, label, value } in items"
         :key="value"
-        text
         :aria-label="value"
-        :class="cn('inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 w-16 h-16 flex flex-col gap-2 shrink-0 bg-transparent hover:bg-accent w-16 h-16 flex flex-col gap-2 shrink-0 bg-transparent hover:bg-accent', editor.sidebarLeft === value ? 'bg-card shadow-sm border hover:bg-card' : 'bg-transparent hover:bg-accent')"
+        class="relative flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-300 group"
+        :class="editor.sidebarLeft === value ? 'bg-brand-primary text-black shadow-[0_0_20px_rgba(var(--brand-primary-rgb),0.4)]' : 'text-white/40 hover:bg-white/10 hover:text-white'"
         @click="editor.setActiveSidebarLeft(editor.sidebarLeft === value ? null : value)"
       >
-        <component :is="Icon" :size="20" :stroke-width="1.5" />
-        <span class="text-xxs leading-none">{{ label }}</span>
+        <component :is="Icon" :size="20" :stroke-width="1.5" :class="cn('transition-transform duration-300', editor.sidebarLeft === value ? 'scale-110' : 'group-hover:scale-110')" />
+        <span class="text-[9px] font-bold mt-1.5 uppercase tracking-wide">{{ label }}</span>
+        
+        <!-- Active Indicator -->
+        <div v-if="editor.sidebarLeft === value" class="absolute -right-[1px] top-1/2 -translate-y-1/2 w-[3px] h-8 bg-brand-primary rounded-l-full shadow-[-2px_0_10px_rgba(var(--brand-primary-rgb),0.5)]"></div>
       </button>
     </aside>
     <AnimatePresence>
-      <Motion layout :style="{ width: activeSidebarComponent ? (leftSidebarWidth + 'px') : '0px' }" :transition="{ default: { ease: 'spring' }, layout: { duration: 0.3 } }">
-        <aside v-if="activeSidebarComponent" :style="{ width: leftSidebarWidth + 'px' }" class="overflow-hidden bg-card/60 border-r shrink-0">
+      <Motion layout :style="{ width: activeSidebarComponent ? (leftSidebarWidth + 'px') : '0px' }" :transition="{ default: { ease: 'easeInOut' }, layout: { duration: 0.3 } }">
+        <aside v-if="activeSidebarComponent" :style="{ width: leftSidebarWidth + 'px' }" class="overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-3xl border-r border-white/5 shrink-0 h-full relative z-40 shadow-2xl">
           <component :is="activeSidebarComponent.value" :key="editor.sidebarLeft" />
         </aside>
       </Motion>

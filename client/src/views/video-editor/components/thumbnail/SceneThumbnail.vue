@@ -104,7 +104,7 @@ const handleSceneAction = (cmd) => {
       />
     </div>
     <el-empty v-else :image-size="32" class="" :description="'Scene ' + (page + 1)"/>
-    <el-dropdown @command="handleSceneAction" class="absolute right-1 top-1 z-10" trigger="hover">
+    <!-- <el-dropdown @command="handleSceneAction" class="absolute right-1 top-1 z-10" trigger="hover">
       <el-button type="primary" text circle @click.stop.prevent="">
         <MoreOne :size="15" />
       </el-button>
@@ -124,7 +124,7 @@ const handleSceneAction = (cmd) => {
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>
-    </el-dropdown>
+    </el-dropdown> -->
   </div>
 </template>
 

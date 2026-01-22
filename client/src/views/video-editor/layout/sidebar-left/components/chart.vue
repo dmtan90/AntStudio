@@ -12,51 +12,58 @@ const addChart = (type: string) => {
 </script>
 
 <template>
-  <div class="h-full w-full">
-    <div class="flex items-center justify-between h-14 border-b px-4">
-      <h2 class="font-semibold">Chart</h2>
-      <el-button size="small" text bg circle class="bg-card h-7 w-7" @click="editor.setActiveSidebarLeft(null)">
+  <div class="h-full w-full flex flex-col cinematic-panel">
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5">
+      <h2 class="font-bold text-sm tracking-wider uppercase text-white/90">Charts</h2>
+      <button
+        class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+        @click="editor.setActiveSidebarLeft(null)">
         <X :size="16" />
-      </el-button>
+      </button>
     </div>
-    <section class="sidebar-container pb-4">
-      <div class="px-3 pt-4 pb-6">
-        <el-input placeholder="Search..." class="text-xs" >
+    <section class="flex-1 overflow-y-auto custom-scrollbar">
+      <div class="px-5 pt-4 pb-4">
+        <el-input placeholder="Search charts..." class="cinematic-input">
           <template #prefix>
-            <Search :size="15" class="text-foreground/60" />
+            <Search :size="15" class="text-white/40" />
           </template>
         </el-input>
       </div>
-      <div class="px-3 flex flex-col gap-6">
+      <div class="px-5 flex flex-col gap-6">
         <div class="flex flex-col gap-4">
-          <h4 class="text-xs font-semibold line-clamp-1">Basic Charts</h4>
+          <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Basic Charts</h4>
           <div class="grid grid-cols-3 gap-3">
-            <div class="flex flex-col gap-2 items-center">
-              <el-button
-                @click="addChart('bar')"
-                class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <img :src="bar" alt="bar-chart" />
-              </el-button>
-              <span class="text-xxs text-center font-medium w-20 px-1 mx-auto whitespace-nowrap overflow-hidden text-ellipsis">Bar Chart</span>
+            <!-- Bar Chart -->
+            <div class="flex flex-col gap-2 items-center group/item">
+              <button @click="addChart('bar')"
+                class="group shrink-0 w-full aspect-square border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 transition-all duration-300 shadow-sm hover:bg-white/10 hover:border-white/20 hover:scale-105">
+                <img :src="bar" alt="bar-chart"
+                  class="w-full h-full object-contain opacity-60 group-hover:opacity-100 transition-opacity" />
+              </button>
+              <span
+                class="text-[9px] text-center font-bold text-white/40 uppercase tracking-wider w-full px-1 mx-auto whitespace-nowrap overflow-hidden text-ellipsis group-hover/item:text-white/90 transition-colors">Bar</span>
             </div>
-            <div class="flex flex-col gap-2 items-center">
-              <el-button
-                @click="addChart('line')"
-                class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <img :src="bar" alt="line-chart" />
-              </el-button>
-              <span class="text-xxs text-center font-medium w-20 px-1 mx-auto whitespace-nowrap overflow-hidden text-ellipsis">Line Chart</span>
+
+            <!-- Line Chart -->
+            <div class="flex flex-col gap-2 items-center group/item">
+              <button @click="addChart('line')"
+                class="group shrink-0 w-full aspect-square border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 transition-all duration-300 shadow-sm hover:bg-white/10 hover:border-white/20 hover:scale-105">
+                <img :src="bar" alt="line-chart"
+                  class="w-full h-full object-contain opacity-60 group-hover:opacity-100 transition-opacity" />
+              </button>
+              <span
+                class="text-[9px] text-center font-bold text-white/40 uppercase tracking-wider w-full px-1 mx-auto whitespace-nowrap overflow-hidden text-ellipsis group-hover/item:text-white/90 transition-colors">Line</span>
             </div>
-            <div class="flex flex-col gap-2 items-center">
-              <el-button
-                @click="addChart('pie')"
-                class="group shrink-0 w-full aspect-square border flex items-center justify-center overflow-hidden rounded-lg p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <img :src="bar" alt="pie-chart" />
-              </el-button>
-              <span class="text-xxs text-center font-medium w-20 px-1 mx-auto whitespace-nowrap overflow-hidden text-ellipsis">Pie Chart</span>
+
+            <!-- Pie Chart -->
+            <div class="flex flex-col gap-2 items-center group/item">
+              <button @click="addChart('pie')"
+                class="group shrink-0 w-full aspect-square border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 transition-all duration-300 shadow-sm hover:bg-white/10 hover:border-white/20 hover:scale-105">
+                <img :src="bar" alt="pie-chart"
+                  class="w-full h-full object-contain opacity-60 group-hover:opacity-100 transition-opacity" />
+              </button>
+              <span
+                class="text-[9px] text-center font-bold text-white/40 uppercase tracking-wider w-full px-1 mx-auto whitespace-nowrap overflow-hidden text-ellipsis group-hover/item:text-white/90 transition-colors">Pie</span>
             </div>
           </div>
         </div>

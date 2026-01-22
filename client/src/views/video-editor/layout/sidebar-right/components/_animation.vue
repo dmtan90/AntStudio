@@ -63,18 +63,28 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full w-full @container animation-container">
-    <div class="flex items-center h-14 border-b px-4 gap-2.5">
-      <h2 class="font-semibold">Animations</h2>
-      <el-button plain circle class="bg-card h-7 w-7 ml-auto" @click="editor.setActiveSidebarRight(null)">
-        <X :size="15" />
-      </el-button>
+  <div class="h-full w-full flex flex-col cinematic-panel">
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5">
+      <h2 class="font-bold text-sm tracking-wider uppercase text-white/90">Animations</h2>
+      <button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors" @click="editor.setActiveSidebarRight(null)">
+        <X :size="16" />
+      </button>
     </div>
-    <section class="sidebar-container">
-      <div class="px-4 py-4">
-        <el-segmented v-model="activeTab" :options="tabOptions" size="small" class="w-full" />
+    <section class="flex-1 overflow-y-auto custom-scrollbar">
+      <div class="px-5 py-4">
+        <div class="bg-white/5 p-1 rounded-xl border border-white/5 flex mb-2">
+           <button 
+             v-for="opt in tabOptions" 
+             :key="opt.value"
+             @click="activeTab = opt.value"
+             class="flex-1 py-1.5 flex items-center justify-center gap-2 text-xs font-bold rounded-lg transition-all"
+             :class="[activeTab === opt.value ? 'bg-brand-primary text-white shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5']"
+           >
+             {{ opt.label }}
+           </button>
+        </div>
       </div>
-      <div class="px-4 flex flex-col divide-y">
+      <div class="px-5 flex flex-col divide-y divide-white/5">
         <template v-if="activeTab == 'in'">
           <Animations :animations="entry" :selected="selected" type="in" />
         </template>
@@ -88,12 +98,3 @@ onMounted(() => {
     </section>
   </div>
 </template>
-
-<style>
-.animation-container {
-  .el-segmented {
-    height: 32px;
-    --el-border-radius-base: 16px;
-  }
-}
-</style>

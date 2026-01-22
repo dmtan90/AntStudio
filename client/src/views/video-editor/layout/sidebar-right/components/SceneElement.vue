@@ -32,13 +32,13 @@ function setObjectURL(url: string) {
 </script>
 
 <template>
-  <el-button
+  <button
     @click="handleAddClipPath"
     :class="cn(
-      'group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100',
+      'group shrink-0 h-[64px] w-[64px] border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-2 transition-all duration-300 hover:bg-white/10 hover:border-white/20 hover:scale-[1.05] active:scale-95 shadow-lg shadow-black/20',
       className,
     )"
   >
-    <img :src="objectURL" :alt="element.name?.split('_').at(0)" />
-  </el-button>
+    <img :src="objectURL" :alt="element.name?.split('_').at(0)" class="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
+  </button>
 </template>

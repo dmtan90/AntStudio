@@ -1,21 +1,183 @@
 import { Router } from 'express';
-import { generateJSON, generateText } from '../utils/AIGenerator.js';
+import { generateJSON, generateText, generateImage, generateAudio, generateVideo, checkVideoStatus } from '../utils/AIGenerator.js';
 import { parseDocument } from '../utils/documentParser.js';
 import multer from 'multer';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { uploadToS3 } from '../utils/s3.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { Media } from '../models/Media.js';
+import { connectDB } from '../utils/db.js';
+import config from '../utils/config.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Middleware for auth if needed, but for now keeping it open or using same as existing if required by client
-// router.use(authMiddleware);
+// Middleware for auth
+router.use(authMiddleware);
 
 // Helper to clean and validate response
 const cleanResponse = (data: any[]) => {
     return data.map(item => typeof item === 'string' ? item.trim() : item).filter(item => item && item.length > 0);
 };
+
+// ============================================================================
+// AI MEDIA GENERATION
+// ============================================================================
+
+// POST /api/ai/generate-image
+router.post('/generate-image', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { prompt, style, aspectRatio } = req.body;
+        const userId = req.user!.userId;
+
+        // Enhance prompt with style
+        const fullPrompt = style ? `${style} style. ${prompt}` : prompt;
+
+        const { s3Key, s3Url } = await generateImage(
+            fullPrompt,
+            userId, // Using userId as projectId for now or 'user-gen'
+            `gen_img_${Date.now()}`,
+            { aspectRatio: aspectRatio || '16:9' }
+        );
+
+        // Create Media Record
+        const media = await Media.create({
+            userId,
+            key: s3Key,
+            fileName: `AI Image - ${prompt.substring(0, 20)}...`,
+            contentType: 'image/png', // AIGenerator usually returns png or jpg
+            size: 0, // We might not know size without head request or from buffer in util
+            bucket: config.awsS3Bucket,
+            purpose: 'ai-image',
+            metadata: {
+                prompt,
+                style,
+                aspectRatio
+            }
+        });
+
+        res.json({ success: true, data: { media, url: s3Url } });
+    } catch (error: any) {
+        console.error('Image generation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate image' });
+    }
+});
+
+// POST /api/ai/generate-voice
+router.post('/generate-voice', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { text, voice } = req.body;
+        const userId = req.user!.userId;
+
+        const { s3Key, s3Url } = await generateAudio(
+            text,
+            userId,
+            `gen_voice_${Date.now()}`,
+            { voice }
+        );
+
+        // Create Media Record
+        const media = await Media.create({
+            userId,
+            key: s3Key,
+            fileName: `AI Voice - ${text.substring(0, 20)}...`,
+            contentType: 'audio/mpeg',
+            size: 0,
+            bucket: config.awsS3Bucket,
+            purpose: 'ai-voice',
+            metadata: {
+                text,
+                voice
+            }
+        });
+
+        res.json({ success: true, data: { media, url: s3Url } });
+    } catch (error: any) {
+        console.error('Voice generation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate voice' });
+    }
+});
+
+// POST /api/ai/generate-video
+router.post('/generate-video', async (req: AuthRequest, res) => {
+    try {
+        const { prompt, duration, aspectRatio } = req.body;
+
+        const { jobId } = await generateVideo({
+            prompt,
+            duration: duration || 5,
+            aspectRatio: aspectRatio || '16:9'
+        });
+
+        res.json({ success: true, data: { jobId } });
+    } catch (error: any) {
+        console.error('Video generation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate video' });
+    }
+});
+
+// GET /api/ai/video-status/:jobId
+router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { jobId } = req.params;
+        const userId = req.user!.userId;
+
+        const status = await checkVideoStatus(jobId);
+
+        if (status.status === 'completed' && status.videoUrl) {
+            // Check if media already exists for this job to avoid duplicates on polling
+            const existingMedia = await Media.findOne({ 'metadata.jobId': jobId });
+
+            if (existingMedia) {
+                return res.json({ success: true, data: { ...status, media: existingMedia } });
+            }
+
+            // Save external URL to media record (or download and upload if needed, but keeping simple)
+            // Note: Media model expects 'key' usually. If it's external URL, we might need adjustments or just store URL in key and handle it.
+            // But assume Media handles key as path. 
+            // Better: 'checkVideoStatus' usually returns a signed URL or public URL.
+            // Ideally we should download and upload to our S3 to own it. 
+            // For now, let's treat videoUrl as the key/url.
+
+            const media = await Media.create({
+                userId,
+                key: status.videoUrl, // Storing full URL as key for external hosted
+                fileName: `AI Video - ${jobId}`,
+                contentType: 'video/mp4',
+                size: 0,
+                bucket: 'external', // Flag as external
+                purpose: 'ai-video',
+                metadata: {
+                    jobId,
+                    status: 'completed'
+                }
+            });
+
+            return res.json({ success: true, data: { ...status, media } });
+        }
+
+        res.json({ success: true, data: status });
+    } catch (error: any) {
+        console.error('Video status check error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to check video status' });
+    }
+});
+
+// POST /api/ai/generate-captions (Mock/Placeholder for now as it relies on timeline audio)
+router.post('/generate-captions', async (req: AuthRequest, res) => {
+    try {
+        // In a real app, this would receive an audio file or timeline JSON
+        // For now, return mock captions
+        await new Promise(r => setTimeout(r, 1000));
+        res.json({ success: true, data: { message: 'Captions generated successfully' } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: 'Failed to generate captions' });
+    }
+});
 
 // POST /api/ai/headlines
 router.post('/headlines', async (req, res) => {

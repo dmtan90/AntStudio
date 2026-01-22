@@ -7,11 +7,11 @@ import ToolbarOpacityOption from '../common/opacity.vue';
 </script>
 
 <template>
-  <div class="flex items-center h-full w-full overflow-x-scroll scrollbar-hidden">
+  <div class="flex items-center h-full w-full overflow-x-auto custom-scrollbar flex-nowrap gap-3.5 px-1 py-1">
     <ToolbarStrokeOption />
-    <el-divider direction="vertical" class="h-8" />
+    <div class="w-px h-6 bg-white/10 shrink-0 mx-1" />
     <ToolbarOpacityOption />
-    <el-divider direction="vertical" class="h-8" />
+    <div class="w-px h-6 bg-white/10 shrink-0 mx-1" />
     <ToolbarTimelineOption />
   </div>
 </template>

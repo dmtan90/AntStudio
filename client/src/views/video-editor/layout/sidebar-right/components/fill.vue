@@ -198,90 +198,144 @@ const modeOptions = [
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="flex items-center h-14 border-b px-4 gap-2.5">
-      <h2 class="font-semibold">Fill</h2>
-      <el-button circle text class="ml-auto h-7 w-7" @click="onToggleFill">
-        <template v-if="disabled">
-          <EyeOff :size="15" :stroke-width="2" />
-        </template>
-        <template v-else>
-          <Eye :size="15" :stroke-width="2" />
-        </template>
-      </el-button>
-      <el-button circle :icon="X" class="bg-card" @click="editor.setActiveSidebarRight(null)" />
+  <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group">
+      <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+      <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Fill</h2>
+      <div class="flex items-center gap-2 relative z-10">
+        <button class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300" @click="onToggleFill">
+           <template v-if="disabled">
+            <EyeOff :size="14" />
+          </template>
+          <template v-else>
+            <Eye :size="14" />
+          </template>
+        </button>
+        <button class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300" @click="editor.setActiveSidebarRight(null)">
+          <X :size="14" />
+        </button>
+      </div>
     </div>
-    <section :class="cn('sidebar-container overflow-x-scroll scrollbar-hidden px-4 py-4', !disabled ? 'opacity-100 pointer-events-auto' : 'opacity-50 pointer-events-none')">
-      <el-segmented v-model="mode" :options="modeOptions" block style="--el-border-radius-base: 20px;" @change="(value) => onChangeMode(value)">
-        <template #default="scope">
-          <div class="flex flex-col items-center gap-2">
-            <template v-if="scope.item.value == 'solid'">
-              <span class="text-xs h-full gap-1 flex items-center">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <circle cx="8" cy="8" r="4" fill="currentColor" fill-opacity="0.9" />
-                  <circle opacity="0.75" cx="8" cy="8" r="5.5" stroke="currentColor" stroke-opacity="0.9" />
-                </svg>
-                <span>Solid</span>
-              </span>
-            </template>
-            <template v-else>
-              <span class="text-xs h-full gap-1 flex items-center">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <circle cx="8" cy="8" r="4" fill="url(#fill-gradient)" fill-opacity="0.9" />
-                  <circle opacity="0.75" cx="8" cy="8" r="5.5" stroke="currentColor" stroke-opacity="0.9" />
-                  <defs>
-                    <linearGradient id="fill-gradient" x1="8" y1="4" x2="8" y2="12" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="currentColor" />
-                      <stop offset="1" stop-color="currentColor" stop-opacity="0" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <span>Gradient</span>
-              </span>
-            </template>
-          </div>
-        </template>
-      </el-segmented>
-      <div class="flex flex-col divide-y">
-        <div class="pb-4 pt-4 flex flex-col gap-4">
-          <div v-if="mode === 'gradient'" ref="containerRef">
+
+    <!-- Content -->
+    <section :class="cn('flex-1 overflow-y-auto custom-scrollbar px-5 py-6', !disabled ? 'opacity-100 pointer-events-auto' : 'opacity-30 pointer-events-none grayscale transition-all duration-500')">
+        <!-- Mode Switcher -->
+        <div class="bg-white/5 p-1 rounded-2xl border border-white/10 flex mb-8">
+           <button 
+             v-for="opt in modeOptions" 
+             :key="opt.value"
+             @click="onChangeMode(opt.value)"
+             class="flex-1 py-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300"
+             :class="[mode === opt.value ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'text-white/40 hover:text-white hover:bg-white/10']"
+           >
+              {{ opt.label }}
+           </button>
+        </div>
+
+      <div class="flex flex-col gap-10">
+        <!-- Picker Section -->
+        <div class="flex flex-col gap-6">
+          <div v-if="mode === 'gradient'" ref="containerRef" class="mb-2">
             <GradientSlider :width="measure.width" :colors="colors" :coords="coords" :selected="index" @select="index = $event" @change="onChangeOffset" @rotate="onRotateGradient" />
           </div>
-          <ChromePicker v-model="color" @update:model-value="(color) => onChangeColor(tinycolor(color))" class="shadow-none w-full" />
-          <el-button v-if="eyeDropperStatus" text bg round :icon="Aiming" class="w-full" @click="onOpenEyeDropper">
-            <span>Pickup color</span>
-          </el-button>
+          
+          <div class="rounded-2xl overflow-hidden border border-white/10 dark-picker-override shadow-2xl bg-black/20">
+             <ChromePicker v-model="color" @update:model-value="(color) => onChangeColor(tinycolor(color))" class="!w-full !shadow-none !bg-transparent" />
+          </div>
+
+          <button v-if="eyeDropperStatus" class="flex items-center justify-center gap-2.5 h-10 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-brand-primary/20 hover:text-brand-primary active:scale-95 transition-all text-white/40 shadow-sm" @click="onOpenEyeDropper">
+             <Pipette :size="16" />
+             <span class="text-[10px] font-bold uppercase tracking-widest">Page Eyedropper</span>
+          </button>
         </div>
-        <template v-if="editor.mode === 'creator' || !editor.adapter.brand">
-          <!-- Render nothing -->
-        </template>
-        <template v-else>
-          <div class="flex flex-col gap-4 py-5">
-            <h4 class="text-xs font-semibold line-clamp-1">Brand Kit</h4>
-            <div class="grid grid-cols-8 gap-2.5">
-              <button v-for="code in editor.adapter.brand.primary_colors.concat(editor.adapter.brand.secondary_colors)" :key="code" @click="onSelectColorFromSwatch(code)" class="w-full aspect-square rounded border border-gray-400 transition-transform hover:scale-110" :style="{ backgroundColor: code }" />
+        
+        <!-- Swatches Sections -->
+        <div class="flex flex-col gap-8 divide-y divide-white/5 pb-20">
+          <template v-if="editor.mode !== 'creator' && editor.adapter.brand">
+             <div class="flex flex-col gap-4 py-2">
+              <h4 class="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Brand Kit</h4>
+              <div class="grid grid-cols-8 gap-3">
+                <button v-for="code in (editor.adapter.brand.primary_colors || []).concat(editor.adapter.brand.secondary_colors || [])" :key="code" @click="onSelectColorFromSwatch(code)" class="w-full aspect-square rounded-full border border-white/10 transition-all hover:scale-125 hover:shadow-lg hover:shadow-black/40 hover:z-10" :style="{ backgroundColor: code }" />
+              </div>
+            </div>
+          </template>
+          
+          <div class="flex flex-col gap-4 pt-6">
+            <h4 class="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Light Colors</h4>
+            <div class="grid grid-cols-8 gap-3">
+              <button v-for="code in lightHexCodes" :key="code" @click="onSelectColorFromSwatch(code)" class="w-full aspect-square rounded-full border border-white/10 transition-all hover:scale-125 hover:shadow-lg hover:shadow-black/40 hover:z-10" :style="{ backgroundColor: code }" />
             </div>
           </div>
-        </template>
-        <div class="flex flex-col gap-4 py-5">
-          <h4 class="text-xs font-semibold line-clamp-1">Light Colors</h4>
-          <div class="grid grid-cols-8 gap-2.5">
-            <button v-for="code in lightHexCodes" :key="code" @click="onSelectColorFromSwatch(code)" class="w-full aspect-square rounded border border-gray-400 transition-transform hover:scale-110" :style="{ backgroundColor: code }" />
+
+          <div class="flex flex-col gap-4 pt-6">
+            <h4 class="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Dark Colors</h4>
+            <div class="grid grid-cols-8 gap-3">
+              <button v-for="code in darkHexCodes" :key="code" @click="onSelectColorFromSwatch(code)" class="w-full aspect-square rounded-full border border-white/10 transition-all hover:scale-125 hover:shadow-lg hover:shadow-black/40 hover:z-10" :style="{ backgroundColor: code }" />
+            </div>
           </div>
-        </div>
-        <div class="flex flex-col gap-4 py-5">
-          <h4 class="text-xs font-semibold line-clamp-1">Dark Colors</h4>
-          <div class="grid grid-cols-8 gap-2.5">
-            <button v-for="code in darkHexCodes" :key="code" @click="onSelectColorFromSwatch(code)" class="w-full aspect-square rounded border border-gray-400 transition-transform hover:scale-110" :style="{ backgroundColor: code }" />
-          </div>
-        </div>
-        <div class="flex flex-col gap-4 py-5">
-          <h4 class="text-xs font-semibold line-clamp-1">Pastel Colors</h4>
-          <div class="grid grid-cols-8 gap-2.5">
-            <button v-for="code in pastelHexCodes" :key="code" @click="onSelectColorFromSwatch(code)" class="w-full aspect-square rounded border border-gray-400 transition-transform hover:scale-110" :style="{ backgroundColor: code }" />
+
+          <div class="flex flex-col gap-4 pt-6">
+            <h4 class="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Pastel Colors</h4>
+            <div class="grid grid-cols-8 gap-3">
+              <button v-for="code in pastelHexCodes" :key="code" @click="onSelectColorFromSwatch(code)" class="w-full aspect-square rounded-full border border-white/10 transition-all hover:scale-125 hover:shadow-lg hover:shadow-black/40 hover:z-10" :style="{ backgroundColor: code }" />
+            </div>
           </div>
         </div>
       </div>
     </section>
   </div>
 </template>
+
+<style scoped>
+.dark-picker-override :deep(.vc-chrome) {
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+
+.dark-picker-override :deep(.vc-chrome-body) {
+    background: rgba(255, 255, 255, 0.03) !important;
+    padding: 16px !important;
+}
+
+.dark-picker-override :deep(.vc-chrome-fields-wrap) {
+    padding-top: 16px !important;
+}
+
+.dark-picker-override :deep(.vc-chrome-fields .vc-input__input) {
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    height: 24px !important;
+    padding: 0 4px !important;
+    font-weight: 600 !important;
+}
+
+.dark-picker-override :deep(.vc-chrome-fields .vc-input__label) {
+    color: rgba(255, 255, 255, 0.3) !important;
+    text-transform: uppercase !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.1em !important;
+}
+
+.dark-picker-override :deep(.vc-chrome-alpha-wrap), 
+.dark-picker-override :deep(.vc-chrome-hue-wrap) {
+    height: 10px !important;
+}
+
+.dark-picker-override :deep(.vc-chrome-color-wrap) {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    border: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark-picker-override :deep(.vc-chrome-toggle-btn) {
+    display: none !important;
+}
+</style>

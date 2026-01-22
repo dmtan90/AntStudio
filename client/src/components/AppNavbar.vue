@@ -93,7 +93,7 @@
           <GDropdown trigger="click" @command="handleCommand">
             <div class="user-badge glass-dark">
               <span class="user-name">{{ user.name }}</span>
-              <GMedia v-if="user.avatar" :src="user.avatar" class="user-avatar" />
+              <el-avatar v-if="user.avatar" :src="getFileUrl(user.avatar)" class="user-avatar" />
               <div v-else class="avatar-placeholder">{{ user.name.charAt(0) }}</div>
             </div>
             <template #dropdown>

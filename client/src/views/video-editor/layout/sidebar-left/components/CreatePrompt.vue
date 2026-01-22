@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useMutation } from '@tanstack/vue-query';
 import { toast } from 'vue-sonner';
-
+import { getFileUrl } from '@/utils/api';
 import { Plus, Search } from '@icon-park/vue-next';
 import { ElButton, ElInput, ElTabs, ElTabPane } from 'element-plus';
 import Label from 'video-editor/components/ui/label.vue';
@@ -47,37 +47,63 @@ const tabOptions = [
 
 
 <template>
-  <section class="sidebar-container py-4 px-3.5 create-prompt-container">
-    <div class="flex flex-col gap-4">
-      <div class="space-y-1.5">
-        <Label class="text-xs text-foreground/75">Which format do you want?</Label>
-        <el-segmented v-model="format" :options="tabOptions" class="w-full" />
-        <!--<el-tabs v-model="format" type="card" stretch>
-          <el-tab-pane label="Feed" name="feed" />
-          <el-tab-pane label="Story" name="story" />
-          <el-tab-pane label="Banner" name="banner" />
-        </el-tabs>-->
+  <section class="sidebar-container pt-6 pb-20 px-5 create-prompt-container">
+    <div class="flex flex-col gap-6">
+      <div class="space-y-3">
+        <Label class="text-[10px] font-bold uppercase tracking-widest text-white/40">Select Format</Label>
+        <el-segmented v-model="format" :options="tabOptions" class="w-full cinematic-segmented" />
       </div>
-      <div class="space-y-1.5">
-        <Label class="text-xs text-foreground/75">Provide topic with detailed instructions</Label>
-        <el-input type="textarea" :rows="5" class="text-xs min-h-20 h-24 max-h-40" :model-value="prompt" @update:model-value="prompt = $event" />
+      <div class="space-y-3">
+        <Label class="text-[10px] font-bold uppercase tracking-widest text-white/40">Topic & Instructions</Label>
+        <el-input 
+          type="textarea" 
+          :rows="6" 
+          placeholder="Describe your video project in detail..."
+          class="cinematic-input !text-xs" 
+          :model-value="prompt" 
+          @update:model-value="prompt = $event" 
+        />
       </div>
     </div>
-    <el-button type="primary" class="w-full mt-10" @click="handleCreateVideo">
-      Generate
-    </el-button>
+    
+    <div class="mt-10">
+      <button 
+        class="w-full h-10 rounded-xl bg-gradient-to-r from-brand-primary to-purple-600 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
+        @click="handleCreateVideo"
+      >
+        <Plus :size="14" :stroke-width="4" />
+        Generate Scene
+      </button>
+      
+      <p class="text-[9px] font-bold uppercase tracking-wider text-white/20 text-center mt-4 px-4 leading-relaxed">
+        AI will generate scenes, logic, and assets based on your prompt.
+      </p>
+    </div>
   </section>
 </template>
 
 <style>
-.create-prompt-container {
-  .el-segmented {
-    /*--el-segmented-item-selected-color: var(--el-color-primary) !important;
-    --el-segmented-item-selected-bg-color: var(--el-fill-color-light) !important;*/
-    --el-border-radius-base: 16px !important;
-    .el-segmented__item {
-      padding: 1px !important;
-    }
-  }
+.cinematic-segmented.el-segmented {
+  --el-segmented-bg-color: rgba(255, 255, 255, 0.03);
+  --el-segmented-item-hover-bg-color: rgba(255, 255, 255, 0.05);
+  --el-segmented-item-selected-bg-color: rgba(255, 255, 255, 0.1);
+  --el-segmented-item-selected-color: #fff;
+  --el-border-radius-base: 12px;
+  background-color: var(--el-segmented-bg-color);
+  padding: 4px;
+  border: 1px border rgba(255, 255, 255, 0.05);
+}
+
+.cinematic-segmented .el-segmented__item {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.cinematic-segmented .el-segmented__item.is-selected {
+  color: #fff;
 }
 </style>

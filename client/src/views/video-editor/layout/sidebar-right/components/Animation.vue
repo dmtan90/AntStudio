@@ -33,29 +33,29 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full animation-container">
-    <div class="flex items-center h-14 border-b px-4 gap-2.5">
-      <h2 class="font-semibold">Animations</h2>
-      <el-button circle :icon="X" class="ml-auto" @click="editor.setActiveSidebarRight(null)" />
+  <div class="flex flex-col h-full cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group">
+      <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+      <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Animations</h2>
+      <button class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300 relative z-10" @click="editor.setActiveSidebarRight(null)">
+        <X :size="14" />
+      </button>
     </div>
-    <section class="flex flex-col sidebar-container px-4 py-4 overflow-hidden">
-      <el-tabs v-model="activeTab" stretch>
-        <el-tab-pane label="Page" name="page">
+
+    <!-- Tabs Content -->
+    <section class="flex-1 overflow-hidden">
+      <el-tabs v-model="activeTab" stretch class="h-full cinematic-tabs">
+        <el-tab-pane label="Page" name="page" class="h-full">
           <PageAnimation />
         </el-tab-pane>
-        <el-tab-pane label="Element" name="element">
+        <el-tab-pane label="Element" name="element" class="h-full">
           <ElementAnimation />
         </el-tab-pane>
       </el-tabs>
     </section>
   </div>
 </template>
-
-<style>
-.animation-container {
-  /*.el-segmented {
-    height: 32px;
-    --el-border-radius-base: 16px;
-  }*/
-}
+<style scoped>
+/* Scoped styles if needed */
 </style>

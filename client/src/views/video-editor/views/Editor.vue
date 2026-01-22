@@ -8,14 +8,14 @@
     </section>
   </template>
   <template v-else-if="status === 'complete'">
-    <section class="h-[100dvh] overflow-hidden flex flex-col select-none relative">
+    <section class="h-[100dvh] overflow-hidden flex flex-col select-none relative bg-[#0a0a0a]">
       <EditorMenubar />
       <main class="flex-1 flex w-full h-[calc(100dvh-56px)]">
         <EditorSidebarLeft />
         <section class="flex-1 flex flex-col relative w-0 pb-16 sm:pb-0">
-          <EditorToolbar v-if="active"/>
+          <EditorToolbar v-if="active" />
           <div class="flex-1 relative overflow-hidden" id="workspace">
-            <template v-for="(page, index) in pages" :key="page.id" >
+            <template v-for="(page, index) in pages" :key="page.id">
               <EditorCanvas :id="page.id" />
             </template>
             <EditorControls />

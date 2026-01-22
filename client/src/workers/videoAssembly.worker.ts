@@ -1,5 +1,5 @@
 
-import { Combinator, MP4Clip, AudioClip, OffscreenSprite } from "@webav/av-cliper";
+import { Combinator, MP4Clip, AudioClip, OffscreenSprite, ImgClip } from "@webav/av-cliper";
 
 self.onmessage = async (event: MessageEvent<any>) => {
     const { project, options, token } = event.data;
@@ -24,27 +24,47 @@ self.onmessage = async (event: MessageEvent<any>) => {
         const totalProjectDuration = segments.reduce((acc: number, s: any) => acc + (s.duration || 0), 0);
 
         // Helper to fetch and cache data to avoid redundant network requests for two-pass rendering
-        const segmentData: Array<{ blob: Blob, duration: number }> = [];
+        const segmentData: Array<{
+            blob: Blob,
+            audioBlob?: Blob,
+            duration: number,
+            type: 'video' | 'image'
+        }> = [];
 
         console.log("[Worker] Fetching segments...");
         for (let i = 0; i < segments.length; i++) {
             const seg = segments[i];
-            const s3Key = seg.generatedVideo?.s3Key || seg.s3Key;
+            const videoKey = seg.generatedVideo?.s3Key;
+            const imageKey = seg.sceneImage;
+
+            const s3Key = videoKey || imageKey;
             if (!s3Key) continue;
 
-            self.postMessage({ type: 'progress', progress: (i / segments.length) * 0.1, status: `Downloading clip ${i + 1}...` });
-            const videoUrl = s3Key.startsWith('http') ? s3Key : `/api/s3/${encodeURIComponent(s3Key)}`;
+            const type = videoKey ? 'video' : 'image';
+            self.postMessage({ type: 'progress', progress: (i / segments.length) * 0.1, status: `Downloading ${type} ${i + 1}...` });
+
+            // 1. Fetch Visual Data
+            const mediaUrl = s3Key.startsWith('http') ? s3Key : `/api/s3/${encodeURIComponent(s3Key)}`;
             const fetchOptions: RequestInit = {};
-            if (token && !videoUrl.startsWith('http')) {
+            if (token && !mediaUrl.startsWith('http')) {
                 fetchOptions.headers = { 'Authorization': `Bearer ${token}` };
             }
-            const resp = await fetch(videoUrl, fetchOptions);
-            if (!resp.ok) continue;
 
-            const blob = await resp.blob();
+            const [mediaResp, audioResp] = await Promise.all([
+                fetch(mediaUrl, fetchOptions),
+                // Try to fetch segment-specific voice track if it exists
+                (seg.generatedAudio?.s3Key || seg.voiceAudioKey) ? fetch((seg.generatedAudio?.s3Key || seg.voiceAudioKey).startsWith('http') ? (seg.generatedAudio?.s3Key || seg.voiceAudioKey) : `/api/s3/${encodeURIComponent(seg.generatedAudio?.s3Key || seg.voiceAudioKey)}`, fetchOptions) : Promise.resolve(null)
+            ]);
+
+            if (!mediaResp.ok) continue;
+            const blob = await mediaResp.blob();
+            const audioBlob = (audioResp && audioResp.ok) ? await audioResp.blob() : undefined;
+
             segmentData.push({
                 blob,
-                duration: seg.duration || 5
+                audioBlob,
+                duration: seg.duration || 5,
+                type
             });
         }
 
@@ -72,19 +92,25 @@ self.onmessage = async (event: MessageEvent<any>) => {
             let currentTime = 0;
             for (let i = 0; i < segmentData.length; i++) {
                 const data = segmentData[i];
-                const rawSeg = segments[i]; // Original segment data with transition info
+                const rawSeg = segments[i];
 
                 if (maxDuration && currentTime >= maxDuration) break;
 
-                const clip = new MP4Clip(data.blob.stream());
+                let clip;
+                if (data.type === 'video') {
+                    clip = new MP4Clip(data.blob.stream());
+                } else {
+                    clip = new ImgClip(data.blob, { duration: data.duration * 1e6 });
+                }
+
                 await clip.ready;
 
                 const spr = new OffscreenSprite(clip);
                 let clipDuration = Math.min(data.duration, maxDuration ? maxDuration - currentTime : data.duration);
 
-                // Transition Logic: Overlap with next segment if applicable
-                const transition = rawSeg.transition;
-                const transitionDur = (rawSeg.transitionDuration || 1); // seconds
+                // Transition Logic: Support fade, wipe
+                const transition = (i > 0) ? segments[i - 1].transition : null;
+                const transitionDur = (segments[i - 1]?.transitionDuration || 1); // seconds
 
                 spr.time = {
                     offset: currentTime * 1e6,
@@ -93,22 +119,39 @@ self.onmessage = async (event: MessageEvent<any>) => {
                 spr.rect.w = width;
                 spr.rect.h = height;
 
-                // Simple Fade-in effect for the second clip in a transition
-                if (i > 0 && segments[i - 1].transition === 'fade') {
-                    spr.setAnimation(
-                        {
-                            '0%': { opacity: 0 },
-                            '100%': { opacity: 1 }
-                        },
-                        { duration: transitionDur * 1e6 }
-                    );
+                if (transition === 'fade') {
+                    spr.setAnimation({
+                        '0%': { opacity: 0 },
+                        '100%': { opacity: 1 }
+                    }, { duration: transitionDur * 1e6 });
+                } else if (transition === 'wipe') {
+                    spr.setAnimation({
+                        '0%': { x: width },
+                        '100%': { x: 0 }
+                    }, { duration: transitionDur * 1e6 });
                 }
 
                 await com.addSprite(spr);
 
+                // Mix Segment Audio if present
+                if (data.audioBlob && !isReview) {
+                    const audioClip = new AudioClip(data.audioBlob.stream(), {
+                        volume: rawSeg.volume || 1
+                    });
+                    const aSpr = new OffscreenSprite(audioClip);
+                    aSpr.time = {
+                        offset: currentTime * 1e6,
+                        duration: clipDuration * 1e6
+                    };
+                    await com.addSprite(aSpr);
+                }
+
                 // If this segment has a transition to the NEXT one, overlap the start time
-                if (transition === 'fade' && i < segmentData.length - 1) {
-                    currentTime += (clipDuration - transitionDur);
+                const nextTransition = rawSeg.transition;
+                const nextTransitionDur = (rawSeg.transitionDuration || 1);
+
+                if ((nextTransition === 'fade' || nextTransition === 'wipe') && i < segmentData.length - 1) {
+                    currentTime += (clipDuration - nextTransitionDur);
                 } else {
                     currentTime += clipDuration;
                 }

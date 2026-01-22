@@ -57,6 +57,12 @@ interface ISegment {
         generatedAt?: Date
         duration?: number
     }
+    generatedAudio?: {
+        s3Key: string
+        s3Url: string
+        status: 'pending' | 'generating' | 'completed' | 'failed'
+        generatedAt?: Date
+    }
 }
 
 const SegmentSchema = new Schema<ISegment>({
@@ -107,6 +113,16 @@ const SegmentSchema = new Schema<ISegment>({
         veoJobId: String,
         generatedAt: Date,
         duration: Number
+    },
+    generatedAudio: {
+        s3Key: String,
+        s3Url: String,
+        status: {
+            type: String,
+            enum: ['pending', 'generating', 'completed', 'failed'],
+            default: 'pending'
+        },
+        generatedAt: Date
     }
 })
 

@@ -4,18 +4,28 @@ import { storeToRefs } from "pinia";
 import { useEditorStore } from 'video-editor/store/editor';
 import { useAudioStore } from 'video-editor/hooks/use-audio';
 import { toast } from 'vue-sonner';
+import { getFileUrl } from '@/utils/api';
+import { useUserMediaStore } from 'video-editor/hooks/use-user-media';
 import AudioItem from './AudioItem.vue';
+
 const props = defineProps<{ match: string | false, query: string | null, category: string | null }>();
 
 const editor = useEditorStore();
 const audioStore = useAudioStore() as any;
+const userMediaStore = useUserMediaStore();
 const { sounds, musics, soundCategories, musicCategories, loading, error, hasNextPage, currentPage } = storeToRefs(audioStore) as any;
 
-const onAddAudio = (audio: any) => {
-  const promise = (editor.canvas as any).onAddAudioFromSource(audio.source).then(element => {
-    (editor.canvas as any).audio.add(audio.source, audio.name, (element as any).name);
-  });
-  toast.promise(promise, { loading: "The audio asset is being loaded...", success: "The audio asset has been added to artboard", error: "Ran into an error adding the audio asset" });
+const onAddAudio = async (audio: any) => {
+  try {
+    const resolvedSource = await getFileUrl(audio.source, { cached: true });
+    const promise = (editor.canvas as any).onAddAudioFromSource(resolvedSource).then(element => {
+      (editor.canvas as any).audio.add(resolvedSource, audio.name, (element as any).name);
+    });
+    toast.promise(promise, { loading: "The audio asset is being loaded...", success: "The audio asset has been added to artboard", error: "Ran into an error adding the audio asset" });
+  } catch (error) {
+    console.error('Failed to resolve audio source:', error);
+    toast.error("Failed to load audio asset");
+  }
 };
 
 onMounted(() => {
@@ -25,61 +35,68 @@ onMounted(() => {
 
 const handleLoadMore = () => {
   console.log("handleLoadMore => Audio");
-  if(props.match == "sounds"){
-    if(loading.value || !hasNextPage.value){
+  if (props.match == "sounds") {
+    if (loading.value || !hasNextPage.value) {
       return;
     }
 
     const nextPage = currentPage.value + 1;
-    if(props.query){
+    if (props.query) {
       audioStore.searchSoundAppend(props.query, props.category, nextPage);
     }
-    else{
-      audioStore.loadSoundAppend(props.category, nextPage);  
+    else {
+      audioStore.loadSoundAppend(props.category, nextPage);
     }
   }
-  if(props.match == "musics"){
-    if(loading.value || !hasNextPage.value){
+  if (props.match == "musics") {
+    if (loading.value || !hasNextPage.value) {
       return;
     }
 
     const nextPage = currentPage.value + 1;
-    if(props.query){
+    if (props.query) {
       audioStore.searchMusicAppend(props.query, props.category, nextPage);
     }
-    else{
-      audioStore.loadMusicAppend(props.category, nextPage);  
+    else {
+      audioStore.loadMusicAppend(props.category, nextPage);
     }
+  }
+  if (props.match == "userAudios") {
+    if (userMediaStore.audios.loading || userMediaStore.audios.page >= userMediaStore.audios.pages) return;
+    userMediaStore.loadAudios(userMediaStore.audios.page + 1);
   }
 }
 
 const handleResetData = () => {
   console.log("handleResetData => Audio");
-  if(props.match == "sounds"){
-    if(loading.value){
+  if (props.match == "sounds") {
+    if (loading.value) {
       return;
     }
 
     const nextPage = 0;
-    if(props.query){
+    if (props.query) {
       audioStore.searchSound(props.query, props.category, nextPage);
     }
-    else{
-      audioStore.loadSound(props.category, nextPage);  
+    else {
+      audioStore.loadSound(props.category, nextPage);
     }
   }
-  if(props.match == "musics"){
-    if(loading.value){
+  if (props.match == "musics") {
+    if (loading.value) {
       return;
     }
 
     const nextPage = 0;
-    if(props.query){
+    if (props.query) {
       audioStore.searchMusic(props.query, props.category, nextPage);
     }
-    else{
-      audioStore.loadMusic(props.category, nextPage);  
+    else {
+      audioStore.loadMusic(props.category, nextPage);
     }
+  }
+  if (props.match == "userAudios") {
+    userMediaStore.refreshAudios();
   }
 };
 
@@ -92,22 +109,40 @@ defineExpose({
 
 <template>
   <template v-if="match === 'sounds'">
-    <template v-if="sounds.length">
+    <div v-if="sounds.length" class="flex flex-col gap-4">
       <AudioItem v-for="audio in sounds" :key="audio.source" :audio="audio" @click="onAddAudio(audio)" />
-    </template>
-    <template v-else>
-      <el-skeleton v-for="(_, index) in 3" :key="index" animated class="h-16 flex-1 rounded-md" />
-      <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none">No Audios</span>
-    </template>
+    </div>
+    <div v-else class="flex flex-col gap-4">
+      <el-skeleton v-for="(_, index) in 6" :key="index" animated class="h-16 w-full rounded-xl !bg-white/5" />
+      <span v-if="!loading"
+        class="text-[10px] font-bold text-white/20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none uppercase tracking-widest text-center">No
+        Audios Found</span>
+    </div>
   </template>
 
   <template v-if="match === 'musics'">
-    <template v-if="musics.length">
+    <div v-if="musics.length" class="flex flex-col gap-4">
       <AudioItem v-for="audio in musics" :key="audio.source" :audio="audio" @click="onAddAudio(audio)" />
-    </template>
-    <template v-else>
-      <el-skeleton v-for="(_, index) in 3" :key="index" animated class="h-16 flex-1 rounded-md" />
-      <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none">No Audios</span>
-    </template>
+    </div>
+    <div v-else class="flex flex-col gap-4">
+      <el-skeleton v-for="(_, index) in 6" :key="index" animated class="h-16 w-full rounded-xl !bg-white/5" />
+      <span v-if="!loading"
+        class="text-[10px] font-bold text-white/20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none uppercase tracking-widest text-center">No
+        Music Found</span>
+    </div>
+  </template>
+
+  <template v-if="match === 'userAudios'">
+    <div v-if="userMediaStore.audios.items.length" class="flex flex-col gap-4">
+      <AudioItem v-for="audio in userMediaStore.audios.items" :key="audio._id"
+        :audio="{ ...audio, source: audio.url, name: audio.fileName }"
+        @click="onAddAudio({ ...audio, source: audio.url, name: audio.fileName })" />
+    </div>
+    <div v-else class="flex flex-col gap-4">
+      <el-skeleton v-for="(_, index) in 6" :key="index" animated class="h-16 w-full rounded-xl !bg-white/5" />
+      <span v-if="!userMediaStore.audios.loading"
+        class="text-[10px] font-bold text-white/20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none uppercase tracking-widest text-center">No
+        Audio Found</span>
+    </div>
   </template>
 </template>

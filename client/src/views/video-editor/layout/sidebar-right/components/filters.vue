@@ -111,25 +111,47 @@ const intensity = computed({
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <div class="flex items-center h-14 border-b px-4 gap-2.5">
-      <h2 class="font-semibold">Filters</h2>
-      <el-button v-if="filterEnabled" :icon="EyeOff" type="danger" text bg round class="ml-auto" @click="removeFilters()">
-        <span>Reset</span>
-      </el-button>
-      <el-button circle :icon="X" :class="'bg-card ' + (filterEnabled ? '' : 'ml-auto')" @click="editor.setActiveSidebarRight(null)">
-      </el-button>
+  <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
+    <!-- Header -->
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group">
+      <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+      <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Filters</h2>
+      <div class="flex items-center gap-2 relative z-10">
+          <button v-if="filterEnabled" class="h-8 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-[10px] font-bold uppercase tracking-widest transition-all border border-red-500/20 flex items-center gap-2 active:scale-95 shadow-lg shadow-red-500/5" @click="removeFilters()">
+            <EyeOff :size="12" />
+            <span>RESET</span>
+          </button>
+        <button class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300" @click="editor.setActiveSidebarRight(null)">
+          <X :size="14" />
+        </button>
+      </div>
     </div>
-    <section class="flex flex-col sidebar-container px-4 py-4">
-      <el-segmented v-model="activeTab" :options="options" block style="--el-border-radius-base: 20px;"/>
-      <div class="relative overflow-x-scroll scrollbar-hidden">
+
+    <!-- Content -->
+    <section class="flex-1 overflow-y-auto custom-scrollbar relative px-5 pt-6 pb-20">
+      <div class="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-50"></div>
+      
+      <!-- Mode Switcher -->
+      <div class="bg-white/5 p-1 rounded-2xl border border-white/10 flex mb-8">
+          <button 
+            v-for="opt in options" 
+            :key="opt.value"
+            @click="activeTab = opt.value"
+            class="flex-1 py-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300"
+            :class="[activeTab === opt.value ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'text-white/40 hover:text-white hover:bg-white/10']"
+          >
+            {{ opt.label }}
+          </button>
+      </div>
+
+      <div class="relative overflow-hidden">
         <template v-if="activeTab == 'effects'">
-          <div class="grid grid-cols-2 gap-3 pt-3.5">
+          <div class="grid grid-cols-2 gap-4">
             <FilterItem v-for="filter in filters" :key="filter.name" :filter="filter" :selected="selected" @change="(intensity) => handleModifyFilter(filter, intensity)" @click="handleToggleFilter(filter)" />
           </div>
         </template>
         <template v-else>
-          <div class="flex flex-col gap-3 pt-3.5">
+          <div class="flex flex-col gap-5">
             <AdjustmentItem
               v-for="adjustment in adjustments"
               :key="adjustment.name"
@@ -142,9 +164,12 @@ const intensity = computed({
         </template>
       </div>
     </section>
-    <div class="flex items-center h-14 border-b px-4 gap-2.5" v-if="filterEnabled && activeTab == 'effects'">
-      <Label class="text-xs font-medium">Intensity</Label>
-      <el-slider :min="1" :max="100" :step="1" v-model="intensity" />
+
+    <!-- Footer Slider -->
+    <div class="flex items-center h-14 border-t border-white/5 px-5 gap-6 bg-white/5 backdrop-blur-md" v-if="filterEnabled && activeTab == 'effects'">
+      <Label class="text-[10px] font-bold text-white/40 uppercase tracking-widest shrink-0">Intensity</Label>
+      <el-slider :min="1" :max="100" :step="1" v-model="intensity" class="flex-1 cinematic-slider" />
+      <span class="text-[10px] font-bold font-mono text-white/60 w-8 text-right">{{ intensity }}%</span>
     </div>
   </div>
 </template>

@@ -1,45 +1,67 @@
 <template>
   <GDialog
     v-model="visible"
-    title="Buy Credits"
     width="800px"
     @close="handleClose"
   >
-    <div class="buy-credits-dialog">
-      <div class="credits-grid">
+    <template #header>
+      <div class="flex items-center gap-4">
+        <div class="h-10 w-1.5 bg-brand-primary rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+        <div class="flex flex-col">
+          <h3 class="text-xl font-black uppercase tracking-[0.2em] text-white/90">Credit Reservoir</h3>
+          <span class="text-[11px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Top up your balance for high-fidelity production</span>
+        </div>
+      </div>
+    </template>
+
+    <div class="buy-credits-dialog px-2 pb-2">
+      <div class="credits-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
         <div 
           v-for="pkg in creditPackages" 
           :key="pkg.id || pkg.name" 
-          class="credit-package" 
-          :class="{ featured: (pkg.credits / pkg.price) > 100 }"
+          :class="cn('credit-package relative group flex flex-col items-center justify-center bg-black/30 border rounded-[28px] p-8 cursor-pointer transition-all duration-500 hover:bg-black/60 hover:-translate-y-2 ring-1 ring-white/5', 
+            selectedPackage?.credits === pkg.credits ? 'border-brand-primary bg-brand-primary/[0.05] shadow-[0_15px_35px_rgba(59,130,246,0.2)]' : 'border-white/5 hover:border-white/10')"
           @click="selectPackage(pkg)"
         >
-          <div class="bonus-badge" v-if="(pkg.credits / pkg.price) > 100">
-            Extra {{ Math.round(((pkg.credits / pkg.price) - 100)) }}%
+          <div v-if="(pkg.credits / pkg.price) > 100" class="absolute -top-2 right-4 bg-brand-primary text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg">
+            +{{ Math.round(((pkg.credits / pkg.price) - 100)) }}% Bonus
           </div>
-          <div class="package-credits">{{ pkg.credits.toLocaleString() }} <span class="credits-icon">🪙</span></div>
-          <div class="package-label">Credits</div>
-          <div class="package-price">${{ pkg.price }}</div>
+          <div class="flex flex-col items-center">
+            <div class="package-credits text-3xl font-black text-white mb-1 tabular-nums">{{ pkg.credits.toLocaleString() }}</div>
+            <div class="package-label text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Credits</div>
+            <div :class="cn('package-price text-xl font-black tracking-tighter transition-colors', selectedPackage?.credits === pkg.credits ? 'text-white' : 'text-brand-primary group-hover:text-white')">${{ pkg.price }}</div>
+          </div>
         </div>
 
         <!-- Custom -->
-        <div class="credit-package custom" @click="contactUs">
-          <div class="package-credits">Custom</div>
-          <div class="package-label">Bulk credits</div>
-          <div class="package-sublabel">High-consuming<br>options</div>
-          <div class="package-action">Contact us</div>
+        <div @click="contactUs" class="credit-package custom relative group flex flex-col items-center justify-center bg-black/40 border border-white/10 rounded-[28px] p-8 cursor-pointer transition-all duration-500 hover:bg-black/60 hover:-translate-y-2 ring-1 ring-white/5">
+          <div class="package-credits text-xl font-black text-white/80 mb-2 uppercase tracking-widest">Custom</div>
+          <div class="package-label text-[9px] font-black text-white/20 uppercase tracking-[0.2em] text-center">High-volume<br>quotation</div>
         </div>
       </div>
 
-      <div class="credits-note">
-        <p>Credits validity: Unused credits purchased individually can directly purchase credits. Credits purchased individually will be valid for two years.</p>
+      <div class="credits-note bg-white/[0.03] border border-white/5 rounded-2xl p-5 mb-8 flex items-start gap-4 ring-1 ring-white/5">
+        <div class="mt-1 p-1.5 rounded-lg bg-white/5 border border-white/10">
+          <Attention :size="14" :stroke-width="5" class="text-white/40" />
+        </div>
+        <p class="text-[11px] font-bold text-white/40 leading-relaxed tracking-tight italic">
+          Reservoir Policy: Purchased credits are valid for twenty-four months from the date of acquisition. Direct top-ups will prioritize existing balances.
+        </p>
       </div>
 
-      <div class="payment-section" v-if="selectedPackage">
-        <GButton type="primary" class="pay-btn" @click="handlePayment">
-          <span>💳</span>
-          Pay now
-        </GButton>
+      <div class="payment-section flex justify-center mt-4">
+        <el-button 
+          @click="handlePayment" 
+          :disabled="!selectedPackage"
+          :class="cn('cinematic-button !h-14 !px-12 !rounded-[20px] !bg-brand-primary !text-white !border-transparent shadow-[0_12px_30px_rgba(59,130,246,0.3)] hover:!scale-[1.05] active:!scale-95 transition-all group disabled:!opacity-30 disabled:!scale-100 disabled:!shadow-none')"
+        >
+          <div class="flex items-center gap-4">
+             <div class="p-1.5 rounded-lg bg-white/20 group-hover:bg-white/30 transition-colors">
+                <Wallet :size="18" :stroke-width="6" />
+             </div>
+             <span class="text-xs font-black uppercase tracking-[0.2em]">Purchase Credits</span>
+          </div>
+        </el-button>
       </div>
     </div>
   </GDialog>
@@ -48,11 +70,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import GDialog from '@/components/ui/GDialog.vue'
-import GButton from '@/components/ui/GButton.vue'
 import { toast } from 'vue-sonner'
 import { useUserStore } from '@/stores/user'
 import { useConfigStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
+import { cn } from 'video-editor/lib/utils'
+import { Wallet, Attention } from '@icon-park/vue-next'
 
 const userStore = useUserStore()
 const configStore = useConfigStore()
@@ -88,10 +111,9 @@ const handlePayment = async () => {
     try {
       // Use ID directly from backend package if available, else fallback to cp_{credits}
       const packageId = selectedPackage.value.id || `cp_${selectedPackage.value.credits}`
-      
       await userStore.purchaseCredits(packageId)
-    } catch (error) {
-      console.error(error)
+    } catch (error: any) {
+      toast.error(error.message || 'Payment failed')
     }
   }
 }
@@ -107,153 +129,9 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.buy-credits-dialog {
-  padding: 20px 0;
-}
-
-.credits-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
 .credit-package {
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 24px 16px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-4px);
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  &.featured {
-    border-color: #ffab00;
-    background: linear-gradient(135deg, rgba(255, 171, 0, 0.1), rgba(255, 109, 0, 0.05));
-
-    &:hover {
-      border-color: #ffab00;
-      box-shadow: 0 8px 24px rgba(255, 171, 0, 0.3);
-    }
-  }
-
-  &.custom {
-    background: linear-gradient(135deg, rgba(100, 100, 100, 0.2), rgba(50, 50, 50, 0.1));
-    border-color: rgba(255, 255, 255, 0.2);
-
-    .package-credits {
-      font-size: 20px;
-      margin-bottom: 8px;
-    }
-
-    .package-sublabel {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.4);
-      margin: 8px 0;
-      line-height: 1.4;
-    }
-
-    .package-action {
-      margin-top: 12px;
-      padding: 8px 16px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-    }
-  }
-
-  .bonus-badge {
-    position: absolute;
-    top: -10px;
-    right: 10px;
-    background: linear-gradient(135deg, #ffab00, #ff6d00);
-    color: #000;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-  }
-
-  .package-credits {
-    font-size: 28px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 4px;
-
-    .credits-icon {
-      font-size: 20px;
-      margin-left: 4px;
-    }
-  }
-
-  .package-label {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .package-price {
-    font-size: 24px;
-    font-weight: 800;
-    color: #ffab00;
-  }
-}
-
-.credits-note {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 24px;
-
-  p {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    margin: 0;
-    line-height: 1.6;
-  }
-}
-
-.payment-section {
-  display: flex;
-  justify-content: center;
-
-  .pay-btn {
-    min-width: 200px;
-    font-size: 16px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    span {
-      font-size: 20px;
-    }
-  }
-}
-
-@media (max-width: 1024px) {
-  .credits-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .credits-grid {
-    grid-template-columns: repeat(2, 1fr);
+  &.selected {
+    box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
   }
 }
 </style>

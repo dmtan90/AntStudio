@@ -48,48 +48,28 @@ onMounted(() => {
 // };
 
 const visualType = computed({
-  get(){
+  get() {
     return selected.value?.visualType;
   },
 
-  set(value){
+  set(value) {
     canvas.value.onChangeActiveObjectProperty("visualType", value);
     // selected.value?.visualType = value;
   }
 })
 
 const visualProps = computed({
-  get(){
+  get() {
     return selected.value?.visualProps;
   },
 
-  set(value){
+  set(value) {
     // selected.value?.visualProps = value;
     canvas.value.onChangeActiveObjectProperty("visualProps", value);
   }
 })
 
-// const playtimeFont = computed({
-//   get(){
-//     let font = (visualProps.value?.playtimeFont ?? "18px Monaco").split(" ");
-//     return {
-//       size: parseInt(font[0]),
-//       family: font[1]
-//     }
-//   },
-
-//   set({size: number, family: string}){
-//     visualProps.value.playtimeFont = size + "px " + family;
-//     canvas.value.onChangeActiveObjectProperty("visualProps", visualProps.value);
-//   }
-// });
-
 watch(visualProps, (value) => {
-  // console.log("visualProps", value);
-  // const object = canvas.value.instance.getItemByName(selected.value.name);
-  // object?.set("visualProps", value);
-  // selected.value?.update();
-  // canvas.value.re
   canvas.value.onChangeActiveObjectProperty("visualProps", value);
 }, { deep: true });
 
@@ -98,216 +78,336 @@ const predefineColors = ref(['#E63415', '#FF6600', '#FFDE0A', '#1EC79D', '#14CCC
 </script>
 
 <template>
-  <div class="h-full w-full">
-    <div class="flex items-center h-14 border-b px-4 gap-2.5">
-      <h2 class="font-semibold">Visual</h2>
-      <el-button circle text class="ml-auto h-7 w-7" @click="canvas.onChangeActiveObjectProperty('visible', disabled)">
-        <template v-if="disabled">
-          <EyeOff :size="15" :stroke-width="2" />
-        </template>
-        <template v-else>
-          <Eye :size="15" :stroke-width="2" />
-        </template>
-      </el-button>
-      <el-button plain circle class="bg-card h-7 w-7" @click="editor.setActiveSidebarRight(null)">
-        <X :size="15" />
-      </el-button>
+  <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
+    <!-- Header -->
+    <div
+      class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header">
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700">
+      </div>
+      <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Visual</h2>
+      <div class="flex items-center gap-2 relative z-10">
+        <button @click="canvas.onChangeActiveObjectProperty('visible', disabled)"
+          :title="disabled ? 'Show Layer' : 'Hide Layer'"
+          class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300">
+          <template v-if="disabled">
+            <EyeOff :size="14" />
+          </template>
+          <template v-else>
+            <Eye :size="14" />
+          </template>
+        </button>
+        <button @click="editor.setActiveSidebarRight(null)"
+          class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300">
+          <X :size="14" />
+        </button>
+      </div>
     </div>
-    <section class="sidebar-container">
-      <div :class="cn('px-4 py-4 flex flex-col', !disabled ? 'opacity-100 pointer-events-auto' : 'opacity-50 pointer-events-none')">
-        <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-          <h4 class="text-xs font-semibold line-clamp-1">Wave Type</h4>
-          <el-select v-model="visualType" class="w-full">
-            <el-option value="bars" label="Bars" />
-            <el-option value="circle" label="Circle" />
-            <el-option value="line" label="Line" />
-            <el-option value="waveform" label="Waveform" />
+
+    <!-- Content -->
+    <section
+      :class="cn('flex-1 overflow-y-auto custom-scrollbar relative px-5 pt-6 pb-20 transition-all duration-500', disabled ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100 pointer-events-auto')">
+      <div
+        class="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-50">
+      </div>
+
+      <div class="flex flex-col gap-8">
+        <!-- Wave Type Selection -->
+        <div class="flex flex-col gap-3">
+          <h4 class="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Visualizer Mode</h4>
+          <el-select v-model="visualType" class="w-full cinematic-select" popper-class="cinematic-popover">
+            <el-option value="bars" label="BARS" />
+            <el-option value="circle" label="CIRCLE" />
+            <el-option value="line" label="LINE" />
+            <el-option value="waveform" label="WAVEFORM" />
           </el-select>
         </div>
-        <template v-if="visualType == 'bars'">
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Bar Width</h4>
-            <el-input-number v-model="visualProps.barWidth" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Bar Space</h4>
-            <el-input-number v-model="visualProps.barSpace" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Bar Color</h4>
-            <el-color-picker v-model="visualProps.barColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Caps Height</h4>
-            <el-input-number v-model="visualProps.capsHeight" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Caps Drop Speed</h4>
-            <el-input-number v-model="visualProps.capsDropSpeed" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Caps Color</h4>
-            <el-color-picker v-model="visualProps.capsColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Brick Height</h4>
-            <el-input-number v-model="visualProps.brickHeight" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Brick Space</h4>
-            <el-input-number v-model="visualProps.brickSpace" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Symmetric</h4>
-            <el-switch v-model="visualProps.symmetric" />
-          </div>
-        </template>
-        <template v-if="visualType == 'circle'">
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Line Width</h4>
-            <el-input-number v-model="visualProps.lineWidth" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Line Space</h4>
-            <el-input-number v-model="visualProps.lineSpace" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Outline Color</h4>
-            <el-color-picker v-model="visualProps.outlineColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Outline Width</h4>
-            <el-input-number v-model="visualProps.outlineWidth" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Bar Width</h4>
-            <el-input-number v-model="visualProps.barWidth" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Bar Color</h4>
-            <el-color-picker v-model="visualProps.barColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Progress</h4>
-            <el-switch v-model="visualProps.progress" />
-          </div>
-          <template v-if="visualProps.progress">
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Progress Width</h4>
-              <el-input-number v-model="visualProps.progressWidth" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Progress Color</h4>
-              <el-color-picker v-model="visualProps.progressColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Progress Clockwise</h4>
-              <el-switch v-model="visualProps.progressClockwise" />
+
+        <div class="border-t border-white/5 pt-8">
+          <!-- Bars Properties -->
+          <template v-if="visualType == 'bars'">
+            <div class="grid grid-cols-2 gap-x-5 gap-y-8">
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Bar Width</h4>
+                <el-input-number v-model="visualProps.barWidth" class="w-full cinematic-input-number" :min="1" :max="20"
+                  :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Bar Space</h4>
+                <el-input-number v-model="visualProps.barSpace" class="w-full cinematic-input-number" :min="1" :max="20"
+                  :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Bar Color</h4>
+                <div
+                  class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                  <el-color-picker v-model="visualProps.barColor" show-alpha :predefine="predefineColors" />
+                </div>
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Symmetric</h4>
+                <div class="h-10 flex items-center">
+                  <el-switch v-model="visualProps.symmetric" />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Caps Height</h4>
+                <el-input-number v-model="visualProps.capsHeight" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Drop Speed</h4>
+                <el-input-number v-model="visualProps.capsDropSpeed" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Caps Color</h4>
+                <div
+                  class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                  <el-color-picker v-model="visualProps.capsColor" show-alpha :predefine="predefineColors" />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Brick Height</h4>
+                <el-input-number v-model="visualProps.brickHeight" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Brick Space</h4>
+                <el-input-number v-model="visualProps.brickSpace" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
             </div>
           </template>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Outline Meter Space</h4>
-            <el-input-number v-model="visualProps.outlineMeterSpace" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Playtime</h4>
-            <el-switch v-model="visualProps.playtime" />
-          </div>
-          <template v-if="visualProps.playtime">
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Font Size</h4>
-              <el-input-number v-model="visualProps.playtimeFontSize" class="w-full" :min="1" :max="100" :step="1" controls-position="right"/>
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Font Family</h4>
-              <el-select v-model="visualProps.playtimeFontFamily" class="w-full">
-                <el-option v-for="font in fonts" :key="font.family" :value="font.family" :label="font.family" class="capitalize" :style="{ fontFamily: font.family }"></el-option>
-              </el-select>
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Color</h4>
-              <el-color-picker v-model="visualProps.playtimeColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
+
+          <!-- Circle Properties -->
+          <template v-if="visualType == 'circle'">
+            <div class="grid grid-cols-2 gap-x-5 gap-y-8">
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Line Width</h4>
+                <el-input-number v-model="visualProps.lineWidth" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Line Space</h4>
+                <el-input-number v-model="visualProps.lineSpace" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Outline</h4>
+                <el-input-number v-model="visualProps.outlineWidth" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Color</h4>
+                <div
+                  class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                  <el-color-picker v-model="visualProps.outlineColor" show-alpha :predefine="predefineColors" />
+                </div>
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Bar Width</h4>
+                <el-input-number v-model="visualProps.barWidth" class="w-full cinematic-input-number" :min="1" :max="20"
+                  :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Bar Color</h4>
+                <div
+                  class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                  <el-color-picker v-model="visualProps.barColor" show-alpha :predefine="predefineColors" />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-5 col-span-2 border-t border-white/5 pt-8">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-[11px] font-bold text-white/80 uppercase tracking-widest">Progress Bar</h4>
+                  <el-switch v-model="visualProps.progress" />
+                </div>
+                <template v-if="visualProps.progress">
+                  <div class="grid grid-cols-2 gap-x-5 gap-y-6 bg-white/2 p-4 rounded-2xl border border-white/5">
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Width</h4>
+                      <el-input-number v-model="visualProps.progressWidth" class="w-full cinematic-input-number"
+                        :min="1" :max="20" :step="1" controls-position="right" />
+                    </div>
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Color</h4>
+                      <div
+                        class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                        <el-color-picker v-model="visualProps.progressColor" show-alpha :predefine="predefineColors" />
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between col-span-2 py-2">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Clockwise</h4>
+                      <el-switch v-model="visualProps.progressClockwise" />
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Meter Space</h4>
+                <el-input-number v-model="visualProps.outlineMeterSpace" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex items-center justify-between pt-6">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Rotate Graph</h4>
+                <el-switch v-model="visualProps.rotateGraph" />
+              </div>
+
+              <div class="flex flex-col gap-5 col-span-2 border-t border-white/5 pt-8">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-[11px] font-bold text-white/80 uppercase tracking-widest">Playtime Display</h4>
+                  <el-switch v-model="visualProps.playtime" />
+                </div>
+                <template v-if="visualProps.playtime">
+                  <div class="grid grid-cols-2 gap-x-5 gap-y-6 bg-white/2 p-4 rounded-2xl border border-white/5">
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Font Size</h4>
+                      <el-input-number v-model="visualProps.playtimeFontSize" class="w-full cinematic-input-number"
+                        :min="1" :max="100" :step="1" controls-position="right" />
+                    </div>
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Family</h4>
+                      <el-select v-model="visualProps.playtimeFontFamily" class="w-full cinematic-select"
+                        popper-class="cinematic-popover">
+                        <el-option v-for="font in fonts" :key="font.family" :value="font.family" :label="font.family"
+                          class="capitalize" :style="{ fontFamily: font.family }"></el-option>
+                      </el-select>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Color</h4>
+                      <div
+                        class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                        <el-color-picker v-model="visualProps.playtimeColor" show-alpha :predefine="predefineColors" />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
             </div>
           </template>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Rotate Graph</h4>
-            <el-switch v-model="visualProps.rotateGraph" />
-          </div>
-          <!--<div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Rotate Speed</h4>
-            <el-input-number v-model="visualProps.rotateSpeed" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>-->
-        </template>
-        <template v-if="visualType == 'line'">
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Line Width</h4>
-            <el-input-number v-model="visualProps.lineWidth" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Line Color</h4>
-            <el-color-picker v-model="visualProps.lineColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-          </div>
-        </template>
-        <template v-if="visualType == 'waveform'">
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Line Width</h4>
-            <el-input-number v-model="visualProps.noplayedLineWidth" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Line Color</h4>
-            <el-color-picker v-model="visualProps.noplayedLineColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Played Line Width</h4>
-            <el-input-number v-model="visualProps.playedLineWidth" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Played Line Color</h4>
-            <el-color-picker v-model="visualProps.playedLineColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-          </div>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Playtime</h4>
-            <el-switch v-model="visualProps.playtime" />
-          </div>
-          <template v-if="visualProps.playtime">
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime With Ms</h4>
-              <el-switch v-model="visualProps.playtimeWithMs" />
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Font Size</h4>
-              <el-input-number v-model="visualProps.playtimeFontSize" class="w-full" :min="1" :max="100" :step="1" controls-position="right"/>
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Font Family</h4>
-              <el-select v-model="visualProps.playtimeFontFamily" class="w-full">
-                <el-option v-for="font in fonts" :key="font.family" :value="font.family" :label="font.family" class="capitalize" :style="{ fontFamily: font.family }"></el-option>
-              </el-select>
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Color</h4>
-              <el-color-picker v-model="visualProps.playtimeFontColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Text Bottom</h4>
-              <el-switch v-model="visualProps.playtimeTextBottom" />
+
+          <!-- Line Properties -->
+          <template v-if="visualType == 'line'">
+            <div class="grid grid-cols-2 gap-x-5 gap-y-8">
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Line Width</h4>
+                <el-input-number v-model="visualProps.lineWidth" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Line Color</h4>
+                <div
+                  class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                  <el-color-picker v-model="visualProps.lineColor" show-alpha :predefine="predefineColors" />
+                </div>
+              </div>
             </div>
           </template>
-          <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-            <h4 class="text-xs font-semibold line-clamp-1">Playtime Slider</h4>
-            <el-switch v-model="visualProps.playtimeSlider" />
-          </div>
-          <template v-if="visualProps.playtimeSlider">
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Slider Width</h4>
-              <el-input-number v-model="visualProps.playtimeSliderWitdh" class="w-full" :min="1" :max="20" :step="1" controls-position="right"/>
-            </div>
-            <div class="pb-4 grid grid-cols-2 gap-2 items-center">
-              <h4 class="text-xs font-semibold line-clamp-1">Playtime Slider Color</h4>
-              <el-color-picker v-model="visualProps.playtimeSliderColor" class="justify-self-start" show-alpha :predefine="predefineColors" />
+
+          <!-- Waveform Properties -->
+          <template v-if="visualType == 'waveform'">
+            <div class="grid grid-cols-2 gap-x-5 gap-y-8">
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Line Width</h4>
+                <el-input-number v-model="visualProps.noplayedLineWidth" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Line Color</h4>
+                <div
+                  class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                  <el-color-picker v-model="visualProps.noplayedLineColor" show-alpha :predefine="predefineColors" />
+                </div>
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Played Width</h4>
+                <el-input-number v-model="visualProps.playedLineWidth" class="w-full cinematic-input-number" :min="1"
+                  :max="20" :step="1" controls-position="right" />
+              </div>
+              <div class="flex flex-col gap-3">
+                <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Played Color</h4>
+                <div
+                  class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                  <el-color-picker v-model="visualProps.playedLineColor" show-alpha :predefine="predefineColors" />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-5 col-span-2 border-t border-white/5 pt-8">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-[11px] font-bold text-white/80 uppercase tracking-widest">Playtime Display</h4>
+                  <el-switch v-model="visualProps.playtime" />
+                </div>
+                <template v-if="visualProps.playtime">
+                  <div class="grid grid-cols-2 gap-x-5 gap-y-6 bg-white/2 p-4 rounded-2xl border border-white/5">
+                    <div class="flex items-center justify-between col-span-2 py-2">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Include Milliseconds
+                      </h4>
+                      <el-switch v-model="visualProps.playtimeWithMs" />
+                    </div>
+                    <div class="flex items-center justify-between col-span-2 py-2">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Position Bottom</h4>
+                      <el-switch v-model="visualProps.playtimeTextBottom" />
+                    </div>
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Font Size</h4>
+                      <el-input-number v-model="visualProps.playtimeFontSize" class="w-full cinematic-input-number"
+                        :min="1" :max="100" :step="1" controls-position="right" />
+                    </div>
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Family</h4>
+                      <el-select v-model="visualProps.playtimeFontFamily" class="w-full cinematic-select"
+                        popper-class="cinematic-popover">
+                        <el-option v-for="font in fonts" :key="font.family" :value="font.family" :label="font.family"
+                          class="capitalize" :style="{ fontFamily: font.family }"></el-option>
+                      </el-select>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Color</h4>
+                      <div
+                        class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                        <el-color-picker v-model="visualProps.playtimeFontColor" show-alpha
+                          :predefine="predefineColors" />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div class="flex flex-col gap-5 col-span-2 border-t border-white/5 pt-8">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-[11px] font-bold text-white/80 uppercase tracking-widest">Playtime Slider</h4>
+                  <el-switch v-model="visualProps.playtimeSlider" />
+                </div>
+                <template v-if="visualProps.playtimeSlider">
+                  <div class="grid grid-cols-2 gap-x-5 gap-y-6 bg-white/2 p-4 rounded-2xl border border-white/5">
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Slider Width</h4>
+                      <el-input-number v-model="visualProps.playtimeSliderWitdh" class="w-full cinematic-input-number"
+                        :min="1" :max="20" :step="1" controls-position="right" />
+                    </div>
+                    <div class="flex flex-col gap-3">
+                      <h4 class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Slider Color</h4>
+                      <div
+                        class="border border-white/10 rounded-xl p-1.5 bg-white/5 w-fit hover:border-white/20 transition-colors">
+                        <el-color-picker v-model="visualProps.playtimeSliderColor" show-alpha
+                          :predefine="predefineColors" />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
             </div>
           </template>
-        </template>
+        </div>
+      </div>
+
+      <!-- Bottom Fade -->
+      <div
+        class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-80">
       </div>
     </section>
   </div>

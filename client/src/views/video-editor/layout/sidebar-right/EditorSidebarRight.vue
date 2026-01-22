@@ -96,15 +96,16 @@ const handleDrawerClose = () => {
 <template>
   <template v-if="!shouldClose">
     <template v-if="!isTablet">
-      <DrawerRoot v-model="sidebar" :with-header="false" @update:open="handleDrawerClose">
+      <aside :style="{ width: rightSidebarWidth }"
+        class="overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-xl border-l border-white/5 shrink-0 cinematic-panel">
         <component :is="sidebar.Component" v-if="sidebar" />
-      </DrawerRoot>
+      </aside>
     </template>
 
     <template v-else-if="sidebar">
-      <aside :style="{ width: rightSidebarWidth }" class="overflow-hidden bg-card/75 dark:bg-gray-900/30 border-l shrink-0">
+      <DrawerRoot v-model="sidebar" :with-header="false" @update:open="handleDrawerClose">
         <component :is="sidebar.Component" :key="editor.sidebarRight" />
-      </aside>
+      </DrawerRoot>
     </template>
   </template>
 </template>

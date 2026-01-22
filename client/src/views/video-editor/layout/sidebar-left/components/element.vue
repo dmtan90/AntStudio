@@ -7,6 +7,7 @@ import { useGiphyGIFs, GIFS_CATEGORIES } from 'video-editor/hooks/use-giphy-gifs
 import { useGiphySticker, STICKER_CATEGORIES } from 'video-editor/hooks/use-giphy-sticker';
 import { useEmoji, EMOJI_CATEGORIES } from 'video-editor/hooks/use-emoji';
 import { cn } from 'video-editor/lib/utils';
+import { getFileUrl } from '@/utils/api'
 import { storeToRefs } from "pinia";
 import { isImageLoaded } from 'video-editor/lib/utils';
 import { toast } from 'vue-sonner';
@@ -40,28 +41,42 @@ const onAddLine = (points: number[], name: string) => {
   (editor.canvas as any).onAddLine(points, name);
 };
 
-const onAddGiphyVideo = (source: string, thumbnail: string) => {
-  if (((editor.canvas as any).replacer.active as any)?.type === "gif") {
-    const promise = (editor.canvas as any).replacer.replace(source, true);
-    toast.promise(promise, { loading: "The gif is being replaced...", success: "The gif has been replaced", error: "Ran into an error while replacing the gif" });
-  } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
-    const promise = (editor.canvas as any).onAddGifFromSource(source);
-    toast.promise(promise, { loading: "The gif asset is being loaded...", success: "The gif asset has been added to artboard", error: "Ran into an error adding the gif asset" });
-  } else {
-    toast.promise((editor.canvas as any).onAddGifFromThumbnail(source, thumbnail), { error: "Ran into an error adding the gif asset" });
+const onAddGiphyVideo = async (source: string, thumbnail: string) => {
+  try {
+    const resolvedSource = await getFileUrl(source, { cached: true });
+
+    if (((editor.canvas as any).replacer.active as any)?.type === "gif") {
+      const promise = (editor.canvas as any).replacer.replace(resolvedSource, true);
+      toast.promise(promise, { loading: "The gif is being replaced...", success: "The gif has been replaced", error: "Ran into an error while replacing the gif" });
+    } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
+      const promise = (editor.canvas as any).onAddGifFromSource(resolvedSource);
+      toast.promise(promise, { loading: "The gif asset is being loaded...", success: "The gif asset has been added to artboard", error: "Ran into an error adding the gif asset" });
+    } else {
+      toast.promise((editor.canvas as any).onAddGifFromThumbnail(resolvedSource, thumbnail), { error: "Ran into an error adding the gif asset" });
+    }
+  } catch (error) {
+    console.error('Failed to resolve gif source:', error);
+    toast.error("Failed to load gif asset");
   }
 };
 
-const onAddEmoji = (source: string, thumbnail: string) => {
-  if (((editor.canvas as any).replacer.active as any)?.type === "gif") {
-    const promise = (editor.canvas as any).replacer.replace(source, true);
-    toast.promise(promise, { loading: "The emoji is being replaced...", success: "The emoji has been replaced", error: "Ran into an error while replacing the emoji" });
-  } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
-    const promise = (editor.canvas as any).onAddGifFromSource(source);
-    toast.promise(promise, { loading: "The emoji is being loaded...", success: "The emoji has been added to artboard", error: "Ran into an error while adding the emoji" });
-  } else {
-    const promise = (editor.canvas as any).onAddGifFromThumbnail(source, thumbnail);
-    toast.promise(promise, { error: "Ran into an error while adding the emoji" });
+const onAddEmoji = async (source: string, thumbnail: string) => {
+  try {
+    const resolvedSource = await getFileUrl(source, { cached: true });
+
+    if (((editor.canvas as any).replacer.active as any)?.type === "gif") {
+      const promise = (editor.canvas as any).replacer.replace(resolvedSource, true);
+      toast.promise(promise, { loading: "The emoji is being replaced...", success: "The emoji has been replaced", error: "Ran into an error while replacing the emoji" });
+    } else if (!thumbnail || !isImageLoaded(thumbnail as any)) {
+      const promise = (editor.canvas as any).onAddGifFromSource(resolvedSource);
+      toast.promise(promise, { loading: "The emoji is being loaded...", success: "The emoji has been added to artboard", error: "Ran into an error while adding the emoji" });
+    } else {
+      const promise = (editor.canvas as any).onAddGifFromThumbnail(resolvedSource, thumbnail);
+      toast.promise(promise, { error: "Ran into an error while adding the emoji" });
+    }
+  } catch (error) {
+    console.error('Failed to resolve emoji source:', error);
+    toast.error("Failed to load emoji asset");
   }
 };
 
@@ -123,246 +138,208 @@ watch(expanded, (value) => {
 </script>
 
 <template>
-  <div class="h-full w-full">
-    <div class="flex items-center justify-between h-14 border-b px-4">
-      <h2 class="font-semibold">Elements</h2>
-      <el-button size="small" text bg circle class="bg-card h-7 w-7" @click="editor.setActiveSidebarLeft(null)">
+  <div class="h-full w-full flex flex-col cinematic-panel">
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5">
+      <h2 class="font-bold text-sm tracking-wider uppercase text-white/90">Elements</h2>
+      <button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors" @click="editor.setActiveSidebarLeft(null)">
         <X :size="16" />
-      </el-button>
+      </button>
     </div>
-    <div class="flex flex-1 justify-between px-4 py-4 gap-1" v-if="expanded">
-      <el-button link circle @click="onBack">
-        <Left :size="16" />
-      </el-button>
-      <el-input v-model="query" placeholder="Search..." class="text-xs" @change="handleResetData">
-        <template #prefix>
-          <Search :size="15" class="text-foreground/60" />
-        </template>
-      </el-input>
-    </div>
-    <el-scrollbar v-if="expanded" class="p-2">
-      <div class="flex w-fit">
-        <el-button text bg round :type="!query ? 'primary' : ''" @click='handleSearchElement(null)' class="capitalize">#Popular</el-button>
-        <template v-for="item in categories" :key="item">
-          <el-button text bg round :type="query == item ? 'primary' : ''" @click='handleSearchElement(item)' class="capitalize">{{ '#' + item }}</el-button>
-        </template>
+
+    <!-- Expanded Search Header -->
+    <div class="px-5 pt-4 pb-2" v-if="expanded">
+      <div class="flex gap-2 mb-3">
+         <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/5 bg-white/5" @click="onBack">
+            <Left :size="14" />
+         </button>
+         <el-input v-model="query" placeholder="Search elements..." class="cinematic-input flex-1" @change="handleResetData">
+            <template #prefix>
+             <Search :size="15" class="text-white/40" />
+            </template>
+        </el-input>
       </div>
-    </el-scrollbar>
-    <section class="sidebar-container pb-4" @scrollend="handleLoadMore">
+
+      <el-scrollbar class="pb-2 scrollbar-hidden">
+        <div class="flex gap-2">
+          <button 
+             class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap"
+             :class="[!query ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white']"
+             @click='handleSearchElement(null)'>
+             Popular
+          </button>
+          <template v-for="item in categories" :key="item">
+             <button 
+                class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border capitalize whitespace-nowrap"
+                :class="[query == item ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white']"
+                @click='handleSearchElement(item)'>
+                {{ item }}
+             </button>
+          </template>
+        </div>
+      </el-scrollbar>
+    </div>
+
+    <section class="flex-1 overflow-y-auto custom-scrollbar sidebar-container pb-4 pt-2" @scrollend="handleLoadMore">
       <template v-if="!expanded">
-        <div class="px-3 flex flex-col gap-6 py-3">
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Basic Shapes</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1" @click="expanded = 'basic'">
+        <div class="px-5 flex flex-col gap-6 pt-2">
+          
+          <!-- Basic Shapes -->
+          <div class="flex flex-col gap-4 border-b border-white/5 pb-6">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Basic Shapes</h4>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors" @click="expanded = 'basic'">
                 See All
-              </el-button>
+              </button>
             </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll scrollbar-hidden">
+            <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
               <button
                 v-for="({ name, path, klass, params }) in basic.slice(0, 10)"
                 :key="name"
                 @click="onAddBasicShape(klass, params)"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
+                class="group shrink-0 h-16 w-16 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 text-white/60 transition-all shadow-sm hover:bg-white/10 hover:text-white hover:border-white/20 hover:scale-105"
               >
-                <svg viewBox="0 0 48 48" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
+                <svg viewBox="0 0 48 48" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-110">
                   <path :d="path" class="h-full" />
                 </svg>
               </button>
             </div>
           </div>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Abstract Shapes</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1" @click="expanded = 'abstract'">
+
+          <!-- Abstract Shapes -->
+          <div class="flex flex-col gap-4 border-b border-white/5 pb-6">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Abstract Shapes</h4>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors" @click="expanded = 'abstract'">
                 See All
-              </el-button>
+              </button>
             </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
+            <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
               <button
                 v-for="({ name, path, height, width, id }) in abstract.slice(0, 10)"
                 :key="id"
                 @click="onAddAbstractShape(path, name)"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
+                class="group shrink-0 h-16 w-16 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 text-white/60 transition-all shadow-sm hover:bg-white/10 hover:text-white hover:border-white/20 hover:scale-105"
               >
-                <svg :viewBox="`0 0 ${width} ${height}`" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
+                <svg :viewBox="`0 0 ${width} ${height}`" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-110">
                   <path :d="path" class="h-full" />
                 </svg>
               </button>
             </div>
           </div>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Frames</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1" @click="expanded = 'frames'">
+
+          <!-- Frames -->
+          <div class="flex flex-col gap-4 border-b border-white/5 pb-6">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Frames</h4>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors" @click="expanded = 'frames'">
                 See All
-              </el-button>
+              </button>
             </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
+            <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
               <button
                 v-for="({ name, path, height, width, id }) in frames.slice(0, 10)"
                 :key="id"
                 @click="onAddAbstractShape(path, name)"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
+                class="group shrink-0 h-16 w-16 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 text-white/60 transition-all shadow-sm hover:bg-white/10 hover:text-white hover:border-white/20 hover:scale-105"
               >
-                <svg :viewBox="`0 0 ${width} ${height}`" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
+                <svg :viewBox="`0 0 ${width} ${height}`" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-110">
                   <path :d="path" class="h-full" />
                 </svg>
               </button>
             </div>
           </div>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Lines</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1">
+
+          <!-- Lines -->
+          <div class="flex flex-col gap-4 border-b border-white/5 pb-6">
+             <div class="flex items-center justify-between">
+               <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Lines</h4>
+             </div>
+             <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
+               <button
+                 v-for="({ name, path, points }) in lines"
+                 :key="name"
+                 @click="onAddLine(points, name)"
+                 class="group shrink-0 h-16 w-16 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl p-3 text-white/60 transition-all shadow-sm hover:bg-white/10 hover:text-white hover:border-white/20 hover:scale-105"
+               >
+                 <svg viewBox="0 0 48 48" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-110">
+                   <path :d="path" class="h-full" />
+                 </svg>
+               </button>
+             </div>
+           </div>
+
+          <!-- GIFs -->
+          <div class="flex flex-col gap-4 border-b border-white/5 pb-6">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">GIFs</h4>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors" @click="expanded = 'gifs'">
                 See All
-              </el-button>
-            </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
-              <button
-                v-for="({ name, path, points }) in lines"
-                :key="name"
-                @click="onAddLine(points, name)"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <svg viewBox="0 0 48 48" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
-                  <path :d="path" class="h-full" />
-                </svg>
               </button>
             </div>
-          </div>
-          <!--<div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Charts</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1">
-                See All
-              </el-button>
-            </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
-              <el-button
-                @click="addChart('bar')"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <img :src="bar" alt="bar-chart" />
-              </el-button>
-              <el-button
-                @click="addChart('line')"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <img :src="line" alt="line-chart" />
-              </el-button>
-              <el-button
-                @click="addChart('pie')"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <img :src="pie" alt="pie-chart" />
-              </el-button>
-            </div>
-          </div>-->
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">GIFs</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1" @click="expanded = 'gifs'">
-                See All
-              </el-button>
-            </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
+            <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
               <template v-if="gifs.length">
-                <button v-for="({ preview, details: { src } }) in gifs" :key="preview" @click="onAddGiphyVideo(src, preview)" class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md shadow-sm">
-                  <img :src="preview" crossOrigin="anonymous" class="h-full w-full rounded-md transition-transform group-hover:scale-110 object-cover" />
+                <button v-for="({ preview, details: { src } }) in gifs.slice(0, 5)" :key="preview" @click="onAddGiphyVideo(src, preview)" class="group shrink-0 h-16 w-16 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl shadow-sm hover:border-white/20 hover:bg-white/10 transition-all">
+                  <img :src="getFileUrl(preview)" crossOrigin="anonymous" class="h-full w-full transition-transform group-hover:scale-110 object-cover opacity-80 group-hover:opacity-100" />
                 </button>
               </template>
               <template v-else>
-                <el-skeleton v-for="(_, index) in 3" :key="index" animated class="h-16 flex-1 rounded-md" />
-                <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none">No Images</span>
+                <el-skeleton v-for="(_, index) in 5" :key="index" animated class="h-16 w-16 shrink-0 rounded-xl !bg-white/5" />
               </template>
             </div>
           </div>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Stickers</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1" @click="expanded = 'sticker'">
+
+          <!-- Stickers -->
+          <div class="flex flex-col gap-4 border-b border-white/5 pb-6">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Stickers</h4>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors" @click="expanded = 'sticker'">
                 See All
-              </el-button>
+              </button>
             </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
+            <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
               <template v-if="stickers.length">
-                <button v-for="({ preview, details: { src } }) in stickers" :key="preview" @click="onAddGiphyVideo(src, preview)" class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md shadow-sm">
-                  <img :src="preview" crossOrigin="anonymous" class="h-full w-full rounded-md transition-transform group-hover:scale-110 object-cover" />
+                <button v-for="({ preview, details: { src } }) in stickers.slice(0, 5)" :key="preview" @click="onAddGiphyVideo(src, preview)" class="group shrink-0 h-16 w-16 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl shadow-sm hover:border-white/20 hover:bg-white/10 transition-all">
+                  <img :src="getFileUrl(preview)" crossOrigin="anonymous" class="h-full w-full transition-transform group-hover:scale-110 object-cover opacity-80 group-hover:opacity-100" />
                 </button>
               </template>
               <template v-else>
-                <el-skeleton v-for="(_, index) in 3" :key="index" animated class="h-16 flex-1 rounded-md" />
-                <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none">No Images</span>
+                 <el-skeleton v-for="(_, index) in 5" :key="index" animated class="h-16 w-16 shrink-0 rounded-xl !bg-white/5" />
               </template>
             </div>
           </div>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Emoji</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1" @click="expanded = 'emoji'">
+
+          <!-- Emoji -->
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Emoji</h4>
+              <button class="text-[10px] font-bold text-brand-primary hover:text-white transition-colors" @click="expanded = 'emoji'">
                 See All
-              </el-button>
+              </button>
             </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
+            <div class="flex gap-3 items-center overflow-x-auto scrollbar-hidden relative pb-2 fade-mask-r">
               <template v-if="icons.length">
-                <button v-for="({ preview, details: { src } }) in icons" :key="preview" @click="onAddEmoji(src, preview)" class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md shadow-sm">
-                  <img :src="src" crossOrigin="anonymous" class="h-full w-full rounded-md transition-transform group-hover:scale-110 object-cover" />
+                <button v-for="({ preview, details: { src } }) in icons.slice(0, 5)" :key="preview" @click="onAddEmoji(src, preview)" class="group shrink-0 h-16 w-16 border border-white/5 bg-white/5 flex items-center justify-center overflow-hidden rounded-xl shadow-sm hover:border-white/20 hover:bg-white/10 transition-all">
+                  <img :src="getFileUrl(src)" crossOrigin="anonymous" class="h-full w-full transition-transform group-hover:scale-110 object-cover opacity-80 group-hover:opacity-100" />
                 </button>
               </template>
               <template v-else>
-                <el-skeleton v-for="(_, index) in 3" :key="index" animated class="h-16 flex-1 rounded-md" />
-                <span class="text-xs font-semibold text-foreground/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none">No Images</span>
+                 <el-skeleton v-for="(_, index) in 5" :key="index" animated class="h-16 w-16 shrink-0 rounded-xl !bg-white/5" />
               </template>
             </div>
           </div>
-          <!--<div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Text</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1">
-                See All
-              </el-button>
-            </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
-              <button
-                v-for="({ name, path, points }) in lines"
-                :key="name"
-                @click="onAddLine(points, name)"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <svg viewBox="0 0 48 48" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
-                  <path :d="path" class="h-full" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-4">
-              <h4 class="text-xs font-semibold line-clamp-1">Clips</h4>
-              <el-button size="small" link class="text-primary font-medium line-clamp-1">
-                See All
-              </el-button>
-            </div>
-            <div class="flex gap-2.5 items-center overflow-x-scroll relative scrollbar-hidden">
-              <button
-                v-for="({ name, path, points }) in lines"
-                :key="name"
-                @click="onAddLine(points, name)"
-                class="group shrink-0 h-16 w-16 border flex items-center justify-center overflow-hidden rounded-md p-2 text-gray-800/80 dark:text-gray-100/80 transition-colors shadow-sm hover:bg-card hover:text-gray-800 dark:hover:text-gray-100"
-              >
-                <svg viewBox="0 0 48 48" :aria-label="name" fill="currentColor" class="h-full w-full transition-transform group-hover:scale-105">
-                  <path :d="path" class="h-full" />
-                </svg>
-              </button>
-            </div>
-          </div>-->
         </div>
       </template>
       <template v-else>
-        <div class="px-3 grid grid-cols-3 gap-2.5 pt-4">
+        <div class="px-5 grid grid-cols-3 gap-4 pt-4 pb-10">
           <ExpandedElementView :match="expanded" :query="query" ref="refExpand"/>
         </div>
       </template>
     </section>
   </div>
 </template>
+
+<style scoped>
+.fade-mask-r {
+    mask-image: linear-gradient(to right, black 0%, black 90%, transparent 100%);
+}
+</style>

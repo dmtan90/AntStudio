@@ -39,16 +39,16 @@ const tabOptions = [
 onMounted(() => {
   let active = "in";
   const animations = canvas.value?.anim || null;
-  if(!animations){
+  if (!animations) {
     active = "in";
   }
-  else if(animations.scene && animations.scene?.name != "none"){
+  else if (animations.scene && animations.scene?.name != "none") {
     active = "scene";
   }
-  else if(animations.out && animations.out?.name != "none"){
+  else if (animations.out && animations.out?.name != "none") {
     active = "out";
   }
-  else{
+  else {
     active = "in";
   }
 
@@ -58,13 +58,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
-    <section class="sidebar-container flex flex-col">
-      <div class="relative pb-4">
-        <el-segmented v-model="activeTab" :options="tabOptions" class="w-full" />
+  <div class="h-full w-full flex flex-col relative overflow-hidden">
+    <section class="flex flex-col h-full">
+      <!-- Tab Switcher -->
+      <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+        <el-segmented v-model="activeTab" :options="tabOptions" class="w-full cinematic-segmented" />
       </div>
-      <div class="relative overflow-x-scroll scrollbar-hidden">
-        <div class="flex flex-col divide-y">
+
+      <!-- Content Area -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar relative px-5 pt-6 pb-20">
+        <!-- Vertical Fade Masks -->
+        <div
+          class="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#0a0a0a] to-transparent z-10 pointer-events-none opacity-40">
+        </div>
+
+        <div class="flex flex-col gap-6 relative z-0">
           <template v-if="activeTab == 'in'">
             <Animations :animations="entry" :selected="selected" type="in" />
           </template>
@@ -75,16 +83,11 @@ onMounted(() => {
             <Animations :animations="scene" :selected="selected" type="scene" />
           </template>
         </div>
+
+        <div
+          class="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-[#0a0a0a] to-transparent z-10 pointer-events-none opacity-80">
+        </div>
       </div>
     </section>
   </div>
 </template>
-
-<style>
-.animation-container {
-  /*.el-segmented {
-    height: 32px;
-    --el-border-radius-base: 16px;
-  }*/
-}
-</style>
