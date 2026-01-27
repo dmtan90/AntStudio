@@ -95,7 +95,7 @@ export const PIXELS_VIDEO_CATEGORIES = ["Business", "Background", "Abstract", "B
 /**
  * Hook for fetching and managing Pexels videos with caching support.
  */
-export const usePexelsVideos = defineStore("pixelsVideos", (): any => {
+export const usePexelsVideos = defineStore("pixelsVideos", () => {
   const videos = ref<any[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -245,4 +245,4 @@ export const usePexelsVideos = defineStore("pixelsVideos", (): any => {
     clearVideos,
     refreshPopularVideos,
   };
-}) as any;
+});

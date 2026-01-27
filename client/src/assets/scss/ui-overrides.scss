@@ -4,6 +4,10 @@
 // Global UI Overrides for Element Plus to match Cinematic Glass style
 :root {
     --el-color-primary: #fff;
+    --el-color-success: #10b981;
+    --el-color-warning: #f59e0b;
+    --el-color-danger: #ef4444;
+    --el-color-info: #6b7280;
     --el-bg-color: #0a0a0a;
     --el-text-color-primary: #fff;
     --el-border-color-light: rgba(255, 255, 255, 0.1);
@@ -19,6 +23,9 @@
     border-radius: $radius-sm;
     font-weight: 500;
     transition: $transition-base;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 12px;
 
     &:hover,
     &:focus {
@@ -28,6 +35,7 @@
         transform: translateY(-2px);
     }
 
+    // Variants
     &.el-button--primary {
         background: #fff;
         color: #000;
@@ -35,9 +43,83 @@
 
         &:hover {
             background: rgba(255, 255, 255, 0.9);
-            border-color: #fff;
             color: #000;
         }
+    }
+
+    &.el-button--success {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.3);
+
+        &:hover {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: #10b981;
+        }
+    }
+
+    &.el-button--warning {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+
+        &:hover {
+            background: rgba(245, 158, 11, 0.3);
+            border-color: #f59e0b;
+        }
+    }
+
+    &.el-button--danger {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.3);
+
+        &:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: #ef4444;
+        }
+    }
+
+    // Types: plain, link, text, bg
+    &.is-plain {
+        background: transparent;
+        border: 1px solid currentColor;
+        opacity: 0.8;
+
+        &:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.05);
+        }
+    }
+
+    &.is-link {
+        background: transparent !important;
+        border: none !important;
+        padding: 0;
+        height: auto;
+        text-decoration: underline;
+
+        &:hover {
+            transform: none;
+            opacity: 0.8;
+        }
+    }
+
+    &.is-text {
+        background: transparent !important;
+        border: none !important;
+        padding: 4px 8px;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+    }
+
+    // Special: bg type (custom implementation for cinematic look)
+    &.el-button--bg {
+        border: none;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 }
 
@@ -217,27 +299,34 @@
 }
 
 :deep(.el-tag) {
-    background-color: rgba(0, 0, 0, 0.2);
-    border: none;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 6px;
+    font-weight: 600;
 
     &.el-tag--success {
         background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.2);
         color: #10b981;
     }
 
     &.el-tag--warning {
         background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
         color: #f59e0b;
     }
 
     &.el-tag--danger {
         background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.2);
         color: #ef4444;
     }
 
     &.el-tag--info {
-        background: rgba(255, 255, 255, 0.1);
-        color: $text-secondary;
+        background: rgba(107, 114, 128, 0.1);
+        border-color: rgba(107, 114, 128, 0.2);
+        color: #9ca3af;
     }
 }
 
@@ -309,14 +398,22 @@
     background: rgba(255, 255, 255, 0.05) !important;
     border-radius: $radius-md !important;
     padding: 4px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 
     .el-segmented__item {
         color: rgba(255, 255, 255, 0.5) !important;
+        transition: all 0.3s;
 
         &.is-selected {
             background: #fff !important;
             color: #000 !important;
-            border-radius: 6px !important;
+            border-radius: 10px !important;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+
+        &:hover:not(.is-selected) {
+            color: #fff !important;
+            background: rgba(255, 255, 255, 0.05) !important;
         }
     }
 }

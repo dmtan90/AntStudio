@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { Search, Close as X, Plus, Down as ChevronDown, FileCode as FileJson, FileHash as FileUser } from '@icon-park/vue-next';
+import {
+  Search,
+  Close as X,
+  Plus, Down as ChevronDown,
+  FileCode as FileJson,
+  FileHash as FileUser,
+  MoreOne, UpSquare, DownSquare, Copy, Delete
+} from '@icon-park/vue-next';
 import { useEditorStore } from 'video-editor/store/editor';
 import { storeToRefs } from "pinia";
 import SceneThumbnail from "video-editor/components/thumbnail/SceneThumbnail.vue";

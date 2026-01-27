@@ -6,7 +6,7 @@ import { ChromePicker, ColorResult, tinycolor } from 'vue-color';
 import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
-import { cn, createInstance } from 'video-editor/lib/utils';
+import { cn, createInstance } from '@/utils/ui';
 import { darkHexCodes, lightHexCodes, pastelHexCodes } from 'video-editor/constants/editor';
 import { fonts } from 'video-editor/constants/fonts';
 

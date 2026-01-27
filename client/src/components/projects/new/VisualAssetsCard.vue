@@ -6,7 +6,7 @@
     >
       <div class="flex items-center gap-3 text-[#eee] text-sm font-semibold">
         <pic theme="outline" size="18"/>
-        <span>Visual Assets <span class="text-[#888] font-normal ml-1">is ready</span></span>
+        <span>Visual Assets <span class="text-[#888] font-normal ml-1">{{ t('projects.new.results.analysis.isReady') }}</span></span>
       </div>
       <arrow-right 
         theme="outline" 
@@ -28,13 +28,13 @@
              <!-- Loading State -->
              <div v-else-if="img.status === 'generating' || img.status === 'pending'" class="w-full h-full flex flex-col items-center justify-center gap-2 text-blue-500 bg-blue-500/5">
                   <loading-one theme="outline" size="24" class="spin" />
-                  <span class="text-[10px] font-medium uppercase tracking-wider">{{ img.status === 'generating' ? 'Generating...' : 'Pending' }}</span>
+                  <span class="text-[10px] font-medium uppercase tracking-wider">{{ img.status === 'generating' ? t('common.generating') : t('projects.detail.pending') }}</span>
              </div>
- 
+  
              <!-- Error State -->
              <div v-else-if="img.status === 'error'" class="w-full h-full flex flex-col items-center justify-center gap-2 text-red-500 bg-red-500/5">
                   <attention theme="outline" size="24" />
-                  <span class="text-[10px] font-medium uppercase tracking-wider">Failed</span>
+                  <span class="text-[10px] font-medium uppercase tracking-wider">{{ t('common.failed') }}</span>
              </div>
           </div>
           <div class="w-full">
@@ -47,17 +47,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { Pic, ArrowRight, LoadingOne, CheckOne, Attention } from '@icon-park/vue-next'
+import { ref, watch } from 'vue'
+import { Pic, ArrowRight, LoadingOne, Attention } from '@icon-park/vue-next'
 import { toast } from 'vue-sonner'
 import GMedia from '@/components/ui/GMedia.vue'
-import { getFileUrl } from '@/utils/api'
+import { useTranslations } from '@/composables/useTranslations'
+import { useProjectStore } from '@/stores/project'
+
+const { t } = useTranslations()
+const projectStore = useProjectStore()
 
 interface VisualAsset {
   name: string
   description?: string
-  // url?: string
   status: 'pending' | 'generating' | 'ready' | 'error'
   s3Key?: string
 }
@@ -71,68 +73,43 @@ const expanded = ref(true)
 const localImages = ref<VisualAsset[]>([])
 const isProcessing = ref(false)
 
-
-
-import { useProjectStore } from '@/stores/project'
-
-const projectStore = useProjectStore()
-
-// ... existing code ...
-
 const processQueue = async () => {
     if (isProcessing.value) return 
 
-    // Find first pending item
     const pendingIdx = localImages.value.findIndex(img => img.status === 'pending')
-    if (pendingIdx === -1) return // Nothing to do
-
-    console.log('Processing asset queue...', pendingIdx, localImages.value)
+    if (pendingIdx === -1) return
 
     const asset = localImages.value[pendingIdx]
-    
-    // Start generating
     isProcessing.value = true
     localImages.value[pendingIdx].status = 'generating'
     
-    // Update Store Status (Optional, if we want global visibility)
-    // projectStore.updateVisualAssetStatus(asset.name, 'generating')
-    
     try {
-        const data = await projectStore.generateAsset(props.projectId, {
+        const responseData = await projectStore.generateAsset(props.projectId, {
             assetName: asset.name,
             description: asset.description || `Visual asset for ${asset.name}`,
             type: 'image'
         })
+        
+        const data = responseData.data || responseData;
 
-        // Success - Local Update
         localImages.value[pendingIdx].status = 'ready'
         localImages.value[pendingIdx].s3Key = data.s3Key
 
-        // Success - Store Sync
         projectStore.updateVisualAssetStatus(asset.name, 'ready', { s3Key: data.s3Key })
         projectStore.syncAssetToElements(asset.name, data.s3Key)
 
     } catch (error) {
         console.error('Asset generation failed', error)
         localImages.value[pendingIdx].status = 'error'
-        toast.error(`Failed to generate ${asset.name}`)
-        
+        toast.error(`${t('common.failed')}: ${asset.name}`)
         projectStore.updateVisualAssetStatus(asset.name, 'error')
     } finally {
         isProcessing.value = false
-        // Process next item
         processQueue()
     }
 }
 
-// Init local images
 watch(() => props.images, (newVal) => {
-  // If we receive new images, merge them or replace?
-  // We want to keep local status if we are generating.
-  // Simple strategy: Copy over, but respect 'generating' status if we are working on it?
-  // Actually, standard prop-down flow: if parent updates, we respect.
-  // But parent only knows 'pending' initially.
-  
   if (localImages.value.length === 0 || newVal.length !== localImages.value.length) {
       localImages.value = JSON.parse(JSON.stringify(newVal))
       processQueue()
@@ -143,7 +120,6 @@ watch(() => props.images, (newVal) => {
 <style scoped>
 .animate-up { animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @keyframes slideInUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>

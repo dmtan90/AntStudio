@@ -202,9 +202,9 @@ const textAlignOptions = [
 
     <!-- Text Formatting Toggles -->
     <div class="flex items-center bg-white/5 rounded-xl border border-white/5 p-1 gap-1">
-      <Toggle v-model="fontWeight" :icon="Bold" class="cinematic-toggle" size="medium" @toggle="value => fontWeight = value" />
-      <Toggle v-model="fontStyle" :icon="Italic" class="cinematic-toggle" size="medium" @toggle="value => fontStyle = value" />
-      <Toggle v-model="underline" :icon="Underline" class="cinematic-toggle" size="medium" @toggle="value => underline = value" />
+      <Toggle v-model="fontWeight" :icon="Bold" class="cinematic-toggle" size="default" @toggle="value => fontWeight = value" />
+      <Toggle v-model="fontStyle" :icon="Italic" class="cinematic-toggle" size="default" @toggle="value => fontStyle = value" />
+      <Toggle v-model="underline" :icon="Underline" class="cinematic-toggle" size="default" @toggle="value => underline = value" />
     </div>
 
     <div class="w-px h-6 bg-white/10 shrink-0" />
@@ -226,10 +226,10 @@ const textAlignOptions = [
 
     <!-- Text Case -->
     <div class="flex items-center bg-white/5 rounded-xl border border-white/5 p-1 gap-1">
-      <Toggle :modelValue="textTransform == 'uppercase'" class="cinematic-toggle w-10 !h-8" size="medium" @toggle="value => textTransform = value ? 'uppercase' : ''">
+      <Toggle :modelValue="textTransform == 'uppercase'" class="cinematic-toggle w-10 !h-8" size="default" @toggle="value => textTransform = value ? 'uppercase' : ''">
         <span class="text-[10px] font-black tracking-tighter">ABC</span>
       </Toggle>
-      <Toggle :modelValue="textTransform == 'lowercase'" class="cinematic-toggle w-10 !h-8" size="medium" @toggle="value => textTransform = value ? 'lowercase' : ''">
+      <Toggle :modelValue="textTransform == 'lowercase'" class="cinematic-toggle w-10 !h-8" size="default" @toggle="value => textTransform = value ? 'lowercase' : ''">
         <span class="text-[10px] font-bold tracking-tighter">abc</span>
       </Toggle>
     </div>

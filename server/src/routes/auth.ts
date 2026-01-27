@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { User } from '../models/User.js';
 import { connectDB } from '../utils/db.js';
+import config from '../utils/config.js';
 import { generateToken } from '../utils/jwt.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { checkUserLimit } from '../middleware/license.js';
@@ -146,6 +147,30 @@ router.post('/register', checkUserLimit, async (req, res) => {
     }
 });
 
+// POST /api/auth/register-owner - Tactical initialization for first specialist
+router.post('/register-owner', async (req, res) => {
+    try {
+        await connectDB();
+        const count = await User.countDocuments();
+        if (count > 0) return res.status(403).json({ success: false, error: 'Supreme Command already established.' });
+
+        const { email, password, name } = req.body;
+        const user = await User.create({
+            email: email.toLowerCase(),
+            passwordHash: password,
+            name,
+            role: 'sys-admin',
+            isActive: true,
+            emailVerified: true
+        });
+
+        const token = generateToken(user);
+        res.status(201).json({ success: true, data: { user, token } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
     try {
@@ -254,7 +279,8 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
                     socialAccounts: {
                         youtube: !!user.socialAccounts?.youtube,
                         facebook: !!user.socialAccounts?.facebook
-                    }
+                    },
+                    systemMode: config.systemMode
                 }
             }
         });

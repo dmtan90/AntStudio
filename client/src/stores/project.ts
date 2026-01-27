@@ -161,6 +161,17 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    async function generateStoryboardAssetsBatch(id: string) {
+        try {
+            const response = await api.post(`/projects/${id}/storyboard/generate-assets`)
+            toast.success(t('projects.editor.storyboard.batchStartSuccess') || 'Batch generation started')
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     async function generateAsset(id: string, assetData: any) {
         try {
             const response = await api.post(`/projects/${id}/assets/generate`, assetData)
@@ -168,6 +179,16 @@ export const useProjectStore = defineStore('project', () => {
         } catch (error) {
             handleError(error)
             throw error
+        }
+    }
+
+    async function getAssetStatus(id: string, jobId: string) {
+        try {
+            const response = await api.get(`/projects/${id}/assets/status/${jobId}`)
+            return response.data
+        } catch (error) {
+            // Silently fail or minimal log for polling
+            return { success: false, error: error.message }
         }
     }
 
@@ -326,6 +347,7 @@ export const useProjectStore = defineStore('project', () => {
         chat,
         generateVisualPlan,
         generateAsset,
+        getAssetStatus,
         uploadAsset,
         generateVoiceover,
         assembleVideo,
@@ -333,6 +355,7 @@ export const useProjectStore = defineStore('project', () => {
         updateVisualAssetStatus,
         syncAssetToElements,
         syncAllAssets,
+        generateStoryboardAssetsBatch,
         editorMode
     }
 })

@@ -3,7 +3,7 @@
     <div class="storyboard-summary-bar" @click.prevent="expanded = !expanded">
       <div class="bar-content">
         <list-checkbox theme="outline" size="18"/>
-        <span>Visual Gen Path <span class="status-ready">is ready</span></span>
+        <span>Visual Gen Path <span class="status-ready">{{ t('projects.new.results.analysis.isReady') }}</span></span>
       </div>
       <arrow-right theme="outline" size="14" :class="expanded ? 'collapsible-icon expanded' : 'collapsible-icon'" />
     </div>
@@ -31,6 +31,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ListCheckbox, ArrowRight, CheckOne, LoadingOne } from '@icon-park/vue-next'
+import { useTranslations } from '@/composables/useTranslations'
+
+const { t } = useTranslations()
 
 interface Step {
   title: string

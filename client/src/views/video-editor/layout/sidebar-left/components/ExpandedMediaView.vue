@@ -47,7 +47,7 @@ const onAddPixelsImage = async (source: string, thumbnail: string, preload: bool
       const promise = editor.canvas.onAddImageFromSource(resolvedSource);
       toast.promise(promise, { loading: "The image is being loaded...", success: "The image has been added to artboard", error: "Ran into an error while adding the image" });
     } else {
-      const promise = editor.canvas.onAddImageFromThumbnail(resolvedSource, thumbnail);
+      const promise = editor.canvas.onAddImageFromThumbnail(resolvedSource, thumbnail as any);
       toast.promise(promise, { error: "Ran into an error while adding the image" });
     }
   } catch (error) {

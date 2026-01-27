@@ -8,11 +8,12 @@ import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
 import { useIsTablet } from 'video-editor/hooks/use-media-query';
 
-import AnimationSidebar from './components/animation.vue';
+import AnimationSidebar from './components/Animation.vue';
 import ClipMaskSidebar from './components/clip.vue';
 import FillSidebar from './components/fill.vue';
 import FilterSidebar from './components/filters.vue';
 import FontSidebar from './components/fonts.vue';
+import AudioSidebar from './components/audio.vue';
 import StrokeSidebar from './components/stroke.vue';
 import AISidebar from './components/ai.vue';
 import VisualSidebar from './components/visual.vue';
@@ -58,6 +59,10 @@ const sidebarComponentMap: Record<string, SidebarMapValue> = {
     Component: VisualSidebar,
     close: (selected) => !selected,
   },
+  audio: {
+    Component: AudioSidebar,
+    close: (selected) => !selected || selected.type !== "audio",
+  },
   position: {
     Component: PositionSidebar,
     close: (selected) => !selected,
@@ -94,18 +99,12 @@ const handleDrawerClose = () => {
 </script>
 
 <template>
-  <template v-if="!shouldClose">
-    <template v-if="!isTablet">
+  <template>
+    <template v-if="sidebar">
       <aside :style="{ width: rightSidebarWidth }"
         class="overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-xl border-l border-white/5 shrink-0 cinematic-panel">
         <component :is="sidebar.Component" v-if="sidebar" />
       </aside>
-    </template>
-
-    <template v-else-if="sidebar">
-      <DrawerRoot v-model="sidebar" :with-header="false" @update:open="handleDrawerClose">
-        <component :is="sidebar.Component" :key="editor.sidebarRight" />
-      </DrawerRoot>
     </template>
   </template>
 </template>

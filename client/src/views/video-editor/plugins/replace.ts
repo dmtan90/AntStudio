@@ -62,7 +62,7 @@ export class CanvasReplace {
   async replaceVideo(video: fabric.Video, source: string, thumbnail: string) {
     video.meta!.replacing = true;
     return createPromise<fabric.Video>((resolve, reject) => {
-      fabric.util.loadVideo(
+      (fabric.util as any).loadVideo(
         source,
         async (element) => {
           if (!element || !element.height || !element.width) {
@@ -78,16 +78,16 @@ export class CanvasReplace {
 
             video.setElement(element);
             video.meta!.replacing = false;
-            video.set({ 
-              scaleX: video.scaleX, 
-              scaleY: video.scaleY, 
-              left: video.left, 
-              top: video.top, 
-              angle: video.angle, 
-              cropX: video.cropX, 
-              cropY: video.cropY, 
+            video.set({
+              scaleX: video.scaleX,
+              scaleY: video.scaleY,
+              left: video.left,
+              top: video.top,
+              angle: video.angle,
+              cropX: video.cropX,
+              cropY: video.cropY,
               hasAudio: hasAudio,
-              thumbnail: thumbnail 
+              thumbnail: thumbnail
             });
 
             this.canvas.requestRenderAll();
@@ -102,10 +102,10 @@ export class CanvasReplace {
 
   mark(object?: fabric.Object | null) {
     if (!object) this.active = null;
-    if (FabricUtils.isGifElement(object)) this.active = { type: "gif", object };
-    else if (FabricUtils.isImageElement(object)) this.active = { type: "image", object };
-    else if (FabricUtils.isVideoElement(object)) this.active = { type: "video", object };
-    else if (FabricUtils.isAudioElement(object)) this.active = { type: "audio", object };
+    if (FabricUtils.isGifElement(object)) (this as any).active = { type: "gif", object };
+    else if (FabricUtils.isImageElement(object)) (this as any).active = { type: "image", object };
+    else if (FabricUtils.isVideoElement(object)) (this as any).active = { type: "video", object };
+    else if (FabricUtils.isAudioElement(object)) (this as any).active = { type: "audio", object };
     return this.active;
   }
 

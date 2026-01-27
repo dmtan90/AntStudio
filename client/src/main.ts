@@ -4,9 +4,12 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { Toaster } from 'vue-sonner'
 import VueFlags from '@singleway/vueflags'
+import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 import App from './App.vue'
 import router from './router'
+import api from './utils/api.js'
+import { ErrorTracker, setupAxiosTracking } from './utils/ErrorTracker'
 
 // Import global styles
 import './assets/scss/main.scss'
@@ -44,5 +47,19 @@ app.component('Toaster', Toaster)
 // vidmate plugins
 app.use(VueQueryPlugin, { queryClient })
 app.use(DraggablePlugin)
+
+// Monitoring (Evolution Phase)
+ErrorTracker.init()
+setupAxiosTracking(api)
+
+// Register Service Worker for PWA Autonomy
+// useRegisterSW({
+//     onRegistered(r) {
+//         console.log('[PWA] Service Worker registered:', r);
+//     },
+//     onRegisterError(e) {
+//         console.error('[PWA] Service Worker registration failed:', e);
+//     }
+// });
 
 app.mount('#app')

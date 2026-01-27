@@ -70,7 +70,7 @@ const CACHE_DURATION = 5 * 60 * 1000;
 
 export const PIXELS_IMAGE_CATEGORIES = ["Business", "Gradient Photo Background", "Fashion", "Technology", "Photo Background", "Real Estate", "Animal", "Entertainment", "Music", "Event", "Nature", "Sport", "Education", "Travel", "Celebration", "Food", "Photography", "Kids", "Transportation", "Art", "Wedding", "Industrial"];
 
-export const usePexelsImages = defineStore("pixelsImages", (): any => {
+export const usePexelsImages = defineStore("pixelsImages", () => {
   const images = ref<any[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -227,4 +227,4 @@ export const usePexelsImages = defineStore("pixelsImages", (): any => {
     clearImages,
     refreshCuratedImages,
   };
-}) as any;
+});

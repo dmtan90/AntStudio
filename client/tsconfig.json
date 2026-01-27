@@ -38,7 +38,8 @@
     "types": [
       "node",
       "element-plus/global",
-      "vite/client"
+      "vite/client",
+      "vite-plugin-pwa/client"
     ]
   },
   "include": [

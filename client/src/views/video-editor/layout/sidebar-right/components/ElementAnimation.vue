@@ -10,6 +10,7 @@ import { storeToRefs } from "pinia";
 import { defaultSpringConfig, easings, entry, exit, scene } from 'video-editor/constants/animations';
 
 import Animations from './Animations.vue';
+import MotionAnimation from './MotionAnimation.vue';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
@@ -32,6 +33,10 @@ const tabOptions = [
   {
     label: 'On Exit',
     value: 'out'
+  },
+  {
+    label: 'Motion',
+    value: 'motion'
   },
 ];
 
@@ -78,6 +83,9 @@ onMounted(() => {
           </template>
           <template v-else-if="activeTab == 'out'">
             <Animations :animations="exit" :selected="selected" type="out" />
+          </template>
+          <template v-else-if="activeTab == 'motion'">
+            <MotionAnimation />
           </template>
           <template v-else>
             <Animations :animations="scene" :selected="selected" type="scene" />

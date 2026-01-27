@@ -2,6 +2,24 @@ import { Router } from 'express';
 import { Project } from '../models/Project.js';
 import { connectDB } from '../utils/db.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
+import { clippingEngine } from '../services/ai/ClippingEngine.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadDir = path.join(__dirname, '../../tmp/recordings');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+    destination: uploadDir,
+    filename: (req, file, cb) => {
+        cb(null, `rec-${Date.now()}${path.extname(file.originalname)}`);
+    }
+});
+const upload = multer({ storage });
 
 const router = Router();
 
@@ -59,6 +77,43 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
     } catch (error: any) {
         console.error('Fetch videos error:', error);
         res.status(500).json({ success: false, data: null, error: 'Failed to fetch videos' });
+    }
+});
+
+// POST /api/videos/upload-recording - Receive studio recording for viral clipping
+router.post('/upload-recording', authMiddleware, upload.single('video'), async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { projectId } = req.body;
+        const videoFile = req.file;
+
+        if (!videoFile) return res.status(400).json({ success: false, error: 'No video file provided' });
+
+        // Associate with project as a viral asset
+        const project = await Project.findOne({
+            $or: [
+                { _id: (mongoose.Types.ObjectId.isValid(projectId) ? projectId : new mongoose.Types.ObjectId()) },
+                { title: { $regex: new RegExp(projectId, 'i') } }
+            ],
+            userId: req.user!.userId
+        });
+
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        // Log receipt
+        console.log(`🎬 Received recording for project ${project.title}: ${videoFile.path}`);
+
+        // Asynchronously trigger Clipping Engine (Phase 7)
+        clippingEngine.processRecording({
+            videoPath: videoFile.path,
+            projectId: project._id.toString(),
+            userId: req.user!.userId
+        });
+
+        res.json({ success: true, data: { status: 'queued', filePath: videoFile.path } });
+    } catch (error: any) {
+        console.error('Upload recording error:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

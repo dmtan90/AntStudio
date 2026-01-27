@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import VueDraggable from 'vue-draggable-resizable';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import Label from 'video-editor/components/ui/label.vue';
 import { Refresh as RotateCw } from '@icon-park/vue-next';
 import { FabricUtils } from 'video-editor/fabric/utils';

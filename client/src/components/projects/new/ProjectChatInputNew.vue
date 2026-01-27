@@ -11,10 +11,14 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item :disabled="form.aspectRatio === '16:9'" @click="handleRatioChange('16:9')">16:9 {{ t('projects.new.flow.landscape') }}</el-dropdown-item>
-                <el-dropdown-item :disabled="form.aspectRatio === '9:16'" @click="handleRatioChange('9:16')">9:16 {{ t('projects.new.flow.portrait') }}</el-dropdown-item>
-                <el-dropdown-item :disabled="form.aspectRatio === '1:1'" @click="handleRatioChange('1:1')">1:1 {{ t('projects.new.flow.square') }}</el-dropdown-item>
-                <el-dropdown-item :disabled="form.aspectRatio === '4:3'" @click="handleRatioChange('4:3')">4:3 {{ t('projects.new.flow.classic') }}</el-dropdown-item>
+                <el-dropdown-item :disabled="form.aspectRatio === '16:9'" @click="handleRatioChange('16:9')">16:9 {{
+                  t('projects.new.flow.landscape') }}</el-dropdown-item>
+                <el-dropdown-item :disabled="form.aspectRatio === '9:16'" @click="handleRatioChange('9:16')">9:16 {{
+                  t('projects.new.flow.portrait') }}</el-dropdown-item>
+                <el-dropdown-item :disabled="form.aspectRatio === '1:1'" @click="handleRatioChange('1:1')">1:1 {{
+                  t('projects.new.flow.square') }}</el-dropdown-item>
+                <el-dropdown-item :disabled="form.aspectRatio === '4:3'" @click="handleRatioChange('4:3')">4:3 {{
+                  t('projects.new.flow.classic') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </GDropdown>
@@ -26,10 +30,14 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item :disabled="form.videoStyle === 'Cinematic'" @click="handleStyleChange('Cinematic')">Cinematic</el-dropdown-item>
-                <el-dropdown-item :disabled="form.videoStyle === 'Realistic'" @click="handleStyleChange('Realistic')">Realistic</el-dropdown-item>
-                <el-dropdown-item :disabled="form.videoStyle === 'Anime'" @click="handleStyleChange('Anime')">Anime</el-dropdown-item>
-                <el-dropdown-item :disabled="form.videoStyle === '3D Render'" @click="handleStyleChange('3D Render')">3D Render</el-dropdown-item>
+                <el-dropdown-item :disabled="form.videoStyle === 'Cinematic'"
+                  @click="handleStyleChange('Cinematic')">Cinematic</el-dropdown-item>
+                <el-dropdown-item :disabled="form.videoStyle === 'Realistic'"
+                  @click="handleStyleChange('Realistic')">Realistic</el-dropdown-item>
+                <el-dropdown-item :disabled="form.videoStyle === 'Anime'"
+                  @click="handleStyleChange('Anime')">Anime</el-dropdown-item>
+                <el-dropdown-item :disabled="form.videoStyle === '3D Render'" @click="handleStyleChange('3D Render')">3D
+                  Render</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </GDropdown>
@@ -58,14 +66,9 @@
 
       <!-- Prompt -->
       <div class="prompt-body">
-        <textarea 
-          :value="modelValue"
-          @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
-          :placeholder="t('projects.new.topicPlaceholder')" 
-          @keydown="handleKeydown" 
-          ref="inputRef"
-          class="chat-input"
-        ></textarea>
+        <textarea :value="modelValue" @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
+          :placeholder="t('projects.new.topicPlaceholder')" @keydown="handleKeydown" ref="inputRef"
+          class="chat-input"></textarea>
       </div>
 
       <!-- Actions -->
@@ -73,7 +76,8 @@
         <div class="footer-left">
           <div class="attach-trigger" @click="triggerFileUpload" title="Attach files">
             <paperclip theme="outline" size="20" />
-            <input type="file" ref="fileInput" style="display: none" multiple @change="$emit('on-file-selected', $event)" />
+            <input type="file" ref="fileInput" style="display: none" multiple
+              @change="$emit('on-file-selected', $event)" />
           </div>
           <div class="selected-files-list">
             <div v-for="(file, idx) in selectedFiles" :key="idx" class="mini-file-tag">
@@ -87,7 +91,8 @@
           <button v-if="loading" class="send-circle cancel-mode" @click="$emit('cancel-analysis')">
             <close-small theme="outline" size="20" />
           </button>
-          <button v-else class="send-circle" :disabled="!modelValue.trim() && !selectedFiles.length" @click="$emit('start-analysis')">
+          <button v-else class="send-circle" :disabled="!modelValue.trim() && !selectedFiles.length"
+            @click="$emit('start-analysis')">
             <arrow-right theme="outline" size="20" />
           </button>
         </div>
@@ -95,13 +100,19 @@
 
       <!-- Suggestions -->
       <div v-if="!hasResults && !loading" class="quick-suggestions animate-up">
-        <button v-for="sug in quickSuggestions" :key="sug" @click="$emit('apply-suggestion', sug)" class="sug-chip">{{ sug }}</button>
+        <button v-for="sug in quickSuggestions" :key="sug" @click="$emit('apply-suggestion', sug)" class="sug-chip">{{
+          sug
+        }}</button>
       </div>
-      
+
+      <!-- Rich Creation Options (Google Vids style) -->
+      <!-- <ProjectCreationOptions v-if="!hasResults && !loading" @select="(opt) => $emit('apply-suggestion', opt.label)" /> -->
+
       <!-- Mentions -->
       <div v-if="showMentions" class="mention-list-glass">
         <div class="mention-header">Mention Files</div>
-        <div v-for="file in selectedFiles" :key="file.name" @click="$emit('insert-mention', file.name)" class="mention-item">
+        <div v-for="file in selectedFiles" :key="file.name" @click="$emit('insert-mention', file.name)"
+          class="mention-item">
           <file-text theme="outline" size="14" />
           <span>{{ file.name }}</span>
         </div>
@@ -112,13 +123,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { 
+import {
   Monitor, Iphone, Square, Tv, MagicWand, Time as TimeIcon,
   Paperclip, ArrowRight, FileText, CloseSmall, Refresh
 } from '@icon-park/vue-next'
 import GDropdown from '@/components/ui/GDropdown.vue'
 import GPopover from '@/components/ui/GPopover.vue'
 import GSlider from '@/components/ui/GSlider.vue'
+import ProjectCreationOptions from './ProjectCreationOptions.vue'
 import { useTranslations } from '@/composables/useTranslations'
 
 const { t } = useTranslations()
@@ -134,8 +146,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits([
-  'update:modelValue', 'handle-enter', 'on-file-selected', 
-  'remove-file', 'start-analysis', 'cancel-analysis', 
+  'update:modelValue', 'handle-enter', 'on-file-selected',
+  'remove-file', 'start-analysis', 'cancel-analysis',
   'reset-flow', 'apply-suggestion', 'insert-mention'
 ])
 
@@ -191,119 +203,306 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 <style lang="scss" scoped>
 .flow-interface-v2 {
-  position: absolute; 
-  bottom: 10px; 
-  left: 0; 
+  position: absolute;
+  bottom: 10px;
+  left: 0;
   right: 0;
-  display: flex; 
-  justify-content: center; 
-  padding: 0 20px; z-index: 100;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+  z-index: 100;
 }
 
 .input-container-glass {
-  width: 100%; 
-  max-width: 800px; 
+  width: 100%;
+  max-width: 800px;
   @include glass-card;
-  border-radius: 28px; 
+  border-radius: 28px;
   padding: 12px;
-  display: flex; flex-direction: column; gap: 8px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); 
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.1); 
+  border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
 }
 
 .input-toolbar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 12px; }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  .toolbar-left,
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
   .tool-badge {
-    display: flex; align-items: center; gap: 8px; padding: 6px 14px;
-    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 100px; font-size: 12px; font-weight: 500; color: #fff;
-    cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    &:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
   }
 }
 
 .prompt-body {
   padding: 4px 8px;
+
   textarea {
-    width: 100%; background: transparent; border: none; color: #fff;
-    font-size: 16px; line-height: 1.5; resize: none; outline: none;
-    min-height: 32px; /* Equivalent to roughly 2-3 rows */
-    max-height: 150px; /* Equivalent to roughly 6-7 rows */
-    &::placeholder { color: rgba(255, 255, 255, 0.2); }
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    min-height: 32px;
+    /* Equivalent to roughly 2-3 rows */
+    max-height: 150px;
+
+    /* Equivalent to roughly 6-7 rows */
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.2);
+    }
   }
 }
 
 .input-footer {
-  display: flex; justify-content: space-between; align-items: center; padding: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+
   .footer-left {
-    display: flex; align-items: center; gap: 12px;
-    .attach-trigger { color: $text-muted; cursor: pointer; &:hover { color: #fff; } }
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .attach-trigger {
+      color: $text-muted;
+      cursor: pointer;
+
+      &:hover {
+        color: #fff;
+      }
+    }
   }
+
   .footer-right {
-    display: flex; align-items: center; gap: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
     .send-circle {
-      width: 40px; height: 40px; background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; color: #fff;
-      cursor: pointer; transition: all 0.3s;
-      &:hover:not(:disabled) { background: #fff; color: #000; transform: scale(1.05); }
-      &:disabled { opacity: 0.2; cursor: not-allowed; }
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s;
+
+      &:hover:not(:disabled) {
+        background: #fff;
+        color: #000;
+        transform: scale(1.05);
+      }
+
+      &:disabled {
+        opacity: 0.2;
+        cursor: not-allowed;
+      }
+
       &.cancel-mode {
-        background: rgba(255, 77, 79, 0.1); border-color: rgba(255, 77, 79, 0.3);
-        color: #ff4d4f; &:hover { background: #ff4d4f; color: #fff; }
+        background: rgba(255, 77, 79, 0.1);
+        border-color: rgba(255, 77, 79, 0.3);
+        color: #ff4d4f;
+
+        &:hover {
+          background: #ff4d4f;
+          color: #fff;
+        }
       }
     }
   }
 }
 
 .tuning-panel {
-  padding: 16px; display: flex; flex-direction: column; gap: 16px;
-  label { font-size: 12px; color: $text-muted; margin-bottom: 6px; display: block; }
-  .slider-val { font-size: 12px; color: #fff; text-align: right; margin-top: 4px; }
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  label {
+    font-size: 12px;
+    color: $text-muted;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .slider-val {
+    font-size: 12px;
+    color: #fff;
+    text-align: right;
+    margin-top: 4px;
+  }
 }
 
 .quick-suggestions {
-  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
-  padding: 0 16px 12px; justify-content: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 0 16px 12px;
+  justify-content: flex-start;
+
   .sug-chip {
-    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 100px; padding: 6px 14px; font-size: 11px; color: rgba(255, 255, 255, 0.5);
-    cursor: pointer; transition: all 0.2s;
-    &:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); color: #fff; }
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
   }
 }
 
 .mention-list-glass {
-  position: absolute; top: 45px; left: 16px; width: 200px; @include glass-card;
-  background: rgba(10, 10, 10, 0.98); border-radius: 12px; padding: 8px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; gap: 4px;
-  z-index: 1000; border: 1px solid rgba(255, 255, 255, 0.15);
-  .mention-header { font-size: 10px; text-transform: uppercase; color: rgba(255, 255, 255, 0.3); padding: 4px 12px; letter-spacing: 1px; }
+  position: absolute;
+  top: 45px;
+  left: 16px;
+  width: 200px;
+  @include glass-card;
+  background: rgba(10, 10, 10, 0.98);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1000;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  .mention-header {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 4px 12px;
+    letter-spacing: 1px;
+  }
+
   .mention-item {
-    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-    border-radius: 6px; cursor: pointer; color: rgba(255, 255, 255, 0.7); font-size: 12px;
-    transition: all 0.2s; &:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
   }
 }
 
-.selected-files-list { display: flex; gap: 8px; overflow-x: auto; max-width: 400px; &::-webkit-scrollbar { display: none; } }
-.mini-file-tag {
-  display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.1);
-  padding: 4px 10px; border-radius: 6px; font-size: 11px; color: #fff;
-  i { cursor: pointer; &:hover { color: #ff4d4f; } }
+.selected-files-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  max-width: 400px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-.animate-up { animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
-@keyframes slideInUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.mini-file-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #fff;
+
+  i {
+    cursor: pointer;
+
+    &:hover {
+      color: #ff4d4f;
+    }
+  }
+}
+
+.animate-up {
+  animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
 .reset-btn-tool {
-  background: rgba(255, 50, 50, 0.1); border: 1px solid rgba(255, 0, 0, 0.2);
-  border-radius: 100px; padding: 4px 10px; display: flex; align-items: center; gap: 6px;
-  color: #ff6b6b; font-size: 11px; cursor: pointer; transition: all 0.2s;
-  &:hover { background: rgba(255, 50, 50, 0.2); border-color: rgba(255, 0, 0, 0.4); transform: translateY(-1px); }
+  background: rgba(255, 50, 50, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.2);
+  border-radius: 100px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ff6b6b;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 50, 50, 0.2);
+    border-color: rgba(255, 0, 0, 0.4);
+    transform: translateY(-1px);
+  }
 }
 </style>

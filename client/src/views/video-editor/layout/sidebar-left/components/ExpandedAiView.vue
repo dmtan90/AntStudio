@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useEditorStore } from 'video-editor/store/editor';
+import { useCanvasStore } from 'video-editor/store/canvas';
 import { toast } from 'vue-sonner';
 import { Loading } from '@element-plus/icons-vue';
 import { getFileUrl } from '@/utils/api';
@@ -8,6 +9,7 @@ import { generateImage, generateVoice, generateVideo, generateCaptions } from 'v
 import { useUserMediaStore } from 'video-editor/hooks/use-user-media';
 const props = defineProps<{ match: string }>();
 const editor = useEditorStore();
+const canvasStore = useCanvasStore();
 
 const isGenerating = ref(false);
 
@@ -44,7 +46,11 @@ const handleGenerate = async (type: string) => {
         if (res.success && res.data.media) {
           toast.success("Voice generated successfully!");
           userMediaStore.addLocalItem('audio', res.data.media);
-          // Also optionally add to editor track if needed, but 'resource management' focus relies on store
+
+          // Automatically add to active canvas for better UX
+          const audioUrl = getFileUrl(res.data.media.key);
+          const name = `AI Voice: ${voiceText.value.substring(0, 15)}...`;
+          canvasStore.canvas?.audio.add(res.data.media.key, name, false, res.data.media.id);
         }
         break;
       }
@@ -75,8 +81,40 @@ const handleGenerate = async (type: string) => {
         break;
       }
       case 'caption': {
-        await generateCaptions({ language: captionLanguage.value });
-        toast.success("Captions generated!");
+        const res = await generateCaptions({ language: captionLanguage.value });
+        if (res.success && res.data.segments) {
+          toast.success("Captions generated!");
+
+          // Scene-aware placement logic
+          let cumulativeTime = 0;
+          const pages = editor.pages;
+
+          // Re-implementing more robustly:
+          res.data.segments.forEach((seg: any) => {
+            let runningEnd = 0;
+            let found = false;
+            for (let i = 0; i < pages.length; i++) {
+              const start = runningEnd;
+              const end = start + pages[i].timeline.duration;
+              if (seg.start >= start && seg.start < end) {
+                pages[i].onAddSubtitle(seg.text, {
+                  start: seg.start - start,
+                  duration: seg.duration
+                });
+                found = true;
+                break;
+              }
+              runningEnd = end;
+            }
+            // If not found (e.g. past the end), add to last page at the end
+            if (!found && pages.length > 0) {
+              pages[pages.length - 1].onAddSubtitle(seg.text, {
+                start: pages[pages.length - 1].timeline.duration - 100, // Near end
+                duration: seg.duration
+              });
+            }
+          });
+        }
         break;
       }
     }
@@ -170,8 +208,13 @@ const handleGenerate = async (type: string) => {
     <template v-else-if="match === 'caption'">
       <div class="flex flex-col gap-4">
         <div
-          class="p-4 rounded-lg bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs leading-relaxed">
-          <p>Automatically analyze the timeline audio and generate synchronized captions.</p>
+          class="p-4 rounded-lg bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 text-[11px] leading-relaxed shadow-lg">
+          <div class="flex items-center gap-2 mb-2">
+            <MagicWand size="14" />
+            <span class="font-bold uppercase tracking-widest">Experimental</span>
+          </div>
+          <p>Analyzing audio tracks and generating scene-by-scene captions. Please ensure your timeline has audio
+            content.</p>
         </div>
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Source Language</label>
@@ -183,7 +226,7 @@ const handleGenerate = async (type: string) => {
 
         <el-button class="cinematic-button is-primary !h-11 !rounded-xl !border-none mt-4" :loading="isGenerating"
           @click="handleGenerate('caption')">
-          <span class="text-xs font-bold uppercase tracking-widest">Analyze & Generate</span>
+          <span class="text-xs font-bold uppercase tracking-widest">Analyze & Generate Captions</span>
         </el-button>
       </div>
     </template>

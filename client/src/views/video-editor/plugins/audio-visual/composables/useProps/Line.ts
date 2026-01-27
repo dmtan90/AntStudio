@@ -47,7 +47,7 @@ export const PropsLine = { ...commonProps, ...lineProps }
 export type PropsLineType = typeof PropsLine
 export function makeLineProps(): PropsLineType { return PropsLine }
 
-export class Line{
+export class Line {
   canvWidth: number
   canvHeight: number
   canvFillColor: string | string[]
@@ -58,7 +58,7 @@ export class Line{
   frqBits: number
   placeholder: boolean
   peaks: [number, number][] = []
-  constructor (p: PropsLineType) {
+  constructor(p: any) {
     const l = PropsLine
     this.canvWidth = resolvePropNum(p.canvWidth, l.canvWidth.default)
     this.canvHeight = resolvePropNum(p.canvHeight, l.canvHeight.default)

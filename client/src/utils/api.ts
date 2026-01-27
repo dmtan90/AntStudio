@@ -26,8 +26,10 @@ api.interceptors.response.use(
         // If the response follows our standardized structure, unwrap the 'data' property
         if (response.data && typeof response.data === 'object' && 'success' in response.data) {
             if (response.data.success) {
-                // Replace the outer response.data with the inner response.data.data
-                response.data = response.data.data
+                // Only unwrap if 'data' property exists, otherwise keep the whole object (success, message etc)
+                if (response.data.data !== undefined) {
+                    response.data = response.data.data
+                }
                 return response
             } else {
                 // If success is false, reject with the error message
@@ -64,6 +66,12 @@ export function getFileUrl(path: string | undefined | null, options?: { cached?:
     // If it doesn't start with http or /, assume it's an S3 path
     if (!path.startsWith('http') && !path.startsWith('/')) {
         url = `/api/s3/${path}`
+    }
+
+    //fix issue with external url
+    if (!options?.cached && (path.startsWith('http://') || path.startsWith('https://'))) {
+        const proxyUrl = `/api/media/proxy?url=${encodeURIComponent(url)}`
+        return proxyUrl;
     }
 
     if (options?.refresh) {

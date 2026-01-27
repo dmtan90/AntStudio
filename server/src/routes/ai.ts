@@ -1,14 +1,18 @@
 import { Router } from 'express';
 import { generateJSON, generateText, generateImage, generateAudio, generateVideo, checkVideoStatus } from '../utils/AIGenerator.js';
+import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { parseDocument } from '../utils/documentParser.js';
 import multer from 'multer';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { uploadToS3 } from '../utils/s3.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
 import { Media } from '../models/Media.js';
 import { connectDB } from '../utils/db.js';
 import config from '../utils/config.js';
+import { aiPerformanceService } from '../services/ai/AIPerformanceService.js';
+import { styleABTestingEngine } from '../services/ai/StyleABTestingEngine.js';
+import { deductCredits, CREDIT_PRICES, getCreditCost } from '../utils/credits.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -31,6 +35,13 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
         await connectDB();
         const { prompt, style, aspectRatio } = req.body;
         const userId = req.user!.userId;
+
+        // Credit Deduction
+        try {
+            await deductCredits(userId, 'image', CREDIT_PRICES.IMAGE_GEN, `Generate AI Image: ${prompt.substring(0, 30)}...`);
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
 
         // Enhance prompt with style
         const fullPrompt = style ? `${style} style. ${prompt}` : prompt;
@@ -58,7 +69,8 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
             }
         });
 
-        res.json({ success: true, data: { media, url: s3Url } });
+        // Return Key instead of URL (Frontend constructs /api/s3/...)
+        res.json({ success: true, data: { media, url: s3Key } });
     } catch (error: any) {
         console.error('Image generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate image' });
@@ -69,14 +81,24 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
 router.post('/generate-voice', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { text, voice } = req.body;
+        const { text, voice, provider } = req.body;
         const userId = req.user!.userId;
+
+        // Credit Deduction
+        try {
+            await deductCredits(userId, 'audio', CREDIT_PRICES.VOICE_GEN, `Generate AI Voice: ${text.substring(0, 30)}...`);
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
 
         const { s3Key, s3Url } = await generateAudio(
             text,
             userId,
             `gen_voice_${Date.now()}`,
-            { voice }
+            {
+                voice,
+                providerId: provider // 'elevenlabs' or others
+            }
         );
 
         // Create Media Record
@@ -94,7 +116,8 @@ router.post('/generate-voice', async (req: AuthRequest, res) => {
             }
         });
 
-        res.json({ success: true, data: { media, url: s3Url } });
+        // Return Key
+        res.json({ success: true, data: { media, url: s3Key } });
     } catch (error: any) {
         console.error('Voice generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate voice' });
@@ -105,10 +128,22 @@ router.post('/generate-voice', async (req: AuthRequest, res) => {
 router.post('/generate-video', async (req: AuthRequest, res) => {
     try {
         const { prompt, duration, aspectRatio } = req.body;
+        const effectiveDuration = duration || 5;
+
+        // Credit Deduction
+        const baseCreditCost = await getCreditCost('video');
+        const creditAmount = Math.ceil(effectiveDuration * baseCreditCost);
+        const deductionDescription = `Generate Video (Generic) - ${effectiveDuration}s @ ${baseCreditCost} cr/s`;
+
+        try {
+            await deductCredits(req.user!.userId, 'video', creditAmount, deductionDescription);
+        } catch (creditError: any) {
+            return res.status(402).json({ success: false, error: creditError.message || 'Insufficient credits' });
+        }
 
         const { jobId } = await generateVideo({
             prompt,
-            duration: duration || 5,
+            duration: effectiveDuration,
             aspectRatio: aspectRatio || '16:9'
         });
 
@@ -129,27 +164,25 @@ router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
         const status = await checkVideoStatus(jobId);
 
         if (status.status === 'completed' && status.videoUrl) {
-            // Check if media already exists for this job to avoid duplicates on polling
-            const existingMedia = await Media.findOne({ 'metadata.jobId': jobId });
+            // Check if media already exists for this job or URL to avoid unique key violation (especially for mocks)
+            const existingMedia = await Media.findOne({
+                $or: [
+                    { 'metadata.jobId': jobId },
+                    { 'key': status.videoUrl }
+                ]
+            });
 
             if (existingMedia) {
                 return res.json({ success: true, data: { ...status, media: existingMedia } });
             }
 
-            // Save external URL to media record (or download and upload if needed, but keeping simple)
-            // Note: Media model expects 'key' usually. If it's external URL, we might need adjustments or just store URL in key and handle it.
-            // But assume Media handles key as path. 
-            // Better: 'checkVideoStatus' usually returns a signed URL or public URL.
-            // Ideally we should download and upload to our S3 to own it. 
-            // For now, let's treat videoUrl as the key/url.
-
             const media = await Media.create({
                 userId,
-                key: status.videoUrl, // Storing full URL as key for external hosted
+                key: status.videoUrl,
                 fileName: `AI Video - ${jobId}`,
                 contentType: 'video/mp4',
                 size: 0,
-                bucket: 'external', // Flag as external
+                bucket: 'external',
                 purpose: 'ai-video',
                 metadata: {
                     jobId,
@@ -167,13 +200,18 @@ router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
     }
 });
 
-// POST /api/ai/generate-captions (Mock/Placeholder for now as it relies on timeline audio)
+// POST /api/ai/generate-captions (Mock transcription response)
 router.post('/generate-captions', async (req: AuthRequest, res) => {
     try {
-        // In a real app, this would receive an audio file or timeline JSON
-        // For now, return mock captions
-        await new Promise(r => setTimeout(r, 1000));
-        res.json({ success: true, data: { message: 'Captions generated successfully' } });
+        // Mock transcription segments
+        const segments = [
+            { start: 1000, duration: 2500, text: "Welcome to the future of video editing." },
+            { start: 4000, duration: 3000, text: "Create stunning cinematic content with AI." },
+            { start: 7500, duration: 2000, text: "Generated by AntFlow." }
+        ];
+
+        await new Promise(r => setTimeout(r, 1500)); // Simulate processing
+        res.json({ success: true, data: { segments } });
     } catch (error: any) {
         res.status(500).json({ success: false, error: 'Failed to generate captions' });
     }
@@ -376,6 +414,230 @@ router.post('/analyze-product', upload.single('file'), async (req, res) => {
     } catch (error: any) {
         console.error('Product analysis error:', error);
         res.status(500).json({ success: false, error: 'Failed to analyze product' });
+    }
+});
+
+// POST /api/ai/generate-avatar-video
+router.post('/generate-avatar-video', async (req: AuthRequest, res) => {
+    try {
+        const { avatarId, script, voiceId, background, avatarImage } = req.body;
+        const userId = req.user!.userId;
+
+        // Estimate duration
+        const avatarWordCount = script.split(' ').length;
+        const avatarDuration = Math.ceil(Math.max(5, avatarWordCount / 2.5));
+
+        // Credit Deduction
+        const creditAmount = Math.ceil(avatarDuration * CREDIT_PRICES.VIDEO_GEN_PER_SECOND);
+        try {
+            await deductCredits(userId, 'video', creditAmount, `Generate Avatar Video (${avatarDuration}s)`);
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
+
+        // Use Veo 3 for Avatar Generation
+        // We construct a prompt that asks for the character to speak the lines
+        // And pass the avatar image as a character reference ("image_start" or "character_references")
+
+        let characterImages = [];
+        if (avatarImage) {
+            characterImages.push(avatarImage);
+        }
+
+        const prompt = `A cinematic video of a character speaking the following lines: "${script}". 
+        The character should match the provided reference image.
+        Setting: ${background || 'Professional studio background, neutral lighting'}.
+        Action: Speaking naturally to the camera, lip syncing to the dialogue.
+        Style: Highly realistic, 4k, professional cinematography.`;
+
+        // Estimate duration (approx 150 words per minute -> 2.5 words per second)
+        const wordCount = script.split(' ').length;
+        const duration = Math.ceil(Math.max(5, wordCount / 2.5));
+
+        const { jobId } = await generateVideo({
+            prompt,
+            duration,
+            aspectRatio: '16:9',
+            characterImages: characterImages,
+            // If we have a direct frontal avatar image, using it as image_start might ensure better consistency
+            // imageStart: avatarImage 
+        });
+
+        res.json({ success: true, data: { jobId, status: 'processing', provider: 'veo-3' } });
+    } catch (error: any) {
+        console.error('Avatar generation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate avatar video' });
+    }
+});
+
+// POST /api/ai/convert-presentation
+router.post('/convert-presentation', upload.single('file'), async (req: AuthRequest, res) => {
+    try {
+        const file = req.file;
+        const userId = req.user!.userId;
+
+        if (!file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+
+        const fileType = file.originalname.split('.').pop()?.toLowerCase();
+        const scenes = [];
+
+        if (fileType === 'pdf') {
+            // Import dynamically to avoid startup issues if not installed yet (though we just installed it)
+            const pdf2img = (await import('pdf-img-convert')).default;
+
+            // Convert PDF pages to images (Uint8Array[])
+            const outputImages = await pdf2img.convert(file.buffer, {
+                width: 1920,
+                height: 1080
+            });
+
+            // Upload each page to S3
+            for (let i = 0; i < outputImages.length; i++) {
+                // Determine duration based on text content? For now fixed.
+                const buffer = Buffer.from(outputImages[i]);
+                const s3Key = `projects/${userId}/docs/${Date.now()}_slide_${i + 1}.png`;
+                const upload = await uploadToS3(s3Key, buffer, 'image/png');
+
+                scenes.push({
+                    id: i + 1,
+                    image: upload.url,
+                    duration: 5,
+                    notes: `Slide ${i + 1} from ${file.originalname}`
+                });
+            }
+        }
+        else if (['pptx', 'ppt'].includes(fileType || '')) {
+            // PPTX Extraction (Text only currently supported natively efficiently)
+            // For images, we would need CloudConvert or LibreOffice.
+            // Fallback: Parse text and use AI to generate scenes? 
+            // Or return error saying PDF is required for visual slides.
+
+            // Temporary Strategy: Suggest converting to PDF
+            return res.status(400).json({
+                success: false,
+                error: 'For visual slide conversion, please export your presentation as PDF first. PPTX support is currently limited to text analysis.'
+            });
+        }
+        else {
+            return res.status(400).json({ success: false, error: 'Unsupported file type. Please upload a PDF.' });
+        }
+
+        res.json({ success: true, data: { scenes, totalDuration: scenes.length * 5 } });
+    } catch (error: any) {
+        console.error('Presentation conversion error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to convert presentation' });
+    }
+});
+
+/**
+ * POST /api/ai/cookies
+ * Update session cookies for browser-based providers (AI Studio, Flow, Gemini Chat)
+ */
+router.post('/cookies', adminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        let { providerId, cookies } = req.body;
+
+        // Default to aistudio if not provided
+        providerId = providerId || 'aistudio';
+
+        // Support form-data / stringified cookies from bookmarklet
+        if (typeof cookies === 'string' && (cookies.startsWith('[') || cookies.startsWith('{'))) {
+            try {
+                cookies = JSON.parse(cookies);
+            } catch (e) {
+                console.warn('[AI Routes] Failed to parse cookies string as JSON');
+            }
+        }
+
+        if (!cookies) {
+            return res.status(400).json({ success: false, error: 'cookies are required' });
+        }
+
+        console.log(`[AI Routes] Updating cookies for provider: ${providerId}`);
+
+        if (providerId === 'aistudio' || providerId === 'gemini-chat') {
+            const { aiStudioClient } = await import('../integrations/aistudio/AIStudioClient.js');
+            await aiStudioClient.updateCookies(cookies);
+        } else if (providerId === 'flow') {
+            const { flowClient } = await import('../integrations/flow/FlowClient.js');
+            await flowClient.updateCookies(cookies);
+        } else {
+            return res.status(400).json({ success: false, error: 'Unsupported provider for cookie update' });
+        }
+
+        res.json({ success: true, message: 'Cookies updated successfully' });
+    } catch (error: any) {
+        console.error('Cookie update error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to update cookies' });
+    }
+});
+
+/**
+ * POST /api/ai/cookies/sync
+ * Trigger server-side browser sync with Google (Manual Login Flow)
+ */
+router.post('/cookies/sync', adminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { aiStudioClient } = await import('../integrations/aistudio/AIStudioClient.js');
+        const result = await aiStudioClient.syncWithGoogle();
+        res.json({ success: true, message: `Successfully synced ${result.count} cookies!`, data: result });
+    } catch (error: any) {
+        console.error('Cookie sync error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to sync with Google' });
+    }
+});
+
+/**
+ * TEST AI CONNECTION
+ * Verifies if the session for a native provider is active
+ */
+router.post('/test-connection', adminMiddleware, async (req: AuthRequest, res: any) => {
+    try {
+        const { providerId } = req.body;
+        if (!providerId) return res.status(400).json({ error: 'providerId is required' });
+
+        const result = await aiManager.testConnection(providerId);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- AI Performance & Optimization Endpoints ---
+
+// POST /api/ai/performance/snapshot
+router.post('/performance/snapshot', async (req, res) => {
+    try {
+        const { projectId, snapshot } = req.body;
+        aiPerformanceService.recordSnapshot(projectId, snapshot);
+
+        // Pass to AB Testing engine for potential style swap
+        await styleABTestingEngine.evaluate(projectId, snapshot);
+
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/ai/performance/insights/:projectId
+router.get('/performance/insights/:projectId', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const data = await aiPerformanceService.generateDirectorInsights(req.params.projectId);
+        res.json({ success: true, data });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/ai/performance/optimize/start
+router.post('/performance/optimize/start', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { projectId, initialStyle, candidates } = req.body;
+        styleABTestingEngine.startOptimization(projectId, initialStyle, candidates);
+        res.json({ success: true, message: 'Autonomous optimization cycle engaged' });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

@@ -141,6 +141,16 @@ export const useUserStore = defineStore('user', () => {
         }
     }
 
+    async function createPayPalOrder(payload: { planName?: string, packageId?: string, billingPeriod?: string }) {
+        try {
+            const response = await api.post('/payment/paypal/create-order', payload)
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     async function purchaseCredits(packageId: string) {
         return createCheckoutSession({ packageId })
     }
@@ -192,6 +202,7 @@ export const useUserStore = defineStore('user', () => {
         isAuthenticated,
         isInitialized,
         lastFetch,
+        systemMode: computed(() => user.value?.systemMode || 'edge'),
         setToken,
         setUser,
         clearAuth,
@@ -203,6 +214,7 @@ export const useUserStore = defineStore('user', () => {
         fetchPaymentHistory,
         fetchPlans,
         createCheckoutSession,
+        createPayPalOrder,
         logout,
         forgotPassword,
         resetPassword,

@@ -15,7 +15,8 @@
         "pricing": "Pricing",
         "signIn": "Sign In",
         "signUp": "Sign Up",
-        "license": "License"
+        "license": "License",
+        "marketplace": "Marketplace"
     },
     "profile": {
         "title": "Profile Settings",
@@ -76,7 +77,9 @@
         "ok": "OK",
         "warning": "Warning",
         "copy": "Copy",
-        "copySuccess": "Copied to clipboard"
+        "copySuccess": "Copied to clipboard",
+        "auto": "Auto",
+        "seconds": "seconds"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -149,7 +152,7 @@
                 "segments": "segments",
                 "confirmCreate": "Start Now",
                 "startOver": "Start Over",
-                "thinking": "AntFlow is processing your idea...",
+                "thinking": "AntStudio is processing your idea...",
                 "analyzing": "Analyzing requirements...",
                 "sec": "sec",
                 "landscape": "Landscape",
@@ -261,6 +264,8 @@
                 "framesUpdated": "frames updated",
                 "videosRequested": "videos requested",
                 "videoBatchStart": "Starting batch video generation for",
+                "assetReady": "Asset generated and synced!",
+                "backgroundJobStarted": "Generation started in background...",
                 "charDialog": {
                     "title": "Character Details",
                     "general": "General Identity",
@@ -404,27 +409,49 @@
                         "scifi": "Sci-fi/Futuristic",
                         "cyberpunk": "Cyberpunk City",
                         "cinematicInterior": "Cinematic Interior"
+                    },
+                    "suggestions": {
+                        "generateFrames": "Generate Frames",
+                        "generateMotion": "Generate Motion",
+                        "generateAudio": "Generate Audio"
                     }
                 }
             },
             "timeline": {
                 "title": "Timeline",
-                "placeholder": "Timeline view is under development...",
-                "noVideo": "No video generated yet.",
                 "tracks": "Tracks",
-                "videoTrack": "Video",
-                "voiceTrack": "AI Voice",
-                "musicTrack": "Music",
-                "assembling": "Assembling...",
-                "dialogueSegment": "Dialogue Segment",
+                "videoTrack": "Video Track",
+                "voiceTrack": "Voice Track",
+                "musicTrack": "Music Track",
                 "backgroundMusic": "Background Music",
+                "dialogueSegment": "Dialogue",
+                "volume": "Volume",
+                "fadeOut": "Fade Out",
+                "speed": "Speed",
+                "duration": "Duration",
+                "trimOffset": "Trim Offset",
+                "transitionSettings": "Transition Settings",
                 "volumeUpdated": "Volume updated",
-                "speedUpdated": "Speed updated",
-                "durationUpdated": "Duration updated",
-                "fadeUpdated": "Fade effect updated",
                 "failedUpdateVolume": "Failed to update volume",
+                "speedUpdated": "Speed updated",
                 "failedUpdateSpeed": "Failed to update speed",
-                "failedUpdateDuration": "Failed to update duration"
+                "durationUpdated": "Duration updated",
+                "failedUpdateDuration": "Failed to update duration",
+                "fadeUpdated": "Fade updated",
+                "transitionUpdated": "Transition updated",
+                "voiceoverGenerating": "Generating voiceover...",
+                "voiceoverSuccess": "Voiceover ready",
+                "voiceoverFailed": "Failed to generate voiceover",
+                "generating": "GENERATING...",
+                "generate": "GENERATE VOICEOVER",
+                "ready": "Ready",
+                "transitions": {
+                    "none": "None",
+                    "fade": "Fade",
+                    "dissolve": "Dissolve",
+                    "wipe": "Wipe",
+                    "circle": "Circle"
+                }
             }
         },
         "detail": {
@@ -578,5 +605,91 @@
                 "step3": "Generate Background Music and Voiceover to establish the atmosphere."
             }
         }
+    },
+    "studio": {
+        "title": "Untitled Stream",
+        "header": {
+            "godMode": "God Mode",
+            "exit": "Exit"
+        },
+        "tabs": {
+            "filters": "Filters",
+            "ai": "AI Persona",
+            "graphics": "Graphics",
+            "scenes": "Scenes",
+            "guests": "Guests",
+            "linguistic": "Linguistics",
+            "commerce": "Commerce",
+            "engagement": "Engagement",
+            "vibe": "Vibe",
+            "collaboration": "Collaboration"
+        },
+        "filters": {
+            "none": "Normal",
+            "dream": "Dreamy",
+            "noir": "Noir",
+            "vibrant": "Vibrant"
+        },
+        "backgrounds": {
+            "office": "Hi-Tech Office",
+            "studio": "Neon Studio"
+        },
+        "messages": {
+            "live": "Broadcast is LIVE!",
+            "liveError": "Failed to start broadcast",
+            "stopped": "Broadcast stopped",
+            "recordingStart": "Recording Session...",
+            "recordingSaved": "Recording Saved to Cloud",
+            "godModeOn": "God Mode Engaged",
+            "godModeOff": "Manual Control Restored",
+            "inviteCopied": "Invite Link Copied",
+            "mockChat": "Amazing stream quality!"
+        },
+        "accessibility": {
+            "aslTitle": "Hands On ASL",
+            "translating": "Translating Speech...",
+            "liveAudio": "LIVE AUDIO"
+        }
+    },
+    "marketplace": {
+        "title": "Marketplace",
+        "browse": "Browse Templates",
+        "import": "Import from External",
+        "importBtn": "Import Template",
+        "useTemplate": "Use Template",
+        "search": "Search templates...",
+        "analyzing": "Analyzing URL...",
+        "placeholder": "https://www.capcut.com/template-detail/..."
+    },
+    "recorder": {
+        "title": "Recorder",
+        "tabs": {
+            "camera": "Camera",
+            "cameraScreen": "Camera & Screen",
+            "screen": "Screen",
+            "audio": "Audio"
+        },
+        "overlay": {
+            "aslZone": "ASL Capture Zone",
+            "audioLevel": "LEVEL"
+        },
+        "settings": {
+            "blur": "Visual Blur"
+        },
+        "dialog": {
+            "title": "Recording Complete",
+            "desc": "Your recording is ready. What would you like to do?",
+            "download": "Download",
+            "save": "Save to Project"
+        },
+        "status": {
+            "syncing": "Synchronizing recording...",
+            "persistenceSuccess": "Mission persistent.",
+            "persistenceError": "Tactical failure during persistence",
+            "extractionSoon": "Enhanced file extraction coming soon.",
+            "accessError": "Strategic Failure: Could not access neural capture unit",
+            "stopFirst": "Stop recording before switching modes"
+        },
+        "projectDefault": "Neural Session"
     }
 }

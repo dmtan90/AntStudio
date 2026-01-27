@@ -117,7 +117,7 @@ export class Bars {
   placeholder: boolean
   symmetric: boolean
   peaks: [number, number][] = []
-  constructor(p: PropsBarsType) {
+  constructor(p: any) {
     this.barColor = resolvePropColor(p.barColor, PropsBars.barColor.default)
     this.barSpace = resolvePropNum(p.barSpace, PropsBars.barSpace.default)
     this.brickHeight = resolvePropNum(p.brickHeight, PropsBars.brickHeight.default)
@@ -135,7 +135,7 @@ export class Bars {
     const bw = resolvePropNum(p.barWidth, PropsBars.barWidth.default)
     this.barWidth = bw > this.canvWidth ? this.canvWidth : bw
   }
-  alignSym(barHeight: number):number {
+  alignSym(barHeight: number): number {
     return this.symmetric ? ((this.canvHeight - barHeight) / 2) : 0
   }
   setPeaks(buffer: AudioBuffer) {

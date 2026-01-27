@@ -8,6 +8,7 @@ _client
 _server
 _pages
 _video-editor
+ams
 dist
 
 # Node dependencies

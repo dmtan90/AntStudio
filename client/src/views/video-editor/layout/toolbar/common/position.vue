@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BoundingBox as BoxSelect } from '@icon-park/vue-next';
+import { Rectangle as BoxSelect } from '@icon-park/vue-next';
 import { useEditorStore } from 'video-editor/store/editor';
 import { align, move } from 'video-editor/constants/editor';
 
@@ -19,7 +19,7 @@ const handleAlignToPage = (type: "left" | "center" | "right" | "top" | "middle" 
   <div class="flex items-center">
     <el-dropdown trigger="click" popper-class="cinematic-dropdown">
       <button class="cinematic-button !h-9 !w-9 !p-0 !rounded-xl border-white/5 bg-white/5 flex items-center justify-center transition-all duration-300 hover:bg-white/10 hover:border-white/10 text-white/50 hover:text-white shadow-sm active:scale-90">
-        <BoxSelect :size="16" stroke-width="4" />
+        <BoxSelect :size="16" :stroke-width="4" />
       </button>
       <template #dropdown>
         <el-dropdown-menu class="cinematic-dropdown-menu">

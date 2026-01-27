@@ -1,6 +1,6 @@
-# AntFlow Wiki
+# AntStudio Wiki
 
-Welcome to the AntFlow (Flova.ai) documentation wiki. This guide covers all aspects of the platform.
+Welcome to the AntStudio documentation wiki. This guide covers all aspects of the platform.
 
 ## 📚 Table of Contents
 
@@ -15,9 +15,9 @@ Welcome to the AntFlow (Flova.ai) documentation wiki. This guide covers all aspe
 
 ## Getting Started
 
-### What is AntFlow?
+### What is AntStudio?
 
-AntFlow is an AI-powered video production platform that transforms scripts and ideas into professional cinematic videos. The platform automates the entire video production workflow from script analysis to final video assembly.
+AntStudio is an AI-powered video production platform that transforms scripts and ideas into professional cinematic videos. The platform automates the entire video production workflow from script analysis to final video assembly.
 
 ### Key Concepts
 
@@ -274,7 +274,7 @@ Navigate to `/admin` (visible only to admin users)
 ### Project Structure
 
 ```
-flova.ai/
+AntStudio/
 ├── client/
 │   ├── src/
 │   │   ├── components/       # Reusable UI components
@@ -521,7 +521,7 @@ See [API.md](./API.md) for detailed API documentation.
 
 - **Documentation**: Read this wiki thoroughly
 - **GitHub Issues**: Report bugs and feature requests
-- **Email Support**: support@flova.ai
+- **Email Support**: dmtan90@gmail.com
 - **Discord Community**: Join for real-time help
 
 ---

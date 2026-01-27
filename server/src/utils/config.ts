@@ -10,6 +10,10 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const config = {
+    // Registry & Business Mode
+    systemMode: process.env.SYSTEM_MODE || 'edge', // 'master' or 'edge'
+    masterServerUrl: process.env.MASTER_SERVER_URL || 'https://antstudio.agrhub.com',
+
     // Private keys
     mongodbUri: process.env.MONGODB_URI,
     jwtSecret: process.env.JWT_SECRET || 'fallback-secret',

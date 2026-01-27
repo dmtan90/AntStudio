@@ -3,16 +3,25 @@
     <div class="sidebar-header">
       <div class="brand-section" v-if="!collapsed">
         <router-link to="/" class="brand">
-            <template v-if="uiStore.logo">
-                <img :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="brand-logo" />
-            </template>
-            <span v-else>{{ uiStore.appName }}</span>
+          <template v-if="uiStore.logo">
+            <img :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="brand-logo" />
+          </template>
+          <span v-else>{{ uiStore.appName }}</span>
         </router-link>
       </div>
       <button class="toggle-btn" @click="collapsed = !collapsed">
         <menu-unfold v-if="collapsed" theme="outline" size="20" />
         <menu-fold v-else theme="outline" size="20" />
       </button>
+    </div>
+
+    <!-- Update Banner -->
+    <div v-if="updateAvailable && !collapsed"
+      class="mx-4 mt-4 p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white shadow-lg animate-pulse cursor-pointer">
+      <div class="flex justify-between items-center">
+        <span class="text-[10px] font-black uppercase">v{{ latestVersion }} Available</span>
+        <download theme="outline" size="14" />
+      </div>
     </div>
 
     <div class="sidebar-content">
@@ -25,30 +34,66 @@
           <folder-open theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.projects') }}</span>
         </router-link>
+        <router-link to="/marketplace" class="nav-item" :class="{ active: route.path === '/marketplace' }">
+          <shopping theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">Marketplace</span>
+        </router-link>
+        <router-link to="/organization" class="nav-item" :class="{ active: route.path === '/organization' }">
+          <peoples theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">Team</span>
+        </router-link>
+        <router-link to="/neural-archive" class="nav-item" :class="{ active: route.path === '/neural-archive' }">
+          <brain theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">Neural Archive</span>
+        </router-link>
         <router-link to="/gallery" class="nav-item" :class="{ active: route.path === '/gallery' }">
           <video-two theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.gallery') }}</span>
         </router-link>
+        <router-link to="/platforms" class="nav-item" :class="{ active: route.path === '/platforms' }">
+          <connection theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">Platforms</span>
+        </router-link>
+        <router-link to="/platforms/cms" class="nav-item" :class="{ active: route.path === '/platforms/cms' }">
+          <chart-line theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">Creator Hub</span>
+        </router-link>
+        <router-link to="/recordings" class="nav-item" :class="{ active: route.path === '/recordings' }">
+          <video-file theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">Archives</span>
+        </router-link>
+        <router-link to="/merchant/orders" class="nav-item" :class="{ active: route.path === '/merchant/orders' }">
+          <shopping theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">Merchant Hub</span>
+        </router-link>
         <router-link to="/resources" class="nav-item" :class="{ active: route.path === '/resources' }">
           <book-one theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.resources') }}</span>
+        </router-link>
+        <router-link to="/developer" class="nav-item" :class="{ active: route.path === '/developer' }">
+          <connection-point theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">Developer Hub</span>
         </router-link>
         <router-link to="/subscription" class="nav-item" :class="{ active: route.path === '/subscription' }">
           <credit theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.subscription') }}</span>
         </router-link>
 
-        <router-link v-if="user?.role === 'sys-admin'" to="/license" class="nav-item" :class="{ active: route.path === '/license' }">
+        <router-link v-if="userStore.systemMode === 'master'" to="/license-portal" class="nav-item"
+          :class="{ active: route.path === '/license-portal' }">
+          <key theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text text-amber-400">License Hub</span>
+        </router-link>
+
+        <router-link v-if="user?.role === 'sys-admin'" to="/license" class="nav-item"
+          :class="{ active: route.path === '/license' }">
           <key theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.license') }}</span>
         </router-link>
-        
+
         <div class="nav-group" v-if="user?.role === 'admin' || user?.role === 'sys-admin'">
-          <div 
-            class="nav-item admin-item" 
-            :class="{ 'active': route.path.startsWith('/admin') && !adminMenuOpen }"
-            @click="toggleAdminMenu"
-          >
+          <div class="nav-item admin-item" :class="{ 'active': route.path.startsWith('/admin') && !adminMenuOpen }"
+            @click="toggleAdminMenu">
             <setting theme="outline" size="20" />
             <span v-if="!collapsed" class="nav-text flex-1">{{ t('nav.admin') }}</span>
             <down v-if="!collapsed && adminMenuOpen" theme="outline" size="16" />
@@ -56,31 +101,50 @@
           </div>
 
           <div v-show="!collapsed && adminMenuOpen" class="submenu">
-            <router-link 
-              to="/admin" 
-              class="nav-item sub-item" 
-              :class="{ active: route.path === '/admin' }"
-            >
+            <router-link to="/admin" class="nav-item sub-item" :class="{ active: route.path === '/admin' }">
               <dashboard-one theme="outline" size="18" />
               <span class="nav-text">{{ t('nav.dashboard') }}</span>
             </router-link>
-            
-            <router-link 
-              to="/admin/users" 
-              class="nav-item sub-item" 
-              :class="{ active: route.path.startsWith('/admin/users') }"
-            >
+
+            <router-link to="/admin/users" class="nav-item sub-item"
+              :class="{ active: route.path.startsWith('/admin/users') }">
               <user-icon theme="outline" size="18" />
               <span class="nav-text">{{ t('nav.users') }}</span>
             </router-link>
-            
-            <router-link 
-              to="/admin/settings" 
-              class="nav-item sub-item" 
-              :class="{ active: route.path.startsWith('/admin/settings') }"
-            >
+
+            <router-link to="/admin/settings" class="nav-item sub-item"
+              :class="{ active: route.path.startsWith('/admin/settings') }">
               <setting theme="outline" size="18" />
               <span class="nav-text">{{ t('nav.settings') }}</span>
+            </router-link>
+            <router-link to="/admin/ai-accounts" class="nav-item sub-item"
+              :class="{ active: route.path.startsWith('/admin/ai-accounts') }">
+              <robot theme="outline" size="18" />
+              <span class="nav-text">AI Accounts</span>
+            </router-link>
+
+            <router-link v-if="userStore.systemMode === 'master'" to="/admin/fleet" class="nav-item sub-item"
+              :class="{ active: route.path === '/admin/fleet' }">
+              <data-server theme="outline" size="18" />
+              <span class="nav-text text-blue-400">Fleet Command</span>
+            </router-link>
+
+            <router-link to="/admin/monitoring" class="nav-item sub-item"
+              :class="{ active: route.path.startsWith('/admin/monitoring') }">
+              <terminal theme="outline" size="18" />
+              <span class="nav-text">Monitoring</span>
+            </router-link>
+
+            <router-link to="/admin/infra-health" class="nav-item sub-item"
+              :class="{ active: route.path.startsWith('/admin/infra-health') }">
+              <database-network theme="outline" size="18" />
+              <span class="nav-text">Infrastructure</span>
+            </router-link>
+
+            <router-link to="/admin/network" class="nav-item sub-item"
+              :class="{ active: route.path.startsWith('/admin/network') }">
+              <earth theme="outline" size="18" />
+              <span class="nav-text">Network Hub</span>
             </router-link>
           </div>
         </div>
@@ -102,34 +166,40 @@
     </div>
 
     <!-- Account Dialog -->
-    <AccountDialog
-      v-model="accountDialogVisible"
-      :user="user"
-      @update-user="user = $event"
-      @logout="handleLogout"
-      fullscreen
-    />
+    <AccountDialog v-model="accountDialogVisible" :user="user" @update-user="user = $event" @logout="handleLogout"
+      fullscreen />
   </aside>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { 
-  DashboardOne, 
-  FolderOpen, 
-  VideoTwo, 
-  BookOne, 
-  User as UserIcon, 
-  Logout as LogoutIcon, 
-  MenuFold, 
+import {
+  DashboardOne,
+  FolderOpen,
+  VideoTwo,
+  BookOne,
+  User as UserIcon,
+  Logout as LogoutIcon,
+  MenuFold,
   MenuUnfold,
   Vip,
   Setting,
   Down,
   Right,
   Key,
-  Credit
+  Credit,
+  Robot,
+  Connection,
+  ChartLine,
+  VideoFile,
+  Shopping,
+  Earth,
+  Peoples,
+  Brain,
+  Terminal,
+  Download
 } from '@icon-park/vue-next'
+import axios from 'axios'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/stores/ui'
@@ -206,7 +276,29 @@ const handleLogout = () => {
 onMounted(() => {
   userStore.fetchProfile()
   uiStore.fetchAppConfig()
+  checkForUpdates()
 })
+
+const updateAvailable = ref(false)
+const latestVersion = ref('')
+
+const checkForUpdates = async () => {
+  try {
+    // Only check if we are in Edge mode
+    if (userStore.systemMode === 'master') return
+    const res = await axios.get('/api/releases/latest')
+    if (res.data.success) {
+      // Simple version compare logic 
+      // In real app, use semver
+      // Assuming locally we have a version in config or env, mocking '1.0.0' for now
+      const currentVersion = '1.4.0'
+      if (res.data.data.release.version !== currentVersion) {
+        updateAvailable.value = true
+        latestVersion.value = res.data.data.release.version
+      }
+    }
+  } catch (e) { }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -250,9 +342,9 @@ onMounted(() => {
 }
 
 .brand-logo {
-    height: 32px;
-    width: auto;
-    object-fit: contain;
+  height: 32px;
+  width: auto;
+  object-fit: contain;
 }
 
 .toggle-btn {
@@ -296,7 +388,8 @@ onMounted(() => {
   transition: $transition-fast;
   cursor: pointer;
 
-  &:hover, &.active {
+  &:hover,
+  &.active {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
   }
@@ -370,12 +463,13 @@ onMounted(() => {
 .sub-item {
   padding-left: 20px !important;
   height: 40px;
-  
+
   .nav-text {
     font-size: 13px;
   }
-  
-  &:hover, &.active {
+
+  &:hover,
+  &.active {
     background: rgba(255, 255, 255, 0.08);
   }
 }
@@ -405,7 +499,8 @@ onMounted(() => {
   }
 }
 
-.large-avatar, .avatar-placeholder.large {
+.large-avatar,
+.avatar-placeholder.large {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -444,7 +539,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  
+
   label {
     font-size: 12px;
     font-weight: 700;
@@ -458,8 +553,8 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   width: 100%;
-  
-  & > * {
+
+  &>* {
     flex: 1;
   }
 }
@@ -468,12 +563,12 @@ onMounted(() => {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   margin-top: $spacing-sm;
   padding-top: $spacing-sm;
-  
+
   &:hover {
     background: rgba(255, 215, 0, 0.1);
     color: #ffd700;
   }
-  
+
   &.active {
     background: rgba(255, 215, 0, 0.15);
     color: #ffd700;

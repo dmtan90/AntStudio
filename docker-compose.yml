@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # DATABASE
+  # ==========================================
+  mongo:
+    image: mongo:latest
+    container_name: antflow-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - antflow-network
+
+  # ==========================================
+  # BACKEND SERVER
+  # ==========================================
+  antflow-server:
+    container_name: antflow-server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - MONGO_URI=mongodb://mongo:27017/antflow
+      - JWT_SECRET=change_me_in_prod
+      # Add your AI Keys here or use .env file
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - VEO_API_ENDPOINT=${VEO_API_ENDPOINT}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+    networks:
+      - antflow-network
+
+  # ==========================================
+  # FRONTEND CLIENT
+  # ==========================================
+  antflow-client:
+    container_name: antflow-client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - antflow-server
+    networks:
+      - antflow-network
+
+networks:
+  antflow-network:
+    driver: bridge
+
+volumes:
+  mongo_data:

@@ -334,7 +334,7 @@ const handleUpdateLicense = async () => {
     }
     try {
         isUploading.value = true
-        await licenseStore.updateLicense(previewLicense.value)
+        await licenseStore.updateLicense(previewLicense.value._id, previewLicense.value)
         //reset form
         previewLicense.value = {
             owner: '',

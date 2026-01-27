@@ -36,6 +36,11 @@ export class CanvasHotkeys {
         if (event.ctrlKey || event.metaKey) {
           this._canvas.cloner.paste();
         }
+      case "s":
+        if (event.ctrlKey || event.metaKey) {
+          event.preventDefault();
+          this._canvas.editor?.onSaveRequested?.();
+        }
         break;
     }
   }

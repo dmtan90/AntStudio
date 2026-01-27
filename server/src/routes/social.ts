@@ -4,6 +4,7 @@ import { getFacebookAuthUrl, getFacebookUserToken, getFacebookPages } from '../u
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { User } from '../models/User.js';
 import { connectDB } from '../utils/db.js';
+import { engagementService } from '../services/EngagementService.js';
 import { google } from 'googleapis';
 import config from '../utils/config.js';
 
@@ -132,9 +133,54 @@ router.post('/disconnect', authMiddleware, async (req: AuthRequest, res) => {
 
         await user.save();
         res.json({ success: true, data: { message: `${provider} disconnected successfully` } });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Social disconnect error:', error);
-        res.status(500).json({ success: false, data: null, error: 'Failed to disconnect account' });
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- Engagement Endpoints (Polls & Q&A) ---
+
+// POST /api/social/engagement/poll/start
+router.post('/engagement/poll/start', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { roomId, question, options } = req.body;
+        const poll = engagementService.startPoll(roomId, question, options);
+        res.json({ success: true, data: poll });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/social/engagement/poll/vote
+router.post('/engagement/poll/vote', async (req, res) => {
+    try {
+        const { roomId, optionIndex } = req.body;
+        const poll = engagementService.submitVote(roomId, optionIndex);
+        res.json({ success: true, data: poll });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/social/engagement/qa/ask
+router.post('/engagement/qa/ask', async (req, res) => {
+    try {
+        const { roomId, user, text } = req.body;
+        const question = engagementService.addQuestion(roomId, user, text);
+        res.json({ success: true, data: question });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/social/engagement/:roomId
+router.get('/engagement/:roomId', async (req, res) => {
+    try {
+        const data = engagementService.getRoomData(req.params.roomId);
+        res.json({ success: true, data });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

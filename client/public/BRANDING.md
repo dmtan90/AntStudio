@@ -1,6 +1,6 @@
-# AntFlow Branding Assets
+# AntStudio Branding Assets
 
-This directory contains the official branding assets for AntFlow by AntMedia.
+This directory contains the official branding assets for AntStudio by AntMedia.
 
 ## Logo Files
 
@@ -96,7 +96,7 @@ client/public/
 
 ### Vue Components
 ```vue
-<img src="/logo.png" alt="AntFlow by AntMedia" />
+<img src="/logo.png" alt="AntStudio by AntMedia" />
 <img src="/icon.png" alt="AntFlow Icon" />
 ```
 

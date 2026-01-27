@@ -20,7 +20,7 @@ watch(templates, (value) => {
   console.log("templates", value);
 });
 
-const loadTemplate = (template: EditorTemplate, mode: string) => {
+const loadTemplate = (template: EditorTemplate, mode: "replace" | "reset") => {
   editor.loadTemplate(template, mode);
 };
 

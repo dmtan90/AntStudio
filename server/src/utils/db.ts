@@ -1,30 +1,30 @@
-import mongoose from 'mongoose'
-import config from './config.js'
+import mongoose from 'mongoose';
+import config from './config.js';
+import { clusterManager } from './ClusterManager.js';
 
-let isConnected = false
+let isConnected = false;
 
+/**
+ * Connects to the database cluster with multi-region support.
+ */
 export const connectDB = async () => {
-    if (isConnected) {
-        return
-    }
-
-    if (!config.mongodbUri) {
-        throw new Error('MONGODB_URI is not defined in environment variables')
-    }
+    if (isConnected) return;
 
     try {
-        const db = await mongoose.connect(config.mongodbUri, {
-            maxPoolSize: 10,
-            serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 45000,
-        })
-
-        isConnected = db.connection.readyState === 1
-        console.log('✅ MongoDB connected successfully')
+        await clusterManager.connect();
+        isConnected = true;
+        console.log('✅ Global Database Cluster connected successfully');
     } catch (error) {
-        console.error('❌ MongoDB connection failed:', error)
-        throw error
+        console.error('❌ Database Cluster connection failed:', error);
+        throw error;
     }
-}
+};
 
-export default connectDB
+/**
+ * Helper to get a connection for specific operations.
+ */
+export const getDB = (mode: 'read' | 'write' = 'write') => {
+    return clusterManager.getConnection(mode);
+};
+
+export default connectDB;

@@ -13,14 +13,14 @@ import { parseGIF, decompressFrames } from 'gifuct-js';
 //      });
 
 const gifToFrames = async (url: string, width: number, height: number) => {
-  try{
-    const reponse = await fetch(url);
-    if(!reponse.ok){
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
       throw new Error(`Load GIF error: ${response.status}`);
     }
-    const arrayBuffer = await reponse.arrayBuffer();
+    const arrayBuffer = await response.arrayBuffer();
     const gif = parseGIF(arrayBuffer)
-    let frames = decompressFrames(gif, true);
+    let frames: any[] = decompressFrames(gif, true);
     let i = 0;
     let canvas = document.createElement('canvas');
     canvas.width = width;//frame.dims.width;
@@ -38,13 +38,13 @@ const gifToFrames = async (url: string, width: number, height: number) => {
       imageData.data.set(frame.patch); // 'frame.patch' contains the pixel data
       let paddingX = 0;
       let paddingY = 0;
-      if(frame.dims.width < width){
-        paddingX = (width - frame.dims.width)/2;
+      if (frame.dims.width < width) {
+        paddingX = (width - frame.dims.width) / 2;
         // console.log(paddingX);
       }
 
-      if(frame.dims.height < height){
-        paddingY = (height - frame.dims.height)/2;
+      if (frame.dims.height < height) {
+        paddingY = (height - frame.dims.height) / 2;
         // console.log(paddingY);
       }
 
@@ -70,7 +70,7 @@ const gifToFrames = async (url: string, width: number, height: number) => {
     });
     canvas = null;
     return frames;
-  }catch(err){
+  } catch (err) {
     return null;
   }
 }
@@ -95,18 +95,18 @@ const Gif = fabric.util.createClass(fabric.Image, {
     this.on("added", () => fabric.util.requestAnimFrame(this.update.bind(this)));
   },
 
-  loadFrames: async function(){
+  loadFrames: async function () {
     // console.log("loadFrames");
     let element = this._originalElement;
     const frames = await gifToFrames(this.src, element.width, element.height);
     this.frames = [];
     this.frameIndex = 0;
     this.duration = 0;
-    if(frames && frames.length > 0){
+    if (frames && frames.length > 0) {
       this.frames = frames;
       this.delay = frames[0].delay;
       frames.forEach(frame => {
-        if(frame && frame.delay < this.delay){
+        if (frame && frame.delay < this.delay) {
           this.delay = frame.delay
         }
       });
@@ -129,12 +129,12 @@ const Gif = fabric.util.createClass(fabric.Image, {
     clearInterval(this.timer);
     this.timer = null;
     // console.log(this.src);
-    this.setSrc(this.src, function(img) {
+    this.setSrc(this.src, function (img) {
       img.canvas.renderAll(); // Important: Re-render the canvas to see the change
-    }, {crossOrigin: "anonymous"});
+    }, { crossOrigin: "anonymous" });
   },
 
-  seek: function(seconds: number) {
+  seek: function (seconds: number) {
 
   },
 
@@ -151,7 +151,7 @@ const Gif = fabric.util.createClass(fabric.Image, {
     }
   },
 
-  updateFrame: function(){
+  updateFrame: function () {
     const src = this.getNextFrame();
     // var image = new Image();
     // image.crossOrigin = true;
@@ -163,9 +163,9 @@ const Gif = fabric.util.createClass(fabric.Image, {
     //   console.log(image);
     // };
     // image.src = src;
-    this.setSrc(src, function(img) {
+    this.setSrc(src, function (img) {
       img.canvas.renderAll(); // Important: Re-render the canvas to see the change
-    }, {crossOrigin: "anonymous"});
+    }, { crossOrigin: "anonymous" });
   },
 
   /**
@@ -190,7 +190,7 @@ const Gif = fabric.util.createClass(fabric.Image, {
     return this.src || '';
   },
 
-  getNextFrame: function(){
+  getNextFrame: function () {
     const index = this.frameIndex % this.frames.length;
     const frame = this.frames[index];
     this.delay = frame.delay;
@@ -198,13 +198,13 @@ const Gif = fabric.util.createClass(fabric.Image, {
     return frame.img;
   },
 
-  destroyFrames: function(){
+  destroyFrames: function () {
     this.frames = null;
     this.frameIndex = 0;
     this.delay = 0;
   },
 
-  dispose: function(){
+  dispose: function () {
     this.pause();
     this.destroyFrames();
     this.callSuper("dispose");
@@ -229,12 +229,12 @@ Gif.fromURL = function (url: string, callback: (gif: fabric.Gif | null) => void,
 
   // element.src = url;
   fabric.util.loadImage(url, (image) => {
-      if (!image || !image.height || !image.width) {
-        callback(null);
-      } else {
-        callback(createInstance(Gif, image, options));
-      }
-    },
+    if (!image || !image.height || !image.width) {
+      callback(null);
+    } else {
+      callback(createInstance(Gif, image, options));
+    }
+  },
     null,
     "anonymous",
   );

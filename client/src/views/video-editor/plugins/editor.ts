@@ -18,6 +18,7 @@ import { propertiesToInclude } from "video-editor/fabric/constants";
 import { type EditorAudioElement, EditorTemplate, EditorTemplatePage } from "video-editor/types/editor";
 import { Adapter } from "./adapter";
 import { useEditorStore } from "video-editor/store/editor"
+import { cat } from "@huggingface/transformers";
 
 export type ExportMode = "video" | "both";
 export type EditorMode = "creator" | "adapter";
@@ -54,7 +55,9 @@ export class Editor {
 
   public sidebarLeft: string | null;
   public sidebarRight: string | null;
-  public timelineOpen: boolean;
+  public timelineOpen: boolean = true;
+  public timelineMode: 'compact' | 'layered' = 'compact';
+  public timelineZoom: number = 1.0;
 
   public blob?: Blob;
   public frame?: string;
@@ -67,8 +70,8 @@ export class Editor {
   public scale: number;
   public format: string;
 
-  public saving: boolean;
-  public preview: boolean;
+  public saving: boolean = false;
+  public preview: boolean = false;
 
   public exports: ExportMode;
   public progress: EditorProgress;
@@ -80,6 +83,9 @@ export class Editor {
   public ffmpeg: FFmpeg;
   public exporting: ExportProgress;
   public controller: AbortController;
+  public onModified?: () => void;
+  public onSaveRequested?: () => void;
+  public onStatusChange?: (status: EditorStatus) => void;
 
   constructor() {
     this.page = 0;
@@ -121,6 +127,7 @@ export class Editor {
     this.sidebarLeft = null;
     this.sidebarRight = null;
     this.timelineOpen = false;
+    this.timelineZoom = 1.0;
   }
 
   get canvas(): Canvas {
@@ -143,6 +150,7 @@ export class Editor {
     console.log("initialize", mode);
     if (mode) this.mode = mode;
     this.status = "pending";
+    this.onStatusChange?.("pending");
     try {
       await this.ffmpeg.load({
         coreURL: await toBlobURL("https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js", "text/javascript"),
@@ -163,10 +171,12 @@ export class Editor {
         active: () => {
           // console.debug("Fonts loaded!");
           this.status = "complete";
+          this.onStatusChange?.("complete");
         },
       });
     } catch (error) {
       this.status = "error";
+      this.onStatusChange?.("error");
     }
   }
 
@@ -243,37 +253,117 @@ export class Editor {
   }
 
   async exportVideo(): Promise<Blob> {
-    this.blob = undefined;
-    this.frame = undefined;
-    this.onResetProgress();
-    const editor = useEditorStore();
-    // console.log(editor.dimension);
+    return null;
+  }
+
+  async exportProjectToStream(fileHandle: FileSystemFileHandle, progress?: (p: number, status: string) => void): Promise<void> {
+    const totalDuration = this.pages.reduce((acc, p) => acc + p.timeline.duration, 0) / 1000;
+
+    // Create Frame Generator
+    async function* frameGenerator(pages: Canvas[], recorder: Recorder, fps: number) {
+      for (let i = 0; i < pages.length; i++) {
+        // Capture page frames
+        // Note: We need a way to capture frames lazily or largely in chunks
+        // recorder.capturePage returns ALL frames for the page.
+        // For extremely long scenes, we might need to chunk this too. 
+        // But for now, chunking by Scene is a huge improvement over chunking by Project.
+        const frames = await recorder.capturePage(i, fps, {
+          progress: (p) => {
+            // Pass through progress if needed (handled in outer loop somewhat)
+          }
+        });
+
+        for (const frame of frames) {
+          yield frame;
+        }
+      }
+    }
 
     try {
-      // const canvas = new OffscreenCanvas(this.width, this.height);
-      // this.recorder.initialize(canvas);
-      this.onChangeExportStatus(ExportProgress.CaptureAudio);
-      const audio: Blob = await this.exportAudio();
-      this.controller = createInstance(AbortController);
-      await this.recorder.start();
-      this.onChangeExportStatus(ExportProgress.CaptureVideo);
-      const frames: Uint8Array[] = await this.recorder.capture(+this.fps, { signal: this.controller.signal, progress: this._progressEvent.bind(this) });
-      this.recorder.stop();
-      this.onChangeExportStatus(ExportProgress.CompileVideo);
-      let nowMs = (new Date()).getTime();
-      let blob: Blob = await this.recorder.mediaBunnyCompile(frames, { width: this.width, height: this.height, scale: this.scale, fps: this.fps, format: this.format, duration: this.getExportDuration(), signal: this.controller.signal, progress: this._progressEvent.bind(this), audio });
-      console.log("Media Bunny cost:", (new Date()).getTime() - nowMs);
-      // nowMs = (new Date()).getTime();
-      // blob: Blob = await this.recorder.compile(frames, { ffmpeg: this.ffmpeg, codec: this.codec, fps: this.fps, signal: this.controller.signal, audio, progress: this._progressEvent.bind(this) });
-      // console.log("FFMPEG cost:", (new Date()).getTime() - nowMs);
-      this.onChangeExportStatus(ExportProgress.Completed);
-      this.blob = blob;
-      return blob;
-    } catch (error) {
-      this.onChangeExportStatus(ExportProgress.Error);
-      this.recorder.stop();
-      throw error;
+      if (progress) progress(0, "Starting Export Stream...");
+
+      // Combine Audio?
+      // Simple approach: Extract audio from all pages first (might be large, but audio is smaller than video)
+      const audioBlob = await this.exportAudio(); // Re-use existing method
+
+      await this.recorder.mediaBunnyCompile(frameGenerator(this.pages, this.recorder, this.fps) as any, {
+        width: this.width,
+        height: this.height,
+        scale: this.scale,
+        fps: this.fps,
+        format: this.format as any,
+        duration: totalDuration,
+        audio: audioBlob,
+        fileHandle: fileHandle,
+        progress: (p) => {
+          if (progress) progress(p.progress, `Exporting: ${Math.round(p.progress * 100)}%`);
+        }
+      });
+
+      if (progress) progress(1, "Export Complete!");
+    } catch (e) {
+      console.error("Export Stream Failed", e);
+      throw e;
     }
+  }
+
+  async getAssemblyProject(progress?: (p: number, status: string) => void): Promise<any> {
+    const segments = [];
+
+    for (let i = 0; i < this.pages.length; i++) {
+      const page = this.pages[i];
+
+      if (progress) progress((i / this.pages.length), `Rendering Scene ${i + 1}/${this.pages.length}...`);
+
+      // 1. Capture Frames
+      const frames = await this.recorder.capturePage(i, this.fps, {
+        progress: (p) => {
+          if (progress) {
+            const totalP = (i / this.pages.length) + (p.progress * (1 / this.pages.length));
+            progress(totalP, `Capturing Scene ${i + 1}: ${Math.round(p.progress * 100)}%`);
+          }
+        }
+      });
+
+      // 2. Compile Scene to Video Blob (Silent for now, joining later via worker)
+      // We use mediaBunnyCompile just to get a valid video container for the worker
+      const blob = await this.recorder.mediaBunnyCompile(frames, {
+        width: this.width,
+        height: this.height,
+        scale: this.scale,
+        fps: this.fps,
+        format: this.format as any,
+        duration: page.timeline.duration / 1000
+      });
+
+      // 3. Audio Extraction for this page
+      // (Wait, we might want to just pass the raw audio elements or a merged page audio)
+      // For simplicity, let's extract the page audio
+      const audioBlob = await page.audio.extract([], { ffmpeg: this.ffmpeg }); // Simplistic, ignoring video audios for a moment
+      // Actually, let's just use the existing exportAudio logic or similar if needed.
+      // But the worker can mix audio too.
+
+      segments.push({
+        id: page.id,
+        name: page.name,
+        duration: page.timeline.duration / 1000,
+        transition: page.transition,
+        transitionDuration: page.transitionDuration,
+        blob: blob,
+        audioBlob: audioBlob,
+        type: 'video'
+      });
+    }
+
+    if (progress) progress(1, "Ready for assembly!");
+
+    return {
+      _id: this.id,
+      name: this.name,
+      storyboard: {
+        segments: segments
+      }
+    };
   }
 
   async exportTemplate(): Promise<EditorTemplatePage[]> {
@@ -284,7 +374,7 @@ export class Editor {
       const scene = JSON.stringify(page.instance.toDatalessJSON(propertiesToInclude));
       const audios: Omit<EditorAudioElement, "buffer" | "source">[] = page.audio.elements.map(({ buffer, source, ...audio }) => audio);
       const data = { fill: page.workspace.fill, height: page.workspace.height, width: page.workspace.width, audios: audios, scene: scene };
-      templates.push({ thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration });
+      templates.push({ thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration, transition: page.transition, transitionDuration: page.transitionDuration, transitionEasing: page.transitionEasing });
     }
     return templates;
   }
@@ -298,40 +388,51 @@ export class Editor {
       const scene = JSON.stringify(page.instance.toDatalessJSON(propertiesToInclude));
       const audios: Omit<EditorAudioElement, "buffer" | "source">[] = page.audio.elements.map(({ buffer, source, ...audio }) => audio);
       const data = { fill: page.workspace.fill, height: page.workspace.height, width: page.workspace.width, audios: audios, scene: scene };
-      template = { thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration };
+      template = { thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration, transition: page.transition, transitionDuration: page.transitionDuration, transitionEasing: page.transitionEasing };
     }
     return template;
   }
 
   loadTemplate(template: EditorTemplate, mode: "replace" | "reset") {
     console.log("loadTemplate", template, mode);
-    switch (mode) {
-      case "reset":
-        this.id = template.id;
-        this.name = template.name;
-        for (let index = 0; index < template.pages.length; index++) {
-          const page = template.pages[index];
-          const initialized = !!this.pages[index];
-          if (!initialized) this.pages[index] = createInstance(Canvas, this);
-          this.pages[index].template.set(page);
-          if (initialized && this.pages[index].initialized) this.pages[index].template.load();
-        }
-        // console.log("pages", this.pages);
-        if (this.pages.length <= template.pages.length || template.pages.length == 0) return;
-        for (let index = template.pages.length; index < this.pages.length; index++) this.pages[index].destroy();
-        this.pages.splice(template.pages.length);
-        break;
-      case "replace":
-        for (let index = 0; index < template.pages.length; index++) {
-          const offset = index + this.page;
-          const page = template.pages[index];
-          const initialized = !!this.pages[offset];
-          if (!initialized) this.pages[offset] = createInstance(Canvas, this);
-          this.pages[offset].template.set(page);
-          if (initialized && this.pages[offset].initialized) this.pages[offset].template.load();
-        }
-        break;
+    try {
+      switch (mode) {
+        case "reset":
+          this.id = template.id;
+          this.name = template.name;
+          for (let index = 0; index < template.pages.length; index++) {
+            const page = template.pages[index];
+            const initialized = !!this.pages[index];
+            if (!initialized) this.pages[index] = createInstance(Canvas, this);
+            this.pages[index].transition = page.transition;
+            this.pages[index].transitionDuration = page.transitionDuration;
+            this.pages[index].transitionEasing = page.transitionEasing;
+            this.pages[index].template.set(page);
+            if (initialized && this.pages[index].initialized) this.pages[index].template.load();
+          }
+          if (this.pages.length <= template.pages.length || template.pages.length == 0) return;
+          for (let index = template.pages.length; index < this.pages.length; index++) this.pages[index].destroy();
+          this.pages.splice(template.pages.length);
+          break;
+        case "replace":
+          for (let index = 0; index < template.pages.length; index++) {
+            const offset = index + this.page;
+            const page = template.pages[index];
+            const initialized = !!this.pages[offset];
+            if (!initialized) this.pages[offset] = createInstance(Canvas, this);
+            this.pages[offset].transition = page.transition;
+            this.pages[offset].transitionDuration = page.transitionDuration;
+            this.pages[offset].transitionEasing = page.transitionEasing;
+            this.pages[offset].template.set(page);
+            if (initialized && this.pages[offset].initialized) this.pages[offset].template.load();
+          }
+          break;
+      }
+    } catch (e) {
+      console.log(e);
     }
+
+    console.log("pages", this.pages);
   }
 
   onResetProgress() {
@@ -360,6 +461,7 @@ export class Editor {
 
   onChangeName(name: string) {
     this.name = name;
+    this.onModified?.();
   }
 
   onChangeWidth(width: number) {
@@ -405,6 +507,7 @@ export class Editor {
     }
     this.pages.push(canvas);
     this.onChangeActivePage(this.pages.length - 1);
+    this.onModified?.();
   }
 
   deleteActivePage() {
@@ -414,6 +517,7 @@ export class Editor {
       if (this.page >= length - 1) this.page = this.page - 1;
       this.pages[index].destroy();
       this.pages.splice(index, 1);
+      this.onModified?.();
     }
   }
 
@@ -421,10 +525,11 @@ export class Editor {
     const length = this.pages.length;
     if (index < length) {
       if (index <= this.page) {
-        this.page = this.page - 1;
+        this.page = Math.max(0, this.page - 1);
       }
       this.pages[index].destroy();
       this.pages.splice(index, 1);
+      this.onModified?.();
     }
   }
 
@@ -436,17 +541,22 @@ export class Editor {
     }
   }
 
+  reorderPages(newPages: Canvas[]) {
+    const activePage = this.pages[this.page];
+    this.pages = newPages;
+
+    // Find new index of active page
+    const newIndex = this.pages.findIndex(p => p.id === activePage?.id);
+    if (newIndex !== -1) {
+      this.page = newIndex;
+    }
+    this.onModified?.();
+  }
+
   swapPage(oldIndex: number, newIndex: number) {
     const pages = [...this.pages];
     [pages[oldIndex], pages[newIndex]] = [pages[newIndex], pages[oldIndex]];
-    this.pages = pages;
-    // const oldPage = cloneDeep(this.pages[oldIndex]);
-    // const newPage = cloneDeep(this.pages[newIndex]);
-    // this.pages[newIndex] = oldPage;
-    // this.pages[oldIndex] = newPage;
-    if (this.page == oldIndex) {
-      this.onChangeActivePage(newIndex);
-    }
+    this.reorderPages(pages);
   }
 
   onChangeActivePage(index: number) {
@@ -497,12 +607,60 @@ export class Editor {
     this.status = status;
   }
 
-  resize(dimension: { width: number; height: number }, changeArtboards: boolean = false) {
+  onChangeTimelineMode(mode: 'compact' | 'layered') {
+    this.timelineMode = mode;
+  }
+
+  resize(dimension: { width: number; height: number }, changeArtboards: boolean = true) {
+    const oldWidth = this.dimension.width;
+    const oldHeight = this.dimension.height;
+
     this.dimension = dimension;
+    this.width = dimension.width;
+    this.height = dimension.height;
+
     if (changeArtboards) {
+      const scaleX = dimension.width / oldWidth;
+      const scaleY = dimension.height / oldHeight;
+      const scale = Math.min(scaleX, scaleY); // Uniform scale if preferred, but for AR switch we usually want to fit
+
       this.pages.forEach(page => {
+        // Resize the artboard
         page.workspace?.resizeArtboard(dimension);
+
+        // Scale and reposition all elements
+        if (page.instance) {
+          page.instance.getObjects().forEach(obj => {
+            if (obj.name === "artboard") return;
+
+            // Calculate new position
+            const left = obj.left! * scaleX;
+            const top = obj.top! * scaleY;
+
+            // Update object properties
+            obj.set({
+              left,
+              top,
+              scaleX: obj.scaleX! * scaleX,
+              scaleY: obj.scaleY! * scaleY
+            });
+
+            // Special handling for textboxes to prevent unwanted wrapping changes
+            // if (obj.type === 'textbox') {
+            //   (obj as any).width *= scaleX;
+            // }
+
+            obj.setCoords();
+          });
+
+          page.instance.requestRenderAll();
+        }
       });
+      this.onModified?.();
     }
+  }
+
+  setTimelineZoom(zoom: number) {
+    this.timelineZoom = Math.max(0.2, Math.min(zoom, 4)); // Clamp between 0.5x and 4x
   }
 }

@@ -1,7 +1,8 @@
 import { getAdminSettings } from '../models/AdminSettings.js';
 import config from './config.js'; // Fallback to env vars
+import { StorageFactory } from '../services/storage/StorageFactory.js';
 
-class ConfigService {
+export class ConfigService {
     private static instance: ConfigService;
     private settings: any = null;
 
@@ -32,6 +33,7 @@ class ConfigService {
      */
     public async refresh() {
         await this.initialize();
+        StorageFactory.reset(); // Clear adapter cache on config change
     }
 
     /**
@@ -57,6 +59,18 @@ class ConfigService {
             secretKey: dbStripe?.secretKey || config.stripeSecretKey,
             publicKey: dbStripe?.publicKey || config.public.stripePublishableKey,
             webhookSecret: dbStripe?.webhookSecret || config.stripeWebhookSecret
+        };
+    }
+
+    /**
+     * Get PayPal Configuration
+     */
+    public get paypal() {
+        const dbPaypal = this.settings?.apiConfigs?.paypal;
+        return {
+            clientId: dbPaypal?.clientId || process.env.PAYPAL_CLIENT_ID || '',
+            clientSecret: dbPaypal?.clientSecret || process.env.PAYPAL_CLIENT_SECRET || '',
+            webhookSecret: dbPaypal?.webhookSecret || process.env.PAYPAL_WEBHOOK_SECRET || ''
         };
     }
 
@@ -114,6 +128,34 @@ class ConfigService {
             providers: [],
             defaults: {},
             models: []
+        };
+    }
+
+    /**
+     * Get Log Settings
+     */
+    public get logs() {
+        const dbLogs = this.settings?.systemSettings?.logging;
+        return {
+            retentionDays: dbLogs?.retentionDays || 30,
+            emailNotificationsEnabled: dbLogs?.emailNotificationsEnabled || false,
+            notificationEmail: dbLogs?.notificationEmail || config.smtpFromEmail,
+            minNotificationLevel: dbLogs?.minNotificationLevel || 'error'
+        };
+    }
+
+    /**
+     * Get Storage Configuration
+     */
+    public get storage() {
+        const dbStorage = this.settings?.apiConfigs?.storage;
+        return {
+            activeProvider: dbStorage?.activeProvider || 's3',
+            googleDrive: {
+                clientEmail: dbStorage?.googleDrive?.clientEmail || '',
+                privateKey: dbStorage?.googleDrive?.privateKey || '',
+                rootFolderId: dbStorage?.googleDrive?.rootFolderId || 'root'
+            }
         };
     }
 }

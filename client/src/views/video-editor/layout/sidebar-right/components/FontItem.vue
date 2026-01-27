@@ -49,7 +49,7 @@ watch(() => props.font, (newFont) => {
     <div class="flex items-center gap-2">
         <div v-if="!isLoaded" class="w-3 h-3 border-2 border-white/20 border-t-brand-primary rounded-full animate-spin"></div>
         <div v-else-if="selected" class="w-5 h-5 flex items-center justify-center rounded-full bg-brand-primary text-white shadow-lg shadow-brand-primary/40">
-            <Check :size="10" stroke-width="5" />
+            <Check :size="10" :stroke-width="5" />
         </div>
     </div>
 

@@ -7,7 +7,7 @@ import VueDraggable from 'vue-draggable-resizable'
 import { ElButton, ElInput } from 'element-plus';
 
 import { useEditorStore } from 'video-editor/store/editor';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { useMeasure } from 'video-editor/hooks/use-measure';
 import { drawWaveformFromAudioBuffer } from 'video-editor/lib/media';
 
@@ -15,7 +15,7 @@ const editor = useEditorStore();
 const audio = computed(() => editor.canvas.trimmer.active!.object);
 
 const [containerRef, dimensions] = useMeasure();
-const containerWidth = computed(() => dimensions.value.width - 16); // handleWidth
+const containerWidth = computed(() => (dimensions.value as any).width - 16); // handleWidth
 
 const background = ref("");
 const trim = ref(0);
@@ -33,7 +33,7 @@ watch(containerWidth, (newWidth) => {
   console.log("trim", trim, timeline);
 }, { immediate: true });
 
-watch(dimensions, (newDimensions) => {
+watch(dimensions, (newDimensions: any) => {
   if (!newDimensions.width) return;
   drawWaveformFromAudioBuffer(audio.value.buffer, 40, newDimensions.width, undefined, undefined).then((blob) => background.value = URL.createObjectURL(blob));
 }, { immediate: true });
@@ -85,7 +85,7 @@ const style = computed(() => ({
           class="!h-full"
           :onDrag="(x, y) => trim = x">
           <button class="absolute grid place-items-center h-full bg-brand-primary rounded-l-lg z-20 cursor-ew-resize group/handle shadow-lg" :style="{ width: `${handleWidth}px` }">
-            <ChevronLeft :size="12" class="text-white group-hover/handle:scale-125 transition-transform" stroke-width="4" stroke="#ffffff" />
+            <ChevronLeft :size="12" class="text-white group-hover/handle:scale-125 transition-transform" :stroke-width="4" stroke="#ffffff" />
           </button>
         </VueDraggable>
         <div class="h-full absolute border-y-2 border-brand-primary mix-blend-screen bg-brand-primary/10 z-10 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]" :style="{ left: `${trim + handleWidth}px`, width: `${trackWidth}px` }" />
@@ -100,7 +100,7 @@ const style = computed(() => ({
           class="!h-full"
           :onDrag="(x, y) => timeline = x">
           <button class="absolute grid place-items-center h-full bg-brand-primary rounded-r-lg z-20 cursor-ew-resize group/handle shadow-lg" :style="{ width: `${handleWidth}px` }">
-            <ChevronRight :size="12" class="text-white group-hover/handle:scale-125 transition-transform" stroke-width="4" stroke="#ffffff" />
+            <ChevronRight :size="12" class="text-white group-hover/handle:scale-125 transition-transform" :stroke-width="4" stroke="#ffffff" />
           </button>
         </VueDraggable>
       </div>
@@ -110,7 +110,7 @@ const style = computed(() => ({
         class="flex items-center gap-2.5 h-9 px-6 rounded-xl bg-brand-primary text-white transition-all duration-300 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-primary/20 hover:bg-brand-primary/90 hover:scale-[1.02] active:scale-95" 
         @click="handleChanges"
     >
-      <Check :size="16" stroke-width="4" />
+      <Check :size="16" :stroke-width="4" />
       <span>Done</span>
     </button>
   </div>

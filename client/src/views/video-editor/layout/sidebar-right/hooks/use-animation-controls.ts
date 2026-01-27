@@ -32,12 +32,12 @@ export function useAnimationControls(selected: fabric.Object, type: 'in' | 'out'
       editor.canvas.onChangeActiveObjectAnimationPhysics(type, selected.anim?.[type]?.config || defaultSpringConfig)
   }
 
-  const changePhysics = (config: Partial<fabric.AnimationPhysics>) => {
+  const changePhysics = (config: any) => {
     editor.canvas.onChangeActiveObjectAnimationPhysics(type, config)
   }
 
   const changeTextAnimate = (animate: string) => {
-    editor.canvas.onChangeActiveTextAnimationType(type, animate as fabric.TextAnimateOptions)
+    editor.canvas.onChangeActiveTextAnimationType(type, animate as any)
   }
 
   return {

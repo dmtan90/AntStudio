@@ -90,29 +90,7 @@
           <div class="absolute bottom-0 left-0 right-0 p-5 z-20 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <h4 class="text-lg font-bold text-white truncate">{{ char.name }}</h4>
-              <!-- <button 
-                v-if="editingId !== `char-${idx}`"
-                class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all disabled:opacity-20"
-                :disabled="loadingStates[`char-${idx}`]"
-                @click.stop="startEdit('char', idx as number, char.description)"
-              >
-                <edit theme="outline" size="14"/>
-              </button> -->
             </div>
-
-              <!-- Description / Editor -->
-            <!-- <div v-if="editingId === `char-${idx}`" class="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <textarea 
-                v-model="tempDesc"
-                class="w-full bg-black/60 backdrop-blur-md border border-white/20 rounded-xl p-3 text-xs text-white/90 focus:outline-none focus:border-brand-primary resize-none"
-                rows="4"
-                @click.stop
-              ></textarea>
-              <div class="flex justify-end gap-2">
-                <button class="bg-white/10 px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-white/20 transition-all" @click.stop="cancelEdit">{{ t('common.cancel') }}</button>
-                <button class="bg-brand-primary text-black px-3 py-1 rounded-lg text-[10px] font-bold hover:scale-105 transition-all" @click.stop="saveEdit('char', idx as number)">{{ t('common.save') }}</button>
-              </div>
-            </div> -->
             <p class="text-xs text-white/60 leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-500">
               {{ char.description }}
             </p>
@@ -213,7 +191,7 @@
             </button>
             <button 
               class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-brand-primary hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              :title="t('projects.editor.storyboard.segDialog.uploadVideo')"
+              :title="t('projects.editor.storyboard.segDialog.uploadImageVideo')"
               :disabled="loadingStates[`seg-${seg.order}`] || loadingStates[`video-${seg.order}`]"
               @click.stop="$emit('upload-image-video', seg)"
             >
@@ -225,31 +203,10 @@
           <div class="absolute bottom-0 left-0 right-0 p-5 z-20 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <div class="flex flex-col">
-                <span class="text-[10px] uppercase text-white/40 font-bold tracking-widest mb-1">{{ t('projects.detail.duration') }}: {{ seg.duration || 'Auto' }}s</span>
+                <span class="text-[10px] uppercase text-white/40 font-bold tracking-widest mb-1">{{ t('projects.detail.duration') }}: {{ seg.duration || t('common.auto') }}s</span>
               </div>
-              <!-- <button 
-                v-if="editingId !== `seg-${idx}`"
-                class="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all disabled:opacity-20"
-                :disabled="loadingStates[`seg-${seg.order}`] || loadingStates[`video-${seg.order}`]"
-                @click.stop="startEdit('seg', idx as number, seg.description)"
-              >
-                <edit theme="outline" size="14"/>
-              </button> -->
             </div>
 
-            <!-- Description / Editor -->
-            <!-- <div v-if="editingId === `seg-${idx}`" class="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <textarea 
-                v-model="tempDesc"
-                class="w-full bg-black/60 backdrop-blur-md border border-white/20 rounded-xl p-3 text-xs text-white/90 focus:outline-none focus:border-brand-primary resize-none"
-                rows="3"
-                @click.stop
-              ></textarea>
-              <div class="flex justify-end gap-2">
-                <button class="bg-white/10 px-3 py-1 rounded-lg text-[10px] font-bold hover:bg-white/20 transition-all" @click.stop="cancelEdit">{{ t('common.cancel') }}</button>
-                <button class="bg-brand-primary text-black px-3 py-1 rounded-lg text-[10px] font-bold hover:scale-105 transition-all" @click.stop="saveEdit('seg', idx as number)">{{ t('common.save') }}</button>
-              </div>
-            </div> -->
             <div class="flex flex-col gap-2">
               <p class="text-xs text-white/80 leading-relaxed italic line-clamp-2 group-hover:line-clamp-none transition-all duration-500">
                 "{{ seg.description }}"
@@ -259,30 +216,12 @@
               <div class="hidden group-hover:flex flex-col gap-3 mt-2 pt-3 border-t border-white/5 animate-in fade-in duration-500">
                 <!-- Location Details -->
                 <div v-if="seg.locationDetails" class="flex flex-col gap-1">
-                  <span class="text-[9px] uppercase text-brand-primary font-bold tracking-widest">Environment</span>
+                  <span class="text-[9px] uppercase text-brand-primary font-bold tracking-widest">{{ t('projects.editor.storyboard.segDialog.tabs.environment') }}</span>
                   <p class="text-[10px] text-white/60 leading-tight">
-                    <span class="text-white/40">Type:</span> {{ seg.locationDetails.type }}<br/>
-                    <span class="text-white/40">Atmosphere:</span> {{ seg.locationDetails.atmosphere }}
+                    <span class="text-white/40">{{ t('projects.editor.storyboard.segDialog.locationType') }}:</span> {{ seg.locationDetails.type }}<br/>
+                    <span class="text-white/40">{{ t('projects.editor.storyboard.segDialog.atmosphere') }}:</span> {{ seg.locationDetails.atmosphere }}
                   </p>
                 </div>
-
-                <!-- Camera Details -->
-                <!-- <div v-if="seg.cameraDetails" class="flex flex-col gap-1">
-                  <span class="text-[9px] uppercase text-brand-primary font-bold tracking-widest">Camera</span>
-                  <div class="flex flex-wrap gap-2">
-                    <div class="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] text-white/50">{{ seg.cameraDetails.framing }}</div>
-                    <div class="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[9px] text-white/50">{{ seg.cameraDetails.movement }}</div>
-                  </div>
-                </div> -->
-
-                <!-- Dialogue -->
-                <!-- <div v-if="seg.detailedDialogue?.length" class="flex flex-col gap-1">
-                  <span class="text-[9px] uppercase text-brand-primary font-bold tracking-widest">Dialogue</span>
-                  <div v-for="(d, dIdx) in seg.detailedDialogue" :key="dIdx" class="flex flex-col gap-0.5">
-                    <span class="text-[9px] text-brand-primary/80 font-bold">{{ d.characterName }}:</span>
-                    <p class="text-[10px] text-white/80 line-clamp-2 leading-snug">"{{ d.line }}"</p>
-                  </div>
-                </div> -->
               </div>
             </div>
           </div>
@@ -661,9 +600,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { 
-  Edit, 
   Refresh, 
   Pic, 
   Peoples, 
@@ -676,148 +614,11 @@ import {
 import { useProjectStore } from '@/stores/project'
 import { useTranslations } from '@/composables/useTranslations'
 import { toast } from 'vue-sonner'
-import GPopover from '@/components/ui/GPopover.vue'
 import GMedia from '@/components/ui/GMedia.vue'
-import { getFileUrl } from '@/utils/api'
 
 const activeSection = ref('segments')
-
 const projectStore = useProjectStore()
 const { t } = useTranslations()
-
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text)
-  toast.success(t('common.copySuccess') || 'Copied to clipboard')
-}
-
-const computedImagePrompt = computed(() => {
-  if (!editingSeg.value || !props.project) return ''
-  
-  const segment = editingSeg.value
-  const allCharacters = props.project.scriptAnalysis?.characters || []
-  const prompt = segment.description
-  
-  // Find characters in this segment
-  const characterContext = (segment.characters || []).map((name: string) => {
-    return allCharacters.find((c: any) => c.name.toLowerCase() === name.toLowerCase())
-  }).filter(Boolean)
-
-  if (characterContext.length > 0) {
-    const charProfiles = characterContext
-      .map((c: any) => {
-        const colors = c.color_spec ? `\nColors: ${JSON.stringify(c.color_spec)}` : ''
-        const traits = `\nTraits: ${c.species}, ${c.gender}, ${c.age}, ${c.body_build}, ${c.face_shape}, ${c.hair}, ${c.skin_or_fur_color}`
-        const style = `\nStyle Markers: 3D rendered surface, smooth shading, PBR materials`
-        return `[CHARACTER IDENTITY: ${c.name.toUpperCase()}]\nDescription: ${c.description}${traits}${colors}${style}\nVisual Reference: This character has an established visual identity from their Key Element reference image.`
-      })
-      .join('\n\n')
-
-    return `### VISUAL IDENTITY RULES (STRICT CONSISTENCY REQUIRED) ###
-You are generating a scene for a video project. You MUST maintain perfect visual consistency for the following characters:
-
-${charProfiles}
-
-### SCENE DESCRIPTION ###
-${prompt}
-
-### FINAL INSTRUCTION ###
-Generate a photo-realistic, cinematic frame that matches the SCENE DESCRIPTION while strictly adhering to the VISUAL IDENTITY RULES for every character mentioned. If a character is in the shot, they must look exactly like their established profile.`
-  }
-
-  const style = props.project?.creativeBrief?.visualStyle || props.project?.videoStyle || 'Cinematic'
-  return `STYLE: ${style}. DESCRIPTION: ${prompt}`
-})
-
-const computedVideoPrompt = computed(() => {
-  if (!editingSeg.value || !props.project) return ''
-  
-  const segment = editingSeg.value
-  const allCharacters = props.project.scriptAnalysis?.characters || []
-  const projectStyle = props.project.creativeBrief?.visualStyle || props.project.videoStyle || 'Cinematic'
-  const duration = segment.duration || 8
-
-  // 1. Visual Style Header
-  const visualStyleHeader = `VISUAL STYLE: ${projectStyle}, filmed with real actors and authentic environments. Natural skin tones, professional lighting. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render. Aspect ratio 16:9 full frame, no black bars.`
-  
-  // 2. Location Details
-  const loc = segment.locationDetails || {}
-  const locationSection = `LOCATION:
-- Location: ${loc.type || segment.location}
-  Layout: ${loc.layout || 'Standard layout'}
-  Objects: ${loc.objects || 'N/A'}
-  Atmosphere: ${loc.atmosphere || segment.mood}
-  Visual Style: ${loc.visualStyle || projectStyle}
-  Lighting: ${loc.lighting || 'Cinematic lighting'}`
-  
-  // 3. Characters Section
-  const charSection = (segment.characters || []).map((name: string) => {
-      const char = allCharacters.find((c: any) => c.name.toLowerCase() === name.toLowerCase())
-      if (!char) return `- [UNKNOWN] ${name}`
-
-      const colors = char.color_spec ? `\n  Colors: ${JSON.stringify(char.color_spec)}` : ''
-      const traits = `\n  Appearance: ${char.species || 'Human'}, ${char.gender || 'N/A'}, ${char.age || 'N/A'}, ${char.body_build || ''}, ${char.face_shape || ''}, ${char.hair || ''}, ${char.skin_or_fur_color || ''}`
-      const outfit = `\n  Outfit: ${char.outfit_top || ''} ${char.outfit_bottom || ''} ${char.shoes_or_footwear || ''} ${char.props || ''}`
-      const voice = `\n  Voice: ${char.voice_personality || 'N/A'} [TTS: ${char.tts_config?.voice_id || 'Alnilam'} | pitch=${char.tts_config?.base_pitch || 0} | style=${char.tts_config?.style_category || 'Professional'}]`
-
-      return `- [${char.char_id || 'ID'}] ${char.name} (${char.species || 'Human'}) - ${char.gender || ''}, ${char.age || ''}${traits}${outfit}${voice}`
-  }).join('\n')
-
-  // 4. Camera & Audio
-  const cam = segment.cameraDetails || {}
-  const cameraSection = `CAMERA:
-- Framing: ${cam.framing || segment.cameraAngle}
-- Angle: ${cam.angle || segment.cameraAngle}
-- Movement: ${cam.movement || 'Static'}
-- Focus: ${cam.focus || 'Deep focus'}`
-
-  const audio = segment.audioDetails || {}
-  const audioSection = `AUDIO:
-- Ambience: ${audio.ambience || 'Ambient noise'}
-- Sound FX: ${audio.sfx || 'N/A'}
-- Music: ${audio.music || 'Dramatic score'}`
-
-  // 5. Dialogue Section
-  const dialogueSection = (segment.detailedDialogue || []).map((d: any) => {
-      return `- ${d.characterId} [TTS: ${d.tts_config?.voice_id || 'Default'}] (${d.language || 'en-US'}): [${d.line}] [delivery: ${d.delivery}, style: ${d.style}, timing: ${d.timing}]`
-  }).join('\n')
-
-  // 6. Subtitle Prevention Block
-  const subtitlePrevention = `
-======================================================================
-CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
-======================================================================
-**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
-- Subtitles, captions, or text overlays of ANY kind
-- Burnt-in text or visual dialogue transcription
-- On-screen text boxes, closed captions, or title cards
-- Visual rendering of spoken dialogue as text elements
-- Text overlays in ANY language
-
-**REQUIRED - AUDIO-ONLY DELIVERY:**
-- ALL dialogue delivered EXCLUSIVELY through audio track
-- Final video output MUST contain ZERO text overlays
-`
-
-  return `[Segment ${segment.order}] 0.0s - ${duration}s
-Scene ${segment.order} (${duration} seconds):
-
-${visualStyleHeader}
-
-${locationSection}
-
-CHARACTERS:
-${charSection || 'None'}
-
-${cameraSection}
-
-${audioSection}
-
-${dialogueSection || 'None'}
-
-LIP SYNC: ${segment.lipSyncRequired ? 'Required for on-screen speakers' : 'None required'}
-
-${subtitlePrevention}`
-})
 
 const props = defineProps<{
   project: any,
@@ -830,14 +631,24 @@ const emit = defineEmits([
   'upload-character-image', 'upload-image-video'
 ])
 
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text)
+  toast.success(t('common.copySuccess'))
+}
+
 // Global loading computed
 const isAnyLoading = computed(() => {
   return Object.values(props.loadingStates).some(v => v === true)
 })
 
-// Inline Editing State
-const editingId = ref<string | null>(null)
-const tempDesc = ref('')
+// Dialog States
+const charDialogVisible = ref(false)
+const selectedCharIdx = ref(-1)
+const editingChar = ref<any>(null)
+const segDialogVisible = ref(false)
+const selectedSegIdx = ref(-1)
+const editingSeg = ref<any>(null)
+const activeSegTab = ref('general')
 
 // Predefined Options
 const speciesOptions = [
@@ -885,7 +696,6 @@ const skinColorOptions = [
   { key: 'grey', value: 'Grey (Robot)' },
   { key: 'green', value: 'Green' }
 ]
-
 const framingOptions = [
   { key: 'extremeCloseUp', value: 'Extreme Close-up' },
   { key: 'closeUp', value: 'Close-up' },
@@ -949,23 +759,13 @@ const playVoiceSample = (voiceId: string) => {
   if (voice && voice.preview) {
     const audio = new Audio(voice.preview)
     audio.play().catch(e => {
-        toast.error('Cannot play sample audio')
+        toast.error(t('common.failed'))
         console.error(e)
     })
   } else {
-    toast.error('No preview available for this voice')
+    toast.error(t('common.failed'))
   }
 }
-
-// Dialog States
-const charDialogVisible = ref(false)
-const selectedCharIdx = ref(-1)
-const editingChar = ref<any>(null)
-
-const segDialogVisible = ref(false)
-const selectedSegIdx = ref(-1)
-const editingSeg = ref<any>(null)
-const activeSegTab = ref('general')
 
 const openCharDialog = (char: any, index: number) => {
   selectedCharIdx.value = index
@@ -979,7 +779,6 @@ const openCharDialog = (char: any, index: number) => {
 const openSegDialog = (seg: any, index: number) => {
   selectedSegIdx.value = index
   editingSeg.value = JSON.parse(JSON.stringify(seg))
-  // Ensure nested objects exist for editing
   if (!editingSeg.value.locationDetails) editingSeg.value.locationDetails = { type: '', atmosphere: '', lighting: '', objects: '' }
   if (!editingSeg.value.cameraDetails) editingSeg.value.cameraDetails = { framing: '', angle: '', movement: '', focus: '' }
   if (!editingSeg.value.audioDetails) editingSeg.value.audioDetails = { ambience: '', sfx: '', music: '' }
@@ -991,74 +790,56 @@ const openSegDialog = (seg: any, index: number) => {
 
 const saveCharDetail = async () => {
   if (!props.project || !editingChar.value) return
-  
   try {
     props.project.scriptAnalysis.characters[selectedCharIdx.value] = editingChar.value
-    await projectStore.updateProject({
-      scriptAnalysis: props.project.scriptAnalysis
-    })
-    toast.success('Character details updated')
+    await projectStore.updateProject({ scriptAnalysis: props.project.scriptAnalysis })
+    toast.success(t('common.updateSuccess'))
     charDialogVisible.value = false
   } catch (error) {
-    toast.error('Failed to save character')
+    toast.error(t('common.failed'))
   }
 }
 
 const saveSegDetail = async () => {
   if (!props.project || !editingSeg.value) return
-  
   try {
     props.project.storyboard.segments[selectedSegIdx.value] = editingSeg.value
-    await projectStore.updateProject({
-      storyboard: props.project.storyboard
-    })
-    toast.success('Segment details updated')
+    await projectStore.updateProject({ storyboard: props.project.storyboard })
+    toast.success(t('common.updateSuccess'))
     segDialogVisible.value = false
   } catch (error) {
-    toast.error('Failed to save segment')
+    toast.error(t('common.failed'))
   }
 }
 
-const startEdit = (type: 'char' | 'seg', index: number, currentVal: string) => {
-  editingId.value = `${type}-${index}`
-  tempDesc.value = currentVal
-}
+// Computed Prompts (Keep English for AI logic)
+const computedImagePrompt = computed(() => {
+  if (!editingSeg.value || !props.project) return ''
+  const segment = editingSeg.value
+  const allCharacters = props.project.scriptAnalysis?.characters || []
+  const prompt = segment.description
+  const characterContext = (segment.characters || []).map((name: string) => {
+    return allCharacters.find((c: any) => c.name.toLowerCase() === name.toLowerCase())
+  }).filter(Boolean)
 
-const cancelEdit = () => {
-  editingId.value = null
-  tempDesc.value = ''
-}
+  if (characterContext.length > 0) {
+    const charProfiles = characterContext
+      .map((c: any) => {
+        const traits = `\nTraits: ${c.species}, ${c.gender}, ${c.age}, ${c.body_build}, ${c.face_shape}, ${c.hair}, ${c.skin_or_fur_color}`
+        return `[CHARACTER IDENTITY: ${c.name.toUpperCase()}]\nDescription: ${c.description}${traits}\nVisual Reference: Already established.`
+      }).join('\n\n')
 
-const saveEdit = async (type: 'char' | 'seg', index: number) => {
-  if (!props.project) return
-
-  try {
-    if (type === 'char') {
-      const char = props.project.scriptAnalysis.characters[index]
-      if (char) {
-        char.description = tempDesc.value
-      }
-    } else {
-      const seg = props.project.storyboard.segments[index]
-      if (seg) {
-        seg.description = tempDesc.value
-      }
-    }
-
-    // Persist to store and backend
-    await projectStore.updateProject({
-      scriptAnalysis: props.project.scriptAnalysis,
-      storyboard: props.project.storyboard
-    })
-
-    toast.success('Description updated successfully')
-    cancelEdit()
-  } catch (error) {
-    console.error('Failed to save edit:', error)
-    toast.error('Failed to save changes')
+    return `### SCENE DESCRIPTION ###\n${prompt}\n\n### CHARACTERS ###\n${charProfiles}`
   }
-}
+  return `DESCRIPTION: ${prompt}`
+})
 
+const computedVideoPrompt = computed(() => {
+  if (!editingSeg.value || !props.project) return ''
+  const segment = editingSeg.value
+  const projectStyle = props.project.creativeBrief?.visualStyle || 'Cinematic'
+  return `VISUAL STYLE: ${projectStyle}. SCENE: ${segment.description}.`
+})
 </script>
 
 <style lang="scss" scoped>
@@ -1073,15 +854,9 @@ const saveEdit = async (type: 'char' | 'seg', index: number) => {
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
 
-/* Animation helpers */
-.animate-in {
-  animation-duration: 0.3s;
-  animation-fill-mode: both;
-}
+.animate-in { animation-duration: 0.3s; animation-fill-mode: both; }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slide-in-from-bottom-2 { from { transform: translateY(0.5rem); } to { transform: translateY(0); } }
 .fade-in { animation-name: fade-in; }
-.slide-in-from-bottom-2 { animation-name: slide-in-from-bottom-2; }
 
 .image-slot-error {
   display: flex;
@@ -1093,11 +868,6 @@ const saveEdit = async (type: 'char' | 'seg', index: number) => {
   width: 100%;
 }
 
-.segment-card {
-  height: 300px;
-}
-
-/* Cinematic Dialog Styles */
 :deep(.cinematic-dialog) {
   background: rgba(15, 15, 15, 0.95) !important;
   backdrop-filter: blur(20px);
@@ -1105,20 +875,17 @@ const saveEdit = async (type: 'char' | 'seg', index: number) => {
   border-radius: 24px;
 }
 :deep(.cinematic-dialog .el-dialog__header) {
-  margin-right: 0;
   padding: 20px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 :deep(.cinematic-dialog .el-dialog__title) {
   color: white;
   font-weight: 800;
-  letter-spacing: -0.025em;
 }
 :deep(.cinematic-dialog .el-dialog__body) {
   padding: 24px;
 }
 
-/* Global Cinematic Input Styling */
 :deep(.cinematic-input .el-input__wrapper),
 :deep(.cinematic-input .el-textarea__inner) {
   background-color: rgba(255, 255, 255, 0.03) !important;
@@ -1131,7 +898,6 @@ const saveEdit = async (type: 'char' | 'seg', index: number) => {
 :deep(.cinematic-input .el-input__wrapper.is-focus),
 :deep(.cinematic-input .el-textarea__inner:focus) {
   border-color: #00f2ff !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 :deep(.cinematic-tabs .el-tabs__item) {
@@ -1139,7 +905,6 @@ const saveEdit = async (type: 'char' | 'seg', index: number) => {
   font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
 }
 :deep(.cinematic-tabs .el-tabs__item.is-active) {
   color: #00f2ff;
@@ -1147,53 +912,19 @@ const saveEdit = async (type: 'char' | 'seg', index: number) => {
 :deep(.cinematic-tabs .el-tabs__active-bar) {
   background-color: #00f2ff;
 }
-:deep(.cinematic-tabs .el-tabs__nav-wrap::after) {
-  background-color: rgba(255, 255, 255, 0.05);
-}
 
-/* Global Cinematic Select Styling */
 :deep(.cinematic-select .el-input__wrapper) {
   background-color: rgba(255, 255, 255, 0.03) !important;
-  box-shadow: none !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 12px !important;
-  padding: 4px 12px;
-}
-:deep(.cinematic-select .el-input__inner) {
-  color: white !important;
-  font-size: 13px;
-}
-:deep(.cinematic-select .el-input__wrapper.is-focus) {
-  border-color: #00f2ff !important;
 }
 
-/* Popper / Dropdown Styling */
-:deep(.el-popper),
-:deep(.el-select__popper) {
+:deep(.el-popper) {
   background: #1a1a1a !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 12px !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
-  z-index: 10000 !important;
 }
 
-:deep(.el-select-dropdown__item) {
-  color: rgba(255, 255, 255, 0.6) !important;
-  padding: 8px 12px !important;
-  height: auto !important;
-  line-height: 1.4 !important;
-}
-:deep(.el-select-dropdown__item.hover),
-:deep(.el-select-dropdown__item:hover) {
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: #00f2ff !important;
-}
-:deep(.el-select-dropdown__item.selected) {
-  color: #00f2ff !important;
-  font-weight: 700 !important;
-}
-
-/* Ensure form groups don't clip dropdowns if not teleported */
 .form-group {
   position: relative;
   overflow: visible !important;
@@ -1202,9 +933,7 @@ const saveEdit = async (type: 'char' | 'seg', index: number) => {
 :deep(.cinematic-input.readonly-input .el-textarea__inner) {
   background-color: rgba(255, 255, 255, 0.02) !important;
   color: rgba(255, 255, 255, 0.5) !important;
-  cursor: default;
   font-family: monospace;
   font-size: 11px;
-  line-height: 1.6;
 }
 </style>

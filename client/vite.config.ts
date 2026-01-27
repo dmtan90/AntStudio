@@ -4,7 +4,7 @@ import { fileURLToPath, URL } from 'node:url'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-// import { VitePWA } from 'vite-plugin-pwa'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -35,27 +35,29 @@ export default defineConfig({
         //     devOptions: {
         //         enabled: true
         //     },
-        //     includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+        //     includeAssets: ['favicon.ico', 'icon.png', 'logo.png', 'splash.png'],
         //     manifest: {
-        //         name: 'AntFlow Media Studio',
-        //         short_name: 'AntFlow',
-        //         description: 'Professional Media Studio',
-        //         theme_color: '#ffffff',
+        //         name: 'AntStudio Media Engine',
+        //         short_name: 'AntStudio',
+        //         description: 'Autonomous AI Production & Broadcasting Hub',
+        //         theme_color: '#000000',
+        //         background_color: '#000000',
         //         icons: [
         //             {
-        //                 src: 'pwa-192x192.png',
+        //                 src: 'icon.png',
         //                 sizes: '192x192',
-        //                 type: 'image/png'
+        //                 type: 'image/png',
+        //                 purpose: 'any maskable'
         //             },
         //             {
-        //                 src: 'pwa-512x512.png',
+        //                 src: 'icon.png',
         //                 sizes: '512x512',
         //                 type: 'image/png'
         //             }
         //         ]
         //     },
         //     workbox: {
-        //         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        //         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
         //         runtimeCaching: [
         //             {
         //                 urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -64,7 +66,7 @@ export default defineConfig({
         //                     cacheName: 'google-fonts-cache',
         //                     expiration: {
         //                         maxEntries: 10,
-        //                         maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+        //                         maxAgeSeconds: 60 * 60 * 24 * 365
         //                     },
         //                     cacheableResponse: {
         //                         statuses: [0, 200]
@@ -72,37 +74,14 @@ export default defineConfig({
         //                 }
         //             },
         //             {
-        //                 urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-        //                 handler: 'CacheFirst',
+        //                 urlPattern: /\/api\/projects.*/i,
+        //                 handler: 'NetworkFirst',
         //                 options: {
-        //                     cacheName: 'gstatic-fonts-cache',
+        //                     cacheName: 'api-projects-cache',
         //                     expiration: {
-        //                         maxEntries: 10,
-        //                         maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
-        //                     },
-        //                     cacheableResponse: {
-        //                         statuses: [0, 200]
+        //                         maxEntries: 50,
+        //                         maxAgeSeconds: 60 * 60 * 24 // 1 Day
         //                     }
-        //                 }
-        //             },
-        //             {
-        //                 urlPattern: /\/api\/s3\/.*/i,
-        //                 handler: 'CacheFirst',
-        //                 options: {
-        //                     cacheName: 's3-media-cache',
-        //                     expiration: {
-        //                         maxEntries: 200,
-        //                         maxAgeSeconds: 60 * 60 * 24 * 30 // 30 Days
-        //                     },
-        //                     cacheableResponse: {
-        //                         statuses: [0, 200]
-        //                     },
-        //                     // Note: rangeRequests support in generateSW mode requires specific plugins or custom handling.
-        //                     // Basic CacheFirst might choke on Range headers if not handled.
-        //                     // For now, we use StaleWhileRevalidate for video to be safer or accept full download.
-        //                     // Actually, let's try StaleWhileRevalidate for broad compatibility or stick to CacheFirst if we assume full downloads.
-        //                     // Given it's a video editor, seeking is key. Range requests are complex in SW.
-        //                     // We will start with CacheFirst and see if it works for chunks.
         //                 }
         //             }
         //         ]

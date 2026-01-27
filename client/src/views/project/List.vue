@@ -7,29 +7,24 @@
           <h1 class="glow-title">{{ t('projects.title') }}</h1>
           <p class="subtitle">{{ t('projects.description') }}</p>
         </div>
-        <GButton type="primary" size="lg" @click="router.push('/projects/new')">
+        <GButton id="tour-new-project" type="primary" size="lg" @click="showCreationDialog = true">
           {{ t('projects.newProject') }}
         </GButton>
       </div>
 
+      <!-- Tour -->
+      <AppTour v-model="showTour" :steps="tourSteps" @finish="onTourFinish" />
+
       <!-- Filters -->
       <div class="filters-bar">
-        <GInput
-          v-model="searchQuery"
-          :placeholder="t('projects.search')"
-          class="search-input"
-        >
+        <GInput v-model="searchQuery" :placeholder="t('projects.search')" class="search-input">
           <template #prefix>
             <search theme="outline" size="18" />
           </template>
         </GInput>
 
-        <div class="filter-tabs">
-          <GSegmented
-            v-model="currentStatus"
-            :options="statusFilters"
-            class="status-segmented"
-          />
+        <div class="filter-tabs" id="tour-filters">
+          <GSegmented v-model="currentStatus" :options="statusFilters" class="status-segmented" />
         </div>
       </div>
 
@@ -39,22 +34,13 @@
       </div>
 
       <div v-else-if="filteredProjects.length > 0" class="projects-grid">
-        <GCard
-          v-for="project in filteredProjects"
-          :key="project._id"
-          class="project-card"
-          @click="router.push(`/projects/${project._id}/editor`)"
-          :bodyStyle="{ padding: '0px !important' }"
-        >
+        <GCard v-for="project in filteredProjects" :key="project._id" class="project-card"
+          @click="router.push(`/projects/${project._id}/editor`)" :bodyStyle="{ padding: '0px !important' }">
           <div class="project-thumbnail">
             <div class="status-badge" :class="project.status?.toLowerCase()">
               {{ t(`projects.status.${project.status?.toLowerCase()}`) }}
             </div>
-            <GMedia 
-              class="project-image" 
-              :src="project.storyboard?.segments?.[0]?.sceneImage" 
-              alt="Project Thumbnail"
-            >
+            <GMedia class="project-image" :src="project.storyboard?.segments?.[0]?.sceneImage" alt="Project Thumbnail">
               <template #error>
                 <div class="image-placeholder">
                   <play-one theme="filled" size="32" fill="#fff" />
@@ -70,18 +56,20 @@
             </div>
           </div>
           <div class="project-actions" @click.stop>
-              <GDropdown placement="bottom-end" @command="(cmd: string) => handleAction(cmd, project)">
-                <button class="action-btn">
-                  <more theme="outline" size="20" />
-                </button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="edit" :icon="EditIcon">{{ t('projects.edit') }}</el-dropdown-item>
-                    <el-dropdown-item command="duplicate" :icon="CopyIcon">{{ t('projects.duplicate') }}</el-dropdown-item>
-                    <el-dropdown-item command="delete" divided class="is-danger" :icon="DeleteIcon">{{ t('projects.delete') }}</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </GDropdown>
+            <GDropdown placement="bottom-end" @command="(cmd: string) => handleAction(cmd, project)">
+              <button class="action-btn">
+                <more theme="outline" size="20" />
+              </button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="edit" :icon="EditIcon">{{ t('projects.edit') }}</el-dropdown-item>
+                  <el-dropdown-item command="duplicate" :icon="CopyIcon">{{ t('projects.duplicate')
+                  }}</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided class="is-danger" :icon="DeleteIcon">{{
+                    t('projects.delete') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </GDropdown>
           </div>
         </GCard>
       </div>
@@ -91,35 +79,38 @@
           <div class="empty-icon">🎬</div>
           <h3>{{ t('projects.noProjects') }}</h3>
           <p>{{ t('projects.noProjectsDesc') }}</p>
-          <GButton type="primary" size="lg" @click="router.push('/projects/new')">
+          <GButton type="primary" size="lg" @click="showCreationDialog = true">
             {{ t('projects.newProject') }}
           </GButton>
         </GCard>
       </div>
     </div>
+
+    <ProjectCreationDialog v-model="showCreationDialog" @select="handleProjectCreation" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { 
-  Search, 
-  More, 
+import {
+  Search,
+  More,
   PlayOne,
-  Edit as EditIcon, 
-  Delete as DeleteIcon, 
-  Copy as CopyIcon 
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Copy as CopyIcon
 } from '@icon-park/vue-next'
 import { useTranslations } from '@/composables/useTranslations'
 import { toast } from 'vue-sonner'
 import { ElMessageBox } from 'element-plus'
-import { useRouter } from 'vue-router'
 import { ref, computed, onMounted } from 'vue'
+import AppTour from '@/components/ui/AppTour.vue'
 import GDropdown from '@/components/ui/GDropdown.vue'
 import GButton from '@/components/ui/GButton.vue'
 import GCard from '@/components/ui/GCard.vue'
 import GInput from '@/components/ui/GInput.vue'
 import GSegmented from '@/components/ui/GSegmented.vue'
 import GMedia from '@/components/ui/GMedia.vue'
+import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue'
 import { useProjectStore } from '@/stores/project'
 import { storeToRefs } from 'pinia'
 import { getFileUrl } from '@/utils/api'
@@ -131,6 +122,62 @@ const projectStore = useProjectStore()
 const { projects, loadingList: loading } = storeToRefs(projectStore)
 const searchQuery = ref('')
 const currentStatus = ref('all')
+const showCreationDialog = ref(false)
+
+const showTour = ref(false)
+const tourSteps = [
+  {
+    target: '#tour-new-project',
+    title: 'Create Your Magic',
+    description: 'Start here to create your first AI-powered video project. Choose from script-to-video, avatars, or recording mode.',
+    placement: 'bottom'
+  },
+  {
+    target: '#tour-filters',
+    title: 'Organize Your Work',
+    description: 'Filter projects by status (Draft/Completed) to keep your workspace clean.',
+    placement: 'bottom'
+  },
+  {
+    target: '.glow-title',
+    title: 'Your Command Center',
+    description: 'This is where all your creative assets live. You can edit, duplicate or delete them anytime.',
+    placement: 'right'
+  }
+]
+
+const onTourFinish = () => {
+    localStorage.setItem('antflow_tour_completed', 'true')
+}
+
+const handleProjectCreation = (type: string) => {
+  switch (type) {
+    case 'ai-video':
+    case 'script-to-video':
+      router.push('/projects/new')
+      break
+    case 'blank':
+      router.push('/projects/new?mode=blank')
+      break
+    case 'product-ads':
+      router.push('/projects/new?mode=product-ads')
+      break
+    case 'avatar':
+      router.push('/projects/new?mode=avatar')
+      break
+    case 'clone-style':
+      router.push('/projects/new?mode=clone')
+      break
+    case 'presentation':
+      router.push('/projects/new?mode=presentation')
+      break
+    case 'record':
+      router.push('/recorder')
+      break
+    default:
+      router.push('/projects/new')
+  }
+}
 
 const statusFilters = computed(() => [
   { value: 'all', label: t('projects.filterAll') },
@@ -201,6 +248,13 @@ const formatDate = (date: string) => {
 
 onMounted(() => {
   projectStore.fetchProjects()
+  
+  // Check if tour should be shown
+  if (!localStorage.getItem('antflow_tour_completed')) {
+    setTimeout(() => {
+        showTour.value = true
+    }, 1000)
+  }
 })
 
 </script>
@@ -246,6 +300,7 @@ onMounted(() => {
 
 .project-card {
   position: relative;
+
   :deep(.g-card__body) {
     padding: 0;
   }
@@ -266,6 +321,7 @@ onMounted(() => {
     height: 100%;
     object-fit: cover;
     border-radius: 12px;
+
     .image-placeholder {
       width: 100%;
       height: 100%;
@@ -290,9 +346,17 @@ onMounted(() => {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 
-  &.draft { color: #fbbf24; }
-  &.completed { color: #34d399; }
-  &.generating { color: #60a5fa; }
+  &.draft {
+    color: #fbbf24;
+  }
+
+  &.completed {
+    color: #34d399;
+  }
+
+  &.generating {
+    color: #60a5fa;
+  }
 }
 
 .project-info {
@@ -341,7 +405,9 @@ onMounted(() => {
     cursor: pointer;
     transition: all 0.2s;
 
-    &:hover { background: rgba(255, 255, 255, 0.1); }
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
   }
 }
 
@@ -350,13 +416,32 @@ onMounted(() => {
   max-width: 600px;
   margin: 100px auto;
 
-  .empty-icon { font-size: 64px; margin-bottom: 24px; }
-  h3 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
-  p { color: rgba(255, 255, 255, 0.6); margin-bottom: 32px; }
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 32px;
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 </style>

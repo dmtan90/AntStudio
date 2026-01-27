@@ -51,7 +51,7 @@ const uploadTemplate = useMutation({
   mutationFn: async () => {
     const pages = await editor.exportTemplate();
     console.log("uploadTemplate", editor.name, editor.id, pages)
-    const template: EditorTemplate = { name: editor.name, id: editor.id, pages };
+    const template: EditorTemplate = { name: editor.name, id: editor.id, pages, is_pubished: false };
     createBase64Download(template, "text/json", `template-${editor.name}-${Date.now()}.json`);
     return template;
   },
@@ -102,9 +102,15 @@ const zoomValue = computed({
   }
 });
 
+const currentFormat = computed(() => {
+  const d = dimension.value;
+  if (!d) return formats[2]; // Default to landscape
+  return formats.find(f => f.dimensions.width === d.width && f.dimensions.height === d.height) || { name: `${d.width}x${d.height}`, ratio: 'Custom' };
+});
+
 const fileName = computed({
   get() {
-    return editor.name;
+    return editor.name || 'Untitled Project';
   },
 
   set(value) {
@@ -122,7 +128,7 @@ const resize = (size: Dimension) => {
 
 const isFormat = (format) => {
   // console.log(format);
-  const ratio = (dimension?.value?.width ?? 1920) / (dimension?.value?.height) ?? 1080;
+  const ratio = (dimension?.value?.width ?? 1920) / (dimension?.value?.height ?? 1080);
   if (ratio == format.aspectRatio) {
     return true;
   }
@@ -169,6 +175,35 @@ const isFormat = (format) => {
 
       <div class="h-4 w-px bg-white/10 mx-1"></div>
 
+      <!-- Aspect Ratio Switcher -->
+      <div class="flex items-center gap-2 px-2 py-1 rounded-xl bg-white/5 border border-white/5">
+        <el-dropdown trigger="click" @command="resize" popper-class="cinematic-dropdown">
+          <button class="flex items-center gap-2 px-2 py-0.5 hover:text-brand-primary transition-colors group">
+            <span
+              class="text-[10px] font-black uppercase tracking-wider text-white/40 group-hover:text-brand-primary/60 transition-colors">Aspect
+              Ratio</span>
+            <span class="text-[11px] font-bold text-white/90">{{ currentFormat.ratio || currentFormat.name }}</span>
+            <ChevronDown :size="10" class="text-white/20" />
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu class="cinematic-dropdown-menu !w-48">
+              <el-dropdown-item v-for="format in formats" :key="format.name" :command="format.dimensions"
+                :class="{ 'is-active': currentFormat.name === format.name }">
+                <div class="flex flex-col py-1">
+                  <div class="flex items-center justify-between gap-4">
+                    <span class="text-[11px] font-bold">{{ format.name }}</span>
+                    <span class="text-[9px] opacity-40">{{ format.ratio }}</span>
+                  </div>
+                  <span class="text-[8px] opacity-30 uppercase tracking-tighter mt-0.5">{{ format.purpose }}</span>
+                </div>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
+
+      <div class="h-4 w-px bg-white/10 mx-1"></div>
+
       <el-button-group class="cinematic-button-group">
         <el-tooltip content="Undo (Ctrl+Z)" placement="bottom" popper-class="cinematic-tooltip">
           <el-button @click="editor.canvas.history.undo()" :disabled="!editor.canvas?.history?.canUndo"
@@ -194,7 +229,7 @@ const isFormat = (format) => {
           <Ticket theme="filled" :size="12" class="text-orange-500 relative z-10" />
         </div>
         <span class="text-[11px] font-black text-orange-500 tracking-wider relative z-10">{{ user.credits?.balance || 0
-          }}</span>
+        }}</span>
         <span class="text-[9px] font-bold text-orange-500/40 uppercase tracking-[0.1em] relative z-10">Credits</span>
       </div>
     </section>

@@ -102,6 +102,7 @@ declare module "fabric" {
             in: any;
             out: any;
             scene: any;
+            keyframes?: any[];
         }
 
         // Augment Canvas

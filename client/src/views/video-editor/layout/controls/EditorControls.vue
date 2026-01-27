@@ -12,14 +12,14 @@ import { storeToRefs } from "pinia"
 import { useCanvasStore } from "video-editor/store/canvas";
 
 import { align, move, placeholders } from 'video-editor/constants/editor';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 
 const MENU_OFFSET_Y = 60;
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
-const { mode } = storeToRefs(editor as any);
-const { canvas, selectionActive: active, workspace, instance, selection } = storeToRefs(canvasStore as any);
+const { mode } = storeToRefs(editor);
+const { canvas, selectionActive: active, workspace, instance, selection } = storeToRefs(canvasStore);
 const style = reactive({
   top: '0px',
   left: '0px'

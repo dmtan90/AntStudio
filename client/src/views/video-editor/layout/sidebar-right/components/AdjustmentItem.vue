@@ -3,7 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { PreviewOpen as Eye, PreviewCloseOne as EyeOff } from '@icon-park/vue-next';
 import Toggle from 'video-editor/components/ui/toggle.vue';
 import Label  from 'video-editor/components/ui/label.vue';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { filters, adjustments, BlendModes, GrayScaleModes } from 'video-editor/constants/filters';
 import { colors } from 'video-editor/constants/color';
 import { onClickOutside } from '@vueuse/core';
@@ -13,7 +13,7 @@ import { onClickOutside } from '@vueuse/core';
 // const canvasStore = useCanvasStore();
 // const { selectionActive: selected } = storeToRefs(canvasStore);
 
-const props = defineProps<{ adjustment: any; selected: any; onChange: (value: number) => void; onToggle: (value: boolean) => void }>();
+const props = defineProps<{ adjustment: any; selected: any; onChange: (value: any) => void; onToggle: (value: boolean) => void }>();
 const name = computed(() => props.adjustment?.name);
 // const activeAdj = computed(() => selected.value?.adjustments?.[name.value]);
 const active = computed(() => !!props.selected?.adjustments?.[name.value]);

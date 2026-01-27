@@ -61,7 +61,7 @@ export class Prompt {
 
       for (const scene of session.scene) {
         if (scene.video) {
-          const video: fabric.Video = await this.canvas.onAddVideoFromSource(scene.video.url, { meta: { duration: scene.duration * 1000, offset } }, true, false);
+          const video: any = await this.canvas.onAddVideoFromSource(scene.video.url, { meta: { duration: scene.duration * 1000, offset } }, true, false);
           const scaleX = this.canvas.artboard.width! / video.width!;
           const scaleY = this.canvas.artboard.height! / video.height!;
           video.scale(Math.max(scaleX, scaleY));

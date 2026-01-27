@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue';
 import { useEditorStore } from 'video-editor/store/editor';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 // import { ElButton } from 'element-plus';
 
 const props = defineProps<{ element: fabric.Object; className?: string }>();

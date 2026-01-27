@@ -58,11 +58,27 @@ export const useLicenseStore = defineStore('license', () => {
         }
     }
 
+    async function updateLicense(id: string, data: any) {
+        try {
+            const response = await api.put(`/license/${id}`, data)
+            const index = licenses.value.findIndex(l => l._id === id)
+            if (index !== -1 && response.data.license) {
+                licenses.value[index] = response.data.license
+            }
+            toast.success(t('common.updateSuccess'))
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     return {
         licenses,
         loading,
         fetchLicenses,
         deleteLicense,
-        addLicense
+        addLicense,
+        updateLicense
     }
 })

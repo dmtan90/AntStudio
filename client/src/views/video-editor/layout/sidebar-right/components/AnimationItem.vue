@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { EditorAnimation } from 'video-editor/constants/animations';
 // import { ElButton } from 'element-plus';
 

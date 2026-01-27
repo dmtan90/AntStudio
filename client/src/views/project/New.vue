@@ -1,98 +1,75 @@
 <template>
   <div class="flow-creation-page">
-    <div class="flow-container" ref="containerRef" @mousedown="floatingComment.show = false" @scroll="floatingComment.show = false">
-      <ProjectWelcome v-if="messages.length === 0 && !loading" />
+    <!-- Blank Project Mode -->
+    <ProjectBlankSetup v-if="mode === 'blank'" />
 
-      <div class="chat-timeline">
-        <div v-for="(msg, idx) in messages" :key="idx" :class="['message-row', msg.author]">
-          <!-- User Message -->
-          <ProjectUserMessage 
-            v-if="msg.author === 'user'" 
-            :content="msg.content" 
-            :files="msg.files" 
-          />
+    <!-- Product Ads Mode -->
+    <ProjectProductAdsSetup v-else-if="mode === 'product-ads'" />
 
-          <!-- AI Greeting -->
-          <ProjectGreeting 
-            v-else-if="msg.type === 'text'" 
-            :content="msg.content" 
-          />
+    <!-- Avatar Mode -->
+    <ProjectAvatarSetup v-else-if="mode === 'avatar'" />
 
-          <!-- AI Results -->
-          <div v-else class="ai-content-wrapper">
-            <!-- Result Grid -->
-            <div v-if="msg.result" class="analysis-grid doc-style-flow">
-              <ProjectAnalysisCard 
-                :msg="msg" 
-                @text-selection="handleTextSelection" 
-                @comment="commentOn" 
-              />
+    <!-- Presentation Mode -->
+    <ProjectPresentationSetup v-else-if="mode === 'presentation'" />
 
-              <ProjectBriefCard 
-                :msg="msg" 
-                :aspect-ratio="form.aspectRatio"
-                @text-selection="handleTextSelection" 
-                @comment="commentOn" 
-              />
+    <!-- Live Stream Mode -->
+    <ProjectLiveStreamSetup v-else-if="mode === 'live-stream'" />
 
-              <ProjectStoryboardCard 
-                :msg="msg" 
-                @text-selection="handleTextSelection" 
-              />
+    <!-- Chat Flow Mode (Default) -->
+    <template v-else>
+      <div class="flow-container" ref="containerRef" @mousedown="floatingComment.show = false"
+        @scroll="floatingComment.show = false">
+        <ProjectWelcome v-if="messages.length === 0 && !loading" />
 
-              <ProjectClosingMessage 
-                :msg="msg" 
-                :index="idx"
-                :creating="creating"
-                @apply-suggestion="applySuggestion"
-                @finalize="finalizeProject"
-                @re-generate="reGenerate"
-              />
+        <div class="chat-timeline">
+          <div v-for="(msg, idx) in messages" :key="idx" :class="['message-row', msg.author]">
+            <!-- User Message -->
+            <ProjectUserMessage v-if="msg.author === 'user'" :content="msg.content" :files="msg.files" />
+
+            <!-- AI Greeting -->
+            <ProjectGreeting v-else-if="msg.type === 'text'" :content="msg.content" />
+
+            <!-- AI Results -->
+            <div v-else class="ai-content-wrapper">
+              <!-- Result Grid -->
+              <div v-if="msg.result" class="analysis-grid doc-style-flow">
+                <ProjectAnalysisCard :msg="msg" @text-selection="handleTextSelection" @comment="commentOn" />
+
+                <ProjectBriefCard :msg="msg" :aspect-ratio="form.aspectRatio" @text-selection="handleTextSelection"
+                  @comment="commentOn" />
+
+                <ProjectStoryboardCard :msg="msg" @text-selection="handleTextSelection" @comment="commentOn" />
+
+                <ProjectClosingMessage :msg="msg" :index="idx" :creating="creating" @apply-suggestion="applySuggestion"
+                  @finalize="finalizeProject" @re-generate="reGenerate" />
+              </div>
+            </div>
+          </div>
+          <div class="message-row" v-if="loading">
+            <div class="ai-content-wrapper">
+              <!-- Thinking -->
+              <ProjectThinking :message="statusMessage" />
             </div>
           </div>
         </div>
-        <div class="message-row" v-if="loading">
-          <div class="ai-content-wrapper">
-            <!-- Thinking -->
-            <ProjectThinking 
-              :message="statusMessage" 
-            />
-          </div>
-        </div>
       </div>
-    </div>
 
-    <!-- Input Area -->
-    <ProjectChatInputNew 
-      v-model="prompt"
-      v-model:form="form"
-      :selected-files="selectedFiles"
-      :loading="loading"
-      :quick-suggestions="quickSuggestions"
-      :has-results="hasResults"
-      :show-mentions="showMentions"
-      ref="chatInputRef"
-      @handle-enter="handleEnter"
-      @on-file-selected="onFileSelected"
-      @remove-file="removeFile"
-      @start-analysis="startAnalysis"
-      @cancel-analysis="cancelAnalysis"
-      @reset-flow="resetFlow"
-      @apply-suggestion="applySuggestion"
-      @insert-mention="insertMention"
-    />
+      <!-- Input Area -->
+      <ProjectChatInputNew v-model="prompt" v-model:form="form" :selected-files="selectedFiles" :loading="loading"
+        :quick-suggestions="quickSuggestions" :has-results="hasResults" :show-mentions="showMentions" ref="chatInputRef"
+        @handle-enter="handleEnter" @on-file-selected="onFileSelected" @remove-file="removeFile"
+        @start-analysis="startAnalysis" @cancel-analysis="cancelAnalysis" @reset-flow="resetFlow"
+        @apply-suggestion="applySuggestion" @insert-mention="insertMention" />
 
-    <!-- Tooltip -->
-    <ProjectFloatingComment 
-      v-bind="floatingComment"
-      @comment="commentOn"
-    />
+      <!-- Tooltip -->
+      <ProjectFloatingComment v-bind="floatingComment" @comment="commentOn" />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { useTranslations } from '@/composables/useTranslations'
 import { useProjectStore } from '@/stores/project'
@@ -106,15 +83,32 @@ import ProjectThinking from '@/components/projects/new/ProjectThinking.vue'
 import ProjectAnalysisCard from '@/components/projects/new/ProjectAnalysisCard.vue'
 import ProjectBriefCard from '@/components/projects/new/ProjectBriefCard.vue'
 import ProjectStoryboardCard from '@/components/projects/new/ProjectStoryboardCard.vue'
-import ProjectClosingMessage from '@/components/projects/new/ProjectClosingMessage.vue'
-import ProjectChatInputNew from '@/components/projects/new/ProjectChatInputNew.vue'
-import ProjectFloatingComment from '@/components/projects/new/ProjectFloatingComment.vue'
+import ProjectBlankSetup from '@/components/projects/new/ProjectBlankSetup.vue'
+import ProjectProductAdsSetup from '@/components/projects/new/ProjectProductAdsSetup.vue'
+import ProjectAvatarSetup from '@/components/projects/new/ProjectAvatarSetup.vue'
+import ProjectPresentationSetup from '@/components/projects/new/ProjectPresentationSetup.vue'
+import ProjectLiveStreamSetup from '@/components/projects/new/ProjectLiveStreamSetup.vue'
+import { onMounted } from 'vue'
 
 const { t } = useTranslations()
 const router = useRouter()
+const route = useRoute()
 const projectStore = useProjectStore()
 
 const { isGenerating: loading, isProcessing: creating } = storeToRefs(projectStore)
+
+const mode = computed(() => route.query.mode as string || 'chat')
+
+// Clone Mode Logic
+onMounted(() => {
+  if (route.query.mode === 'clone') {
+    prompt.value = "I want to create a video similar to this style: [Paste URL here]. Requirements: "
+    // Auto-focus the input after a short delay
+    setTimeout(() => {
+      chatInputRef.value?.focus()
+    }, 300)
+  }
+})
 
 // UI State
 const prompt = ref('')
@@ -190,7 +184,7 @@ watch(prompt, (newVal) => {
   if (!input) return
   const cursor = input.selectionStart || 0
   const textBefore = newVal.slice(0, cursor)
-  
+
   if (textBefore.endsWith('@') && selectedFiles.value.length > 0) {
     showMentions.value = true
   } else {
@@ -225,7 +219,7 @@ const commentOn = (part: string, selectedText?: string) => {
   } else {
     prompt.value = `Adjust ${part}: `
   }
-  
+
   floatingComment.show = false
   chatInputRef.value?.focus()
   setTimeout(() => {
@@ -239,7 +233,7 @@ const handleTextSelection = (e: MouseEvent, part: string) => {
   if (selection && selection.toString().trim().length > 0) {
     const range = selection.getRangeAt(0)
     const rect = range.getBoundingClientRect()
-    
+
     floatingComment.text = selection.toString().trim()
     floatingComment.context = part
     floatingComment.top = rect.top - 40
@@ -267,21 +261,21 @@ const reGenerate = (idx: number) => {
 
 const startAnalysis = async () => {
   if ((!prompt.value.trim() && !selectedFiles.value.length) || loading.value) return
-  
+
   lastInput.prompt = prompt.value
   lastInput.files = [...selectedFiles.value]
-  
+
   messages.value.push({
     author: 'user',
     content: prompt.value,
     files: selectedFiles.value.map(f => ({ name: f.name }))
   })
-  
+
   const userMessageCount = messages.value.filter(m => m.author === 'user').length
   if (userMessageCount <= 1) {
     const isScript = prompt.value.toLowerCase().includes('phim') || prompt.value.toLowerCase().includes('kịch bản') || selectedFiles.value.length > 0
     const key = isScript ? 'script' : 'topic'
-    
+
     const greeting = `
       ${t(`ai.greetings.${key}.title`)}<br><br>
       ${t(`ai.greetings.${key}.steps`)}<br>
@@ -292,21 +286,21 @@ const startAnalysis = async () => {
       </ol>
       ${t(`ai.greetings.${key}.footer`)}
     `
-    
+
     messages.value.push({
       author: 'ai',
       content: greeting,
       type: 'text'
     })
   }
-  
+
   const currentPrompt = prompt.value
   const currentFiles = [...selectedFiles.value]
   prompt.value = ''
-  
+
   statusMessage.value = t('projects.new.flow.thinking')
   scrollToBottom()
-  
+
   try {
     const formData = new FormData()
     formData.append('topic', currentPrompt)
@@ -321,7 +315,7 @@ const startAnalysis = async () => {
     formData.append('aspectRatio', form.aspectRatio)
     formData.append('videoStyle', form.videoStyle)
     formData.append('targetDuration', form.targetDuration.toString())
-    
+
     currentFiles.forEach(file => {
       formData.append('files', file)
     })
@@ -329,7 +323,7 @@ const startAnalysis = async () => {
     const responseData = await projectStore.getPreview(formData)
 
     if (responseData.success) {
-      if(responseData.data && responseData.data.creativeBrief){
+      if (responseData.data && responseData.data.creativeBrief) {
         responseData.data.expandAnalysis = true;
         responseData.data.expandBrief = true;
         responseData.data.expandStoryboard = true;
@@ -354,9 +348,9 @@ const finalizeProject = async (resultData: any) => {
   projectStore.isProcessing = true
   try {
     const title = form.title || resultData.creativeBrief?.title || 'Project ' + new Date().toLocaleDateString()
-    
-    const projectRes = await projectStore.createProject({ 
-      title, aspectRatio: form.aspectRatio, videoStyle: form.videoStyle, targetDuration: form.targetDuration 
+
+    const projectRes = await projectStore.createProject({
+      title, aspectRatio: form.aspectRatio, videoStyle: form.videoStyle, targetDuration: form.targetDuration
     })
 
     const project = projectRes.project
@@ -447,8 +441,15 @@ watch(messages, () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
 }
 
 .chat-timeline {
@@ -463,9 +464,14 @@ watch(messages, () => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  
-  &.user { align-items: flex-end; }
-  &.ai { align-items: flex-start; }
+
+  &.user {
+    align-items: flex-end;
+  }
+
+  &.ai {
+    align-items: flex-start;
+  }
 }
 
 .ai-content-wrapper {
@@ -482,7 +488,9 @@ watch(messages, () => {
 }
 
 .analysis-grid {
-  display: grid; grid-template-columns: 1fr; gap: 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
   width: 100%;
   margin-top: 16px;
 }

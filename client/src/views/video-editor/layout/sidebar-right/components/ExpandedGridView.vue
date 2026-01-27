@@ -11,11 +11,11 @@ const canvasStore = useCanvasStore();
 const { canvas, clipper } = storeToRefs(canvasStore);
 
 const clipActiveObjectFromBasicShape = (klass: string, params: any) => {
-  clipper.value?.clipActiveObjectFromBasicShape(klass, params);
+  (clipper.value as any)?.clipActiveObjectFromBasicShape(klass, params);
 };
 
 const clipActiveObjectFromAbstractShape = (path: string, name: string) => {
-  clipper.value?.clipActiveObjectFromAbstractShape(path, name);
+  (clipper.value as any)?.clipActiveObjectFromAbstractShape(path, name);
 };
 </script>
 

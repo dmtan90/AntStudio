@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { WavesLeft as AudioWaveform, Down as ChevronDown, Timeline as GanttChart, Delete as Trash2, VolumeNotice as Volume2, VolumeMute as VolumeX } from '@icon-park/vue-next';
 import { floor } from 'lodash';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 
 import Label from 'video-editor/components/ui/label.vue';
 import SliderInput from 'video-editor/components/ui/SliderInput.vue';

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
+    "build:only": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -13,6 +14,7 @@
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@icon-park/vue-next": "^1.4.2",
+    "@mediapipe/tasks-vision": "^0.10.32",
     "@meersagor/wavesurfer-vue": "^2.0.2",
     "@singleway/vueflags": "^0.1.18",
     "@tanstack/vue-query": "^5.92.8",
@@ -35,7 +37,10 @@
     "motion-v": "^1.9.0",
     "nanoid": "^5.1.6",
     "pinia": "^3.0.4",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.4.0",
+    "three": "^0.182.0",
+    "tinycolor2": "^1.6.0",
     "vue": "^3.5.26",
     "vue-chartjs": "^5.3.3",
     "vue-color": "^3.3.3",
@@ -44,13 +49,18 @@
     "vue-draggable-resizable-gorkys-vue3": "^2.5.1",
     "vue-router": "^4.6.4",
     "vue-sonner": "^2.0.9",
+    "vue-virtual-scroller": "2.0.0-beta.8",
     "wavesurfer.js": "^7.12.1",
-    "webfontloader": "^1.6.28"
+    "webfontloader": "^1.6.28",
+    "workbox-window": "^7.4.0"
   },
   "devDependencies": {
     "@huggingface/transformers": "^3.8.1",
+    "@types/animejs": "^3.1.13",
     "@types/fabric": "^5.3.11",
-    "@types/node": "^25.0.5",
+    "@types/node": "^20.0.0",
+    "@types/three": "^0.182.0",
+    "@types/tinycolor2": "^1.4.6",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "autoprefixer": "^10.4.20",
@@ -60,7 +70,7 @@
     "postcss": "^8.4.49",
     "sass": "^1.97.2",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.9.3",
+    "typescript": "^5.7.0",
     "unplugin-auto-import": "^19.0.0",
     "unplugin-vue-components": "^28.0.0",
     "vite": "^5.4.14",

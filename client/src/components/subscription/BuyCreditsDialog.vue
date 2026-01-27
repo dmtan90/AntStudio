@@ -74,7 +74,7 @@ import { toast } from 'vue-sonner'
 import { useUserStore } from '@/stores/user'
 import { useConfigStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
-import { cn } from 'video-editor/lib/utils'
+import { cn } from '@/utils/ui'
 import { Wallet, Attention } from '@icon-park/vue-next'
 
 const userStore = useUserStore()

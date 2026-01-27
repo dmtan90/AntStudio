@@ -239,7 +239,7 @@ export class Circle {
   rotateGraph: boolean
   rotateSpeed: number
   peaks: [number, number][] = []
-  constructor(p: PropsCircleType) {
+  constructor(p: any) {
     const c = PropsCircle
     this.barColor = resolvePropColor(p.barColor, c.barColor.default)
     this.barLength = resolvePropNum(p.barLength, c.barLength.default)

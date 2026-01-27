@@ -118,7 +118,8 @@ export class CustomAIAdapter {
                 try {
                     // We ALMOST ALWAYS want to parse the template as JSON first to get an object,
                     // so we should ALMOST ALWAYS use escapeJson = true if it looks like JSON.
-                    const shouldEscape = config.payloadTemplate.trim().startsWith('{') || isJson;
+                    const trimmedTemplate = config.payloadTemplate.trim();
+                    const shouldEscape = trimmedTemplate.startsWith('{') || trimmedTemplate.startsWith('[') || isJson;
                     const populatedString = fillTemplate(config.payloadTemplate, variables, shouldEscape);
 
                     if (isJson) {
@@ -135,7 +136,18 @@ export class CustomAIAdapter {
                     } else if (isMultipart) {
                         // Use global FormData if available (Node 18+) or axios will handle objects
                         // Note: In Node.js, we might need to check if FormData is available
-                        const FormClass = (globalThis as any).FormData;
+                        let FormClass = (globalThis as any).FormData;
+
+                        // Fallback to formdata-node if global FormData is not available or behaves unexpectedly in Node
+                        if (!FormClass) {
+                            try {
+                                const { FormData: NodeFormData } = await import('formdata-node');
+                                FormClass = NodeFormData;
+                            } catch (e) {
+                                console.error('[CustomAdapter] formdata-node not found and global FormData missing');
+                            }
+                        }
+
                         if (FormClass) {
                             const form = new FormClass();
                             try {
@@ -145,13 +157,12 @@ export class CustomAIAdapter {
                                 // Axios automatically sets the boundary for FormData
                                 delete headers['Content-Type'];
                                 delete headers['content-type'];
-                            } catch (e) {
-                                console.warn('[CustomAdapter] Failed to parse multipart template as JSON, sending as raw string');
-                                data = populatedString;
+                            } catch (e: any) {
+                                console.error(`[CustomAdapter] Failed to parse multipart template as JSON for ${taskType}:`, e.message);
+                                throw new Error(`Invalid JSON in multipart template for ${taskType}: ${e.message}. Template: ${populatedString.substring(0, 100)}...`);
                             }
                         } else {
-                            console.error('[CustomAdapter] FormData is not available in this environment');
-                            data = populatedString;
+                            throw new Error(`[CustomAdapter] FormData is not available for ${taskType} multipart request`);
                         }
                     } else {
                         data = populatedString;

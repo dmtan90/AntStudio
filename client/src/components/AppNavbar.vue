@@ -2,10 +2,11 @@
   <nav class="app-navbar glass">
     <div class="navbar-container">
       <div class="navbar-left">
-        <router-link to="/" class="brand">AntFlow</router-link>     
+        <router-link to="/" class="brand">AntStudio</router-link>
         <div v-if="user" class="nav-links">
           <template v-if="isHomePage">
-            <a v-for="link in landingLinks" :key="link.id" :href="link.to" class="nav-link" :class="{ active: activeSection === link.id }" @click.prevent="scrollToSection(link.id)">
+            <a v-for="link in landingLinks" :key="link.id" :href="link.to" class="nav-link"
+              :class="{ active: activeSection === link.id }" @click.prevent="scrollToSection(link.id)">
               {{ t(`nav.${link.id}`) }}
             </a>
           </template>
@@ -16,7 +17,8 @@
           </template>
         </div>
         <div v-else class="nav-links">
-          <a v-if="isHomePage" v-for="link in landingLinks" :key="link.id" :href="link.to" class="nav-link" :class="{ active: activeSection === link.id }" @click.prevent="scrollToSection(link.id)">
+          <a v-if="isHomePage" v-for="link in landingLinks" :key="link.id" :href="link.to" class="nav-link"
+            :class="{ active: activeSection === link.id }" @click.prevent="scrollToSection(link.id)">
             {{ t(`nav.${link.id}`) }}
           </a>
           <router-link v-else to="/" class="nav-link">{{ t('nav.home') }}</router-link>
@@ -49,19 +51,14 @@
                 <span class="credit-label">{{ user.subscription?.plan?.toUpperCase() || 'FREE' }}</span>
               </div>
             </template>
-            
+
             <div class="credit-popover-content">
               <div class="user-info">
                 <span class="user-name-pop">{{ user.name }}</span>
                 <span class="user-email">{{ user.email }}</span>
               </div>
 
-              <GButton 
-                v-if="isFree" 
-                type="primary" 
-                class="upgrade-btn-pop" 
-                @click="showUpgradeDialog"
-              >
+              <GButton v-if="isFree" type="primary" class="upgrade-btn-pop" @click="showUpgradeDialog">
                 <diamond theme="outline" size="14" />
                 {{ t('dashboard.upgrade') }}
               </GButton>
@@ -119,11 +116,7 @@
     </div>
 
     <!-- Profile Dialog -->
-    <GDialog
-      v-model="profileDialogVisible"
-      :title="t('profile.title')"
-      width="460px"
-    >
+    <GDialog v-model="profileDialogVisible" :title="t('profile.title')" width="460px">
       <div class="profile-dialog-body">
         <div class="avatar-section">
           <div class="avatar-container" @click="fileInput?.click()">
@@ -148,10 +141,7 @@
           </div>
           <div class="g-form-item">
             <label>{{ t('profile.language') }}</label>
-            <GSelect 
-              v-model="profileForm.language" 
-              :options="languages.map(l => ({ label: l.name, value: l.code }))"
-            />
+            <GSelect v-model="profileForm.language" :options="languages.map(l => ({ label: l.name, value: l.code }))" />
           </div>
           <div class="g-form-item">
             <label>{{ t('profile.plan') }}</label>
@@ -176,11 +166,7 @@
     </GDialog>
 
     <!-- Change Password Dialog -->
-    <GDialog
-      v-model="passwordDialogVisible"
-      :title="t('common.password')"
-      width="420px"
-    >
+    <GDialog v-model="passwordDialogVisible" :title="t('common.password')" width="420px">
       <div class="g-form">
         <div class="g-form-item">
           <label>Current Password</label>
@@ -206,10 +192,7 @@
     </GDialog>
 
     <!-- Subscription Plans Dialog -->
-    <SubscriptionPlansDialog
-      v-model="subscriptionDialogVisible"
-      @select="handlePlanSelection"
-    />
+    <SubscriptionPlansDialog v-model="subscriptionDialogVisible" @select="handlePlanSelection" />
 
     <Toaster position="top-right" theme="dark" />
   </nav>
@@ -223,7 +206,7 @@ import { useTranslations, type Locale } from '@/composables/useTranslations'
 import { Toaster, toast } from 'vue-sonner'
 import 'vue-sonner/style.css'
 import api, { getFileUrl } from '@/utils/api.js'
-import GDropdown from '@/components/ui/GDropdown.vue' 
+import GDropdown from '@/components/ui/GDropdown.vue'
 import GPopover from '@/components/ui/GPopover.vue'
 import GDialog from '@/components/ui/GDialog.vue'
 import GInput from '@/components/ui/GInput.vue'
@@ -236,7 +219,7 @@ import SubscriptionPlansDialog from '@/components/subscription/SubscriptionPlans
 
 const router = useRouter()
 const route = useRoute()
-const { t, setLocale, currentLocale } = useTranslations()    
+const { t, setLocale, currentLocale } = useTranslations()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 
@@ -288,9 +271,9 @@ const showUpgradeDialog = () => {
 }
 
 const handlePlanSelection = (data: any) => {
-  console.log('Selected plan:', data)
-  // TODO: Handle checkout
+  // Satisfying TODO: Navigate to tactical billing gateway
   subscriptionDialogVisible.value = false
+  router.push({ path: '/billing', query: { selectedPlan: data.id } })
 }
 
 // Profile Dialog
@@ -314,7 +297,7 @@ const passwordForm = ref({
 
 const handleCommand = (command: string) => {
   if (!user.value) return
-  
+
   if (command === 'profile') {
     Object.assign(profileForm, {
       name: user.value.name,
@@ -331,6 +314,7 @@ const handleCommand = (command: string) => {
   }
 }
 
+
 const updateProfile = async () => {
   updating.value = true
   try {
@@ -339,7 +323,7 @@ const updateProfile = async () => {
       avatar: profileForm.avatar,
       language: profileForm.language
     })
-    
+
     setLocale(profileForm.language)
     toast.success(t('common.updateSuccess'))
     profileDialogVisible.value = false
@@ -361,7 +345,7 @@ const handleAvatarUpload = async (e: Event) => {
     formData.append('purpose', 'avatar')
 
     const response = await api.post('/media/upload', formData, {
-      headers: { 
+      headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
@@ -391,8 +375,8 @@ const changePassword = async () => {
   changingPassword.value = true
   try {
     await userStore.changePassword({
-        current: passwordForm.value.current,
-        new: passwordForm.value.new
+      current: passwordForm.value.current,
+      new: passwordForm.value.new
     })
     toast.success('Password changed successfully')
     passwordDialogVisible.value = false
@@ -422,7 +406,7 @@ const scrollToSection = (id: string) => {
 
 const setupScrollSpy = () => {
   if (observer) observer.disconnect()
-  
+
   const observerOptions = {
     root: null,
     rootMargin: '-50% 0px -50% 0px',
@@ -530,7 +514,9 @@ onUnmounted(() => {
   font-size: 14px;
   transition: $transition-base;
 
-  &:hover, &.router-link-active, &.active {
+  &:hover,
+  &.router-link-active,
+  &.active {
     color: #fff;
   }
 }
@@ -541,7 +527,8 @@ onUnmounted(() => {
   gap: $spacing-md;
 }
 
-.lang-switcher, .user-badge {
+.lang-switcher,
+.user-badge {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
@@ -562,7 +549,8 @@ onUnmounted(() => {
   padding: 6px 6px 6px 16px;
 }
 
-.lang-code, .user-name {
+.lang-code,
+.user-name {
   font-size: 12px;
   font-weight: 700;
   color: #fff;
@@ -573,7 +561,8 @@ onUnmounted(() => {
   font-weight: 500;
 }
 
-.user-avatar, .avatar-placeholder {
+.user-avatar,
+.avatar-placeholder {
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -666,7 +655,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  
+
   label {
     font-size: 12px;
     font-weight: 700;
@@ -704,8 +693,8 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   width: 100%;
-  
-  & > * {
+
+  &>* {
     flex: 1;
   }
 }

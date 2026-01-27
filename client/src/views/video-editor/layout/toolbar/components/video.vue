@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ExcludeSelection as Blend, Movie as Clapperboard, Selected as Crop, MagicWand as Wand, Down as ChevronDown, Timeline as GanttChart, VolumeNotice as Volume2, VolumeMute as VolumeX } from '@icon-park/vue-next';
+import { floor } from 'lodash';
 
 // import { ElButton, ElDivider } from 'element-plus';
 
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { FabricUtils } from 'video-editor/fabric/utils';
 import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';

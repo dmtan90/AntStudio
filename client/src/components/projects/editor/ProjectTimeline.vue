@@ -18,22 +18,22 @@
           </div>
         </div>
 
-        <!-- Floating Tooltips/Adustments (Images 2 & 3) -->
+        <!-- Floating Tooltips/Adustments -->
         <div class="absolute top-10 right-10 flex flex-col gap-4 z-50">
            <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
               <template #reference>
-                <button class="tool-btn"><volume-notice theme="outline" size="18" /> <span>Audio</span></button>
+                <button class="tool-btn"><volume-notice theme="outline" size="18" /> <span>{{ t('projects.editor.timeline.volume') }}</span></button>
               </template>
               <div class="p-4 space-y-4">
                  <div class="flex flex-col gap-2">
-                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Volume</div>
+                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.volume') }}</div>
                     <div class="flex items-center gap-3">
                        <el-slider v-model="currentVolume" :min="0" :max="1" :step="0.01" class="flex-1" @change="updateVolume" />
                        <span class="text-[10px] w-8 text-right">{{ Math.round(currentVolume * 100) }}%</span>
                     </div>
                  </div>
                  <div class="flex flex-col gap-2">
-                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Fade out</div>
+                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.fadeOut') }}</div>
                     <el-slider v-model="fadeOut" :min="0" :max="5" :step="0.1" @change="updateFade" />
                  </div>
               </div>
@@ -41,28 +41,28 @@
 
            <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
               <template #reference>
-                <button class="tool-btn"><speed theme="outline" size="18" /> <span>Speed</span></button>
+                <button class="tool-btn"><speed theme="outline" size="18" /> <span>{{ t('projects.editor.timeline.speed') }}</span></button>
               </template>
               <div class="p-4 space-y-4">
                  <div class="flex flex-col gap-2">
-                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Speed</div>
+                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.speed') }}</div>
                     <div class="flex items-center gap-3">
                        <el-slider v-model="currentSpeed" :min="0.1" :max="5" :step="0.1" class="flex-1" @change="updateSpeed" />
                        <span class="text-[10px] w-8 text-right">{{ currentSpeed }}x</span>
                     </div>
                  </div>
                  <div class="flex flex-col gap-2">
-                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Duration</div>
+                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.duration') }}</div>
                     <div class="flex items-center gap-2">
                       <el-input-number v-model="currentDuration" :min="1" :max="60" size="small" @change="updateDuration" />
-                      <span class="text-[10px] text-white/40">seconds</span>
+                      <span class="text-[10px] text-white/40">{{ t('common.seconds') }}</span>
                     </div>
                  </div>
                  <div class="flex flex-col gap-2">
-                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Trim Offset</div>
+                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.trimOffset') }}</div>
                     <div class="flex items-center gap-2">
                       <el-input-number v-model="currentTrimOffset" :min="0" :step="0.1" size="small" @change="updateTrimOffset" />
-                      <span class="text-[10px] text-white/40">seconds</span>
+                      <span class="text-[10px] text-white/40">{{ t('common.seconds') }}</span>
                     </div>
                  </div>
               </div>
@@ -71,7 +71,7 @@
    
         <el-dialog
             v-model="transitionMenuVisible"
-            title="Transition Settings"
+            :title="t('projects.editor.timeline.transitionSettings')"
             :width="300"
             :modal="true"
             :append-to-body="true"
@@ -216,9 +216,7 @@
                 @click="selectSegment(seg)"
               >
                 <!-- Transition Button -->
-                <!-- Use z-50 to ensure it's above handles and clip content. 
-                     Position strictly between clips. -->
-                <div v-if="idx < segments.length - 1" class="absolute -right-4 top-1/2 -translate-y-1/2 z-[60] opacity-0 group-hover:opacity-100 transition-opacity hover:!opacity-100 w-8 h-8 flex items-center justify-center">
+                <div v-if="(idx as number) < segments.length - 1" class="absolute -right-4 top-1/2 -translate-y-1/2 z-[60] opacity-0 group-hover:opacity-100 transition-opacity hover:!opacity-100 w-8 h-8 flex items-center justify-center">
                     <button class="w-6 h-6 rounded-full bg-white border border-black flex items-center justify-center text-black hover:scale-110 transition-transform shadow-[0_0_10px_rgba(0,0,0,0.5)] cursor-pointer" @click.stop="openTransitionMenu(seg)">
                        <magic theme="outline" size="14" />
                     </button>
@@ -229,7 +227,7 @@
                   <div v-else class="h-full w-full bg-white/5 flex items-center justify-center shrink-0">
                     <pic theme="outline" size="24" class="text-white/10" />
                   </div>
-                  <!-- Trim Handles (only visible when selected) -->
+                  <!-- Trim Handles -->
                   <div v-if="selectedSegmentId === seg._id" class="absolute inset-y-0 left-0 w-2 cursor-ew-resize bg-brand-primary opacity-100 transition-opacity z-20 flex items-center justify-center group" @mousedown.stop="startTrim($event, 'start', seg)">
                       <div class="w-1 h-4 bg-black rounded-full"></div>
                   </div>
@@ -266,13 +264,13 @@
                       :loading="seg.generatedAudio?.status === 'generating'"
                       @click.stop="handleGenerateVoiceover(seg)"
                    >
-                     {{ seg.generatedAudio?.status === 'generating' ? 'GENERATING...' : 'GENERATE VOICEOVER' }}
+                     {{ seg.generatedAudio?.status === 'generating' ? t('projects.editor.timeline.generating') : t('projects.editor.timeline.generate') }}
                    </el-button>
                 </div>
                 <div v-else-if="seg.generatedAudio?.status === 'completed'" class="absolute bottom-1 right-1 pb-1 pr-1">
                    <div class="flex items-center gap-1 bg-brand-primary/20 backdrop-blur-md border border-brand-primary/30 rounded px-1.5 py-0.5">
                       <check theme="outline" size="10" class="text-brand-primary" />
-                      <span class="text-[8px] font-bold text-brand-primary uppercase">Ready</span>
+                      <span class="text-[8px] font-bold text-brand-primary uppercase">{{ t('projects.editor.timeline.ready') }}</span>
                    </div>
                 </div>
               </div>
@@ -301,19 +299,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, markRaw, shallowRef } from 'vue'
 import { 
-  Play as PlayIcon, Pause as PauseIcon, Back, Next, Export, VolumeNotice, Speed, 
   VideoTwo, Pic, Voice, MusicOne, ZoomIn, ZoomOut, Magic, Check, Timeline 
 } from '@icon-park/vue-next'
+import { cn } from '@/utils/ui'
 import { useProjectStore } from '@/stores/project'
 import { useTranslations } from '@/composables/useTranslations'
 import { useTimelinePlayer } from '@/composables/useTimelinePlayer'
 import { toast } from 'vue-sonner'
-import { getFileUrl } from '@/utils/api'
 import ExportSettingsDialog from './ExportSettingsDialog.vue'
 import PublishDialog from './PublishDialog.vue'
 import GMedia from '@/components/ui/GMedia.vue'
-import { useVideoAssembler } from '@/composables/useVideoAssembler'
-
 
 const props = defineProps<{
   project: any
@@ -324,7 +319,7 @@ const { t } = useTranslations()
 
 // Canvas Ref
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const pxPerSec = ref(15) // Zoom level
+const pxPerSec = ref(15)
 
 const currentDuration = ref(0)
 const currentVolume = ref(1)
@@ -333,18 +328,15 @@ const currentTrimOffset = ref(0)
 const fadeOut = ref(0)
 const timelineHeight = ref(200)
 
-// Manual DOM Refs for performance
 const currentTimeRef = ref<HTMLElement | null>(null)
 const totalTimeRef = ref<HTMLElement | null>(null)
 const playheadRef = ref<HTMLElement | null>(null)
 
-// Computed
 const segments = computed(() => props.project?.storyboard?.segments || [])
 
 const visibleMarkers = computed(() => {
   const duration = totalDuration.value || 60
   const max = Math.ceil(duration * 2)
-  // Adaptive step based on zoom
   let step = 10
   if (pxPerSec.value > 50) step = 1
   else if (pxPerSec.value > 30) step = 2
@@ -371,7 +363,6 @@ const totalTimelineWidth = computed(() => {
   return Math.max(dur * 2, 60) * pxPerSec.value
 })
 
-// // Map project segments to player segments - Stabilized with watch
 const timelineSegments = shallowRef<any[]>([])
 watch(segments, (newSegs) => {
   timelineSegments.value = markRaw(newSegs.map((s: any) => ({
@@ -386,7 +377,6 @@ watch(segments, (newSegs) => {
   })))
 }, { immediate: true, deep: true })
 
-// // Initialize Player
 const player = useTimelinePlayer({
   segments: () => timelineSegments.value,
   backgroundMusic: () => props.project.backgroundMusic?.s3Key ? {
@@ -394,7 +384,6 @@ const player = useTimelinePlayer({
     volume: props.project.backgroundMusic.volume || 0.5
   } : undefined,
   onTimeUpdate: (time) => {
-    // Direct DOM manipulation to bypass Vue VDOM during playback
     if (currentTimeRef.value) currentTimeRef.value.textContent = formatTime(time)
     if (playheadRef.value) playheadRef.value.style.left = `${time * pxPerSec.value}px`
   }
@@ -402,20 +391,16 @@ const player = useTimelinePlayer({
 
 const { currentTime, isPlaying, totalDuration } = player
 
-
-
 onUnmounted(() => {
   window.removeEventListener('mousemove', onDrag)
   window.removeEventListener('mouseup', stopDrag)
 })
 
-// // Selected Clip State
 const selectedSegmentId = ref<string | null>(null)
 const selectedSegment = computed(() => 
   props.project?.storyboard?.segments?.find((s: any) => s._id === selectedSegmentId.value)
 )
 
-// // Actions
 const togglePlay = () => {
   if (isPlaying.value) player.pause()
   else player.play()
@@ -425,19 +410,13 @@ const handleSeek = (seconds: number) => {
   player.seek(currentTime.value + seconds)
 }
 
-const onScroll = (e: Event) => {
-  // Unused for now
-}
-
 const selectSegment = (seg: any) => {
-  console.log("selectSegment", seg);
   selectedSegmentId.value = seg._id
   currentVolume.value = seg.volume || 1
   currentSpeed.value = seg.speed || 1
   currentDuration.value = seg.duration || 5
   currentTrimOffset.value = seg.trimOffset || 0
   
-  // Jump playhead to start of this segment
   let elapsed = 0
   for (const s of segments.value) {
     if (s._id === seg._id) break
@@ -484,9 +463,9 @@ const updateTrimOffset = async () => {
   try {
     selectedSegment.value.trimOffset = currentTrimOffset.value
     await projectStore.updateProject({ storyboard: props.project.storyboard })
-    toast.success('Trim offset updated')
+    toast.success(t('common.updateSuccess'))
   } catch (e) {
-    toast.error('Failed to update trim offset')
+    toast.error(t('common.failed'))
   }
 }
 
@@ -496,21 +475,18 @@ const updateFade = () => {
 
 const handleGenerateVoiceover = async (seg: any) => {
   if (!seg.voiceover) {
-    toast.error('No dialogue text found for this segment')
+    toast.error(t('projects.editor.timeline.voiceoverFailed'))
     return
   }
-
   try {
     const promise = projectStore.generateVoiceover(props.project._id, seg._id, {
-      voiceId: 'en-US-Neural2-J' // Default voice
+      voiceId: 'en-US-Neural2-J'
     })
-
     toast.promise(promise, {
-      loading: `Generating voiceover for segment ${seg.order}...`,
-      success: `Voiceover generated successfully`,
-      error: (err) => err.response?.data?.error || 'Failed to generate voiceover'
+      loading: t('projects.editor.timeline.voiceoverGenerating'),
+      success: t('projects.editor.timeline.voiceoverSuccess'),
+      error: (err) => err.response?.data?.error || t('projects.editor.timeline.voiceoverFailed')
     })
-
     await promise
   } catch (error) {
     console.error('Voiceover generation error:', error)
@@ -518,14 +494,9 @@ const handleGenerateVoiceover = async (seg: any) => {
 }
 
 const toggleTimeline = () => {
-  if(timelineHeight.value > 0){
-    timelineHeight.value = 0
-  }else{
-    timelineHeight.value = 250
-  }
-};
+  timelineHeight.value = timelineHeight.value > 0 ? 0 : 250
+}
 
-// // Assembly/Export State
 const showExportSettings = ref(false)
 const showPublishDialog = ref(false)
 
@@ -538,7 +509,7 @@ const handleAssemble = () => {
   showExportSettings.value = true
 }
 
-const onExportComplete = async (result: any) => {
+const onExportComplete = async () => {
   showPublishDialog.value = true
 }
 
@@ -549,28 +520,20 @@ const formatTime = (seconds: number) => {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`
 }
 
-
-
-watch(currentTime, (time) => {
-  // Logic to switch video source if we reach end of current segment could be here manually
-  // but let the computed `currentVideoUrl` handle it for now.
-})
-
-// // Dragging Logic
+// Dragging Logic
 const isDragging = ref(false)
-const timelineViewportRef = ref<HTMLElement | null>(null) // We need to add ref="timelineViewportRef" to the viewport div
+const timelineViewportRef = ref<HTMLElement | null>(null)
 const onTimelineClick = (e: MouseEvent, time?: number) => {
   if (time !== undefined) {
     player.seek(time)
   } else if (timelineViewportRef.value) {
     const rect = timelineViewportRef.value.getBoundingClientRect()
     const offsetX = e.clientX - rect.left + timelineViewportRef.value.scrollLeft
-    const newTime = offsetX / pxPerSec.value
-    player.seek(newTime)
+    player.seek(offsetX / pxPerSec.value)
   }
 }
 
-const startDrag = (e: MouseEvent) => {
+const startDrag = () => {
   isDragging.value = true
   document.body.style.cursor = 'ew-resize'
 }
@@ -578,10 +541,8 @@ const startDrag = (e: MouseEvent) => {
 const onDrag = (e: MouseEvent) => {
   if (!isDragging.value || !timelineViewportRef.value) return
   const rect = timelineViewportRef.value.getBoundingClientRect()
-  // Calculate time based on scroll position + mouse offset relative to viewport
   const offsetX = e.clientX - rect.left + timelineViewportRef.value.scrollLeft
-  const newTime = Math.max(0, offsetX / pxPerSec.value)
-  player.seek(newTime)
+  player.seek(Math.max(0, offsetX / pxPerSec.value))
 }
 
 const stopDrag = () => {
@@ -591,27 +552,18 @@ const stopDrag = () => {
   }
 }
 
-
-// // Transition Logic
+// Transition Logic
 const transitionMenuVisible = ref(false)
 const activeTransitionSegment = ref<any>(null)
-const availableTransitions = [
-    { label: 'None', value: null }, // or 'none'
-    { label: 'Fade', value: 'fade' },
-    { label: 'Dissolve', value: 'dissolve' },
-    { label: 'Wipe', value: 'wipe' },
-    { label: 'Circle', value: 'circle' }
-]
+const availableTransitions = computed(() => [
+    { label: t('projects.editor.timeline.transitions.none'), value: null },
+    { label: t('projects.editor.timeline.transitions.fade'), value: 'fade' },
+    { label: t('projects.editor.timeline.transitions.dissolve'), value: 'dissolve' },
+    { label: t('projects.editor.timeline.transitions.wipe'), value: 'wipe' },
+    { label: t('projects.editor.timeline.transitions.circle'), value: 'circle' }
+])
 
 const openTransitionMenu = (seg: any) => {
-    // For simplicity, we can use the clicked button as reference if we track it,
-    // or just toggle a global boolean if we had a single centered modal.
-    // However, with el-popover v-model:visible, we need a reference.
-    // Hack: We'll set the active segment and just position the "invisible" reference or 
-    // simply rely on the fact that we might need a distinct popover for each button (expensive)
-    // OR: Use a manual fixed position div (custom popup) instead of el-popover for better control.
-    
-    // Better approach for now: Just one centered dialog/popup for settings to avoid "reference" hell in v-for.
     activeTransitionSegment.value = seg
     transitionMenuVisible.value = true
 }
@@ -624,24 +576,26 @@ const applyTransition = async (type: string | null) => {
         toast.success(t('projects.editor.timeline.transitionUpdated'))
         transitionMenuVisible.value = false
     } catch (e) {
-        toast.error('Failed to update transition')
+        toast.error(t('common.failed'))
     }
 }
 
+const onScroll = (e: Event) => {
+  // Logic for syncing or handling scroll if needed
+}
 
-// // Trim Logic
+// Trim Logic
 const isTrimming = ref(false)
 const trimType = ref<'start' | 'end' | null>(null)
 const trimSegment = ref<any>(null)
 const trimStartX = ref(0)
-const trimOriginalDuration = ref(0) // Original displayed duration (accounting for speed)
+const trimOriginalDuration = ref(0)
 
 const startTrim = (e: MouseEvent, type: 'start' | 'end', seg: any) => {
   isTrimming.value = true
   trimType.value = type
   trimSegment.value = seg
   trimStartX.value = e.clientX
-  // Store valid duration
   trimOriginalDuration.value = seg.duration / (seg.speed || 1)
   
   document.body.style.cursor = 'ew-resize'
@@ -651,65 +605,29 @@ const startTrim = (e: MouseEvent, type: 'start' | 'end', seg: any) => {
 
 const onTrim = (e: MouseEvent) => {
   if (!isTrimming.value || !trimSegment.value) return
-  
   const deltaX = e.clientX - trimStartX.value
   const deltaSeconds = deltaX / pxPerSec.value
   const speed = trimSegment.value.speed || 1
 
   if (trimType.value === 'end') {
-    // Changing duration by adjusting end
-    // New displayed duration
-    let newDisplayDuration = trimOriginalDuration.value + deltaSeconds
-    // Clamp: Min 1s, Max original source duration (approx... simplified here to just don't go below 0.5)
-    newDisplayDuration = Math.max(0.5, newDisplayDuration)
-    
-    // Set actual duration property
-    // Max duration is sourceDuration (if available) - trimOffset
+    let newDisplayDuration = Math.max(0.5, trimOriginalDuration.value + deltaSeconds)
     const maxDur = (trimSegment.value.sourceDuration || 9999) - (trimSegment.value.trimOffset || 0)
     newDisplayDuration = Math.min(newDisplayDuration, maxDur)
     trimSegment.value.duration = newDisplayDuration * speed
   } else if (trimType.value === 'start') {
-     // Trimming start usually means cutting from left, but for simplicity we'll just reduce duration for now
-     // Implementing true split/trim requires offset logic not present in model yet (sourceStartTime).
-     // Ideally: duration gets shorter, but we keep same end point visually? Or same start point?
-     // Standard behavior: dragging left handle right -> start time moves right, duration decreases.
-     
-     // DeltaX positive (move right) -> duration decreases, offset increases
      const startOffset = trimSegment.value.trimOffset || 0
      const startDur = trimOriginalDuration.value
-     
-     // Original duration logic: newDisplayDuration = trimOriginalDuration - deltaSeconds
-     // But we need to track offset
-     
-     // Calculate proposed change in source time
      const deltaSource = deltaSeconds * speed
-     
      let newTrimOffset = startOffset + deltaSource
-     let newDuration = startDur - deltaSeconds // on timeline
-     
-     // Bounds
-     // Offset >= 0
+     let newDuration = startDur - deltaSeconds
      if (newTrimOffset < 0) {
         newTrimOffset = 0
-        newDuration = startDur + (startOffset / speed) // Revert duration expansion if hitting 0 offset
+        newDuration = startDur + (startOffset / speed)
      }
-     
-     // Duration >= 0.5
      if (newDuration < 0.5) {
         newDuration = 0.5
-        newTrimOffset = startOffset + (startDur - 0.5) * speed // Cap offset at end
+        newTrimOffset = startOffset + (startDur - 0.5) * speed
      }
-     
-     // Offset + Duration*Speed <= SourceDuration
-     const sourceDur = trimSegment.value.sourceDuration || 9999
-     if (newTrimOffset + (newDuration * speed) > sourceDur) {
-         // Should not happen if dragging start handle usually, unless dragging LEFT (negative delta)
-         // If dragging LEFT, offset decreases, duration increases.
-         // If we exceed source bounds:
-         newTrimOffset = 0 // can't go before 0
-         // Max duration is sourceDur / speed
-     }
-
      trimSegment.value.trimOffset = newTrimOffset
      trimSegment.value.duration = newDuration * speed
   }
@@ -722,8 +640,6 @@ const stopTrim = async () => {
     document.body.style.cursor = ''
     window.removeEventListener('mousemove', onTrim)
     window.removeEventListener('mouseup', stopTrim)
-    
-    // Persist
     if (trimSegment.value) {
        await projectStore.updateProject({ storyboard: props.project.storyboard })
        trimSegment.value = null
@@ -731,11 +647,10 @@ const stopTrim = async () => {
   }
 }
 
-// // Resize Logic
+// Resize Logic
 const isResizing = ref(false)
 const startY = ref(0)
 const startHeight = ref(0)
-
 const startResize = (e: MouseEvent) => {
   isResizing.value = true
   startY.value = e.clientY
@@ -744,15 +659,11 @@ const startResize = (e: MouseEvent) => {
   window.addEventListener('mousemove', onResize)
   window.addEventListener('mouseup', stopResize)
 }
-
 const onResize = (e: MouseEvent) => {
   if (!isResizing.value) return
-  const deltaY = startY.value - e.clientY // Pulling up increases height
-  const newHeight = startHeight.value + deltaY
-  // Clamp height (min 200px, max 80% of window height)
-  timelineHeight.value = Math.max(25, Math.min(window.innerHeight * 0.8, newHeight))
+  const deltaY = startY.value - e.clientY
+  timelineHeight.value = Math.max(25, Math.min(window.innerHeight * 0.8, startHeight.value + deltaY))
 }
-
 const stopResize = () => {
   isResizing.value = false
   document.body.style.cursor = ''
@@ -762,7 +673,6 @@ const stopResize = () => {
 
 onMounted(() => {
   if (totalTimeRef.value) totalTimeRef.value.textContent = formatTime(totalDuration.value)
-  
   if (canvasRef.value) {
     const ctx = canvasRef.value.getContext('2d')
     if (ctx) {
@@ -771,17 +681,14 @@ onMounted(() => {
       canvasRef.value.width = width
       canvasRef.value.height = height
       player.setCanvas(ctx, width, height)
-      player.draw(ctx, width, height) // Initial draw
+      player.draw(ctx, width, height)
     }
   }
-
   window.addEventListener('mousemove', onDrag)
   window.addEventListener('mouseup', stopDrag)
 })
-
-// Ensure Viewport Ref is captured
-// See template changes to add ref="timelineViewportRef"
 </script>
+
 <style lang="scss" scoped>
 .timeline-view {
   display: flex;
@@ -802,131 +709,104 @@ onMounted(() => {
   background-color: #000;
 }
 
-.timeline-section {
-  height: 340px;
-  flex-shrink: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background-color: #111;
+.player-container {
+  width: 100%;
+  height: 100%;
   display: flex;
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
 }
 
-.timeline-sidebar {
-  width: 160px;
-  flex-shrink: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+.video-preview-wrapper {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  height: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.tool-btn {
   display: flex;
-  flex-direction: column;
-  background-color: #111;
-  z-index: 50;
+  items-center: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #00f2ff;
+  }
+}
+
+.ctrl-btn-small {
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.2s;
+}
+
+.ctrl-btn-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.timeline-section {
+  display: flex;
+  background: #111;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .timeline-viewport {
   flex: 1;
   overflow-x: auto;
-  overflow-y: hidden;
   position: relative;
-  background-color: #0d0d0d;
-}
-
-.track-row {
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.ctrl-btn-large {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  &:hover { transform: scale(1.1); }
-}
-
-.ctrl-btn-small {
-  background: none;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  opacity: 0.5;
-  transition: all 0.2s;
-  &:hover { opacity: 1; }
-}
-
-.tool-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 0 16px;
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 11px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  backdrop-filter: blur(10px);
-  cursor: pointer;
-  transition: all 0.2s;
-  &:hover { background: rgba(255, 255, 255, 0.1); border-color: #ffffff; }
+  background: #0d0d0d;
 }
 
 .timeline-clip {
   flex-shrink: 0;
-  margin-right: 2px;
+  position: relative;
+  z-index: 10;
 }
 
-.tracks-container {
-  mask-image: none;
+.timeline-clip-audio,
+.timeline-clip-music {
+  flex-shrink: 0;
+  position: relative;
 }
 
-.track-row {
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.03);
-    top: 0;
-  }
-}
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
 
 :deep(.cinematic-popper) {
   background: rgba(15, 15, 15, 0.95) !important;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 0;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-  .el-popover__title { color: #ffffff; font-weight: bold; font-size: 12px; }
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
 }
 
-.custom-scrollbar::-webkit-scrollbar { height: 6px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
-
-.zoom-slider {
-  :deep(.el-slider__runway) {
-    background-color: rgba(255, 255, 255, 0.1);
-    height: 4px;
-  }
-  :deep(.el-slider__bar) {
-    background-color: #ffffff;
-    height: 4px;
-  }
-  :deep(.el-slider__button) {
-    width: 12px;
-    height: 12px;
-    border: 2px solid #ffffff;
-    background-color: #000;
-  }
-}
+:deep(.zoom-slider .el-slider__runway) { background-color: rgba(255, 255, 255, 0.05); height: 4px; }
+:deep(.zoom-slider .el-slider__bar) { background-color: #00f2ff; height: 4px; }
+:deep(.zoom-slider .el-slider__button) { width: 10px; height: 10px; border: 2px solid #00f2ff; }
 </style>

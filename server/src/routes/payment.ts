@@ -1,233 +1,165 @@
 import { Router } from 'express';
-import { getStripeClient } from '../utils/stripe.js';
-import { AdminSettings } from '../models/AdminSettings.js';
-import { Payment } from '../models/Payment.js';
-import { User } from '../models/User.js';
-import { connectDB } from '../utils/db.js';
-import config from '../utils/config.js';
-// @ts-ignore
+import { paymentService } from '../services/PaymentService.js';
+import { payPalService } from '../services/PayPalService.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { cacheMiddleware } from '../middleware/cache.js';
+import { License } from '../models/License.js';
+import { LicensePackage } from '../models/LicensePackage.js';
+import { Transaction } from '../models/Transaction.js';
+import crypto from 'crypto';
 
 const router = Router();
 
-// GET /api/payment/history - Get user's payment history
-router.get('/history', authMiddleware, async (req: AuthRequest, res) => {
-    try {
-        await connectDB();
-        const payments = await Payment.find({ userId: req.user!.userId })
-            .sort({ createdAt: -1 })
-            .limit(20);
-
-        res.json({
-            success: true,
-            data: { payments }
-        });
-    } catch (error: any) {
-        console.error('Fetch payment history error:', error);
-        res.status(500).json({ success: false, data: null, error: 'Failed to fetch payment history' });
-    }
-});
-
-// POST /api/payment/create-checkout - Create Stripe checkout session
+// POST /api/payment/create-checkout - Stripe
 router.post('/create-checkout', authMiddleware, async (req: AuthRequest, res) => {
     try {
-        await connectDB();
-        const { planName, packageId, billingPeriod } = req.body;
-
-        if (!planName && !packageId) {
-            return res.status(400).json({ success: false, data: null, error: 'Plan name or Package ID is required' });
-        }
-
-        const settings = await AdminSettings.findOne();
-        if (!settings) return res.status(500).json({ success: false, data: null, error: 'Admin settings not found' });
-
-        const stripe = getStripeClient();
-        const user = await User.findById(req.user!.userId);
-        if (!user) return res.status(404).json({ success: false, data: null, error: 'User not found' });
-
-        let sessionConfig: any = {
-            payment_method_types: ['card'],
-            success_url: `${config.public.baseUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${config.public.baseUrl}/pricing`,
-            customer_email: user.email,
-            metadata: {
-                userId: user._id.toString()
-            }
-        };
-
-        // Handle Subscription Plan
-        if (planName) {
-            const plan = settings.plans.find(p => p.name.toLowerCase() === planName.toLowerCase());
-            if (!plan) return res.status(404).json({ success: false, data: null, error: 'Plan not found' });
-
-            const price = billingPeriod === 'yearly' ? plan.yearlyPrice : plan.price;
-
-            sessionConfig = {
-                ...sessionConfig,
-                mode: 'subscription',
-                line_items: [
-                    {
-                        price_data: {
-                            currency: plan.currency || 'usd',
-                            product_data: {
-                                name: `AntFlow ${plan.name} Plan (${billingPeriod || 'monthly'})`,
-                                description: `${plan.features.monthlyCredits} credits/month`,
-                            },
-                            unit_amount: Math.round(price * 100),
-                            recurring: {
-                                interval: billingPeriod === 'yearly' ? 'year' : 'month',
-                            },
-                        },
-                        quantity: 1,
-                    },
-                ],
-                metadata: {
-                    ...sessionConfig.metadata,
-                    type: 'subscription',
-                    planName: plan.name,
-                    billingPeriod: billingPeriod || 'monthly'
-                }
-            };
-        }
-        // Handle Credit Package (One-time)
-        else if (packageId) {
-            const pkg = settings.creditPackages.find(p => p.id === packageId);
-            if (!pkg) return res.status(404).json({ success: false, data: null, error: 'Credit package not found' });
-
-            sessionConfig = {
-                ...sessionConfig,
-                mode: 'payment',
-                line_items: [
-                    {
-                        price_data: {
-                            currency: pkg.currency || 'usd',
-                            product_data: {
-                                name: pkg.name,
-                                description: `${pkg.credits} Credits`,
-                            },
-                            unit_amount: Math.round(pkg.price * 100),
-                        },
-                        quantity: 1,
-                    },
-                ],
-                metadata: {
-                    ...sessionConfig.metadata,
-                    type: 'credit_purchase',
-                    packageId: pkg.id,
-                    credits: pkg.credits.toString()
-                }
-            };
-        }
-
-        const session = await stripe.checkout.sessions.create(sessionConfig);
-        res.json({ success: true, data: { url: session.url } });
-    } catch (error: any) {
-        console.error('Stripe checkout error:', error);
-        res.status(500).json({ success: false, data: null, error: error.message || 'Failed to create checkout session' });
+        const { packageId, licenseKey } = req.body;
+        const url = await paymentService.createLicenseCheckout(req.user!.userId, packageId, licenseKey);
+        res.json({ success: true, data: { url } });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 
-// POST /api/payment/webhook - Stripe webhook handler
-router.post('/webhook', async (req, res) => {
+// POST /api/payment/paypal/create-order - PayPal
+router.post('/paypal/create-order', authMiddleware, async (req: AuthRequest, res) => {
     try {
-        await connectDB();
-        const stripe = getStripeClient();
-        const signature = req.headers['stripe-signature'] as string;
-
-        let stripeEvent: any;
-        try {
-            stripeEvent = stripe.webhooks.constructEvent(
-                (req as any).rawBody || JSON.stringify(req.body),
-                signature,
-                config.stripeWebhookSecret as string
-            );
-        } catch (err: any) {
-            console.error('Webhook signature verification failed:', err.message);
-            return res.status(400).send(`Webhook Error: ${err.message}`);
-        }
-
-        switch (stripeEvent.type) {
-            case 'checkout.session.completed': {
-                const session = stripeEvent.data.object;
-                const userId = session.metadata.userId;
-                const type = session.metadata.type;
-
-                if (userId) {
-                    if (type === 'subscription') {
-                        await handleSuccessfulSubscription(userId, session);
-                    } else if (type === 'credit_purchase') {
-                        await handleSuccessfulCreditPurchase(userId, session);
-                    }
-                }
-                break;
-            }
-        }
-
-        res.json({ success: true, data: { received: true } });
-    } catch (error: any) {
-        console.error('Webhook processing error:', error);
-        res.status(500).json({ success: false, data: null, error: 'Internal server error' });
+        const { packageId, licenseKey } = req.body;
+        const url = await payPalService.createOrder(req.user!.userId, packageId, licenseKey);
+        res.json({ success: true, data: { url } });// Return approval link
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 
-async function handleSuccessfulSubscription(userId: string, session: any) {
-    const settings = await AdminSettings.findOne();
-    if (!settings) return;
-    const user = await User.findById(userId);
-    if (!user) return;
+// POST /api/payment/verify-session - Finalize (called by frontend on success)
+router.post('/verify-session', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { sessionId, gateway } = req.body;
+        let tx;
 
-    const planName = session.metadata.planName;
-    const plan = settings.plans.find(p => p.name === planName);
+        if (gateway === 'stripe') {
+            tx = await paymentService.verifySession(sessionId);
+        } else if (gateway === 'paypal') {
+            tx = await payPalService.captureOrder(sessionId);
+        }
 
-    if (plan) {
-        user.subscription = {
-            plan: plan.name.toLowerCase() as any,
-            status: 'active',
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Approximate
-            stripeCustomerId: session.customer as string,
-            stripeSubscriptionId: session.subscription as string
-        };
+        if (tx && tx.status === 'completed') {
+            // Provision or Renew License
+            const { packageId, licenseKey } = tx.metadata;
+            const pkg = await LicensePackage.findById(packageId);
 
-        if (!user.credits) user.credits = { balance: 0, membership: 0, bonus: 0, weekly: 0 };
-        user.credits.membership = plan.features.monthlyCredits || 0;
-        await user.save();
+            if (pkg) {
+                if (licenseKey) {
+                    // RENEWAL
+                    const lic = await License.findOne({ key: licenseKey });
+                    if (lic) {
+                        const base = lic.endDate > new Date() ? lic.endDate : new Date();
+                        const newEnd = new Date(base);
+                        if (pkg.billingPeriod === 'monthly') newEnd.setMonth(newEnd.getMonth() + 1);
+                        else if (pkg.billingPeriod === 'yearly') newEnd.setFullYear(newEnd.getFullYear() + 1);
 
-        await Payment.create({
-            userId: user._id,
-            amount: session.amount_total / 100,
-            currency: session.currency,
-            status: 'completed',
-            type: 'subscription',
-            plan: plan.name,
-            stripePaymentIntentId: session.payment_intent as string,
-            metadata: session.metadata
-        });
+                        lic.endDate = newEnd;
+                        lic.tier = pkg.tier; // Handle upgrade scenario
+                        await lic.save();
+                    }
+                } else {
+                    // NEW LICENSE
+                    const startDate = new Date();
+                    const endDate = new Date();
+                    if (pkg.billingPeriod === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
+                    else if (pkg.billingPeriod === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
+
+                    const key = 'LIC-' + crypto.randomBytes(8).toString('hex').toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+                    await License.create({
+                        key,
+                        owner: req.user!.email,
+                        tier: pkg.tier,
+                        instancesLimit: pkg.limits.instances,
+                        maxUsersPerInstance: pkg.limits.usersPerInstance,
+                        startDate,
+                        endDate,
+                        status: 'valid'
+                    });
+                }
+            }
+            res.json({ success: true, status: 'completed' });
+        } else {
+            res.json({ success: false, status: 'pending' });
+        }
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
     }
-}
+});
 
-async function handleSuccessfulCreditPurchase(userId: string, session: any) {
-    const user = await User.findById(userId);
-    if (!user) return;
-
-    const creditsToAdd = parseInt(session.metadata.credits || '0');
-    if (creditsToAdd > 0) {
-        if (!user.credits) user.credits = { balance: 0, membership: 0, bonus: 0, weekly: 0 };
-
-        user.credits.balance += creditsToAdd;
-        await user.save();
-
-        await Payment.create({
-            userId: user._id,
-            amount: session.amount_total / 100,
-            currency: session.currency,
-            status: 'completed',
-            type: 'one_time',
-            plan: 'Credits',
-            stripePaymentIntentId: session.payment_intent as string,
-            metadata: session.metadata
-        });
+// GET /api/payment/transactions - User history
+router.get('/transactions', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const transactions = await Transaction.find({ userId: req.user!.userId }).sort({ createdAt: -1 });
+        res.json({ success: true, data: { transactions } });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
     }
-}
+});
+
+// GET /api/payment/admin/transactions - Global Ledger (Admin Only)
+router.get('/admin/transactions', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        // In a real app, add pagination
+        const transactions = await Transaction.find({})
+            .populate('userId', 'email')
+            .sort({ createdAt: -1 })
+            .limit(50);
+        res.json({ success: true, data: { transactions } });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// GET /api/payment/admin/stats - Admin Financial Dashboard
+router.get('/admin/stats',
+    authMiddleware,
+    cacheMiddleware({ ttl: 60, keyPrefix: 'admin:stats', varyByUser: false }),
+    async (req: AuthRequest, res) => {
+        try {
+            // 1. Calculate Volume (Lifetime Gross)
+            const volumeAgg = await Transaction.aggregate([
+                { $match: { status: 'completed' } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]);
+            const volume = volumeAgg[0]?.total || 0;
+
+            // 2. Count Active Subscribers (Valid Licenses)
+            const subscribers = await License.countDocuments({ status: 'valid', endDate: { $gt: new Date() } });
+
+            // 3. Estimate MRR (Approximation based on active PRO/ENTERPRISE licenses)
+            // Ideally, we'd sum the value of all active monthly subscriptions.
+            // For MVP, simplistic calculation:
+            const proCount = await License.countDocuments({ status: 'valid', tier: 'pro', endDate: { $gt: new Date() } });
+            const entCount = await License.countDocuments({ status: 'valid', tier: 'enterprise', endDate: { $gt: new Date() } });
+            const basicCount = await License.countDocuments({ status: 'valid', tier: 'basic', endDate: { $gt: new Date() } });
+
+            // Assuming Pro=49, Ent=299
+            const mrr = (proCount * 49) + (entCount * 299);
+
+            // 4. Calculate Churn (Simplified placeholder for advanced analytics)
+            const churn = 2.1;
+
+            const stats = {
+                mrr,
+                subscribers,
+                volume,
+                churn,
+                distribution: {
+                    enterprise: entCount,
+                    pro: proCount,
+                    basic: basicCount
+                }
+            };
+            res.json({ success: true, data: stats });
+        } catch (e: any) {
+            res.status(500).json({ success: false, error: e.message });
+        }
+    });
 
 export default router;

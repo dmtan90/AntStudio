@@ -91,6 +91,7 @@ export abstract class FabricUtils {
       in: props?.in ?? { name: "none", duration: 0 },
       scene: props?.scene ?? { name: "none" },
       out: props?.out ?? { name: "none", duration: 0 },
+      keyframes: props?.keyframes ?? [],
     };
   }
 
@@ -243,7 +244,7 @@ export abstract class FabricUtils {
       onComplete: () => {
         if (loop) this.objectSpinningAnimation(object);
       },
-    });
+    } as any);
   }
 
   static applyTransformationsAfterLoad(canvas: fabric.Canvas | fabric.StaticCanvas) {

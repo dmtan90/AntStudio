@@ -264,7 +264,7 @@ export function convertFlowToStudio(project: StudioProject): EditorTemplate {
         duration: startSeconds * 1000,
         data: {
             scene: JSON.stringify({
-                version: fabric.version,
+                version: '5.3.0',
                 objects: objects,
                 background: '#000000'
             }),

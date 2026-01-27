@@ -119,9 +119,9 @@ export async function extractAudioWaveformFromAudioFile(file: File) {
   });
 }
 
-export async function drawWaveformFromAudioBuffer(buffer: AudioBuffer, height?: number, width?: number, from?: number, to?: number, skip?: number = 3) {
+export async function drawWaveformFromAudioBuffer(buffer: AudioBuffer, height?: number, width?: number, from?: number, to?: number, skip = 3) {
   return createInstance(Promise<Blob>, (resolve, reject) => {
-    if(!buffer){
+    if (!buffer) {
       return reject();
     }
 
@@ -141,7 +141,7 @@ export async function drawWaveformFromAudioBuffer(buffer: AudioBuffer, height?: 
 
     const step = Math.ceil(raw.length / canvas.width);
     const amp = canvas.height / 2;
-    
+
     // Set fill style and stroke style
     ctx.fillStyle = '#6A24FF';
     ctx.strokeStyle = '#6A24FF';
@@ -273,7 +273,6 @@ export async function compressVideoFile(ffmpeg: FFmpeg, file: File, width = 2000
 export function convertBufferToWaveBlob(_buffer: AudioBuffer, _length: number) {
   let numOfChannels = _buffer.numberOfChannels;
   let length = _length * numOfChannels * 2 + 44;
-  // @ts-expect-error
   let buffer = createInstance(ArrayBuffer, length);
   let view = createInstance(DataView, buffer);
   let channels = [];

@@ -11,7 +11,7 @@
       <transition name="fade-up" appear>
         <GCard class="auth-card" :hoverable="false">
           <div class="logo">
-            <h1 class="brand">AntFlow</h1>
+            <h1 class="brand">AntStudio</h1>
             <p>Create wonderful videos with AI</p>
           </div>
 

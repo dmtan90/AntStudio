@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, reactive } from 'vue';
 import { Close as X, Aiming, Lock, Unlock, FlipHorizontally, FlipVertically } from '@icon-park/vue-next';
+import { cn } from '@/utils/ui';
 import { toast } from 'vue-sonner';
 import Label from 'video-editor/components/ui/label.vue';
 import Toggle from 'video-editor/components/ui/toggle.vue';
@@ -134,8 +135,14 @@ const onChangeOrder = (order: any) => {
   (alignment.value as any)?.changeActiveObjectLayer(order);
 }
 
-const offsetMs = computed(() => (selected.value as any)?.meta?.offset ?? (selected.value as any)?.offset * 1000 ?? 0);
-const durationMs = computed(() => (selected.value as any)?.meta?.duration ?? (selected.value as any)?.timeline * 1000 ?? 0);
+const offsetMs = computed(() => {
+  const v = selected.value as any;
+  return v?.meta?.offset !== undefined ? v.meta.offset : (v?.offset * 1000 || 0);
+});
+const durationMs = computed(() => {
+  const v = selected.value as any;
+  return v?.meta?.duration !== undefined ? v.meta.duration : (v?.timeline * 1000 || 0);
+});
 const durationInSecond = computed({
   get() {
     return durationMs.value! / 1000;

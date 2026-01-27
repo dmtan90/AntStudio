@@ -10,7 +10,7 @@ import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
 import { formatMediaDuration } from 'video-editor/lib/time';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { FabricUtils } from 'video-editor/fabric/utils';
 import { propertiesToInclude } from 'video-editor/fabric/constants';
 

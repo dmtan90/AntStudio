@@ -64,8 +64,9 @@ export class CanvasAudio {
       source.connect(gain);
 
       gain.gain.setValueAtTime(0, this.context.currentTime + audio.offset);
-      gain.gain.linearRampToValueAtTime(audio.volume, this.context.currentTime + audio.offset + Math.min(this._gainStartOffset, audio.timeline / 2));
-      gain.gain.linearRampToValueAtTime(0, this.context.currentTime + audio.offset + audio.timeline - this._gainEndOffset);
+      gain.gain.linearRampToValueAtTime(audio.volume, this.context.currentTime + audio.offset + Math.min(audio.fadeIn || 0, audio.timeline / 2));
+      gain.gain.setValueAtTime(audio.volume, this.context.currentTime + audio.offset + audio.timeline - (audio.fadeOut || 0));
+      gain.gain.linearRampToValueAtTime(0, this.context.currentTime + audio.offset + audio.timeline);
 
       audio.playing = true;
       audio.source = source;
@@ -87,8 +88,9 @@ export class CanvasAudio {
       source.connect(gain);
 
       gain.gain.setValueAtTime(0, context.currentTime + audio.offset);
-      gain.gain.linearRampToValueAtTime(audio.volume, context.currentTime + audio.offset + Math.min(this._gainStartOffset, audio.timeline / 2));
-      gain.gain.linearRampToValueAtTime(0, context.currentTime + audio.offset + audio.timeline - this._gainEndOffset);
+      gain.gain.linearRampToValueAtTime(audio.volume, context.currentTime + audio.offset + Math.min(audio.fadeIn || 0, audio.timeline / 2));
+      gain.gain.setValueAtTime(audio.volume, context.currentTime + audio.offset + audio.timeline - (audio.fadeOut || 0));
+      gain.gain.linearRampToValueAtTime(0, context.currentTime + audio.offset + audio.timeline);
 
       audio.source = source;
       source.start(context.currentTime + audio.offset, audio.trim, audio.timeline);
@@ -164,7 +166,7 @@ export class CanvasAudio {
     source.buffer = buffer;
     source.connect(this.context.destination);
 
-    const audio: EditorAudioElement = { id, buffer, url, timeline, name, duration, source, muted: false, playing: false, trim: 0, offset: 0, volume: 1, trimStart: 0, trimEnd: 0, visible: true, visualEnabled: false, visualType: 'bars', visualProps: {}, type: 'audio' };
+    const audio: EditorAudioElement = { id, buffer, url, timeline, name, duration, source, muted: false, playing: false, trim: 0, offset: 0, volume: 1, fadeIn: 0, fadeOut: 0, trimStart: 0, trimEnd: 0, visible: true, visualEnabled: false, visualType: 'bars', visualProps: {}, type: 'audio' };
     this.elements.push(audio);
 
     //add visual audio object
@@ -233,7 +235,7 @@ export class CanvasAudio {
       const source = this.context.createBufferSource();
       source.buffer = buffer;
       source.connect(this.context.destination);
-      result.push({ id, buffer, duration, muted, volume, source, offset, timeline, trim, name: output, playing: false, url: "", trimStart: video.trimStart / 1000, trimEnd: video.trimEnd / 1000, visible: true, visualEnabled: false, visualType: 'bars', visualProps: {}, type: 'audio' });
+      result.push({ id, buffer, duration, muted, volume, source, offset, timeline, trim, name: output, playing: false, url: "", fadeIn: 0, fadeOut: 0, trimStart: video.trimStart / 1000, trimEnd: video.trimEnd / 1000, visible: true, visualEnabled: false, visualType: 'bars', visualProps: {}, type: 'audio' });
     }
 
     return result;

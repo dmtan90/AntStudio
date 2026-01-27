@@ -65,7 +65,7 @@ export abstract class CanvasGuidelines {
 
       if (!transform) return;
 
-      for (let i = canvasObjects.length; i--; ) {
+      for (let i = canvasObjects.length; i--;) {
         if (canvasObjects[i] === activeObject || canvasObjects[i].excludeFromAlignment) continue;
 
         let objectCenter = canvasObjects[i].getCenterPoint(),
@@ -150,10 +150,10 @@ export abstract class CanvasGuidelines {
     });
 
     canvas.on("after:render", function () {
-      for (let i = verticalLines.length; i--; ) {
+      for (let i = verticalLines.length; i--;) {
         drawVerticalLine(verticalLines[i]);
       }
-      for (let i = horizontalLines.length; i--; ) {
+      for (let i = horizontalLines.length; i--;) {
         drawHorizontalLine(horizontalLines[i]);
       }
 

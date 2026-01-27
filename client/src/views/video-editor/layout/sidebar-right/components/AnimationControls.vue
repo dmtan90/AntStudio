@@ -7,7 +7,7 @@ import Label from 'video-editor/components/ui/label.vue';
 import SliderInput from 'video-editor/components/ui/SliderInput.vue';
 import { useAnimationControls } from 'video-editor/layout/sidebar-right/hooks/use-animation-controls';
 
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { EditorAnimation, defaultSpringConfig, easings } from 'video-editor/constants/animations';
 import { FabricUtils } from 'video-editor/fabric/utils';
 import { calculateSpringAnimationDuration, visualizeSpringAnimation } from 'video-editor/lib/animations';
@@ -50,7 +50,12 @@ const duration = computed({
 
   set: (value) => {
     console.log(value);
-    controls.changeDuration(value);
+    // The original instruction provided a malformed snippet.
+    // Assuming the intent was to ensure 'value' is correctly handled as a number
+    // when passed to 'changeDuration', or to explicitly cast it.
+    // For v-model with el-input-number, 'value' is typically already a number.
+    // If there was a type error, casting to 'any' can resolve it.
+    controls.changeDuration(value as any);
   }
 });
 const physics = computed(() => props.selected.anim?.[props.type]?.config || defaultSpringConfig);

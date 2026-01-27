@@ -3,7 +3,7 @@
     <el-container style="height: 100vh">
       <el-aside width="240px" class="admin-aside">
         <div class="logo">
-          <h2>Flova Admin</h2>
+          <h2>AntStudio Admin</h2>
         </div>
         <el-menu
           router

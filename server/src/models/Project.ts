@@ -51,7 +51,7 @@ interface ISegment {
     volume?: number // 0 to 1
     generatedVideo?: {
         s3Key: string
-        s3Url: string
+        s3Url?: string
         status: 'pending' | 'generating' | 'completed' | 'failed'
         veoJobId?: string
         generatedAt?: Date
@@ -161,9 +161,10 @@ export interface IDetailedCharacter {
 
 export interface IProject extends Document {
     userId: Types.ObjectId
+    organizationId?: Types.ObjectId // Shared Team Context
     title: string
     description: string
-    mode: 'topic' | 'upload'
+    mode: 'topic' | 'upload' | 'avatar'
     aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
     videoStyle: string
     targetDuration: number
@@ -231,7 +232,7 @@ export interface IProject extends Document {
             status: string
         }
     }
-    status: 'draft' | 'analyzing' | 'storyboard' | 'generating' | 'editing' | 'completed'
+    status: 'draft' | 'analyzing' | 'storyboard' | 'generating' | 'editing' | 'completed' | 'failed'
     chatHistory?: Array<{
         author: 'user' | 'ai' | 'system'
         content?: string
@@ -271,6 +272,11 @@ const ProjectSchema = new Schema<IProject>(
             required: true,
             index: true
         },
+        organizationId: {
+            type: Schema.Types.ObjectId,
+            ref: 'Organization',
+            index: true
+        },
         title: {
             type: String,
             required: true,
@@ -282,7 +288,7 @@ const ProjectSchema = new Schema<IProject>(
         },
         mode: {
             type: String,
-            enum: ['topic', 'upload'],
+            enum: ['topic', 'upload', 'avatar'],
             required: true
         },
         aspectRatio: {
@@ -398,7 +404,7 @@ const ProjectSchema = new Schema<IProject>(
         },
         status: {
             type: String,
-            enum: ['draft', 'analyzing', 'storyboard', 'generating', 'editing', 'completed'],
+            enum: ['draft', 'analyzing', 'storyboard', 'generating', 'editing', 'completed', 'failed'],
             default: 'draft'
         },
         chatHistory: [
@@ -443,8 +449,10 @@ const ProjectSchema = new Schema<IProject>(
     }
 )
 
-// Indexes
-ProjectSchema.index({ userId: 1, createdAt: -1 })
-ProjectSchema.index({ status: 1 })
+// Indexes for performance
+ProjectSchema.index({ userId: 1, createdAt: -1 }); // User's project list (most common query)
+ProjectSchema.index({ organizationId: 1, status: 1 }); // Organization project filtering
+ProjectSchema.index({ status: 1, updatedAt: -1 }); // Status-based queries with recency
+ProjectSchema.index({ 'storyboard.segments.generatedVideo.jobId': 1 }, { sparse: true }); // Job lookup
 
 export const Project: Model<IProject> = mongoose.models.Project || mongoose.model<IProject>('Project', ProjectSchema)

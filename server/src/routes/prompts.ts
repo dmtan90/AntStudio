@@ -73,7 +73,7 @@ router.get('/scene/:projectId/:segmentId', async (req: any, res: Response) => {
         const allCharacters = project.scriptAnalysis?.characters || [];
         const characterContext = (segment.characters || [])
             .map((name: string) => allCharacters.find((c: any) => c.name.toLowerCase() === name.toLowerCase()))
-            .filter(Boolean);
+            .filter((c: any): c is any => !!c);
 
         const style = project.creativeBrief?.visualStyle || project.videoStyle || 'Cinematic';
         const prompt = buildScenePrompt(segment.description, characterContext, style);

@@ -98,7 +98,7 @@ const handleSubscribe = async (planName: string) => {
 
   loadingPlan.value = planName
   try {
-    const data = await userStore.createCheckoutSession(planName)
+    const data = await userStore.createCheckoutSession({ planName })
     if (data?.url) {
       window.location.href = data.url
     }

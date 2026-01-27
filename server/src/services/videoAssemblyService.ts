@@ -116,7 +116,7 @@ export class VideoAssemblyService {
 
                 await this.downloadFile(url, localPath);
 
-                const meta = await new Promise<ffmpeg.FfprobeData>((resolve, reject) => {
+                const meta = await new Promise<any>((resolve, reject) => {
                     ffmpeg.ffprobe(localPath, (err: any, data: any) => {
                         if (err) reject(err);
                         else resolve(data);
@@ -300,7 +300,7 @@ export class VideoAssemblyService {
 
             await new Promise<void>((resolve, reject) => {
                 command.on('end', () => resolve())
-                    .on('error', (err) => {
+                    .on('error', (err: any) => {
                         console.error('FFmpeg Error:', err);
                         reject(err);
                     })

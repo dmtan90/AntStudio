@@ -20,10 +20,10 @@
       <div class="hero-content">
         <transition name="fade-up" appear>
           <div class="hero-inner">
-            <h1 class="glow-title">AntFlow</h1>
+            <h1 class="glow-title">AntStudio</h1>
             <p class="hero-tagline">Where the next wave of storytelling happens with AI</p>
             <div class="action-row">
-              <router-link to="/dashboard" class="hero-btn-primary">Start with AntFlow</router-link>
+              <router-link to="/dashboard" class="hero-btn-primary">Start with AntStudio</router-link>
             </div>
           </div>
         </transition>
@@ -33,7 +33,7 @@
     <!-- App Intro -->
     <section class="app-intro">
       <div class="container">
-        <h2 class="intro-title">AntFlow is an AI filmmaking tool built with and for creatives.</h2>
+        <h2 class="intro-title">AntStudio is an AI filmmaking tool built with and for creatives.</h2>
         <p class="intro-text">
           Seamlessly create cinematic clips, scenes and stories using <br />
           next-generation capable generative AI models.
@@ -192,7 +192,7 @@
     <!-- Footer -->
     <footer class="ant-footer">
       <div class="container footer-content">
-        <div class="footer-left">AntFlow</div>
+        <div class="footer-left">AntStudio</div>
         <div class="footer-right">
           <router-link to="/privacy">Privacy</router-link>
           <router-link to="/terms">Terms of Service</router-link>

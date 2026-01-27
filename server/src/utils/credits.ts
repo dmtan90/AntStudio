@@ -1,5 +1,6 @@
 import { User } from '../models/User.js'
 import { getAdminSettings } from '../models/AdminSettings.js'
+import { creditManager, ServiceType } from './CreditManager.js'
 
 export const CREDIT_PRICES = {
     IMAGE_GEN: 5,
@@ -47,71 +48,21 @@ export const getCreditCost = async (type: 'image' | 'video' | 'audio' | 'text' |
  * Checks if a user has enough credits and deducts them.
  * Logs the transaction to creditLogs.
  */
-export const deductCredits = async (userId: string, amount: number, description: string) => {
-    const user = await User.findById(userId)
-    if (!user) {
-        throw new Error('User not found')
+export const deductUserCredits = async (userId: string, serviceType: ServiceType, amount: number, description: string) => {
+    const success = await creditManager.deductCredits(userId, serviceType, amount, description);
+    if (!success) {
+        throw new Error(`Insufficient credits. Required: ${amount}`);
     }
+    return true;
+}
 
-    // Initialize credits if missing
-    if (!user.credits) {
-        user.credits = { balance: 0, membership: 0, bonus: 0, weekly: 0 }
-    }
+export const deductCredits = deductUserCredits;
 
-    const { membership = 0, balance = 0, bonus = 0, weekly = 0 } = user.credits
-    const totalAvailable = membership + balance + bonus + weekly
-
-    if (totalAvailable < amount) {
-        throw new Error(`Insufficient credits. Required: ${amount}, Available: ${totalAvailable}`)
-    }
-
-    // Deduction logic (Waterfall: Weekly -> Membership -> Balance -> Bonus)
-    let remaining = amount
-
-    // 1. Weekly (Use it or lose it)
-    if (user.credits.weekly >= remaining) {
-        user.credits.weekly -= remaining
-        remaining = 0
-    } else {
-        remaining -= user.credits.weekly
-        user.credits.weekly = 0
-    }
-
-    // 2. Membership (Monthly allocation)
-    if (remaining > 0) {
-        if (user.credits.membership >= remaining) {
-            user.credits.membership -= remaining
-            remaining = 0
-        } else {
-            remaining -= user.credits.membership
-            user.credits.membership = 0
-        }
-    }
-
-    // 3. Balance (Purchased top-up)
-    if (remaining > 0) {
-        if (user.credits.balance >= remaining) {
-            user.credits.balance -= remaining
-            remaining = 0
-        } else {
-            remaining -= user.credits.balance
-            user.credits.balance = 0
-        }
-    }
-
-    // 4. Bonus
-    if (remaining > 0) {
-        user.credits.bonus = Math.max(0, user.credits.bonus - remaining)
-    }
-
-    // Log transaction
-    user.creditLogs.push({
-        type: 'consumed',
-        amount: amount,
-        description: description,
-        timestamp: new Date()
-    })
-
-    await user.save()
-    return true
+/**
+ * Checks if a user has enough credits without deducting.
+ */
+export const hasSufficientCredits = async (userId: string, amount: number) => {
+    const user = await User.findById(userId);
+    if (!user) return false;
+    return (user.credits?.balance || 0) >= amount;
 }

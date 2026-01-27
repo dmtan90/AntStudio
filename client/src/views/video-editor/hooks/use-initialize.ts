@@ -15,7 +15,7 @@ const Schema = z.object({
 });
 
 export function useInitializeEditor() {
-  // console.log("useInitializeEditor");
+  console.log("useInitializeEditor");
   const editor = useEditorStore();
   const isInitialized = ref(false);
 

@@ -1,9 +1,9 @@
-import flovaApi from '@/utils/api';
+import antStudioApi from '@/utils/api';
 import { QueryClient } from "@tanstack/vue-query";
 import { createInstance } from "video-editor/lib/utils";
 const HOST = "http://0.0.0.0";
 
-export const api = flovaApi;
+export const api = antStudioApi;
 
 export const queryClient = createInstance(QueryClient, {
   defaultOptions: {

@@ -33,12 +33,12 @@ export function useAnimationPage(selected: Canvas, type: 'in' | 'out' | 'scene')
       editor.canvas.onChangeActiveObjectAnimationPhysics(type, selected.anim?.[type]?.config || defaultSpringConfig)
   }
 
-  const changePhysics = (config: Partial<fabric.AnimationPhysics>) => {
+  const changePhysics = (config: any) => {
     editor.canvas.onChangeActiveObjectAnimationPhysics(type, config)
   }
 
   const changeTextAnimate = (animate: string) => {
-    editor.canvas.onChangeActiveTextAnimationType(type, animate as fabric.TextAnimateOptions)
+    editor.canvas.onChangeActiveTextAnimationType(type, animate as any)
   }
 
   return {

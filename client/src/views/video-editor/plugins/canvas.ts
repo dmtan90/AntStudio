@@ -36,6 +36,7 @@ import { getFileUrl } from "@/utils/api";
 export class Canvas {
   id: string;
   name: string;
+  thumbnail?: string;
 
   editor: Editor;
   artboard!: fabric.Rect;
@@ -65,6 +66,9 @@ export class Canvas {
   elements: fabric.Object[];
   anim!: AnimationTimeline;//default animation for elements
   public initialized: boolean;
+  public transition?: 'none' | 'fade' | 'wipe' | 'slide-left' | 'slide-right' | 'slide-up' | 'slide-down' | 'zoom-in' | 'zoom-out' | 'dip-to-black' | 'dip-to-white';
+  public transitionDuration?: number;
+  public transitionEasing?: string;
 
   constructor(editor: Editor) {
     this.id = nanoid();
@@ -91,6 +95,7 @@ export class Canvas {
     // console.log("_objectAddedEvent", event.target);
     if (!event.target || event.target.excludeFromTimeline) return;
     this.elements.push(event.target.toObject(propertiesToInclude));
+    this.editor.onModified?.();
   }
 
   private _objectModifiedEvent(event: fabric.IEvent) {
@@ -102,6 +107,7 @@ export class Canvas {
     const index = this.elements.findIndex((element) => element.name === event.target!.name);
     if (index === -1 || event.target.excludeFromTimeline) return;
     this.elements[index] = event.target.toObject(propertiesToInclude);
+    this.editor.onModified?.();
   }
 
   private _objectDeletedEvent(event: fabric.IEvent) {
@@ -110,6 +116,7 @@ export class Canvas {
     const index = this.elements.findIndex((element) => element.name === event.target!.name);
     if (index !== -1) this.elements.splice(index, 1);
     if (event.target.clipPath) this.instance.remove(event.target.clipPath);
+    this.editor.onModified?.();
   }
 
   private _objectMovingEvent(event: fabric.IEvent) {
@@ -161,7 +168,7 @@ export class Canvas {
   }
 
   initialize(element: HTMLCanvasElement, workspace: HTMLDivElement) {
-    // console.log("initialize canvas", element, workspace);
+    console.log("initialize canvas", this.id);
     const props = { width: workspace.offsetWidth, height: workspace.offsetHeight, backgroundColor: "#F0F0F0" };
     this.instance = markRaw(createInstance(fabric.Canvas, element, { stateful: true, centeredRotation: true, preserveObjectStacking: true, renderOnAddRemove: false, controlsAboveOverlay: true, ...props }));
     this.artboard = markRaw(createInstance(fabric.Rect, { name: "artboard", rx: 0, ry: 0, selectable: false, absolutePositioned: true, hoverCursor: "default", excludeFromExport: true, excludeFromTimeline: true }));
@@ -192,6 +199,7 @@ export class Canvas {
     this.instance.add(this.artboard).renderAll();
     if (this.template.pending) this.template.load();
     this.initialized = true;
+    console.log("Canvas initialized", this.id);
   }
 
   onToggleControls(visible?: boolean) {
@@ -234,6 +242,43 @@ export class Canvas {
     FabricUtils.initializeAnimationProperties(textbox);
     //fix wrong coords issue with custom font
     // console.log(textbox);
+    this.instance.add(textbox);
+    this.instance.setActiveObject(textbox).requestRenderAll();
+    return textbox;
+  }
+
+  onAddSubtitle(text: string, options: { start?: number; duration?: number } = {}): fabric.Object {
+    const font = { family: "Inter", style: "normal", weight: "700" };
+    const fontSize = 24;
+    const padding = 10;
+
+    // Default styling for subtitles: centered at bottom, white text, black background/shadow
+    const textbox = createInstance(fabric.Textbox, text, {
+      name: FabricUtils.elementID("subtitle"),
+      objectCaching: false,
+      fontFamily: font.family,
+      fontWeight: font.weight,
+      fontSize: fontSize,
+      width: this.workspace.width * 0.8,
+      textAlign: "center",
+      fill: "#ffffff",
+      backgroundColor: "rgba(0,0,0,0.6)",
+      selectable: true,
+      hasControls: true,
+    });
+
+    // Position at bottom center
+    const center = this.artboard!.getCenterPoint();
+    textbox.setPositionByOrigin(new fabric.Point(center.x, this.artboard.height - 60), "center", "center");
+
+    FabricUtils.initializeMetaProperties(textbox, {
+      font,
+      isSubtitle: true,
+      offset: options.start || 0,
+      duration: options.duration || 2000
+    });
+    FabricUtils.initializeAnimationProperties(textbox);
+
     this.instance.add(textbox);
     this.instance.setActiveObject(textbox).requestRenderAll();
     return textbox;
@@ -590,7 +635,7 @@ export class Canvas {
     const line = createInstance(fabric.Line, points, options);
 
     line.setPositionByOrigin(this.artboard.getCenterPoint(), "center", "center");
-    line.set({ controls: { mtr: fabric.Object.prototype.controls.mtr, mr: fabric.Object.prototype.controls.mr, ml: fabric.Object.prototype.controls.ml } });
+    line.set({ controls: { mtr: (fabric.Object as any).prototype.controls.mtr, mr: (fabric.Object as any).prototype.controls.mr, ml: (fabric.Object as any).prototype.controls.ml } });
 
     FabricUtils.initializeMetaProperties(line);
     FabricUtils.initializeAnimationProperties(line);
@@ -599,6 +644,28 @@ export class Canvas {
     this.instance.setActiveObject(line).requestRenderAll();
 
     return line;
+  }
+
+  onGroup() {
+    const activeObject = this.instance.getActiveObject();
+    if (!activeObject || activeObject.type !== 'activeSelection') {
+      return;
+    }
+    (activeObject as fabric.ActiveSelection).toGroup();
+    this.instance.requestRenderAll();
+    this.instance.fire("object:modified", { target: this.instance.getActiveObject() });
+    this.editor.onModified?.();
+  }
+
+  onUngroup() {
+    const activeObject = this.instance.getActiveObject();
+    if (!activeObject || activeObject.type !== 'group') {
+      return;
+    }
+    (activeObject as fabric.Group).toActiveSelection();
+    this.instance.requestRenderAll();
+    this.instance.fire("object:modified", { target: this.instance.getActiveObject() });
+    this.editor.onModified?.();
   }
 
   //init audios from template
@@ -628,6 +695,26 @@ export class Canvas {
     if (!object || !object.meta) return;
     object.meta[property] = value;
     this.timeline.update(object);
+    this.instance.fire("object:modified", { target: object });
+    this.instance.requestRenderAll();
+    this.editor.onModified?.();
+  }
+
+  onToggleLock(object: fabric.Object, locked?: boolean) {
+    if (!object || !object.meta) return;
+    const newState = typeof locked === 'undefined' ? !object.meta.locked : locked;
+    object.meta.locked = newState;
+    object.selectable = !newState;
+    object.evented = !newState;
+    this.instance.fire("object:modified", { target: object });
+    this.instance.requestRenderAll();
+  }
+
+  onToggleVisibility(object: fabric.Object, visible?: boolean) {
+    if (!object || !object.meta) return;
+    const newState = typeof visible === 'undefined' ? !object.visible : visible;
+    object.visible = newState;
+    object.meta.hidden = !newState;
     this.instance.fire("object:modified", { target: object });
     this.instance.requestRenderAll();
   }
@@ -822,6 +909,14 @@ export class Canvas {
       object.set("volume", props.volume);
     }
 
+    if (props.fadeIn != undefined) {
+      object.set("fadeIn", props.fadeIn);
+    }
+
+    if (props.fadeOut != undefined) {
+      object.set("fadeOut", props.fadeOut);
+    }
+
     if (props.timeline != undefined && object.meta) {
       object.meta["duration"] = props.timeline * 1000;
       //update trimEnd
@@ -839,6 +934,23 @@ export class Canvas {
 
     this.instance.fire("object:modified", { target: object });
     this.instance.requestRenderAll();
+  }
+
+  /**
+   * Updates properties of a layer (object) by ID.
+   * Used for remote synchronization.
+   */
+  updateLayerProps(id: string, props: any, options: { remote?: boolean } = {}) {
+    const object = this.instance.getItemByName(id);
+    if (object) {
+      object.set(props);
+      object.setCoords();
+      if (!options.remote) {
+        // Broadcast local change
+        // Note: Actual broadcast is usually handled by the caller or specialized service
+      }
+      this.instance.requestRenderAll();
+    }
   }
 
   destroy() {

@@ -49,7 +49,7 @@ type EditorStoreInstance = ReturnType<typeof useEditorStore>;
 
 export const useCanvasStore = defineStore('canvas', {
   state: () => ({
-    editor: reactive<EditorStoreInstance>({}),
+    editor: null as EditorStoreInstance,
     selectionActive: ref<fabric.Object>(null),
     cropperActive: ref<fabric.Image>(null),
     trimmerActive: ref<EditorTrim>(null)
@@ -118,12 +118,13 @@ export const useCanvasStore = defineStore('canvas', {
   actions: {
     registerEvents() {
       this.editor = useEditorStore();
-      // const { instance, canvas } = storeToRefs(this.editor);
-      // this.canvas = ref(this.editor?.canvas);
-      watch([this.editor, this.canvas], (value) => {
-        // console.log("Store change events", value);
+      const { page, pages } = storeToRefs<EditorStoreInstance>(this.editor);
+
+      // Watch for page changes (which changes the active canvas)
+      watch([page, pages], ([newPage, newPages]) => {
+        // console.log("Store change events - page:", newPage, "pages count:", newPages?.length);
         this.updateRefs();
-      });
+      }, { deep: true, immediate: true });
     },
     getSelectionActive() {
       return this.selection?.active;
@@ -189,6 +190,10 @@ export const useCanvasStore = defineStore('canvas', {
     onChangeSelection() {
       // console.log("onChangeSelection");
       this.updateRefs();
+
+      if (this.selectionActive?.type === "audio") {
+        this.editor.setActiveSidebarRight("audio");
+      }
     }
   }
 });

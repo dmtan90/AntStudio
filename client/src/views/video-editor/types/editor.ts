@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-export type EditorReplace = EditorReplaceVideo | EditorReplaceImage | EditorReplaceAudio | null;
+export type EditorReplace = EditorReplaceVideo | EditorReplaceImage | EditorReplaceAudio | EditorReplaceGif | null;
 
 export type EditorPlaceholder = "main-image" | "brand-image" | "cta-text" | "headline-text" | "description-text";
 
@@ -15,6 +15,9 @@ export interface EditorTemplatePage {
   name: string;
   thumbnail: string;
   duration: number;
+  transition?: 'none' | 'fade' | 'wipe' | 'slide-left' | 'slide-right' | 'slide-up' | 'slide-down' | 'zoom-in' | 'zoom-out' | 'dip-to-black' | 'dip-to-white';
+  transitionDuration?: number;
+  transitionEasing?: string;
   data: EditorTemplatePageData;
 }
 
@@ -62,6 +65,8 @@ export interface EditorAudioElement {
   visible: boolean;
   visualType: VisualType;
   visualProps: PropsBarsType | PropsCircleType | PropsLineType | PropsMediaType | PropsWaveformType;
+  fadeIn: number;
+  fadeOut: number;
   type: "audio"
 }
 
@@ -73,6 +78,8 @@ export interface IAudioOptions extends fabric.IObjectOptions {
   trimEnd?: number;
   visualType?: VisualType;
   visualProps?: PropsBarsType | PropsCircleType | PropsLineType | PropsMediaType | PropsWaveformType;
+  fadeIn?: number;
+  fadeOut?: number;
 }
 
 
@@ -101,4 +108,9 @@ export interface EditorReplaceImage {
 export interface EditorReplaceAudio {
   object: EditorAudioElement;
   type: "audio";
+}
+
+export interface EditorReplaceGif {
+  object: fabric.Image;
+  type: "gif";
 }

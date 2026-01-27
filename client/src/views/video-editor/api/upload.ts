@@ -23,7 +23,7 @@ async function upload(file: File | Blob, name: string, purpose: string = 'media'
     }
   });
 
-  // Flova API returns { key, url, media } in data
+  // AntStudio API returns { key, url, media } in data
   // We want the proxied URL for the editor
   const key = response.data.data ? response.data.data.key : response.data.key; // Safe check
   return `/api/s3/${key}`;

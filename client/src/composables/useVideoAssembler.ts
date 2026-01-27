@@ -22,8 +22,10 @@ export function useVideoAssembler() {
 
     let worker: Worker | null = null;
 
-    const assemble = async (options: ExportOptions) => {
-        if (!projectStore.currentProject) {
+    const assemble = async (options: ExportOptions, projectOverride?: any) => {
+        const projectData = projectOverride || projectStore.currentProject;
+
+        if (!projectData) {
             toast.error('No active project found');
             return;
         }
@@ -60,7 +62,7 @@ export function useVideoAssembler() {
             // Start Assembly
             const token = localStorage.getItem('auth-token');
             worker.postMessage({
-                project: JSON.parse(JSON.stringify(projectStore.currentProject)),
+                project: projectData, // Pass the override which might contain blobs
                 options: JSON.parse(JSON.stringify(options)),
                 token
             });

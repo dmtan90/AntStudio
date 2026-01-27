@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { filterPlaceholder } from 'video-editor/constants/editor';
 import Label from 'video-editor/components/ui/label.vue';
 import { useCanvasStore } from 'video-editor/store/canvas';

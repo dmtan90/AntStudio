@@ -7,6 +7,8 @@ export interface IUser extends Document {
     name: string
     avatar?: string
     role: 'user' | 'admin' | 'sys-admin'
+    tenantId?: mongoose.Types.ObjectId // Association with White-label Tenant
+    currentOrganizationId?: mongoose.Types.ObjectId // Active Team Context
     subscription: {
         plan: 'free' | 'pro' | 'enterprise'
         status: 'active' | 'cancelled' | 'expired'
@@ -54,6 +56,11 @@ export interface IUser extends Document {
     }
     resetPasswordToken?: string
     resetPasswordExpires?: Date
+    preferences?: {
+        aiPersona?: string
+        theme?: string
+        customVoiceId?: string
+    }
     createdAt: Date
     updatedAt: Date
     comparePassword(candidatePassword: string): Promise<boolean>
@@ -84,6 +91,16 @@ const UserSchema = new Schema<IUser>(
             type: String,
             enum: ['user', 'admin', 'sys-admin'],
             default: 'user'
+        },
+        tenantId: {
+            type: Schema.Types.ObjectId,
+            ref: 'Tenant',
+            index: true
+        },
+        currentOrganizationId: {
+            type: Schema.Types.ObjectId,
+            ref: 'Organization',
+            index: true
         },
         subscription: {
             plan: {
@@ -157,7 +174,12 @@ const UserSchema = new Schema<IUser>(
             inApp: { type: Boolean, default: true }
         },
         resetPasswordToken: String,
-        resetPasswordExpires: Date
+        resetPasswordExpires: Date,
+        preferences: {
+            aiPersona: { type: String, default: 'Default Enthusiast' },
+            theme: { type: String, default: 'dark' },
+            customVoiceId: String
+        }
     },
     {
         timestamps: true
@@ -183,8 +205,11 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
     return bcrypt.compare(candidatePassword, this.passwordHash)
 }
 
-// Indexes
-UserSchema.index({ 'subscription.plan': 1 })
-UserSchema.index({ createdAt: -1 })
+// Indexes for performance
+UserSchema.index({ 'subscription.plan': 1 });
+UserSchema.index({ 'subscription.status': 1, 'subscription.endDate': 1 }); // For active subscription queries
+UserSchema.index({ createdAt: -1 });
+UserSchema.index({ currentOrganizationId: 1 }); // For organization member lookups
+UserSchema.index({ role: 1 }); // For admin/user filtering
 
 export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema)

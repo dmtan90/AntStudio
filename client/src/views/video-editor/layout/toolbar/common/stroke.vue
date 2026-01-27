@@ -9,7 +9,7 @@ import SliderInput from 'video-editor/components/ui/SliderInput.vue';
 import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();

@@ -1,0 +1,73 @@
+import mongoose from 'mongoose';
+
+/**
+ * Service to manage multi-region database clusters.
+ * Implements Read/Write splitting for global scalability.
+ */
+export class ClusterManager {
+    private primaryConnection: mongoose.Connection | null = null;
+    private readReplicas: mongoose.Connection[] = [];
+    private currentReaderIndex = 0;
+
+    /**
+     * Initializes the cluster connections.
+     * ENV: MONGODB_URI (Primary), MONGODB_READ_REPLICAS (Comma-separated list)
+     */
+    public async connect() {
+        try {
+            const primaryUri = process.env.MONGODB_URI;
+            if (!primaryUri) throw new Error("Primary MONGODB_URI is not defined");
+
+            // 1. Connect Primary (Master Writer)
+            this.primaryConnection = await mongoose.createConnection(primaryUri).asPromise();
+            console.log(`[ClusterManager] 🟢 Primary DB Connected: ${this.getHost(primaryUri)}`);
+
+            // 2. Connect Read Replicas (Optional Readers)
+            const replicaUris = process.env.MONGODB_READ_REPLICAS?.split(',') || [];
+            for (const uri of replicaUris) {
+                if (!uri) continue;
+                const conn = await mongoose.createConnection(uri.trim()).asPromise();
+                this.readReplicas.push(conn);
+                console.log(`[ClusterManager] 🟢 Read Replica Connected: ${this.getHost(uri)}`);
+            }
+
+            if (this.readReplicas.length === 0) {
+                console.warn("[ClusterManager] ⚠️ No read replicas defined. All traffic routed to Primary.");
+            }
+
+        } catch (error) {
+            console.error("[ClusterManager] ❌ Connection failed:", error);
+            throw error;
+        }
+    }
+
+    /**
+     * Gets the appropriate connection based on operation type.
+     * @param mode 'read' or 'write'
+     */
+    public getConnection(mode: 'read' | 'write' = 'write'): mongoose.Connection {
+        if (mode === 'write' || this.readReplicas.length === 0) {
+            return this.primaryConnection!;
+        }
+
+        // Round-robin for Read Replicas
+        const conn = this.readReplicas[this.currentReaderIndex];
+        this.currentReaderIndex = (this.currentReaderIndex + 1) % this.readReplicas.length;
+        return conn;
+    }
+
+    private getHost(uri: string): string {
+        try {
+            return new URL(uri).host;
+        } catch {
+            return 'hidden-host';
+        }
+    }
+
+    public async disconnect() {
+        if (this.primaryConnection) await this.primaryConnection.close();
+        for (const conn of this.readReplicas) await conn.close();
+    }
+}
+
+export const clusterManager = new ClusterManager();

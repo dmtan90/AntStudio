@@ -10,7 +10,7 @@ import { useEditorStore } from 'video-editor/store/editor';
 import { storeToRefs } from "pinia";
 
 import { leftSidebarWidth } from 'video-editor/constants/layout';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { Motion, AnimatePresence } from 'motion-v'
 
 import AudioMenu from './components/audio.vue';

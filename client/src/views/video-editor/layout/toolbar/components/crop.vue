@@ -33,7 +33,7 @@ const handleReset = () => {
       class="flex items-center gap-2.5 h-9 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/20 transition-all duration-300 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/5 active:scale-95" 
       @click="handleCropEnd"
     >
-      <Check :size="16" stroke-width="4" />
+      <Check :size="16" :stroke-width="4" />
       <span>Done</span>
     </button>
 

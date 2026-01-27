@@ -8,7 +8,7 @@ import { ChromePicker, ColorResult, tinycolor } from 'vue-color';
 import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
-import { cn, createInstance } from 'video-editor/lib/utils';
+import { cn, createInstance } from '@/utils/ui';
 import { darkHexCodes, lightHexCodes, pastelHexCodes } from 'video-editor/constants/editor';
 
 const editor = useEditorStore();
@@ -24,7 +24,7 @@ watch(selected, () => {
   color.value = disabled.value ? "#ffffff" : selected.value?.stroke;
 });
 
-const onChangeColor = (result: tinycolor) => {
+const onChangeColor = (result: any) => {
   // console.log("onChangeColor", result);
   const { _r, _g, _b, _a } = result;
   const color = (window as any).fabric.Color.fromRgba(`rgba(${_r},${_g},${_b},${_a || 1})`);

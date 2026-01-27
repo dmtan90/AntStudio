@@ -5,7 +5,7 @@ import { Plus, Delete as Trash } from '@icon-park/vue-next';
 import { ElButton, ElTabs, ElTabPane } from 'element-plus';
 
 import { useEditorStore } from 'video-editor/store/editor';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 
 const editor = useEditorStore();
 

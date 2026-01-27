@@ -1,7 +1,13 @@
 import { Router } from 'express';
+import crypto from 'crypto';
+import axios from 'axios';
+import config from '../utils/config.js';
 import { License } from '../models/License.js';
 import { connectDB } from '../utils/db.js';
 import { authMiddleware, adminMiddleware, sysAdminMiddleware, AuthRequest } from '../middleware/auth.js';
+
+import { LicensePackage } from '../models/LicensePackage.js';
+import { Release } from '../models/Release.js';
 
 const router = Router();
 
@@ -11,44 +17,111 @@ router.use(async (req, res, next) => {
     next();
 });
 
-// GET /api/license/list - List all licenses (Sys-Admin only)
-router.get('/list', authMiddleware, sysAdminMiddleware, async (req: AuthRequest, res) => {
+// GET /api/license/packages - Public (Master Mode)
+router.get('/packages', async (req, res) => {
     try {
-        // console.log("req.user", req.user);
-        if (req.user?.role !== 'sys-admin') {
-            return res.status(403).json({ success: false, error: 'Access denied' });
-        }
+        const pkgs = await LicensePackage.find({ isActive: true });
+        res.json({ success: true, data: { packages: pkgs } });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
 
-        const licenses = await License.find().sort({ createdAt: -1 });
+// GET /api/license/my-licenses - Customer view (Master Mode)
+router.get('/my-licenses', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const licenses = await License.find({ owner: req.user!.email }).sort({ createdAt: -1 });
         res.json({ success: true, data: { licenses } });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// POST /api/license/generate - Generate new license (Sys-Admin only)
-router.post('/generate', authMiddleware, sysAdminMiddleware, async (req: AuthRequest, res) => {
+// POST /api/license/activate - Edge Server Activation Handshake
+router.post('/activate', authMiddleware, async (req: AuthRequest, res) => {
     try {
-        if (req.user?.role !== 'sys-admin') {
-            return res.status(403).json({ success: false, error: 'Access denied' });
+        const { key } = req.body;
+        if (!key) return res.status(400).json({ success: false, error: 'Key Identity required.' });
+
+        // 1. Call Master Hub for validation
+        const response = await axios.post(`${config.masterServerUrl}/api/license/license-status`, {
+            key,
+            instanceId: process.env.INSTANCE_ID || 'edge-default',
+            version: '1.4.0'
+        });
+
+        const remote = response.data;
+        if (remote.status !== 'valid') {
+            return res.status(402).json({ success: false, error: remote.message || 'Registry Handshake Failed.' });
         }
 
-        const { owner, type, maxUsers, maxProjects, durationDays } = req.body;
+        // 2. Persist local registry cache
+        await License.deleteMany({}); // Only one active registry per Edge unit
+        const localLic = await License.create({
+            key,
+            owner: remote.owner,
+            tier: remote.tier,
+            startDate: new Date(),
+            endDate: new Date(remote.endDate),
+            status: 'valid',
+            instancesLimit: 1, // Edge doesn't manage multiple units
+            maxUsersPerInstance: remote.limits.users,
+            maxProjectsPerInstance: remote.limits.projects
+        });
 
-        console.log(req.body, owner, type, maxUsers, maxProjects, durationDays);
+        res.json({ success: true, data: { license: localLic } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: 'Target Registry Hub Unreachable.' });
+    }
+});
+
+// POST /api/license/renew - High-Fidelity Renewal (Master Mode)
+router.post('/renew', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { key, packageId } = req.body;
+        const lic = await License.findOne({ key, owner: req.user!.email });
+        if (!lic) return res.status(404).json({ success: false, error: 'Registry identity not found.' });
+
+        const pkg = await LicensePackage.findById(packageId);
+        if (!pkg) return res.status(404).json({ success: false, error: 'Tactical package not found.' });
+
+        // Logic: Add duration relative to current endDate or Now
+        const base = lic.endDate > new Date() ? lic.endDate : new Date();
+        const newEnd = new Date(base);
+        if (pkg.billingPeriod === 'monthly') newEnd.setMonth(newEnd.getMonth() + 1);
+        else if (pkg.billingPeriod === 'yearly') newEnd.setFullYear(newEnd.getFullYear() + 1);
+
+        lic.endDate = newEnd;
+        lic.status = 'valid';
+        lic.tier = pkg.tier;
+        lic.instancesLimit = pkg.limits.instances;
+        lic.maxUsersPerInstance = pkg.limits.usersPerInstance;
+        lic.maxProjectsPerInstance = pkg.limits.projectsPerInstance;
+
+        await lic.save();
+        res.json({ success: true, data: { license: lic, message: 'Renewal established.' } });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// POST /api/license/generate - Specialized Master Engine
+router.post('/generate', authMiddleware, sysAdminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { owner, tier, instancesLimit, durationDays, maxUsersPerInstance } = req.body;
+
         const startDate = new Date();
         const endDate = new Date();
         endDate.setDate(startDate.getDate() + (durationDays || 365));
 
-        // Generate a random key (simple implementation, can be improved)
-        const key = 'LIC-' + Math.random().toString(36).substring(2, 15).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+        const key = 'LIC-' + crypto.randomBytes(8).toString('hex').toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
 
         const license = await License.create({
             key,
             owner,
-            type,
-            maxUsers,
-            maxProjects,
+            tier: tier || 'basic',
+            instancesLimit: instancesLimit || 1,
+            maxUsersPerInstance: maxUsersPerInstance || 10,
             startDate,
             endDate,
             status: 'valid'
@@ -60,67 +133,60 @@ router.post('/generate', authMiddleware, sysAdminMiddleware, async (req: AuthReq
     }
 });
 
-// DELETE /api/license/:id - Delete/Revoke license (Sys-Admin only)
-router.delete('/:id', authMiddleware, sysAdminMiddleware, async (req: AuthRequest, res) => {
-    try {
-        if (req.user?.role !== 'sys-admin') {
-            return res.status(403).json({ success: false, error: 'Access denied' });
-        }
-
-        await License.findByIdAndDelete(req.params.id);
-        res.json({ success: true, data: { message: 'License deleted' } });
-    } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// POST /api/license/license-status - Public endpoint to check license status
+// POST /api/license/license-status - The Neural Heartbeat (Edge -> Master)
 router.post('/license-status', async (req, res) => {
     try {
-        const { key, instanceId, ip } = req.body;
+        const { key, instanceId, ip, version } = req.body;
 
         const license = await License.findOne({ key });
-
-        if (!license) {
-            return res.json({ status: 'invalid', message: 'License not found' });
-        }
-
-        if (license.status === 'revoked') {
-            return res.json({ status: 'invalid', message: 'License revoked' });
-        }
+        if (!license) return res.json({ status: 'invalid', message: 'Registry identity not found.' });
+        if (license.status === 'revoked') return res.json({ status: 'revoked', message: 'License access terminated.' });
 
         const now = new Date();
         if (now > license.endDate) {
-            license.status = 'expired';
-            await license.save();
-            return res.json({ status: 'expired', startDate: license.startDate.getTime(), endDate: license.endDate.getTime() });
+            if (license.status !== 'expired') {
+                license.status = 'expired';
+                await license.save();
+            }
+            return res.json({ status: 'expired', endDate: license.endDate.getTime() });
         }
 
-        if (license.hwid && license.hwid !== instanceId) {
-            return res.json({ status: 'invalid', message: 'HWID mismatch' });
+        // Fleet Telemetry Update
+        let telemetry = license.fleetTelemetry.find(f => f.instanceId === instanceId);
+        if (!telemetry) {
+            // New instance pairing
+            if (license.activeInstances >= license.instancesLimit) {
+                return res.json({ status: 'invalid', message: 'Instance limit reached. Upgrade required.' });
+            }
+            license.fleetTelemetry.push({
+                instanceId,
+                lastIp: ip || req.ip,
+                lastHeartbeat: now,
+                version: version || '1.0.0'
+            });
+            license.activeInstances += 1;
+        } else {
+            telemetry.lastIp = ip || req.ip;
+            telemetry.lastHeartbeat = now;
+            telemetry.version = version || '1.0.0';
         }
 
-        // Bind HWID on first use if not bound? 
-        // For strict binding:
-        if (!license.hwid && instanceId) {
-            license.hwid = instanceId;
-            await license.save();
-        }
+        license.lastCheckedAt = now;
+        await license.save();
 
         res.json({
-            licenseId: license._id,
-            md5Key: license.key, // Placeholder
-            startDate: license.startDate.getTime(),
-            endDate: license.endDate.getTime(),
-            type: license.type,
-            licenseCount: 1, // Number of servers
-            owner: license.owner,
             status: 'valid',
-            hourUsed: 0
+            licenseId: license._id,
+            tier: license.tier,
+            owner: license.owner,
+            endDate: license.endDate.getTime(),
+            limits: {
+                users: license.maxUsersPerInstance,
+                projects: license.maxProjectsPerInstance
+            }
         });
-
     } catch (error: any) {
-        res.status(500).json({ status: 'error', error: error.message });
+        res.status(500).json({ status: 'error', message: 'Neural validation engine failure.' });
     }
 });
 

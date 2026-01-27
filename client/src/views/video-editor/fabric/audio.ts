@@ -35,8 +35,8 @@ export class FabricAudio extends fabric.Object {
     options.width = options.width || 400;
     options.height = options.height || 100;
     // @ts-ignore
-    super.initialize(options);
-    this.set(options);
+    super.initialize(options as any);
+    this.set(options as any);
 
     // console.log("initialize", options);
     // options = options || {};
@@ -62,7 +62,7 @@ export class FabricAudio extends fabric.Object {
       objectCaching: false,
       src: options.src ?? element.src,
       visible: options.visible || false
-    });
+    } as any);
     // this.initAudioVisual();
     console.log(this, options);
     this.on("added", () => fabric.util.requestAnimFrame(this.update.bind(this)));
@@ -137,19 +137,19 @@ export class FabricAudio extends fabric.Object {
     console.log("initVisualProps", props);
     let _props = null;
     if (this.visualType == 'bars') {
-      _props = new Bars(props);
+      _props = new (Bars as any)(props);
     }
     else if (this.visualType == 'circle') {
-      _props = new Circle(props);
+      _props = new (Circle as any)(props);
     }
     else if (this.visualType == 'line') {
-      _props = new Line(props);
+      _props = new (Line as any)(props);
     }
     else if (this.visualType == 'media') {
-      _props = new Media(props);
+      _props = new (Media as any)(props);
     }
     else if (this.visualType == 'wave') {
-      _props = new Waveform(props);
+      _props = new (Waveform as any)(props);
     }
 
     return _props;
@@ -301,7 +301,7 @@ export class FabricAudio extends fabric.Object {
     this.__renderer.height = this.getScaledHeight();
     const context = this.__renderer.getContext("2d")!;
     context.clearRect(0, 0, this.__renderer.width, this.__renderer.height);
-    context.fillStyle = this.fill ?? "#FFFFFF10";
+    context.fillStyle = (this.fill as any) ?? "#FFFFFF10";
     context.fillRect(0, 0, this.__renderer.width, this.__renderer.height);
     if (this.stroke) {
       context.strokeStyle = this.stroke;

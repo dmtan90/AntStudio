@@ -7,14 +7,14 @@ import VueDraggable from 'vue-draggable-resizable'
 import { ElButton, ElInput } from 'element-plus';
 
 import { useEditorStore } from 'video-editor/store/editor';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 import { useMeasure } from 'video-editor/hooks/use-measure';
 
 const editor = useEditorStore();
 const trim = computed(() => editor.canvas.trimmer.active!.object);
 
 const [containerRef, dimensions] = useMeasure();
-const containerWidth = computed(() => dimensions.value.width - 16); // handleWidth
+const containerWidth = computed(() => (dimensions.value as any).width - 16); // handleWidth
 
 const background = ref("");
 const data = ref({ trimStartX: 0, trimEndX: 0, duration: 0 });
@@ -23,16 +23,16 @@ const handleWidth = 16;
 
 watch(containerWidth, (newWidth) => {
   if (newWidth <= 0) return;
-  const object = editor.canvas.instance!.getItemByName(trim.value.name) as fabric.Video;
+  const object = editor.canvas.instance!.getItemByName(trim.value.name) as any;
   const trimStartX = (newWidth / object.duration(false)) * object.trimStart!;
   const trimEndX = newWidth - (newWidth / object.duration(false)) * object.trimEnd!;
   data.value = { trimStartX: trimStartX, trimEndX: trimEndX, duration: object.duration(false) };
 }, { immediate: true });
 
 watch(trim, (newTrim) => {
-  const video = editor.canvas.instance!.getItemByName(newTrim.name) as fabric.Video;
+  const video = editor.canvas.instance!.getItemByName(newTrim.name) as any;
   if (background.value || video.meta!.placeholder) return;
-  video.clone((clone: fabric.Video) => {
+  video.clone((clone: any) => {
     clone.set({ opacity: 1, visible: true, clipPath: undefined });
     clone.seek(1);
     setTimeout(() => {
@@ -43,7 +43,7 @@ watch(trim, (newTrim) => {
   });
 }, { immediate: true });
 
-const backgroundWidth = computed(() => 40 * (trim.value.width! / trim.value.height!) + 10);
+const backgroundWidth = computed(() => 40 * ((trim.value as any).width! / (trim.value as any).height!) + 10);
 const trackWidth = computed(() => containerWidth.value - data.value.trimStartX - (containerWidth.value - data.value.trimEndX) - handleWidth);
 const absoluteDuration = computed(() => data.value.duration - (data.value.trimStartX / containerWidth.value) * data.value.duration - ((containerWidth.value - data.value.trimEndX) / containerWidth.value) * data.value.duration);
 
@@ -94,7 +94,7 @@ const style = computed(() => ({
           class="!h-full"
           :onDrag="(x, y) => handleDragChange('trimStartX', x)">
           <button class="absolute grid place-items-center h-full bg-brand-primary rounded-l-lg z-20 cursor-ew-resize group/handle shadow-lg" :style="{ width: `${handleWidth}px` }">
-            <ChevronLeft :size="12" class="text-white group-hover/handle:scale-125 transition-transform" stroke-width="4" stroke="#ffffff" />
+            <ChevronLeft :size="12" class="text-white group-hover/handle:scale-125 transition-transform" :stroke-width="4" stroke="#ffffff" />
           </button>
         </VueDraggable>
         <div class="h-full absolute border-y-2 border-brand-primary mix-blend-screen bg-brand-primary/10 z-10 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]" :style="{ left: `${data.trimStartX + handleWidth}px`, width: `${trackWidth}px` }"></div>
@@ -109,7 +109,7 @@ const style = computed(() => ({
           class="!h-full"
           :onDrag="(x, y) => handleDragChange('trimEndX', x)">
           <button class="absolute grid place-items-center h-full bg-brand-primary rounded-r-lg z-20 cursor-ew-resize group/handle shadow-lg" :style="{ width: `${handleWidth}px` }">
-            <ChevronRight :size="12" class="text-white group-hover/handle:scale-125 transition-transform" stroke-width="4" stroke="#ffffff" />
+            <ChevronRight :size="12" class="text-white group-hover/handle:scale-125 transition-transform" :stroke-width="4" stroke="#ffffff" />
           </button>
         </VueDraggable>
       </div>
@@ -119,7 +119,7 @@ const style = computed(() => ({
         class="flex items-center gap-2.5 h-9 px-6 rounded-xl bg-brand-primary text-white transition-all duration-300 text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-primary/20 hover:bg-brand-primary/90 hover:scale-[1.02] active:scale-95" 
         @click="handleChanges"
     >
-      <Check :size="16" stroke-width="4" />
+      <Check :size="16" :stroke-width="4" />
       <span>Done</span>
     </button>
   </div>

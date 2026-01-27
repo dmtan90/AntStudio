@@ -14,7 +14,7 @@ import {
 } from '@icon-park/vue-next';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from "pinia";
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 
 const canvasStore = useCanvasStore();
 const { canvas, selectionActive: selected } = storeToRefs(canvasStore);
@@ -94,7 +94,7 @@ watch(selected, updateObjects);
     <div class="flex flex-col gap-2">
       <template v-if="objects.length === 0">
         <div class="flex flex-col items-center justify-center py-20 opacity-20">
-            <LayerIcon :size="40" stroke-width="2" />
+            <LayerIcon :size="40" :stroke-width="2" />
             <span class="mt-4 text-[10px] font-bold uppercase tracking-[0.2em]">No Layers Found</span>
         </div>
       </template>

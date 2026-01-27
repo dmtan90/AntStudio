@@ -8,7 +8,7 @@
 import { ref, onMounted, watch } from "vue";
 import { useEditorStore } from 'video-editor/store/editor'
 import { useCanvasStore } from 'video-editor/store/canvas';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();

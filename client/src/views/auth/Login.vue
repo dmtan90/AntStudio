@@ -11,7 +11,7 @@
       <transition name="fade-up" appear>
           <GCard class="auth-card" :hoverable="false">
             <div class="logo">
-              <h1 class="brand">AntFlow</h1>
+              <h1 class="brand">AntStudio</h1>
               <p>Everyone can be a director with AI</p>
             </div>
 
@@ -88,7 +88,7 @@
 
             <div class="auth-footer">
               <p>
-                New to AntFlow?
+                New to AntStudio?
                 <router-link to="/register" class="link">Create an account</router-link>
               </p>
               <router-link to="/" class="back-home">Back to Home</router-link>

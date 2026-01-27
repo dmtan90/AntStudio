@@ -70,6 +70,21 @@ export function getExportFileExtension(format: "mp4" | "webm" | "mov" | "mkv"): 
   return `.${format}`;
 }
 
+// Custom Target for FileSystem API
+class FileSystemTarget {
+  private writable: FileSystemWritableFileStream;
+
+  constructor(writable: FileSystemWritableFileStream) {
+    this.writable = writable;
+  }
+
+  async add(chunk: Uint8Array) {
+    await this.writable.write(new Blob([chunk as any]));
+  }
+
+  async finalize() { }
+}
+
 export interface RenderContext {
   ctx: CanvasRenderingContext2D;
   time: number;
@@ -366,111 +381,74 @@ export class Recorder {
     return null;
   }
 
-  async mediaBunnyCompile(frames: Uint8Array[], { width = 1920, height = 1080, scale = 1, fps = 30, format = "mp4", duration = 0, audio, signal, progress }: { width?: number, height?: number, scale?: number; fps?: number; format?: string, duration?: number, signal?: AbortSignal; progress?: (value: { progress: number }) => void; audio?: Blob }) {
+  // Custom Target for FileSystem API
+
+  async mediaBunnyCompile(frames: Uint8Array[], { width = 1920, height = 1080, scale = 1, fps = 30, format = "mp4", duration = 0, audio, signal, progress, fileHandle }: { width?: number, height?: number, scale?: number; fps?: number; format?: string, duration?: number, signal?: AbortSignal; progress?: (value: { progress: number }) => void; audio?: Blob; fileHandle?: FileSystemFileHandle }) {
     // if (!ffmpeg.loaded) throw createInstance(Error, "Ffmpeg is not loaded");
     console.log("mediaBunnyCompile", width, height, scale, fps, format, duration, audio);
 
-    // let cleanup = 0;
-    // const { command, extension, mimetype } = fetchExtensionByCodec(codec);
-    let extension = "mp4";
     let mimetype = "video/mp4";
-    if (format == "mp4") {
-      extension = "mp4";
-      mimetype = "video/mp4";
-    }
-    else if (format == "webm") {
-      extension = "webm";
-      mimetype = "video/webm";
-    }
-
-    // const music = "output_audio.wav";
-    // const pattern = "output_frame_%d.png";
-
-    // const temporary = "output_temporary." + extension;
-    // const output = audio ? "output_with_audio." + extension : "output_without_audio." + extension;
+    if (format == "mp4") mimetype = "video/mp4";
+    else if (format == "webm") mimetype = "video/webm";
 
     try {
-      // const timelineStore = useTimelineStore.getState();
-      // const mediaStore = useMediaStore.getState();
-      // const projectStore = useProjectStore.getState();
-
-      // const { tracks, getTotalDuration } = timelineStore;
-      // const { mediaFiles } = mediaStore;
-      // const { activeProject } = projectStore;
-
-      // if (!activeProject) {
-      //   return { success: false, error: "No active project" };
-      // }
-
-      // const duration = getTotalDuration();
-      if (duration === 0) {
-        // return { success: false, error: "Project is empty" };
-        throw new Error("Project is empty");
-      }
+      if (duration === 0) throw new Error("Project is empty");
 
       const exportFps = fps;
       const canvasSize = { width, height };
       const quality = "medium";
       const backgroundType = "none";
-      const blurIntensity = 5;
+      // const blurIntensity = 5;
       const backgroundColor = "#000000";
 
-      const outputFormat =
-        format === "webm" ? new WebMOutputFormat() : new Mp4OutputFormat();
+      const outputFormat = format === "webm" ? new WebMOutputFormat() : new Mp4OutputFormat();
 
-      // BufferTarget for smaller files, StreamTarget for larger ones
-      // TODO: Implement StreamTarget
+      let target;
+      let writableStream;
+
+      if (fileHandle) {
+        writableStream = await fileHandle.createWritable();
+        target = new FileSystemTarget(writableStream);
+      } else {
+        target = new BufferTarget();
+      }
+
       const output = new Output({
         format: outputFormat,
-        target: new BufferTarget(),
+        target: target,
       });
 
       // Canvas for rendering
       const canvas = new OffscreenCanvas(canvasSize.width * scale, canvasSize.height * scale);
-      // canvas.width = canvasSize.width*scale;
-      // canvas.height = canvasSize.height*scale;
       const ctx = canvas.getContext("2d");
 
-      if (!ctx) {
-        // return { success: false, error: "Failed to create canvas context" };
-        throw new Error("Failed to create canvas context");
-      }
+      if (!ctx) throw new Error("Failed to create canvas context");
 
       try {
         const videoSource = new CanvasSource(canvas, {
-          codec: format === "webm" ? "vp9" : "avc", // VP9 for WebM, H.264 for MP4
+          codec: format === "webm" ? "vp9" : "avc",
           bitrate: qualityMap[quality],
         });
 
         output.addVideoTrack(videoSource, { frameRate: exportFps });
 
-        // Add audio track if requested (but don't add data yet)
+        // Add audio track if requested
         let audioSource: AudioBufferSource | null = null;
         let audioBuffer: AudioBuffer | null = null;
 
         if (audio) {
-          // onProgress?.(0.05); // 5% for audio processing
           progress?.({ progress: 0.05 });
-
-          // audioBuffer = await createTimelineAudioBuffer(
-          //   tracks,
-          //   mediaFiles,
-          //   duration
-          // );
-          // const audioBuffer: ArrayBuffer = await audio.arrayBuffer();
           audioBuffer = await this.createAudioBuffer(audio);
           if (audioBuffer) {
             audioSource = new AudioBufferSource({
-              codec: format === "webm" ? "opus" : "aac", // Opus for WebM, AAC for MP4
-              bitrate: qualityMap[quality], // Use same quality for audio
+              codec: format === "webm" ? "opus" : "aac",
+              bitrate: qualityMap[quality],
             });
-
             output.addAudioTrack(audioSource);
           }
-          console.log("audioBuffer", audioBuffer);
         }
 
-        // Start the output (after all tracks are added)
+        // Start the output
         await output.start();
 
         // Now add audio data after starting
@@ -480,18 +458,12 @@ export class Recorder {
         }
 
         const totalFrames = frames.length;
-        // let cancelled = false;
 
         // Render each frame
         for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
           signal?.throwIfAborted();
-          // Check for cancellation
-          // if (onCancel?.()) {
-          //   cancelled = true;
-          //   break;
-          // }
+
           const time = frameIndex / exportFps;
-          //draw image on canvas
           await this.renderVideoFrame({
             ctx: ctx as any,
             time,
@@ -499,81 +471,37 @@ export class Recorder {
             canvasHeight: canvas.height,
             frame: frames[frameIndex],
             backgroundType: backgroundType as any,
-            blurIntensity: blurIntensity,
-            backgroundColor:
-              (backgroundType as any) === "blur"
-                ? undefined
-                : backgroundColor || "#000000",
+            blurIntensity: 5,
+            backgroundColor: backgroundColor,
             projectCanvasSize: canvasSize,
           });
 
           const frameDuration = 1 / exportFps;
           await videoSource.add(time, frameDuration);
-          // cleanup = frame;
-          // Adjust progress to account for audio processing (5% at start)
+
           const videoProgress = audio
             ? 0.05 + (frameIndex / totalFrames) * 0.95
             : frameIndex / totalFrames;
           progress?.({ progress: videoProgress });
-          // onProgress?.(videoProgress);
         }
-
-        // if (cancelled) {
-        //   await output.cancel();
-        //   return { success: false, cancelled: true };
-        // }
 
         videoSource.close();
         await output.finalize();
-        // onProgress?.(1);
 
-        return createInstance(Blob, [output.target.buffer], { type: mimetype });
+        if (writableStream) {
+          await writableStream.close();
+          return null; // File saved directly
+        }
+
+        return createInstance(Blob, [(output.target as any).buffer], { type: mimetype });
       } catch (error) {
-        console.error("Mediabunny", error);
-        await output.cancel();
+        console.error("Mediabunny export error", error);
+        // await output.cancel(); 
+        if (writableStream) await writableStream.close();
         throw error;
       }
-
-      // return {
-      //   success: true,
-      //   buffer: output.target.buffer || undefined,
-      // };
-
-      // for (let frame = 0; frame < frames.length; frame++) {
-      //   signal?.throwIfAborted();
-      //   const name = pattern.replace("%d", String(frame));
-      //   await ffmpeg.writeFile(name, frames[frame], { signal });
-      //   cleanup = frame;
-      // }
-
-      // if (audio) {
-      //   const buffer: ArrayBuffer = await audio.arrayBuffer();
-      //   await ffmpeg.writeFile(music, createUint8Array(buffer), { signal });
-      //   await ffmpeg.exec(["-framerate", fps, "-i", pattern, "-i", music, "-c:v", command, "-preset", "ultrafast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", output], undefined, { signal });
-      //   // @ts-expect-error
-      //   const data: Uint8Array = await ffmpeg.readFile(output, undefined, { signal });
-      //   return createInstance(Blob, [data.buffer], { type: mimetype });
-      // }
-
-      // await ffmpeg.exec(["-framerate", fps, "-i", pattern, "-c:v", command, "-preset", "ultrafast", "-pix_fmt", "yuv420p", output], undefined, { signal });
-      // // @ts-expect-error
-      // const data: Uint8Array = await ffmpeg.readFile(output, undefined, { signal });
-      // return createInstance(Blob, [data.buffer], { type: mimetype });
     } finally {
-      try {
-        // for (let frame = 0; frame <= cleanup; frame++) {
-        //   const name = pattern.replace("%d", String(frame));
-        //   await ffmpeg.deleteFile(name);
-        // }
-        // await ffmpeg.deleteFile(output);
-        // if (audio) {
-        //   await ffmpeg.deleteFile(music);
-        //   await ffmpeg.deleteFile(temporary);
-        // }
-        // await output.cancel();
-      } catch (err) {
-        console.warn("Mediabunny - Failed to perform cleanup", err);
-      }
+      // cleanup
     }
   }
 
@@ -587,6 +515,47 @@ export class Recorder {
       const seek = frame === count - 1 ? duration : (frame / count) * duration;
       this.timeline!.seek(seek);
       await Promise.all([this._toggleElements(seek), wait(0.1)]);
+
+      const base64 = this.instance.toDataURL({ format: "image/png" });
+      const buffer = dataURLToUInt8Array(base64);
+      frames.push(buffer);
+
+      progress?.({ progress: (frame + 1) / count, frame: base64 });
+      signal?.throwIfAborted();
+    }
+
+    return frames;
+  }
+
+  async capturePage(pageIndex: number, fps: number, { progress, signal }: { progress?: (value: { progress: number; frame: string }) => void; signal?: AbortSignal } = {}) {
+    const page = this.editor.pages[pageIndex];
+    if (!page) throw new Error("Page not found");
+
+    const interval = 1000 / fps;
+    const frames: Uint8Array[] = [];
+    const duration = page.timeline.duration;
+    const count = Math.ceil(duration / interval);
+
+    // Prepare recorder for this page
+    this.instance.setDimensions({ height: this.workspace.height, width: this.workspace.width });
+    this.instance.clear();
+    const data = await this.editor.exportPageTemplate(pageIndex);
+    await createPromise<void>((resolve) => this.instance.loadFromJSON(data.data.scene, resolve));
+
+    const artboard: fabric.Object = await createPromise<fabric.Object>((resolve) => this.artboard.clone((clone: fabric.Object) => resolve(clone), propertiesToInclude));
+    this.instance.insertAt(artboard, 0, false);
+    this.instance.clipPath = artboard;
+    FabricUtils.applyTransformationsAfterLoad(this.instance);
+    this.instance.renderAll();
+
+    // Re-initialize animations for this specific duration
+    const timeline = anime.timeline({ duration: duration, loop: false, autoplay: false, update: this.instance.renderAll.bind(this.instance) });
+    this.animations.initialize(this.instance, timeline, duration);
+
+    for (let frame = 0; frame < count; frame++) {
+      const seek = frame === count - 1 ? duration : (frame / count) * duration;
+      timeline.seek(seek);
+      await Promise.all([this._toggleElements(seek), wait(0.05)]); // Smaller wait?
 
       const base64 = this.instance.toDataURL({ format: "image/png" });
       const buffer = dataURLToUInt8Array(base64);
@@ -657,7 +626,7 @@ export class Recorder {
     this.instance.renderAll();
     this.duration = data.duration;
 
-    this.timeline = anime.timeline({ duration: this.duration, loop: false, autoplay: false, update: this.instance.renderAll.bind(this.instance) });
+    this.timeline = anime.timeline({ duration: this.duration, loop: false, autoplay: false, update: this.instance.renderAll.bind(this.instance) }) as any;
     this.animations.initialize(this.instance, this.timeline, this.duration);
   }
 

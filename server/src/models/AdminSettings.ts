@@ -10,6 +10,7 @@ export interface IAdminSettings extends Document {
     }>
     apiConfigs: {
         stripe: { secretKey: string; publicKey: string; webhookSecret: string }
+        paypal: { clientId: string; clientSecret: string; webhookSecret: string }
         aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string }
         smtp: {
             host: string
@@ -34,6 +35,17 @@ export interface IAdminSettings extends Document {
             email: string
             password: string
             appName: string
+        }
+        aiOAuth: {
+            google: { clientId: string; clientSecret: string; redirectUriOverride?: string }
+        }
+        storage: {
+            activeProvider: 's3' | 'google_drive'
+            googleDrive: {
+                clientEmail: string
+                privateKey: string
+                rootFolderId: string
+            }
         }
     }
     oauthProviders: {
@@ -76,6 +88,8 @@ export interface IAdminSettings extends Document {
             creditCost: number
             isActive: boolean
         }>
+        flowWorkspaceUrls: string[]
+        flowSessionToken?: string
     }
     s3: {
         totalStorageUsed: number
@@ -117,6 +131,12 @@ export interface IAdminSettings extends Document {
         logo: string
         favicon: string
     }
+    logSettings: {
+        emailNotificationsEnabled: boolean
+        notificationEmail: string
+        minNotificationLevel: 'debug' | 'info' | 'warn' | 'error'
+        retentionDays: number
+    }
     updatedAt: Date
 }
 
@@ -137,6 +157,11 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 publicKey: { type: String, default: '' },
                 webhookSecret: { type: String, default: '' }
             },
+            paypal: {
+                clientId: { type: String, default: '' },
+                clientSecret: { type: String, default: '' },
+                webhookSecret: { type: String, default: '' }
+            },
             aws: {
                 accessKeyId: { type: String, default: '' },
                 secretAccessKey: { type: String, default: '' },
@@ -151,7 +176,7 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 user: { type: String, default: '' },
                 pass: { type: String, default: '' },
                 fromEmail: { type: String, default: 'noreply@flova.ai' },
-                fromName: { type: String, default: 'AntFlow' }
+                fromName: { type: String, default: 'AntStudio' }
             },
             social: {
                 facebook: { appId: { type: String, default: '' }, appSecret: { type: String, default: '' } },
@@ -167,7 +192,20 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 email: { type: String, default: '' },
                 password: { type: String, default: '' },
                 appName: { type: String, default: 'WebRTCAppEE' }
+            },
+            aiOAuth: {
+                google: {
+                    clientId: { type: String, default: '' },
+                    clientSecret: { type: String, default: '' },
+                    redirectUriOverride: { type: String, default: '' }
+                }
             }
+        },
+        logSettings: {
+            emailNotificationsEnabled: { type: Boolean, default: false },
+            notificationEmail: { type: String, default: '' },
+            minNotificationLevel: { type: String, enum: ['debug', 'info', 'warn', 'error'], default: 'error' },
+            retentionDays: { type: Number, default: 30 }
         },
         oauthProviders: {
             google: { enabled: { type: Boolean, default: false } },
@@ -215,7 +253,9 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                     creditCost: { type: Number, default: 1 },
                     isActive: { type: Boolean, default: true }
                 }
-            ]
+            ],
+            flowWorkspaceUrls: { type: [String], default: [] },
+            flowSessionToken: { type: String, default: '' }
         },
         s3: {
             totalStorageUsed: { type: Number, default: 0 },
@@ -257,7 +297,7 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
             }
         },
         whitelabel: {
-            appName: { type: String, default: 'AntFlow' },
+            appName: { type: String, default: 'AntStudio' },
             logo: { type: String, default: '' }, // S3 path or URL
             favicon: { type: String, default: '' }
         }
@@ -280,6 +320,7 @@ export const getAdminSettings = async () => {
             geminiApiKeys: [],
             apiConfigs: {
                 stripe: { secretKey: '', publicKey: '', webhookSecret: '' },
+                paypal: { clientId: '', clientSecret: '', webhookSecret: '' },
                 aws: { accessKeyId: '', secretAccessKey: '', bucketName: '', region: 'us-east-1' },
                 smtp: {
                     host: 'smtp.gmail.com',
@@ -288,7 +329,7 @@ export const getAdminSettings = async () => {
                     user: '',
                     pass: '',
                     fromEmail: 'noreply@flova.ai',
-                    fromName: 'AntFlow'
+                    fromName: 'AntStudio'
                 },
                 social: { facebook: { appId: '', appSecret: '' }, google: { clientId: '', clientSecret: '' } },
                 media: { giphy: { apiKey: '', enabled: false }, pexels: { apiKey: '', enabled: false }, unsplash: { apiKey: '', enabled: false } },
@@ -297,7 +338,22 @@ export const getAdminSettings = async () => {
                     email: '',
                     password: '',
                     appName: 'WebRTCAppEE'
+                },
+                aiOAuth: { google: { clientId: '', clientSecret: '', redirectUriOverride: '' } },
+                storage: {
+                    activeProvider: 's3',
+                    googleDrive: {
+                        clientEmail: '',
+                        privateKey: '',
+                        rootFolderId: 'root'
+                    }
                 }
+            },
+            logSettings: {
+                emailNotificationsEnabled: false,
+                notificationEmail: '',
+                minNotificationLevel: 'error',
+                retentionDays: 30
             },
             oauthProviders: { google: { enabled: false }, facebook: { enabled: false } },
             aiSettings: {
@@ -318,7 +374,9 @@ export const getAdminSettings = async () => {
                     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', providerId: 'google', type: 'text', creditCost: 1, isActive: true },
                     { id: 'imagen-3.0', name: 'Imagen 3', providerId: 'google', type: 'image', creditCost: 4, isActive: true },
                     { id: 'veo-2.0', name: 'Veo 2.0', providerId: 'google', type: 'video', creditCost: 10, isActive: true }
-                ]
+                ],
+                flowWorkspaceUrls: [],
+                flowSessionToken: ''
             },
             s3: {
                 totalStorageUsed: 0,
@@ -363,7 +421,7 @@ export const getAdminSettings = async () => {
                 }
             },
             whitelabel: {
-                appName: 'AntFlow',
+                appName: 'AntStudio',
                 logo: '',
                 favicon: ''
             }

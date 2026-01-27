@@ -76,9 +76,9 @@ function mouseDownHandler() {
   if (props.disabled) {
     return;
   }
-  const { left, top } = lineElement.value?.$el?.getBoundingClientRect();
-  positionState.left = parseInt(left);
-  positionState.top = parseInt(top);
+  const { left, top } = lineElement.value?.getBoundingClientRect() || { left: 0, top: 0 };
+  positionState.left = parseInt(left.toString());
+  positionState.top = parseInt(top.toString());
   enableMove = true;
 
   document.onmousemove = documentEvent => {
@@ -110,15 +110,20 @@ function mouseDownHandler() {
 </script>
 
 <template>
-  <div ref="lineElement" 
+  <div ref="lineElement"
     :class="['resize-handler flex justify-center items-center relative z-50 group hover:bg-brand-primary/10 transition-all duration-300', isVertical ? 'cursor-col-resize w-1.5 h-full' : 'cursor-row-resize h-1.5 w-full']"
     @mousedown="mouseDownHandler">
-    <div :class="['absolute bg-white/5 transition-colors duration-300 group-hover:bg-brand-primary/50', isVertical ? 'w-px h-full' : 'h-px w-full']"></div>
-    
-    <!-- Drag Handle Indicator -->
-    <div :class="['absolute bg-white/10 rounded-full transition-all duration-300 group-hover:bg-brand-primary group-hover:scale-x-125 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]', isVertical ? 'h-8 w-1' : 'w-12 h-1']"></div>
+    <div
+      :class="['absolute bg-white/5 transition-colors duration-300 group-hover:bg-brand-primary/50', isVertical ? 'w-px h-full' : 'h-px w-full']">
+    </div>
 
-    <button class="flex items-center justify-center h-6 w-6 rounded-full bg-brand-primary text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 active:scale-90 select-none pointer-events-none z-10">
+    <!-- Drag Handle Indicator -->
+    <div
+      :class="['absolute bg-white/10 rounded-full transition-all duration-300 group-hover:bg-brand-primary group-hover:scale-x-125 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]', isVertical ? 'h-8 w-1' : 'w-12 h-1']">
+    </div>
+
+    <button
+      class="flex items-center justify-center h-6 w-6 rounded-full bg-brand-primary text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110 active:scale-90 select-none pointer-events-none z-10">
       <Sort :size="12" :class="isVertical ? 'rotate-90' : ''" :stroke-width="5" />
     </button>
   </div>

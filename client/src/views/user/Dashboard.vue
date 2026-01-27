@@ -8,7 +8,7 @@
             <p class="subtitle">{{ t('dashboard.manage') }}</p>
           </div>
         </transition>
-        <GButton type="primary" size="lg" @click="router.push('/projects/new')">
+        <GButton type="primary" size="lg" @click="showCreationDialog = true">
           {{ t('dashboard.startProject') }}
         </GButton>
       </div>
@@ -16,38 +16,29 @@
       <!-- Stats Grid -->
       <div class="stats-grid">
         <GCard class="stat-card">
-          <GStatistic 
-            :title="t('dashboard.creditsBalance')" 
-            :value="user?.credits?.balance || 0"
-            prefix="⭐"
-          />
+          <GStatistic :title="t('dashboard.creditsBalance')" :value="user?.credits?.balance || 0" prefix="⭐" />
           <div class="credit-breakdown">
-            <span><small>{{ t('dashboard.membership') }}:</small> <strong>{{ user?.credits?.membership || 0 }}</strong></span>
+            <span><small>{{ t('dashboard.membership') }}:</small> <strong>{{ user?.credits?.membership || 0
+            }}</strong></span>
             <span><small>{{ t('dashboard.bonus') }}:</small> <strong>{{ user?.credits?.bonus || 0 }}</strong></span>
             <span><small>{{ t('dashboard.weekly') }}:</small> <strong>{{ user?.credits?.weekly || 0 }}</strong></span>
           </div>
         </GCard>
         <GCard class="stat-card">
-          <GStatistic 
-            :title="t('dashboard.creditsConsumed')" 
-            :value="creditsConsumedThisMonth"
-            prefix="💳"
-          />
+          <GStatistic :title="t('dashboard.creditsConsumed')" :value="creditsConsumedThisMonth" prefix="💳" />
           <div class="stat-progress">
             <div class="progress-bar" :style="{ width: creditUsagePercent + '%' }"></div>
           </div>
         </GCard>
         <GCard class="stat-card plan-card">
-          <GStatistic 
-            :title="t('dashboard.currentMembership')" 
-            :value="0"
-          >
+          <GStatistic :title="t('dashboard.currentMembership')" :value="0">
             <template #prefix>⭐</template>
             <template #default>
               <span class="plan-name">{{ user?.subscription?.plan?.toUpperCase() || 'FREE' }}</span>
             </template>
           </GStatistic>
-          <GButton link size="sm" @click="handleCommand('profile')" class="upgrade-btn">{{ t('dashboard.upgrade') }}</GButton>
+          <GButton link size="sm" @click="handleCommand('profile')" class="upgrade-btn">{{ t('dashboard.upgrade') }}
+          </GButton>
         </GCard>
       </div>
 
@@ -55,29 +46,21 @@
         <div class="section-header">
           <h2>{{ t('dashboard.recentProjects') }}</h2>
         </div>
-        
+
         <div v-if="loadingProjects" class="loading-state">
           <GCard v-for="i in 3" :key="i" class="skeleton-card"></GCard>
         </div>
 
         <div v-else-if="projects.length > 0" class="projects-grid">
-          <GCard
-            v-for="project in projects"
-            :key="project._id"
-            class="project-card"
-            @click="router.push(`/projects/${project._id}/editor`)"
-            :bodyStyle="{ padding: '0px !important' }"
-          >
+          <GCard v-for="project in projects" :key="project._id" class="project-card"
+            @click="router.push(`/projects/${project._id}/editor`)" :bodyStyle="{ padding: '0px !important' }">
             <div class="project-preview">
               <div class="status-badge" :class="project.status">{{ project.status.toUpperCase() }}</div>
               <div class="play-overlay">
                 <play-one theme="filled" size="32" fill="#fff" />
               </div>
-              <GMedia 
-                class="project-image" 
-                :src="project.storyboard?.segments?.[0]?.sceneImage" 
-                alt="Project Thumbnail"
-              >
+              <GMedia class="project-image" :src="project.storyboard?.segments?.[0]?.sceneImage"
+                alt="Project Thumbnail">
                 <template #error>
                   <div class="image-placeholder">
                     <play-one theme="filled" size="32" fill="#fff" />
@@ -97,44 +80,72 @@
             <div class="empty-icon">🎞️</div>
             <h3>{{ t('dashboard.noProjects') }}</h3>
             <p>{{ t('dashboard.bringVision') }}</p>
-            <GButton type="primary" @click="router.push('/projects/new')">{{ t('dashboard.createProject') }}</GButton>
+            <GButton type="primary" @click="showCreationDialog = true">{{ t('dashboard.createProject') }}</GButton>
           </GCard>
         </div>
       </div>
     </div>
+
+    <ProjectCreationDialog v-model="showCreationDialog" @select="handleProjectCreation" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { PlayOne } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
-import GCard from '@/components/ui/GCard.vue'
-import GStatistic from '@/components/ui/GStatistic.vue'
-import GButton from '@/components/ui/GButton.vue'
-import GMedia from '@/components/ui/GMedia.vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useProjectStore } from '@/stores/project'
 import { storeToRefs } from 'pinia'
-import { getFileUrl } from '@/utils/api'
+import { PlayOne, Star, Credit } from '@icon-park/vue-next'
+import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue'
+import { useTranslations } from '@/composables/useTranslations'
 
 const { t, setLocale } = useTranslations()
 const router = useRouter()
 const userStore = useUserStore()
 const projectStore = useProjectStore()
+const showCreationDialog = ref(false)
 
 const { user } = storeToRefs(userStore)
 const { projects, loadingList: loadingProjects } = storeToRefs(projectStore)
+
+const handleProjectCreation = (type: string) => {
+  switch (type) {
+    case 'ai-video':
+    case 'script-to-video':
+      router.push('/projects/new')
+      break
+    case 'blank':
+      router.push('/projects/new?mode=blank')
+      break
+    case 'product-ads':
+      router.push('/projects/new?mode=product-ads')
+      break
+    case 'avatar':
+      router.push('/projects/new?mode=avatar')
+      break
+    case 'clone-style':
+      router.push('/projects/new?mode=clone')
+      break
+    case 'presentation':
+      router.push('/projects/new?mode=presentation')
+      break
+    case 'record':
+      router.push('/recorder')
+      break
+    default:
+      router.push('/projects/new')
+  }
+}
 
 const creditsConsumedThisMonth = computed(() => {
   if (!user.value?.creditLogs) return 0
   const now = new Date()
   const thisMonth = user.value.creditLogs.filter((log: any) => {
     const logDate = new Date(log.timestamp)
-    return log.type === 'consumed' && 
-           logDate.getMonth() === now.getMonth() && 
-           logDate.getFullYear() === now.getFullYear()
+    return log.type === 'consumed' &&
+      logDate.getMonth() === now.getMonth() &&
+      logDate.getFullYear() === now.getFullYear()
   })
   return thisMonth.reduce((sum: number, log: any) => sum + log.amount, 0)
 })
@@ -153,10 +164,10 @@ const handleCommand = (cmd: string) => {
 
 const initializeData = async () => {
   try {
-    if(!user.value){
+    if (!user.value) {
       await userStore.fetchProfile()
     }
-    
+
     if (user.value?.language) {
       setLocale(user.value.language)
     }
@@ -209,7 +220,10 @@ onMounted(initializeData)
   display: flex;
   flex-direction: column;
   gap: 16px;
-  :deep(.g-card__body) { padding: 24px; }
+
+  :deep(.g-card__body) {
+    padding: 24px;
+  }
 }
 
 .stat-progress {
@@ -244,16 +258,16 @@ onMounted(initializeData)
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  
+
   span {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
+
     small {
       opacity: 0.7;
     }
-    
+
     strong {
       color: #fff;
       font-weight: 600;
@@ -269,6 +283,7 @@ onMounted(initializeData)
 
 .projects-section {
   margin-top: 60px;
+
   h2 {
     font-size: 24px;
     font-weight: 700;
@@ -285,24 +300,33 @@ onMounted(initializeData)
 .project-card {
   overflow: hidden;
   cursor: pointer;
-  :deep(.g-card__body) { padding: 0; }
+
+  :deep(.g-card__body) {
+    padding: 0;
+  }
+
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   &:hover {
     transform: translateY(-8px);
-    .play-overlay { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+
+    .play-overlay {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
   }
 }
 
 .project-preview {
   aspect-ratio: 16/9;
-  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
   position: relative;
 
   .project-image {
     width: 100%;
     height: 100%;
     z-index: 1;
+
     .image-placeholder {
       width: 100%;
       height: 100%;
@@ -327,9 +351,17 @@ onMounted(initializeData)
   backdrop-filter: blur(10px);
   z-index: 2;
 
-  &.completed { color: #4ade80; }
-  &.draft { color: rgba(255, 255, 255, 0.5); }
-  &.generating { color: #fbbf24; }
+  &.completed {
+    color: #4ade80;
+  }
+
+  &.draft {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  &.generating {
+    color: #fbbf24;
+  }
 }
 
 .play-overlay {
@@ -339,7 +371,7 @@ onMounted(initializeData)
   transform: translate(-50%, -50%);
   opacity: 0;
   transition: all 0.3s;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -371,9 +403,21 @@ onMounted(initializeData)
   max-width: 600px;
   margin: 100px auto;
 
-  .empty-icon { font-size: 64px; margin-bottom: 24px; }
-  h3 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
-  p { color: rgba(255, 255, 255, 0.6); margin-bottom: 32px; }
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 32px;
+  }
 }
 
 /* Animations */
@@ -392,8 +436,16 @@ onMounted(initializeData)
 }
 
 @keyframes pulse {
-  0% { opacity: 0.5; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.5; }
+  0% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
 }
 </style>

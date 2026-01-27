@@ -13,10 +13,14 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  loading: {
+    type: Boolean,
+    default: false
+  }
 });
 
 const editor = useEditorStore();
-const { pages, page : activePage, dimension } = storeToRefs(editor);
+const { pages, page: activePage, dimension } = storeToRefs(editor);
 const sceneWrapper = ref<HTMLElement | null>(null);
 const container = ref<HTMLElement | null>(null);
 const { instance } = storeToRefs(editor);
@@ -58,7 +62,7 @@ const computeStyle = () => {
 };
 
 watch([sceneWrapper, elements], (value) => {
-  if(value){
+  if (value) {
     computeStyle();
   }
 })
@@ -80,16 +84,16 @@ watch(artboard, (value) => {
 
 const handleSceneAction = (cmd) => {
   const page = props.page;
-  if(cmd == "up"){
+  if (cmd == "up") {
     editor.swapPage(page, page - 1);
   }
-  else if(cmd == "down"){
+  else if (cmd == "down") {
     editor.swapPage(page, page + 1);
   }
-  else if(cmd == "copy"){
+  else if (cmd == "copy") {
     editor.copyPage(page)
   }
-  else if(cmd == "delete"){
+  else if (cmd == "delete") {
     editor.deletePage(page);
   }
 }
@@ -97,13 +101,14 @@ const handleSceneAction = (cmd) => {
 </script>
 
 <template>
-  <div ref="container" class="relative p-0 h-full" :style="{backgroundColor: backgroundColor}">
+  <div ref="container" class="relative p-0 h-full" :style="{ backgroundColor: backgroundColor as string }">
     <div v-if="elements && elements.length > 0" ref="sceneWrapper" class="scene-wrapper" :style="style">
-      <BaseElement 
-        v-for="(element,index) in elements" :key="index" :page="page" :element="element" :scale="1"
-      />
+      <BaseElement v-for="(element, index) in elements" :key="index" :page="page" :element="element" :scale="1" />
     </div>
-    <el-empty v-else :image-size="32" class="" :description="'Scene ' + (page + 1)"/>
+    <div v-else-if="loading" class="w-full h-full flex items-center justify-center bg-white/5 animate-pulse">
+      <div class="h-8 w-8 rounded-full bg-white/10"></div>
+    </div>
+    <el-empty v-else :image-size="32" class="" :description="'Scene ' + (page + 1)" />
     <!-- <el-dropdown @command="handleSceneAction" class="absolute right-1 top-1 z-10" trigger="hover">
       <el-button type="primary" text circle @click.stop.prevent="">
         <MoreOne :size="15" />
@@ -124,7 +129,7 @@ const handleSceneAction = (cmd) => {
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>
-    </el-dropdown> -->
+</el-dropdown> -->
   </div>
 </template>
 

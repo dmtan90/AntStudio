@@ -7,17 +7,15 @@ export interface AuthRequest extends Request {
         userId: string;
         email: string;
         role: string;
+        currentOrganizationId?: string;
     };
 }
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        // Try to get token from Authorization header first, then from cookie
         let token = extractTokenFromHeader(req.headers.authorization);
-
-        if (!token) {
-            token = extractTokenFromCookie(req.headers.cookie);
-        }
+        if (!token) token = extractTokenFromCookie(req.headers.cookie);
+        if (!token && req.body && req.body.token) token = req.body.token;
 
         if (!token) {
             return res.status(401).json({ success: false, data: null, error: 'Authentication required' });
@@ -28,7 +26,6 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
             return res.status(401).json({ success: false, data: null, error: 'Invalid or expired token' });
         }
 
-        // Verify user still exists and is active
         const user = await User.findById(decoded.userId);
         if (!user || !user.isActive) {
             return res.status(401).json({ success: false, data: null, error: 'User not found or inactive' });

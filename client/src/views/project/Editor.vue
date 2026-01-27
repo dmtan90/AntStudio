@@ -1,52 +1,28 @@
 <template>
-  <div 
-    class="project-editor-layout h-screen bg-black text-white overflow-hidden flex flex-col"
-  >
+  <div class="project-editor-layout h-screen bg-black text-white overflow-hidden flex flex-col">
     <!-- Header Bar -->
-    <ProjectEditorHeader 
-      v-if="editorMode !== 'studio'"
-      :left-visible="isLeftVisible"
-      :right-visible="isRightVisible"
-      @toggle-left="isLeftVisible = !isLeftVisible"
-      @toggle-right="isRightVisible = !isRightVisible"
-      @export="handleExportAction"
-      @view-mode="handleViewMode"
-    />
+    <ProjectEditorHeader v-if="editorMode !== 'studio'" :left-visible="isLeftVisible" :right-visible="isRightVisible"
+      @toggle-left="isLeftVisible = !isLeftVisible" @toggle-right="isRightVisible = !isRightVisible"
+      @export="handleExportAction" @view-mode="handleViewMode" />
 
     <div class="editor-body">
-      <StudioEditor v-if="editorMode === 'studio'" :project="project"/>
+      <StudioEditor v-if="editorMode === 'studio'" :project="project" />
       <template v-else>
         <!-- Left Sidebar: Navigation -->
-        <aside 
-          v-show="isLeftVisible"
-          class="left-sidebar-nav"
-          :style="{ width: isLeftVisible ? '180px' : '0' }"
-        >
+        <aside v-show="isLeftVisible" class="left-sidebar-nav" :style="{ width: isLeftVisible ? '180px' : '0' }">
           <div class="p-5 flex flex-col gap-2" style="width: 180px">
-            <div 
-              class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all" 
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all"
               :class="activeTab === 'storyboard' ? 'bg-white/10 text-white' : 'text-[#888] hover:bg-white/5 hover:text-[#ccc]'"
-              @click="changeTab('storyboard')"
-            >
+              @click="changeTab('storyboard')">
               <movie-board theme="outline" size="20" />
               <span class="text-sm font-medium">{{ t('projects.editor.storyboard.title') }}</span>
             </div>
-            <div 
-              class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all" 
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all"
               :class="activeTab === 'timeline' ? 'bg-white/10 text-white' : 'text-[#888] hover:bg-white/5 hover:text-[#ccc]'"
-              @click="changeTab('timeline')"
-            >
+              @click="changeTab('timeline')">
               <film theme="outline" size="20" />
               <span class="text-sm font-medium">{{ t('projects.editor.timeline.title') }}</span>
             </div>
-            <!-- <div 
-              class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all" 
-              :class="activeTab === 'advanced' ? 'bg-white/10 text-white' : 'text-[#888] hover:bg-white/5 hover:text-[#ccc]'"
-              @click="changeTab('advanced')"
-            >
-              <magic theme="outline" size="20" />
-              <span class="text-sm font-medium">Advanced</span>
-            </div> -->
           </div>
         </aside>
 
@@ -55,29 +31,14 @@
           <div v-if="loading" class="p-10 h-full">
             <el-skeleton :rows="10" animated />
           </div>
-          
+
           <template v-if="project">
-            <ProjectStoryboard 
-              v-if="activeTab === 'storyboard'"
-              :project="project"
-              :loading-states="generatingStates"
-              @regenerate-character="handleRegenerateCharacter"
-              @upload-character-image="handleUploadCharacterImage"
-              @generate-frame="handleGenerateFrame"
-              @generate-video="handleGenerateVideo"
-              @upload-image-video="handleUploadImageVideo"
-              @regenerate-all-characters="handleRegenerateAllCharacters"
-              @generate-all-frames="handleGenerateAllFrames"
-              @generate-all-videos="handleGenerateAllVideos"
-            />
-            <ProjectTimeline 
-              :project="project" 
-              v-if="activeTab === 'timeline'"
-            />
-            <!-- <StudioEditor 
-              v-if="activeTab === 'advanced'"
-              :project="project"
-            /> -->
+            <ProjectStoryboard v-if="activeTab === 'storyboard'" :project="project" :loading-states="generatingStates"
+              @regenerate-character="handleRegenerateCharacter" @upload-character-image="handleUploadCharacterImage"
+              @generate-frame="handleGenerateFrame" @generate-video="handleGenerateVideo"
+              @upload-image-video="handleUploadImageVideo" @regenerate-all-characters="handleRegenerateAllCharacters"
+              @generate-all-frames="handleGenerateAllFrames" @generate-all-videos="handleGenerateAllVideos" />
+            <ProjectTimeline :project="project" v-if="activeTab === 'timeline'" />
           </template>
           <div v-else-if="!loading" class="p-10">
             <el-skeleton :rows="10" animated />
@@ -86,65 +47,46 @@
       </template>
 
       <!-- Resize Handle -->
-      <div 
-        v-show="isRightVisible"
-        class="resize-handle"
-        @mousedown="startResizing"
-      />
+      <div v-show="isRightVisible" class="resize-handle" @mousedown="startResizing" />
 
       <!-- Right Sidebar: Chat & AI Assistant -->
-      <aside 
-        v-show="isRightVisible"
-        class="right-sidebar-panel"
-        :style="{ width: isRightVisible ? `${rightWidth}px` : '0' }"
-      >
+      <aside v-show="isRightVisible" class="right-sidebar-panel"
+        :style="{ width: isRightVisible ? `${rightWidth}px` : '0' }">
         <div class="px-5 py-4 border-b border-white/5 text-[13px] font-semibold text-[#aaa] flex items-center gap-2">
           <robot theme="outline" size="18" />
           <span>{{ t('projects.editor.assistant') }}</span>
         </div>
-        
+
         <div class="chat-messages-container custom-scrollbar" ref="chatContainer">
-          <div v-for="(msg, index) in localMessages" :key="index" :class="['flex flex-col gap-4 w-full', msg.author === 'user' ? 'items-end' : '']">
+          <div v-for="(msg, index) in localMessages" :key="index"
+            :class="['flex flex-col gap-4 w-full', msg.author === 'user' ? 'items-end' : '']">
             <!-- User Message -->
-            <ProjectUserMessage 
-              v-if="msg.author === 'user'" 
-              :content="msg.content" 
-              :files="msg.files" 
-            ></ProjectUserMessage>
-            
+            <ProjectUserMessage v-if="msg.author === 'user'" :content="msg.content" :files="msg.files">
+            </ProjectUserMessage>
+
             <!-- AI Message -->
             <div v-else class="flex flex-col gap-4">
               <!-- Text Content -->
-              <div v-if="msg.content" class="text-white/90 text-sm leading-relaxed max-w-[85%] bg-white/10 backdrop-blur-md border border-white/10 px-6 py-4 rounded-[24px_24px_24px_8px] shadow-lg" v-html="formatContent(msg.content)"></div>
+              <div v-if="msg.content"
+                class="text-white/90 text-sm leading-relaxed max-w-[85%] bg-white/10 backdrop-blur-md border border-white/10 px-6 py-4 rounded-[24px_24px_24px_8px] shadow-lg"
+                v-html="formatContent(msg.content)"></div>
 
               <!-- Cards -->
-              <ProjectAnalysisCard 
-                v-if="msg.result?.analysis" 
-                :msg="{ result: { analysis: msg.result.analysis, language: project?.scriptAnalysis?.language || 'English' }, expandAnalysis: false }" 
-              />
+              <ProjectAnalysisCard v-if="msg.result?.analysis"
+                :msg="{ result: { analysis: msg.result.analysis, language: project?.scriptAnalysis?.language || 'English' }, expandAnalysis: false }" />
 
-              <ProjectBriefCard 
-                v-if="msg.result?.creativeBrief" 
+              <ProjectBriefCard v-if="msg.result?.creativeBrief"
                 :msg="{ result: { creativeBrief: msg.result.creativeBrief, analysis: { overview: { duration: '60s' } }, language: project?.scriptAnalysis?.language || 'English' }, expandBrief: false }"
-                :aspect-ratio="project.aspectRatio"
-              />
+                :aspect-ratio="project.aspectRatio" />
 
-              <ProjectStoryboardCard 
-                v-if="msg.result?.storyboard" 
-                :msg="{ result: { storyboard: msg.result.storyboard, language: project?.scriptAnalysis?.language || 'English' }, expandStoryboard: false }"
-              />
-              
+              <ProjectStoryboardCard v-if="msg.result?.storyboard"
+                :msg="{ result: { storyboard: msg.result.storyboard, language: project?.scriptAnalysis?.language || 'English' }, expandStoryboard: false }" />
+
               <!-- Visual Path & Assets -->
-              <VisualGenPathCard 
-                v-if="msg.type === 'visual-path' && msg.result?.path" 
-                :content="msg.result.path"
-              />
+              <VisualGenPathCard v-if="msg.type === 'visual-path' && msg.result?.path" :content="msg.result.path" />
 
-              <VisualAssetsCard 
-                v-if="msg.type === 'visual-assets' && msg.result?.assets" 
-                :images="msg.result.assets"
-                :project-id="projectId"
-              />
+              <VisualAssetsCard v-if="msg.type === 'visual-assets' && msg.result?.assets" :images="msg.result.assets"
+                :project-id="projectId" />
             </div>
           </div>
           <!-- Thinking -->
@@ -154,15 +96,9 @@
         </div>
 
         <div class="p-2.5 border-t border-white/5 bg-black/20 relative">
-          <ProjectChatInputEditor 
-            v-model="inputMessage"
-            :loading="processing"
-            :selected-files="[]"
-            :quick-suggestions="quickSuggestions"
-            @handle-enter="handleSendMessage"
-            @start-analysis="handleSendMessage"
-            @apply-suggestion="handleApplySuggestion"
-          />
+          <ProjectChatInputEditor v-model="inputMessage" :loading="processing" :selected-files="[]"
+            :quick-suggestions="quickSuggestions" @handle-enter="handleSendMessage" @start-analysis="handleSendMessage"
+            @apply-suggestion="handleApplySuggestion" />
         </div>
       </aside>
     </div>
@@ -172,7 +108,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { 
+import {
   MovieBoard, Film, Robot, Peoples, Magic
 } from '@icon-park/vue-next'
 import { toast } from 'vue-sonner'
@@ -194,7 +130,7 @@ import VisualGenPathCard from '@/components/projects/new/VisualGenPathCard.vue'
 import VisualAssetsCard from '@/components/projects/new/VisualAssetsCard.vue'
 import ProjectAnalysisCard from '@/components/projects/new/ProjectAnalysisCard.vue'
 
-const { t } = useTranslations()
+const { t, currentLocale } = useTranslations()
 
 const route = useRoute()
 const projectId = route.params.id as string
@@ -215,7 +151,6 @@ const quickSuggestions = ref<string[]>([])
 const currentStage = ref('planning_confirmed')
 const project = computed(() => projectStore.currentProject)
 const activeTab = ref('storyboard')
-// const activeTab = ref('timeline')
 
 const messages = computed(() => projectStore.currentProject?.chatHistory || [])
 const inputMessage = ref('')
@@ -264,7 +199,7 @@ const handleExportAction = async (command: string) => {
       const response = await projectStore.assembleVideo(projectId)
       toast.success(t('projects.editor.video.completed'))
       if (response.project?.finalVideo?.s3Url) {
-         window.open(response.project.finalVideo.s3Url, '_blank')
+        window.open(response.project.finalVideo.s3Url, '_blank')
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || t('projects.editor.video.error'))
@@ -276,7 +211,7 @@ const handleExportAction = async (command: string) => {
 
 const handleViewMode = (command: string) => {
   editorMode.value = command as any
-  if(command == 'studio'){
+  if (command == 'studio') {
     isRightVisible.value = false
   }
 }
@@ -297,7 +232,7 @@ const scrollToBottom = () => {
 // Lifecycle and Watchers
 onMounted(async () => {
   await projectStore.fetchProject(projectId)
-  await userStore.fetchProfile() // Ensure user is loaded for header
+  await userStore.fetchProfile()
   projectStore.syncAllAssets()
   scrollToBottom()
 })
@@ -310,318 +245,367 @@ watch(() => projectStore.currentProject?.chatHistory, (newHistory) => {
 }, { deep: true, immediate: true })
 
 const handleSendMessage = async (payload?: any) => {
-    let msgContent = inputMessage.value
-    if (typeof payload === 'string') {
-        msgContent = payload
-    }
-    
-    if (!msgContent.trim()) return
-    
-    const lastMsg = messages.value[messages.value.length - 1];
+  let msgContent = inputMessage.value
+  if (typeof payload === 'string') {
+    msgContent = payload
+  }
 
-    // Add user message locally
+  if (!msgContent.trim()) return
+
+  const lastMsg = messages.value[messages.value.length - 1];
+
+  // Add user message locally
+  if (projectStore.currentProject) {
+    if (!projectStore.currentProject.chatHistory) projectStore.currentProject.chatHistory = []
+    projectStore.currentProject.chatHistory.push({
+      author: 'user',
+      content: msgContent,
+      timestamp: new Date()
+    })
+  }
+
+  inputMessage.value = ''
+  processing.value = true
+  quickSuggestions.value = []
+  scrollToBottom()
+
+  try {
+    const lowerMsg = msgContent.toLowerCase()
+    
+    // Command detection (Language agnostic keywords)
+    const keywords = ['start', 'ok', 'yes', 'bắt đầu', 'được', 'triển', 'tiếp']
+    const isStartCommand = keywords.some(k => lowerMsg.includes(k)) && lastMsg?.type == "visual-guide"
+
+    if (isStartCommand || lowerMsg.includes('visual plan') || lowerMsg.includes('generate plan')) {
+      if (currentStage.value === 'planning_confirmed' || isStartCommand) {
+        await generateVisualStrategy()
+        return
+      }
+    }
+
+    await projectStore.chat(projectId, msgContent)
+
+  } catch (error) {
+    console.error('Chat API Error', error)
     if (projectStore.currentProject) {
-        if (!projectStore.currentProject.chatHistory) projectStore.currentProject.chatHistory = []
-        projectStore.currentProject.chatHistory.push({
-            author: 'user',
-            content: msgContent,
-            timestamp: new Date()
-        })
+      projectStore.currentProject.chatHistory.push({
+        author: 'ai',
+        content: t('projects.editor.chat.error'),
+        type: 'text',
+        timestamp: new Date()
+      })
     }
-    
-    inputMessage.value = ''
-    processing.value = true
-    quickSuggestions.value = [] // Clear suggestions while processing
+  } finally {
+    processing.value = false
     scrollToBottom()
-    
-    // Determine language from project analysis
-    const isVietnamese = project.value?.scriptAnalysis?.language === 'Vietnamese' || project.value?.scriptAnalysis?.language === 'vi'
-
-    try {
-        const lowerMsg = msgContent.toLowerCase()
-        const isStartCommand = ['start', 'ok', 'yes', 'bắt đầu', 'được'].some(k => lowerMsg.includes(k)) && lastMsg?.type == "visual-guide"
-        
-        if (isStartCommand || lowerMsg.includes('visual plan') || lowerMsg.includes('generate plan')) {
-             if (currentStage.value === 'planning_confirmed' || isStartCommand) {
-                  await generateVisualStrategy(isVietnamese)
-                  return
-             }
-        }
-
-        // General Chat API Call
-        await projectStore.chat(projectId, msgContent)
-
-    } catch (error) {
-        console.error('Chat API Error', error)
-        if (projectStore.currentProject) {
-            projectStore.currentProject.chatHistory.push({
-                author: 'ai',
-                content: t('projects.editor.chat.error'),
-                type: 'text',
-                timestamp: new Date()
-            })
-        }
-    } finally {
-        processing.value = false
-        scrollToBottom()
-    }
+  }
 }
 
-const generateVisualStrategy = async (isVietnamese: boolean) => {
-    try {
-        const result = await projectStore.generateVisualPlan(projectId)
-        
-        if (result.assets) {
-            if (!projectStore.currentProject.visualAssets) projectStore.currentProject.visualAssets = []
-            
-            result.assets.forEach((a: any) => {
-                if (!projectStore.currentProject.visualAssets.some((exist: any) => exist.name === a.name)) {
-                     projectStore.currentProject.visualAssets.push(a)
-                }
-                projectStore.syncAssetToElements(a.name, a.s3Key)
-            })
+const generateVisualStrategy = async () => {
+  try {
+    const result = await projectStore.generateVisualPlan(projectId)
 
-            await projectStore.updateProject({ 
-                visualAssets: projectStore.currentProject.visualAssets,
-                scriptAnalysis: projectStore.currentProject.scriptAnalysis,
-                storyboard: projectStore.currentProject.storyboard
-            })
+    if (result.assets) {
+      if (!projectStore.currentProject.visualAssets) projectStore.currentProject.visualAssets = []
+
+      result.assets.forEach((a: any) => {
+        if (!projectStore.currentProject.visualAssets.some((exist: any) => exist.name === a.name)) {
+          projectStore.currentProject.visualAssets.push(a)
         }
+        projectStore.syncAssetToElements(a.name, a.s3Key)
+      })
 
-        if (projectStore.currentProject) {
-            projectStore.currentProject.chatHistory.push({
-                author: 'ai',
-                type: 'visual-path',
-                result: {
-                    path: {
-                        steps: result.plan_steps
-                    }
-                },
-                timestamp: new Date()
-            })
-        }
-        scrollToBottom()
-
-        setTimeout(() => {
-            if (projectStore.currentProject) {
-                projectStore.currentProject.chatHistory.push({
-                    author: 'ai',
-                    type: 'visual-assets',
-                    result: {
-                        assets: result.assets
-                    },
-                    timestamp: new Date()
-                })
-            }
-            
-            quickSuggestions.value = isVietnamese 
-                ? [t('projects.editor.storyboard.regenerateAllFrames'), t('projects.editor.storyboard.regenerateAllVideos'), t('projects.detail.finalVideo')]
-                : [t('projects.editor.storyboard.regenerateAllFrames'), t('projects.editor.storyboard.regenerateAllVideos'), t('projects.detail.finalVideo')]
-                
-            // Handle different labels for suggestions if needed, but for now use existing keys
-            quickSuggestions.value = isVietnamese
-                ? ['Tạo khung hình tĩnh', 'Tạo chuyển động', 'Tạo nhạc nền']
-                : ['Generate Frames', 'Generate Motion', 'Generate Audio']
-                
-            scrollToBottom()
-            
-        }, 2000)
-
-    } catch (error) {
-        console.error('Failed to generate visual plan', error)
-        toast.error(t('projects.editor.chat.visualStrategyFailed'))
-    } finally {
-        processing.value = false
+      await projectStore.updateProject({
+        visualAssets: projectStore.currentProject.visualAssets,
+        scriptAnalysis: projectStore.currentProject.scriptAnalysis,
+        storyboard: projectStore.currentProject.storyboard
+      })
     }
+
+    if (projectStore.currentProject) {
+      projectStore.currentProject.chatHistory.push({
+        author: 'ai',
+        type: 'visual-path',
+        result: {
+          path: {
+            steps: result.plan_steps
+          }
+        },
+        timestamp: new Date()
+      })
+    }
+    scrollToBottom()
+
+    setTimeout(() => {
+      if (projectStore.currentProject) {
+        projectStore.currentProject.chatHistory.push({
+          author: 'ai',
+          type: 'visual-assets',
+          result: {
+            assets: result.assets
+          },
+          timestamp: new Date()
+        })
+      }
+
+      // Localized Suggestions
+      quickSuggestions.value = [
+        t('projects.editor.storyboard.suggestions.generateFrames'),
+        t('projects.editor.storyboard.suggestions.generateMotion'),
+        t('projects.editor.storyboard.suggestions.generateAudio')
+      ]
+
+      scrollToBottom()
+    }, 2000)
+
+  } catch (error) {
+    console.error('Failed to generate visual plan', error)
+    toast.error(t('projects.editor.chat.visualStrategyFailed'))
+  } finally {
+    processing.value = false
+  }
 }
 
 const handleApplySuggestion = (sug: string) => {
-    handleSendMessage(sug)
+  handleSendMessage(sug)
 }
 
 // Loading States for storyboard items
 const generatingStates = ref<Record<string, boolean>>({})
 
-const handleRegenerateCharacter = async (char: any, index: number) => {
-    const id = `char-${index}`
-    generatingStates.value[id] = true
-    try {
-        const responseData = await projectStore.generateAsset(projectId, { 
-            assetName: `Element_${char.name}.img`,
-            description: char.description,
-            type: 'image',
-            characterNames: [char.name],
-            generationType: 'character'
-        })
+const pollAssetStatus = async (jobId: string, loadingKey: string) => {
+  if (!jobId) return;
 
-        if (responseData.s3Key) {
-            char.referenceImage = responseData.s3Key
-            projectStore.syncAssetToElements(`Element_${char.name}.img`, responseData.s3Key)
-            await projectStore.fetchProject(projectId)
-            return true
-        }
-    } catch (error) {
-        console.error(`Failed to regenerate character ${char.name}:`, error)
-        return false
-    } finally {
-        generatingStates.value[id] = false
+  const check = async () => {
+    try {
+      const res = await projectStore.getAssetStatus(projectId, jobId);
+      if (res.data?.status === 'completed') {
+        await projectStore.fetchProject(projectId);
+        generatingStates.value[loadingKey] = false;
+        toast.success(t('projects.editor.storyboard.assetReady'))
+        return true;
+      } else if (res.data?.status === 'failed') {
+        generatingStates.value[loadingKey] = false;
+        toast.error(res.data?.error || t('common.failed'))
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('[Polling] Error:', e);
+      return false;
     }
+  };
+
+  const isDone = await check();
+  if (isDone) return;
+
+  const interval = setInterval(async () => {
+    const done = await check();
+    if (done) clearInterval(interval);
+  }, 5000);
+};
+
+const handleRegenerateCharacter = async (char: any, index: number) => {
+  const id = `char-${index}`
+  generatingStates.value[id] = true
+  try {
+    const responseData = await projectStore.generateAsset(projectId, {
+      assetName: `Element_${char.name}.img`,
+      description: char.description,
+      type: 'image',
+      characterNames: [char.name],
+      generationType: 'character'
+    })
+
+    const data = responseData.data || responseData;
+    const jobId = data.jobId || data.video?.veoJobId;
+
+    if (data.s3Key) {
+      char.referenceImage = data.s3Key
+      projectStore.syncAssetToElements(`Element_${char.name}.img`, data.s3Key)
+      await projectStore.fetchProject(projectId)
+      generatingStates.value[id] = false
+      return true
+    } else if (jobId) {
+      toast.info(t('projects.editor.storyboard.backgroundJobStarted'));
+      pollAssetStatus(jobId, id);
+      return true;
+    }
+  } catch (error) {
+    console.error(`Failed to regenerate character ${char.name}:`, error)
+    generatingStates.value[id] = false
+    return false
+  }
 }
 
 const handleRegenerateAllCharacters = async () => {
-    const chars = project.value?.scriptAnalysis?.characters || []
-    if (chars.length === 0) return
-    
-    toast.info(`${t('projects.editor.storyboard.batchStart')} ${chars.length} ${t('projects.detail.characters')}...`)
-    let successCount = 0
-    for (let i = 0; i < chars.length; i++) {
-        const success = await handleRegenerateCharacter(chars[i], i)
-        if (success) successCount++
-    }
-    toast.success(`${t('projects.editor.storyboard.batchComplete')} ${successCount}/${chars.length} ${t('projects.editor.storyboard.charsUpdated')}`)
+  const chars = project.value?.scriptAnalysis?.characters || []
+  if (chars.length === 0) return
+
+  toast.info(`${t('projects.editor.storyboard.batchStart')} ${chars.length} ${t('projects.detail.characters')}...`)
+  let successCount = 0
+  for (let i = 0; i < chars.length; i++) {
+    const success = await handleRegenerateCharacter(chars[i], i)
+    if (success) successCount++
+  }
+  toast.success(`${t('projects.editor.storyboard.batchComplete')} ${successCount}/${chars.length} ${t('projects.editor.storyboard.charsUpdated')}`)
 }
 
 const handleGenerateFrame = async (seg: any) => {
-    const id = `seg-${seg.order}`
-    generatingStates.value[id] = true
-    try {
-        const responseData = await projectStore.generateAsset(projectId, { 
-            assetName: `Scene_${seg.order}.img`,
-            description: seg.description,
-            type: 'image',
-            segmentId: seg._id,
-            characterNames: seg.characters,
-            generationType: 'scene'
-        })
+  const id = `seg-${seg.order}`
+  generatingStates.value[id] = true
+  try {
+    const responseData = await projectStore.generateAsset(projectId, {
+      assetName: `Scene_${seg.order}.img`,
+      description: seg.description,
+      type: 'image',
+      segmentId: seg._id,
+      characterNames: seg.characters,
+      generationType: 'scene'
+    })
 
-        if (responseData.s3Key) {
-            seg.sceneImage = responseData.s3Key
-            projectStore.syncAssetToElements(`Scene_${seg.order}.img`, responseData.s3Key)
-            await projectStore.fetchProject(projectId)
-            return true
-        }
-    } catch (error) {
-        console.error(`Failed to generate frame for ${seg.title}:`, error)
-        return false
-    } finally {
-        generatingStates.value[id] = false
+    const data = responseData.data || responseData;
+    const jobId = data.jobId || data.video?.veoJobId;
+
+    if (data.s3Key) {
+      seg.sceneImage = data.s3Key
+      projectStore.syncAssetToElements(`Scene_${seg.order}.img`, data.s3Key)
+      await projectStore.fetchProject(projectId)
+      generatingStates.value[id] = false
+      return true
+    } else if (jobId) {
+      toast.info(t('projects.editor.storyboard.backgroundJobStarted'));
+      pollAssetStatus(jobId, id);
+      return true;
     }
+  } catch (error) {
+    console.error(`Failed to generate frame for ${seg.title}:`, error)
+    generatingStates.value[id] = false
+    return false
+  }
 }
 
 const handleGenerateAllFrames = async () => {
-    const segments = project.value?.storyboard?.segments || []
-    if (segments.length === 0) return
+  const segments = project.value?.storyboard?.segments || []
+  if (segments.length === 0) return
 
-    toast.info(`${t('projects.editor.storyboard.batchStart')} ${segments.length} ${t('projects.editor.storyboard.title')}...`)
-    let successCount = 0
-    for (const seg of segments) {
-        const success = await handleGenerateFrame(seg)
-        if (success) successCount++
-    }
-    toast.success(`${t('projects.editor.storyboard.batchComplete')} ${successCount}/${segments.length} ${t('projects.editor.storyboard.framesUpdated')}`)
+  toast.info(`${t('projects.editor.storyboard.batchStart')} ${segments.length} ${t('projects.editor.storyboard.title')}...`)
+  let successCount = 0
+  for (const seg of segments) {
+    const success = await handleGenerateFrame(seg)
+    if (success) successCount++
+  }
+  toast.success(`${t('projects.editor.storyboard.batchComplete')} ${successCount}/${segments.length} ${t('projects.editor.storyboard.framesUpdated')}`)
 }
 
 const handleGenerateVideo = async (seg: any) => {
-    const id = `video-${seg.order}`
-    generatingStates.value[id] = true
-    try {
-        const responseData = await projectStore.generateAsset(projectId, {
-            segmentId: seg._id,
-            type: 'video'
-        })
+  const id = `video-${seg.order}`
+  generatingStates.value[id] = true
+  try {
+    const responseData = await projectStore.generateAsset(projectId, {
+      segmentId: seg._id,
+      type: 'video'
+    })
 
-        if (responseData.s3Key) {
-            if (!seg.generatedVideo) seg.generatedVideo = {}
-            seg.generatedVideo.s3Key = responseData.s3Key
-            projectStore.syncAssetToElements(`segment_${seg.order}.mp4`, responseData.s3Key)
-            await projectStore.fetchProject(projectId)
-            return true
-        }
-    } catch (error: any) {
-        console.error(`Failed to generate video for ${seg.title}:`, error)
-        toast.error(error.response?.data?.message || `Failed to generate video for ${seg.title}`)
-        return false
-    } finally {
-        generatingStates.value[id] = false
+    const data = responseData.data || responseData;
+    const jobId = data.jobId || data.video?.veoJobId;
+
+    if (data.s3Key) {
+      if (!seg.generatedVideo) seg.generatedVideo = {}
+      seg.generatedVideo.s3Key = data.s3Key
+      projectStore.syncAssetToElements(`segment_${seg.order}.mp4`, data.s3Key)
+      await projectStore.fetchProject(projectId)
+      generatingStates.value[id] = false
+      return true
+    } else if (jobId) {
+      toast.info(t('projects.editor.storyboard.backgroundJobStarted'));
+      pollAssetStatus(jobId, id);
+      return true;
     }
+  } catch (error: any) {
+    console.error(`Failed to generate video for ${seg.title}:`, error)
+    toast.error(error.response?.data?.message || t('common.failed'))
+    generatingStates.value[id] = false
+    return false
+  }
 }
 
 const handleGenerateAllVideos = async () => {
-    const segments = project.value?.storyboard?.segments || []
-    if (segments.length === 0) return
+  if (!project.value || projectStore.isProcessing) return
 
-    toast.info(`${t('projects.editor.storyboard.videoBatchStart')} ${segments.length} ${t('projects.new.flow.segments')}...`)
-    let successCount = 0
-    for (const seg of segments) {
-        const success = await handleGenerateVideo(seg)
-        if (success) successCount++
-    }
-    toast.success(`${t('projects.editor.storyboard.batchComplete')} ${successCount}/${segments.length} ${t('projects.editor.storyboard.videosRequested')}`)
+  try {
+    toast.info(t('projects.editor.storyboard.videoBatchStart'))
+    await projectStore.generateStoryboardAssetsBatch(projectId)
+    await projectStore.fetchProject(projectId)
+  } catch (error: any) {
+    console.error('Batch generation failed:', error)
+    toast.error(error.response?.data?.message || t('common.failed'))
+  }
 }
 
 // Upload handlers
 const handleUploadCharacterImage = async (char: any, index: number) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    
-    input.onchange = async (e: Event) => {
-        const file = (e.target as HTMLInputElement).files?.[0]
-        if (!file) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
 
-        const id = `char-${index}`
-        generatingStates.value[id] = true
-        
-        try {
-            const responseData = await projectStore.uploadAsset(projectId, file, 'character', index.toString())
-            toast.success(t('projects.editor.uploadSuccess'))
-            if (responseData.s3Key) {
-                projectStore.syncAssetToElements(`Element_${char.name}.img`, responseData.s3Key)
-                char.referenceImage = responseData.s3Key
-            }
-        } catch (error) {
-            console.error(`Failed to upload character image:`, error)
-        } finally {
-            generatingStates.value[id] = false
-        }
+  input.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+
+    const id = `char-${index}`
+    generatingStates.value[id] = true
+
+    try {
+      const responseData = await projectStore.uploadAsset(projectId, file, 'character', index.toString())
+      toast.success(t('projects.editor.uploadSuccess'))
+      if (responseData.s3Key) {
+        projectStore.syncAssetToElements(`Element_${char.name}.img`, responseData.s3Key)
+        char.referenceImage = responseData.s3Key
+      }
+    } catch (error) {
+      console.error(`Failed to upload character image:`, error)
+    } finally {
+      generatingStates.value[id] = false
     }
-    
-    input.click()
+  }
+
+  input.click()
 }
 
 const handleUploadImageVideo = async (seg: any) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*,video/*'
-    
-    input.onchange = async (e: Event) => {
-        const file = (e.target as HTMLInputElement).files?.[0]
-        if (!file) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*,video/*'
 
-        const id = `seg-${seg.order}`
-        generatingStates.value[id] = true
-        
-        try {
-            const responseData = await projectStore.uploadAsset(projectId, file, 'segment', seg.order.toString())
-            toast.success(t('projects.editor.uploadSuccess'))
-            if (responseData.s3Key) {
-              if(file.type.startsWith('image/')){
-                seg.sceneImage = responseData.s3Key
-                projectStore.syncAssetToElements(`Scene_${seg.order}.img`, responseData.s3Key)
-              }else if(file.type.startsWith('video/')){
-                if (!seg.generatedVideo) seg.generatedVideo = {}
-                seg.generatedVideo.s3Key = responseData.s3Key
-                projectStore.syncAssetToElements(`video_${seg.order}.mp4`, responseData.s3Key)
-              }
-            }
-        } catch (error) {
-            console.error(`Failed to upload segment asset:`, error)
-        } finally {
-            generatingStates.value[id] = false
+  input.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+
+    const id = `seg-${seg.order}`
+    generatingStates.value[id] = true
+
+    try {
+      const responseData = await projectStore.uploadAsset(projectId, file, 'segment', seg.order.toString())
+      toast.success(t('projects.editor.uploadSuccess'))
+      if (responseData.s3Key) {
+        if (file.type.startsWith('image/')) {
+          seg.sceneImage = responseData.s3Key
+          projectStore.syncAssetToElements(`Scene_${seg.order}.img`, responseData.s3Key)
+        } else if (file.type.startsWith('video/')) {
+          if (!seg.generatedVideo) seg.generatedVideo = {}
+          seg.generatedVideo.s3Key = responseData.s3Key
+          projectStore.syncAssetToElements(`video_${seg.order}.mp4`, responseData.s3Key)
         }
+      }
+    } catch (error) {
+      console.error(`Failed to upload segment asset:`, error)
+    } finally {
+      generatingStates.value[id] = false
     }
-    
-    input.click()
+  }
+
+  input.click()
 }
 </script>
 
@@ -701,13 +685,22 @@ const handleUploadImageVideo = async (seg: any) => {
     background: rgba(255, 255, 255, 0.05);
   }
 
-  &:hover, &:active {
+  &:hover,
+  &:active {
     background: rgba(255, 255, 255, 0.1);
   }
 }
 
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
 
-.hidden { display: none; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.hidden {
+  display: none;
+}
 </style>

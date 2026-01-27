@@ -32,7 +32,7 @@ dragControl.src = DragControl;
 
 // This enables the WebGL pipeline required for 'multiply'
 (fabric as any).filterBackend = (fabric as any).initFilterBackend(null);
-console.log("isWebglSupported", fabric.isWebglSupported())
+console.log("isWebglSupported", (fabric as any).isWebglSupported())
 
 // Sets crossOrigin to 'anonymous' for all new Fabric images globally
 fabric.Image.prototype.crossOrigin = 'anonymous';
@@ -240,7 +240,7 @@ fabric.Canvas.prototype.indexOf = function (object) {
   return this._objects.findIndex((element) => element === object);
 };
 
-fabric.util.loadVideo = function (url, callback, _, crossOrigin) {
+(fabric as any).util.loadVideo = function (url: any, callback: any, _: any, crossOrigin: any) {
   const element = document.createElement("video");
 
   element.currentTime = 0;
@@ -350,7 +350,7 @@ fabric.Image.filters.SoftLightBlend = fabric.util.createClass(fabric.Image.filte
   }
 });
 
-fabric.Image.filters.SoftLightBlend.fromObject = fabric.Image.filters.BaseFilter.fromObject;
+(fabric.Image.filters.SoftLightBlend as any).fromObject = (fabric.Image.filters.BaseFilter as any).fromObject;
 
 fabric.Image.filters.SaturationBlend = fabric.util.createClass(fabric.Image.filters.BaseFilter, {
   type: 'SaturationBlend',
@@ -400,7 +400,7 @@ fabric.Image.filters.SaturationBlend = fabric.util.createClass(fabric.Image.filt
 });
 
 // 5. THE FIX: Attach the static fromObject method
-fabric.Image.filters.SaturationBlend.fromObject = fabric.Image.filters.BaseFilter.fromObject;
+(fabric.Image.filters.SaturationBlend as any).fromObject = (fabric.Image.filters.BaseFilter as any).fromObject;
 
 fabric.Image.filters.HardLightBlend = fabric.util.createClass(fabric.Image.filters.BaseFilter, {
   type: 'HardLightBlend',
@@ -451,4 +451,4 @@ fabric.Image.filters.HardLightBlend = fabric.util.createClass(fabric.Image.filte
 });
 
 // Important: Fix for the fromObject error
-fabric.Image.filters.HardLightBlend.fromObject = fabric.Image.filters.BaseFilter.fromObject;
+(fabric.Image.filters.HardLightBlend as any).fromObject = (fabric.Image.filters.BaseFilter as any).fromObject;

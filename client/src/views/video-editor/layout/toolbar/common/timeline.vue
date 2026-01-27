@@ -11,8 +11,14 @@ import { cn } from 'video-editor/lib/utils';
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
 const { canvas, selection, selectionActive: active, timeline, audio } = storeToRefs(canvasStore);
-const offsetMs = computed(() => active.value?.meta?.offset ?? active.value.offset*1000 ?? 0);
-const durationMs = computed(() => active.value?.meta?.duration ?? active.value.timeline*1000 ?? 0);
+const offsetMs = computed(() => {
+  const v = active.value as any;
+  return v?.meta?.offset !== undefined ? v.meta.offset : (v?.offset * 1000 || 0);
+});
+const durationMs = computed(() => {
+  const v = active.value as any;
+  return v?.meta?.duration !== undefined ? v.meta.duration : (v?.timeline * 1000 || 0);
+});
 const durationInSecond = computed({
   get(){
     return durationMs.value! / 1000;
@@ -43,14 +49,12 @@ const offsetInSecond = computed({
   }
 });
 
-const activeAnim = computed({
-  get(){
+const activeAnim = computed(() => {
     let state = false;
     if((active.value?.anim && active.value?.anim?.in?.name != "none" || active.value?.anim?.out?.name != "none" || active.value?.anim?.scene?.name != "none")){
       state = true;
     }
     return state;
-  }
 });
 
 watch([selection,active], (value) => {

@@ -39,7 +39,7 @@ export class EmailService {
         return this.transporter
     }
 
-    public async sendEmail(to: string, subject: string, html: string) {
+    public async sendEmail(to: string | any, subject?: string, html?: string) {
         try {
             const transporter = await this.createTransporter()
             if (!transporter) return
@@ -47,12 +47,17 @@ export class EmailService {
             const smtp = configService.smtp
             const from = `"${smtp.fromName}" <${smtp.fromEmail}>`
 
-            const info = await transporter.sendMail({
-                from,
-                to,
-                subject,
-                html
-            })
+            let mailOptions: any = { from };
+
+            if (typeof to === 'string') {
+                mailOptions.to = to;
+                mailOptions.subject = subject;
+                mailOptions.html = html;
+            } else {
+                mailOptions = { ...mailOptions, ...to };
+            }
+
+            const info = await transporter.sendMail(mailOptions)
 
             console.log('Message sent: %s', info.messageId)
             return info

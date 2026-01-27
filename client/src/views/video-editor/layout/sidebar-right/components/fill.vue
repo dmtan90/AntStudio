@@ -12,7 +12,7 @@ import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from "pinia";
 import { defaultFill, defaultGradient } from 'video-editor/fabric/constants';
-import { cn, createInstance } from 'video-editor/lib/utils';
+import { cn, createInstance } from '@/utils/ui';
 import { useMeasure } from 'video-editor/hooks/use-measure';
 import { FabricUtils } from 'video-editor/fabric/utils';
 
@@ -35,7 +35,7 @@ const computeColor = computed(() => {
   // console.log("color", selected);
   if (!selected.value?.fill) return defaultFill;
   if (typeof selected.value.fill === "string") return selected.value.fill;
-  return (selected.value.fill as fabric.Gradient).colorStops![index.value].color;
+  return ((selected.value.fill as any) as fabric.Gradient).colorStops![index.value].color;
 });
 
 // const mode = computed(() => {
@@ -63,7 +63,7 @@ const mode = computed({
 const colors = computed({
   get(){
     if (!selected.value || !selected.value.fill || typeof selected.value.fill === "string") return [];
-    return (selected.value.fill as fabric.Gradient).colorStops!;
+    return ((selected.value.fill as any) as fabric.Gradient).colorStops!;
   },
   set(value){
 
@@ -102,10 +102,10 @@ const onToggleFill = () => {
   }
 };
 
-const onChangeColor = (result: tinycolor) => {
+const onChangeColor = (result: any) => {
   // console.log("onChangeColor", result);
   const { _r, _g, _b, _a } = result;
-  const color = fabric.Color.fromRgba(`rgba(${_r},${_g},${_b},${_a || 1})`);
+  const color = (window as any).fabric.Color.fromRgba(`rgba(${_r},${_g},${_b},${_a || 1})`);
   const hex = color.toHexa();
 
   switch (mode.value) {
@@ -237,7 +237,7 @@ const modeOptions = [
         <!-- Picker Section -->
         <div class="flex flex-col gap-6">
           <div v-if="mode === 'gradient'" ref="containerRef" class="mb-2">
-            <GradientSlider :width="measure.width" :colors="colors" :coords="coords" :selected="index" @select="index = $event" @change="onChangeOffset" @rotate="onRotateGradient" />
+            <GradientSlider :width="(measure as any).width" :colors="colors" :coords="(coords as any)" :selected="index" @select="index = $event" @change="onChangeOffset" @rotate="onRotateGradient" />
           </div>
           
           <div class="rounded-2xl overflow-hidden border border-white/10 dark-picker-override shadow-2xl bg-black/20">

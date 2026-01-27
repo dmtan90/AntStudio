@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # DATABASE (High Availability)
+  # ==========================================
+  mongo-enterprise:
+    image: mongo:6.0
+    container_name: antflow-mongo-b2b
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - enterprise_mongo_data:/data/db
+    networks:
+      - internal-db-tier
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # BACKEND API (Auto-scaling ready)
+  # ==========================================
+  antflow-server-enterprise:
+    image: antflow/server-enterprise:latest
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: antflow-api-b2b
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo-enterprise:27017/antflow_b2b
+      - BASE_DOMAIN=${BASE_DOMAIN:-localhost}
+      - JWT_SECRET=${JWT_SECRET}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+    depends_on:
+      mongo-enterprise:
+        condition: service_healthy
+    networks:
+      - internal-db-tier
+      - external-web-tier
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  # ==========================================
+  # FRONTEND (Nginx Hardened)
+  # ==========================================
+  antflow-client-enterprise:
+    image: antflow/client-enterprise:latest
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: antflow-ui-b2b
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - external-web-tier
+    depends_on:
+      - antflow-server-enterprise
+
+networks:
+  internal-db-tier:
+    internal: true
+  external-web-tier:
+    driver: bridge
+
+volumes:
+  enterprise_mongo_data:
+    driver: local

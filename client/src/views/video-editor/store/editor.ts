@@ -1,6 +1,8 @@
-import { toRaw } from "vue"
+import { toRaw, markRaw } from "vue"
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { defineStore } from 'pinia';
+import { throttle } from 'lodash';
+import { useProjectStore } from '@/stores/project';
 
 import { Editor, type EditorStatus, type EditorMode, type ExportProgress, type ExportMode } from "video-editor/plugins/editor";
 import { Canvas } from "video-editor/plugins/canvas";
@@ -23,86 +25,95 @@ export const useEditorStore = defineStore('editor', {
 
   getters: {
     instance(state): Editor {
-      return state._editor;
+      return state._editor as any;
     },
     page(state): number {
-      return state._editor.page;
+      return (state._editor as any).page;
     },
     id(state): string {
-      return state._editor.id;
+      return (state._editor as any).id;
     },
     mode(state): EditorMode {
-      return state._editor.mode;
+      return (state._editor as any).mode;
     },
     name(state): string {
-      return state._editor.name;
+      return (state._editor as any).name;
     },
     status(state): EditorStatus {
-      return state._editor.status;
+      return (state._editor as any).status;
     },
     pages(state): Canvas[] {
-      return state._editor.pages as Canvas[];
+      return (state._editor as any).pages as Canvas[];
     },
     controller(state) {
-      return state._editor.controller;
+      return (state._editor as any).controller;
     },
     adapter(state) {
-      return state._editor.adapter;
+      return (state._editor as any).adapter;
     },
     prompter(state) {
-      return state._editor.prompter;
+      return (state._editor as any).prompter;
     },
     recorder(state) {
-      return state._editor.recorder;
+      return (state._editor as any).recorder;
     },
     saving(state): boolean {
-      return state._editor.saving;
+      return (state._editor as any).saving;
     },
     preview(state): boolean {
-      return state._editor.preview;
+      return (state._editor as any).preview;
     },
     exporting(state): ExportProgress {
-      return state._editor.exporting;
+      return (state._editor as any).exporting;
     },
     ffmpeg(state): FFmpeg {
-      // Using any cast as a last resort for vue-tsc if type inference fails on markRaw property
       return (toRaw(state._editor) as any).ffmpeg;
     },
     progress(state) {
-      return state._editor.progress;
+      return (state._editor as any).progress;
     },
     blob(state) {
-      return state._editor.blob;
+      return (state._editor as any).blob;
     },
     frame(state) {
-      return state._editor.frame;
+      return (state._editor as any).frame;
     },
     file(state): string {
-      return state._editor.file;
+      return (state._editor as any).file;
     },
     fps(state): number {
-      return state._editor.fps;
+      return (state._editor as any).fps;
     },
     codec(state): string {
-      return state._editor.codec;
+      return (state._editor as any).codec;
     },
     exports(state): ExportMode {
-      return state._editor.exports;
+      return (state._editor as any).exports;
     },
     sidebarLeft(state): string | null {
-      return state._editor.sidebarLeft;
+      return (state._editor as any).sidebarLeft;
     },
     sidebarRight(state): string | null {
-      return state._editor.sidebarRight;
+      return (state._editor as any).sidebarRight;
     },
     timelineOpen(state): boolean {
-      return state._editor.timelineOpen;
+      return (state._editor as any).timelineOpen;
+    },
+    timelineMode(state): 'compact' | 'layered' {
+      return (state._editor as any).timelineMode;
     },
     canvas(state): Canvas {
-      return state._editor?.canvas as Canvas;
+      return (state._editor as any)?.canvas as Canvas;
     },
     dimension(state) {
-      return state._editor?.dimension;
+      return (state._editor as any)?.dimension;
+    },
+    timelineZoom(state): number {
+      return (state._editor as any)?.timelineZoom || 1;
+    },
+    totalDuration(state): number {
+      const pages = (state._editor as any).pages as Canvas[];
+      return pages.reduce((acc, page) => acc + (page.timeline?.duration || 5000), 0);
     }
   },
 
@@ -112,6 +123,14 @@ export const useEditorStore = defineStore('editor', {
     },
 
     async initialize(mode?: EditorMode) {
+      this._editor.onModified = () => {
+        console.log("Editor modified, triggering autoSave");
+        this.autoSave();
+      };
+      this._editor.onSaveRequested = () => {
+        console.log("Save requested (Ctrl+S), triggering saveProject");
+        this.saveProject();
+      };
       return await this._editor.initialize(mode);
     },
 
@@ -191,6 +210,10 @@ export const useEditorStore = defineStore('editor', {
       this._editor.swapPage(oldIndex, newIndex);
     },
 
+    reorderPages(newPages: Canvas[]) {
+      this._editor.reorderPages(newPages);
+    },
+
     onChangeActivePage(index: number) {
       this._editor.onChangeActivePage(index);
     },
@@ -211,9 +234,53 @@ export const useEditorStore = defineStore('editor', {
       this._editor.changeStatus(status);
     },
 
+    onChangeTimelineMode(mode: 'compact' | 'layered') {
+      this._editor.onChangeTimelineMode(mode);
+    },
+
+    setTimelineZoom(zoom: number) {
+      this._editor.setTimelineZoom(zoom);
+    },
+
     resize(dimensions: { width: number; height: number }, changeArtboards: boolean = false) {
       this._editor.resize(dimensions, changeArtboards);
     },
+
+    async saveProject() {
+      if (this.instance.saving) return;
+      const projectStore = useProjectStore();
+
+      this.instance.saving = true;
+      try {
+        const pages = await this.exportTemplate();
+        const projectData = {
+          name: this.name,
+          dimension: this.dimension,
+          pages
+        };
+
+        // 1. Save to LocalStorage for crash recovery
+        localStorage.setItem(`antflow_autosave_${this.id}`, JSON.stringify(projectData));
+
+        // 2. Save to Server if it's a real project
+        if (this.id && !this.id.startsWith('preview_')) {
+          await projectStore.updateProject({
+            name: this.name,
+            data: JSON.stringify(projectData)
+          }, this.id);
+        }
+
+        console.log("Project saved successfully");
+      } catch (err) {
+        console.error("Failed to auto-save project:", err);
+      } finally {
+        this.instance.saving = false;
+      }
+    },
+
+    autoSave: throttle(async function (this: any) {
+      await this.saveProject();
+    }, 10000, { leading: false, trailing: true }),
 
     getCanvasInstance(page: number): any {
       return (this._editor.pages[page] as any)?.instance;

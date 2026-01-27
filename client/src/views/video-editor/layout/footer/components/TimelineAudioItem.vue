@@ -11,7 +11,7 @@ import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
 import { drawWaveformFromAudioBuffer } from 'video-editor/lib/media';
 import { formatMediaDuration } from 'video-editor/lib/time';
-import { cn } from 'video-editor/lib/utils';
+import { cn } from '@/utils/ui';
 
 import ElementDescription from './ElementDescription.vue';
 

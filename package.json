@@ -5,11 +5,16 @@
     "dev:client": "pnpm --filter client dev",
     "dev:server": "pnpm --filter server dev",
     "dev": "pnpm dev:client & pnpm dev:server",
+    "build": "pnpm run build:client && pnpm run build:server",
     "build:client": "pnpm --filter client build",
+    "build:client-only": "pnpm --filter client build:only",
     "build:server": "pnpm --filter server build",
     "install:all": "pnpm install"
   },
   "dependencies": {
     "form-data": "^4.0.5"
+  },
+  "devDependencies": {
+    "vite-plugin-pwa": "^1.2.0"
   }
 }
