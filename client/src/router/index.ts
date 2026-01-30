@@ -33,10 +33,18 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
-        path: '/projects/:id/edit',
-        name: 'project-edit',
+        path: '/projects/new',
+        name: 'projects-new',
+        component: () => import('@/views/project/New.vue'),
+        meta: { requiresAuth: true, layout: 'app' },
+        props: true
+    },
+    {
+        path: '/projects/:id/editor',
+        name: 'project-editor',
         component: () => import('@/views/video-editor/views/Editor.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
+        meta: { requiresAuth: true, layout: 'none' },
+        props: true
     },
     {
         path: '/marketplace',
@@ -199,6 +207,48 @@ const routes: Array<RouteRecordRaw> = [
         name: 'recorder',
         component: () => import('@/views/project/Recorder.vue'),
         meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/platforms/callback/:platform',
+        name: 'platform-callback',
+        component: () => import('@/views/user/PlatformCallback.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/platforms',
+        name: 'platforms',
+        component: () => import('@/views/user/Platforms.vue'),
+        meta: { requiresAuth: true, layout: 'app' }
+    },
+    {
+        path: '/platforms/cms',
+        name: 'platforms-cms',
+        component: () => import('@/views/user/PlatformCMS.vue'),
+        meta: { requiresAuth: true, layout: 'app' }
+    },
+    {
+        path: '/recordings',
+        name: 'recordings',
+        component: () => import('@/views/user/Recordings.vue'),
+        meta: { requiresAuth: true, layout: 'app' }
+    },
+    {
+        path: '/resources',
+        name: 'resources',
+        component: () => import('@/views/user/Resources.vue'),
+        meta: { requiresAuth: true, layout: 'app' }
+    },
+    {
+        path: '/license-portal',
+        name: 'license-portal',
+        component: () => import('@/views/user/LicensePortal.vue'),
+        meta: { requiresAuth: true, layout: 'app' }
+    },
+    {
+        path: '/admin/fleet',
+        name: 'admin-fleet',
+        component: () => import('@/views/admin/FleetManager.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, layout: 'app' }
     }
 ]
 

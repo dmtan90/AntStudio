@@ -1,4 +1,4 @@
-import osUtils from 'node-os-utils';
+import si from 'systeminformation';
 import mongoose from 'mongoose';
 import { SystemMetric } from '../models/SystemMetric.js';
 import { Project } from '../models/Project.js';
@@ -8,8 +8,6 @@ import { redisService } from './RedisService.js';
 import { systemLogger } from '../utils/systemLogger.js';
 import { getS3Client } from '../utils/s3.js';
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
-
-const { cpu, mem, drive } = (osUtils as any);
 
 /**
  * RecoveryService (Industrial Watchdog)
@@ -71,24 +69,32 @@ export class RecoveryService {
      * Collect system metrics using node-os-utils.
      */
     private async collectMetrics(): Promise<any> {
-        // node-os-utils usage is async
-        const cpuUsage = await cpu.usage();
-        const memInfo = await mem.info();
-        const driveInfo = await drive.info();
+        try {
+            const [cpu, memory, disk] = await Promise.all([
+                si.currentLoad(),
+                si.mem(),
+                si.fsSize()
+            ]);
 
-        return {
-            cpuUsage,
-            memory: {
-                total: memInfo.totalMemMb * 1024 * 1024,
-                used: memInfo.usedMemMb * 1024 * 1024,
-                free: memInfo.freeMemMb * 1024 * 1024
-            },
-            disk: {
-                total: driveInfo.totalGb * 1024 * 1024 * 1024,
-                used: driveInfo.usedGb * 1024 * 1024 * 1024
-            },
-            timestamp: new Date()
-        };
+            const rootDisk = disk.find((d: any) => d.mount === '/') || disk[0];
+
+            return {
+                cpuUsage: Math.round(cpu.currentLoad),
+                memory: {
+                    total: memory.total,
+                    used: memory.active,
+                    free: memory.available
+                },
+                disk: {
+                    total: rootDisk?.size || 0,
+                    used: rootDisk?.used || 0
+                },
+                timestamp: new Date()
+            };
+        } catch (error) {
+            console.error('[RecoveryService] Failed to collect metrics:', error);
+            throw error;
+        }
     }
 
     private async saveMetrics(metrics: any): Promise<void> {

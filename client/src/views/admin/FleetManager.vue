@@ -9,25 +9,29 @@
             <div class="flex items-center gap-6">
                 <div class="text-right">
                     <p class="text-[8px] font-black opacity-40 uppercase">Total Active Units</p>
-                    <p class="text-2xl font-black text-green-400">1,248</p>
+                    <p class="text-2xl font-black text-green-400">{{ stats.activeInstances }}</p>
                 </div>
                 <button
-                    class="px-8 py-3 bg-white text-black rounded-full text-[10px] font-black uppercase hover:bg-blue-500 hover:text-white transition-all">Strategic
-                    Report</button>
+                    class="px-8 py-3 bg-white text-black rounded-full text-[10px] font-black uppercase hover:bg-blue-500 hover:text-white transition-all"
+                    @click="fetchFleet">Refresh
+                    Command</button>
             </div>
         </header>
 
-        <div class="grid grid-cols-12 gap-8">
+        <div v-if="loading" class="p-20 text-center text-blue-400 font-bold animate-pulse">ESTABLISHING DOWNLINK...
+        </div>
+
+        <div v-else class="grid grid-cols-12 gap-8 shadow-inner">
             <!-- STAT PANELS -->
             <div class="col-span-12 md:col-span-3 glass-card p-8 rounded-3xl border border-white/5">
-                <p class="text-[10px] font-black opacity-30 uppercase mb-4 tracking-widest">Financial Health</p>
-                <h2 class="text-3xl font-black">$42.8K <span class="text-[10px] text-green-400">+14%</span></h2>
-                <p class="text-[8px] opacity-40 mt-2">Active Subscriptions: 142</p>
+                <p class="text-[10px] font-black opacity-30 uppercase mb-4 tracking-widest">Active Registries</p>
+                <h2 class="text-3xl font-black">{{ licenses.length }}</h2>
+                <p class="text-[8px] opacity-40 mt-2">Enterprise Tiers: {{ stats.enterpriseCount }}</p>
             </div>
             <div class="col-span-12 md:col-span-3 glass-card p-8 rounded-3xl border border-white/5">
-                <p class="text-[10px] font-black opacity-30 uppercase mb-4 tracking-widest">Unit Stability</p>
-                <h2 class="text-3xl font-black text-green-400">99.8%</h2>
-                <p class="text-[8px] opacity-40 mt-2">Critical Heat: 2 Units</p>
+                <p class="text-[10px] font-black opacity-30 uppercase mb-4 tracking-widest">Fleet Integrity</p>
+                <h2 class="text-3xl font-black text-green-400">{{ stats.stability }}%</h2>
+                <p class="text-[8px] opacity-40 mt-2">Status: OPTIMAL</p>
             </div>
             <div class="col-span-12 md:col-span-3 glass-card p-8 rounded-3xl border border-white/5">
                 <p class="text-[10px] font-black opacity-30 uppercase mb-4 tracking-widest">Global Ingest</p>
@@ -63,29 +67,36 @@
                             </tr>
                         </thead>
                         <tbody class="text-sm">
-                            <tr v-for="i in 5" :key="i"
+                            <tr v-for="lic in licenses" :key="lic._id"
                                 class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                                 <td class="p-6">
-                                    <p class="font-mono text-[10px] text-blue-400">LIC-8832-ADF9-{{ i }}</p>
-                                    <p class="text-[8px] opacity-30 mt-1 uppercase">CREATED: 2026-01-20</p>
+                                    <p class="font-mono text-[10px] text-blue-400">{{ lic.key }}</p>
+                                    <p class="text-[8px] opacity-30 mt-1 uppercase">EXPIRES: {{ formatDate(lic.endDate)
+                                        }}</p>
                                 </td>
-                                <td class="p-6 font-bold">specialist-{{ i }}@agrhub.com</td>
+                                <td class="p-6 font-bold">{{ lic.owner }}</td>
                                 <td class="p-6">
                                     <span
-                                        class="px-3 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[8px] font-black rounded-lg uppercase">ENTERPRISE</span>
+                                        :class="['px-3 py-1 text-[8px] font-black rounded-lg uppercase border',
+                                            lic.tier === 'enterprise' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20']">
+                                        {{ lic.tier }}
+                                    </span>
                                 </td>
-                                <td class="p-6 font-black">{{ i }} / 10 Units</td>
+                                <td class="p-6 font-black">{{ lic.activeInstances || 0 }} / {{ lic.instancesLimit }}
+                                    Units</td>
                                 <td class="p-6">
                                     <span class="flex items-center gap-2">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                                        <span class="text-[10px] font-bold uppercase text-green-400">ACTIVE</span>
+                                        <span
+                                            :class="['w-1.5 h-1.5 rounded-full animate-pulse', lic.status === 'valid' ? 'bg-green-400' : 'bg-red-400']"></span>
+                                        <span
+                                            :class="['text-[10px] font-bold uppercase', lic.status === 'valid' ? 'text-green-400' : 'text-red-400']">{{
+                                            lic.status }}</span>
                                     </span>
                                 </td>
                                 <td class="p-6 text-right">
                                     <button
-                                        class="text-[10px] font-black uppercase text-gray-500 hover:text-white transition-colors mr-6">View
-                                        Units</button>
-                                    <button
+                                        class="text-[10px] font-black uppercase text-gray-500 hover:text-white transition-colors mr-6">Telemetry</button>
+                                    <button @click="terminateLicense(lic)"
                                         class="text-[10px] font-black uppercase text-red-500/60 hover:text-red-400 transition-colors">Terminate</button>
                                 </td>
                             </tr>
@@ -98,7 +109,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import axios from 'axios';
+import { toast } from 'vue-sonner';
+
+const licenses = ref<any[]>([]);
+const loading = ref(true);
+
+const stats = computed(() => {
+    const total = licenses.value.reduce((acc, lic) => acc + (lic.instancesLimit || 0), 0);
+    const active = licenses.value.reduce((acc, lic) => acc + (lic.activeInstances || 0), 0);
+    const enterpriseCount = licenses.value.filter(l => l.tier === 'enterprise').length;
+
+    return {
+        totalInstances: total,
+        activeInstances: active,
+        enterpriseCount,
+        stability: active > 0 ? 99.9 : 0
+    };
+});
+
+const fetchFleet = async () => {
+    try {
+        loading.value = true;
+        const res = await axios.get('/api/license/all');
+        if (res.data.success) {
+            licenses.value = res.data.data.licenses;
+        }
+    } catch (e) {
+        toast.error('Tactical Downlink Failure: Could not reach Registry Hub.');
+    } finally {
+        loading.value = false;
+    }
+};
+
+const formatDate = (date: string) => new Date(date).toISOString().split('T')[0];
+
+const terminateLicense = async (lic: any) => {
+    if (!confirm(`CRITICAL ACTION: Terminate license registry ${lic.key}?`)) return;
+    toast.info('Initiating termination sequence...');
+    // Impl delete route if needed, for now just placeholder
+};
+
+onMounted(fetchFleet);
 </script>
 
 <style lang="scss" scoped>

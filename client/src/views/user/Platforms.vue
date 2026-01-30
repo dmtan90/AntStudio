@@ -20,7 +20,8 @@
         <connection theme="outline" size="40" />
       </div>
       <h3>No platforms connected yet</h3>
-      <p>Connect your YouTube, Facebook, or TikTok channels to start professional streaming and automated publishing.</p>
+      <p>Connect your YouTube, Facebook, or TikTok channels to start professional streaming and automated publishing.
+      </p>
       <button class="primary-btn secondary mt-6" @click="showAddModal = true">
         Get Started
       </button>
@@ -28,89 +29,143 @@
 
     <!-- Active Platforms Grid -->
     <div v-else class="platforms-grid">
-      <div v-for="account in accounts" :key="account._id" class="platform-card glass-card animate-slide-up" :class="{ 'error': account.status === 'error' }">
+      <div v-for="account in accounts" :key="account._id" class="platform-card cinematic-card animate-slide-up"
+        :class="{ 'error': account.status === 'error', [account.platform]: true }">
+
+        <div class="card-glow"></div>
+
         <div class="card-header">
-            <div class="platform-icon" :class="account.platform">
+          <div class="user-avatar-group">
+            <div class="avatar-ring">
+              <!-- <img v-if="account.avatarUrl" :src="getFileUrl(account.avatarUrl)" :alt="account.accountName" class="user-avatar" />
+              <div v-else class="avatar-placeholder">
+                <user-icon theme="outline" size="20" />
+              </div> -->
+              <el-image :src="getFileUrl(account.avatarUrl)" :alt="account.accountName" class="user-avatar">
+                <template #error>
+                  <div class="avatar-placeholder">
+                    <user-icon theme="outline" size="20" />
+                  </div>
+                </template>
+                <template #placeholder>
+                  <div class="avatar-placeholder">
+                    <user-icon theme="outline" size="20" />
+                  </div>
+                </template>
+              </el-image>
+            </div>
+            <div class="platform-mini-icon" :class="account.platform">
               <youtube v-if="account.platform === 'youtube'" theme="filled" />
               <facebook v-else-if="account.platform === 'facebook'" theme="filled" />
               <tiktok v-else-if="account.platform === 'tiktok'" theme="filled" />
               <broadcast v-else theme="filled" />
             </div>
-            <div class="status-badge" :class="account.status">
-              {{ account.status }}
-            </div>
+          </div>
+
+          <div class="status-indicator">
+            <div class="dot" :class="account.status"></div>
+            <span class="status-text">{{ account.status }}</span>
+          </div>
         </div>
 
-        <div class="account-info mt-4">
-          <h4 class="name">{{ account.accountName }}</h4>
-          <p class="type text-xs uppercase opacity-40 font-black tracking-widest">{{ account.platform }}</p>
+        <div class="account-details mt-6">
+          <h4 class="account-name">{{ account.accountName }}</h4>
+          <div class="meta-tags">
+            <span class="platform-tag">{{ account.platform }}</span>
+            <span v-if="account.credentials?.email || account.accountEmail" class="email-tag">
+              {{ account.credentials?.email || account.accountEmail }}
+            </span>
+          </div>
         </div>
 
-        <div class="card-footer mt-6">
-          <div class="actions">
-            <button class="icon-btn" title="Sync Status" @click="syncAccount(account)">
-              <refresh theme="outline" size="14" />
+        <div class="card-actions mt-8">
+          <router-link :to="{ name: 'platforms-cms', query: { accountId: account._id } }"
+            class="action-btn primary-action w-full">
+            <video-file theme="outline" size="16" />
+            <span>Manage Content</span>
+          </router-link>
+
+          <div class="utility-actions">
+            <button class="util-btn" @click="editAccount(account)" title="Settings">
+              <setting theme="outline" size="16" />
             </button>
-            <router-link :to="{ name: 'platforms-cms', query: { accountId: account._id }}" class="icon-btn" title="Manage Videos">
-              <video-file theme="outline" size="14" />
-            </router-link>
-            <button class="icon-btn delete" title="Disconnect" @click="disconnectAccount(account)">
-              <close theme="outline" size="14" />
+            <button class="util-btn" @click="syncAccount(account)" title="Sync Status">
+              <refresh theme="outline" size="16" />
+            </button>
+            <button class="util-btn delete" @click="disconnectAccount(account)" title="Disconnect">
+              <close theme="outline" size="16" />
             </button>
           </div>
-          <button class="text-link" @click="editAccount(account)">Configure</button>
         </div>
       </div>
     </div>
 
     <!-- Add Platform Modal -->
-    <el-dialog
-      v-model="showAddModal"
-      title="Connect Dynamic Platform"
-      width="500px"
-      class="glass-dialog dark-theme-dialog"
-      :show-close="false"
-      destroy-on-close
-    >
+    <el-dialog v-model="showAddModal" title="Connect Dynamic Platform" width="500px"
+      class="glass-dialog dark-theme-dialog" :show-close="false" destroy-on-close>
       <div class="platform-selector grid grid-cols-2 gap-4 mb-6">
-          <div v-for="p in availablePlatforms" :key="p.id" 
-               class="p-item glass-selectable" 
-               :class="{ active: selectedPlatform === p.id }"
-               @click="selectedPlatform = p.id">
-            <component :is="p.icon" theme="outline" size="24" :class="p.id" />
-            <span>{{ p.name }}</span>
-          </div>
+        <div v-for="p in availablePlatforms" :key="p.id" class="p-item glass-selectable"
+          :class="{ active: selectedPlatform === p.id }" @click="selectedPlatform = p.id">
+          <component :is="p.icon" theme="outline" size="24" :class="p.id" />
+          <span>{{ p.name }}</span>
+        </div>
       </div>
 
       <el-form :model="form" layout="vertical" class="mt-6">
-          <div v-if="selectedPlatform">
-             <div class="form-group mb-4">
-                <label class="form-label">Internal Name</label>
-                <el-input v-model="form.name" placeholder="e.g. My Official Channel" />
-             </div>
-
-             <!-- Platform Specific Fields -->
-             <div v-if="selectedPlatform === 'ant-media' || selectedPlatform === 'custom-rtmp'">
-                <div class="form-group mb-4">
-                   <label class="form-label">RTMP URL</label>
-                   <el-input v-model="form.rtmpUrl" placeholder="rtmp://server.com/app" />
-                </div>
-                <div class="form-group mb-4">
-                   <label class="form-label">Stream Key</label>
-                   <el-input v-model="form.streamKey" type="password" show-password />
-                </div>
-             </div>
-
-             <div v-else class="api-note p-4 glass-dark rounded-xl text-sm border border-white/5 mb-4">
-                <p class="text-blue-400 font-bold mb-2">Notice for {{ selectedPlatform.toUpperCase() }}</p>
-                <p class="opacity-60 leading-relaxed">Direct OAuth authorization is coming soon. For now, please provide your <b>Stream Key</b> manually to enable RTMP restreaming.</p>
-             </div>
-
-             <div v-if="selectedPlatform !== 'ant-media' && selectedPlatform !== 'custom-rtmp' " class="form-group mb-4">
-                 <label class="form-label">Stream Key</label>
-                 <el-input v-model="form.streamKey" type="password" show-password placeholder="Paste from platform dashboard" />
-             </div>
+        <div v-if="selectedPlatform">
+          <!-- AMS Fields -->
+          <div v-if="selectedPlatform === 'ant-media'">
+            <div class="form-group mb-4">
+              <label class="form-label">Internal Name</label>
+              <el-input v-model="form.name" placeholder="e.g. My AMS Instance" />
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Managing URL (REST API)</label>
+              <el-input v-model="form.serverUrl" placeholder="https://antmedia.server.com:5443" />
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Admin Email</label>
+              <el-input v-model="form.email" placeholder="admin@server.com" />
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Password</label>
+              <el-input v-model="form.password" type="password" show-password />
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">App Name</label>
+              <el-input v-model="form.appName" placeholder="LiveApp" />
+            </div>
           </div>
+
+          <!-- Custom RTMP -->
+          <div v-else-if="selectedPlatform === 'custom-rtmp'">
+            <div class="form-group mb-4">
+              <label class="form-label">Internal Name</label>
+              <el-input v-model="form.name" placeholder="e.g. Custom Endpoint" />
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">RTMP URL</label>
+              <el-input v-model="form.rtmpUrl" placeholder="rtmp://server.com/app" />
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Stream Key</label>
+              <el-input v-model="form.streamKey" type="password" show-password />
+            </div>
+          </div>
+
+          <!-- OAuth Platforms -->
+          <div v-else class="oauth-connect flex flex-col items-center justify-center py-8">
+            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+              <component :is="availablePlatforms.find(p => p.id === selectedPlatform)?.icon" theme="filled" size="32"
+                :class="selectedPlatform" />
+            </div>
+            <p class="text-center text-gray-400 mb-6 px-8">
+              Connect your {{availablePlatforms.find(p => p.id === selectedPlatform)?.name}} account to automatically
+              sync videos and manage live streams.
+            </p>
+            <!-- No input fields needed for OAuth initial step -->
+          </div>
+        </div>
       </el-form>
 
       <template #footer>
@@ -126,117 +181,158 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { 
-  Connection, Plus, Youtube, Facebook, Tiktok, 
+import { ref, onMounted, computed } from 'vue';
+import {
+  Connection, Plus, Youtube, Facebook, Tiktok,
   Broadcast, Refresh, Close, SettingTwo as SettingIcon,
-  VideoFile
+  VideoFile, Setting, User as UserIcon
 } from '@icon-park/vue-next';
-import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { usePlatformStore } from '@/stores/platform';
+import { getFileUrl } from '@/utils/api';
 
-const accounts = ref<any[]>([]);
-const loading = ref(true);
+const platformStore = usePlatformStore();
+const accounts = computed(() => platformStore.accounts);
+const loading = computed(() => platformStore.loading);
+const connecting = computed(() => platformStore.connecting);
+
 const showAddModal = ref(false);
 const selectedPlatform = ref('youtube');
-const connecting = ref(false);
+const editingAccountId = ref<string | null>(null);
 
 const form = ref({
   name: '',
   rtmpUrl: '',
+  serverUrl: '',
   streamKey: '',
   email: '',
-  password: ''
+  password: '', // Only filled if creating or explicitly changing
+  appName: '',
 });
 
 const availablePlatforms = [
-  { id: 'youtube', name: 'YouTube', icon: Youtube },
-  { id: 'facebook', name: 'Facebook', icon: Facebook },
-  { id: 'tiktok', name: 'TikTok', icon: Tiktok },
-  { id: 'ant-media', name: 'Ant Media Server', icon: Broadcast },
-  { id: 'custom-rtmp', name: 'Custom RTMP', icon: Connection }
+  { id: 'youtube', name: 'YouTube', icon: Youtube, type: 'oauth' },
+  { id: 'facebook', name: 'Facebook', icon: Facebook, type: 'oauth' },
+  { id: 'tiktok', name: 'TikTok', icon: Tiktok, type: 'oauth' },
+  { id: 'ant-media', name: 'Ant Media Server', icon: Broadcast, type: 'manual' },
+  { id: 'custom-rtmp', name: 'Custom RTMP', icon: Connection, type: 'manual' }
 ];
 
-const fetchAccounts = async () => {
+const initiateOAuth = async (platform: string) => {
   try {
-    loading.value = true;
-    const res = await axios.get('/api/platforms');
-    accounts.value = res.data.data;
-  } catch (error: any) {
-    toast.error('Failed to load platform accounts');
-  } finally {
-    loading.value = false;
+    const data = await platformStore.getAuthUrl(platform);
+    if (data.success && data.data.url) {
+      window.location.href = data.data.url;
+    } else {
+      toast.error('Failed to get authorization URL');
+    }
+  } catch (e) {
+    // Error handled in store but we catch here to stop flow if needed
   }
 };
 
 const handleConnect = async () => {
-  if (!form.value.name || !form.value.streamKey) {
-     return toast.error('Account Name and Stream Key are required');
+  const platformConfig = availablePlatforms.find(p => p.id === selectedPlatform.value);
+
+  // OAuth Flow (Only supported for NEW connections currently)
+  if (platformConfig?.type === 'oauth' && !editingAccountId.value) {
+    await initiateOAuth(selectedPlatform.value);
+    return;
+  }
+
+  // Manual Flow (AMS / Custom RTMP) validation
+  if (!form.value.name) {
+    return toast.error('Account Name is required');
+  }
+
+  if (selectedPlatform.value === 'ant-media') {
+    // If editing, password can be empty (unchanged). If creating, password required.
+    const isPasswordRequired = !editingAccountId.value;
+
+    if (!form.value.serverUrl || !form.value.email) {
+      return toast.error('Server URL and Email are required');
+    }
+    if (isPasswordRequired && !form.value.password) {
+      return toast.error('Password is required for new connection');
+    }
+
+  } else if (selectedPlatform.value === 'custom-rtmp') {
+    if (!form.value.rtmpUrl || !form.value.streamKey) {
+      return toast.error('RTMP URL and Stream Key are required');
+    }
   }
 
   try {
-    connecting.value = true;
-    await axios.post('/api/platforms', {
+    const payload = {
       platform: selectedPlatform.value,
       accountName: form.value.name,
       streamKey: form.value.streamKey,
       rtmpUrl: form.value.rtmpUrl,
       credentials: {
-         email: form.value.email,
-         password: form.value.password,
-         serverUrl: form.value.rtmpUrl
+        email: form.value.email,
+        password: form.value.password, // Store cleans empty pass for updates if needed? Actually store handles API call. Route handles empty pass.
+        serverUrl: form.value.serverUrl,
+        appName: form.value.appName
       }
-    });
+    };
 
-    toast.success(`${selectedPlatform.value} account connected successfully`);
+    if (editingAccountId.value) {
+      // Update existing account
+      await platformStore.updatePlatform(editingAccountId.value, payload);
+    } else {
+      // Create new account
+      await platformStore.connectPlatform(payload);
+    }
+
     showAddModal.value = false;
-    await fetchAccounts();
-    
-    // Reset form
-    form.value = { name: '', rtmpUrl: '', streamKey: '', email: '', password: '' };
-  } catch (e: any) {
-    toast.error(e.response?.data?.error || 'Failed to connect platform');
-  } finally {
-    connecting.value = false;
+    resetForm();
+  } catch (e) {
+    // Error handled in store
   }
 };
 
 const disconnectAccount = async (account: any) => {
-    if (!confirm(`Are you sure you want to disconnect ${account.accountName}?`)) return;
-    
-    try {
-        await axios.delete(`/api/platforms/${account._id}`);
-        toast.success('Platform disconnected');
-        await fetchAccounts();
-    } catch (e) {
-        toast.error('Failed to disconnect');
-    }
+  if (!confirm(`Are you sure you want to disconnect ${account.accountName}?`)) return;
+  await platformStore.disconnectPlatform(account._id);
 };
 
 const editAccount = (account: any) => {
-    selectedPlatform.value = account.platform;
-    form.value = {
-        name: account.accountName,
-        rtmpUrl: account.rtmpUrl,
-        streamKey: account.streamKey,
-        email: account.credentials?.email || '',
-        password: account.credentials?.password || ''
-    };
-    showAddModal.value = true;
+  editingAccountId.value = account._id;
+  selectedPlatform.value = account.platform;
+  form.value = {
+    name: account.accountName,
+    rtmpUrl: account.rtmpUrl || '',
+    serverUrl: account.credentials?.serverUrl || '',
+    streamKey: account.streamKey || '',
+    email: account.credentials?.email || '',
+    password: '', // Clear password field for security
+    appName: account.credentials?.appName || ''
+  };
+  showAddModal.value = true;
+};
+
+const resetForm = () => {
+  form.value = { name: '', rtmpUrl: '', serverUrl: '', streamKey: '', email: '', password: '', appName: '' };
+  editingAccountId.value = null;
+  selectedPlatform.value = 'youtube'; // Reset to default tab? Or keep last. Let's reset.
 };
 
 const syncAccount = async (account: any) => {
-    toast.info(`Syncing status for ${account.accountName}...`);
-    // Mock sync for now
-    setTimeout(() => toast.success('Status synchronized'), 1000);
+  toast.info(`Syncing status for ${account.accountName}...`);
+  // Mock sync for now
+  setTimeout(() => toast.success('Status synchronized'), 1000);
 };
 
-onMounted(fetchAccounts);
+onMounted(() => {
+  platformStore.fetchAccounts();
+});
 </script>
 
 <style lang="scss" scoped>
 .platforms-view {
   min-height: 100vh;
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 400px),
+    radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.05), transparent 400px);
 }
 
 .view-header {
@@ -247,29 +343,66 @@ onMounted(fetchAccounts);
 
 .platforms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 32px;
 }
 
-.platform-card {
-  padding: 24px;
+.cinematic-card {
   position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(15, 15, 15, 0.7);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 28px;
+  transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
   overflow: hidden;
 
-  &::before {
+  &::after {
     content: '';
     position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
-    background: var(--platform-color, #3b82f6);
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
+    pointer-events: none;
+  }
+
+  .card-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--accent-color, rgba(59, 130, 246, 0.1)) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
   }
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+    transform: translateY(-8px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+
+    .card-glow {
+      opacity: 1;
+    }
   }
 
-  &.error::before { background: #ef4444; }
+  &.youtube {
+    --accent-color: rgba(254, 0, 0, 0.15);
+  }
+
+  &.facebook {
+    --accent-color: rgba(24, 119, 242, 0.15);
+  }
+
+  &.tiktok {
+    --accent-color: rgba(254, 44, 85, 0.15);
+  }
+
+  &.ant-media {
+    --accent-color: rgba(255, 193, 7, 0.15);
+  }
 
   .card-header {
     display: flex;
@@ -277,43 +410,233 @@ onMounted(fetchAccounts);
     align-items: center;
   }
 
-  .platform-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    @include flex-center;
+  .user-avatar-group {
+    position: relative;
+
+    .avatar-ring {
+      width: 64px;
+      height: 64px;
+      padding: 3px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+
+      .user-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    .platform-mini-icon {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #0f0f0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border: 2px solid #0f0f0f;
+
+      &.youtube {
+        color: #fe0000;
+      }
+
+      &.facebook {
+        color: #1877f2;
+      }
+
+      &.tiktok {
+        color: #fe2c55;
+      }
+
+      &.ant-media {
+        color: #ffc107;
+      }
+    }
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 100px;
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #666;
+      box-shadow: 0 0 8px currentColor;
+
+      &.connected {
+        background: #10b981;
+        color: #10b981;
+      }
+
+      &.error {
+        background: #ef4444;
+        color: #ef4444;
+      }
+    }
+
+    .status-text {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  .account-name {
     font-size: 20px;
-    background: rgba(255, 255, 255, 0.05);
-
-    &.youtube { color: #fe0000; }
-    &.facebook { color: #1877f2; }
-    &.tiktok { color: #ff0050; }
-    &.ant-media { color: #ffc107; }
-  }
-
-  .status-badge {
-    font-size: 9px;
     font-weight: 800;
-    text-transform: uppercase;
-    padding: 2px 8px;
-    border-radius: 20px;
-    letter-spacing: 1px;
-    
-    &.connected { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-    &.error { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    color: white;
+    letter-spacing: -0.5px;
   }
 
-  .account-info {
-    .name { font-weight: 700; color: #fff; font-size: 16px; margin: 0; }
-    .type { margin-top: 4px; }
+  .meta-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+
+    span {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .platform-tag {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .email-tag {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
-  .card-footer {
+  .card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.2s;
+    cursor: pointer;
+
+    &.primary-action {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+
+      &:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+      }
+    }
+  }
+
+  .utility-actions {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    
-    .actions { display: flex; gap: 8px; }
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+
+    .util-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+      }
+
+      &.delete:hover {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+      }
+    }
+  }
+}
+
+.primary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  height: 48px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  color: black;
+  border: none;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(255, 255, 255, 0.2);
+  }
+
+  &.glass-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    }
   }
 }
 
@@ -322,24 +645,46 @@ onMounted(fetchAccounts);
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 20px;
-  border-radius: 16px;
+  padding: 24px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 
-  span { font-size: 12px; font-weight: 700; }
-
-  &.active {
-    background: rgba($primary-rgb, 0.1);
-    border-color: rgba($primary-rgb, 0.3);
-    color: #3b82f6;
+  span {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
 
-  .youtube { color: #fe0000; }
-  .facebook { color: #1877f2; }
-  .tiktok { color: #ff0050; }
+  &.active {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+    transform: scale(1.05);
+
+    span {
+      color: #3b82f6;
+    }
+
+    .youtube {
+      color: #fe0000;
+    }
+
+    .facebook {
+      color: #1877f2;
+    }
+
+    .tiktok {
+      color: #fe2c55;
+    }
+
+    .ant-media {
+      color: #ffc107;
+    }
+  }
 }
 
 .form-label {
@@ -348,40 +693,30 @@ onMounted(fetchAccounts);
   font-weight: 800;
   color: rgba(255, 255, 255, 0.3);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
-}
-
-.text-link {
-  background: none;
-  border: none;
-  padding: 0;
-  color: #3b82f6;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  
-  &:hover { text-decoration: underline; }
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
 }
 
 .empty-state {
   text-align: center;
-  padding: 80px 40px;
-  max-width: 600px;
-  margin: 40px auto;
+  padding: 100px 40px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 40px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  margin-top: 40px;
 
-  .icon-orb {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    margin: 0 auto;
-    @include flex-center;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    color: #3b82f6;
+  h3 {
+    font-size: 28px;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 16px;
   }
 
-  h3 { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 12px; }
-  p { line-height: 1.6; color: rgba(255, 255, 255, 0.4); }
+  p {
+    color: rgba(255, 255, 255, 0.4);
+    max-width: 480px;
+    margin: 0 auto 32px;
+    line-height: 1.6;
+  }
 }
 </style>

@@ -57,6 +57,6 @@ const MediaSchema = new Schema<IMedia>(
 
 // Indexes for performance
 MediaSchema.index({ userId: 1, purpose: 1, createdAt: -1 }); // User media filtering by purpose
-MediaSchema.index({ key: 1 }, { unique: true }); // Already unique, but explicit index
+// MediaSchema.index({ key: 1 }, { unique: true }); // Already unique, but explicit index
 
 export const Media: Model<IMedia> = mongoose.models.Media || mongoose.model<IMedia>('Media', MediaSchema)

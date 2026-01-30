@@ -164,7 +164,7 @@ export interface IProject extends Document {
     organizationId?: Types.ObjectId // Shared Team Context
     title: string
     description: string
-    mode: 'topic' | 'upload' | 'avatar'
+    mode: 'topic' | 'upload' | 'avatar' | 'template'
     aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
     videoStyle: string
     targetDuration: number
@@ -260,6 +260,7 @@ export interface IProject extends Document {
     }>
     advancedEditorState?: any
     scriptContent?: string
+    metadata?: any
     createdAt: Date
     updatedAt: Date
 }
@@ -288,7 +289,7 @@ const ProjectSchema = new Schema<IProject>(
         },
         mode: {
             type: String,
-            enum: ['topic', 'upload', 'avatar'],
+            enum: ['topic', 'upload', 'avatar', 'template'],
             required: true
         },
         aspectRatio: {
@@ -442,7 +443,8 @@ const ProjectSchema = new Schema<IProject>(
             }
         ],
         advancedEditorState: { type: Schema.Types.Mixed, default: null },
-        scriptContent: String
+        scriptContent: String,
+        metadata: { type: Schema.Types.Mixed, default: {} }
     },
     {
         timestamps: true

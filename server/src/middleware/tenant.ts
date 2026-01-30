@@ -25,7 +25,12 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
         let subdomain = '';
 
         if (host.includes(baseDomain)) {
-            subdomain = host.split(`.${baseDomain}`)[0];
+            // Handle localhost or direct IP specifically to avoid weird subdomain splitting
+            if (baseDomain === 'localhost' || host.split(':')[0] === '127.0.0.1') {
+                subdomain = '';
+            } else {
+                subdomain = host.split(`.${baseDomain}`)[0];
+            }
         } else {
             // Assume it's a Custom Domain (e.g., 'stream.client.com')
             const tenantByDomain = await Tenant.findOne({ customDomain: host });
@@ -37,7 +42,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
         }
 
         // 2. Resolve by Subdomain
-        if (subdomain && subdomain !== 'www' && subdomain !== baseDomain) {
+        if (subdomain && subdomain !== 'www' && subdomain !== baseDomain && subdomain !== host) {
             const tenantBySub = await Tenant.findOne({ subdomain: subdomain.toLowerCase() });
             if (tenantBySub) {
                 req.tenant = tenantBySub;

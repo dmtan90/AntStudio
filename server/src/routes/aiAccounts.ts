@@ -37,9 +37,8 @@ const getRedirectUri = async (req: any) => {
         return override;
     }
 
-    const protocol = req.protocol;
-    const host = req.get('host');
-    return `${protocol}://${host}/api/admin/ai/accounts/callback`;
+    const config = (await import('../utils/config.js')).default;
+    return `${config.public.baseUrl}/api/admin/ai/accounts/callback`;
 };
 
 /**
@@ -114,7 +113,10 @@ router.get('/callback', async (req: any, res) => {
         res.redirect(`${config.public.baseUrl}/admin/ai-accounts?success=true`);
     } catch (error: any) {
         console.error('OAuth Callback Error:', error.message);
-        res.status(500).send(`Authentication failed: ${error.message}`);
+        // res.status(500).send(`Authentication failed: ${error.message}`);
+        // Redirect back to frontend admin panel
+        const config = (await import('../utils/config.js')).default;
+        res.redirect(`${config.public.baseUrl}/admin/ai-accounts?success=false&message=${error.message}`);
     }
 });
 
@@ -237,15 +239,27 @@ router.post('/direct', async (req: AuthRequest, res) => {
     try {
         await connectDB();
         const { email, licenseKey, accessToken, accountType, providerId } = req.body;
+        const finalAccountType = accountType || '11labs-direct';
 
-        if (!email || !licenseKey) {
-            return res.status(400).json({ success: false, data: null, error: 'Email and License Key are required' });
+        if (!email) {
+            return res.status(400).json({ success: false, data: null, error: 'Email is required' });
         }
 
-        let account = await AIAccount.findOne({ email, accountType });
+        // Automatic onboarding if it's 11labs-direct and license key is missing
+        if (finalAccountType === '11labs-direct' && !licenseKey) {
+            const account = await aiAccountManager.onboard11LabsDirectAccount(email);
+            return res.json({ success: true, data: account, error: null });
+        }
+
+        // Standard manual entry (fallback or for other account types)
+        if (!licenseKey && finalAccountType !== '11labs-direct') {
+            return res.status(400).json({ success: false, data: null, error: 'License Key is required for this account type' });
+        }
+
+        let account = await AIAccount.findOne({ email, accountType: finalAccountType });
 
         if (account) {
-            account.licenseKey = licenseKey;
+            account.licenseKey = licenseKey || account.licenseKey;
             account.accessToken = accessToken || account.accessToken;
             account.providerId = providerId || account.providerId;
             account.status = 'ready';
@@ -255,7 +269,7 @@ router.post('/direct', async (req: AuthRequest, res) => {
                 email,
                 licenseKey,
                 accessToken,
-                accountType: accountType || '11labs-direct',
+                accountType: finalAccountType,
                 providerId: providerId || '11labs',
                 status: 'ready'
             });

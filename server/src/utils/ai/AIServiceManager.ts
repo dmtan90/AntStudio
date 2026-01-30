@@ -110,6 +110,12 @@ export class AIServiceManager {
                 const { GeminiChatProvider } = await import('./providers/GeminiChatProvider.js');
                 providerInstances['gemini-chat'] = new GeminiChatProvider();
             }
+            if (!providerInstances['google-tts']) {
+                const { GoogleTTSProvider } = await import('./providers/GoogleTTSProvider.js');
+                const staticKey = settings?.providers?.find((p: any) => p.id === 'google')?.apiKey || process.env.GOOGLE_API_KEY;
+                providerInstances['google-tts'] = new GoogleTTSProvider(staticKey ? { apiKey: staticKey } : {});
+            }
+
             if (!providerInstances['flow']) {
                 const { FlowProvider } = await import('./providers/FlowProvider.js');
                 providerInstances['flow'] = new FlowProvider();
@@ -255,7 +261,8 @@ export class AIServiceManager {
                     client = new ElevenLabsDirectClient({
                         email: account.email,
                         token: account.accessToken || 'invalid',
-                        licenseKey: account.licenseKey
+                        licenseKey: account.licenseKey,
+                        serviceKeys: account.serviceKeys
                     });
                 } else {
                     client = new CloudCodeClient(account);
@@ -379,12 +386,21 @@ export class AIServiceManager {
                 }
 
                 try {
-                    const result = await client.generateVideo(prompt, finalModelName);
+                    // Correctly map options to VeoRequest
+                    const result = await client.generateVideo({
+                        prompt: prompt,
+                        aspectRatio: options.aspectRatio,
+                        duration: options.duration,
+                        seed: options.seed,
+                        upscale_1080p: options.upscale_1080p,
+                        image_url: options.characterImages?.[0] || options.imageStart || options.imageUrl
+                    });
+
                     // Record usage
                     await aiAccountManager.recordUsage(account, finalModelName);
 
                     // Reformat for Service Manager response
-                    if (result.url.startsWith('data:')) {
+                    if (result.url && result.url.startsWith('data:')) {
                         const base64Data = result.url.replace(/^data:video\/\w+;base64,/, "");
                         return { buffer: Buffer.from(base64Data, 'base64'), mimeType: 'video/mp4' };
                     }
@@ -492,7 +508,7 @@ export class AIServiceManager {
         const finalModelName = modelId || inputModelName || 'tts-1' // Fallback
 
         // Proactive switch to AIStudio if ready
-        if (providerId === 'google') {
+        if (providerId === 'google' || providerId === 'google-tts') {
             const aiStudio = providerInstances['aistudio'];
             if (aiStudio && await aiStudio.isReady()) {
                 console.log(`[AIServiceManager] AIStudio is Ready. Proactively using it for audio generation.`);
@@ -502,15 +518,35 @@ export class AIServiceManager {
         }
 
         // SMART MULTI-ACCOUNT SELECTION for Audio
-        if (providerId === 'elevenlabs' || providerId === '11labs') {
+        if (providerId === 'google' || providerId === 'google-tts') {
+            // Sourcing from AI Account standard as requested
+            const account = await aiAccountManager.getOptimalAccount('audio');
+            // Check if it's a standard google account
+            if (account && account.providerId === 'google' && account.accountType === 'standard') {
+                console.log(`[AIServiceManager] Using Standard OAuth account for Google TTS: ${account.email}`);
+                const token = await aiAccountManager.refreshAccessToken(account);
+
+                // Get the instance and update its token
+                const googleTTS = providerInstances['google-tts'];
+                if (googleTTS && typeof googleTTS.updateClient === 'function') {
+                    googleTTS.updateClient({ accessToken: token });
+                    return await googleTTS.generateAudio(prompt, finalModelName, options);
+                }
+            }
+        }
+
+        if ((providerId === 'elevenlabs' || providerId === '11labs') && options.usePool) {
+            // Only use pool if explicitly requested or for general background tasks
+            // For "ElevenLabs provider" (static key), we skip this and use the direct instance below
             const account = await aiAccountManager.getOptimalAccount('audio');
             if (account && account.accountType === '11labs-direct') {
-                console.log(`[AIServiceManager] Using 11Labs Direct account for audio: ${account.email}`);
+                console.log(`[AIServiceManager] Using 11Labs Direct pooled account for audio: ${account.email}`);
                 const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
                 const client = new ElevenLabsDirectClient({
                     email: account.email,
                     token: account.accessToken || 'invalid',
-                    licenseKey: account.licenseKey
+                    licenseKey: account.licenseKey,
+                    serviceKeys: account.serviceKeys
                 });
                 const buffer = await client.generateAudio(prompt, finalModelName, options);
                 return { media: { url: `data:audio/mpeg;base64,${buffer.toString('base64')}`, mimeType: 'audio/mpeg' } };

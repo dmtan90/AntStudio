@@ -222,8 +222,8 @@ const TenantSchema = new Schema<ITenant>({
 }, { timestamps: true });
 
 // Indexes
-TenantSchema.index({ subdomain: 1 });
-TenantSchema.index({ customDomain: 1 });
+// TenantSchema.index({ subdomain: 1 });
+// TenantSchema.index({ customDomain: 1 });
 TenantSchema.index({ 'license.status': 1 });
 
 // Methods

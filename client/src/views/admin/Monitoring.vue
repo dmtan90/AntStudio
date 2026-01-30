@@ -139,8 +139,26 @@
         <div class="monitoring-tabs">
             <div class="tabs-header">
                 <button :class="{ active: activeTab === 'logs' }" @click="activeTab = 'logs'">System Logs</button>
+                <button :class="{ active: activeTab === 'realtime' }" @click="activeTab = 'realtime'">Real-time
+                    Stream</button>
                 <button :class="{ active: activeTab === 'client' }" @click="activeTab = 'client'">Client Errors</button>
                 <button :class="{ active: activeTab === 'errors' }" @click="activeTab = 'errors'">Analytics</button>
+            </div>
+
+            <div v-if="activeTab === 'realtime'" class="realtime-logs-section animate-in">
+                <div class="cinematic-card p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Live Engine
+                            Stream</span>
+                        <div class="flex items-center gap-2">
+                            <div class="status-dot" :class="{ online: socket && socket.connected }"></div>
+                            <span class="text-[9px] opacity-60">{{ socket && socket.connected ? 'CONNECTED' :
+                                'CONNECTING...' }}</span>
+                        </div>
+                    </div>
+                    <textarea ref="realtimeLogArea" class="realtime-textarea" readonly v-model="realtimeLogs"
+                        placeholder="Waiting for system events..."></textarea>
+                </div>
             </div>
 
             <div v-if="activeTab === 'logs'" class="logs-section animate-in">
@@ -216,11 +234,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, reactive, watch, computed } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, watch, computed, nextTick } from 'vue';
 import { SettingConfig, Delete, Cpu, Memory, FolderOpen, Connection, Loading, Terminal, Help } from '@icon-park/vue-next';
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 import axios from 'axios';
+import { io } from 'socket.io-client';
+import { useUserStore } from '@/stores/user';
 import { toast } from 'vue-sonner';
 import SupportTicketDialog from '@/components/SupportTicketDialog.vue';
 
@@ -247,8 +267,12 @@ const consoleRef = ref<HTMLElement | null>(null);
 
 const logFilter = reactive({ level: 'all', search: '', page: 1 });
 const settings = reactive({ emailNotificationsEnabled: false, notificationEmail: '', minNotificationLevel: 'error', retentionDays: 30 });
+const realtimeLogs = ref('');
+const realtimeLogArea = ref<HTMLTextAreaElement | null>(null);
+const socket = ref<any>(null);
 
 // Intervals
+const authStore = useUserStore();
 let statsTimer: any = null;
 let historyTimer: any = null;
 let logsTimer: any = null;
@@ -314,8 +338,42 @@ const clearLogs = async () => {
     try {
         await axios.delete('/api/admin/monitoring/logs');
         logs.value = [];
+        realtimeLogs.value = '';
         toast.success('Logs cleared');
     } catch (e) { }
+};
+
+const setupSocket = () => {
+    const token = authStore.token;
+    if (!token) return;
+
+    socket.value = io(import.meta.env.VITE_API_URL || 'http://localhost:4000', {
+        path: '/api/socket.io',
+        auth: { token }
+    });
+
+    socket.value.on('connect', () => {
+        console.log('Monitoring socket connected');
+    });
+
+    socket.value.on('system-log', (log: any) => {
+        const timestamp = new Date(log.timestamp).toLocaleTimeString();
+        const line = `[${timestamp}] [${log.level.toUpperCase()}] [${log.source}] ${log.message}\n`;
+        realtimeLogs.value += line;
+
+        // Keep last 500 lines
+        const lines = realtimeLogs.value.split('\n');
+        if (lines.length > 500) {
+            realtimeLogs.value = lines.slice(-500).join('\n');
+        }
+
+        // Auto scroll
+        nextTick(() => {
+            if (realtimeLogArea.value) {
+                realtimeLogArea.value.scrollTop = realtimeLogArea.value.scrollHeight;
+            }
+        });
+    });
 };
 
 const debounceFetchLogs = () => {
@@ -406,13 +464,55 @@ onMounted(() => {
     fetchHistory();
     fetchLogs();
     fetchSettings();
+    setupSocket();
     if (autoRefresh.value) startPolling();
 });
 
-onUnmounted(() => stopPolling());
+onUnmounted(() => {
+    stopPolling();
+    if (socket.value) socket.value.disconnect();
+});
 </script>
 
 <style lang="scss" scoped>
+.realtime-logs-section {
+    .realtime-textarea {
+        width: 100%;
+        height: 600px;
+        background: #000;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        color: #00ff00; // Classic terminal green
+        font-family: 'Fira Code', monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        padding: 16px;
+        resize: none;
+        outline: none;
+
+        &::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ef4444;
+
+        &.online {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+    }
+}
+
 .admin-monitoring {
     padding: 24px;
 }

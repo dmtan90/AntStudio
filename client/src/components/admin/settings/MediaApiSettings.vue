@@ -1,14 +1,15 @@
 <template>
     <div class="api-grid grid grid-cols-1 xl:grid-cols-3 gap-6">
         <!-- Giphy API -->
-        <el-card class="settings-section">
+        <el-card class="settings-section" v-if="apiConfigs && apiConfigs.media && apiConfigs.media.giphy">
             <template #header>
                 <div class="provider-header flex justify-between items-center">
                     <span>Giphy API</span>
                     <el-switch v-model="apiConfigs.media.giphy.enabled" active-text="Active" />
                 </div>
             </template>
-            <el-form :model="apiConfigs.media.giphy" label-position="top">
+            <el-form :model="apiConfigs.media.giphy" label-position="top"
+                v-if="apiConfigs && apiConfigs.media && apiConfigs.media.giphy">
                 <el-form-item label="API Key">
                     <el-input v-model="apiConfigs.media.giphy.apiKey" type="password" show-password
                         placeholder="Enter Giphy API key" :disabled="!apiConfigs.media.giphy.enabled"
@@ -23,14 +24,15 @@
         </el-card>
 
         <!-- Pexels API -->
-        <el-card class="settings-section">
+        <el-card class="settings-section" v-if="apiConfigs && apiConfigs.media && apiConfigs.media.pexels">
             <template #header>
                 <div class="provider-header flex justify-between items-center">
                     <span>Pexels API</span>
                     <el-switch v-model="apiConfigs.media.pexels.enabled" active-text="Active" />
                 </div>
             </template>
-            <el-form :model="apiConfigs.media.pexels" label-position="top">
+            <el-form :model="apiConfigs.media.pexels" label-position="top"
+                v-if="apiConfigs && apiConfigs.media && apiConfigs.media.pexels">
                 <el-form-item label="API Key">
                     <el-input v-model="apiConfigs.media.pexels.apiKey" type="password" show-password
                         placeholder="Enter Pexels API key" :disabled="!apiConfigs.media.pexels.enabled"
@@ -45,14 +47,15 @@
         </el-card>
 
         <!-- Unsplash API -->
-        <el-card class="settings-section">
+        <el-card class="settings-section" v-if="apiConfigs && apiConfigs.media && apiConfigs.media.unsplash">
             <template #header>
                 <div class="provider-header flex justify-between items-center">
                     <span>Unsplash API</span>
                     <el-switch v-model="apiConfigs.media.unsplash.enabled" active-text="Active" />
                 </div>
             </template>
-            <el-form :model="apiConfigs.media.unsplash" label-position="top">
+            <el-form :model="apiConfigs.media.unsplash" label-position="top"
+                v-if="apiConfigs && apiConfigs.media && apiConfigs.media.unsplash">
                 <el-form-item label="API Key (Access Key)">
                     <el-input v-model="apiConfigs.media.unsplash.apiKey" type="password" show-password
                         placeholder="Client-ID your-access-key" :disabled="!apiConfigs.media.unsplash.enabled"

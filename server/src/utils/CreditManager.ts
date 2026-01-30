@@ -111,12 +111,39 @@ export const creditManager = {
 
         } catch (error: any) {
             await session.abortTransaction();
+
+            // Handle "Transaction numbers are only allowed on a replica set member"
+            if (error.code === 20 || error.message.includes('replica set')) {
+                // systemLogger.warn('Transactions not supported (Standalone MongoDB). Falling back to non-transactional deduction.', 'CreditManager');
+                return await this.deductCreditsNonTransactional(userId, serviceType, amount, description, metadata);
+            }
+
             console.error('[CreditManager] Deduction failed:', error);
             systemLogger.error(`Credit deduction failed: ${error.message}`, 'CreditManager');
             return false;
         } finally {
             session.endSession();
         }
+    },
+
+    /**
+     * Fallback for Standalone MongoDB
+     */
+    async deductCreditsNonTransactional(userId: string, serviceType: ServiceType, amount: number, description: string, metadata: any): Promise<boolean> {
+        try {
+            const user = await User.findById(userId);
+            if (!user || user.credits.balance < amount) return false;
+
+            user.credits.balance -= amount;
+            user.creditLogs.push({
+                type: 'consumed',
+                amount: amount,
+                description: `${description} (${serviceType})`,
+                timestamp: new Date()
+            });
+            await user.save();
+            return true;
+        } catch (e) { return false; }
     },
 
     /**

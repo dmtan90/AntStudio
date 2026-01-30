@@ -21,7 +21,7 @@ const SystemLogSchema = new Schema<ISystemLog>(
         source: { type: String, required: true, index: true },
         metadata: { type: Schema.Types.Mixed },
         timestamp: { type: Date, default: Date.now, index: true },
-        expiresAt: { type: Date, required: true, index: true }
+        expiresAt: { type: Date, required: true }
     },
     {
         timestamps: false // We use our own timestamp for precise control

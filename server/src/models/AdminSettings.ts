@@ -21,9 +21,10 @@ export interface IAdminSettings extends Document {
             fromEmail: string
             fromName: string
         }
-        social: {
-            facebook: { appId: string; appSecret: string }
-            google: { clientId: string; clientSecret: string }
+        oauth: {
+            google: { clientId: string; clientSecret: string; redirectUriOverride?: string; enabled: boolean }
+            facebook: { appId: string; appSecret: string; enabled: boolean }
+            tiktok: { clientKey: string; clientSecret: string; enabled: boolean }
         }
         media: {
             giphy: { apiKey: string; enabled: boolean }
@@ -36,9 +37,6 @@ export interface IAdminSettings extends Document {
             password: string
             appName: string
         }
-        aiOAuth: {
-            google: { clientId: string; clientSecret: string; redirectUriOverride?: string }
-        }
         storage: {
             activeProvider: 's3' | 'google_drive'
             googleDrive: {
@@ -47,11 +45,11 @@ export interface IAdminSettings extends Document {
                 rootFolderId: string
             }
         }
+        publicDomain?: string
     }
-    oauthProviders: {
-        google: { enabled: boolean }
-        facebook: { enabled: boolean }
-    }
+    // settings.oauthProviders is deprecated in favor of apiConfigs.oauth but kept for migration if needed, 
+    // but better to remove it now to avoid confusion.
+    // aiSettings...
     aiSettings: {
         providers: Array<{
             id: string
@@ -90,6 +88,10 @@ export interface IAdminSettings extends Document {
         }>
         flowWorkspaceUrls: string[]
         flowSessionToken?: string
+        sessionSync?: {
+            googleCookies?: string // For AIStudio/Gemini
+            flowCookies?: string // For Labs Flow
+        }
     }
     s3: {
         totalStorageUsed: number
@@ -117,7 +119,7 @@ export interface IAdminSettings extends Document {
         key: string
         info: {
             status: 'valid' | 'expired' | 'invalid'
-            type: 'trial' | 'free' | 'enterprise'
+            type: 'trial' | 'basic' | 'pro' | 'enterprise'
             maxUsers: number
             maxProjects: number
             startDate?: Date
@@ -178,9 +180,10 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 fromEmail: { type: String, default: 'noreply@flova.ai' },
                 fromName: { type: String, default: 'AntStudio' }
             },
-            social: {
-                facebook: { appId: { type: String, default: '' }, appSecret: { type: String, default: '' } },
-                google: { clientId: { type: String, default: '' }, clientSecret: { type: String, default: '' } }
+            oauth: {
+                facebook: { appId: { type: String, default: '' }, appSecret: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
+                google: { clientId: { type: String, default: '' }, clientSecret: { type: String, default: '' }, redirectUriOverride: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
+                tiktok: { clientKey: { type: String, default: '' }, clientSecret: { type: String, default: '' }, enabled: { type: Boolean, default: false } }
             },
             media: {
                 giphy: { apiKey: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
@@ -193,23 +196,21 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 password: { type: String, default: '' },
                 appName: { type: String, default: 'WebRTCAppEE' }
             },
-            aiOAuth: {
-                google: {
-                    clientId: { type: String, default: '' },
-                    clientSecret: { type: String, default: '' },
-                    redirectUriOverride: { type: String, default: '' }
+            storage: {
+                activeProvider: { type: String, enum: ['s3', 'google_drive'], default: 's3' },
+                googleDrive: {
+                    clientEmail: { type: String, default: '' },
+                    privateKey: { type: String, default: '' },
+                    rootFolderId: { type: String, default: 'root' }
                 }
-            }
+            },
+            publicDomain: { type: String, default: '' }
         },
         logSettings: {
             emailNotificationsEnabled: { type: Boolean, default: false },
             notificationEmail: { type: String, default: '' },
             minNotificationLevel: { type: String, enum: ['debug', 'info', 'warn', 'error'], default: 'error' },
             retentionDays: { type: Number, default: 30 }
-        },
-        oauthProviders: {
-            google: { enabled: { type: Boolean, default: false } },
-            facebook: { enabled: { type: Boolean, default: false } }
         },
         aiSettings: {
             providers: [
@@ -255,7 +256,11 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 }
             ],
             flowWorkspaceUrls: { type: [String], default: [] },
-            flowSessionToken: { type: String, default: '' }
+            flowSessionToken: { type: String, default: '' },
+            sessionSync: {
+                googleCookies: { type: String, default: '' },
+                flowCookies: { type: String, default: '' }
+            }
         },
         s3: {
             totalStorageUsed: { type: Number, default: 0 },
@@ -331,7 +336,11 @@ export const getAdminSettings = async () => {
                     fromEmail: 'noreply@flova.ai',
                     fromName: 'AntStudio'
                 },
-                social: { facebook: { appId: '', appSecret: '' }, google: { clientId: '', clientSecret: '' } },
+                oauth: {
+                    facebook: { appId: '', appSecret: '', enabled: false },
+                    google: { clientId: '', clientSecret: '', redirectUriOverride: '', enabled: false },
+                    tiktok: { clientKey: '', clientSecret: '', enabled: false }
+                },
                 media: { giphy: { apiKey: '', enabled: false }, pexels: { apiKey: '', enabled: false }, unsplash: { apiKey: '', enabled: false } },
                 antMedia: {
                     baseUrl: '',
@@ -339,7 +348,6 @@ export const getAdminSettings = async () => {
                     password: '',
                     appName: 'WebRTCAppEE'
                 },
-                aiOAuth: { google: { clientId: '', clientSecret: '', redirectUriOverride: '' } },
                 storage: {
                     activeProvider: 's3',
                     googleDrive: {
@@ -347,7 +355,8 @@ export const getAdminSettings = async () => {
                         privateKey: '',
                         rootFolderId: 'root'
                     }
-                }
+                },
+                publicDomain: ''
             },
             logSettings: {
                 emailNotificationsEnabled: false,
@@ -355,7 +364,6 @@ export const getAdminSettings = async () => {
                 minNotificationLevel: 'error',
                 retentionDays: 30
             },
-            oauthProviders: { google: { enabled: false }, facebook: { enabled: false } },
             aiSettings: {
                 providers: [
                     { id: 'google', name: 'Google Gemini', apiKey: '', supportedTypes: ['text', 'image', 'video', 'audio'], isActive: true },
@@ -426,6 +434,20 @@ export const getAdminSettings = async () => {
                 favicon: ''
             }
         })
+    }
+
+    // Ensure nested defaults exist if schema changed on existing document
+    if (!settings.apiConfigs.oauth) {
+        settings.apiConfigs.oauth = {
+            facebook: { appId: '', appSecret: '', enabled: false },
+            google: { clientId: '', clientSecret: '', redirectUriOverride: '', enabled: false },
+            tiktok: { clientKey: '', clientSecret: '', enabled: false }
+        };
+        await settings.save();
+    }
+    if (settings.apiConfigs.publicDomain === undefined) {
+        settings.apiConfigs.publicDomain = '';
+        await settings.save();
     }
 
     return settings

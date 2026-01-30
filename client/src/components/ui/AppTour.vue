@@ -1,13 +1,7 @@
 <template>
   <el-tour v-model="visible" :mask="true" :type="tourType">
-    <el-tour-step 
-      v-for="(step, index) in steps" 
-      :key="index"
-      :target="step.target"
-      :title="step.title"
-      :description="step.description"
-      :placement="step.placement || 'bottom'"
-    />
+    <el-tour-step v-for="(step, index) in steps" :key="index" :target="step.target" :title="step.title"
+      :description="step.description" :placement="step.placement || 'bottom'" />
   </el-tour>
 </template>
 
@@ -49,6 +43,8 @@ watch(visible, (val) => {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  position: absolute !important;
 
   .el-tour-step__title {
     color: #fff;
@@ -70,11 +66,11 @@ watch(visible, (val) => {
   .el-tour-step__footer {
     padding: 16px 24px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
-    
+
     .el-button {
-        border-radius: 10px;
-        text-transform: none;
-        font-weight: 700;
+      border-radius: 10px;
+      text-transform: none;
+      font-weight: 700;
     }
   }
 }

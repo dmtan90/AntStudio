@@ -8,8 +8,18 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { AdminSettings } from '../models/AdminSettings.js';
 import { Template } from '../models/Template.js';
 
+// Define the file filter function to update the filename encoding
+const fileFilter = (req: AuthRequest, file: any, callback: any) => {
+    // Re-encode from latin1 (Multer's default behavior in older versions) to utf8
+    file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    callback(null, true); // Accept the file
+};
+
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB limit
+const upload = multer({
+    fileFilter, storage: multer.memoryStorage(),
+    limits: { fileSize: 2000 * 1024 * 1024 }
+}); // 2GB limit
 
 // All media routes require authentication
 router.use(authMiddleware);
@@ -758,101 +768,101 @@ router.get('/unsplash/images', async (req: AuthRequest, res: Response) => {
 // TEMPLATE APIs
 // ============================================================================
 
-const ZOCKET_API_TEMPLATES = 'https://prod.zocket.com/customer/ads/api/v1/editor/video-templates/all';
+// const ZOCKET_API_TEMPLATES = 'https://prod.zocket.com/customer/ads/api/v1/editor/video-templates/all';
+// move to /api/marketplace/templates
+// // GET /api/media/templates
+// router.get('/templates', async (req: AuthRequest, res: Response) => {
+//     try {
+//         await connectDB();
 
-// GET /api/media/templates
-router.get('/templates', async (req: AuthRequest, res: Response) => {
-    try {
-        await connectDB();
+//         const page = parseInt(req.query.page as string) || 0;
+//         const limit = parseInt(req.query.per_page as string) || 20;
+//         const query = req.query.query as string;
+//         const isPublic = req.query.public === 'true';
 
-        const page = parseInt(req.query.page as string) || 0;
-        const limit = parseInt(req.query.per_page as string) || 20;
-        const query = req.query.query as string;
-        const isPublic = req.query.public === 'true';
+//         // 1. Check if we have templates in DB
+//         const count = await Template.countDocuments();
 
-        // 1. Check if we have templates in DB
-        const count = await Template.countDocuments();
+//         // 2. If empty, sync from Zocket
+//         if (count === 0) {
+//             console.log('Template DB empty, syncing from Zocket...');
+//             try {
+//                 // Fetch all templates (or a large batch) to populate DB
+//                 const zocketUrl = `${ZOCKET_API_TEMPLATES}?is_published=true&page=0&limit=100`; // Initial sync limit
+//                 const response = await fetch(zocketUrl);
 
-        // 2. If empty, sync from Zocket
-        if (count === 0) {
-            console.log('Template DB empty, syncing from Zocket...');
-            try {
-                // Fetch all templates (or a large batch) to populate DB
-                const zocketUrl = `${ZOCKET_API_TEMPLATES}?is_published=true&page=0&limit=100`; // Initial sync limit
-                const response = await fetch(zocketUrl);
+//                 if (!response.ok) {
+//                     console.error(`Failed to fetch from Zocket: ${response.status}`);
+//                     // Don't fail the request, just return empty or what we have
+//                 } else {
+//                     const data: any = await response.json();
+//                     if (data.data && Array.isArray(data.data.templates)) {
+//                         const templatesToSave = data.data.templates.map((t: any) => {
+//                             let pages = [];
+//                             try {
+//                                 pages = typeof t.pages === 'string' ? JSON.parse(t.pages) : t.pages;
+//                             } catch (e) {
+//                                 console.warn(`Failed to parse pages for template ${t.id}`, e);
+//                             }
 
-                if (!response.ok) {
-                    console.error(`Failed to fetch from Zocket: ${response.status}`);
-                    // Don't fail the request, just return empty or what we have
-                } else {
-                    const data: any = await response.json();
-                    if (data.data && Array.isArray(data.data.templates)) {
-                        const templatesToSave = data.data.templates.map((t: any) => {
-                            let pages = [];
-                            try {
-                                pages = typeof t.pages === 'string' ? JSON.parse(t.pages) : t.pages;
-                            } catch (e) {
-                                console.warn(`Failed to parse pages for template ${t.id}`, e);
-                            }
+//                             return {
+//                                 id: t.id,
+//                                 name: t.name,
+//                                 is_published: true, // Assuming public sync
+//                                 pages: pages,
+//                                 // Map other fields if necessary
+//                             };
+//                         });
 
-                            return {
-                                id: t.id,
-                                name: t.name,
-                                is_published: true, // Assuming public sync
-                                pages: pages,
-                                // Map other fields if necessary
-                            };
-                        });
+//                         if (templatesToSave.length > 0) {
+//                             await Template.insertMany(templatesToSave);
+//                             console.log(`Synced ${templatesToSave.length} templates from Zocket.`);
+//                         }
+//                     }
+//                 }
+//             } catch (syncError) {
+//                 console.error('Error syncing templates from Zocket:', syncError);
+//                 // Continue to serve what we have (which might be empty)
+//             }
+//         }
 
-                        if (templatesToSave.length > 0) {
-                            await Template.insertMany(templatesToSave);
-                            console.log(`Synced ${templatesToSave.length} templates from Zocket.`);
-                        }
-                    }
-                }
-            } catch (syncError) {
-                console.error('Error syncing templates from Zocket:', syncError);
-                // Continue to serve what we have (which might be empty)
-            }
-        }
+//         // 3. Query DB
+//         const filter: any = {};
+//         if (query) {
+//             filter.name = { $regex: query, $options: 'i' };
+//         }
+//         if (isPublic) {
+//             filter.is_published = true;
+//         }
 
-        // 3. Query DB
-        const filter: any = {};
-        if (query) {
-            filter.name = { $regex: query, $options: 'i' };
-        }
-        if (isPublic) {
-            filter.is_published = true;
-        }
+//         const templates = await Template.find(filter)
+//             .sort({ createdAt: -1 }) // Or allow sorting param
+//             .skip(page * limit) // Note: user's client seems to use 0-based page index for this API based on use-public-template.ts
+//             .limit(limit)
+//             .lean();
 
-        const templates = await Template.find(filter)
-            .sort({ createdAt: -1 }) // Or allow sorting param
-            .skip(page * limit) // Note: user's client seems to use 0-based page index for this API based on use-public-template.ts
-            .limit(limit)
-            .lean();
+//         const total = await Template.countDocuments(filter);
 
-        const total = await Template.countDocuments(filter);
+//         res.json({
+//             success: true,
+//             data: {
+//                 templates: templates,
+//                 total_results: total,
+//                 page: page,
+//                 per_page: limit,
+//                 next_page: (page + 1) * limit < total,
+//                 prev_page: page > 0
+//             }
+//         });
 
-        res.json({
-            success: true,
-            data: {
-                templates: templates,
-                total_results: total,
-                page: page,
-                per_page: limit,
-                next_page: (page + 1) * limit < total,
-                prev_page: page > 0
-            }
-        });
-
-    } catch (error: any) {
-        console.error('Template API error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch templates',
-            status: 500
-        });
-    }
-});
+//     } catch (error: any) {
+//         console.error('Template API error:', error);
+//         res.status(500).json({
+//             success: false,
+//             error: 'Failed to fetch templates',
+//             status: 500
+//         });
+//     }
+// });
 
 export default router;

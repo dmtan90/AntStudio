@@ -12,22 +12,14 @@
       </div>
 
       <div class="filters-bar">
-        <GInput
-          v-model="searchQuery"
-          :placeholder="t('license.search')"
-          class="search-input"
-        >
+        <GInput v-model="searchQuery" :placeholder="t('license.search')" class="search-input">
           <template #prefix>
             <search theme="outline" size="18" />
           </template>
         </GInput>
 
         <div class="filter-tabs">
-          <GSegmented
-            v-model="currentLicenseType"
-            :options="licenseTypeFilters"
-            class="type-segmented"
-          />
+          <GSegmented v-model="currentLicenseType" :options="licenseTypeFilters" class="type-segmented" />
         </div>
       </div>
 
@@ -37,32 +29,32 @@
 
       <div v-else-if="filteredLicenses.length > 0" class="flex flex-row">
         <GTable :data="filteredLicenses" stripe highlight-current-row>
-            <el-table-column type="index" width="50px" />
-            <el-table-column prop="owner" label="Owner" />
-            <el-table-column prop="type" label="Type">
-                <template #default="{ row }">
-                    <el-tag>{{ row.type }}</el-tag>
-                </template>
-            </el-table-column>
-            <el-table-column prop="maxUsers" label="Max Users" />
-            <el-table-column prop="maxProjects" label="Max Projects" />
-            <!-- <el-table-column prop="durationDays" label="Duration Days" /> -->
-            <el-table-column prop="createdAt" label="Created At" >
-                <template #default="{ row }">
-                    {{ formatDate(row.createdAt) }}
-                </template>
-            </el-table-column>
-            <el-table-column prop="updatedAt" label="Updated At" >
-                <template #default="{ row }">
-                    {{ formatDate(row.updatedAt) }}
-                </template>
-            </el-table-column>
-            <el-table-column label="Actions">
-                <template #default="{ row }">
-                    <el-button type="primary" plain bg circle :icon="PlayOne" @click="handlePreviewLicense(row)" />
-                    <el-button type="danger" plain bg circle :icon="Delete" @click="deleteLicense(row)" />
-                </template>
-            </el-table-column>
+          <el-table-column type="index" width="50px" />
+          <el-table-column prop="owner" label="Owner" />
+          <el-table-column prop="tier" label="Type">
+            <template #default="{ row }">
+              <el-tag>{{ row.tier }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="maxUsersPerInstance" label="Max Users" />
+          <el-table-column prop="maxProjectsPerInstance" label="Max Projects" />
+          <!-- <el-table-column prop="durationDays" label="Duration Days" /> -->
+          <el-table-column prop="createdAt" label="Created At">
+            <template #default="{ row }">
+              {{ formatDate(row.createdAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="updatedAt" label="Updated At">
+            <template #default="{ row }">
+              {{ formatDate(row.updatedAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="Actions">
+            <template #default="{ row }">
+              <el-button type="primary" plain bg circle :icon="PlayOne" @click="handlePreviewLicense(row)" />
+              <el-button type="danger" plain bg circle :icon="Delete" @click="deleteLicense(row)" />
+            </template>
+          </el-table-column>
         </GTable>
         <!-- <GCard
           v-for="license in filteredLicenses"
@@ -118,28 +110,21 @@
     </div>
 
     <!-- License Issue Dialog -->
-    <GDialog
-      v-model="showLicenseIssueDialog"
-      :title="t('license.issue')"
-      width="500px"
-    >
+    <GDialog v-model="showLicenseIssueDialog" :title="t('license.issue')" width="500px">
       <div class="license-form g-form flex flex-col gap-2" v-loading="isUploading">
-        <GLabel>{{ t('license.owner') }}</GLabel>
+        <label>{{ t('license.owner') }}</label>
         <GInput v-model="licenseForm.owner" :placeholder="t('license.owner')" />
-        <GLabel>{{ t('license.type') }}</GLabel>
-        <GSelect v-model="licenseForm.type" :placeholder="t('license.type')">
-            <el-option
-                v-for="item in licenseTypeOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-            />
+        <label>{{ t('license.type') }}</label>
+        <GSelect v-model="licenseForm.tier" :placeholder="t('license.type')">
+          <el-option v-for="item in licenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
         </GSelect>
-        <GLabel>{{ t('license.maxUsers') }}</GLabel>
-        <GInputNumber v-model="licenseForm.maxUsers" :min="1" :placeholder="t('license.maxUsers')" />
-        <GLabel>{{ t('license.maxProjects') }}</GLabel>
-        <GInputNumber v-model="licenseForm.maxProjects" :min="1" :placeholder="t('license.maxProjects')" />
-        <GLabel>{{ t('license.durationDays') }}</GLabel>
+        <label>{{ t('license.maxUsers') }}</label>
+        <GInputNumber v-model="licenseForm.maxUsersPerInstance" :min="1"
+          :placeholder="t('license.maxUsersPerInstance')" />
+        <label>{{ t('license.maxProjects') }}</label>
+        <GInputNumber v-model="licenseForm.maxProjectsPerInstance" :min="1"
+          :placeholder="t('license.maxProjectsPerInstance')" />
+        <label>{{ t('license.durationDays') }}</label>
         <GInputNumber v-model="licenseForm.durationDays" :min="1" :placeholder="t('license.durationDays')" />
         <el-divider />
         <GButton type="primary" @click="handleAddLicense">{{ t('license.issue') }}</GButton>
@@ -147,31 +132,23 @@
     </GDialog>
 
     <!-- License Preview Dialog -->
-    <GDialog
-      v-model="showPreviewDialog"
-      :title="previewLicense?.key"
-      width="500px"
-      custom-class="preview-dialog"
-    >
+    <GDialog v-model="showPreviewDialog" :title="previewLicense?.key" width="500px" custom-class="preview-dialog">
       <div class="preview-content flex flex-col gap-2">
-        <GLabel>{{ t('license.owner') }}</GLabel>
+        <label>{{ t('license.owner') }}</label>
         <GInput v-model="previewLicense.owner" :placeholder="t('license.owner')" />
-        <GLabel>{{ t('license.type') }}</GLabel>
-        <GSelect v-model="previewLicense.type" :placeholder="t('license.type')">
-            <el-option
-                v-for="item in licenseTypeOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-            />
+        <label>{{ t('license.type') }}</label>
+        <GSelect v-model="previewLicense.tier" :placeholder="t('license.type')">
+          <el-option v-for="item in licenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
         </GSelect>
-        <GLabel>{{ t('license.maxUsers') }}</GLabel>
-        <GInputNumber v-model="previewLicense.maxUsers" :min="1" :placeholder="t('license.maxUsers')" />
-        <GLabel>{{ t('license.maxProjects') }}</GLabel>
-        <GInputNumber v-model="previewLicense.maxProjects" :min="1" :placeholder="t('license.maxProjects')" />
-        <GLabel>{{ t('license.startDate') }}</GLabel>
+        <label>{{ t('license.maxUsers') }}</label>
+        <GInputNumber v-model="previewLicense.maxUsersPerInstance" :min="1"
+          :placeholder="t('license.maxUsersPerInstance')" />
+        <label>{{ t('license.maxProjects') }}</label>
+        <GInputNumber v-model="previewLicense.maxProjectsPerInstance" :min="1"
+          :placeholder="t('license.maxProjectsPerInstance')" />
+        <label>{{ t('license.startDate') }}</label>
         <el-date-picker class="w-full" v-model="previewLicense.startDate" :placeholder="t('license.startDate')" />
-        <GLabel>{{ t('license.endDate') }}</GLabel>
+        <label>{{ t('license.endDate') }}</label>
         <el-date-picker class="w-full" v-model="previewLicense.endDate" :placeholder="t('license.endDate')" />
         <el-divider />
         <GButton type="primary" @click="handleUpdateLicense">{{ t('license.update') }}</GButton>
@@ -181,9 +158,9 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  Search, 
-  Delete, 
+import {
+  Search,
+  Delete,
   PlayOne
 } from '@icon-park/vue-next'
 import { useTranslations } from '@/composables/useTranslations'
@@ -194,7 +171,7 @@ import GInput from '@/components/ui/GInput.vue'
 import GCard from '@/components/ui/GCard.vue'
 import GSegmented from '@/components/ui/GSegmented.vue'
 import GDialog from '@/components/ui/GDialog.vue'
-// import GDatePicker from '@/components/ui/GDatePicker.vue'
+// import GLabel from '@/components/ui/GLabel.vue'
 import { useLicenseStore } from '@/stores/license'
 import { storeToRefs } from 'pinia'
 import GInputNumber from '@/components/ui/GInputNumber.vue'
@@ -209,21 +186,21 @@ const currentLicenseType = ref('all')
 const showLicenseIssueDialog = ref(false)
 const showPreviewDialog = ref(false)
 const previewLicense = ref<any>({
-    owner: '',
-    type: 'trial',
-    maxUsers: 5,
-    maxProjects: 10,
-    durationDays: 30,
-    startDate: new Date(),
-    endDate: new Date()
+  owner: '',
+  tier: 'trial',
+  maxUsersPerInstance: 5,
+  maxProjectsPerInstance: 10,
+  durationDays: 30,
+  startDate: new Date(),
+  endDate: new Date()
 })
 // const fileInput = ref<HTMLInputElement>()
 const isUploading = ref(false)
 const licenseForm = ref({
   owner: '',
-  type: 'trial',
-  maxUsers: 5,
-  maxProjects: 10,
+  tier: 'trial',
+  maxUsersPerInstance: 5,
+  maxProjectsPerInstance: 10,
   durationDays: 30
 })
 
@@ -236,7 +213,8 @@ const licenseTypeFilters = computed(() => [
 
 const licenseTypeOptions = computed(() => [
   { value: 'trial', label: t('license.typeTrial') },
-  { value: 'free', label: t('license.typeFree') },
+  { value: 'basic', label: t('license.typeBasic') },
+  { value: 'pro', label: t('license.typePro') },
   { value: 'enterprise', label: t('license.typeEnterprise') }
 ])
 
@@ -271,87 +249,87 @@ const fetchLicenses = () => {
 }
 
 const handleAddLicense = async () => {
-    if(!licenseForm.value?.owner){
-        toast.error(t('license.ownerRequired'))
-        return
+  if (!licenseForm.value?.owner) {
+    toast.error(t('license.ownerRequired'))
+    return
+  }
+  if (!licenseForm.value?.tier) {
+    toast.error(t('license.typeRequired'))
+    return
+  }
+  if (!licenseForm.value?.maxUsersPerInstance) {
+    toast.error(t('license.maxUsersRequired'))
+    return
+  }
+  if (!licenseForm.value?.maxProjectsPerInstance) {
+    toast.error(t('license.maxProjectsRequired'))
+    return
+  }
+  if (!licenseForm.value?.durationDays) {
+    toast.error(t('license.durationDaysRequired'))
+    return
+  }
+  try {
+    isUploading.value = true
+    await licenseStore.addLicense(licenseForm.value)
+    //reset form
+    licenseForm.value = {
+      owner: '',
+      tier: 'trial',
+      maxUsersPerInstance: 5,
+      maxProjectsPerInstance: 10,
+      durationDays: 30
     }
-    if(!licenseForm.value?.type){
-        toast.error(t('license.typeRequired'))
-        return
-    }
-    if(!licenseForm.value?.maxUsers){
-        toast.error(t('license.maxUsersRequired'))
-        return
-    }
-    if(!licenseForm.value?.maxProjects){
-        toast.error(t('license.maxProjectsRequired'))
-        return
-    }
-    if(!licenseForm.value?.durationDays){
-        toast.error(t('license.durationDaysRequired'))
-        return
-    }
-    try {
-        isUploading.value = true
-        await licenseStore.addLicense(licenseForm.value)
-        //reset form
-        licenseForm.value = {
-            owner: '',
-            type: 'trial',
-            maxUsers: 5,
-            maxProjects: 10,
-            durationDays: 30
-        }
-        showLicenseIssueDialog.value = false
-    } catch (error) {
-        console.error(error)
-        toast.error(t('common.failed'))
-    } finally {
-        isUploading.value = false
-    }
+    showLicenseIssueDialog.value = false
+  } catch (error) {
+    console.error(error)
+    toast.error(t('common.failed'))
+  } finally {
+    isUploading.value = false
+  }
 }
 
 const handleUpdateLicense = async () => {
-    if(!previewLicense.value?.owner){
-        toast.error(t('license.ownerRequired'))
-        return
+  if (!previewLicense.value?.owner) {
+    toast.error(t('license.ownerRequired'))
+    return
+  }
+  if (!previewLicense.value?.tier) {
+    toast.error(t('license.typeRequired'))
+    return
+  }
+  if (!previewLicense.value?.maxUsersPerInstance) {
+    toast.error(t('license.maxUsersRequired'))
+    return
+  }
+  if (!previewLicense.value?.maxProjectsPerInstance) {
+    toast.error(t('license.maxProjectsRequired'))
+    return
+  }
+  if (!previewLicense.value?.durationDays) {
+    toast.error(t('license.durationDaysRequired'))
+    return
+  }
+  try {
+    isUploading.value = true
+    await licenseStore.updateLicense(previewLicense.value._id, previewLicense.value)
+    //reset form
+    previewLicense.value = {
+      owner: '',
+      tier: 'trial',
+      maxUsersPerInstance: 5,
+      maxProjectsPerInstance: 10,
+      durationDays: 30,
+      startDate: new Date(),
+      endDate: new Date()
     }
-    if(!previewLicense.value?.type){
-        toast.error(t('license.typeRequired'))
-        return
-    }
-    if(!previewLicense.value?.maxUsers){
-        toast.error(t('license.maxUsersRequired'))
-        return
-    }
-    if(!previewLicense.value?.maxProjects){
-        toast.error(t('license.maxProjectsRequired'))
-        return
-    }
-    if(!previewLicense.value?.durationDays){
-        toast.error(t('license.durationDaysRequired'))
-        return
-    }
-    try {
-        isUploading.value = true
-        await licenseStore.updateLicense(previewLicense.value._id, previewLicense.value)
-        //reset form
-        previewLicense.value = {
-            owner: '',
-            type: 'trial',
-            maxUsers: 5,
-            maxProjects: 10,
-            durationDays: 30,
-            startDate: new Date(),
-            endDate: new Date()
-        }
-        showPreviewDialog.value = false
-    } catch (error) {
-        console.error(error)
-        toast.error(t('common.failed'))
-    } finally {
-        isUploading.value = false
-    }
+    showPreviewDialog.value = false
+  } catch (error) {
+    console.error(error)
+    toast.error(t('common.failed'))
+  } finally {
+    isUploading.value = false
+  }
 }
 
 // const handleFileSelect = async (event: Event) => {
@@ -377,8 +355,8 @@ const handleUpdateLicense = async () => {
 // }
 
 const handlePreviewLicense = (license: any) => {
-    previewLicense.value = license
-    showPreviewDialog.value = true
+  previewLicense.value = license
+  showPreviewDialog.value = true
 }
 
 // const downloadLicense = (license: any) => {
@@ -465,6 +443,7 @@ onMounted(() => {
 
 .license-card {
   position: relative;
+
   :deep(.g-card__body) {
     padding: 0;
   }
@@ -565,7 +544,10 @@ onMounted(() => {
 
   &.danger {
     color: #ff5252;
-    &:hover { background: rgba(255, 82, 82, 0.1); }
+
+    &:hover {
+      background: rgba(255, 82, 82, 0.1);
+    }
   }
 }
 
@@ -574,9 +556,21 @@ onMounted(() => {
   max-width: 600px;
   margin: 100px auto;
 
-  .empty-icon { font-size: 64px; margin-bottom: 24px; }
-  h3 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
-  p { color: rgba(255, 255, 255, 0.6); margin-bottom: 32px; }
+  .empty-icon {
+    font-size: 64px;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 32px;
+  }
 }
 
 .license-form {
@@ -605,13 +599,14 @@ onMounted(() => {
 
 .preview-content {
   display: flex;
-//   align-items: center;
+  //   align-items: center;
   justify-content: center;
-//   background: #000;
+  //   background: #000;
   width: 100%;
-//   height: 60vh;
+  //   height: 60vh;
 
-  img, video {
+  img,
+  video {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
@@ -619,7 +614,14 @@ onMounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 </style>

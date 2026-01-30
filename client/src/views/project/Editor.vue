@@ -129,6 +129,7 @@ import ProjectStoryboardCard from '@/components/projects/new/ProjectStoryboardCa
 import VisualGenPathCard from '@/components/projects/new/VisualGenPathCard.vue'
 import VisualAssetsCard from '@/components/projects/new/VisualAssetsCard.vue'
 import ProjectAnalysisCard from '@/components/projects/new/ProjectAnalysisCard.vue'
+import { EditorTemplate } from '../video-editor/types/editor'
 
 const { t, currentLocale } = useTranslations()
 
@@ -136,6 +137,11 @@ const route = useRoute()
 const projectId = route.params.id as string
 const projectStore = useProjectStore()
 const userStore = useUserStore()
+let template: EditorTemplate | null = null;
+if (route.params?.template) {
+  template = JSON.parse(route.params.template as string) as EditorTemplate;
+  console.log("template", template);
+}
 
 // Layout State
 const isLeftVisible = ref(true)
@@ -271,7 +277,7 @@ const handleSendMessage = async (payload?: any) => {
 
   try {
     const lowerMsg = msgContent.toLowerCase()
-    
+
     // Command detection (Language agnostic keywords)
     const keywords = ['start', 'ok', 'yes', 'bắt đầu', 'được', 'triển', 'tiếp']
     const isStartCommand = keywords.some(k => lowerMsg.includes(k)) && lastMsg?.type == "visual-guide"

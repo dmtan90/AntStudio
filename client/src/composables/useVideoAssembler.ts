@@ -1,6 +1,5 @@
 import { ref } from 'vue';
 import { useProjectStore } from '@/stores/project';
-import api from '@/utils/api';
 import { toast } from 'vue-sonner';
 
 export interface ExportOptions {
@@ -105,16 +104,10 @@ export function useVideoAssembler() {
             formData.append('duration', data.duration.toString());
             formData.append('resolution', options.resolution);
 
-            // Upload directly to project endpoint
-            await api.post(`/projects/${projectId}/upload-final-video`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                },
-                onUploadProgress: (progressEvent) => {
-                    const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
-                    progress.value = 95 + (percentCompleted * 0.05); // Last 5% for upload
-                    status.value = `Uploading: ${percentCompleted}%`;
-                }
+            // Upload directly to project endpoint via store
+            await projectStore.uploadFinalVideo(projectId, formData, (percent) => {
+                progress.value = 95 + (percent * 0.05); // Last 5% for upload
+                status.value = `Uploading: ${percent}%`;
             });
 
             status.value = 'All done!';

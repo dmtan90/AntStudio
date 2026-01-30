@@ -5,6 +5,7 @@ import { AdminSettings } from '../../models/AdminSettings.js';
 /**
  * FlowClientV2: Orchestrated client for Google Labs / Antigravity
  * Adopts the Unified Payload logic from antigravity2api-nodejs.
+ * @deprecated Use FlowProvider (via FlowApiClient) instead.
  */
 export class FlowClientV2 {
 

@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface ILicense extends Document {
     key: string;
     owner: string; // Email of the owner on Master
-    tier: 'basic' | 'pro' | 'enterprise';
+    tier: 'trial' | 'basic' | 'pro' | 'enterprise';
     status: 'valid' | 'expired' | 'revoked';
     instancesLimit: number; // Max Edge servers for this key
     activeInstances: number;
@@ -26,7 +26,7 @@ const LicenseSchema = new Schema<ILicense>(
     {
         key: { type: String, required: true, unique: true },
         owner: { type: String, required: true },
-        tier: { type: String, enum: ['basic', 'pro', 'enterprise'], default: 'basic' },
+        tier: { type: String, enum: ['trial', 'basic', 'pro', 'enterprise'], default: 'trial' },
         status: { type: String, enum: ['valid', 'expired', 'revoked'], default: 'valid' },
         instancesLimit: { type: Number, default: 1 },
         activeInstances: { type: Number, default: 0 },
@@ -48,7 +48,7 @@ const LicenseSchema = new Schema<ILicense>(
 );
 
 // Indexes for performance
-LicenseSchema.index({ key: 1 }, { unique: true }); // License key lookup
+// LicenseSchema.index({ key: 1 }, { unique: true }); // License key lookup
 LicenseSchema.index({ owner: 1, status: 1 }); // Owner's active licenses
 LicenseSchema.index({ status: 1, endDate: 1 }); // Active/expiring license queries
 LicenseSchema.index({ tier: 1, status: 1, endDate: 1 }); // Tier-based analytics (for MRR calculation)

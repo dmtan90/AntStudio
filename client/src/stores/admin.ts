@@ -171,6 +171,41 @@ export const useAdminStore = defineStore('admin', () => {
         }
     }
 
+    // Release Hub Actions
+    async function fetchReleases(params?: any) {
+        loading.value = true
+        try {
+            const response = await api.get('/admin/releases', { params })
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function createRelease(data: any) {
+        try {
+            const response = await api.post('/admin/releases', data)
+            toast.success('Release created successfully')
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function deleteRelease(id: string) {
+        try {
+            await api.delete(`/admin/releases/${id}`)
+            toast.success('Release deleted successfully')
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     return {
         users,
         settings,
@@ -187,6 +222,9 @@ export const useAdminStore = defineStore('admin', () => {
         fetchLicenses,
         generateLicense,
         deleteLicense,
-        generateTemplate
+        generateTemplate,
+        fetchReleases,
+        createRelease,
+        deleteRelease
     }
 })

@@ -16,14 +16,16 @@ export class ElevenLabsProvider {
             const voiceId = options.voice || '21m00Tcm4TlvDq8ikWAM'; // Default voice (Rachel)
             const model = modelId || 'eleven_monolingual_v1';
 
+            const voiceSettings = options.voiceSettings || {};
+
             const response = await axios.post(
                 `${this.baseUrl}/text-to-speech/${voiceId}`,
                 {
                     text: prompt,
                     model_id: model,
-                    voice_settings: options.voice_settings || {
-                        stability: 0.5,
-                        similarity_boost: 0.75
+                    voice_settings: {
+                        stability: voiceSettings.stability ?? 0.5,
+                        similarity_boost: voiceSettings.similarity ?? 0.75
                     }
                 },
                 {
@@ -130,10 +132,10 @@ export class ElevenLabsProvider {
             const response = await axios.get(`${this.baseUrl}/voices`, {
                 headers: { 'xi-api-key': this.apiKey }
             });
-            return response.data.voices;
+            return response.data.voices || [];
         } catch (error: any) {
             console.error('ElevenLabs List Voices Error:', error.message);
-            throw error;
+            return []; // Return empty array on error for resilience
         }
     }
 }

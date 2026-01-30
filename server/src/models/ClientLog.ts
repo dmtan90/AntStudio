@@ -10,7 +10,7 @@ export interface IClientLog extends Document {
 }
 
 const ClientLogSchema = new Schema<IClientLog>({
-    type: { type: String, enum: ['javascript', 'http', 'promise', 'network'], required: true },
+    type: { type: String, required: true },
     details: { type: Schema.Types.Mixed, required: true },
     url: { type: String },
     userAgent: { type: String },

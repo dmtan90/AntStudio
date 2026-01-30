@@ -1,11 +1,11 @@
 <template>
     <div class="ai-model-settings space-y-8 animate-in">
         <!-- Providers Registry -->
-        <div class="settings-section cinematic-panel">
+        <div class="settings-section cinematic-panel p-6">
             <div class="panel-header flex justify-between items-center mb-6">
                 <span class="text-xs font-black uppercase tracking-widest opacity-60">Neural Provider Registry</span>
                 <el-dropdown @command="handleProviderCommand">
-                    <el-button type="primary" plain bg round size="small">Add Intelligence Core</el-button>
+                    <el-button plain bg round size="small">Add Intelligence Core</el-button>
                     <template #dropdown>
                         <el-dropdown-menu>
                             <el-dropdown-item v-for="p in knownProviders" :key="p.id" :command="p"
@@ -65,7 +65,8 @@
         </div>
 
         <!-- AI Account Manager OAuth -->
-        <div class="settings-section cinematic-panel p-6">
+        <!-- Move to System config -->
+        <!-- <div class="settings-section cinematic-panel p-6">
             <div class="flex items-center gap-3 mb-6">
                 <div class="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
                     <user theme="outline" size="20" />
@@ -77,19 +78,21 @@
             </div>
             <el-form label-position="top">
                 <el-row :gutter="20">
-                    <el-col :span="8">
+                    <el-col :span="12">
                         <el-form-item label="Google Client ID">
                             <el-input v-model="aiOAuth.google.clientId" placeholder="...apps.googleusercontent.com"
                                 class="glass-input" />
                         </el-form-item>
                     </el-col>
-                    <el-col :span="8">
+                    <el-col :span="12">
                         <el-form-item label="Google Client Secret">
                             <el-input v-model="aiOAuth.google.clientSecret" type="password" show-password
                                 class="glass-input" />
                         </el-form-item>
                     </el-col>
-                    <el-col :span="8">
+                </el-row>
+                <el-row :gutter="20">
+                    <el-col :span="24">
                         <div class="p-3 bg-black/40 rounded-2xl border border-white/5 mt-6">
                             <p class="text-[8px] font-black uppercase opacity-30 mb-1">Redirect URI Handshake</p>
                             <code class="text-[10px] text-blue-400 font-mono">{{ suggestedRedirectUri }}</code>
@@ -97,7 +100,7 @@
                     </el-col>
                 </el-row>
             </el-form>
-        </div>
+        </div> -->
 
         <!-- Neural Session Sync -->
         <div class="settings-section cinematic-panel p-6">
@@ -107,18 +110,23 @@
                 </div>
                 <div>
                     <h4 class="text-xs font-black uppercase tracking-widest">Neural Session Sync</h4>
-                    <p class="text-[9px] opacity-40">Unified identity for AI Studio, Gemini, and Labs Flow.</p>
+                    <p class="text-[9px] opacity-40">Session cookies for AI Studio, Gemini, and Labs Flow.</p>
                 </div>
             </div>
             <el-form label-position="top">
-                <el-form-item label="Shared Identity Cookies (JSON/Raw)">
-                    <el-input v-model="localCookies" type="textarea" :rows="4"
-                        placeholder='Paste session identity data...' class="glass-input code-font" />
+                <el-form-item label="AIStudio / Gemini Cookies (JSON/Raw)">
+                    <el-input v-model="localGoogleCookies" type="textarea" :rows="3"
+                        placeholder='Paste Google AI Studio / Gemini session cookies...' class="glass-input code-font"
+                        @change="saveCookies" />
+                </el-form-item>
+                <el-form-item label="Labs Flow Cookies (JSON/Raw)" class="mt-4">
+                    <el-input v-model="localFlowCookies" type="textarea" :rows="3"
+                        placeholder='Paste Labs Flow session cookies...' class="glass-input code-font"
+                        @change="saveCookies" />
                 </el-form-item>
                 <div class="flex gap-3">
-                    <el-button type="primary" plain bg round @click="$emit('save-cookies', localCookies)">Update Sync
-                        Core</el-button>
-                    <el-button type="success" plain bg round @click="$emit('sync-google')">Fast AI Sync</el-button>
+                    <!-- <el-button plain bg round @click="saveCookies">Save Session Cookies</el-button> -->
+                    <el-button type="success" plain bg round @click="$emit('sync-google')">Save Cookies</el-button>
                 </div>
             </el-form>
         </div>
@@ -132,7 +140,8 @@ import { SettingTwo, Delete, User, Refresh } from '@icon-park/vue-next';
 const props = defineProps<{
     providers: any[];
     aiOAuth: any;
-    aiStudioCookies: string;
+    googleCookies?: string;
+    flowCookies?: string;
     suggestedRedirectUri: string;
     knownProviders: any[];
 }>();
@@ -142,12 +151,22 @@ const emit = defineEmits([
     'save-cookies', 'sync-google'
 ]);
 
-const localCookies = ref(props.aiStudioCookies);
-watch(() => props.aiStudioCookies, (val) => localCookies.value = val);
+const localGoogleCookies = ref(props.googleCookies || '');
+const localFlowCookies = ref(props.flowCookies || '');
+
+watch(() => props.googleCookies, (val) => localGoogleCookies.value = val || '');
+watch(() => props.flowCookies, (val) => localFlowCookies.value = val || '');
 
 const handleProviderCommand = (command: any) => {
     if (command === 'custom') emit('add-provider', null);
     else emit('add-provider', command);
+};
+
+const saveCookies = () => {
+    emit('save-cookies', {
+        googleCookies: localGoogleCookies.value,
+        flowCookies: localFlowCookies.value
+    });
 };
 </script>
 

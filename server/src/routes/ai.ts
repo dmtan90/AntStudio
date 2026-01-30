@@ -420,7 +420,7 @@ router.post('/analyze-product', upload.single('file'), async (req, res) => {
 // POST /api/ai/generate-avatar-video
 router.post('/generate-avatar-video', async (req: AuthRequest, res) => {
     try {
-        const { avatarId, script, voiceId, background, avatarImage } = req.body;
+        const { avatarId, script, voiceId, voiceProvider, voiceSettings, background, avatarImage } = req.body;
         const userId = req.user!.userId;
 
         // Estimate duration
@@ -459,6 +459,13 @@ router.post('/generate-avatar-video', async (req: AuthRequest, res) => {
             duration,
             aspectRatio: '16:9',
             characterImages: characterImages,
+            metadata: {
+                avatarId,
+                voiceId,
+                voiceProvider: voiceProvider || 'elevenlabs',
+                voiceSettings: voiceSettings || {},
+                script
+            }
             // If we have a direct frontal avatar image, using it as image_start might ensure better consistency
             // imageStart: avatarImage 
         });

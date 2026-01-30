@@ -81,7 +81,7 @@ const OrganizationSchema = new Schema<IOrganization>(
 );
 
 // Indexes
-OrganizationSchema.index({ slug: 1 });
+// OrganizationSchema.index({ slug: 1 });
 OrganizationSchema.index({ 'members.userId': 1 });
 
 export const Organization: Model<IOrganization> =

@@ -23,6 +23,8 @@ export interface IUserPlatformAccount extends Document {
         email?: string;
         password?: string; // For manual login types
         serverUrl?: string; // For AMS
+        appName?: string; // For AMS is AppName
+        scope?: string;
     };
 
     streamKey?: string;
@@ -52,7 +54,9 @@ const UserPlatformAccountSchema: Schema = new Schema({
         expiresAt: { type: Date },
         email: { type: String },
         password: { type: String },
-        serverUrl: { type: String }
+        serverUrl: { type: String },
+        scope: { type: String },
+        appName: { type: String },
     },
 
     streamKey: { type: String },

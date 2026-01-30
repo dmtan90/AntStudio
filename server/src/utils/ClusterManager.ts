@@ -19,8 +19,12 @@ export class ClusterManager {
             if (!primaryUri) throw new Error("Primary MONGODB_URI is not defined");
 
             // 1. Connect Primary (Master Writer)
-            this.primaryConnection = await mongoose.createConnection(primaryUri).asPromise();
-            console.log(`[ClusterManager] 🟢 Primary DB Connected: ${this.getHost(primaryUri)}`);
+            // Use mongoose.connect to initialize the default connection for models
+            // Disable buffering to fail fast if connection is not ready
+            mongoose.set('bufferCommands', false);
+            await mongoose.connect(primaryUri);
+            this.primaryConnection = mongoose.connection;
+            console.log(`[ClusterManager] 🟢 Primary DB Connected (Default): ${this.getHost(primaryUri)}`);
 
             // 2. Connect Read Replicas (Optional Readers)
             const replicaUris = process.env.MONGODB_READ_REPLICAS?.split(',') || [];

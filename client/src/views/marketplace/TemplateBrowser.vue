@@ -1,60 +1,165 @@
 <template>
   <div class="marketplace-view min-h-screen bg-[#0a0a0c] text-white">
     <!-- Header Section -->
-    <header class="relative py-20 px-8 overflow-hidden border-b border-white/5">
-      <div class="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent pointer-events-none"></div>
+    <header class="relative py-24 px-8 overflow-hidden border-b border-white/5">
+      <div
+        class="absolute inset-0 bg-gradient-to-br from-blue-600/15 via-purple-600/5 to-transparent pointer-events-none">
+      </div>
+      <!-- Animated background glow -->
+      <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
+      <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] animate-pulse"
+        style="animation-delay: 1s"></div>
+
       <div class="max-w-7xl mx-auto relative z-10">
-        <h1 class="text-6xl font-black mb-4 tracking-tighter">
-          AntFlow <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500">Marketplace</span>
+        <div
+          class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
+          <div class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">Premium Templates</span>
+        </div>
+        <h1 class="text-7xl font-black mb-6 tracking-tighter leading-[0.9]">
+          Magic <span
+            class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">Template</span><br />
+          Marketplace
         </h1>
-        <p class="text-xl text-gray-400 max-w-2xl leading-relaxed">
-          Unlock your productivity with premium AI video templates. Import from CapCut, Canva, or discover our native creative library.
+        <p class="text-xl text-gray-400 max-w-2xl leading-relaxed mb-10 font-medium">
+          Unlock your productivity with professional designs. One-click import from your favorite platforms to start
+          editing instantly.
         </p>
-        
-        <div class="flex gap-4 mt-8">
-          <button @click="openImport('capcut')" class="px-8 py-4 bg-gradient-to-r from-[#FF0050] to-[#00F2EA]/20 rounded-2xl font-black hover:scale-105 transition-transform shadow-lg shadow-pink-500/20">
-            Import from CapCut
+
+        <div class="flex flex-wrap gap-4">
+          <button @click="importDialog.show = true"
+            class="group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden">
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity">
+            </div>
+            <Magic theme="filled" class="text-xl" />
+            Import from URL
           </button>
-          <button @click="openImport('canva')" class="px-8 py-4 bg-gradient-to-r from-[#00C4CC] to-blue-500/20 rounded-2xl font-black hover:scale-105 transition-transform shadow-lg shadow-cyan-500/20">
-            Import from Canva
-          </button>
+
+          <div class="flex -space-x-4">
+            <div v-for="i in 3" :key="i"
+              class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] overflow-hidden bg-white/5 backdrop-blur-md">
+              <img :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`"
+                class="w-full h-full object-cover" />
+            </div>
+            <div
+              class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] bg-white/10 backdrop-blur-md flex items-center justify-center text-[10px] font-black text-white">
+              +2k
+            </div>
+          </div>
+          <div class="flex flex-col justify-center ml-2">
+            <div class="text-[10px] font-black uppercase tracking-widest text-gray-500">Trusted by</div>
+            <div class="text-xs font-bold text-gray-300">Global Creators</div>
+          </div>
         </div>
       </div>
     </header>
 
     <!-- Content Section -->
-    <main class="max-w-7xl mx-auto py-12 px-8">
-      <!-- Filters -->
-      <div class="flex flex-wrap items-center justify-between gap-6 mb-12">
-        <div class="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/10">
-          <button 
-            v-for="cat in categories" 
-            :key="cat.id"
-            @click="filters.category = cat.id"
-            :class="[
-              'px-6 py-2.5 rounded-xl font-bold text-sm transition-all',
-              filters.category === cat.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white'
-            ]"
-          >
-            {{ cat.name }}
-          </button>
-        </div>
+    <main class="max-w-7xl mx-auto py-16 px-8">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+        <el-segmented v-model="activeTab" :options="tabs"
+          class="premium-segmented h-14 rounded-2xl bg-white/5 p-1.5 border border-white/5">
+          <template #default="scope">
+            <div class="flex items-center gap-2.5 px-5 h-full transition-all">
+              <Earth v-if="scope.item.value === 'public'" class="text-blue-400" />
+              <VideoOne v-if="scope.item.value === 'capcut'" class="text-[#FF0050]" />
+              <Edit v-if="scope.item.value === 'canva'" class="text-[#00C4CC]" />
+              <User v-if="scope.item.value === 'private'" class="text-purple-400" />
+              <span class="font-black text-sm tracking-tight">{{ scope.item.name }}</span>
+            </div>
+          </template>
+        </el-segmented>
 
-        <div class="flex items-center gap-4">
-          <div class="relative min-w-[300px]">
-            <i class="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
-            <input 
-              v-model="filters.search"
-              placeholder="Search templates..." 
-              class="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none"
-            />
-          </div>
-          <select v-model="filters.sort" class="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl font-bold outline-none focus:border-blue-500/50">
-            <option value="featured">Featured</option>
-            <option value="popular">Popular</option>
-            <option value="newest">Newest</option>
-          </select>
+        <div class="relative group min-w-[320px]">
+          <Search
+            class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 text-lg group-focus-within:text-blue-400 transition-colors" />
+          <input v-model="filters.search" placeholder="Search templates..."
+            class="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-500/50 focus:bg-white/[0.08] transition-all outline-none text-base" />
         </div>
+      </div>
+
+      <!-- Canva Discovery UI -->
+      <div v-if="activeTab === 'canva'" class="mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div class="flex flex-col gap-10">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-[#00C4CC]/10 flex items-center justify-center">
+                  <Edit theme="filled" class="text-[#00C4CC] text-xl" />
+                </div>
+                <span class="text-sm font-black text-[#00C4CC] uppercase tracking-[0.2em]">Canva Discovery</span>
+              </div>
+              <h2 class="text-5xl font-black tracking-tight leading-tight">Professional Video <br /> <span
+                  class="text-[#00C4CC]">Templates</span></h2>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-4">
+            <button
+              class="px-6 py-3 bg-white/10 border border-white/10 rounded-2xl text-sm font-black flex items-center gap-3 hover:bg-white/20 hover:scale-105 transition-all text-white">
+              <Equalizer /> All Filters
+            </button>
+            <div class="h-10 w-px bg-white/10 mx-2"></div>
+            <button v-for="tag in ['Style', 'Theme', 'Price', 'Color']" :key="tag"
+              class="px-6 py-3 bg-white/5 border border-white/5 rounded-2xl text-sm font-bold flex items-center gap-4 hover:border-white/20 transition-all text-gray-300">
+              {{ tag }}
+              <Down class="text-gray-600" />
+            </button>
+            <div class="h-10 w-px bg-white/10 mx-2"></div>
+            <button v-for="pill in ['Peace Videos', 'Birthday', 'Education', 'Nature', 'Business']" :key="pill"
+              @click="filters.category = pill.toLowerCase()" :class="['px-6 py-3 rounded-2xl text-sm font-black transition-all border outline-none',
+                filters.category === pill.toLowerCase()
+                  ? 'bg-[#00C4CC] text-white border-[#00C4CC] shadow-xl shadow-teal-500/20 scale-105'
+                  : 'bg-white/5 border-transparent hover:border-white/10 text-gray-400 hover:text-white']">
+              {{ pill }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CapCut Discovery UI -->
+      <div v-if="activeTab === 'capcut'" class="mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div class="flex flex-col gap-10">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-[#FF0050]/10 flex items-center justify-center">
+                  <VideoOne theme="filled" class="text-[#FF0050] text-xl" />
+                </div>
+                <span class="text-sm font-black text-[#FF0050] uppercase tracking-[0.2em]">CapCut Trends</span>
+              </div>
+              <div class="flex items-center gap-10">
+                <button @click="filters.category = 'video'"
+                  :class="['text-5xl font-black transition-all pb-2', (filters.category === 'video' || !filters.category) ? 'text-white border-b-4 border-[#FF0050]' : 'text-gray-600 hover:text-gray-400']">Video</button>
+                <button @click="filters.category = 'image'"
+                  :class="['text-5xl font-black transition-all pb-2', filters.category === 'image' ? 'text-white border-b-4 border-[#FF0050]' : 'text-gray-600 hover:text-gray-400']">Image</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button v-for="cat in ['For You', 'Trending', 'New Year', 'Business', 'TikTok', 'Vlog', 'Student']"
+              :key="cat" @click="filters.category = cat.toLowerCase()" :class="['px-8 py-3.5 rounded-2xl text-sm font-black transition-all border outline-none',
+                (filters.category === cat.toLowerCase() || (cat === 'For You' && !filters.category))
+                  ? 'bg-[#FF0050] text-white border-[#FF0050] shadow-xl shadow-pink-500/20 scale-105'
+                  : 'bg-white/5 border-transparent hover:border-white/10 text-gray-400 hover:text-white']">
+              {{ cat }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Private/Public Title -->
+      <div v-if="activeTab === 'public' || activeTab === 'private'" class="mb-12">
+        <div class="flex items-center gap-4 mb-2">
+          <div class="w-8 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+          <span class="text-sm font-black uppercase tracking-widest text-gray-500">{{ activeTab === 'public' ? 'Featured
+            Collections' : 'Personal Assets' }}</span>
+        </div>
+        <h2 class="text-5xl font-black tracking-tight">{{ activeTab === 'public' ? 'Community Templates' : 'My Library'
+        }}
+        </h2>
       </div>
 
       <!-- Loading State -->
@@ -64,68 +169,98 @@
 
       <!-- Grid -->
       <div v-else-if="templates.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        <TemplateCard 
-          v-for="tpl in templates" 
-          :key="tpl._id" 
-          :template="tpl" 
-          @use="useTemplate"
-          @view="viewTemplate"
-        />
+        <TemplateCard v-for="tpl in templates" :key="tpl._id" :template="tpl" @use="useTemplate" @view="viewTemplate" />
       </div>
 
       <!-- Empty State -->
       <div v-else class="text-center py-32 border border-dashed border-white/10 rounded-3xl">
-        <i class="ri-ghost-line text-6xl text-gray-600 mb-4 block"></i>
+        <Ghost class="text-6xl text-gray-600 mb-4 block" />
         <h3 class="text-xl font-black mb-2">No templates found</h3>
-        <p class="text-gray-500">Try adjusting your filters or import your first template!</p>
+        <p class="text-gray-500">
+          {{
+            activeTab === 'private' ?
+              'Templates you import or export will appear here.' :
+              'Try adjusting your filters or search.' }}
+        </p>
       </div>
+
+      <el-pagination class="mt-12 w-full flex justify-center" v-model:current-page="filters.page"
+        v-model:page-size="filters.limit" :total="filters.total" :page-sizes="[12, 24, 48]"
+        layout="total, prev, pager, next" @current-change="handlePageChange" @size-change="handleSizeChange" />
     </main>
 
     <!-- Import Dialog -->
-    <ImportDialog 
-      v-if="importDialog.show" 
-      :platform="importDialog.platform"
-      @close="importDialog.show = false"
-      @imported="handleImported"
-    />
+    <ImportDialog v-if="importDialog.show" @close="importDialog.show = false" @imported="handleImported" />
+
+    <!-- Preview Dialog -->
+    <TemplatePreviewDialog v-if="previewDialog.show" :show="previewDialog.show" :template="previewDialog.template"
+      @close="previewDialog.show = false" @use="useTemplate" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '@/utils/api'
+import {
+  Magic,
+  Earth,
+  VideoOne,
+  Edit,
+  User,
+  Search,
+  Equalizer,
+  Down,
+  Ghost
+} from '@icon-park/vue-next'
 import TemplateCard from '@/components/marketplace/TemplateCard.vue'
 import ImportDialog from '@/components/marketplace/ImportDialog.vue'
+import TemplatePreviewDialog from '@/components/marketplace/TemplatePreviewDialog.vue'
+import { useMarketplaceStore } from '@/stores/marketplace'
+import { useProjectStore } from '@/stores/project'
 
 const router = useRouter()
+const marketplaceStore = useMarketplaceStore()
+const projectStore = useProjectStore()
+
 const loading = ref(false)
 const templates = ref<any[]>([])
 
-const categories = [
-  { id: '', name: 'All' },
-  { id: 'full-video', name: 'Full Video' },
-  { id: 'intro', name: 'Intro' },
-  { id: 'social-media', name: 'Social Media' },
-  { id: 'tutorial', name: 'Tutorial' }
-]
+const activeTab = ref('public');
+
+const tabs = [
+  { value: 'public', name: 'Public' },
+  { value: 'canva', name: 'Canva' },
+  { value: 'capcut', name: 'Capcut' },
+  { value: 'private', name: 'My Templates' },
+];
 
 const filters = reactive({
   category: '',
   search: '',
-  sort: 'featured'
+  sort: 'featured',
+  page: 1,
+  limit: 12,
+  total: 0,
+  tab: 'public'
 })
 
-const importDialog = reactive<{show: boolean, platform: 'capcut' | 'canva'}>({
+const importDialog = reactive<{ show: boolean }>({
+  show: false
+})
+
+const previewDialog = reactive<{ show: boolean, template: any }>({
   show: false,
-  platform: 'capcut'
+  template: null
 })
 
 const fetchTemplates = async () => {
   loading.value = true
   try {
-    const response = await api.get('/marketplace/templates', { params: filters })
-    templates.value = response.data.data.templates
+    filters.tab = activeTab.value
+    const data = await marketplaceStore.fetchTemplates(filters)
+    templates.value = data.templates || []
+    filters.total = data.total || 0
+    filters.page = data.page || 1
   } catch (e) {
     console.error('Failed to fetch templates:', e)
   } finally {
@@ -133,43 +268,74 @@ const fetchTemplates = async () => {
   }
 }
 
-const openImport = (platform: 'capcut' | 'canva') => {
-  importDialog.platform = platform
-  importDialog.show = true
-}
-
 const handleImported = (newTemplate: any) => {
   importDialog.show = false
-  templates.value.unshift(newTemplate)
-  // Optionally view detail or go to editor
+  if (activeTab.value === 'private') {
+    templates.value.unshift(newTemplate)
+  } else {
+    activeTab.value = 'private'
+  }
 }
 
 const useTemplate = async (template: any) => {
   try {
-    // Record download/use
-    await api.post(`/marketplace/templates/${template._id}/use`)
-    
-    // Create new project from template structure
-    const projectResponse = await api.post('/projects', {
-      title: `Copy of ${template.name}`,
+    // If triggered from preview dialog, close it
+    previewDialog.show = false;
+
+    console.log('Using template with variant/page:', template, template.selectedPageId || 'default');
+
+    await marketplaceStore.useTemplate(template._id)
+    const selectedPage = template.pages.find((page: any) => page.id === template.selectedPageId)
+    console.log('Selected page:', selectedPage)
+    const duration = (selectedPage?.duration ?? 0) / 1000;
+    const aspectRatio = selectedPage?.data?.[0]?.orientation == 'square' ? '1:1' : (selectedPage?.data?.[0]?.orientation == 'portrait' ? '9:16' : '16:9');
+
+    const projectResponse = await projectStore.createProject({
+      title: `${template.name}`,
       description: template.description,
-      aspectRatio: template.structure.aspectRatio,
-      mode: 'topic',
-      storyboard: template.structure
+      targetDuration: duration,
+      aspectRatio: aspectRatio,
+      mode: 'template',
+      // templateData: JSON.stringify(template) // Pass full template data including selected variant
     })
-    
-    router.push(`/editor/${projectResponse.data.data.id}`)
+
+    if (projectResponse.project) {
+      router.push({ path: `/projects/${projectResponse.project._id}/editor`, params: { template: JSON.stringify(template) } } as any)
+    }
   } catch (e) {
     console.error('Failed to use template:', e)
   }
 }
 
-const viewTemplate = (template: any) => {
-  // Navigation to detail view if implemented
-  console.log('View template:', template._id)
+const handleSizeChange = (val: number) => {
+  filters.limit = val
+  fetchTemplates()
+}
+const handlePageChange = (val: number) => {
+  filters.page = val
+  fetchTemplates()
 }
 
-watch(filters, () => fetchTemplates())
+const viewTemplate = (template: any) => {
+  console.log('View template:', template._id)
+  previewDialog.template = template
+  previewDialog.show = true
+}
+
+watch(activeTab, () => {
+  filters.page = 1
+  fetchTemplates()
+})
+
+watch(() => filters.search, () => {
+  filters.page = 1
+  fetchTemplates()
+})
+
+watch(() => filters.category, () => {
+  filters.page = 1
+  fetchTemplates()
+})
 
 onMounted(() => {
   fetchTemplates()
@@ -178,8 +344,43 @@ onMounted(() => {
 
 <style scoped>
 .marketplace-view {
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.05) 0, transparent 50%);
+  background-color: #0a0a0c;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.08) 0, transparent 50%);
+}
+
+:deep(.premium-segmented) {
+  --el-segmented-bg-color: transparent;
+  --el-segmented-item-selected-bg-color: rgba(255, 255, 255, 0.08);
+  --el-segmented-item-selected-color: #fff;
+  --el-segmented-item-active-color: #fff;
+  --el-segmented-item-hover-bg-color: rgba(255, 255, 255, 0.05);
+}
+
+:deep(.premium-segmented .el-segmented__item) {
+  @apply px-0;
+}
+
+:deep(.premium-segmented .el-segmented__item-selected) {
+  @apply shadow-xl shadow-black/20;
+}
+
+.animate-pulse {
+  animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.3;
+    transform: scale(1.1);
+  }
 }
 </style>

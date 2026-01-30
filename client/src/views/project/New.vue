@@ -1,19 +1,13 @@
 <template>
   <div class="flow-creation-page">
-    <!-- Blank Project Mode -->
-    <ProjectBlankSetup v-if="mode === 'blank'" />
-
-    <!-- Product Ads Mode -->
-    <ProjectProductAdsSetup v-else-if="mode === 'product-ads'" />
-
-    <!-- Avatar Mode -->
-    <ProjectAvatarSetup v-else-if="mode === 'avatar'" />
-
-    <!-- Presentation Mode -->
-    <ProjectPresentationSetup v-else-if="mode === 'presentation'" />
-
-    <!-- Live Stream Mode -->
-    <ProjectLiveStreamSetup v-else-if="mode === 'live-stream'" />
+    <!-- Setup Modes (Scrollable) -->
+    <div v-if="mode !== 'chat'" class="setup-layout-wrapper">
+      <ProjectBlankSetup v-if="mode === 'blank'" />
+      <ProjectProductAdsSetup v-else-if="mode === 'product-ads'" />
+      <ProjectAvatarSetup v-else-if="mode === 'avatar'" />
+      <ProjectPresentationSetup v-else-if="mode === 'presentation'" />
+      <ProjectLiveStreamSetup v-else-if="mode === 'live-stream'" />
+    </div>
 
     <!-- Chat Flow Mode (Default) -->
     <template v-else>
@@ -432,6 +426,21 @@ watch(messages, () => {
   background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 80%);
   overflow: hidden;
   position: relative;
+}
+
+.setup-layout-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 60px; // Space for action buttons if they overlap
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
 }
 
 .flow-container {

@@ -34,7 +34,7 @@ const SystemMetricSchema = new Schema<ISystemMetric>(
             tx_bytes: { type: Number, default: 0 },
             rx_bytes: { type: Number, default: 0 }
         },
-        timestamp: { type: Date, default: Date.now, index: true }
+        timestamp: { type: Date, default: Date.now }
     },
     {
         timestamps: false

@@ -128,8 +128,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { ChartLine, TrendingUp, People, History, Attention } from '@icon-park/vue-next';
-import api from '@/utils/api';
+import { usePaymentStore } from '@/stores/payment';
 
+const paymentStore = usePaymentStore();
 const transactions = ref<any[]>([]);
 const stats = ref<{
     mrr: number;
@@ -149,9 +150,9 @@ const stats = ref<{
 });
 
 const tiers = ref([
-    { name: 'Enterprise', count: 124, percentage: 15, color: '#a855f7' },
-    { name: 'Pro', count: 842, percentage: 45, color: '#3b82f6' },
-    { name: 'Basic', count: 1240, percentage: 40, color: '#22c55e' }
+    { name: 'Enterprise', count: 0, percentage: 0, color: '#a855f7' },
+    { name: 'Pro', count: 0, percentage: 0, color: '#3b82f6' },
+    { name: 'Basic', count: 0, percentage: 0, color: '#22c55e' }
 ]);
 
 const formatCurrency = (value: number) => {
@@ -164,19 +165,19 @@ const formatCompact = (value: number) => {
 
 const fetchData = async () => {
     try {
-        const [statsRes, txRes] = await Promise.all([
-            api.get('/payment/admin/stats'),
-            api.get('/payment/admin/transactions')
+        const [statsData, txData] = await Promise.all([
+            paymentStore.fetchAdminStats(),
+            paymentStore.fetchAdminTransactions()
         ]);
-        
-        stats.value = (statsRes.data || statsRes) as any; 
-        transactions.value = ((txRes as any).data?.transactions || (txRes as any).transactions || []) as any[];
+
+        if (statsData) stats.value = statsData;
+        if (txData) transactions.value = txData;
 
         // Update distribution
         if (stats.value.distribution) {
             const dist = stats.value.distribution;
             const total = (dist.enterprise || 0) + (dist.pro || 0) + (dist.basic || 0) || 1;
-            
+
             tiers.value = [
                 { name: 'Enterprise', count: dist.enterprise || 0, percentage: ((dist.enterprise || 0) / total) * 100, color: '#a855f7' },
                 { name: 'Pro', count: dist.pro || 0, percentage: ((dist.pro || 0) / total) * 100, color: '#3b82f6' },

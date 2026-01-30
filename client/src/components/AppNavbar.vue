@@ -344,13 +344,9 @@ const handleAvatarUpload = async (e: Event) => {
     formData.append('file', file)
     formData.append('purpose', 'avatar')
 
-    const response = await api.post('/media/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    const data = await userStore.uploadAvatar(formData)
 
-    profileForm.avatar = response.data.url
+    profileForm.avatar = data.url
     toast.success('Avatar uploaded')
   } catch (error) {
     toast.error('Failed to upload avatar')

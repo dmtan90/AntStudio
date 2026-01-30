@@ -6,6 +6,7 @@ import { generateToken } from '../utils/jwt.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { checkUserLimit } from '../middleware/license.js';
 import { emailService } from '../services/email.js';
+import { redisService } from '../services/RedisService.js';
 import crypto from 'crypto';
 
 const router = Router();
@@ -258,7 +259,12 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
 
-        const user = await User.findById(req.user!.userId).select('-password');
+        const cacheKey = `user:profile:${req.user!.userId}`;
+
+        const user = await redisService.getOrSet(cacheKey, async () => {
+            return await User.findById(req.user!.userId).select('-password');
+        }, 3600);
+
         if (!user) {
             return res.status(404).json({ success: false, data: null, error: 'User not found' });
         }
@@ -505,8 +511,8 @@ router.get('/facebook/callback', async (req, res) => {
 router.get('/oauth-config', async (req, res) => {
     try {
         await connectDB();
-        const { AdminSettings } = await import('../models/AdminSettings.js');
-        const settings = await AdminSettings.findOne();
+        const { getAdminSettings } = await import('../models/AdminSettings.js');
+        const settings = await getAdminSettings();
 
         res.json({
             success: true,

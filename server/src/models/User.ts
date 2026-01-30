@@ -209,7 +209,8 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
 UserSchema.index({ 'subscription.plan': 1 });
 UserSchema.index({ 'subscription.status': 1, 'subscription.endDate': 1 }); // For active subscription queries
 UserSchema.index({ createdAt: -1 });
-UserSchema.index({ currentOrganizationId: 1 }); // For organization member lookups
+// currentOrganizationId is index in Schema
+// UserSchema.index({ currentOrganizationId: 1 }); // For organization member lookups
 UserSchema.index({ role: 1 }); // For admin/user filtering
 
 export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema)

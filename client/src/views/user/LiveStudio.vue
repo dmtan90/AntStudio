@@ -11,29 +11,89 @@
                <div class="relative w-full h-full overflow-hidden rounded-[2.5rem] border border-white/10 shadow-2xl">
                   <canvas ref="outputCanvas" class="main-canvas"></canvas>
                   <video ref="sourceVideo" autoplay muted playsinline style="display:none"></video>
-                  
+
+                  <!-- Network Health Overlay -->
+                  <div v-if="isLive && networkStats"
+                     class="absolute top-8 right-8 flex flex-col items-end gap-2 z-30 animate-in pointer-events-none">
+                     <div
+                        class="px-3 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center gap-3">
+                        <div class="flex flex-col items-end">
+                           <span class="text-[8px] font-black text-white/30 uppercase tracking-widest">Network
+                              Health</span>
+                           <div class="flex items-center gap-1.5">
+                              <div class="w-2 h-2 rounded-full"
+                                 :class="networkStats.rtt > 150 ? 'bg-red-500 animate-pulse' : (networkStats.rtt > 100 ? 'bg-yellow-500' : 'bg-green-500')">
+                              </div>
+                              <span class="text-[10px] font-black"
+                                 :class="networkStats.rtt > 150 ? 'text-red-400' : (networkStats.rtt > 100 ? 'text-yellow-400' : 'text-green-400')">
+                                 {{ networkStats.rtt > 150 ? 'CRITICAL' : (networkStats.rtt > 100 ? 'STRESSED' :
+                                    'STABLE') }}
+                              </span>
+                           </div>
+                        </div>
+                     </div>
+
+                     <!-- Stats Detail -->
+                     <div class="flex gap-2">
+                        <div
+                           class="px-3 py-2 bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl flex flex-col items-center min-w-[60px]">
+                           <span class="text-[7px] font-bold text-white/40 uppercase">Bitrate</span>
+                           <span class="text-[11px] font-black text-blue-400">{{ networkStats.bitrate }}k</span>
+                        </div>
+                        <div
+                           class="px-3 py-2 bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl flex flex-col items-center min-w-[60px]">
+                           <span class="text-[7px] font-bold text-white/40 uppercase">RTT</span>
+                           <span class="text-[11px] font-black"
+                              :class="networkStats.rtt > 100 ? 'text-yellow-400' : 'text-white'">{{ networkStats.rtt
+                              }}ms</span>
+                        </div>
+                     </div>
+
+                     <!-- Auto Recommendation Tooltip -->
+                     <div v-if="networkStats.rtt > 100 && streamQuality !== 'low'"
+                        class="mt-2 px-4 py-3 bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/30 rounded-2xl max-w-[200px] shadow-2xl">
+                        <div class="flex gap-3">
+                           <i class="ri-error-warning-fill text-yellow-400 text-xl font-inner-shadow"></i>
+                           <div class="flex flex-col">
+                              <span class="text-[10px] font-black text-yellow-400 uppercase tracking-wider">Lag
+                                 Detected</span>
+                              <p class="text-[9px] font-bold text-white/70 leading-relaxed">Network delay is high.
+                                 Switching to <span class="text-yellow-400 font-black">Low Quality</span> is
+                                 recommended.</p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
                   <!-- ASL Visual Interpreter (Accessibility) -->
-                  <div v-if="enableASL" class="asl-interpreter animate-in absolute bottom-8 right-8 w-48 aspect-video bg-black/60 backdrop-blur-xl border border-blue-500/30 rounded-3xl overflow-hidden shadow-2xl z-20">
+                  <div v-if="enableASL"
+                     class="asl-interpreter animate-in absolute bottom-8 right-8 w-48 aspect-video bg-black/60 backdrop-blur-xl border border-blue-500/30 rounded-3xl overflow-hidden shadow-2xl z-20">
                      <div class="absolute inset-0 flex flex-col items-center justify-center p-4">
                         <div class="w-full flex justify-between items-center mb-2 px-2">
-                            <span class="text-[8px] font-black text-blue-400 uppercase tracking-widest">{{ t('studio.accessibility.aslTitle') }}</span>
-                            <div class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                           <span class="text-[8px] font-black text-blue-400 uppercase tracking-widest">{{
+                              t('studio.accessibility.aslTitle') }}</span>
+                           <div class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
                         </div>
                         <!-- Mock ASL Animation/Visual -->
-                        <div class="flex-1 w-full bg-blue-500/10 rounded-xl border border-white/5 flex items-center justify-center">
-                            <i class="ri-hand-coin-line text-3xl text-blue-400"></i>
+                        <div
+                           class="flex-1 w-full bg-blue-500/10 rounded-xl border border-white/5 flex items-center justify-center">
+                           <i class="ri-hand-coin-line text-3xl text-blue-400"></i>
                         </div>
-                        <p class="mt-2 text-[9px] font-bold text-white/50 text-center uppercase">{{ t('studio.accessibility.translating') }}</p>
+                        <p class="mt-2 text-[9px] font-bold text-white/50 text-center uppercase">{{
+                           t('studio.accessibility.translating') }}</p>
                      </div>
                   </div>
 
                   <!-- Visual Audio Cues (For Hearing Impaired) -->
-                  <div class="audio-visual-cue absolute bottom-8 left-8 flex items-end gap-1 px-4 py-2 bg-black/40 backdrop-blur-md rounded-2xl border border-white/5">
-                     <div v-for="i in 5" :key="i" 
-                       class="w-1 bg-gradient-to-t from-blue-500 to-purple-500 rounded-full transition-all duration-100"
-                       :style="{ height: `${Math.random() * (audioLevel * 40 + 5)}px`, opacity: audioLevel > 0.1 ? 1 : 0.3 }">
+                  <div
+                     class="audio-visual-cue absolute bottom-8 left-8 flex items-end gap-1 px-4 py-2 bg-black/40 backdrop-blur-md rounded-2xl border border-white/5">
+                     <div v-for="i in 5" :key="i"
+                        class="w-1 bg-gradient-to-t from-blue-500 to-purple-500 rounded-full transition-all duration-100"
+                        :style="{ height: `${Math.random() * (audioLevel * 40 + 5)}px`, opacity: audioLevel > 0.1 ? 1 : 0.3 }">
                      </div>
-                     <span class="text-[10px] font-black ml-2" :class="audioLevel > 0.05 ? 'text-blue-400' : 'text-white/20'">{{ t('studio.accessibility.liveAudio') }}</span>
+                     <span class="text-[10px] font-black ml-2"
+                        :class="audioLevel > 0.05 ? 'text-blue-400' : 'text-white/20'">{{
+                           t('studio.accessibility.liveAudio') }}</span>
                   </div>
                </div>
             </template>
@@ -83,9 +143,10 @@
                @toggle-guest="toggleGuest" @add-mobile-cam="generateMobileLink" />
 
             <LinguisticSettings v-else-if="activeTab === 'linguistic'" :is-translating="isTranslating"
-               :enable-asl="enableASL" :source-lang="sourceLang" :target-lang="targetLang" :current-transcript="currentTranscript"
-               @update:is-translating="v => isTranslating = v" @update:enable-asl="v => enableASL = v"
-               @update:source-lang="v => sourceLang = v" @update:target-lang="v => targetLang = v" />
+               :enable-asl="enableASL" :source-lang="sourceLang" :target-lang="targetLang"
+               :current-transcript="currentTranscript" @update:is-translating="v => isTranslating = v"
+               @update:enable-asl="v => enableASL = v" @update:source-lang="v => sourceLang = v"
+               @update:target-lang="v => targetLang = v" />
 
             <CommerceSettings v-else-if="activeTab === 'commerce'" :is-flash-deal="isFlashDeal"
                :live-products="liveProducts" :active-product-id="activeProductId" @trigger-flash-deal="triggerFlashDeal"
@@ -120,18 +181,59 @@
             <button class="primary-btn w-full" @click="showPlatformSelector = false">{{ t('common.save') }}</button>
          </template>
       </el-dialog>
+
+      <!-- Settings Modal -->
+      <transition name="fade">
+         <div v-if="showSettings"
+            class="absolute inset-0 bg-black/90 backdrop-blur-2xl z-50 p-12 overflow-y-auto w-full h-full">
+            <div class="max-w-xl mx-auto">
+               <div class="flex justify-between items-center mb-12">
+                  <h2 class="text-3xl font-black uppercase tracking-tighter italic text-white">Studio Settings</h2>
+                  <button @click="showSettings = false"
+                     class="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all text-white">
+                     <close theme="outline" size="24" />
+                  </button>
+               </div>
+
+               <div class="space-y-10">
+                  <!-- Quality Preset Selector -->
+                  <div class="space-y-4">
+                     <label class="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Streaming
+                        Quality</label>
+                     <div class="grid grid-cols-3 gap-3">
+                        <button v-for="(v, k) in qualityPresets" :key="k" @click="streamQuality = k"
+                           class="p-4 rounded-3xl border transition-all flex flex-col items-center gap-2 group w-full"
+                           :class="streamQuality === k ? 'bg-blue-600 border-blue-400 shadow-xl shadow-blue-500/20' : 'bg-white/5 border-white/5 hover:border-white/10'">
+                           <span class="text-xs font-black uppercase tracking-widest"
+                              :class="streamQuality === k ? 'text-white' : 'text-white/40'">{{ k }}</span>
+                           <span class="text-[8px] font-bold text-center opacity-50 text-white">{{ v.label }}</span>
+                        </button>
+                     </div>
+                     <p class="text-[10px] text-white/20 italic">Recommendation: Use 'Low' if your RTT is high (>100ms)
+                        or
+                        network is unstable.</p>
+                  </div>
+
+                  <div class="pt-8 border-t border-white/5">
+                     <p class="text-[9px] font-black text-white/10 uppercase tracking-widest text-center">Version
+                        2.5.0-premium</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </transition>
    </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { toast } from 'vue-sonner';
 import { useTranslations } from '@/composables/useTranslations';
 import axios from 'axios';
 import {
    Youtube, Facebook, Tiktok, Close, Shopping, Broadcast, Magic, Effects,
-   GraphicDesign, Translation, ChartHistogram, User, ShareTwo
+   GraphicDesign, Translation, ChartHistogram, User, ShareTwo, Hands
 } from '@icon-park/vue-next';
 
 // Components
@@ -156,8 +258,10 @@ import { studioDirector } from '@/utils/ai/StudioDirector.js';
 import { syntheticGuestManager } from '@/utils/ai/SyntheticGuestManager.js';
 import { useUserStore } from '@/stores/user.js';
 import { WebRTCPublisher } from '@/utils/ai/WebRTCPublisher.js';
+import { ActionSyncService } from '@/utils/ai/ActionSyncService.js';
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 const { t } = useTranslations();
 
@@ -200,6 +304,15 @@ const enableASL = ref(false);
 const audioLevel = ref(0);
 const guestPersonas = ref<any[]>([]);
 const liveProducts = ref<any[]>([]);
+const streamQuality = ref('high');
+const networkStats = ref<any>(null);
+
+const qualityPresets = {
+   low: { video: 500, audio: 64, fps: 30, width: 640, height: 360, label: 'Low (360p @ 30fps)' },
+   medium: { video: 1200, audio: 128, fps: 30, width: 854, height: 480, label: 'Medium (480p @ 30fps)' },
+   high: { video: 2500, audio: 160, fps: 30, width: 1280, height: 720, label: 'High (720p @ 30fps)' },
+   ultra: { video: 4500, audio: 192, fps: 30, width: 1920, height: 1080, label: 'Ultra (1080p @ 30fps)' }
+};
 
 // Virtual Production State
 const enableChromakey = ref(false);
@@ -217,85 +330,380 @@ const scenes = [
 const sourceVideo = ref<HTMLVideoElement | null>(null);
 const outputCanvas = ref<HTMLCanvasElement | null>(null);
 const rtcPublisher = ref<WebRTCPublisher | null>(null);
+const mediaRecorder = ref<MediaRecorder | null>(null);
 
 let stream: MediaStream | null = null;
 let timerInterval: any = null;
+const currentSessionId = ref<string | null>(null);
 
 // Logic Methods
 const toggleLive = async () => {
    if (!isLive.value) {
+      if (selectedPlatforms.value.length === 0) {
+         toast.error(t('studio.messages.selectPlatform'));
+         showPlatformSelector.value = true;
+         return;
+      }
       try {
-         const res = await axios.post('/api/streaming/start', { platforms: selectedPlatforms.value });
+         // Auto-setup live info for platforms that support it if streamKey is missing
+         for (const pId of selectedPlatforms.value) {
+            const acc = availableAccounts.value.find(a => a._id === pId);
+            if (acc && !acc.streamKey && (acc.platform === 'youtube' || acc.platform === 'ant-media')) {
+               toast.info(`Configuring live stream for ${acc.accountName}...`);
+               const infoRes = await axios.get(`/api/platforms/${pId}/live-info`, {
+                  params: {
+                     title: currentProject.value.title,
+                     description: 'Live via AntFlow'
+                  }
+               });
+               if (infoRes.data.success) {
+                  acc.streamKey = infoRes.data.data.streamKey;
+                  acc.rtmpUrl = infoRes.data.data.rtmpUrl;
+               }
+            }
+         }
+
+         // 1. Using platformAccountIds to start the session on backend
+         const quality = (qualityPresets as any)[streamQuality.value];
+         const res = await axios.post('/api/streaming/start', {
+            platformAccountIds: selectedPlatforms.value,
+            source: 'webrtc',
+            quality: {
+               width: quality.width,
+               height: quality.height,
+               videoBitrate: quality.video,
+               audioBitrate: quality.audio,
+               fps: quality.fps
+            }
+         });
+
          if (res.data.success) {
-            isLive.value = true
-            timerInterval = setInterval(() => liveTime.value++, 1000)
-            toast.success(t('studio.messages.live'))
-            mockChat()
+            const { sessionId, mode, amsAccount } = res.data.data;
+            currentSessionId.value = sessionId;
+
+            console.log(`[Studio] Start response: session=${sessionId}, mode=${mode}, amsId=${amsAccount?._id}`);
+
+            // 2. Start WebRTC Publisher based on the mode returned by backend
+            if (mode === 'webrtc_ams' && amsAccount) {
+               const serverUrl = amsAccount.credentials.serverUrl;
+               const appName = amsAccount.credentials.appName || 'WebRTCAppEE';
+               const streamId = amsAccount.streamKey;
+
+               console.log(`[Studio] Publishing to bridge: ${serverUrl}/${appName}/${streamId}`);
+
+               if (serverUrl && streamId) {
+                  const wsProtocol = serverUrl.startsWith('https') ? 'wss:' : 'ws:';
+                  const wsHost = new URL(serverUrl).host;
+                  const websocketUrl = `${wsProtocol}//${wsHost}/${appName}/websocket`;
+
+                  const quality = (qualityPresets as any)[streamQuality.value];
+                  rtcPublisher.value = new WebRTCPublisher({
+                     websocketUrl,
+                     streamId,
+                     videoBitrate: quality?.video,
+                     audioBitrate: quality?.audio,
+                     maxFramerate: quality?.fps,
+                     onStats: (stats) => { networkStats.value = stats; }
+                  });
+
+                  const canvasStream = outputCanvas.value!.captureStream(quality?.fps || 30);
+                  if (stream) stream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+
+                  await rtcPublisher.value.start(canvasStream);
+                  toast.success("Connection synchronized. Stream starting...");
+               }
+            } else if (mode === 'webrtc_relay') {
+               toast.info("Using Direct Backend Relay (Experimental)");
+               startRelayStream(sessionId);
+            }
+
+            isLive.value = true;
+            timerInterval = setInterval(() => liveTime.value++, 1000);
+            toast.success(t('studio.messages.live'));
+            mockChat();
          }
       } catch (e: any) {
-         toast.error(t('studio.messages.liveError'))
+         console.error(e);
+         if (rtcPublisher.value) {
+            rtcPublisher.value.stop();
+            rtcPublisher.value = null;
+         }
+         toast.error(e.response?.data?.error || t('studio.messages.liveError'));
       }
    } else {
-      isLive.value = false
-      clearInterval(timerInterval)
-      toast.info(t('studio.messages.stopped'))
+      isLive.value = false;
+      clearInterval(timerInterval);
+      toast.info(t('studio.messages.stopped'));
+
+      if (rtcPublisher.value) {
+         rtcPublisher.value.stop();
+         rtcPublisher.value = null;
+      }
+
+      if (mediaRecorder.value) {
+         mediaRecorder.value.stop();
+         mediaRecorder.value = null;
+      }
+
+      // Call stop endpoint if necessary
+      try {
+         if (currentSessionId.value) {
+            await axios.post('/api/streaming/stop', { sessionId: currentSessionId.value });
+            currentSessionId.value = null;
+         }
+      } catch (e) { }
    }
 }
 
-const toggleRecord = () => {
-   isRecording.value = !isRecording.value
-   toast.info(isRecording.value ? t('studio.messages.recordingStart') : t('studio.messages.recordingSaved'))
+const startRelayStream = (sessionId: string) => {
+   if (!outputCanvas.value) return;
+
+   // 1. Prepare Stream (Video from Canvas + Audio from Mic)
+   const quality = (qualityPresets as any)[streamQuality.value];
+   const canvasStream = outputCanvas.value.captureStream(quality.fps);
+
+   if (stream) {
+      stream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+   }
+
+   // 2. Initialize MediaRecorder
+   // Match the bitrate to the selected quality to reduce upload bandwidth and decode load
+   const bitrate = quality.video * 1000; // kbps to bps
+
+   let options = { mimeType: 'video/webm;codecs=h264', videoBitsPerSecond: bitrate };
+   if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      options = { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: bitrate };
+   }
+
+   mediaRecorder.value = new MediaRecorder(canvasStream, options);
+
+   mediaRecorder.value.ondataavailable = async (event) => {
+      if (event.data.size > 0) {
+         const socket = ActionSyncService.getSocket();
+         if (socket) {
+            // Convert Blob to ArrayBuffer for binary transmission
+            const buffer = await event.data.arrayBuffer();
+            socket.emit('stream:relay', {
+               sessionId,
+               chunk: buffer
+            });
+
+            // Calculate and update stats for Relay mode
+            const bytes = event.data.size;
+            // Approximate bitrate based on 500ms chunks (2 chunks per second)
+            const bitrate = Math.round((bytes * 8 * 2) / 1000); // kbps
+
+            networkStats.value = {
+               currentRoundTripTime: 50, // Mock RTT for relay (socket latency usually low)
+               currentBitrate: bitrate,
+               packetLoss: 0,
+               availableOutgoingBitrate: bitrate + 500, // Mock headroom
+               source: 'relay'
+            };
+         }
+      }
+   };
+
+   mediaRecorder.value.onerror = (err) => {
+      console.error('[Relay] Recorder Error:', err);
+      toast.error('Relay stream error');
+   };
+
+   // Start recording with 500ms slices for reliable chunk generation
+   mediaRecorder.value.start(500);
+   console.log(`[Studio] MediaRecorder started with 500ms timeslice`);
+   console.log(`[Studio] Relay stream started for session: ${sessionId}`);
 }
-
-const spawnLike = () => {
-   const id = Date.now();
-   activeLikes.value.push({ id, style: { left: `${Math.random() * 80 + 10}%`, animationDelay: `${Math.random() * 0.5}s` } });
-   setTimeout(() => { activeLikes.value = activeLikes.value.filter(l => l.id !== id); }, 4000);
-};
-
-const mockChat = () => {
-   const users = ['Alex (YouTube)', 'Sarah (FB)', 'DevPro (TikTok)'];
-   setInterval(() => {
-      if (!isLive.value) return;
-      messages.value.push({ id: Date.now(), user: users[Math.floor(Math.random() * users.length)], text: t('studio.messages.mockChat'), isSocial: true });
-      if (messages.value.length > 50) messages.value.shift();
-   }, 5000);
-};
 
 const toggleGodMode = () => {
    isGodMode.value = !isGodMode.value;
-   studioDirector.setActive(isGodMode.value);
-   toast.success(isGodMode.value ? t('studio.messages.godModeOn') : t('studio.messages.godModeOff'));
-};
+   if (isGodMode.value) {
+      toast.success(t('studio.messages.godModeEnabled'));
+      studioDirector.start();
+   } else {
+      toast.info(t('studio.messages.godModeDisabled'));
+      studioDirector.stop();
+   }
+}
 
-const inviteGuest = () => { /* Logic */ toast.info(t('studio.messages.inviteCopied')); };
-const selectStage = (url: string) => { selectedBackground.value = url; };
-const toggleLowerThird = () => { showLowerThird.value = !showLowerThird.value; };
-const toggleTicker = () => { showTicker.value = !showTicker.value; };
-const triggerFlashDeal = () => { isFlashDeal.value = !isFlashDeal.value; };
-const toggleProduct = (id: string) => { activeProductId.value = activeProductId.value === id ? null : id; };
-const startPoll = () => { /* Poll Logic */ };
-const featureQuestion = (q: any) => { /* Q&A Logic */ };
-const summonGuest = (g: any) => { syntheticGuestManager.summonGuest(g); };
-const toggleGuest = (g: any) => { g.active = !g.active; };
-const inviteCoHost = () => { /* Link Logic */ };
-const generateMobileLink = () => { /* Pairing Logic */ };
+const handleExit = () => {
+   if (isLive.value) {
+      toast.error(t('studio.messages.stopLiveFirst'));
+      return;
+   }
+   router.push('/platforms');
+}
+
+const toggleRecord = () => {
+   isRecording.value = !isRecording.value;
+   if (isRecording.value) {
+      toast.success(t('studio.messages.recordingStarted'));
+   } else {
+      toast.info(t('studio.messages.recordingSaved'));
+   }
+}
+
+const spawnLike = () => {
+   const id = Math.random().toString(36).substr(2, 9);
+   const style = {
+      left: `${20 + Math.random() * 60}%`,
+      animationDuration: `${1.5 + Math.random()}s`
+   };
+   activeLikes.value.push({ id, style });
+   setTimeout(() => {
+      activeLikes.value = activeLikes.value.filter(l => l.id !== id);
+   }, 2000);
+}
+
+const inviteGuest = () => {
+   toast.info(t('studio.messages.inviteSent'));
+}
+
+const summonGuest = (persona: any) => {
+   syntheticGuestManager.summon(persona);
+   toast.success(`Summoning ${persona.name}...`);
+}
+
+const toggleGuest = (guest: any) => {
+   guest.active = !guest.active;
+}
+
+const toggleLowerThird = () => {
+   showLowerThird.value = !showLowerThird.value;
+}
+
+const toggleTicker = () => {
+   showTicker.value = !showTicker.value;
+}
+
+const generateMobileLink = () => {
+   const link = `${window.location.origin}/remote-cam?session=${Math.random().toString(36).substr(2, 9)}`;
+   navigator.clipboard.writeText(link);
+   toast.success(t('studio.messages.linkCopied'));
+}
+
+const triggerFlashDeal = () => {
+   isFlashDeal.value = true;
+   setTimeout(() => isFlashDeal.value = false, 10000);
+}
+
+const toggleProduct = (product: any) => {
+   activeProductId.value = activeProductId.value === product.id ? null : product.id;
+}
+
+const mockChat = () => {
+   const mockMsgs = [
+      { id: 1, user: 'User123', text: 'Amazing stream!', avatar: '' },
+      { id: 2, user: 'StreamFan', text: 'How do you do that effect?', avatar: '' }
+   ];
+   let i = 0;
+   const interval = setInterval(() => {
+      if (!isLive.value) {
+         clearInterval(interval);
+         return;
+      }
+      if (i < mockMsgs.length) {
+         messages.value.push(mockMsgs[i++]);
+         spawnLike();
+      }
+   }, 5000);
+}
+
+const selectStage = (bg: any) => {
+   selectedBackground.value = bg.url;
+   toast.info(`Scene updated: ${bg.name}`);
+}
+
+const startPoll = (poll: any) => {
+   activePoll.value = poll;
+   toast.success(t('studio.messages.pollStarted'));
+}
+
+const featureQuestion = (q: any) => {
+   qaQueue.value.push(q);
+   toast.info(t('studio.messages.questionFeatured'));
+}
+
+const inviteCoHost = () => {
+   toast.info(t('studio.messages.inviteCohostSent'));
+}
 
 const togglePlatform = (id: string) => {
-   const idx = selectedPlatforms.value.indexOf(id);
-   if (idx > -1) selectedPlatforms.value.splice(idx, 1);
-   else selectedPlatforms.value.push(id);
-};
+   const index = selectedPlatforms.value.indexOf(id);
+   if (index === -1) {
+      selectedPlatforms.value.push(id);
+   } else {
+      selectedPlatforms.value.splice(index, 1);
+   }
+}
 
-const handleExit = () => { router.push('/dashboard'); };
+const fetchAccounts = async () => {
+   try {
+      const res = await axios.get('/api/platforms');
+      availableAccounts.value = res.data.data;
+      // Ensure Socket is connected for relay/collaboration
+      if (userStore.token) {
+         ActionSyncService.connect('studio_global', userStore.token);
+
+         // Listen for relay stream status (errors/stops)
+         const socket = ActionSyncService.getSocket();
+         if (socket) {
+            socket.off('stream:status'); // Prevent duplicates
+            socket.on('stream:status', (data: { sessionId: string, status: string, error?: string }) => {
+               if (data.sessionId === currentSessionId.value && (data.status === 'error' || data.status === 'stopped')) {
+                  console.warn(`[Studio] Stream stopped by server: ${data.error}`);
+                  toast.error(`Stream stopped: ${data.error || 'Server error'}`);
+
+                  // Force stop local state without calling API again (since session is already dead)
+                  if (isLive.value) {
+                     isLive.value = false;
+                     clearInterval(timerInterval);
+                     if (mediaRecorder.value) {
+                        mediaRecorder.value.stop();
+                        mediaRecorder.value = null;
+                     }
+                     currentSessionId.value = null;
+                     toast.info('Broadcast ended');
+                  }
+               }
+            });
+         }
+      }
+      // Auto-select if query param exists
+      const qPlatformId = route.query.platformId as string;
+      if (qPlatformId) {
+         if (availableAccounts.value.find(a => a._id === qPlatformId)) {
+            selectedPlatforms.value = [qPlatformId];
+            toast.success('Platform pre-selected');
+         }
+      }
+   } catch (e) {
+      console.error('Failed to fetch platforms', e);
+      toast.error('Could not load platform accounts');
+   }
+}
 
 // Lifecycle
 onMounted(async () => {
    try {
       stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (sourceVideo.value) sourceVideo.value.srcObject = stream;
-      startProcessing();
-   } catch (e) { toast.error("Camera required for studio"); }
+      if (sourceVideo.value) {
+         sourceVideo.value.srcObject = stream;
+         sourceVideo.value.onloadedmetadata = () => {
+            if (outputCanvas.value) {
+               outputCanvas.value.width = sourceVideo.value!.videoWidth;
+               outputCanvas.value.height = sourceVideo.value!.videoHeight;
+            }
+            sourceVideo.value?.play();
+            startProcessing();
+         };
+      }
+
+      await fetchAccounts();
+   } catch (e) {
+      console.error(e);
+      toast.error("Camera required for studio");
+   }
 });
 
 const startProcessing = () => {
@@ -303,7 +711,7 @@ const startProcessing = () => {
       if (!outputCanvas.value || !sourceVideo.value) return;
       const ctx = outputCanvas.value.getContext('2d');
       if (ctx) ctx.drawImage(sourceVideo.value, 0, 0, outputCanvas.value.width, outputCanvas.value.height);
-      
+
       // Simulate audio analysis for visual cues
       if (micOn.value) {
          audioLevel.value = 0.2 + Math.random() * 0.4;
@@ -315,6 +723,19 @@ const startProcessing = () => {
    };
    render();
 };
+
+// Watcher for quality changes during live
+watch(streamQuality, (newVal) => {
+   if (isLive.value && rtcPublisher.value) {
+      const quality = (qualityPresets as any)[newVal];
+      rtcPublisher.value.updateConfig({
+         videoBitrate: quality?.video,
+         audioBitrate: quality?.audio,
+         maxFramerate: quality?.fps
+      });
+      toast.info(`Quality updated: ${newVal.toUpperCase()}`);
+   }
+});
 
 onUnmounted(() => {
    if (stream) stream.getTracks().forEach(t => t.stop());
@@ -360,6 +781,7 @@ const backgrounds = computed(() => [
    flex: 1;
    display: flex;
    overflow: hidden;
+   position: relative;
 
    @media (max-width: 768px) {
       flex-direction: column;
@@ -368,9 +790,67 @@ const backgrounds = computed(() => [
    }
 }
 
+.main-canvas {
+   width: 100%;
+   height: 100%;
+   object-fit: contain;
+   border-radius: 20px;
+}
+
+/* Studio Global Elements */
+:deep(.glass-dark) {
+   background: rgba(10, 10, 10, 0.8);
+   backdrop-filter: blur(20px);
+   -webkit-backdrop-filter: blur(20px);
+   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+:deep(.side-rail) {
+   width: 72px;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   padding: 16px 0;
+   gap: 8px;
+   border-right: 1px solid rgba(255, 255, 255, 0.05);
+   z-index: 60;
+
+   .rail-item {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: rgba(255, 255, 255, 0.4);
+
+      &:hover {
+         background: rgba(255, 255, 255, 0.05);
+         color: #fff;
+      }
+
+      &.active {
+         background: rgba(59, 130, 246, 0.1);
+         color: #3b82f6;
+         border: 1px solid rgba(59, 130, 246, 0.2);
+      }
+
+      .label {
+         font-size: 8px;
+         font-weight: 900;
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+      }
+   }
+}
+
 .effects-drawer {
    position: absolute;
-   top: 64px;
+   top: 0;
    left: 72px;
    bottom: 0;
    width: 320px;
@@ -423,6 +903,24 @@ const backgrounds = computed(() => [
    }
 }
 
+.close-drawer {
+   width: 24px;
+   height: 24px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: rgba(255, 255, 255, 0.05);
+   border-radius: 50%;
+   color: #fff;
+   cursor: pointer;
+   border: none;
+   transition: all 0.2s;
+
+   &:hover {
+      background: rgba(255, 255, 255, 0.2);
+   }
+}
+
 .p-row {
    display: flex;
    align-items: center;
@@ -450,10 +948,19 @@ const backgrounds = computed(() => [
    }
 }
 
-.main-canvas {
-   width: 100%;
-   height: 100%;
-   object-fit: contain;
-   border-radius: 20px;
+.animate-slide-left {
+   animation: slideLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideLeft {
+   from {
+      transform: translateX(-100%);
+      opacity: 0;
+   }
+
+   to {
+      transform: translateX(0);
+      opacity: 1;
+   }
 }
 </style>

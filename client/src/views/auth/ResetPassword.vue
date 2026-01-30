@@ -2,55 +2,42 @@
   <div class="auth-page">
     <div class="video-bg-container">
       <video autoplay muted loop playsinline class="video-bg">
-        <source src="https://storage.googleapis.com/pinhole-about-assets-prod-us/RNDR_TunnelVidoes_stretched_005_1440x1080.mp4" type="video/mp4">
+        <source
+          :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/RNDR_TunnelVidoes_stretched_005_1440x1080.mp4')"
+          type="video/mp4">
       </video>
       <div class="video-overlay"></div>
     </div>
 
     <div class="auth-container">
       <transition name="fade-up" appear>
-          <GCard class="auth-card" :hoverable="false">
-            <div class="logo">
-              <h1 class="brand">Reset Password</h1>
-              <p>Enter your new password below</p>
+        <GCard class="auth-card" :hoverable="false">
+          <div class="logo">
+            <h1 class="brand">Reset Password</h1>
+            <p>Enter your new password below</p>
+          </div>
+
+          <form @submit.prevent="handleResetPassword" class="ant-form">
+            <div class="form-item">
+              <GInput v-model="form.password" placeholder="New Password" type="password" class="login-input" />
             </div>
 
-            <form @submit.prevent="handleResetPassword" class="ant-form">
-              <div class="form-item">
-                <GInput
-                  v-model="form.password"
-                  placeholder="New Password"
-                  type="password"
-                  class="login-input"
-                />
-              </div>
-
-              <div class="form-item">
-                <GInput
-                  v-model="form.confirmPassword"
-                  placeholder="Confirm New Password"
-                  type="password"
-                  class="login-input"
-                />
-              </div>
-
-              <div class="form-item">
-                <GButton
-                  type="primary"
-                  size="lg"
-                  :loading="loading"
-                  native-type="submit"
-                  class="login-btn"
-                >
-                  Reset Password
-                </GButton>
-              </div>
-            </form>
-
-            <div class="auth-footer">
-              <router-link to="/login" class="back-home">Back to Login</router-link>
+            <div class="form-item">
+              <GInput v-model="form.confirmPassword" placeholder="Confirm New Password" type="password"
+                class="login-input" />
             </div>
-          </GCard>
+
+            <div class="form-item">
+              <GButton type="primary" size="lg" :loading="loading" native-type="submit" class="login-btn">
+                Reset Password
+              </GButton>
+            </div>
+          </form>
+
+          <div class="auth-footer">
+            <router-link to="/login" class="back-home">Back to Login</router-link>
+          </div>
+        </GCard>
       </transition>
     </div>
   </div>
@@ -64,6 +51,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ref, reactive } from 'vue'
 import { toast } from 'vue-sonner'
 import { useUserStore } from '@/stores/user'
+import { getFileUrl } from '@/utils/api'
 
 const router = useRouter()
 const route = useRoute()
@@ -106,7 +94,7 @@ const handleResetPassword = async () => {
 
     // Redirect to login after slight delay
     setTimeout(() => {
-        router.push('/login')
+      router.push('/login')
     }, 1500)
   } catch (error: any) {
     // Error handled in store
@@ -162,6 +150,7 @@ const handleResetPassword = async () => {
 
 .auth-card {
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+
   :deep(.g-card__body) {
     padding: 50px 40px;
   }

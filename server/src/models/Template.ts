@@ -1,6 +1,9 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ITemplate extends Document {
+    // Legacy/Migration ID
+    id: string;
+
     // Basic info
     name: string;
     description: string;
@@ -8,22 +11,43 @@ export interface ITemplate extends Document {
     thumbnail: string;
     previewVideo?: string;
 
-    // Template structure (AntFlow format)
-    structure: {
-        segments: any[];
+    // Template structure (User's specific format)
+    pages: {
+        id: string;
+        name: string;
+        thumbnail: string;
+        preview: string;
         duration: number;
-        aspectRatio: '16:9' | '9:16' | '1:1' | '4:5';
-        customizableFields: string[];
-        requiredAssets: {
-            type: 'image' | 'video' | 'audio';
-            placeholder: string;
-            description: string;
+        data: {
+            fill: string;
+            height: number;
+            width: number;
+            format: string;
+            orientation: string;
+            audios: {
+                id: string;
+                url: string;
+                name: string;
+                trim: number;
+                muted: boolean;
+                offset: number;
+                volume: number;
+                playing: boolean;
+                duration: number;
+                timeline: number;
+            }[];
+            scene: string; // Fabric.js JSON string
+        };
+        blocks: {
+            id: string;
+            start: number;
+            end: number;
         }[];
-    };
+    }[];
 
     // External source tracking
     source: {
-        platform?: 'capcut' | 'canva' | 'native';
+        platform?: 'capcut' | 'canva' | 'zocket' | 'private';
         originalId?: string;
         importedAt?: Date;
         originalUrl?: string;
@@ -60,31 +84,53 @@ export interface ITemplate extends Document {
 
 const TemplateSchema = new Schema<ITemplate>(
     {
+        id: { type: String, index: true },
         name: { type: String, required: true },
-        description: { type: String, required: true },
+        description: { type: String, default: '' },
         category: {
             type: String,
             enum: ['intro', 'outro', 'transition', 'full-video', 'social-media', 'ad', 'tutorial'],
-            required: true,
+            default: 'full-video',
             index: true
         },
-        thumbnail: { type: String, required: true },
+        thumbnail: { type: String },
         previewVideo: String,
 
-        structure: {
-            segments: [Schema.Types.Mixed],
+        pages: [{
+            id: String,
+            name: String,
+            thumbnail: String,
+            preview: String,
             duration: Number,
-            aspectRatio: { type: String, enum: ['16:9', '9:16', '1:1', '4:5'], default: '16:9' },
-            customizableFields: [String],
-            requiredAssets: [{
-                type: { type: String, enum: ['image', 'video', 'audio'] },
-                placeholder: String,
-                description: String
+            data: {
+                fill: String,
+                height: Number,
+                width: Number,
+                format: String,
+                orientation: String,
+                audios: [{
+                    id: String,
+                    url: String,
+                    name: String,
+                    trim: { type: Number, default: 0 },
+                    muted: { type: Boolean, default: false },
+                    offset: { type: Number, default: 0 },
+                    volume: { type: Number, default: 1 },
+                    playing: { type: Boolean, default: false },
+                    duration: Number,
+                    timeline: Number
+                }],
+                scene: String
+            },
+            blocks: [{
+                id: String,
+                start: Number,
+                end: Number
             }]
-        },
+        }],
 
         source: {
-            platform: { type: String, enum: ['capcut', 'canva', 'native'], default: 'native' },
+            platform: { type: String, enum: ['capcut', 'canva', 'zocket', 'private'], default: 'zocket' },
             originalId: String,
             importedAt: Date,
             originalUrl: String

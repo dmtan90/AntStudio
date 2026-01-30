@@ -1,4 +1,7 @@
 import express from 'express';
+import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
 import cors from 'cors';
 import config from './utils/config.js';
 import { configService } from './utils/configService.js';
@@ -12,10 +15,11 @@ import aiConfigRoutes from './routes/aiConfig.js';
 import mediaRouter from './routes/media.js';
 import aiRouter from './routes/ai.js';
 import promptsRouter from './routes/prompts.js';
-import templatesRouter from './routes/templates.js';
+// import templatesRouter from './routes/templates.js';
 import voiceRouter from './routes/voice.js';
 import platformsRouter from './routes/platforms.js';
 import streamingRouter from './routes/streaming.js';
+import mobileStreamingRouter from './routes/mobileStreaming.js';
 import broadcasterRouter from './routes/broadcaster.js';
 import networkRouter from './routes/network.js';
 import organizationRoutes from './routes/organizations.js';
@@ -27,7 +31,9 @@ import paymentRouter from './routes/payment.js';
 import socialRouter from './routes/social.js';
 import configsRouter from './routes/configs.js';
 import videosRouter from './routes/videos.js';
+import analyticsRouter from './routes/analytics.js';
 import licenseRouter from './routes/license.js';
+import collaborationRouter from './routes/collaboration.js';
 import aiAccountsRouter from './routes/aiAccounts.js';
 import monitoringRouter from './routes/monitoring.js';
 import { monitoringService } from './services/monitoringService.js';
@@ -46,7 +52,7 @@ import mobileRouter from './routes/mobile.js';
 import moderationRouter from './routes/moderation.js';
 import commentsRouter from './routes/comments.js';
 import versionsRouter from './routes/versions.js';
-import { recoveryService } from './services/RecoveryService.js';
+// import { recoveryService } from './services/RecoveryService.js';
 import { apiKeyMiddleware } from './middleware/apiKey.js';
 import { createServer } from 'http';
 import { SocketServer } from './services/SocketServer.js';
@@ -61,7 +67,15 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Trust proxy if behind Nginx/Load Balancer
+app.set('trust proxy', 1);
+
 // Middleware
+// Security Headers
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin for S3/Media
+    contentSecurityPolicy: false, // Disable CSP for now as it can break some frontend features if not tuned
+}));
 app.use(cors({
     origin: config.public.baseUrl,
     credentials: true
@@ -84,6 +98,9 @@ app.use(express.json({
     }
 }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// NoSQL Injection Protection
+app.use(mongoSanitize());
 
 app.use(express.static(path.join(__dirname, '../../public')));
 app.use(express.static(path.join(__dirname, '../../../client/dist')));
@@ -118,10 +135,11 @@ app.use('/api/social', socialRouter);
 app.use('/api/configs', configsRouter);
 app.use('/api/videos', videosRouter);
 app.use('/api/license', licenseRouter);
-app.use('/api/templates', templatesRouter);
+// app.use('/api/templates', templatesRouter);
 app.use('/api/voice', voiceRouter);
 app.use('/api/platforms', platformsRouter);
 app.use('/api/streaming', streamingRouter);
+app.use('/api/streaming/mobile', mobileStreamingRouter);
 app.use('/api/broadcaster', broadcasterRouter);
 app.use('/api/network', networkRouter);
 app.use('/api/admin/ai/accounts', aiAccountsRouter);
@@ -134,11 +152,45 @@ app.use('/api/developer', developerRoutes);
 app.use('/api/neural', neuralRoutes);
 app.use('/api/headless', headlessRouter);
 app.use('/api/mobile', mobileRouter);
+app.use('/api/analytics', analyticsRouter);
 app.use('/api/moderation', moderationRouter);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/releases', releaseRouter);
 app.use('/api/comments', commentsRouter);
+app.use('/api/collaboration', collaborationRouter);
 app.use('/api/versions', versionsRouter);
+
+// Rate Limiting
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 1000, // Limit each IP to 1000 requests per window
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    limit: 20, // Limit each IP to 20 auth requests per hour
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Too many authentication attempts, please try again in an hour.' }
+});
+
+const aiLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    limit: 50, // Limit each IP to 50 AI generations per hour
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'AI generation limit reached, please try again in an hour.' }
+});
+
+// Apply global rate limit
+app.use('/api/', globalLimiter);
+
+// Specific limiters
+app.use('/api/auth/', authLimiter);
+app.use('/api/ai/', aiLimiter);
 
 // SPA Handling: Redirect all non-API 404s to index.html
 app.get('*', (req, res) => {
@@ -193,13 +245,16 @@ const startServer = async () => {
         const httpServer = createServer(app);
         const socketServer = new SocketServer(httpServer);
 
+        // Connect SocketServer to SystemLogger for real-time streaming
+        systemLogger.setSocketServer(socketServer.getIO());
+
         // Initialize collaboration service
         collaborationService.initialize(socketServer['io']);
 
         httpServer.listen(PORT, () => {
             console.log(`🚀 AntStudio Engine is running on port ${PORT}`);
             // Start Industrial Watchdog (Phase 25)
-            recoveryService.startMonitoring();
+            // recoveryService.startMonitoring();
             console.log(`📡 API available at http://localhost:${PORT}/api`);
         });
     } catch (error) {
@@ -207,5 +262,17 @@ const startServer = async () => {
         process.exit(1);
     }
 };
+
+process.on('unhandledRejection', (reason, promise) => {
+    systemLogger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`, 'GlobalErrorHandler');
+});
+
+process.on('uncaughtException', (error) => {
+    systemLogger.error(`Uncaught Exception: ${error.message}`, 'GlobalErrorHandler', {
+        stack: error.stack
+    });
+    // Give some time for logging before exiting
+    setTimeout(() => process.exit(1), 1000);
+});
 
 startServer();

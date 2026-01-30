@@ -110,8 +110,8 @@ export const useUserStore = defineStore('user', () => {
 
     async function fetchPaymentHistory() {
         try {
-            const response = await api.get('/payment/history')
-            return response.data.payments || []
+            const response = await api.get('/payment/transactions')
+            return response.data.transactions || []
         } catch (error) {
             handleError(error)
             return []
@@ -128,7 +128,7 @@ export const useUserStore = defineStore('user', () => {
         }
     }
 
-    async function createCheckoutSession(payload: { planName?: string, packageId?: string, billingPeriod?: string }) {
+    async function createCheckoutSession(payload: any) {
         try {
             const response = await api.post('/payment/create-checkout', payload)
             if (response.data?.data?.url) {
@@ -153,6 +153,16 @@ export const useUserStore = defineStore('user', () => {
 
     async function purchaseCredits(packageId: string) {
         return createCheckoutSession({ packageId })
+    }
+
+    async function fetchOAuthConfig() {
+        try {
+            const response = await api.get('/auth/oauth-config')
+            return response.data
+        } catch (error) {
+            console.error('Failed to fetch OAuth config:', error)
+            return { google: false, facebook: false }
+        }
     }
 
     function logout() {
@@ -196,6 +206,38 @@ export const useUserStore = defineStore('user', () => {
         }
     }
 
+    async function uploadAvatar(formData: FormData) {
+        try {
+            const response = await api.post('/media/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            return response.data
+        } catch (error) {
+            handleError(error, 'profile.uploadFailed')
+            throw error
+        }
+    }
+
+    async function connectSocial(provider: 'youtube' | 'facebook') {
+        try {
+            const response = await api.get(`/social/connect?provider=${provider}`)
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function disconnectSocial(provider: 'youtube' | 'facebook') {
+        try {
+            const response = await api.post(`/social/disconnect`, { provider })
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     return {
         user,
         token,
@@ -221,6 +263,10 @@ export const useUserStore = defineStore('user', () => {
         creditLogs,
         loadingHistory,
         fetchCreditHistory,
-        purchaseCredits
+        purchaseCredits,
+        fetchOAuthConfig,
+        uploadAvatar,
+        connectSocial,
+        disconnectSocial
     }
 })

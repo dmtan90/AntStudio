@@ -6,7 +6,7 @@ import config from '../utils/config.js';
  * Tactical License Gating Middleware.
  * Enforces tier-based access and valid heartbeat checks.
  */
-export const licenseGating = (requiredTier: 'basic' | 'pro' | 'enterprise') => {
+export const licenseGating = (requiredTier: 'trial' | 'basic' | 'pro' | 'enterprise') => {
     return async (req: AuthRequest, res: Response, next: NextFunction) => {
         // Master server is exempt from local license gating
         if (config.systemMode === 'master') {
@@ -33,7 +33,7 @@ export const licenseGating = (requiredTier: 'basic' | 'pro' | 'enterprise') => {
         }
 
         // Tier check
-        const tiers = ['basic', 'pro', 'enterprise'];
+        const tiers = ['trial', 'basic', 'pro', 'enterprise'];
         const currentRank = tiers.indexOf(localLicense.tier);
         const requiredRank = tiers.indexOf(requiredTier);
 

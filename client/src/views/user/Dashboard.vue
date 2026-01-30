@@ -8,10 +8,16 @@
             <p class="subtitle">{{ t('dashboard.manage') }}</p>
           </div>
         </transition>
-        <GButton type="primary" size="lg" @click="showCreationDialog = true">
+        <!-- <GButton type="primary" size="lg" @click="showCreationDialog = true">
           {{ t('dashboard.startProject') }}
+        </GButton> -->
+        <GButton id="tour-new-project" type="primary" size="lg" @click="showCreationDialog = true; onTourFinish()">
+          {{ t('projects.newProject') }}
         </GButton>
       </div>
+
+      <!-- Tour -->
+      <AppTour v-model="showTour" :steps="oneStep" @finish="onTourFinish" />
 
       <!-- Stats Grid -->
       <div class="stats-grid">
@@ -19,7 +25,7 @@
           <GStatistic :title="t('dashboard.creditsBalance')" :value="user?.credits?.balance || 0" prefix="⭐" />
           <div class="credit-breakdown">
             <span><small>{{ t('dashboard.membership') }}:</small> <strong>{{ user?.credits?.membership || 0
-            }}</strong></span>
+                }}</strong></span>
             <span><small>{{ t('dashboard.bonus') }}:</small> <strong>{{ user?.credits?.bonus || 0 }}</strong></span>
             <span><small>{{ t('dashboard.weekly') }}:</small> <strong>{{ user?.credits?.weekly || 0 }}</strong></span>
           </div>
@@ -86,7 +92,7 @@
       </div>
     </div>
 
-    <ProjectCreationDialog v-model="showCreationDialog" @select="handleProjectCreation" />
+    <ProjectCreationDialog v-model="showCreationDialog" />
   </div>
 </template>
 
@@ -99,6 +105,7 @@ import { storeToRefs } from 'pinia'
 import { PlayOne, Star, Credit } from '@icon-park/vue-next'
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue'
 import { useTranslations } from '@/composables/useTranslations'
+import AppTour from '@/components/ui/AppTour.vue'
 
 const { t, setLocale } = useTranslations()
 const router = useRouter()
@@ -109,33 +116,19 @@ const showCreationDialog = ref(false)
 const { user } = storeToRefs(userStore)
 const { projects, loadingList: loadingProjects } = storeToRefs(projectStore)
 
-const handleProjectCreation = (type: string) => {
-  switch (type) {
-    case 'ai-video':
-    case 'script-to-video':
-      router.push('/projects/new')
-      break
-    case 'blank':
-      router.push('/projects/new?mode=blank')
-      break
-    case 'product-ads':
-      router.push('/projects/new?mode=product-ads')
-      break
-    case 'avatar':
-      router.push('/projects/new?mode=avatar')
-      break
-    case 'clone-style':
-      router.push('/projects/new?mode=clone')
-      break
-    case 'presentation':
-      router.push('/projects/new?mode=presentation')
-      break
-    case 'record':
-      router.push('/recorder')
-      break
-    default:
-      router.push('/projects/new')
-  }
+const showTour = ref(false)
+const oneStep = [
+  {
+    target: '#tour-new-project',
+    title: 'Create Your Magic',
+    description: 'Start here to create your first AI-powered video project. Choose from script-to-video, avatars, or recording mode.',
+    placement: 'bottom'
+  },
+]
+
+const onTourFinish = () => {
+  localStorage.setItem('antflow_create_project_tour_completed', 'true');
+  showTour.value = false;
 }
 
 const creditsConsumedThisMonth = computed(() => {
@@ -164,6 +157,13 @@ const handleCommand = (cmd: string) => {
 
 const initializeData = async () => {
   try {
+    // Check if tour should be shown
+    if (!localStorage.getItem('antflow_create_project_tour_completed')) {
+      setTimeout(() => {
+        showTour.value = true
+      }, 1000)
+    }
+
     if (!user.value) {
       await userStore.fetchProfile()
     }

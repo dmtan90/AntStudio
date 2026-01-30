@@ -4,7 +4,7 @@
         <section>
             <div class="section-title text-xs font-black uppercase tracking-widest opacity-40 mb-6 px-4">Membership
                 Plans</div>
-            <div class="plans-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="plans-grid grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div v-for="(plan, index) in plans" :key="index" class="settings-section plan-card cinematic-panel p-6">
                     <div class="panel-header mb-6">
                         <el-input v-model="plan.name" size="small" class="glass-input text-lg font-black" />

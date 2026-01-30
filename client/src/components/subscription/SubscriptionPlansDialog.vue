@@ -21,22 +21,22 @@
             Monthly
           </button>
           <button @click="isYearly = true"
-            :class="cn('px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2', isYearly ? 'bg-brand-primary text-white shadow-[0_8px_20px_rgba(59,130,246,0.3)]' : 'text-white/30 hover:text-white/60')">
+            :class="cn('px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2', isYearly ? 'bg-brand-primary text-black shadow-[0_8px_20px_rgba(59,130,246,0.3)]' : 'text-white/30 hover:text-white/60')">
             Annually
             <span
-              :class="cn('text-[8px] px-1.5 py-0.5 rounded-full font-black', isYearly ? 'bg-white text-brand-primary' : 'bg-brand-primary/20 text-brand-primary')">SAVE
+              :class="cn('text-[8px] px-1.5 py-0.5 rounded-full font-black', isYearly ? 'bg-black/60 text-black' : 'bg-brand-primary/20 text-brand-primary')">SAVE
               17%</span>
           </button>
         </div>
       </div>
 
       <!-- Plans Grid -->
-      <div class="plans-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div class="plans-grid">
         <div v-for="plan in plans" :key="plan.name"
           :class="cn('plan-card relative flex flex-col bg-black/30 border border-white/5 rounded-[32px] p-8 transition-all duration-500 hover:bg-black/50 hover:-translate-y-2 ring-1 ring-white/5 group',
             (plan.name === 'Pro' || plan.name === 'Enterprise') ? 'border-brand-primary/30 bg-brand-primary/[0.03] shadow-[0_20px_50px_rgba(59,130,246,0.1)]' : '')">
           <div v-if="plan.name === 'Pro'"
-            class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-primary text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-[0_8px_20px_rgba(59,130,246,0.5)] z-10">
+            class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-primary text-black text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-[0_8px_20px_rgba(59,130,246,0.5)] z-10">
             Recommended
           </div>
 
@@ -250,7 +250,30 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.plans-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 24px;
+  width: 100%;
+  padding-bottom: 20px;
+}
+
 .plan-card {
+  flex: 1;
+  min-width: 250px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+
+  h3 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 1.5em;
+  }
+
   &:hover {
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.05);
   }

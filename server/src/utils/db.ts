@@ -13,7 +13,7 @@ export const connectDB = async () => {
     try {
         await clusterManager.connect();
         isConnected = true;
-        console.log('✅ Global Database Cluster connected successfully');
+        console.log(`✅ Global Database Cluster connected successfully (State: ${mongoose.connection.readyState})`);
     } catch (error) {
         console.error('❌ Database Cluster connection failed:', error);
         throw error;

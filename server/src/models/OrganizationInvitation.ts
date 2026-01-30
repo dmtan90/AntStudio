@@ -38,7 +38,7 @@ const OrganizationInvitationSchema = new Schema<IOrganizationInvitation>(
 );
 
 OrganizationInvitationSchema.index({ email: 1 });
-OrganizationInvitationSchema.index({ token: 1 });
+// OrganizationInvitationSchema.index({ token: 1 });
 
 export const OrganizationInvitation: Model<IOrganizationInvitation> =
     mongoose.models.OrganizationInvitation || mongoose.model<IOrganizationInvitation>('OrganizationInvitation', OrganizationInvitationSchema);

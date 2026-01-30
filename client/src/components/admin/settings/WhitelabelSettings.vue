@@ -1,7 +1,7 @@
 <template>
     <el-card class="settings-section">
         <template #header>Branding Configuration</template>
-        <el-form label-position="top">
+        <el-form label-position="top" v-if="whitelabel">
             <el-form-item label="Application Name">
                 <el-input v-model="whitelabel.appName" placeholder="AntStudio" class="glass-input" />
             </el-form-item>

@@ -65,8 +65,8 @@ router.post('/activate', authMiddleware, async (req: AuthRequest, res) => {
             endDate: new Date(remote.endDate),
             status: 'valid',
             instancesLimit: 1, // Edge doesn't manage multiple units
-            maxUsersPerInstance: remote.limits.users,
-            maxProjectsPerInstance: remote.limits.projects
+            maxUsersPerInstance: remote.limits.maxUsersPerInstance,
+            maxProjectsPerInstance: remote.limits.maxProjectsPerInstance
         });
 
         res.json({ success: true, data: { license: localLic } });
@@ -119,7 +119,7 @@ router.post('/generate', authMiddleware, sysAdminMiddleware, async (req: AuthReq
         const license = await License.create({
             key,
             owner,
-            tier: tier || 'basic',
+            tier: tier || 'trial',
             instancesLimit: instancesLimit || 1,
             maxUsersPerInstance: maxUsersPerInstance || 10,
             startDate,
@@ -130,6 +130,16 @@ router.post('/generate', authMiddleware, sysAdminMiddleware, async (req: AuthReq
         res.json({ success: true, data: { license } });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/license/all - Sys-Admin view of all global registries (Master Mode)
+router.get('/all', authMiddleware, sysAdminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const licenses = await License.find().sort({ createdAt: -1 });
+        res.json({ success: true, data: { licenses } });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 
@@ -187,6 +197,34 @@ router.post('/license-status', async (req, res) => {
         });
     } catch (error: any) {
         res.status(500).json({ status: 'error', message: 'Neural validation engine failure.' });
+    }
+});
+
+// PUT /api/license/:id - Update License (Master Mode)
+router.put('/:id', authMiddleware, sysAdminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const license = await License.findByIdAndUpdate(id, updates, { new: true });
+        if (!license) return res.status(404).json({ success: false, error: 'License not found' });
+
+        res.json({ success: true, data: { license } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// DELETE /api/license/:id - Delete License (Master Mode)
+router.delete('/:id', authMiddleware, sysAdminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { id } = req.params;
+        const license = await License.findByIdAndDelete(id);
+        if (!license) return res.status(404).json({ success: false, error: 'License not found' });
+
+        res.json({ success: true, data: { message: 'License deleted' } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

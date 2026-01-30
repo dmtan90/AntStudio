@@ -19,7 +19,7 @@ export const useLicenseStore = defineStore('license', () => {
     async function fetchLicenses(purpose?: string) {
         loading.value = true
         try {
-            const response = await api.get('/license/list', {
+            const response = await api.get('/license/all', {
                 params: { purpose }
             })
             licenses.value = response.data.licenses || []

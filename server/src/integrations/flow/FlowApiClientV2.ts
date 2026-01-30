@@ -6,6 +6,7 @@ import crypto from 'crypto';
  * Refined based on antigravity2api-nodejs:
  * - Uses nested wrapper (project, requestId, model, requestType, userAgent)
  * - Optimized for Agent-based endpoints
+ * @deprecated Use FlowApiClient instead.
  */
 export class FlowApiClientV2 {
     private readonly API_BASE_URL = 'https://aisandbox-pa.googleapis.com/v1';

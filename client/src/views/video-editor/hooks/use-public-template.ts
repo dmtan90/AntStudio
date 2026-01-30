@@ -72,7 +72,7 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
   };
 
   const searchTemplates = async (query: string, page = 0) => {
-    const url = `/media/templates?query=${encodeURIComponent(query)}&page=${page}&per_page=${DEFAULT_LIMIT}&public=true`;
+    const url = `/marketplace/templates?query=${encodeURIComponent(query)}&page=${page}&limit=${DEFAULT_LIMIT}&tab=public`;
     await fetchTemplates(url);
   };
 
@@ -81,7 +81,7 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     error.value = null;
 
     try {
-      const url = `/media/templates?query=${encodeURIComponent(query)}&page=${page}&per_page=${DEFAULT_LIMIT}&public=true`;
+      const url = `/marketplace/templates?query=${encodeURIComponent(query)}&page=${page}&limit=${DEFAULT_LIMIT}&tab=public`;
       const response = await api.get(url);
       const data = response.data;
 

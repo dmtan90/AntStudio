@@ -13,17 +13,33 @@ export class ActionSyncService {
      * Connects to the collaboration server for a specific room.
      */
     public static connect(roomId: string, token: string) {
-        if (this.socket?.connected && this.roomId === roomId) return;
+        if (this.socket?.connected && this.roomId === roomId) {
+            console.log(`[ActionSync] Already connected to room ${roomId}`);
+            return;
+        }
 
         this.roomId = roomId;
-        this.socket = io({
+        const endpoint = window.location.origin;
+        console.log(`[ActionSync] Connecting to ${endpoint} with path /api/socket.io`);
+
+        this.socket = io(endpoint, {
             path: '/api/socket.io',
             auth: { token, roomId },
-            reconnectionAttempts: 5
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            timeout: 20000,
+            transports: ['polling', 'websocket'] // Try polling first as it is more proxy-friendly
+        });
+
+        this.socket.on('connect', () => {
+            console.log(`✅ [ActionSync] Connected to room: ${roomId} (ID: ${this.socket?.id})`);
+        });
+
+        this.socket.on('connect_error', (err) => {
+            console.error(`❌ [ActionSync] Connection error:`, err.message);
         });
 
         this.setupListeners();
-        console.log(`🔗 ActionSyncService connected to room: ${roomId}`);
     }
 
     /**
@@ -78,5 +94,12 @@ export class ActionSyncService {
             this.socket = null;
             this.roomId = null;
         }
+    }
+
+    /**
+     * Gets the active socket instance.
+     */
+    public static getSocket(): Socket | null {
+        return this.socket;
     }
 }

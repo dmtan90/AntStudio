@@ -19,9 +19,14 @@ export class FlowApiClient {
     async getAccessToken(stToken: string): Promise<{ at: string; expires: string; email: string; raw: any }> {
         console.log('[FlowAPI] Step 1: Validating Session & Obtaining Access Token...');
 
+        // Check if stToken is a full cookie string or just the session token
+        const cookieHeader = stToken.includes('__Secure-next-auth.session-token')
+            ? stToken
+            : `__Secure-next-auth.session-token=${stToken}`;
+
         const res = await axios.get(`${this.LABS_BASE_URL}/auth/session`, {
             headers: {
-                'Cookie': `__Secure-next-auth.session-token=${stToken}`,
+                'Cookie': cookieHeader,
                 'Accept': '*/*',
                 'Origin': 'https://labs.google',
                 'Referer': 'https://labs.google/',
@@ -55,9 +60,13 @@ export class FlowApiClient {
             }
         };
 
+        const cookieHeader = stToken.includes('__Secure-next-auth.session-token')
+            ? stToken
+            : `__Secure-next-auth.session-token=${stToken}`;
+
         const res = await axios.post(`${this.LABS_BASE_URL}/trpc/project.createProject`, payload, {
             headers: {
-                'Cookie': `__Secure-next-auth.session-token=${stToken}`,
+                'Cookie': cookieHeader,
                 'Content-Type': 'application/json',
                 'Accept': '*/*',
                 'Origin': 'https://labs.google',
@@ -83,9 +92,13 @@ export class FlowApiClient {
             const input = JSON.stringify({ json: { projectId, toolName: "PINHOLE" } });
             const encodedInput = encodeURIComponent(input);
 
+            const cookieHeader = stToken.includes('__Secure-next-auth.session-token')
+                ? stToken
+                : `__Secure-next-auth.session-token=${stToken}`;
+
             const res = await axios.get(`${this.LABS_BASE_URL}/trpc/project.getProject?input=${encodedInput}`, {
                 headers: {
-                    'Cookie': `__Secure-next-auth.session-token=${stToken}`,
+                    'Cookie': cookieHeader,
                     'Accept': '*/*',
                     'Origin': 'https://labs.google',
                     'Referer': 'https://labs.google/',
@@ -117,18 +130,40 @@ export class FlowApiClient {
             }
         });
 
+
         // 1. Force Authentication Cookie Inject (Ensures we are logged in)
-        await page.context().addCookies([
-            {
+        const cookiesToInject = [];
+
+        if (stToken.includes(';')) {
+            // Parse full raw cookie string
+            const rawCookies = stToken.split(';');
+            for (const cookieStr of rawCookies) {
+                const [name, value] = cookieStr.trim().split('=');
+                if (name && value) {
+                    cookiesToInject.push({
+                        name: name.trim(),
+                        value: value.trim(),
+                        domain: 'labs.google',
+                        path: '/',
+                        secure: true,
+                        httpOnly: false // Allow JS access for most, though httpOnly is safer, browser context usually handles it
+                    });
+                }
+            }
+        } else {
+            // Fallback: Just the session token
+            cookiesToInject.push({
                 name: '__Secure-next-auth.session-token',
                 value: stToken,
                 domain: 'labs.google',
                 path: '/',
                 secure: true,
                 httpOnly: true,
-                sameSite: 'Lax'
-            }
-        ]);
+                sameSite: 'Lax' as 'Lax'
+            });
+        }
+
+        await page.context().addCookies(cookiesToInject);
 
         // 2. Ensure we are on the project page
         const projectUrl = `https://labs.google/fx/tools/flow/project/${projectId}`;

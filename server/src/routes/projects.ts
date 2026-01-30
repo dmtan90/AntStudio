@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import multer from 'multer';
 import { connectDB } from '../utils/db.js';
 import { Project } from '../models/Project.js';
 import { VideoAssemblyService } from '../services/videoAssemblyService.js';
@@ -9,15 +10,24 @@ import { moderationService } from '../services/ModerationService.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { cacheMiddleware } from '../middleware/cache.js';
 import { checkLicenseStatus, checkProjectLimit } from '../middleware/license.js';
-import { generateText, generateJSON } from '../utils/AIGenerator.js';
+import { generateText, generateJSON, generateImage } from '../utils/AIGenerator.js';
 import { generateStoryboardIteratively } from '../services/iterativeStoryboard.js';
 import { User } from '../models/User.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
 import { licenseGating } from '../middleware/licenseGating.js';
 import { hasSufficientCredits, deductCredits, getCreditCost } from '../utils/credits.js';
+import { uploadToS3 } from '../utils/s3.js';
+
+// Define the file filter function to update the filename encoding
+const fileFilter = (req: AuthRequest, file: any, callback: any) => {
+    // Re-encode from latin1 (Multer's default behavior in older versions) to utf8
+    file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    callback(null, true); // Accept the file
+};
 
 const router = Router();
+const upload = multer({ fileFilter, storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // All project routes require authentication
 router.use(authMiddleware);
@@ -71,10 +81,10 @@ router.get('/',
     });
 
 // POST /api/projects - Create new project (scoped to organization)
-router.post('/', checkLicenseStatus, checkProjectLimit, licenseGating('basic'), rbacMiddleware(Permission.PROJECT_CREATE), async (req: any, res: Response) => {
+router.post('/', checkLicenseStatus, checkProjectLimit, licenseGating('trial'), rbacMiddleware(Permission.PROJECT_CREATE), async (req: any, res: Response) => {
     try {
         await connectDB();
-        const { title, description, mode, aspectRatio, videoStyle, targetDuration } = req.body;
+        const { title, description, mode, aspectRatio, videoStyle, targetDuration, metadata, advancedEditorState } = req.body;
         if (!title) return res.status(400).json({ success: false, error: 'Title is required' });
 
         const user = await User.findById(req.user!.userId);
@@ -88,7 +98,9 @@ router.post('/', checkLicenseStatus, checkProjectLimit, licenseGating('basic'), 
             videoStyle: videoStyle || 'cinematic',
             targetDuration: targetDuration || 60,
             status: 'draft',
-            input: {}
+            input: {},
+            metadata: metadata || {},
+            advancedEditorState: advancedEditorState || null,
         });
 
         res.status(201).json({ success: true, data: { project } });
@@ -140,7 +152,7 @@ router.put('/:id', rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res
 });
 
 // POST /api/projects/preview - Quick preview
-router.post('/preview', checkLicenseStatus, licenseGating('pro'), async (req: any, res: Response) => {
+router.post('/preview', checkLicenseStatus, licenseGating('trial'), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { topic, history, targetDuration } = req.body;
@@ -389,12 +401,85 @@ router.post('/:id/assets/generate', checkLicenseStatus, rbacMiddleware(Permissio
         const project = await Project.findOne({ _id: projectId, userId: req.user!.userId });
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
-        // Modularized logic for asset generation...
-        // [Existing asset generation logic simplified here...]
-        res.json({ success: true, message: 'Asset generation initiated' });
+        if (type === 'image') {
+            const result = await generateImage(description, projectId, assetName || `generated-${Date.now()}`, {
+                generationType: segmentId ? 'scene' : 'character'
+            });
+
+            // Check and update project structure if segmentId provided (Scene Image)
+            if (segmentId && project.storyboard && project.storyboard.segments) {
+                const segment = project.storyboard.segments.find((s: any) => s._id.toString() === segmentId);
+                if (segment) {
+                    segment.sceneImage = result.s3Key; // Save key
+                }
+            }
+
+            // Add main visual assets list if not exists
+            if (!project.visualAssets) project.visualAssets = [];
+            project.visualAssets.push({
+                name: assetName || `Generated Asset ${Date.now()}`,
+                description: description || '',
+                type: 'image',
+                status: 'ready',
+                s3Key: result.s3Key,
+                createdAt: new Date()
+            });
+
+            await project.save();
+            return res.json({ success: true, data: { s3Key: result.s3Key, url: result.s3Key } });
+        }
+
+        res.json({ success: true, message: 'Asset generation initiated (Simulation for non-image types)' });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
+// POST /api/projects/:id/assets/upload - Upload asset
+router.post('/:id/assets/upload',
+    checkLicenseStatus,
+    rbacMiddleware(Permission.PROJECT_EDIT),
+    upload.single('file'),
+    async (req: any, res: Response) => {
+        try {
+            await connectDB();
+            const projectId = req.params.id;
+
+            if (!req.file) {
+                return res.status(400).json({ success: false, error: 'No files uploaded' });
+            }
+
+            const project = await Project.findOne({ _id: projectId, userId: req.user!.userId });
+            if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+            const file = req.file;
+            const s3Key = `projects/${projectId}/assets/${Date.now()}_${file.originalname}`;
+            const uploadResult = await uploadToS3(s3Key, file.buffer, file.mimetype);
+
+            // Update Project Assets
+            const entityType = req.body.entityType; // 'character', 'segment'
+            const entityId = req.body.entityId;
+
+            if (entityType && entityId) {
+                if (entityType === 'segment' && project.storyboard && project.storyboard.segments) {
+                    const segment = project.storyboard.segments.find((s: any) => s._id.toString() === entityId);
+                    if (segment) {
+                        segment.sceneImage = uploadResult.key;
+                    }
+                } else if (entityType === 'character' && project.scriptAnalysis && project.scriptAnalysis.characters) {
+                    const character = project.scriptAnalysis.characters.find((c: any) => c.name === entityId || c._id === entityId); // assuming entityId matches name or ID
+                    if (character) {
+                        character.referenceImage = uploadResult.key;
+                    }
+                }
+                await project.save();
+            }
+
+            res.json({ success: true, data: { s3Key: uploadResult.key, url: uploadResult.key } });
+        } catch (error: any) {
+            console.error('Asset upload error:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
 
 export default router;

@@ -1,0 +1,58 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import api from '@/utils/api'
+import { toast } from 'vue-sonner'
+
+export const usePaymentStore = defineStore('payment', () => {
+    const transactions = ref<any[]>([])
+    const stats = ref<any>(null)
+    const loading = ref(false)
+
+    async function fetchTransactions() {
+        loading.value = true
+        try {
+            const response = await api.get('/payment/transactions')
+            transactions.value = response.data.data?.transactions || []
+            return transactions.value
+        } catch (error: any) {
+            console.error('Failed to fetch transactions', error)
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function fetchAdminTransactions() {
+        loading.value = true
+        try {
+            const response = await api.get('/payment/admin/transactions')
+            transactions.value = response.data.data?.transactions || []
+            return transactions.value
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Failed to fetch admin transactions')
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function fetchAdminStats() {
+        loading.value = true
+        try {
+            const response = await api.get('/payment/admin/stats')
+            stats.value = response.data.data
+            return stats.value
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Failed to fetch admin stats')
+        } finally {
+            loading.value = false
+        }
+    }
+
+    return {
+        transactions,
+        stats,
+        loading,
+        fetchTransactions,
+        fetchAdminTransactions,
+        fetchAdminStats
+    }
+})

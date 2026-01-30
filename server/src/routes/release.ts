@@ -16,7 +16,7 @@ router.get('/latest', async (req, res) => {
             channel: channel || 'stable'
         }).sort({ publishedAt: -1 });
 
-        if (!release) return res.status(404).json({ success: false, message: 'No updates available.' });
+        if (!release) return res.json({ success: true, data: { release: null } });
 
         res.json({ success: true, data: { release } });
     } catch (e: any) {

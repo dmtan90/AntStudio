@@ -18,7 +18,8 @@ export interface IAIAccount extends Document {
 
     // Google Cloud specific
     projectId?: string;
-    licenseKey?: string; // For 11labs-direct accounts
+    licenseKey?: string; // Legacy/Global license key
+    serviceKeys?: Map<string, string>; // task specific keys for 11labs-direct (voice, image, video)
     avatarUrl?: string;
 
     // Usage Tracking
@@ -52,6 +53,11 @@ const AIAccountSchema = new Schema<IAIAccount>(
 
         projectId: String,
         licenseKey: String,
+        serviceKeys: {
+            type: Map,
+            of: String,
+            default: {}
+        },
         avatarUrl: String,
 
         quotas: {
@@ -81,7 +87,7 @@ const AIAccountSchema = new Schema<IAIAccount>(
 );
 
 // Indexes
-AIAccountSchema.index({ email: 1, accountType: 1 }, { unique: true });
+AIAccountSchema.index({ email: 1, accountType: 1 });
 AIAccountSchema.index({ providerId: 1, status: 1 });
 AIAccountSchema.index({ isActive: 1 });
 

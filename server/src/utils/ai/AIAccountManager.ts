@@ -105,6 +105,7 @@ export class AIAccountManager {
         }
 
         try {
+            console.log('[AIAccountManager] Attempting token exchange with:', { redirectUri, isAntigravity: options.isAntigravity });
             const response = await axios.post(TOKEN_URL, new URLSearchParams({
                 code,
                 client_id: clientId,
@@ -116,12 +117,14 @@ export class AIAccountManager {
             });
 
             const { access_token, refresh_token, expires_in } = response.data;
+            console.log('[AIAccountManager] Token exchange successful, fetching user info...');
 
             // Get user email and picture
             const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
                 headers: { Authorization: `Bearer ${access_token}` }
             });
             const { email, picture } = userResponse.data;
+            console.log('[AIAccountManager] User info retrieved:', email);
 
             // Save or update account
             const accountType = options.isAntigravity ? 'antigravity' : 'standard';
@@ -163,8 +166,9 @@ export class AIAccountManager {
 
             return account;
         } catch (error: any) {
-            console.error('[AIAccountManager] Token Exchange Error:', error.response?.data || error.message);
-            throw new Error('Failed to exchange authorization code for tokens');
+            const errorDetails = error.response?.data || error.message;
+            console.error('[AIAccountManager] Token Exchange Error:', errorDetails);
+            throw new Error(`Failed to exchange authorization code for tokens: ${JSON.stringify(errorDetails)}`);
         }
     }
 
@@ -172,6 +176,12 @@ export class AIAccountManager {
      * Refresh access token for a specific account
      */
     public async refreshAccessToken(account: IAIAccount, customCreds?: { clientId: string, clientSecret: string }): Promise<string> {
+        // 11labs-direct accounts don't use OAuth tokens, they use license keys
+        if (account.accountType === '11labs-direct') {
+            console.log(`[AIAccountManager] Skipping OAuth refresh for 11labs-direct account: ${account.email}`);
+            return account.accessToken || '';
+        }
+
         if (account.accessToken && account.accessTokenExpiresAt && account.accessTokenExpiresAt.getTime() > Date.now() + 300000) {
             return account.accessToken;
         }
@@ -217,6 +227,137 @@ export class AIAccountManager {
             await account.save();
             throw new Error(`Failed to refresh token for ${account.email}`);
         }
+    }
+
+    /**
+     * Onboard an 11labs-direct (11labs.net) account using only email
+     */
+    public async onboard11LabsDirectAccount(email: string) {
+        try {
+            console.log(`[AIAccountManager] Onboarding 11labs-direct account for ${email}...`);
+
+            // Generate deterministic hardware IDs for this server instance
+            const hardware_id = crypto.createHash('md5').update('antflow-server-hw').digest('hex').substring(0, 16);
+            const cpu_id = crypto.createHash('md5').update('antflow-server-cpu').digest('hex').substring(0, 16);
+            const mainboard_uuid = crypto.createHash('md5').update('antflow-server-mb').digest('hex').substring(0, 16);
+
+            const serviceKeys = new Map<string, string>();
+            const brands = [
+                { id: 'voice', brand: 'elevenlabs' },
+                { id: 'image', brand: 'imagen' },
+                { id: 'video', brand: 'veo3' }
+            ];
+
+            for (const { id, brand } of brands) {
+                console.log(`[AIAccountManager] Requesting license for ${brand}...`);
+                try {
+                    const response = await axios.post('https://11labs.net/api/license/activate.php', {
+                        email,
+                        hardware_id,
+                        cpu_id,
+                        mainboard_uuid,
+                        brand
+                    }, { timeout: 10000 });
+
+                    if (response.data.success && response.data.license_key) {
+                        serviceKeys.set(id, response.data.license_key);
+                        console.log(`[AIAccountManager] Successfully retrieved ${id} key for ${email}`);
+                    } else {
+                        console.warn(`[AIAccountManager] Failed to get ${id} key:`, response.data.message);
+                    }
+                } catch (err: any) {
+                    console.error(`[AIAccountManager] Error activating ${brand}:`, err.message);
+                }
+            }
+
+            if (serviceKeys.size === 0) {
+                console.warn(`[AIAccountManager] No license keys retrieved from 11labs.net for ${email}. Account will be created but may need manual key configuration.`);
+            }
+
+            // Save or update account
+            const accountType = '11labs-direct';
+            let account = await AIAccount.findOne({ email, accountType });
+
+            if (account) {
+                account.serviceKeys = serviceKeys;
+                account.status = 'ready';
+                await account.save();
+            } else {
+                account = await AIAccount.create({
+                    email,
+                    providerId: '11labs-direct',
+                    accountType,
+                    serviceKeys,
+                    status: 'ready',
+                    isActive: true
+                });
+            }
+
+            // Sync detailed account info
+            await this.syncDirectAccountInfo(account);
+
+            return account;
+        } catch (error: any) {
+            console.error('[AIAccountManager] 11labs-direct Onboarding Error:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Synchronize detailed account info for 11labs-direct accounts
+     */
+    public async syncDirectAccountInfo(account: IAIAccount): Promise<void> {
+        if (account.accountType !== '11labs-direct' || !account.serviceKeys || account.serviceKeys.size === 0) {
+            console.log(`[AIAccountManager] Skipping sync for ${account.email} - no service keys available`);
+            return;
+        }
+
+        console.log(`[AIAccountManager] Syncing direct account info for ${account.email}...`);
+
+        const serviceInfoUrls = [
+            { id: 'voice', url: 'https://11labs.net/api/account/info' },
+            { id: 'image', url: 'https://11labs.net/api/account/info', params: { app: 'imagen4' } },
+            { id: 'video', url: 'https://11labs.net/api/account/info_veo3.php', params: { app: 'veo3' } }
+        ];
+
+        for (const { id, url, params } of serviceInfoUrls) {
+            const licenseKey = account.serviceKeys.get(id);
+            if (!licenseKey) continue;
+
+            try {
+                const response = await axios.get(url, {
+                    params: { ...params, license_key: licenseKey },
+                    timeout: 5000
+                });
+
+                if (response.data.success) {
+                    const info = response.data.data?.account_info || {};
+                    console.log(`[AIAccountManager] Received info for ${id}:`, info.email);
+
+                    // Update quotas based on received info
+                    if (id === 'video') {
+                        const remaining = info.remaining_veo3_credits ?? info.veo3_remaining_videos ?? 0;
+                        const safeId = this.sanitizeModelId('veo-3.1-generate-001');
+                        account.quotas.set(safeId, {
+                            used: 0,
+                            limit: info.unlimited_paid_veo3 ? 999999 : remaining
+                        });
+                    } else if (id === 'image') {
+                        const remaining = info.imagen_limit_no_package - info.imagen_count;
+                        const safeId = this.sanitizeModelId('imagen-4.0-generate-001');
+                        account.quotas.set(safeId, {
+                            used: 0,
+                            limit: info.imagen_buy_package ? 999999 : remaining
+                        });
+                    }
+                }
+            } catch (err: any) {
+                console.error(`[AIAccountManager] Error syncing ${id} info:`, err.message);
+            }
+        }
+
+        account.markModified('quotas');
+        await account.save();
     }
 
     /**
@@ -303,6 +444,12 @@ export class AIAccountManager {
      * 2. Fall back to enumerating user projects via Resource Manager
      */
     public async discoverProjectId(account: IAIAccount): Promise<string> {
+        // 11labs-direct accounts don't use Google Cloud projects
+        if (account.accountType === '11labs-direct') {
+            console.log(`[AIAccountManager] Skipping project discovery for 11labs-direct account: ${account.email}`);
+            return '';
+        }
+
         if (account.projectId && !account.projectId.includes('default')) return account.projectId;
 
         // Try specialized discovery first (Works for both Antigravity and Standard with right scopes)

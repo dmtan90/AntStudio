@@ -33,6 +33,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['update:modelValue', 'select'])
+const router = useRouter()
 
 const options = [
     {
@@ -64,11 +65,11 @@ const options = [
         value: 'clone-style'
     },
     {
-        label: 'Script to Video',
-        desc: 'From screenplay',
-        icon: FileText,
+        label: 'Live Studio',
+        desc: 'Live streaming',
+        icon: Monitor,
         class: 'bg-gradient-pink',
-        value: 'script-to-video'
+        value: 'live-studio'
     },
     {
         label: 'Presentation',
@@ -93,9 +94,42 @@ const options = [
     }
 ]
 
+// const handleSelect = (opt: any) => {
+//     emit('select', opt.value)
+//     emit('update:modelValue', false)
+// }
+
 const handleSelect = (opt: any) => {
-    emit('select', opt.value)
     emit('update:modelValue', false)
+    switch (opt.value) {
+        case 'ai-video':
+        case 'script-to-video':
+            router.push('/projects/new')
+            break
+        case 'blank':
+            router.push('/projects/new?mode=blank')
+            break
+        case 'product-ads':
+            router.push('/projects/new?mode=product-ads')
+            break
+        case 'avatar':
+            router.push('/projects/new?mode=avatar')
+            break
+        case 'clone-style':
+            router.push('/projects/new?mode=clone')
+            break
+        case 'presentation':
+            router.push('/projects/new?mode=presentation')
+            break
+        case 'record':
+            router.push('/recorder')
+            break
+        case 'live-studio':
+            router.push('/live/studio')
+            break
+        default:
+            router.push('/projects/new')
+    }
 }
 </script>
 

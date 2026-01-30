@@ -86,7 +86,7 @@
       </div>
     </div>
 
-    <ProjectCreationDialog v-model="showCreationDialog" @select="handleProjectCreation" />
+    <ProjectCreationDialog v-model="showCreationDialog" />
   </div>
 </template>
 
@@ -147,7 +147,7 @@ const tourSteps = [
 ]
 
 const onTourFinish = () => {
-    localStorage.setItem('antflow_tour_completed', 'true')
+  localStorage.setItem('antflow_tour_completed', 'true')
 }
 
 const handleProjectCreation = (type: string) => {
@@ -173,6 +173,9 @@ const handleProjectCreation = (type: string) => {
       break
     case 'record':
       router.push('/recorder')
+      break
+    case 'live-studio':
+      router.push('/live/studio')
       break
     default:
       router.push('/projects/new')
@@ -248,11 +251,11 @@ const formatDate = (date: string) => {
 
 onMounted(() => {
   projectStore.fetchProjects()
-  
+
   // Check if tour should be shown
   if (!localStorage.getItem('antflow_tour_completed')) {
     setTimeout(() => {
-        showTour.value = true
+      showTour.value = true
     }, 1000)
   }
 })

@@ -87,10 +87,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { Download } from '@icon-park/vue-next';
-import axios from 'axios';
 import api from '@/utils/api';
 import { toast } from 'vue-sonner';
+import { useAdminStore } from '@/stores/admin';
 
+const adminStore = useAdminStore();
 const releases = ref<any[]>([]);
 const showUpload = ref(false);
 const form = reactive({
@@ -102,9 +103,8 @@ const form = reactive({
 
 const fetchReleases = async () => {
     try {
-        const res = await api.get('/releases/history');
-        // api utility already unwraps 'data', so res is the payload { releases: [...] }
-        releases.value = ((res as any).data?.releases || (res as any).releases || []) as any[];
+        const data = await adminStore.fetchReleases();
+        releases.value = data.releases || [];
     } catch (e) {
         console.error('Failed to fetch releases', e);
     }
@@ -112,15 +112,15 @@ const fetchReleases = async () => {
 
 const publishRelease = async () => {
     try {
-        await api.post('/releases', form);
-        toast.success('New version deployed to Global Registry.');
+        await adminStore.createRelease(form);
+        // toast.success is handled in store or we can do it here if store doesn't
         showUpload.value = false;
         fetchReleases();
         form.version = '';
         form.releaseNotes = '';
         form.downloadUrl = '';
     } catch (e: any) {
-        toast.error(e.response?.data?.error || e.message || 'Deployment failed.');
+        // Error handled in store or console
     }
 };
 

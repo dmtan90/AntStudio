@@ -8,15 +8,15 @@
       <div class="flex gap-2">
         <button class="primary-btn secondary" @click="addAccount(true)">
           <gemini theme="outline" size="20" />
-          Antigravity Quick Login
+          Antigravity
         </button>
-        <button class="primary-btn labs" @click="addLabsAccount">
+        <button class="primary-btn labs" @click="add11LabsAccount">
           <brain theme="outline" size="20" />
-          Add 11Labs Account
+          11Labs
         </button>
         <button class="primary-btn" @click="addAccount(false)">
           <plus theme="outline" size="20" />
-          Add Standard Account
+          Google
         </button>
       </div>
     </div>
@@ -50,16 +50,23 @@
           <div class="card-header">
             <div class="user-info">
               <div class="avatar-circle" :style="{ background: getAvatarColor(account.email) }">
-                <img v-if="account.avatarUrl" :src="account.avatarUrl" class="avatar-img" />
+                <img v-if="account.avatarUrl" :src="getFileUrl(account.avatarUrl)" class="avatar-img" />
                 <span v-else>{{ getInitials(account.email) }}</span>
               </div>
               <div class="details">
                 <div class="email-row">
                   <div class="email" :title="account.email">{{ account.email }}</div>
-                  <span v-if="account.accountType === 'antigravity'" class="ag-badge">ANTIGRAVITY</span>
-                  <span v-else-if="account.accountType === '11labs-direct'" class="ag-badge labs">11LABS DIRECT</span>
+                  <!-- <div class="account-type no-wrap">
+                    <span v-if="account.accountType === 'antigravity'" class="ag-badge">ANTIGRAVITY</span>
+                    <span v-else-if="account.accountType === '11labs-direct'" class="ag-badge labs">11LABS DIRECT</span>
+                    <span v-else-if="account.accountType === 'google'" class="ag-badge google">GOOGLE</span>
+                    
+                  </div> -->
                 </div>
                 <div class="status">
+                  <span v-if="account.accountType === 'antigravity'" class="ag-badge">ANTIGRAVITY</span>
+                  <span v-else-if="account.accountType === '11labs-direct'" class="ag-badge labs">11LABS DIRECT</span>
+                  <span v-else class="ag-badge google">GOOGLE</span>
                   <span :class="['status-dot', account.status, { 'inactive-dot': account.isActive === false }]"></span>
                   <span class="status-text">{{ account.isActive !== false ? account.status.toUpperCase() : 'DISABLED'
                   }}</span>
@@ -140,7 +147,7 @@
               <span class="label">PRJ:</span>
               <span class="value" @click="copyText(account.projectId)">{{ account.projectId || 'N/A' }}</span>
 
-              <div class="footer-actions ml-2">
+              <div class="footer-actions ml-2" v-if="account.accountType === 'google'">
                 <copy v-if="account.projectId" theme="outline" size="12" class="footer-icon"
                   @click="copyText(account.projectId)" title="Copy ID" />
 
@@ -196,11 +203,15 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Plus, User, Refresh, Delete, Wallet, Copy, Loading, Gemini, Brain, VideoTwo, Pic, Down, Up, Power, Edit } from '@icon-park/vue-next';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { getFileUrl } from '@/utils/api';
 
+const route = useRoute();
 const loading = ref(true);
 const accounts = ref<any[]>([]);
 const expandedIds = ref<Set<string>>(new Set());
 let refreshInterval: any = null;
+let success = route.query.success;
+let message = route.query.message;
 
 const activeAccounts = computed(() => accounts.value.filter(a => a.status === 'ready' && a.isActive !== false));
 const limitedAccounts = computed(() => accounts.value.filter(a => a.status === 'rate-limited'));
@@ -327,18 +338,18 @@ const addAccount = async (isAntigravity = false) => {
   }
 };
 
-const addLabsAccount = async () => {
+const add11LabsAccount = async () => {
   const email = prompt('1. Enter 11Labs Account Email:');
   if (!email) return;
-  const licenseKey = prompt('2. Enter License Key:');
-  if (!licenseKey) return;
-  const token = prompt('3. (Optional) Enter Google Bearer Token if you have it (for direct compute bypass):');
-
+  const licenseKey = prompt('2. (Optional) Enter License Key:');
+  // // if (!licenseKey) return;
+  // const token = prompt('3. (Optional) Enter Google Bearer Token if you have it (for direct compute bypass):');
+  const token = undefined;
   try {
     toast.info('Integrating 11Labs account...');
     await axios.post('/api/admin/ai/accounts/direct', {
       email,
-      licenseKey,
+      // licenseKey,
       accessToken: token || undefined,
       accountType: '11labs-direct',
       providerId: '11labs'
@@ -441,6 +452,12 @@ onMounted(() => {
   fetchAccounts();
   // Auto refresh every 30 seconds
   refreshInterval = setInterval(() => fetchAccounts(true), 30000);
+
+  if (success === 'true') {
+    toast.success(message);
+  } else if (success === 'false') {
+    toast.error(message);
+  }
 });
 
 onUnmounted(() => {
@@ -493,7 +510,10 @@ onUnmounted(() => {
 
   &.labs {
     background: #8b5cf6;
-    &:hover { background: #7c3aed; }
+
+    &:hover {
+      background: #7c3aed;
+    }
   }
 }
 

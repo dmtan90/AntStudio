@@ -9,6 +9,30 @@
                 <p>Convert your slides into an engaging video instantly.</p>
             </div>
 
+            <div class="section-title">
+                <user theme="outline" size="18" fill="currentColor" />
+                <span>Presenter Avatar (Optional)</span>
+            </div>
+
+            <div class="avatars-grid">
+                <div v-for="avatar in mediaStore.resources" :key="avatar._id"
+                    :class="['avatar-item', { selected: selectedAvatarId === avatar._id }]"
+                    @click="toggleAvatar(avatar._id)">
+                    <img :src="avatar.thumbnails?.[0] || avatar.url" alt="Avatar" />
+                    <div class="check-overlay">
+                        <check theme="filled" size="20" fill="#fff" />
+                    </div>
+                </div>
+                <div v-if="mediaStore.resources.length === 0" class="no-avatars">
+                    No avatars found. Upload one in Avatar setup.
+                </div>
+            </div>
+
+            <div class="section-title">
+                <upload-one theme="outline" size="18" fill="currentColor" />
+                <span>Upload Slides</span>
+            </div>
+
             <div class="upload-area" @click="triggerUpload" @dragover.prevent @drop.prevent="handleDrop">
                 <div class="upload-content">
                     <upload-one theme="outline" size="48" fill="#6366f1" />
@@ -28,17 +52,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Monitor, UploadOne } from '@icon-park/vue-next'
+import { Monitor, UploadOne, User, Check, Close } from '@icon-park/vue-next'
 import { toast } from 'vue-sonner'
 import { useProjectStore } from '@/stores/project'
+import { useMediaStore } from '@/stores/media'
 
 const router = useRouter()
 const projectStore = useProjectStore()
+const mediaStore = useMediaStore()
 const fileInput = ref<HTMLInputElement | null>(null)
+const selectedAvatarId = ref<string | null>(null)
 
 const triggerUpload = () => fileInput.value?.click()
+
+onMounted(async () => {
+    await mediaStore.fetchMedia('avatar')
+})
 
 const handleFileSelect = (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0]
@@ -50,24 +81,30 @@ const handleDrop = (e: DragEvent) => {
     if (file) processFile(file)
 }
 
+const toggleAvatar = (id: string) => {
+    selectedAvatarId.value = selectedAvatarId.value === id ? null : id
+}
+
 const processFile = async (file: File) => {
     if (!['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'].includes(file.type)) {
-        // Basic type check, might need looser check for convenience
-        // toast.error('Invalid file type')
-        // allowing flow for now for demo
+        // Basic type check
     }
 
-    // Mock Processing
     const toastId = toast.loading('Uploading and processing slides...')
 
     try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Simulate uploading/processing delay
+        await new Promise(resolve => setTimeout(resolve, 1500))
 
         const res = await projectStore.createProject({
             title: file.name.replace(/\.[^/.]+$/, "") + ' (Presentation)',
             aspectRatio: '16:9',
-            mode: 'presentation'
+            mode: 'presentation',
+            metadata: {
+                sourceFile: file.name,
+                avatarMediaId: selectedAvatarId.value || undefined, // Pass selected avatar
+                useAvatar: !!selectedAvatarId.value
+            }
         })
 
         toast.success('Presentation converted!', { id: toastId })
@@ -81,14 +118,15 @@ const processFile = async (file: File) => {
 <style lang="scss" scoped>
 .presentation-setup {
     width: 100%;
-    padding-top: 60px;
     display: flex;
     justify-content: center;
+    padding: 40px 20px;
+    padding-bottom: 100px;
 }
 
 .setup-card {
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
@@ -125,6 +163,83 @@ const processFile = async (file: File) => {
     }
 }
 
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+.avatars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+
+    .avatar-item {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+
+        &:hover {
+            transform: translateY(-2px);
+        }
+
+        &.selected {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+
+            .check-overlay {
+                opacity: 1;
+            }
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .check-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(99, 102, 241, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+    }
+
+    .no-avatars {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 13px;
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+}
+
 .upload-area {
     border: 2px dashed rgba(255, 255, 255, 0.15);
     border-radius: 16px;
@@ -148,7 +263,6 @@ const processFile = async (file: File) => {
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    transition: transform 0.3s;
 
     h3 {
         font-size: 16px;
@@ -184,26 +298,14 @@ const processFile = async (file: File) => {
         border: none;
         color: rgba(255, 255, 255, 0.5);
         cursor: pointer;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: all 0.2s;
 
         &:hover {
             color: #fff;
+            background: rgba(255, 255, 255, 0.05);
         }
-    }
-}
-
-.animate-up {
-    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(40px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
     }
 }
 </style>

@@ -8,6 +8,7 @@ import { connectDB } from '../utils/db.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { capcutImporter } from '../services/CapCutImporter.js';
 import { canvaImporter } from '../services/CanvaImporter.js';
+import axios from 'axios';
 
 const router = Router();
 
@@ -152,18 +153,96 @@ router.post('/publish', authMiddleware, async (req: AuthRequest, res) => {
 /**
  * TEMPLATE MARKETPLACE ENDPOINTS
  */
+const ZOCKET_API_TEMPLATES = 'https://prod.zocket.com/customer/ads/api/v1/editor/video-templates/all';
 
 // GET /api/marketplace/templates - Browse templates
-router.get('/templates', async (req, res) => {
+router.get('/templates', authMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { category, search, sort, pricing, page = 1, limit = 20 } = req.query;
 
-        const filter: any = { is_published: true };
-        if (category) filter.category = category;
+        // 1. Check if we have templates in DB
+        const count = await Template.countDocuments({ is_published: true });
+        // 2. If empty, sync from Zocket
+        if (count === 0) {
+            console.log('Template DB empty, syncing from Zocket...');
+            try {
+                // Fetch all templates (or a large batch) to populate DB
+                const zocketUrl = `${ZOCKET_API_TEMPLATES}?is_published=true&page=0&limit=1000`; // Initial sync limit
+                const response = await fetch(zocketUrl);
+
+                if (!response.ok) {
+                    console.error(`Failed to fetch from Zocket: ${response.status}`);
+                    // Don't fail the request, just return empty or what we have
+                }
+                else {
+                    const data: any = await response.json();
+                    if (data.data && Array.isArray(data.data.templates)) {
+                        const templatesToSave = data.data.templates.map((t: any) => {
+                            let pages = [];
+                            try {
+                                pages = typeof t.pages === 'string' ? JSON.parse(t.pages) : t.pages;
+                            } catch (e) {
+                                console.warn(`Failed to parse pages for template ${t.id}`, e);
+                            }
+                            return {
+                                id: t.id + "_zocket",
+                                name: t.name,
+                                category: 'ad',
+                                tags: [...t.formats || [], ...t.orientations || []],
+                                pricing: { type: 'free' },
+                                pages: pages,
+                                source: {
+                                    platform: 'zocket',
+                                    originalId: t.id,
+                                    importedAt: new Date()
+                                },
+                                is_published: true,
+                                author: req.user!.userId,
+                                authorName: "zocket.io",
+                                createdAt: new Date(),
+                                updatedAt: new Date()
+                            };
+                        });
+                        await Template.insertMany(templatesToSave);
+                        console.log(`Synced ${templatesToSave.length} templates from Zocket`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error syncing templates from Zocket:', error);
+            }
+        }
+
+        const { category, search, sort, pricing, page = 1, limit = 20, tab = 'public', platform } = req.query;
+
+        const filter: any = {};
+
+        if (tab === 'private') {
+            filter.author = req.user!.userId;
+            // For private/user templates, we show both published and unpublished
+        } else if (tab === 'public') {
+            filter.is_published = true;
+        } else if (tab === 'canva' || tab === 'capcut') {
+            filter.is_published = true;
+            filter['source.platform'] = tab;
+        } else {
+            filter.is_published = true;
+        }
+
+        // Additional filters from Discovery UI
+        if (platform) filter['source.platform'] = platform;
+        if (category && category !== 'all' && category !== 'All') {
+            filter.category = category;
+        }
+
         if (pricing) filter['pricing.type'] = pricing;
+
         if (search) {
-            filter.$text = { $search: search as string };
+            // Using a simple regex search if text index isn't available or for partial matches
+            filter.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } },
+                { tags: { $in: [new RegExp(search as string, 'i')] } }
+            ];
         }
 
         const sortOptions: any = {};
@@ -229,23 +308,28 @@ router.post('/templates', authMiddleware, async (req: AuthRequest, res) => {
     }
 });
 
-// POST /api/marketplace/import/capcut - Import from CapCut
-router.post('/import/capcut', authMiddleware, async (req: AuthRequest, res) => {
+// POST /api/marketplace/import - Unified Import
+router.post('/import', authMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
         const { url } = req.body;
+        if (!url) return res.status(400).json({ success: false, error: 'URL is required' });
 
-        if (!url) {
-            return res.status(400).json({ success: false, error: 'URL is required' });
+        let templateData: any;
+        if (url.includes('capcut.com')) {
+            templateData = await capcutImporter.importTemplate(url);
+        } else if (url.includes('canva.com')) {
+            templateData = await canvaImporter.importDesign(url);
+        } else {
+            return res.status(400).json({ success: false, error: 'Unsupported URL platform. Use CapCut or Canva links.' });
         }
-
-        const templateData = await capcutImporter.importTemplate(url);
 
         const template = await Template.create({
             ...templateData,
             author: req.user!.userId,
             authorName: req.user!.email,
-            pricing: { type: 'free' }
+            pricing: { type: 'free' },
+            is_published: false
         });
 
         res.json({ success: true, data: { template } });
@@ -253,6 +337,8 @@ router.post('/import/capcut', authMiddleware, async (req: AuthRequest, res) => {
         res.status(500).json({ success: false, error: e.message });
     }
 });
+
+// POST /api/marketplace/import/capcut - Import from CapCut (Legacy support)
 
 // POST /api/marketplace/import/canva - Import from Canva
 router.post('/import/canva', authMiddleware, async (req: AuthRequest, res) => {
@@ -270,7 +356,8 @@ router.post('/import/canva', authMiddleware, async (req: AuthRequest, res) => {
             ...templateData,
             author: req.user!.userId,
             authorName: req.user!.email,
-            pricing: { type: 'free' }
+            pricing: { type: 'free' },
+            is_published: false
         });
 
         res.json({ success: true, data: { template } });

@@ -36,7 +36,7 @@
         </router-link>
         <router-link to="/marketplace" class="nav-item" :class="{ active: route.path === '/marketplace' }">
           <shopping theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Marketplace</span>
+          <span v-if="!collapsed" class="nav-text">Templates</span>
         </router-link>
         <router-link to="/organization" class="nav-item" :class="{ active: route.path === '/organization' }">
           <peoples theme="outline" size="20" />
@@ -70,11 +70,7 @@
           <book-one theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.resources') }}</span>
         </router-link>
-        <router-link to="/developer" class="nav-item" :class="{ active: route.path === '/developer' }">
-          <connection-point theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Developer Hub</span>
-        </router-link>
-        <router-link to="/subscription" class="nav-item" :class="{ active: route.path === '/subscription' }">
+        <router-link to="/billing" class="nav-item" :class="{ active: route.path === '/billing' }">
           <credit theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.subscription') }}</span>
         </router-link>
@@ -146,6 +142,11 @@
               <earth theme="outline" size="18" />
               <span class="nav-text">Network Hub</span>
             </router-link>
+            <router-link to="/developer-hub" class="nav-item sub-item"
+              :class="{ active: route.path === '/developer-hub' }">
+              <connection-point theme="outline" size="20" />
+              <span v-if="!collapsed" class="nav-text">Developer Hub</span>
+            </router-link>
           </div>
         </div>
       </nav>
@@ -197,7 +198,10 @@ import {
   Peoples,
   Brain,
   Terminal,
-  Download
+  Download,
+  ConnectionPoint,
+  DataServer,
+  DatabaseNetwork
 } from '@icon-park/vue-next'
 import axios from 'axios'
 import { useRoute } from 'vue-router'

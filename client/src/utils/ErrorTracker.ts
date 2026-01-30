@@ -16,8 +16,14 @@ export class ErrorTracker {
 
         // 1. JavaScript Runtime Errors
         window.onerror = (message, source, lineno, colno, error) => {
+            const msg = message.toString();
+            // Filter out benign ResizeObserver loop errors
+            if (msg.includes('ResizeObserver loop') || msg.includes('ResizeObserver loop limit exceeded')) {
+                return;
+            }
+
             this.reportError('javascript', {
-                message: message.toString(),
+                message: msg,
                 source,
                 lineno,
                 colno,

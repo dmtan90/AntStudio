@@ -19,7 +19,7 @@
                     <span class="label text-[10px] opacity-40 uppercase font-black block mb-1">Max Users</span>
                     <span class="value font-mono font-bold">{{ license.info.maxUsers == -1 ? 'Unlimited' :
                         license.info.maxUsers
-                        }}</span>
+                    }}</span>
                 </div>
                 <div class="info-item p-3 bg-white/5 rounded-xl border border-white/5">
                     <span class="label text-[10px] opacity-40 uppercase font-black block mb-1">Max Projects</span>
@@ -35,7 +35,7 @@
             </div>
         </div>
 
-        <el-form label-position="top">
+        <el-form label-position="top" v-if="license">
             <el-form-item label="License Key">
                 <el-input v-model="license.key" placeholder="Enter your license key" show-password
                     class="glass-input" />

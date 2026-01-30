@@ -7,13 +7,14 @@
                     Registry</p>
             </div>
             <div class="flex gap-4">
-                <el-button @click="fetchSettings" :loading="loading" class="glass-btn">Reload Core</el-button>
-                <el-button type="primary" @click="saveSettings" :loading="saving" class="save-btn px-8">Save All
+                <el-button @click="fetchSettings" :loading="loading" class="glass-btn">Reload</el-button>
+                <el-button @click="saveSettings" :loading="saving" class="save-btn px-8">Save All
                     Changes</el-button>
             </div>
         </header>
 
-        <el-tabs v-model="activeTab" class="settings-tabs custom-tabs">
+        <el-tabs v-model="activeTab" class="settings-tabs custom-tabs"
+            v-if="settings && settings.license && settings.whitelabel && settings.apiConfigs && settings.aiSettings && settings.plans && settings.creditPackages">
             <!-- License & Identity -->
             <el-tab-pane label="License & Identity" name="license">
                 <div class="space-y-6">
@@ -25,7 +26,7 @@
             <!-- System Infrastructure -->
             <el-tab-pane label="System Infrastructure" name="system">
                 <SystemConfigSettings :api-configs="settings.apiConfigs"
-                    :oauth-providers="settings.apiConfigs.social" />
+                    :oauth-providers="settings.apiConfigs?.oauth" />
             </el-tab-pane>
 
             <!-- Media Content APIs -->
@@ -36,11 +37,12 @@
             <!-- Artificial Intelligence -->
             <el-tab-pane label="Neural Engine" name="ai">
                 <div class="space-y-8">
-                    <AIModelSettings :providers="settings.aiSettings.providers" :ai-o-auth="settings.aiSettings.oauth"
-                        :ai-studio-cookies="settings.aiSettings.sessionSync?.googleCookies || ''"
+                    <AIModelSettings :providers="settings.aiSettings.providers" :ai-o-auth="settings.apiConfigs.oauth"
+                        :google-cookies="settings.aiSettings.sessionSync?.googleCookies || ''"
+                        :flow-cookies="settings.aiSettings.sessionSync?.flowCookies || ''"
                         :suggested-redirect-uri="suggestedRedirectUri" :known-providers="KNOWN_PROVIDERS"
-                        @add-provider="addProvider" @remove-provider="removeProvider"
-                        @save-cookies="saveAIStudioCookies" @sync-google="syncGoogleAI" />
+                        @add-provider="addProvider" @remove-provider="removeProvider" @save-cookies="saveSessionCookies"
+                        @sync-google="syncGoogleAI" />
 
                     <TaskDefaultsSettings :ai-settings="settings.aiSettings"
                         :get-providers-for-type="getProvidersForType" :get-models-for-provider="getModelsForProvider" />
@@ -49,10 +51,11 @@
 
             <!-- Subscriptions & Economy -->
             <el-tab-pane label="Commercial Core" name="billing">
-                <SubscriptionSettings :plans="settings.billing.plans" :credit-packages="settings.billing.creditPackages"
+                <SubscriptionSettings :plans="settings.plans" :credit-packages="settings.creditPackages"
                     @add-package="addPackage" @remove-package="removePackage" />
             </el-tab-pane>
         </el-tabs>
+        <el-empty description="No settings found" v-else />
     </div>
 </template>
 
@@ -60,7 +63,6 @@
 import { ref, onMounted, computed } from 'vue';
 import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
-import axios from 'axios';
 
 // Components
 import LicenseSettings from '@/components/admin/settings/LicenseSettings.vue';
@@ -83,11 +85,17 @@ const suggestedRedirectUri = computed(() => {
 });
 
 const KNOWN_PROVIDERS = [
+    { id: 'gemini_chat', name: 'Gemini Chat (Native)', supportedTypes: ['text'] },
+    { id: 'aistudio', name: 'AIStudio (Native)', supportedTypes: ['text', 'image'] },
     { id: 'google_gemini', name: 'Google Gemini (Vertex AI)', supportedTypes: ['text', 'image', 'video'] },
+    { id: 'geminigen_ai', name: 'GeminiGen AI', supportedTypes: ['image', 'video'] },
+    { id: 'labs_flow', name: 'Labs Flow (Native)', supportedTypes: ['image', 'video'] },
+    { id: '11labs_direct', name: '11Labs Direct', supportedTypes: ['image', 'video', 'audio'] },
     { id: 'openai_gpt', name: 'OpenAI (GPT-4 / DALL-E)', supportedTypes: ['text', 'image'] },
     { id: 'anthropic', name: 'Anthropic (Claude)', supportedTypes: ['text'] },
     { id: 'stability_ai', name: 'Stability AI', supportedTypes: ['image', 'video'] },
-    { id: 'eleven_labs', name: 'Eleven Labs (Neural Voice)', supportedTypes: ['audio'] }
+    { id: 'eleven_labs', name: 'Eleven Labs (Neural Voice)', supportedTypes: ['audio'] },
+    { id: 'suno', name: 'Suno', supportedTypes: ['music'] }
 ];
 
 // Methods
@@ -95,6 +103,7 @@ const fetchSettings = async () => {
     loading.value = true;
     try {
         await adminStore.fetchSettings();
+        console.log(settings.value);
         toast.success("System settings synchronized");
     } catch (e) {
         toast.error("Failed to load settings registry");
@@ -137,14 +146,53 @@ const removeProvider = (idx: number) => {
     settings.value.aiSettings.providers.splice(idx, 1);
 };
 
-const saveAIStudioCookies = async (cookies: string) => {
-    settings.value.aiSettings.sessionSync.googleCookies = cookies;
-    toast.success("Session state staged for commit");
+const saveSessionCookies = async (cookies: { googleCookies: string, flowCookies: string }) => {
+    if (!settings.value.aiSettings.sessionSync) {
+        settings.value.aiSettings.sessionSync = { googleCookies: '', flowCookies: '' };
+    }
+    settings.value.aiSettings.sessionSync.googleCookies = cookies.googleCookies;
+    settings.value.aiSettings.sessionSync.flowCookies = cookies.flowCookies;
+    toast.success("Session cookies staged for commit");
 };
 
 const syncGoogleAI = async () => {
-    toast.info("Initiating high-speed Google AI Handshake...");
-    // Logic for fast sync
+    try {
+        toast.info("Validating and syncing session cookies...");
+
+        // Validate that at least one cookie field has data
+        if (!settings.value.aiSettings.sessionSync?.googleCookies && !settings.value.aiSettings.sessionSync?.flowCookies) {
+            toast.error("Please paste cookies in at least one field before syncing");
+            return;
+        }
+
+        // Try to parse and validate cookies
+        const validateCookies = (cookieStr: string) => {
+            if (!cookieStr) return true;
+            try {
+                // Try parsing as JSON first
+                JSON.parse(cookieStr);
+                return true;
+            } catch {
+                // If not JSON, check if it's a valid cookie string format
+                return cookieStr.includes('=') && cookieStr.length > 10;
+            }
+        };
+
+        const googleValid = validateCookies(settings.value.aiSettings.sessionSync?.googleCookies || '');
+        const flowValid = validateCookies(settings.value.aiSettings.sessionSync?.flowCookies || '');
+
+        if (!googleValid || !flowValid) {
+            toast.error("Invalid cookie format. Please paste valid JSON or cookie string.");
+            return;
+        }
+
+        // Save the settings
+        await adminStore.updateSettings(settings.value);
+        toast.success("✅ Session cookies synced successfully!");
+    } catch (error: any) {
+        console.error('Sync error:', error);
+        toast.error(`Sync failed: ${error.message}`);
+    }
 };
 
 const getProvidersForType = (type: string) => {

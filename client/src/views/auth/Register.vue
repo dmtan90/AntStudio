@@ -2,7 +2,8 @@
   <div class="auth-page">
     <div class="video-bg-container">
       <video autoplay muted loop playsinline class="video-bg">
-        <source src="https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4" type="video/mp4">
+        <source :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4')"
+          type="video/mp4">
       </video>
       <div class="video-overlay"></div>
     </div>
@@ -15,58 +16,27 @@
             <p>Create wonderful videos with AI</p>
           </div>
 
-          <el-form
-            ref="formRef"
-            :model="form"
-            :rules="rules"
-            @submit.prevent="handleRegister"
-            class="ant-form"
-          >
+          <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleRegister" class="ant-form">
             <el-form-item prop="name">
-              <GInput
-                v-model="form.name"
-                placeholder="Full Name"
-                class="register-input"
-              />
+              <GInput v-model="form.name" placeholder="Full Name" class="register-input" />
             </el-form-item>
 
             <el-form-item prop="email">
-              <GInput
-                v-model="form.email"
-                placeholder="Email address"
-                type="email"
-                class="register-input"
-              />
+              <GInput v-model="form.email" placeholder="Email address" type="email" class="register-input" />
             </el-form-item>
 
             <el-form-item prop="password">
-              <GInput
-                v-model="form.password"
-                placeholder="Password (min 8 chars)"
-                type="password"
-                show-password
-                class="register-input"
-              />
+              <GInput v-model="form.password" placeholder="Password (min 8 chars)" type="password" show-password
+                class="register-input" />
             </el-form-item>
 
             <el-form-item prop="confirmPassword">
-              <GInput
-                v-model="form.confirmPassword"
-                placeholder="Confirm password"
-                type="password"
-                show-password
-                class="register-input"
-              />
+              <GInput v-model="form.confirmPassword" placeholder="Confirm password" type="password" show-password
+                class="register-input" />
             </el-form-item>
 
             <el-form-item>
-              <GButton
-                type="primary"
-                size="lg"
-                :loading="loading"
-                native-type="submit"
-                class="register-btn"
-              >
+              <GButton type="primary" size="lg" :loading="loading" native-type="submit" class="register-btn">
                 Create Account
               </GButton>
             </el-form-item>
@@ -94,6 +64,7 @@ import { useUserStore } from '@/stores/user'
 import GCard from '@/components/ui/GCard.vue'
 import GInput from '@/components/ui/GInput.vue'
 import GButton from '@/components/ui/GButton.vue'
+import { getFileUrl } from '@/utils/api'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -135,7 +106,7 @@ const rules: FormRules = {
 
 const handleRegister = async () => {
   if (!formRef.value) return
-  
+
   await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return
 
@@ -148,7 +119,7 @@ const handleRegister = async () => {
       })
 
       toast.success('Account created successfully!')
-      
+
       // Redirect to dashboard
       router.push('/dashboard')
     } catch (error: any) {
@@ -206,6 +177,7 @@ const handleRegister = async () => {
 
 .auth-card {
   box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+
   :deep(.g-card__body) {
     padding: 50px 40px;
   }

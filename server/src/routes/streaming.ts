@@ -17,7 +17,7 @@ router.use(authMiddleware);
 router.post('/start', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { source, platformAccountIds, loop, projectId } = req.body;
+        const { source, platformAccountIds, loop, projectId, quality } = req.body;
 
         let finalSource = source;
 
@@ -35,7 +35,7 @@ router.post('/start', async (req: AuthRequest, res) => {
         }
 
         // 1. Fetch platform accounts to get RTMP details
-        const accounts = await UserPlatformAccount.find({
+        let accounts = await UserPlatformAccount.find({
             _id: { $in: platformAccountIds },
             userId: req.user?.userId,
             isActive: true
@@ -45,11 +45,31 @@ router.post('/start', async (req: AuthRequest, res) => {
             return res.status(404).json({ success: false, error: 'No active platform accounts found' });
         }
 
+        let amsAccount = accounts.find(a => a.platform === 'ant-media');
+        const rtmpPlatforms = accounts.filter(a => a.platform !== 'ant-media');
+
+        // Logic check for WebRTC source
+        if (source === 'webrtc' && !amsAccount) {
+            // Check if user has ANY active AMS account that wasn't selected
+            const fallbackAMS = await UserPlatformAccount.findOne({
+                userId: req.user?.userId,
+                platform: 'ant-media',
+                isActive: true
+            });
+
+            if (fallbackAMS) {
+                console.log(`[Streaming] Auto-selecting fallback AMS for WebRTC: ${fallbackAMS.accountName}`);
+                accounts.push(fallbackAMS);
+                amsAccount = fallbackAMS;
+            }
+        }
+
         // 2. Prepare targets
         const targets: StreamTarget[] = accounts.map(acc => ({
             url: acc.rtmpUrl || getDefaultRtmpUrl(acc.platform),
             key: acc.streamKey || '',
-            platform: acc.platform
+            platform: acc.platform,
+            accountId: acc._id.toString()
         })).filter(t => t.url && t.key);
 
         if (!targets.length) {
@@ -57,14 +77,26 @@ router.post('/start', async (req: AuthRequest, res) => {
         }
 
         // 3. Start the relay service
-        const sessionId = await streamingService.startRestream(
+        const restreamResult = await streamingService.startRestream(
             req.user?.userId.toString() || 'unknown',
             finalSource,
             targets,
-            { loop: !!loop }
+            { loop: !!loop, quality }
         );
 
-        res.json({ success: true, data: { sessionId }, error: null });
+        res.json({
+            success: true,
+            data: {
+                sessionId: restreamResult.sessionId,
+                mode: restreamResult.mode,
+                amsAccount: amsAccount ? {
+                    _id: amsAccount._id,
+                    streamKey: amsAccount.streamKey,
+                    credentials: amsAccount.credentials
+                } : null
+            },
+            error: null
+        });
 
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });

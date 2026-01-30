@@ -172,6 +172,10 @@ const createProject = async () => {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
+
+    @media (max-width: 600px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .ratio-card {

@@ -567,6 +567,7 @@
     "subscription": {
         "title": "Subscription",
         "description": "Manage your subscription",
+        "currentPlan": "Current Plan",
         "upgrade": "Upgrade Plan",
         "cancel": "Cancel Subscription",
         "credits": "Credits",
@@ -576,7 +577,9 @@
         "bonus": "Bonus",
         "weekly": "Weekly",
         "consumedThisMonth": "Consumed This Month",
-        "creditUsagePercent": "Credit Usage Percent"
+        "creditUsagePercent": "Credit Usage Percent",
+        "status": "Status",
+        "renewsOn": "Renews On"
     },
     "ai": {
         "greetings": {

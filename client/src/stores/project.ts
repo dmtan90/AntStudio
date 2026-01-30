@@ -132,6 +132,23 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    async function analyzeProduct(inputData: any) {
+        isGenerating.value = true
+        try {
+            const response = await api.post('/ai/analyze-product', inputData, {
+                headers: {
+                    'Content-Type': inputData instanceof FormData ? 'multipart/form-data' : 'application/json'
+                }
+            })
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        } finally {
+            isGenerating.value = false
+        }
+    }
+
     async function chat(id: string, message: string) {
         try {
             const response = await api.post(`/projects/${id}/chat`, { message })
@@ -326,6 +343,63 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    async function startStreaming(id: string, streamId: string) {
+        try {
+            const response = await api.post(`/projects/${id}/stream`, { streamId })
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async function addStreamEndpoint(id: string, streamId: string, rtmpUrl: string) {
+        try {
+            const response = await api.post(`/projects/${id}/stream/endpoint`, { streamId, rtmpUrl })
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async function uploadFinalVideo(id: string, formData: FormData, onProgress?: (percent: number) => void) {
+        try {
+            const response = await api.post(`/projects/${id}/upload-final-video`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    if (onProgress) {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+                        onProgress(percentCompleted);
+                    }
+                }
+            })
+            return response.data
+        } catch (error) {
+            handleError(error, 'projects.editor.uploadFailed')
+            throw error
+        }
+    }
+
+    async function saveToVoD(id: string) {
+        try {
+            const response = await api.post(`/projects/${id}/vod`)
+            return response.data
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async function uploadMedia(formData: FormData) {
+        try {
+            const response = await api.post('/media/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            return response.data
+        } catch (error) {
+            handleError(error, 'projects.editor.uploadFailed')
+            throw error
+        }
+    }
+
     return {
         projects,
         currentProject,
@@ -344,6 +418,7 @@ export const useProjectStore = defineStore('project', () => {
         updateProject,
         deleteProject,
         getPreview,
+        analyzeProduct,
         chat,
         generateVisualPlan,
         generateAsset,
@@ -356,6 +431,11 @@ export const useProjectStore = defineStore('project', () => {
         syncAssetToElements,
         syncAllAssets,
         generateStoryboardAssetsBatch,
-        editorMode
+        editorMode,
+        startStreaming,
+        addStreamEndpoint,
+        saveToVoD,
+        uploadMedia,
+        uploadFinalVideo
     }
 })

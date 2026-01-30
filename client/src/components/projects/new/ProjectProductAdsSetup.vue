@@ -37,11 +37,14 @@
                             class="glow-input" />
                     </div>
 
-                    <div v-else class="upload-area">
+                    <div v-else class="upload-area" @click="$refs.fileInput.click()">
                         <div class="dropzone">
                             <plus theme="outline" size="32" />
-                            <p>Drag images here or click to upload</p>
+                            <p v-if="!selectedFile">Drag images here or click to upload</p>
+                            <p v-else class="text-brand-accent">{{ selectedFile.name }}</p>
                         </div>
+                        <input type="file" ref="fileInput" hidden @change="onFileSelected"
+                            accept="image/*,video/*,.pdf,.docx,.txt" />
                     </div>
                 </div>
 
@@ -73,6 +76,16 @@
                             <label>Brand Vibe</label>
                             <div class="tags">
                                 <span v-for="tag in analysisData.vibe" :key="tag" class="tag">{{ tag }}</span>
+                                <span v-if="analysisData.vibe.length === 0" class="text-muted">No vibes detected</span>
+                            </div>
+                        </div>
+
+                        <div v-if="analysisData.images && analysisData.images.length > 0" class="form-group">
+                            <label>Product Images</label>
+                            <div class="extracted-images">
+                                <div v-for="(img, idx) in analysisData.images" :key="idx" class="extracted-image">
+                                    <img :src="getFileUrl(img.url)" alt="Product Image" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -113,24 +126,29 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
+import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
 import { LinkOne, UploadOne, Plus } from '@icon-park/vue-next'
+import { getFileUrl } from '@/utils/api'
 
 const router = useRouter()
 const projectStore = useProjectStore()
+const { isGenerating: loading } = storeToRefs(projectStore)
 
 const steps = ['Source', 'Analysis', 'Template']
 const currentStep = ref(1)
 const sourceType = ref('url')
 const productUrl = ref('')
-const loading = ref(false)
+const selectedFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 const selectedTemplate = ref(1)
 
 const analysisData = reactive({
-    name: 'Sony WH-1000XM5',
-    price: '$349.00',
-    description: 'Industry-leading noise cancellation, 30-hour battery life, and crystal-clear hands-free calling.',
-    vibe: ['Modern', 'Sleek', 'Premium']
+    name: '',
+    price: '',
+    description: '',
+    vibe: [] as string[],
+    images: [] as any[]
 })
 
 const templates = [
@@ -140,16 +158,42 @@ const templates = [
     { id: 4, name: 'Cinematic Reveal', color: '#8b5cf6' }
 ]
 
+const onFileSelected = (e: Event) => {
+    const target = e.target as HTMLInputElement
+    if (target.files && target.files[0]) {
+        selectedFile.value = target.files[0]
+    }
+}
+
 const handleNext = async () => {
     if (currentStep.value === 1) {
-        if (!productUrl.value && sourceType.value === 'url') return toast.error('Please enter a URL')
+        if (sourceType.value === 'url' && !productUrl.value) return toast.error('Please enter a URL')
+        if (sourceType.value === 'upload' && !selectedFile.value) return toast.error('Please upload a file')
 
-        loading.value = true
-        // Mock API Call
-        setTimeout(() => {
-            loading.value = false
-            currentStep.value++
-        }, 1500)
+        try {
+            const formData = new FormData()
+            if (sourceType.value === 'url') {
+                formData.append('url', productUrl.value)
+            } else if (selectedFile.value) {
+                formData.append('file', selectedFile.value)
+            }
+
+            const response = await projectStore.analyzeProduct(formData)
+            if (response) {
+                const product = response.product || {}
+                const brand = response.brand || {}
+
+                analysisData.name = product.name || ''
+                analysisData.price = product.selling_price ? `${product.selling_price} ${product.currency || 'USD'}` : ''
+                analysisData.description = product.description || ''
+                analysisData.vibe = product.tags || brand.tone_of_voice ? [brand.tone_of_voice] : []
+                analysisData.images = product.images || []
+
+                currentStep.value++
+            }
+        } catch (error) {
+            // Error managed by store
+        }
         return
     }
 
@@ -164,21 +208,26 @@ const handleNext = async () => {
 }
 
 const createProject = async () => {
-    loading.value = true
     try {
         const res = await projectStore.createProject({
-            title: `${analysisData.name} Ad`,
+            title: `${analysisData.name || 'Product'} Ad`,
             aspectRatio: '9:16',
-            mode: 'product-ads'
+            videoStyle: analysisData.vibe[0] || 'Cinematic',
+            mode: 'product-ads',
+            description: analysisData.description,
+            input: {
+                productName: analysisData.name,
+                price: analysisData.price,
+                url: productUrl.value
+            }
         })
 
-        // In a real flow, we would pass analysisData to the project store or initialize API
-        toast.success('Project created!')
-        router.push(`/projects/${res.project._id}/editor`)
+        if (res.project) {
+            toast.success('Project created!')
+            router.push(`/projects/${res.project._id}/editor`)
+        }
     } catch (error) {
-        toast.error('Failed to create project')
-    } finally {
-        loading.value = false
+        // Error managed by store
     }
 }
 </script>
@@ -186,10 +235,9 @@ const createProject = async () => {
 <style lang="scss" scoped>
 .product-ads-setup {
     width: 100%;
-    height: 100%;
     display: flex;
     justify-content: center;
-    padding-top: 40px;
+    padding: 40px 20px;
 }
 
 .setup-container {
@@ -353,14 +401,43 @@ const createProject = async () => {
 
     .tags {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
 
         .tag {
             background: rgba(99, 102, 241, 0.2);
             color: #818cf8;
-            padding: 4px 12px;
+            padding: 6px 16px;
             border-radius: 100px;
-            font-size: 12px;
+            font-size: 13px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+    }
+
+    .extracted-images {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        .extracted-image {
+            flex: 0 0 100px;
+            height: 100px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
         }
     }
 }

@@ -42,6 +42,6 @@ const AffiliateSchema = new Schema<IAffiliate>({
 }, { timestamps: true });
 
 // Index for fast lookup via URL slug
-AffiliateSchema.index({ referralCode: 1 });
+// AffiliateSchema.index({ referralCode: 1 });
 
 export const Affiliate = mongoose.model<IAffiliate>('Affiliate', AffiliateSchema);
