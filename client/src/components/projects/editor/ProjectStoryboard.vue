@@ -2,18 +2,14 @@
   <div class="storyboard-root custom-scrollbar">
     <!-- View Switcher -->
     <div class="flex items-center gap-2 mb-8 bg-white/5 p-1 rounded-xl w-fit">
-      <button 
-        class="px-5 py-2 rounded-lg text-xs font-bold transition-all"
-        :class="activeSection === 'characters' ? 'bg-brand-primary text-black' : 'text-white/40 hover:text-white'"
-        @click="activeSection = 'characters'"
-      >
+      <button class="px-5 py-2 rounded-lg text-xs font-bold transition-all"
+        :class="activeSection === 'characters' ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20' : 'text-white/40 hover:text-white'"
+        @click="activeSection = 'characters'">
         {{ t('projects.editor.storyboard.keyElements') }}
       </button>
-      <button 
-        class="px-5 py-2 rounded-lg text-xs font-bold transition-all"
-        :class="activeSection === 'segments' ? 'bg-brand-primary text-black' : 'text-white/40 hover:text-white'"
-        @click="activeSection = 'segments'"
-      >
+      <button class="px-5 py-2 rounded-lg text-xs font-bold transition-all"
+        :class="activeSection === 'segments' ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20' : 'text-white/40 hover:text-white'"
+        @click="activeSection = 'segments'">
         {{ t('projects.editor.storyboard.productionSegments') }}
       </button>
     </div>
@@ -22,67 +18,61 @@
     <div v-if="activeSection === 'all' || activeSection === 'characters'" class="mb-12">
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-xl text-white font-bold flex items-center gap-2">
-          <peoples theme="outline" size="22" class="text-brand-primary"/>
+          <peoples theme="outline" size="22" class="text-brand-primary" />
           {{ t('projects.editor.storyboard.keyElements') }}
         </h3>
-        <button 
+        <button
           class="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-bold hover:bg-brand-primary hover:text-black transition-all group disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale"
-          :disabled="isAnyLoading"
-          @click="$emit('regenerate-all-characters')"
-        >
-          <refresh theme="outline" size="14" :class="[isAnyLoading ? '' : 'group-hover:rotate-180 transition-transform duration-500']"/>
+          :disabled="isAnyLoading" @click="$emit('regenerate-all-characters')">
+          <refresh theme="outline" size="14"
+            :class="[isAnyLoading ? '' : 'group-hover:rotate-180 transition-transform duration-500']" />
           {{ t('projects.editor.storyboard.regenerateAi') }}
         </button>
       </div>
-      
+
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        <div v-for="(char, idx) in project.scriptAnalysis?.characters" :key="idx" 
-          class="element-card relative group aspect-[4/5] rounded-2xl overflow-hidden border border-white/10 bg-[#1a1a1a] transition-all hover:scale-[1.02] hover:shadow-2xl hover:border-white/20 cursor-pointer"
-          @click="openCharDialog(char, idx as number)"
-        >
-          
+        <div v-for="(char, idx) in project.scriptAnalysis?.characters" :key="idx"
+          class="element-card relative group aspect-[4/5] rounded-2xl overflow-hidden border border-white/5 bg-[#0a0a0a] transition-all hover:scale-[1.02] hover:shadow-2xl hover:border-brand-primary/50 cursor-pointer"
+          @click="openCharDialog(char, idx as number)">
+
           <!-- Background Image / Placeholder -->
           <div class="absolute inset-0 z-0">
-             <GMedia v-if="char.referenceImage" 
-                :src="char.referenceImage" 
-                class="w-full h-full object-cover" 
-             >
+            <GMedia v-if="char.referenceImage" :src="char.referenceImage" class="w-full h-full object-cover">
               <template #error>
                 <div class="image-slot-error">
                   <pic theme="outline" size="48" class="text-white/10" />
                 </div>
               </template>
-             </GMedia>
-             <div v-else class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#222] to-[#111]">
-                <pic theme="outline" size="48" class="text-white/10" />
-             </div>
-             <!-- Dark Gradient Overlay -->
-             <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10"></div>
+            </GMedia>
+            <div v-else class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#222] to-[#111]">
+              <pic theme="outline" size="48" class="text-white/10" />
+            </div>
+            <!-- Dark Gradient Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10"></div>
           </div>
 
           <!-- Loading Overlay -->
-          <div v-if="loadingStates[`char-${idx}`]" class="absolute inset-0 z-40 bg-black/60 backdrop-blur-[2px] flex items-center justify-center flex-col gap-3">
-             <refresh theme="outline" size="32" class="text-brand-primary animate-spin" />
-             <span class="text-[10px] font-bold text-brand-primary uppercase tracking-widest">{{ t('common.generating') }}</span>
+          <div v-if="loadingStates[`char-${idx}`]"
+            class="absolute inset-0 z-40 bg-black/60 backdrop-blur-[2px] flex items-center justify-center flex-col gap-3">
+            <refresh theme="outline" size="32" class="text-brand-primary animate-spin" />
+            <span class="text-[10px] font-bold text-brand-primary uppercase tracking-widest">{{ t('common.generating')
+              }}</span>
           </div>
 
           <!-- Top Actions (Regenerate) -->
-          <div class="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
-            <button 
+          <div
+            class="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
+            <button
               class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-brand-primary hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :title="t('projects.editor.storyboard.charDialog.regenerateVisual')"
-              :disabled="loadingStates[`char-${idx}`]"
-              @click.stop="$emit('regenerate-character', char, idx as number)"
-            >
-              <refresh theme="outline" size="16"/>
+              :disabled="loadingStates[`char-${idx}`]" @click.stop="$emit('regenerate-character', char, idx as number)">
+              <refresh theme="outline" size="16" />
             </button>
-            <button 
+            <button
               class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-brand-primary hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              :title="t('projects.editor.storyboard.charDialog.uploadImage')"
-              :disabled="loadingStates[`char-${idx}`]"
-              @click.stop="$emit('upload-character-image', char, idx as number)"
-            >
-              <upload theme="outline" size="16"/>
+              :title="t('projects.editor.storyboard.charDialog.uploadImage')" :disabled="loadingStates[`char-${idx}`]"
+              @click.stop="$emit('upload-character-image', char, idx as number)">
+              <upload theme="outline" size="16" />
             </button>
           </div>
 
@@ -91,7 +81,8 @@
             <div class="flex items-center justify-between">
               <h4 class="text-lg font-bold text-white truncate">{{ char.name }}</h4>
             </div>
-            <p class="text-xs text-white/60 leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-500">
+            <p
+              class="text-xs text-white/60 leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-500">
               {{ char.description }}
             </p>
           </div>
@@ -103,66 +94,62 @@
     <div v-if="activeSection === 'all' || activeSection === 'segments'" class="mb-10">
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-xl text-white font-bold flex items-center gap-2">
-          <movie theme="outline" size="22" class="text-brand-primary"/>
+          <movie theme="outline" size="22" class="text-brand-primary" />
           {{ t('projects.editor.storyboard.productionSegments') }}
         </h3>
         <div class="flex items-center gap-3">
-          <button 
+          <button
             class="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-bold hover:bg-brand-primary hover:text-black transition-all group disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale"
-            :disabled="isAnyLoading"
-            @click="$emit('generate-all-frames')"
-          >
-            <pic theme="outline" size="14"/>
+            :disabled="isAnyLoading" @click="$emit('generate-all-frames')">
+            <pic theme="outline" size="14" />
             {{ t('projects.editor.storyboard.regenerateAllFrames') }}
           </button>
-          <button 
+          <button
             class="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-bold hover:bg-brand-primary hover:text-black transition-all group disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale"
-            :disabled="isAnyLoading"
-            @click="$emit('generate-all-videos')"
-          >
-            <play theme="outline" size="14"/>
+            :disabled="isAnyLoading" @click="$emit('generate-all-videos')">
+            <play theme="outline" size="14" />
             {{ t('projects.editor.storyboard.regenerateAllVideos') }}
           </button>
         </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <div v-for="(seg, idx) in project.storyboard?.segments" :key="seg._id || idx" 
-          class="segment-card relative group h-[300px] rounded-2xl overflow-hidden border border-white/10 bg-[#1a1a1a] transition-all hover:scale-[1.02] hover:shadow-2xl hover:border-white/20 cursor-pointer"
-          @click="openSegDialog(seg, idx as number)"
-          @mouseenter="seg.hover = true" @mouseleave="seg.hover = false"
-        >
-          
+        <div v-for="(seg, idx) in project.storyboard?.segments" :key="seg._id || idx"
+          class="segment-card relative group h-[300px] rounded-2xl overflow-hidden border border-white/5 bg-[#0a0a0a] transition-all hover:scale-[1.02] hover:shadow-2xl hover:border-brand-primary/50 cursor-pointer"
+          @click="openSegDialog(seg, idx as number)" @mouseenter="seg.hover = true" @mouseleave="seg.hover = false">
+
           <!-- Background Image -->
           <div class="absolute inset-0 z-0">
-             <GMedia v-if="seg.sceneImage" 
-                :src="seg.sceneImage" 
-                class="w-full h-full object-cover" 
-             >
+            <GMedia v-if="seg.sceneImage" :src="seg.sceneImage" class="w-full h-full object-cover">
               <template #error>
                 <div class="image-slot-error">
                   <pic theme="outline" size="48" class="text-white/10" />
                 </div>
               </template>
-             </GMedia>
-             <div v-else class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#222] to-[#111]">
-                <video-two theme="outline" size="48" class="text-white/10" />
-             </div>
-             <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10"></div>
-             <div v-if="seg.hover && seg.generatedVideo?.s3Key" class="absolute inset-0 z-40 bg-black/60 backdrop-blur-[2px] flex items-center justify-center flex-col gap-3">
-                <GMedia :src="seg.generatedVideo.s3Key" type="video" autoplay muted loop />
-             </div>
+            </GMedia>
+            <div v-else class="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#222] to-[#111]">
+              <video-two theme="outline" size="48" class="text-white/10" />
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent z-10"></div>
+            <div v-if="seg.hover && seg.generatedVideo?.s3Key"
+              class="absolute inset-0 z-40 bg-black/60 backdrop-blur-[2px] flex items-center justify-center flex-col gap-3">
+              <GMedia :src="seg.generatedVideo.s3Key" type="video" autoplay muted loop />
+            </div>
           </div>
 
           <!-- Loading Overlay -->
-          <div v-if="loadingStates[`seg-${seg.order}`] || loadingStates[`video-${seg.order}`]" class="absolute inset-0 z-40 bg-black/60 backdrop-blur-[2px] flex items-center justify-center flex-col gap-3">
-             <refresh theme="outline" size="28" class="text-brand-primary animate-spin" />
-             <span class="text-[9px] font-bold text-brand-primary uppercase tracking-widest">{{ loadingStates[`video-${seg.order}`] ? t('projects.editor.storyboard.segDialog.videoProcessing') : t('projects.editor.storyboard.segDialog.imageProcessing') }}</span>
+          <div v-if="loadingStates[`seg-${seg.order}`] || loadingStates[`video-${seg.order}`]"
+            class="absolute inset-0 z-40 bg-black/60 backdrop-blur-[2px] flex items-center justify-center flex-col gap-3">
+            <refresh theme="outline" size="28" class="text-brand-primary animate-spin" />
+            <span class="text-[9px] font-bold text-brand-primary uppercase tracking-widest">{{
+              loadingStates[`video-${seg.order}`] ? t('projects.editor.storyboard.segDialog.videoProcessing') :
+                t('projects.editor.storyboard.segDialog.imageProcessing') }}</span>
           </div>
 
           <!-- Top Badge -->
           <div class="absolute top-3 left-3 z-30 w-[calc(100%-1.5rem)]">
-            <div class="px-3 py-1 rounded-full bg-brand-primary/20 backdrop-blur-md border border-brand-primary/30 text-[10px] font-bold text-brand-primary uppercase tracking-wider items-center flex gap-2">
+            <div
+              class="px-3 py-1 rounded-full bg-brand-primary/20 backdrop-blur-md border border-brand-primary/30 text-[10px] font-bold text-brand-primary uppercase tracking-wider items-center flex gap-2">
               <div v-if="seg.sceneImage" class="w-6 h-6 rounded-full overflow-hidden border border-brand-primary/30">
                 <GMedia :src="seg.sceneImage" class="w-full h-full object-cover" />
               </div>
@@ -172,30 +159,28 @@
           </div>
 
           <!-- Right Actions -->
-          <div class="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
-             <button 
+          <div
+            class="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
+            <button
               class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-brand-primary hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :title="t('projects.editor.storyboard.segDialog.regenerateFrame')"
               :disabled="loadingStates[`seg-${seg.order}`] || loadingStates[`video-${seg.order}`]"
-              @click.stop="$emit('generate-frame', seg)"
-            >
-              <pic theme="outline" size="16"/>
+              @click.stop="$emit('generate-frame', seg)">
+              <pic theme="outline" size="16" />
             </button>
-            <button 
+            <button
               class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-brand-primary hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :title="t('projects.editor.storyboard.segDialog.regenerateVideo')"
               :disabled="loadingStates[`seg-${seg.order}`] || loadingStates[`video-${seg.order}`]"
-              @click.stop="$emit('generate-video', seg)"
-            >
-              <play theme="outline" size="16"/>
+              @click.stop="$emit('generate-video', seg)">
+              <play theme="outline" size="16" />
             </button>
-            <button 
+            <button
               class="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-brand-primary hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :title="t('projects.editor.storyboard.segDialog.uploadImageVideo')"
               :disabled="loadingStates[`seg-${seg.order}`] || loadingStates[`video-${seg.order}`]"
-              @click.stop="$emit('upload-image-video', seg)"
-            >
-              <upload theme="outline" size="16"/>
+              @click.stop="$emit('upload-image-video', seg)">
+              <upload theme="outline" size="16" />
             </button>
           </div>
 
@@ -203,23 +188,29 @@
           <div class="absolute bottom-0 left-0 right-0 p-5 z-20 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <div class="flex flex-col">
-                <span class="text-[10px] uppercase text-white/40 font-bold tracking-widest mb-1">{{ t('projects.detail.duration') }}: {{ seg.duration || t('common.auto') }}s</span>
+                <span class="text-[10px] uppercase text-white/40 font-bold tracking-widest mb-1">{{
+                  t('projects.detail.duration') }}: {{ seg.duration || t('common.auto') }}s</span>
               </div>
             </div>
 
             <div class="flex flex-col gap-2">
-              <p class="text-xs text-white/80 leading-relaxed italic line-clamp-2 group-hover:line-clamp-none transition-all duration-500">
+              <p
+                class="text-xs text-white/80 leading-relaxed italic line-clamp-2 group-hover:line-clamp-none transition-all duration-500">
                 "{{ seg.description }}"
               </p>
-              
+
               <!-- Rich Cinematic Details (Visible on hover) -->
-              <div class="hidden group-hover:flex flex-col gap-3 mt-2 pt-3 border-t border-white/5 animate-in fade-in duration-500">
+              <div
+                class="hidden group-hover:flex flex-col gap-3 mt-2 pt-3 border-t border-white/5 animate-in fade-in duration-500">
                 <!-- Location Details -->
                 <div v-if="seg.locationDetails" class="flex flex-col gap-1">
-                  <span class="text-[9px] uppercase text-brand-primary font-bold tracking-widest">{{ t('projects.editor.storyboard.segDialog.tabs.environment') }}</span>
+                  <span class="text-[9px] uppercase text-brand-primary font-bold tracking-widest">{{
+                    t('projects.editor.storyboard.segDialog.tabs.environment') }}</span>
                   <p class="text-[10px] text-white/60 leading-tight">
-                    <span class="text-white/40">{{ t('projects.editor.storyboard.segDialog.locationType') }}:</span> {{ seg.locationDetails.type }}<br/>
-                    <span class="text-white/40">{{ t('projects.editor.storyboard.segDialog.atmosphere') }}:</span> {{ seg.locationDetails.atmosphere }}
+                    <span class="text-white/40">{{ t('projects.editor.storyboard.segDialog.locationType') }}:</span> {{
+                      seg.locationDetails.type }}<br />
+                    <span class="text-white/40">{{ t('projects.editor.storyboard.segDialog.atmosphere') }}:</span> {{
+                      seg.locationDetails.atmosphere }}
                   </p>
                 </div>
               </div>
@@ -230,46 +221,31 @@
     </div>
 
     <!-- Character Detail Dialog -->
-    <el-dialog
-      v-model="charDialogVisible"
-      :title="editingChar?.name || t('projects.editor.storyboard.charDialog.title')"
-      width="1000px"
-      class="cinematic-dialog"
-      destroy-on-close
-    >
+    <el-dialog v-model="charDialogVisible"
+      :title="editingChar?.name || t('projects.editor.storyboard.charDialog.title')" width="1000px"
+      class="cinematic-dialog" destroy-on-close>
       <div v-if="editingChar" class="grid grid-cols-12 gap-8">
         <!-- Preview Column -->
         <div class="col-span-12 lg:col-span-5 flex flex-col gap-4">
           <div class="rounded-2xl overflow-hidden border border-white/10 bg-black/40">
-            <GMedia
-              v-if="editingChar.referenceImage"
-              :src="editingChar.referenceImage"
-              class="w-full"
-              v-loading="loadingStates[`char-${selectedCharIdx}`]"
-            />
-            <div v-else class="w-full h-full flex items-center justify-center text-white/5 uppercase font-bold tracking-widest italic">
+            <GMedia v-if="editingChar.referenceImage" :src="editingChar.referenceImage" class="w-full"
+              v-loading="loadingStates[`char-${selectedCharIdx}`]" />
+            <div v-else
+              class="w-full h-full flex items-center justify-center text-white/5 uppercase font-bold tracking-widest italic">
               {{ t('projects.editor.storyboard.charDialog.noImage') }}
             </div>
           </div>
           <div class="flex gap-2">
-            <el-button 
-              type="primary" 
-              :icon="Refresh"
-              :loading="loadingStates[`char-${selectedCharIdx}`]"
+            <el-button type="primary" :icon="Refresh" :loading="loadingStates[`char-${selectedCharIdx}`]"
               class="w-full !rounded-xl !h-12 !bg-brand-primary !text-black !border-none font-bold"
-              @click="$emit('regenerate-character', editingChar, selectedCharIdx as number)"
-            >
+              @click="$emit('regenerate-character', editingChar, selectedCharIdx as number)">
               {{ t('projects.editor.storyboard.charDialog.regenerateVisual') }}
             </el-button>
-            <el-button 
-              type="primary" 
-              :icon="Upload"
-              :loading="loadingStates[`char-${selectedCharIdx}`]"
+            <el-button type="primary" :icon="Upload" :loading="loadingStates[`char-${selectedCharIdx}`]"
               class="w-full !rounded-xl !h-12 !bg-brand-primary !text-black !border-none font-bold"
-              @click="$emit('upload-character-image', editingChar, selectedCharIdx as number)"
-            >
+              @click="$emit('upload-character-image', editingChar, selectedCharIdx as number)">
               {{ t('projects.editor.storyboard.charDialog.uploadImage') }}
-            </el-button>  
+            </el-button>
           </div>
         </div>
 
@@ -277,88 +253,113 @@
         <div class="col-span-12 lg:col-span-7 h-[600px] overflow-y-auto custom-scrollbar pr-2">
           <div class="space-y-6">
             <div class="form-group border-b border-white/5 pb-6">
-              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{ t('projects.editor.storyboard.charDialog.general') }}</label>
+              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{
+                t('projects.editor.storyboard.charDialog.general') }}</label>
               <div class="grid grid-cols-2 gap-4">
-                <el-input v-model="editingChar.name" :placeholder="t('projects.editor.storyboard.charDialog.name')" class="cinematic-input col-span-2" />
-                <el-select v-model="editingChar.species" filterable allow-create default-first-option :placeholder="t('projects.editor.storyboard.charDialog.species')" class="cinematic-select" :teleported="false">
-                  <el-option v-for="s in speciesOptions" :key="s.key" :label="t('projects.editor.storyboard.charDialog.options.' + s.key)" :value="s.value" />
+                <el-input v-model="editingChar.name" :placeholder="t('projects.editor.storyboard.charDialog.name')"
+                  class="cinematic-input col-span-2" />
+                <el-select v-model="editingChar.species" filterable allow-create default-first-option
+                  :placeholder="t('projects.editor.storyboard.charDialog.species')" class="cinematic-select"
+                  :teleported="false">
+                  <el-option v-for="s in speciesOptions" :key="s.key"
+                    :label="t('projects.editor.storyboard.charDialog.options.' + s.key)" :value="s.value" />
                 </el-select>
-                <el-select v-model="editingChar.gender" filterable allow-create default-first-option :placeholder="t('projects.editor.storyboard.charDialog.gender')" class="cinematic-select" :teleported="false">
-                  <el-option v-for="g in genderOptions" :key="g.key" :label="t('projects.editor.storyboard.charDialog.options.' + g.key)" :value="g.value" />
+                <el-select v-model="editingChar.gender" filterable allow-create default-first-option
+                  :placeholder="t('projects.editor.storyboard.charDialog.gender')" class="cinematic-select"
+                  :teleported="false">
+                  <el-option v-for="g in genderOptions" :key="g.key"
+                    :label="t('projects.editor.storyboard.charDialog.options.' + g.key)" :value="g.value" />
                 </el-select>
-                <el-input v-model="editingChar.age" :placeholder="t('projects.editor.storyboard.charDialog.age')" class="cinematic-input" />
-                <el-select v-model="editingChar.body_build" filterable allow-create default-first-option :placeholder="t('projects.editor.storyboard.charDialog.bodyBuild')" class="cinematic-select" :teleported="false">
-                  <el-option v-for="b in bodyBuildOptions" :key="b.key" :label="t('projects.editor.storyboard.charDialog.options.' + b.key)" :value="b.value" />
+                <el-input v-model="editingChar.age" :placeholder="t('projects.editor.storyboard.charDialog.age')"
+                  class="cinematic-input" />
+                <el-select v-model="editingChar.body_build" filterable allow-create default-first-option
+                  :placeholder="t('projects.editor.storyboard.charDialog.bodyBuild')" class="cinematic-select"
+                  :teleported="false">
+                  <el-option v-for="b in bodyBuildOptions" :key="b.key"
+                    :label="t('projects.editor.storyboard.charDialog.options.' + b.key)" :value="b.value" />
                 </el-select>
               </div>
             </div>
 
             <div class="form-group border-b border-white/5 pb-6">
-              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{ t('projects.detail.summary') }}</label>
-              <el-input 
-                v-model="editingChar.description" 
-                type="textarea" 
-                :rows="4" 
-                :placeholder="t('projects.detail.summary')"
-                class="cinematic-input"
-              />
+              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{
+                t('projects.detail.summary') }}</label>
+              <el-input v-model="editingChar.description" type="textarea" :rows="4"
+                :placeholder="t('projects.detail.summary')" class="cinematic-input" />
             </div>
 
             <div class="form-group border-b border-white/5 pb-6">
-              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{ t('projects.editor.storyboard.charDialog.physical') }}</label>
+              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{
+                t('projects.editor.storyboard.charDialog.physical') }}</label>
               <div class="grid grid-cols-2 gap-4">
-                <el-select v-model="editingChar.face_shape" filterable allow-create default-first-option :placeholder="t('projects.editor.storyboard.charDialog.faceShape')" class="cinematic-select" :teleported="false">
-                  <el-option v-for="f in faceShapeOptions" :key="f.key" :label="t('projects.editor.storyboard.charDialog.options.' + f.key)" :value="f.value" />
+                <el-select v-model="editingChar.face_shape" filterable allow-create default-first-option
+                  :placeholder="t('projects.editor.storyboard.charDialog.faceShape')" class="cinematic-select"
+                  :teleported="false">
+                  <el-option v-for="f in faceShapeOptions" :key="f.key"
+                    :label="t('projects.editor.storyboard.charDialog.options.' + f.key)" :value="f.value" />
                 </el-select>
-                <el-select v-model="editingChar.hair" filterable allow-create default-first-option :placeholder="t('projects.editor.storyboard.charDialog.hair')" class="cinematic-select" :teleported="false">
-                  <el-option v-for="h in hairOptions" :key="h.key" :label="t('projects.editor.storyboard.charDialog.options.' + h.key)" :value="h.value" />
+                <el-select v-model="editingChar.hair" filterable allow-create default-first-option
+                  :placeholder="t('projects.editor.storyboard.charDialog.hair')" class="cinematic-select"
+                  :teleported="false">
+                  <el-option v-for="h in hairOptions" :key="h.key"
+                    :label="t('projects.editor.storyboard.charDialog.options.' + h.key)" :value="h.value" />
                 </el-select>
-                <el-select v-model="editingChar.skin_or_fur_color" filterable allow-create default-first-option :placeholder="t('projects.editor.storyboard.charDialog.skinColor')" class="cinematic-select" :teleported="false">
-                  <el-option v-for="sk in skinColorOptions" :key="sk.key" :label="t('projects.editor.storyboard.charDialog.options.' + sk.key)" :value="sk.value" />
+                <el-select v-model="editingChar.skin_or_fur_color" filterable allow-create default-first-option
+                  :placeholder="t('projects.editor.storyboard.charDialog.skinColor')" class="cinematic-select"
+                  :teleported="false">
+                  <el-option v-for="sk in skinColorOptions" :key="sk.key"
+                    :label="t('projects.editor.storyboard.charDialog.options.' + sk.key)" :value="sk.value" />
                 </el-select>
-                <el-input v-model="editingChar.signature_feature" :placeholder="t('projects.editor.storyboard.charDialog.features')" class="cinematic-input" />
+                <el-input v-model="editingChar.signature_feature"
+                  :placeholder="t('projects.editor.storyboard.charDialog.features')" class="cinematic-input" />
               </div>
             </div>
 
             <div class="form-group border-b border-white/5 pb-6">
-              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{ t('projects.editor.storyboard.charDialog.costume') }}</label>
+              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{
+                t('projects.editor.storyboard.charDialog.costume') }}</label>
               <div class="grid grid-cols-2 gap-4">
-                <el-input v-model="editingChar.outfit_top" :placeholder="t('projects.editor.storyboard.charDialog.outfitTop')" class="cinematic-input col-span-2" />
-                <el-input v-model="editingChar.outfit_bottom" :placeholder="t('projects.editor.storyboard.charDialog.outfitBottom')" class="cinematic-input" />
-                <el-input v-model="editingChar.shoes_or_footwear" :placeholder="t('projects.editor.storyboard.charDialog.footwear')" class="cinematic-input" />
-                <el-input v-model="editingChar.helmet_or_hat" :placeholder="t('projects.editor.storyboard.charDialog.headwear')" class="cinematic-input" />
-                <el-input v-model="editingChar.props" :placeholder="t('projects.editor.storyboard.charDialog.props')" class="cinematic-input" />
+                <el-input v-model="editingChar.outfit_top"
+                  :placeholder="t('projects.editor.storyboard.charDialog.outfitTop')"
+                  class="cinematic-input col-span-2" />
+                <el-input v-model="editingChar.outfit_bottom"
+                  :placeholder="t('projects.editor.storyboard.charDialog.outfitBottom')" class="cinematic-input" />
+                <el-input v-model="editingChar.shoes_or_footwear"
+                  :placeholder="t('projects.editor.storyboard.charDialog.footwear')" class="cinematic-input" />
+                <el-input v-model="editingChar.helmet_or_hat"
+                  :placeholder="t('projects.editor.storyboard.charDialog.headwear')" class="cinematic-input" />
+                <el-input v-model="editingChar.props" :placeholder="t('projects.editor.storyboard.charDialog.props')"
+                  class="cinematic-input" />
               </div>
             </div>
 
             <div class="form-group pb-6">
-              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{ t('projects.editor.storyboard.charDialog.voice') }}</label>
+              <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-3">{{
+                t('projects.editor.storyboard.charDialog.voice') }}</label>
               <div v-if="editingChar.tts_config" class="grid grid-cols-2 gap-4">
                 <div class="flex flex-col gap-2 col-span-2">
-                  <span class="text-[10px] text-white/40">{{ t('projects.editor.storyboard.charDialog.voiceId') }}</span>
+                  <span class="text-[10px] text-white/40">{{ t('projects.editor.storyboard.charDialog.voiceId')
+                    }}</span>
                   <div class="flex gap-2">
-                    <el-select v-model="editingChar.tts_config.voice_id" filterable :placeholder="t('projects.editor.storyboard.charDialog.voiceId')" class="cinematic-select flex-1" :teleported="false">
-                      <el-option 
-                        v-for="v in googleVoices" 
-                        :key="v.id" 
-                        :label="`${v.name} (${v.lang}) - ${v.gender}`" 
-                        :value="v.id" 
-                      />
+                    <el-select v-model="editingChar.tts_config.voice_id" filterable
+                      :placeholder="t('projects.editor.storyboard.charDialog.voiceId')" class="cinematic-select flex-1"
+                      :teleported="false">
+                      <el-option v-for="v in googleVoices" :key="v.id" :label="`${v.name} (${v.lang}) - ${v.gender}`"
+                        :value="v.id" />
                     </el-select>
-                    <el-button 
-                      circle 
-                      class="!bg-brand-primary !text-black !border-none"
+                    <el-button circle class="!bg-brand-primary !text-black !border-none"
                       :disabled="!editingChar.tts_config.voice_id"
                       @click="playVoiceSample(editingChar.tts_config.voice_id)"
-                      :title="t('projects.editor.storyboard.charDialog.listen')"
-                    >
+                      :title="t('projects.editor.storyboard.charDialog.listen')">
                       <play theme="outline" size="14" fill="#000" />
                     </el-button>
                   </div>
                 </div>
-                <el-input v-model="editingChar.tts_config.style_category" :placeholder="t('projects.editor.storyboard.charDialog.styleCategory')" class="cinematic-input" />
+                <el-input v-model="editingChar.tts_config.style_category"
+                  :placeholder="t('projects.editor.storyboard.charDialog.styleCategory')" class="cinematic-input" />
                 <div class="flex flex-col gap-1">
-                  <span class="text-[10px] text-white/40">{{ t('projects.editor.storyboard.charDialog.pitch') }} ({{ editingChar.tts_config.base_pitch }})</span>
+                  <span class="text-[10px] text-white/40">{{ t('projects.editor.storyboard.charDialog.pitch') }} ({{
+                    editingChar.tts_config.base_pitch }})</span>
                   <el-slider v-model="editingChar.tts_config.base_pitch" :min="-20" :max="20" :step="0.5" />
                 </div>
               </div>
@@ -368,69 +369,52 @@
       </div>
       <template #footer>
         <div class="flex justify-end gap-3 px-2 py-4">
-          <el-button @click="charDialogVisible = false" class="!bg-white/5 !border-none !text-white/60 hover:!bg-white/10 !rounded-xl">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" @click="saveCharDetail" class="!bg-brand-primary !text-black !border-none !rounded-xl font-bold px-8">{{ t('common.save') }}</el-button>
+          <el-button @click="charDialogVisible = false"
+            class="!bg-white/5 !border-none !text-white/60 hover:!bg-white/10 !rounded-xl">{{ t('common.cancel')
+            }}</el-button>
+          <el-button type="primary" @click="saveCharDetail"
+            class="!bg-brand-primary !text-black !border-none !rounded-xl font-bold px-8">{{ t('common.save')
+            }}</el-button>
         </div>
       </template>
     </el-dialog>
 
     <!-- Segment Detail Dialog -->
-    <el-dialog
-      v-model="segDialogVisible"
-      :title="editingSeg?.title || t('projects.editor.storyboard.segDialog.title')"
-      width="1200px"
-      class="cinematic-dialog"
-      destroy-on-close
-    >
+    <el-dialog v-model="segDialogVisible" :title="editingSeg?.title || t('projects.editor.storyboard.segDialog.title')"
+      width="1200px" class="cinematic-dialog" destroy-on-close>
       <div v-if="editingSeg" class="grid grid-cols-12 gap-8">
         <!-- Media Preview -->
         <div class="col-span-12 lg:col-span-6 flex flex-col gap-4">
-          <div class="aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black/40 relative" 
+          <div class="aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black/40 relative"
             v-loading="loadingStates[`seg-${editingSeg.order}`] || loadingStates[`video-${editingSeg.order}`]">
-            <GMedia 
-              v-if="editingSeg.generatedVideo?.s3Key" 
-              :src="editingSeg.generatedVideo.s3Key" 
-              type="video"
-              controls 
-              autoplay
-              class="w-full h-full object-contain"
-            />
-            <GMedia
-              v-else-if="editingSeg.sceneImage"
-              :src="editingSeg.sceneImage"
-              class="w-full h-full object-contain"
-            />
-            <div v-else class="w-full h-full flex items-center justify-center text-white/5 uppercase font-bold tracking-widest italic">
+            <GMedia v-if="editingSeg.generatedVideo?.s3Key" :src="editingSeg.generatedVideo.s3Key" type="video" controls
+              autoplay class="w-full h-full object-contain" />
+            <GMedia v-else-if="editingSeg.sceneImage" :src="editingSeg.sceneImage"
+              class="w-full h-full object-contain" />
+            <div v-else
+              class="w-full h-full flex items-center justify-center text-white/5 uppercase font-bold tracking-widest italic">
               {{ t('projects.editor.storyboard.segDialog.noMedia') }}
             </div>
           </div>
           <div class="grid grid-cols-3 gap-1">
-             <el-button 
-                :icon="Refresh"
-                :loading="loadingStates[`seg-${editingSeg.order}`] || loadingStates[`video-${editingSeg.order}`]"
-                class="!rounded-xl !h-12 !bg-white/5 !text-white !border-white/10 font-bold"
-                @click="$emit('generate-frame', editingSeg)"
-              >
-                {{ t('projects.editor.storyboard.segDialog.regenerateFrame') }}
-              </el-button>
-              <el-button 
-                :icon="Refresh"
-                type="primary"
-                :loading="loadingStates[`seg-${editingSeg.order}`] || loadingStates[`video-${editingSeg.order}`]"
-                class="!rounded-xl !h-12 !bg-brand-primary !text-black !border-none font-bold"
-                @click="$emit('generate-video', editingSeg)"
-              >
-                {{ t('projects.editor.storyboard.segDialog.regenerateVideo') }}
-              </el-button>
-              <el-button 
-                :icon="Upload"
-                type="primary"
-                :loading="loadingStates[`seg-${editingSeg.order}`] || loadingStates[`video-${editingSeg.order}`]"
-                class="!rounded-xl !h-12 !bg-brand-primary !text-black !border-none font-bold"
-                @click="$emit('upload-image-video', editingSeg)"
-              >
-                {{ t('projects.editor.storyboard.segDialog.uploadImageVideo') }}
-              </el-button>
+            <el-button :icon="Refresh"
+              :loading="loadingStates[`seg-${editingSeg.order}`] || loadingStates[`video-${editingSeg.order}`]"
+              class="!rounded-xl !h-12 !bg-white/5 !text-white !border-white/10 font-bold"
+              @click="$emit('generate-frame', editingSeg)">
+              {{ t('projects.editor.storyboard.segDialog.regenerateFrame') }}
+            </el-button>
+            <el-button :icon="Refresh" type="primary"
+              :loading="loadingStates[`seg-${editingSeg.order}`] || loadingStates[`video-${editingSeg.order}`]"
+              class="!rounded-xl !h-12 !bg-brand-primary !text-black !border-none font-bold"
+              @click="$emit('generate-video', editingSeg)">
+              {{ t('projects.editor.storyboard.segDialog.regenerateVideo') }}
+            </el-button>
+            <el-button :icon="Upload" type="primary"
+              :loading="loadingStates[`seg-${editingSeg.order}`] || loadingStates[`video-${editingSeg.order}`]"
+              class="!rounded-xl !h-12 !bg-brand-primary !text-black !border-none font-bold"
+              @click="$emit('upload-image-video', editingSeg)">
+              {{ t('projects.editor.storyboard.segDialog.uploadImageVideo') }}
+            </el-button>
           </div>
         </div>
 
@@ -440,20 +424,24 @@
             <el-tab-pane :label="t('projects.editor.storyboard.segDialog.tabs.general')" name="general">
               <div class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar">
                 <div class="form-group pb-4">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.segTitle') }}</label>
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.segTitle') }}</label>
                   <el-input v-model="editingSeg.title" class="cinematic-input" />
                 </div>
                 <div class="form-group pb-4">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.detail.summary') }}</label>
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.detail.summary') }}</label>
                   <el-input v-model="editingSeg.description" type="textarea" :rows="6" class="cinematic-input" />
                 </div>
                 <div class="form-group grid grid-cols-2 gap-4">
                   <div>
-                    <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.duration') }}</label>
+                    <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                      t('projects.editor.storyboard.segDialog.duration') }}</label>
                     <el-input-number v-model="editingSeg.duration" :min="1" :max="60" class="!w-full cinematic-input" />
                   </div>
                   <div>
-                    <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.lipSync') }}</label>
+                    <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                      t('projects.editor.storyboard.segDialog.lipSync') }}</label>
                     <el-switch v-model="editingSeg.lipSyncRequired" />
                   </div>
                 </div>
@@ -463,27 +451,39 @@
             <el-tab-pane :label="t('projects.editor.storyboard.segDialog.tabs.cinematic')" name="cinematic">
               <div v-if="editingSeg.cameraDetails" class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar">
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.framing') }}</label>
-                  <el-select v-model="editingSeg.cameraDetails.framing" filterable allow-create default-first-option class="cinematic-select !w-full" :teleported="false">
-                    <el-option v-for="f in framingOptions" :key="f.key" :label="t('projects.editor.storyboard.segDialog.options.' + f.key)" :value="f.value" />
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.framing') }}</label>
+                  <el-select v-model="editingSeg.cameraDetails.framing" filterable allow-create default-first-option
+                    class="cinematic-select !w-full" :teleported="false">
+                    <el-option v-for="f in framingOptions" :key="f.key"
+                      :label="t('projects.editor.storyboard.segDialog.options.' + f.key)" :value="f.value" />
                   </el-select>
                 </div>
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.angle') }}</label>
-                  <el-select v-model="editingSeg.cameraDetails.angle" filterable allow-create default-first-option class="cinematic-select !w-full" :teleported="false">
-                    <el-option v-for="a in angleOptions" :key="a.key" :label="t('projects.editor.storyboard.segDialog.options.' + a.key)" :value="a.value" />
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.angle') }}</label>
+                  <el-select v-model="editingSeg.cameraDetails.angle" filterable allow-create default-first-option
+                    class="cinematic-select !w-full" :teleported="false">
+                    <el-option v-for="a in angleOptions" :key="a.key"
+                      :label="t('projects.editor.storyboard.segDialog.options.' + a.key)" :value="a.value" />
                   </el-select>
                 </div>
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.movement') }}</label>
-                  <el-select v-model="editingSeg.cameraDetails.movement" filterable allow-create default-first-option class="cinematic-select !w-full" :teleported="false">
-                    <el-option v-for="m in movementOptions" :key="m.key" :label="t('projects.editor.storyboard.segDialog.options.' + m.key)" :value="m.value" />
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.movement') }}</label>
+                  <el-select v-model="editingSeg.cameraDetails.movement" filterable allow-create default-first-option
+                    class="cinematic-select !w-full" :teleported="false">
+                    <el-option v-for="m in movementOptions" :key="m.key"
+                      :label="t('projects.editor.storyboard.segDialog.options.' + m.key)" :value="m.value" />
                   </el-select>
                 </div>
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.focus') }}</label>
-                  <el-select v-model="editingSeg.cameraDetails.focus" filterable allow-create default-first-option class="cinematic-select !w-full" :teleported="false">
-                    <el-option v-for="f in focusOptions" :key="f.key" :label="t('projects.editor.storyboard.segDialog.options.' + f.key)" :value="f.value" />
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.focus') }}</label>
+                  <el-select v-model="editingSeg.cameraDetails.focus" filterable allow-create default-first-option
+                    class="cinematic-select !w-full" :teleported="false">
+                    <el-option v-for="f in focusOptions" :key="f.key"
+                      :label="t('projects.editor.storyboard.segDialog.options.' + f.key)" :value="f.value" />
                   </el-select>
                 </div>
               </div>
@@ -492,22 +492,30 @@
             <el-tab-pane :label="t('projects.editor.storyboard.segDialog.tabs.environment')" name="env">
               <div v-if="editingSeg.locationDetails" class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar">
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.locationType') }}</label>
-                  <el-select v-model="editingSeg.locationDetails.type" filterable allow-create default-first-option class="cinematic-select !w-full" :teleported="false">
-                    <el-option v-for="opt in environmentOptions" :key="opt.key" :label="t('projects.editor.storyboard.segDialog.options.' + opt.key)" :value="opt.value" />
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.locationType') }}</label>
+                  <el-select v-model="editingSeg.locationDetails.type" filterable allow-create default-first-option
+                    class="cinematic-select !w-full" :teleported="false">
+                    <el-option v-for="opt in environmentOptions" :key="opt.key"
+                      :label="t('projects.editor.storyboard.segDialog.options.' + opt.key)" :value="opt.value" />
                   </el-select>
                 </div>
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.atmosphere') }}</label>
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.atmosphere') }}</label>
                   <el-input v-model="editingSeg.locationDetails.atmosphere" class="cinematic-input" />
                 </div>
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.lighting') }}</label>
-                  <el-input v-model="editingSeg.locationDetails.lighting" type="textarea" :rows="3" class="cinematic-input" />
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.lighting') }}</label>
+                  <el-input v-model="editingSeg.locationDetails.lighting" type="textarea" :rows="3"
+                    class="cinematic-input" />
                 </div>
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.objects') }}</label>
-                  <el-input v-model="editingSeg.locationDetails.objects" type="textarea" :rows="3" class="cinematic-input" />
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.objects') }}</label>
+                  <el-input v-model="editingSeg.locationDetails.objects" type="textarea" :rows="3"
+                    class="cinematic-input" />
                 </div>
               </div>
             </el-tab-pane>
@@ -515,31 +523,43 @@
             <el-tab-pane :label="t('projects.editor.storyboard.segDialog.tabs.audio')" name="audio">
               <div class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar">
                 <div class="form-group">
-                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.voiceover') }}</label>
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.voiceover') }}</label>
                   <el-input v-model="editingSeg.voiceover" type="textarea" :rows="4" class="cinematic-input" />
                 </div>
-                
+
                 <div v-if="editingSeg.audioDetails" class="space-y-4 pt-4 border-t border-white/5">
-                   <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.audioDetails') }}</label>
-                    <el-input v-model="editingSeg.audioDetails.ambience" :placeholder="t('projects.editor.storyboard.segDialog.ambience')" class="cinematic-input" />
-                   <el-input v-model="editingSeg.audioDetails.sfx" :placeholder="t('projects.editor.storyboard.segDialog.sfx')" class="cinematic-input" />
-                   <el-input v-model="editingSeg.audioDetails.music" :placeholder="t('projects.editor.storyboard.segDialog.music')" class="cinematic-input" />
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.audioDetails') }}</label>
+                  <el-input v-model="editingSeg.audioDetails.ambience"
+                    :placeholder="t('projects.editor.storyboard.segDialog.ambience')" class="cinematic-input" />
+                  <el-input v-model="editingSeg.audioDetails.sfx"
+                    :placeholder="t('projects.editor.storyboard.segDialog.sfx')" class="cinematic-input" />
+                  <el-input v-model="editingSeg.audioDetails.music"
+                    :placeholder="t('projects.editor.storyboard.segDialog.music')" class="cinematic-input" />
                 </div>
 
                 <div v-if="editingSeg.detailedDialogue?.length" class="space-y-4 pt-4 border-t border-white/5">
-                   <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.segDialog.detailedDialogue') }}</label>
-                   <div v-for="(d, dIdx) in editingSeg.detailedDialogue" :key="dIdx" class="p-3 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                      <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-bold text-brand-primary">{{ d.characterName }} ({{ d.characterId }})</span>
-                        <el-input v-model="d.language" size="small" class="!w-24 text-[9px]" :placeholder="t('projects.editor.storyboard.segDialog.lang')" />
-                      </div>
-                      <el-input v-model="d.line" type="textarea" :rows="2" class="cinematic-input" />
-                      <div class="grid grid-cols-2 gap-2">
-                        <el-input v-model="d.delivery" :placeholder="t('projects.editor.storyboard.segDialog.delivery')" class="cinematic-input" />
-                        <el-input v-model="d.style" :placeholder="t('projects.editor.storyboard.segDialog.style')" class="cinematic-input" />
-                        <el-input v-model="d.timing" :placeholder="t('projects.editor.storyboard.segDialog.timing')" class="cinematic-input col-span-2" />
-                      </div>
-                   </div>
+                  <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block mb-2">{{
+                    t('projects.editor.storyboard.segDialog.detailedDialogue') }}</label>
+                  <div v-for="(d, dIdx) in editingSeg.detailedDialogue" :key="dIdx"
+                    class="p-3 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                    <div class="flex justify-between items-center">
+                      <span class="text-[10px] font-bold text-brand-primary">{{ d.characterName }} ({{ d.characterId
+                        }})</span>
+                      <el-input v-model="d.language" size="small" class="!w-24 text-[9px]"
+                        :placeholder="t('projects.editor.storyboard.segDialog.lang')" />
+                    </div>
+                    <el-input v-model="d.line" type="textarea" :rows="2" class="cinematic-input" />
+                    <div class="grid grid-cols-2 gap-2">
+                      <el-input v-model="d.delivery" :placeholder="t('projects.editor.storyboard.segDialog.delivery')"
+                        class="cinematic-input" />
+                      <el-input v-model="d.style" :placeholder="t('projects.editor.storyboard.segDialog.style')"
+                        class="cinematic-input" />
+                      <el-input v-model="d.timing" :placeholder="t('projects.editor.storyboard.segDialog.timing')"
+                        class="cinematic-input col-span-2" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </el-tab-pane>
@@ -547,42 +567,32 @@
               <div class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar">
                 <div class="form-group">
                   <div class="flex items-center justify-between mb-2">
-                    <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block">{{ t('projects.editor.storyboard.segDialog.imagePrompt') }}</label>
-                    <button 
+                    <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block">{{
+                      t('projects.editor.storyboard.segDialog.imagePrompt') }}</label>
+                    <button
                       class="flex items-center gap-1 text-[10px] text-white/40 hover:text-brand-primary transition-colors"
-                      @click="copyToClipboard(computedImagePrompt)"
-                    >
-                      <copy theme="outline" size="12"/>
+                      @click="copyToClipboard(computedImagePrompt)">
+                      <copy theme="outline" size="12" />
                       {{ t('common.copy') }}
                     </button>
                   </div>
-                  <el-input 
-                    :model-value="computedImagePrompt" 
-                    type="textarea" 
-                    :rows="4" 
-                    readonly 
-                    class="cinematic-input readonly-input" 
-                  />
+                  <el-input :model-value="computedImagePrompt" type="textarea" :rows="4" readonly
+                    class="cinematic-input readonly-input" />
                 </div>
 
                 <div class="form-group">
                   <div class="flex items-center justify-between mb-2">
-                    <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block">{{ t('projects.editor.storyboard.segDialog.videoPrompt') }}</label>
-                    <button 
+                    <label class="text-[10px] uppercase text-brand-primary font-bold tracking-widest block">{{
+                      t('projects.editor.storyboard.segDialog.videoPrompt') }}</label>
+                    <button
                       class="flex items-center gap-1 text-[10px] text-white/40 hover:text-brand-primary transition-colors"
-                      @click="copyToClipboard(computedVideoPrompt)"
-                    >
-                      <copy theme="outline" size="12"/>
+                      @click="copyToClipboard(computedVideoPrompt)">
+                      <copy theme="outline" size="12" />
                       {{ t('common.copy') }}
                     </button>
                   </div>
-                  <el-input 
-                    :model-value="computedVideoPrompt" 
-                    type="textarea" 
-                    :rows="12" 
-                    readonly 
-                    class="cinematic-input readonly-input" 
-                  />
+                  <el-input :model-value="computedVideoPrompt" type="textarea" :rows="12" readonly
+                    class="cinematic-input readonly-input" />
                 </div>
               </div>
             </el-tab-pane>
@@ -591,8 +601,12 @@
       </div>
       <template #footer>
         <div class="flex justify-end gap-3 px-2 py-4 mt-4">
-          <el-button @click="segDialogVisible = false" class="!bg-white/5 !border-none !text-white/60 hover:!bg-white/10 !rounded-xl">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" @click="saveSegDetail" class="!bg-brand-primary !text-black !border-none !rounded-xl font-bold px-8">{{ t('common.save') }}</el-button>
+          <el-button @click="segDialogVisible = false"
+            class="!bg-white/5 !border-none !text-white/60 hover:!bg-white/10 !rounded-xl">{{ t('common.cancel')
+            }}</el-button>
+          <el-button type="primary" @click="saveSegDetail"
+            class="!bg-brand-primary !text-black !border-none !rounded-xl font-bold px-8">{{ t('common.save')
+            }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -601,14 +615,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { 
-  Refresh, 
-  Pic, 
-  Peoples, 
-  Movie, 
-  Play, 
-  VideoTwo, 
-  Copy, 
+import {
+  Refresh,
+  Pic,
+  Peoples,
+  Movie,
+  Play,
+  VideoTwo,
+  Copy,
   Upload
 } from '@icon-park/vue-next'
 import { useProjectStore } from '@/stores/project'
@@ -759,8 +773,8 @@ const playVoiceSample = (voiceId: string) => {
   if (voice && voice.preview) {
     const audio = new Audio(voice.preview)
     audio.play().catch(e => {
-        toast.error(t('common.failed'))
-        console.error(e)
+      toast.error(t('common.failed'))
+      console.error(e)
     })
   } else {
     toast.error(t('common.failed'))
@@ -783,7 +797,7 @@ const openSegDialog = (seg: any, index: number) => {
   if (!editingSeg.value.cameraDetails) editingSeg.value.cameraDetails = { framing: '', angle: '', movement: '', focus: '' }
   if (!editingSeg.value.audioDetails) editingSeg.value.audioDetails = { ambience: '', sfx: '', music: '' }
   if (!editingSeg.value.detailedDialogue) editingSeg.value.detailedDialogue = []
-  
+
   activeSegTab.value = 'general'
   segDialogVisible.value = true
 }
@@ -851,12 +865,33 @@ const computedVideoPrompt = computed(() => {
   background-color: transparent;
 }
 
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
 
-.animate-in { animation-duration: 0.3s; animation-fill-mode: both; }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-.fade-in { animation-name: fade-in; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.animate-in {
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation-name: fade-in;
+}
 
 .image-slot-error {
   display: flex;
@@ -874,14 +909,17 @@ const computedVideoPrompt = computed(() => {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
 }
+
 :deep(.cinematic-dialog .el-dialog__header) {
   padding: 20px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 :deep(.cinematic-dialog .el-dialog__title) {
   color: white;
   font-weight: 800;
 }
+
 :deep(.cinematic-dialog .el-dialog__body) {
   padding: 24px;
 }
@@ -895,6 +933,7 @@ const computedVideoPrompt = computed(() => {
   padding: 8px 12px;
   color: white !important;
 }
+
 :deep(.cinematic-input .el-input__wrapper.is-focus),
 :deep(.cinematic-input .el-textarea__inner:focus) {
   border-color: #00f2ff !important;
@@ -906,9 +945,11 @@ const computedVideoPrompt = computed(() => {
   font-size: 12px;
   text-transform: uppercase;
 }
+
 :deep(.cinematic-tabs .el-tabs__item.is-active) {
   color: #00f2ff;
 }
+
 :deep(.cinematic-tabs .el-tabs__active-bar) {
   background-color: #00f2ff;
 }

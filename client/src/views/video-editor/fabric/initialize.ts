@@ -452,3 +452,109 @@ fabric.Image.filters.HardLightBlend = fabric.util.createClass(fabric.Image.filte
 
 // Important: Fix for the fromObject error
 (fabric.Image.filters.HardLightBlend as any).fromObject = (fabric.Image.filters.BaseFilter as any).fromObject;
+
+// Film Grain Filter
+(fabric.Image.filters as any).FilmGrain = fabric.util.createClass(fabric.Image.filters.BaseFilter, {
+  type: 'FilmGrain',
+  fragmentSource: `
+    precision highp float;
+    uniform sampler2D uTexture;
+    varying vec2 vTexCoord;
+    uniform float uIntensity;
+    uniform float uTime;
+
+    float noise(vec2 co) {
+        return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+    }
+
+    void main() {
+      vec4 color = texture2D(uTexture, vTexCoord);
+      float n = noise(vTexCoord + uTime);
+      color.rgb += (n - 0.5) * uIntensity;
+      gl_FragColor = color;
+    }
+  `,
+  initialize: function (options) {
+    options = options || {};
+    this.uIntensity = options.uIntensity || 0.1;
+    this.uTime = options.uTime || 0.0;
+  },
+  sendUniformData: function (gl, uniformLocations) {
+    gl.uniform1f(uniformLocations.uIntensity, this.uIntensity);
+    gl.uniform1f(uniformLocations.uTime, this.uTime);
+  },
+  toObject: function () {
+    return fabric.util.object.extend(this.callSuper('toObject'), {
+      uIntensity: this.uIntensity,
+      uTime: this.uTime
+    });
+  }
+});
+(fabric.Image.filters as any).FilmGrain.fromObject = (fabric.Image.filters.BaseFilter as any).fromObject;
+
+// Vignette Filter
+(fabric.Image.filters as any).Vignette = fabric.util.createClass(fabric.Image.filters.BaseFilter, {
+  type: 'Vignette',
+  fragmentSource: `
+    precision highp float;
+    uniform sampler2D uTexture;
+    varying vec2 vTexCoord;
+    uniform float uIntensity;
+    uniform float uSize;
+
+    void main() {
+      vec4 color = texture2D(uTexture, vTexCoord);
+      float dist = distance(vTexCoord, vec2(0.5, 0.5));
+      color.rgb *= smoothstep(0.8, 0.8 - (uSize * 0.5), dist * (uIntensity + 0.5));
+      gl_FragColor = color;
+    }
+  `,
+  initialize: function (options) {
+    options = options || {};
+    this.uIntensity = options.uIntensity || 0.5;
+    this.uSize = options.uSize || 0.5;
+  },
+  sendUniformData: function (gl, uniformLocations) {
+    gl.uniform1f(uniformLocations.uIntensity, this.uIntensity);
+    gl.uniform1f(uniformLocations.uSize, this.uSize);
+  },
+  toObject: function () {
+    return fabric.util.object.extend(this.callSuper('toObject'), {
+      uIntensity: this.uIntensity,
+      uSize: this.uSize
+    });
+  }
+});
+(fabric.Image.filters as any).Vignette.fromObject = (fabric.Image.filters.BaseFilter as any).fromObject;
+
+// Chromatic Aberration Filter
+(fabric.Image.filters as any).ChromaticAberration = fabric.util.createClass(fabric.Image.filters.BaseFilter, {
+  type: 'ChromaticAberration',
+  fragmentSource: `
+    precision highp float;
+    uniform sampler2D uTexture;
+    varying vec2 vTexCoord;
+    uniform float uIntensity;
+
+    void main() {
+      float offset = uIntensity * 0.01;
+      vec4 r = texture2D(uTexture, vec2(vTexCoord.x + offset, vTexCoord.y));
+      vec4 g = texture2D(uTexture, vTexCoord);
+      vec4 b = texture2D(uTexture, vec2(vTexCoord.x - offset, vTexCoord.y));
+      gl_FragColor = vec4(r.r, g.g, b.b, g.a);
+    }
+  `,
+  initialize: function (options) {
+    options = options || {};
+    this.uIntensity = options.uIntensity || 0.5;
+  },
+  sendUniformData: function (gl, uniformLocations) {
+    gl.uniform1f(uniformLocations.uIntensity, this.uIntensity);
+  },
+  toObject: function () {
+    return fabric.util.object.extend(this.callSuper('toObject'), {
+      uIntensity: this.uIntensity
+    });
+  }
+});
+(fabric.Image.filters as any).ChromaticAberration.fromObject = (fabric.Image.filters.BaseFilter as any).fromObject;

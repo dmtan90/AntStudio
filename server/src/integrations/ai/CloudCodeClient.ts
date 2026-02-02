@@ -42,7 +42,7 @@ export class CloudCodeClient {
     /**
      * Generate content (Text generation via Agent Gateway)
      */
-    public async generateContent(prompt: string, modelId: string = 'gemini-2.0-flash') {
+    public async generateContent(prompt: string, modelId: string = 'gemini-2.0-flash', options: any = {}) {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         const headers = await this.getHeaders();
 
@@ -67,6 +67,9 @@ export class CloudCodeClient {
                 }
             },
             model: modelId,
+            systemInstruction: options.systemPrompt ? {
+                parts: [{ text: options.systemPrompt }]
+            } : undefined,
             userAgent: 'antigravity',
             requestType: 'agent'
         };

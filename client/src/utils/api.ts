@@ -8,7 +8,14 @@ const api = axios.create({
 // Request interceptor: attach auth token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('auth-token')
+        let token = localStorage.getItem('auth-token')
+
+        // Feature: Automatically use token from URL if on Live Studio (Guest support)
+        if (!token && window.location.pathname === '/live/studio') {
+            const params = new URLSearchParams(window.location.search)
+            token = params.get('token')
+        }
+
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
@@ -43,7 +50,9 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Only clear auth if we're not already on the login page
-            if (window.location.pathname !== '/login') {
+            // Feature: Ignore 401 redirect if on Live Studio (Guest Access support)
+            const isStudioPage = window.location.pathname === '/live/studio'
+            if (window.location.pathname !== '/login' && !isStudioPage) {
                 localStorage.removeItem('auth-token')
                 window.location.href = '/login'
             }

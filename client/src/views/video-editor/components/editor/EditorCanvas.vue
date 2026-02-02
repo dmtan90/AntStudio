@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useEditorStore } from 'video-editor/store/editor';
 import EditorActivityIndicator from './EditorActivityIndicator.vue';
+import Ruler from './Ruler.vue';
 import { cn } from '@/utils/ui';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { fabric } from 'fabric';
@@ -21,6 +22,7 @@ const { page, pages } = storeToRefs(editor);
 const container = ref(null);
 const canvas = ref(null);
 const selected = ref(false);
+
 onMounted(() => {
   console.log("onMounted", props.id);
   canvas.value = editor.getPageById(props.id);
@@ -75,5 +77,23 @@ onUnmounted(() => {
   <div ref="container" :class="cn('absolute', selected ? 'opacity-100 z-10' : 'opacity-0 z-0')">
     <canvas ref="refCanvas" />
     <EditorActivityIndicator :pending="pending" />
+
+    <!-- Rulers Overlay -->
+    <template v-if="selected && canvasStore.showRulers">
+      <!-- Corner Box -->
+      <div
+        class="absolute top-0 left-0 w-5 h-5 bg-[#18181b] border-r border-b border-white/10 z-20 pointer-events-auto">
+      </div>
+
+      <!-- Horizontal Ruler -->
+      <div class="absolute top-0 left-5 right-0 h-5 z-20 bg-[#18181b] border-b border-white/10">
+        <Ruler type="horizontal" />
+      </div>
+
+      <!-- Vertical Ruler -->
+      <div class="absolute top-5 left-0 bottom-0 w-5 z-20 bg-[#18181b] border-r border-white/10">
+        <Ruler type="vertical" />
+      </div>
+    </template>
   </div>
 </template>

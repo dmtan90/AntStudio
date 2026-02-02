@@ -7,6 +7,7 @@ import config from '../utils/config.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { AdminSettings } from '../models/AdminSettings.js';
 import { Template } from '../models/Template.js';
+import { StorageFactory } from '../services/storage/StorageFactory.js';
 
 // Define the file filter function to update the filename encoding
 const fileFilter = (req: AuthRequest, file: any, callback: any) => {
@@ -22,7 +23,7 @@ const upload = multer({
 }); // 2GB limit
 
 // All media routes require authentication
-router.use(authMiddleware);
+// router.use(authMiddleware);
 
 // Helper function to get media API settings
 async function getMediaSettings() {
@@ -36,7 +37,7 @@ async function getMediaSettings() {
 // ============================================================================
 
 // POST /api/media/upload - Upload file to S3
-router.post('/upload', upload.single('file'), async (req: AuthRequest, res) => {
+router.post('/upload', authMiddleware, upload.single('file'), async (req: AuthRequest, res) => {
     try {
         await connectDB();
 
@@ -79,7 +80,7 @@ router.post('/upload', upload.single('file'), async (req: AuthRequest, res) => {
 });
 
 // GET /api/media/list - List user's media files
-router.get('/list', async (req: AuthRequest, res) => {
+router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
 
@@ -125,7 +126,7 @@ router.get('/list', async (req: AuthRequest, res) => {
 });
 
 // DELETE /api/media/:id - Delete media file
-router.delete('/:id', async (req: AuthRequest, res) => {
+router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
 
@@ -147,6 +148,25 @@ router.delete('/:id', async (req: AuthRequest, res) => {
     } catch (error: any) {
         console.error('Delete media error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to delete media' });
+    }
+});
+
+// GET /api/media/cloud/list - List files from the active cloud storage provider
+router.get('/cloud/list', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const prefix = req.query.prefix as string;
+        const adapter = await StorageFactory.getActiveAdapter();
+        const files = await adapter.listFiles(prefix);
+
+        res.json({
+            success: true,
+            data: {
+                files
+            }
+        });
+    } catch (error: any) {
+        console.error('Cloud list error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to list cloud assets' });
     }
 });
 
@@ -251,7 +271,7 @@ enum GiphyType {
 }
 
 // GET /api/media/giphy/gifs
-router.get('/giphy/gifs', async (req: AuthRequest, res: Response) => {
+router.get('/giphy/gifs', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const mediaSettings = await getMediaSettings();
         const apiKey = mediaSettings?.giphy?.apiKey;
@@ -333,7 +353,7 @@ router.get('/giphy/gifs', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/media/giphy/stickers
-router.get('/giphy/stickers', async (req: AuthRequest, res: Response) => {
+router.get('/giphy/stickers', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const mediaSettings = await getMediaSettings();
         const apiKey = mediaSettings?.giphy?.apiKey;
@@ -414,7 +434,7 @@ router.get('/giphy/stickers', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/media/giphy/emoji
-router.get('/giphy/emoji', async (req: AuthRequest, res: Response) => {
+router.get('/giphy/emoji', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const mediaSettings = await getMediaSettings();
         const apiKey = mediaSettings?.giphy?.apiKey;
@@ -501,7 +521,7 @@ router.get('/giphy/emoji', async (req: AuthRequest, res: Response) => {
 const PEXELS_API_BASE_URL = 'https://api.pexels.com/v1';
 
 // GET /api/media/pexels/images
-router.get('/pexels/images', async (req: AuthRequest, res: Response) => {
+router.get('/pexels/images', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const mediaSettings = await getMediaSettings();
         const apiKey = mediaSettings?.pexels?.apiKey;
@@ -580,7 +600,7 @@ router.get('/pexels/images', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/media/pexels/videos
-router.get('/pexels/videos', async (req: AuthRequest, res: Response) => {
+router.get('/pexels/videos', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const mediaSettings = await getMediaSettings();
         const apiKey = mediaSettings?.pexels?.apiKey;
@@ -664,7 +684,7 @@ router.get('/pexels/videos', async (req: AuthRequest, res: Response) => {
 const UNSPLASH_API_BASE_URL = 'https://api.unsplash.com';
 
 // GET /api/media/unsplash/images
-router.get('/unsplash/images', async (req: AuthRequest, res: Response) => {
+router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const mediaSettings = await getMediaSettings();
         const apiKey = mediaSettings?.unsplash?.apiKey;

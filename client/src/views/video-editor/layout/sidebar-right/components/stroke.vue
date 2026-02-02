@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { PreviewOpen as Eye, PreviewCloseOne as EyeOff, ColorFilter as Pipette, Close as X, Aiming } from '@icon-park/vue-next';
-import { ElButton, ElColorPicker } from 'element-plus';
-import { toast } from 'vue-sonner';
-import { ChromePicker, ColorResult, tinycolor } from 'vue-color';
-
+import { PreviewOpen as Eye, PreviewCloseOne as EyeOff, Close as X } from '@icon-park/vue-next';
+import ColorPickerWithPresets from '@/components/ui/ColorPickerWithPresets.vue';
 import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
-import { cn, createInstance } from '@/utils/ui';
-import { darkHexCodes, lightHexCodes, pastelHexCodes } from 'video-editor/constants/editor';
+import { cn } from '@/utils/ui';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
@@ -78,59 +74,12 @@ const onOpenEyeDropper = async () => {
       
       <!-- Color Picker -->
       <div class="flex flex-col gap-6 mb-10">
-        <div class="rounded-2xl overflow-hidden border border-white/10 dark-picker-override shadow-2xl bg-black/20">
-            <ChromePicker v-model="color" @update:model-value="(color) => onChangeColor(tinycolor(color))" class="!w-full !shadow-none !bg-transparent" />
-        </div>
-        
-        <button v-if="eyeDropperStatus" class="flex items-center justify-center gap-2.5 h-10 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-brand-primary/20 hover:text-brand-primary active:scale-95 transition-all text-white/40 shadow-sm w-full group" @click="onOpenEyeDropper">
-            <Aiming :size="15" class="group-hover:scale-110 transition-transform" />
-            <span class="text-[10px] font-bold uppercase tracking-widest">Pick From Page</span>
-        </button>
+        <ColorPickerWithPresets
+          v-model="color"
+          @change="(val) => canvas.onChangeActiveObjectProperty('stroke', val)"
+        />
       </div>
       
-      <!-- Color Swatches -->
-      <div class="flex flex-col gap-10">
-          <!-- Light Colors -->
-          <div class="flex flex-col gap-5">
-            <h4 class="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Light Palette</h4>
-            <div class="grid grid-cols-8 gap-3">
-              <button
-                v-for="code in lightHexCodes"
-                :key="code"
-                @click="canvas.onChangeActiveObjectProperty('stroke', code)"
-                class="w-full aspect-square rounded-full border border-white/10 transition-all hover:scale-125 hover:shadow-lg hover:shadow-black/40 hover:z-10 focus:outline-none focus:ring-2 focus:ring-brand-primary/50"
-                :style="{ backgroundColor: code }"
-              />
-            </div>
-          </div>
-
-          <!-- Dark Colors -->
-          <div class="flex flex-col gap-5">
-            <h4 class="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Dark Palette</h4>
-            <div class="grid grid-cols-8 gap-3">
-              <button
-                v-for="code in darkHexCodes"
-                :key="code"
-                @click="canvas.onChangeActiveObjectProperty('stroke', code)"
-                class="w-full aspect-square rounded-full border border-white/10 transition-all hover:scale-125 hover:shadow-lg hover:shadow-black/40 hover:z-10 focus:outline-none focus:ring-2 focus:ring-brand-primary/50"
-                :style="{ backgroundColor: code }"
-              />
-            </div>
-          </div>
-
-          <!-- Pastel Colors -->
-          <div class="flex flex-col gap-5">
-            <h4 class="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Pastel Palette</h4>
-            <div class="grid grid-cols-8 gap-3">
-              <button
-                v-for="code in pastelHexCodes"
-                :key="code"
-                @click="canvas.onChangeActiveObjectProperty('stroke', code)"
-                class="w-full aspect-square rounded-full border border-white/10 transition-all hover:scale-125 hover:shadow-lg hover:shadow-black/40 hover:z-10 focus:outline-none focus:ring-2 focus:ring-brand-primary/50"
-                :style="{ backgroundColor: code }"
-              />
-            </div>
-          </div>
       </div>
 
        <!-- Bottom Fade -->

@@ -50,7 +50,7 @@ const isMuted = computed({
             <div
                 class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700">
             </div>
-            <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Audio</h2>
+            <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Audio Settings</h2>
             <div class="flex items-center gap-2 relative z-10">
                 <button @click="canvas.onChangeAudioProperties(selected, { visible: !selected.visible })"
                     :title="selected?.visible === false ? 'Show Layer' : 'Hide Layer'"
@@ -70,6 +70,9 @@ const isMuted = computed({
             :class="cn('flex-1 overflow-y-auto custom-scrollbar relative px-5 pt-6 pb-20 transition-all duration-500', disabled ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100 pointer-events-auto')">
 
             <div class="flex flex-col gap-8">
+                <!-- Effects Section -->
+                <AudioEffectsController />
+
                 <!-- Volume Section -->
                 <div class="flex flex-col gap-4 p-4 rounded-2xl bg-white/2 border border-white/5">
                     <div class="flex items-center justify-between">
@@ -85,7 +88,7 @@ const isMuted = computed({
                         <el-slider v-model="volume" :min="0" :max="200" :step="1" size="small"
                             class="flex-1 cinematic-slider" />
                         <span class="text-[10px] font-mono text-white/60 w-8 text-right">{{ Math.round(volume)
-                            }}%</span>
+                        }}%</span>
                     </div>
                 </div>
 

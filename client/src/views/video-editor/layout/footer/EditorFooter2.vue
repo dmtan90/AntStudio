@@ -78,12 +78,17 @@
                 <Music :size="14" />
                 <span>Audio</span>
             </div>
-            <div class="audio-waveform flex-1 h-10 bg-white/5 rounded-lg relative overflow-hidden">
-                <!-- Audio waveform visualization would go here -->
-                <div class="flex items-center gap-0.5 h-full px-2">
-                    <div v-for="i in 200" :key="i" class="w-0.5 bg-blue-400/40 rounded-full transition-all"
-                        :style="{ height: (20 + (i * 13) % 60) + '%' }">
+            <div class="audio-waveform flex-1 h-10 bg-white/5 rounded-lg relative overflow-hidden flex items-center">
+                <!-- Real Audio Waveform -->
+                <div v-if="audioWaveform.length > 0" class="flex items-center gap-[2px] h-full w-full px-2">
+                    <div v-for="(val, i) in audioWaveform" :key="i"
+                        class="w-1 bg-blue-500/60 rounded-full transition-all duration-300"
+                        :style="{ height: Math.max(10, val * 100) + '%', opacity: 0.5 + (val * 0.5) }">
                     </div>
+                </div>
+                <div v-else
+                    class="flex items-center justify-center w-full h-full text-white/20 text-[10px] uppercase font-bold tracking-widest">
+                    No Audio Track
                 </div>
             </div>
         </div>
@@ -108,6 +113,7 @@ import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
 import SceneCard from './components/SceneCard.vue';
 import { useTimelinePlayer } from '@/composables/useTimelinePlayer'; // Assume we might migrate to this eventually, but for now stick to store
+import { WaveformGenerator } from 'video-editor/utils/WaveformGenerator';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
@@ -118,6 +124,7 @@ const pxPerSec = ref(20); // Zoom level (pixels per second)
 const showTiming = ref(false); // Show timing toggle
 const timelineContainer = ref<HTMLElement | null>(null);
 const isScrubbing = ref(false);
+const audioWaveform = ref<number[]>([]);
 
 // Computed
 const pages = computed(() => editor.pages);
@@ -317,6 +324,31 @@ const onDrop = (e: DragEvent, targetIndex: number) => {
     }
 };
 
+// Audio Waveform Logic
+const updateWaveform = async () => {
+    // Check if there are any audios in the current canvas
+    const canvas = canvasStore.canvas;
+    if (!canvas || !canvas.audio || canvas.audio.elements.length === 0) {
+        audioWaveform.value = [];
+        return;
+    }
+
+    // Visualize the first audio element found
+    const audio = canvas.audio.elements[0];
+    if (audio && audio.buffer) {
+        // Generate 150 bars for visualization
+        audioWaveform.value = WaveformGenerator.generate(audio.buffer, 150);
+    } else if (audio && audio.url) {
+        audioWaveform.value = await WaveformGenerator.generateFromUrl(audio.url, 150);
+    }
+}
+
+watch(() => canvasStore.canvas?.audio?.elements, updateWaveform, { deep: true });
+watch(() => editor.page, updateWaveform);
+
+onMounted(() => {
+    updateWaveform();
+});
 </script>
 
 <style lang="scss" scoped>

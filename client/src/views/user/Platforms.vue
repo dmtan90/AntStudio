@@ -37,10 +37,6 @@
         <div class="card-header">
           <div class="user-avatar-group">
             <div class="avatar-ring">
-              <!-- <img v-if="account.avatarUrl" :src="getFileUrl(account.avatarUrl)" :alt="account.accountName" class="user-avatar" />
-              <div v-else class="avatar-placeholder">
-                <user-icon theme="outline" size="20" />
-              </div> -->
               <el-image :src="getFileUrl(account.avatarUrl)" :alt="account.accountName" class="user-avatar">
                 <template #error>
                   <div class="avatar-placeholder">
@@ -79,14 +75,21 @@
         </div>
 
         <div class="card-actions mt-8">
-          <router-link :to="{ name: 'platforms-cms', query: { accountId: account._id } }"
+          <router-link v-if="account.platform == 'custom-rtmp'"
+            :to="{ name: 'live-studio', query: { platformId: account._id } }"
+            class="action-btn primary-action bg-red-600 w-full">
+            <Broadcast theme="outline" size="16" />
+            <span>Go Live</span>
+          </router-link>
+          <router-link v-else :to="{ name: 'platforms-cms', query: { accountId: account._id } }"
             class="action-btn primary-action w-full">
             <video-file theme="outline" size="16" />
-            <span>Manage Content</span>
+            <span>Manage Channel</span>
           </router-link>
 
           <div class="utility-actions">
-            <button class="util-btn" @click="editAccount(account)" title="Settings">
+            <button v-if="account.platform == 'custom-rtmp' || account.platform == 'ant-media'" class="util-btn"
+              @click="editAccount(account)" title="Settings">
               <setting theme="outline" size="16" />
             </button>
             <button class="util-btn" @click="syncAccount(account)" title="Sync Status">
@@ -343,7 +346,7 @@ onMounted(() => {
 
 .platforms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 32px;
 }
 

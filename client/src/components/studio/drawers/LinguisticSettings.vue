@@ -30,6 +30,22 @@
                     </el-select>
                 </div>
             </div>
+
+            <div
+                class="mt-6 p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20">
+                <div class="flex justify-between items-center">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-black text-purple-400 uppercase tracking-tighter">Neural
+                            Dubbing</span>
+                        <span class="text-[8px] opacity-40 font-bold uppercase tracking-widest">Voice Clone Relay</span>
+                    </div>
+                    <el-switch v-model="dubbingActive" active-color="#a855f7" />
+                </div>
+                <div v-if="dubbingActive" class="mt-4 flex gap-1 items-center animate-pulse">
+                    <div v-for="i in 3" :key="i" class="w-1 h-2 bg-purple-500/40 rounded-full"></div>
+                    <span class="text-[8px] text-purple-400 font-black italic ml-1 uppercase">Cloning in Progress</span>
+                </div>
+            </div>
         </section>
 
         <!-- Real-time Transcript -->
@@ -66,6 +82,7 @@ const emit = defineEmits(['update:isTranslating', 'update:sourceLang', 'update:t
 const localIsTranslating = ref(props.isTranslating);
 const localSourceLang = ref(props.sourceLang);
 const localTargetLang = ref(props.targetLang);
+const dubbingActive = ref(false);
 
 watch(() => props.isTranslating, (val) => localIsTranslating.value = val);
 watch(() => props.sourceLang, (val) => localSourceLang.value = val);

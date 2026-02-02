@@ -1,84 +1,68 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import api from '@/utils/api.js'
-import { useTranslations } from '@/composables/useTranslations'
-import { toast } from 'vue-sonner'
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import api from '@/utils/api';
 
 export const useLicenseStore = defineStore('license', () => {
-    const { t } = useTranslations()
-    const licenses = ref<any[]>([])
-    const loading = ref(false)
+    const key = ref('');
+    const status = ref<'valid' | 'expired' | 'invalid' | 'none'>('none');
+    const tier = ref<'trial' | 'free' | 'pro' | 'enterprise'>('free');
+    const limits = ref({
+        maxUsers: 5,
+        maxProjects: 10
+    });
+    const endDate = ref<Date | null>(null);
 
-    // Helper
-    function handleError(error: any, defaultKey: string = 'common.failed') {
-        const message = error.response?.data?.error || error.message || t(defaultKey)
-        toast.error(t(message))
-        return message
-    }
+    const isValid = computed(() => status.value === 'valid');
+    const isPro = computed(() => tier.value === 'pro' || tier.value === 'enterprise');
+    const isEnterprise = computed(() => tier.value === 'enterprise');
 
-    async function fetchLicenses(purpose?: string) {
-        loading.value = true
+    async function fetchLicenseStatus() {
         try {
-            const response = await api.get('/license/all', {
-                params: { purpose }
-            })
-            licenses.value = response.data.licenses || []
-            return response.data
-        } catch (error) {
-            handleError(error)
-            throw error
-        } finally {
-            loading.value = false
-        }
-    }
-
-    async function deleteLicense(id: string) {
-        try {
-            await api.delete(`/license/${id}`)
-            licenses.value = licenses.value.filter(l => l._id !== id)
-            toast.success(t('license.deleteSuccess'))
-        } catch (error) {
-            handleError(error)
-            throw error
-        }
-    }
-
-    async function addLicense(license: any) {
-        try {
-            const response = await api.post('/license/generate', license)
-            const newLicense = response.data.license
-            if (newLicense) {
-                licenses.value.unshift(newLicense)
+            const res = await api.get('/admin/settings');
+            if (res.data.success && res.data.data.license) {
+                const lic = res.data.data.license;
+                key.value = lic.key;
+                status.value = lic.info?.status || 'none';
+                tier.value = lic.info?.type || 'free';
+                limits.value = {
+                    maxUsers: lic.info?.maxUsers || 5,
+                    maxProjects: lic.info?.maxProjects || 10
+                };
+                endDate.value = lic.info?.endDate ? new Date(lic.info.endDate) : null;
             }
-            toast.success(t('common.updateSuccess'))
-            return response.data
         } catch (error) {
-            handleError(error)
-            throw error
+            console.error('Failed to fetch license status', error);
         }
     }
 
-    async function updateLicense(id: string, data: any) {
-        try {
-            const response = await api.put(`/license/${id}`, data)
-            const index = licenses.value.findIndex(l => l._id === id)
-            if (index !== -1 && response.data.license) {
-                licenses.value[index] = response.data.license
-            }
-            toast.success(t('common.updateSuccess'))
-            return response.data
-        } catch (error) {
-            handleError(error)
-            throw error
-        }
+    function checkFeature(featureId: string): boolean {
+        // Example feature map
+        const featureTiers: Record<string, string> = {
+            'god-mode': 'pro',
+            'custom-branding': 'enterprise',
+            'unlimited-guests': 'enterprise',
+            'advanced-analytics': 'pro'
+        };
+
+        const requiredTier = featureTiers[featureId];
+        if (!requiredTier) return true; // Public feature
+
+        if (!isValid.value) return false;
+
+        const tiers = ['free', 'trial', 'pro', 'enterprise'];
+        return tiers.indexOf(tier.value) >= tiers.indexOf(requiredTier);
     }
 
     return {
-        licenses,
-        loading,
-        fetchLicenses,
-        deleteLicense,
-        addLicense,
-        updateLicense
-    }
-})
+        key,
+        status,
+        tier,
+        limits,
+        endDate,
+        isValid,
+        isPro,
+        isEnterprise,
+        fetchLicenseStatus,
+        checkFeature
+    };
+});

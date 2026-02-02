@@ -1,319 +1,233 @@
 <template>
     <div class="recorder-page">
-        <!-- Close Button -->
-        <button class="btn-close" @click="$router.push('/dashboard')">
-            <close theme="outline" size="20" />
-        </button>
-
-        <!-- Tab Navigation -->
-        <div class="recorder-tabs">
-            <button v-for="tab in tabs" :key="tab.value" class="tab-btn" :class="{ active: mode === tab.value }"
-                @click="switchMode(tab.value as RecordingMode)">
-                <component :is="tab.icon" theme="filled" size="20" />
-                <span>{{ tab.label }}</span>
-            </button>
-        </div>
+        <!-- Main Header -->
+        <RecorderHeader :mode="mode" :tabs="tabs" @switch-mode="switchMode" />
 
         <!-- Preview Area -->
-        <div class="preview-container">
-            <!-- Video Preview -->
-            <video v-show="mode !== 'audio'" ref="previewVideo" autoplay muted playsinline class="preview-video"
-                :class="{ blurred: blurEffect !== 'none', 'asl-frame': enableASLAssist }"></video>
-
-            <!-- ASL Assist Overlay -->
-            <div v-if="enableASLAssist && mode !== 'audio'" class="asl-assist-overlay absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div class="asl-target-frame w-[80%] h-[80%] border-2 border-dashed border-blue-500/50 rounded-[3rem] flex items-center justify-center">
-                    <p class="text-[10px] font-black text-blue-400 bg-black/60 px-4 py-2 rounded-full uppercase tracking-widest">{{ t('recorder.overlay.aslZone') }}</p>
+        <RecorderPreview v-model:processing-canvas="processingCanvas" v-model:display-canvas="displayCanvas"
+            :mode="mode" :show-mini-preview="showMiniPreview" :mini-pos="miniPos" :is-dragging="isDragging"
+            @start-drag="startDrag" @mousedown="handleCanvasMouseDown" @mousemove="handleCanvasMouseMove" @mouseup="handleCanvasMouseUp"
+            :is-recording="isRecording" :recording-time="recordingTime" :max-duration="maxDuration"
+            :mic-enabled="micEnabled" :enable-asl-assist="enableAslAssist" :is-streaming="isStreaming"
+            :stream-stats="streamStats" :active-captions="activeCaptions" :current-caption="currentCaption"
+            :translated-caption="translatedCaption" :audio-levels="audioLevels" :current-db="currentDb" />
+        
+        <!-- Teleprompter Overlay -->
+        <Transition name="fade">
+            <div v-if="isTeleprompterActive" class="teleprompter-overlay fixed top-32 left-1/2 -translate-x-1/2 w-[600px] h-[240px] z-[180] rounded-3xl overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl pointer-events-none">
+                <div class="teleprompter-content p-8 pt-20" :style="{ transform: `translateY(-${teleprompterScrollPos}px)` }">
+                    <p :style="{ fontSize: teleprompterFontSize + 'px', lineHeight: 1.5 }" class="text-white font-bold text-center drop-shadow-lg">
+                        {{ teleprompterScript }}
+                    </p>
+                </div>
+                <!-- Reading Line Indicator -->
+                <div class="absolute top-[60px] left-0 right-0 h-px bg-orange-500/50 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
+                <div class="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/80 to-transparent pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+            </div>
+        </Transition>
+        
+        <!-- Recording Countdown Overlay -->
+        <Transition name="fade">
+            <div v-if="isCountdownActive" class="countdown-overlay fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
+                <div class="flex flex-col items-center">
+                    <div class="countdown-circle relative flex items-center justify-center">
+                        <svg class="absolute w-64 h-64 -rotate-90">
+                            <circle cx="128" cy="128" r="120" stroke="rgba(249, 115, 22, 0.2)" stroke-width="8" fill="transparent" />
+                            <circle cx="128" cy="128" r="120" stroke="#f97316" stroke-width="8" fill="transparent"
+                                :stroke-dasharray="753.98" :stroke-dashoffset="753.98 * (1 - countdownValue/3)"
+                                class="transition-all duration-1000 ease-linear" />
+                        </svg>
+                        <Transition name="scale" mode="out-in">
+                            <span :key="countdownValue" class="text-[120px] font-black text-white italic drop-shadow-[0_0_30px_rgba(249,115,22,0.5)]">
+                                {{ countdownValue }}
+                            </span>
+                        </Transition>
+                    </div>
+                    <span class="text-orange-400 font-bold uppercase tracking-[0.3em] mt-8 animate-pulse text-xl">Get Ready!</span>
                 </div>
             </div>
+        </Transition>
 
-            <!-- DB Meter (Visual Audio Cues) -->
-            <div v-if="micEnabled" class="db-meter absolute left-8 top-1/2 -translate-y-1/2 flex flex-col gap-1 items-center">
-                <div v-for="i in 15" :key="i" 
-                    class="w-1.5 h-4 rounded-full transition-all duration-75"
-                    :style="{ 
-                        backgroundColor: i > 12 ? '#ef4444' : (i > 8 ? '#f59e0b' : '#3b82f6'),
-                        opacity: (16 - i) <= (currentDB * 15) ? 1 : 0.1,
-                        boxShadow: (16 - i) <= (currentDB * 15) ? '0 0 10px currentColor' : 'none'
-                    }">
-                </div>
-                <span class="text-[8px] font-black text-white/40 mt-2 rotate-90">{{ t('recorder.overlay.audioLevel') }}</span>
+        <!-- Draggable Mini Preview (Webcam) -->
+        <div v-if="mode === 'screen' && !isScreenShareEnded && !showFinishDialog" 
+            class="mini-preview-container fixed z-[150] w-[280px] aspect-video rounded-3xl overflow-hidden border-2 border-orange-500/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all"
+            :style="{ left: miniPos.x + 'px', top: miniPos.y + 'px', transform: isDragging ? 'scale(1.02)' : 'scale(1)' }"
+            @mousedown="startDrag">
+            <div class="absolute top-3 left-3 z-10 px-2 py-0.5 rounded-full bg-black/40 border border-white/10 backdrop-blur-md flex items-center gap-1.5 pointer-events-none">
+                <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
+                <span class="text-[8px] font-bold text-white uppercase tracking-wider">Live Cam</span>
             </div>
-
-            <!-- Audio Visualizer -->
-            <div v-if="mode === 'audio'" class="audio-visualizer">
-                <div class="audio-bars">
-                    <div v-for="i in 50" :key="i" class="bar" :style="{ height: audioLevels[i - 1] || '20%' }"></div>
-                </div>
-            </div>
-
-            <!-- Timer -->
-            <div v-if="isRecording" class="recording-timer">
-                {{ formatTime(recordingTime) }} / {{ formatTime(maxDuration) }}
-            </div>
-
-            <!-- Controls -->
-            <div class="controls-overlay">
-                <div class="control-bar">
-                    <button class="ctrl-btn" @click="showMoreOptions = !showMoreOptions">
-                        <more theme="outline" size="20" />
-                    </button>
-
-                    <button class="ctrl-btn" :class="{ active: micEnabled }" @click="toggleMic">
-                        <microphone v-if="micEnabled" theme="filled" size="20" />
-                        <voice v-else theme="outline" size="20" />
-                    </button>
-
-                    <button class="record-btn" :class="{ recording: isRecording }" @click="toggleRecording">
-                        <div class="inner-circle"></div>
-                    </button>
-
-                    <button class="ctrl-btn" @click="triggerFileUpload">
-                        <file-addition theme="outline" size="20" />
-                        <input type="file" ref="fileInput" style="display: none" accept="video/*,audio/*"
-                            @change="handleFileUpload" />
-                    </button>
-
-                     <button class="ctrl-btn" :class="{ active: enableASLAssist }" @click="enableASLAssist = !enableASLAssist">
-                        <hand-right theme="outline" size="20" />
-                     </button>
-
-                     <button class="ctrl-btn" :class="{ active: settingsOpen }" @click="settingsOpen = !settingsOpen">
-                        <effects theme="outline" size="20" />
-                     </button>
-
-                     <button class="ctrl-btn">
-                        <more-one theme="outline" size="20" />
-                     </button>
-                </div>
-            </div>
+            <video ref="miniCamVideo" :srcObject="webcamVideo" autoplay muted playsinline class="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] pointer-events-none" />
         </div>
 
-        <!-- Settings Panel -->
-        <transition name="slide-up">
-            <div v-if="settingsOpen" class="settings-panel">
-                <button class="btn-close-panel" @click="settingsOpen = false">
-                    <close theme="outline" size="16" />
-                </button>
-                <div class="settings-header">{{ t('recorder.settings.blur') }}</div>
-                <div class="blur-options">
-                    <button class="blur-btn" :class="{ active: blurEffect === 'background' }"
-                        @click="toggleBlur('background')">
-                        <user theme="outline" size="24" />
-                    </button>
-                    <button class="blur-btn" :class="{ active: blurEffect === 'full' }" @click="toggleBlur('full')">
-                        <handle-round theme="outline" size="24" />
-                    </button>
-                </div>
-            </div>
-        </transition>
+        <!-- Bottom Controls -->
+        <RecorderControls :mode="mode" :is-recording="isRecording" :mic-enabled="micEnabled"
+            :enable-beauty="enableBeauty" :is-streaming="isStreaming" :active-sidebar="activeSidebar"
+            :is-screen-share-ended="isScreenShareEnded" :is-annotation-active="isAnnotationActive"
+            :layout-preset="layoutPreset" :is-teleprompter-active="isTeleprompterActive"
+            @toggle-sidebar="toggleSidebar" @toggle-mic="toggleMic"
+            @toggle-ai="toggleAI" @toggle-recording="toggleRecording" @toggle-live="toggleLiveStream"
+            @trigger-upload="triggerFileUpload" @initialize-stream="initializeStream"
+            @update:is-annotation-active="v => isAnnotationActive = v" />
+
+        <!-- Side Panel -->
+        <RecorderSidePanel v-if="activeSidebar" :mode="mode" :active-sidebar="activeSidebar"
+            :video-filters="videoFilters" :applied-filter="appliedFilter" :cam-settings="camSettings"
+            :enable-asl-assist="enableAslAssist" :asl-mode="aslMode" :enable-beauty="enableBeauty"
+            :beauty-settings="beautySettings" :active-captions="activeCaptions" :target-language="targetLanguage"
+            :resource-pool="resourcePool" :active-overlays="activeOverlays" :stream-config="streamConfig"
+            :autopilot-data="autopilotData" :is-recording="isRecording" :current-slide-index="currentSlideIndex"
+            :podcast-settings="podcastSettings" :avatar-presets="avatarPresets"
+            :selected-avatar="selectedAvatar" :selected-voice="selectedVoice"
+            :video-devices="videoDevices" :audio-devices="audioDevices"
+            :selected-camera-id="selectedCameraId" :selected-mic-id="selectedMicId"
+            :mic-volume="micVolume"
+            @close="activeSidebar = null" @update:applied-filter="v => appliedFilter = v"
+            @update:enable-asl-assist="v => enableAslAssist = v" @update:asl-mode="v => aslMode = v"
+            @update:beauty-settings="v => beautySettings = v"
+            @toggle-ai-filter="toggleAIFilter" @toggle-captions="toggleCaptions" @update:target-language="v => targetLanguage = v"
+            @trigger-presentation-upload="triggerPresentationUpload" @trigger-resource-upload="triggerResourceUpload"
+            @toggle-overlay="toggleOverlay" @update:current-slide-index="v => currentSlideIndex = v"
+            @update:selected-avatar="v => selectedAvatar = v" @update:selected-voice="v => selectedVoice = v"
+            @update:selected-mic-id="v => { if (isRecording) { toast.error('Cannot change mic while recording'); return; }; selectedMicId = v; initializeStream() }"
+            @update:mic-volume="v => micVolume = v"
+            @start-autopilot="startAutopilotSession" @update:podcast-settings="v => podcastSettings = { ...podcastSettings, ...v }"
+            @update:audio-advanced="v => podcastSettings = { ...podcastSettings, ...v }"
+            @update:cam-settings="v => camSettings = { ...camSettings, ...v }"
+            :layout-preset="layoutPreset" :is-teleprompter-active="isTeleprompterActive"
+            :is-teleprompter-scrolling="isTeleprompterScrolling" :teleprompter-script="teleprompterScript"
+            :teleprompter-speed="teleprompterSpeed" :teleprompter-font-size="teleprompterFontSize"
+            @update:layout-preset="v => layoutPreset = v"
+            @update:is-teleprompter-active="v => isTeleprompterActive = v"
+            @update:is-teleprompter-scrolling="v => isTeleprompterScrolling = v"
+            @update:teleprompter-script="v => teleprompterScript = v"
+            @update:teleprompter-speed="v => teleprompterSpeed = v"
+            @update:teleprompter-font-size="v => teleprompterFontSize = v"
+            @update:teleprompter-scroll-pos="v => teleprompterScrollPos = v"
+            :is-annotation-active="isAnnotationActive" :annotation-tool="annotationTool"
+            :annotation-color="annotationColor" :annotation-size="annotationSize"
+            @update:is-annotation-active="v => isAnnotationActive = v"
+            @update:annotation-tool="v => annotationTool = v"
+            @update:annotation-color="v => annotationColor = v"
+            @update:annotation-size="v => annotationSize = v"
+            @clear-annotations="clearAnnotations" />
+
+        <!-- Hidden Inputs -->
+        <input ref="fileInput" type="file" class="hidden" accept="image/*,video/*" @change="handleFileUpload" />
+        <input ref="presentationInput" type="file" class="hidden" accept=".pdf,.pptx"
+            @change="handlePresentationUpload" />
 
         <!-- Finish Dialog -->
-        <el-dialog v-model="showFinishDialog" :title="t('recorder.dialog.title')" width="400px" align-center>
-            <p>{{ t('recorder.dialog.desc') }}</p>
-            <template #footer>
-                <div class="dialog-footer">
-                    <button class="btn-secondary" @click="downloadRecording">
-                        {{ t('recorder.dialog.download') }}
+        <el-dialog v-model="showFinishDialog" title="Recording Finished" width="600px" center
+            class="finish-dialog glass-dialog">
+            <div class="flex flex-col gap-6 py-4">
+                <!-- Video Preview Player -->
+                <div v-if="recordedVideoUrl" class="aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-2xl">
+                    <video :src="recordedVideoUrl" controls class="w-full h-full object-contain" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <button class="action-btn primary" @click="saveToProject">
+                        <handle-round theme="outline" size="18" />
+                        <span>Save to Project</span>
                     </button>
-                    <button class="btn-primary" @click="saveToProject">
-                        {{ t('recorder.dialog.save') }}
+                    <button class="action-btn secondary" @click="downloadRecording">
+                        <file-addition theme="outline" size="18" />
+                        <span>Download .webm</span>
                     </button>
                 </div>
-            </template>
+                <button class="action-btn ghost" @click="showFinishDialog = false">
+                    <span>Discard Recording</span>
+                </button>
+            </div>
         </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import {
-    Camera, Monitor, Microphone, Voice,
-    Close, More, MoreOne, FileAddition, Effects, User, HandleRound, HandRight
-} from '@icon-park/vue-next'
-import { useProjectStore } from '@/stores/project'
-import { useTranslations } from '@/composables/useTranslations'
+import { onMounted, ref } from 'vue'
+import { ElDialog } from 'element-plus'
 import { toast } from 'vue-sonner'
+import { HandleRound, FileAddition } from '@icon-park/vue-next'
+import { useRecorder, videoFilters } from '@/composables/useRecorder'
 
-const router = useRouter()
-const projectStore = useProjectStore()
-const { t } = useTranslations()
+// Components
+import RecorderHeader from '@/components/recorder/RecorderHeader.vue'
+import RecorderPreview from '@/components/recorder/RecorderPreview.vue'
+import RecorderControls from '@/components/recorder/RecorderControls.vue'
+import RecorderSidePanel from '@/components/recorder/RecorderSidePanel.vue'
 
-type RecordingMode = 'camera' | 'camera-screen' | 'screen' | 'audio'
+const {
+    mode, isRecording, recordingTime, maxDuration, micEnabled, activeSidebar,
+    appliedFilter, showFinishDialog, enableAslAssist, aslMode, enableBeauty, beautySettings, currentDb,
+    isAiActive, processingCanvas, displayCanvas, activeCaptions, currentCaption,
+    translatedCaption, targetLanguage, isStreaming, streamConfig, streamStats,
+    fileInput, presentationInput, resourcePool, activeOverlays, autopilotData, currentSlideIndex,
+    audioLevels, isScreenShareEnded, tabs, camSettings, podcastSettings,
+    avatarPresets, selectedAvatar, selectedVoice,
+    videoDevices, audioDevices, selectedCameraId, selectedMicId, micVolume, recordedVideoUrl,
+    isCountdownActive, countdownValue, showMiniPreview, webcamVideo,
+    triggerResourceUpload, toggleOverlay, enumerateDevices,
+    layoutPreset, isTeleprompterActive, isTeleprompterScrolling, teleprompterScript, teleprompterSpeed, teleprompterFontSize, teleprompterScrollPos,
+    isAnnotationActive, annotationTool, annotationColor, annotationSize,
+    toggleAI, switchMode, initializeStream, toggleRecording, stopRecording, startRecording, startCountdown,
+    startDrawing, draw, stopDrawing, clearAnnotations,
+    handleFileUpload, handlePresentationUpload, startAutopilotSession, downloadRecording, saveToProject, toggleAIFilter, toggleCaptions, toggleLiveStream, toggleMic, triggerFileUpload, triggerPresentationUpload
+} = useRecorder()
 
-const tabs = computed(() => [
-    { value: 'camera', label: t('recorder.tabs.camera'), icon: Camera },
-    { value: 'camera-screen', label: t('recorder.tabs.cameraScreen'), icon: Monitor },
-    { value: 'screen', label: t('recorder.tabs.screen'), icon: Monitor },
-    { value: 'audio', label: t('recorder.tabs.audio'), icon: Voice }
-])
-
-const mode = ref<RecordingMode>('camera')
-const isRecording = ref(false)
-const recordingTime = ref(0)
-const maxDuration = ref(600)
-const micEnabled = ref(true)
-const settingsOpen = ref(false)
-const showMoreOptions = ref(false)
-const blurEffect = ref<'none' | 'background' | 'full'>('none')
-const showFinishDialog = ref(false)
-const enableASLAssist = ref(false)
-const currentDB = ref(0)
-
-const previewVideo = ref<HTMLVideoElement | null>(null)
-const fileInput = ref<HTMLInputElement | null>(null)
-const mediaRecorder = ref<any | null>(null)
-const recordedChunks = ref<Blob[]>([])
-const currentStream = ref<MediaStream | null>(null)
-const audioLevels = ref<string[]>(Array(50).fill('20%'))
-
-let timer: any = null
-let audioContext: AudioContext | null = null
-let analyser: AnalyserNode | null = null
-
-const switchMode = async (newMode: RecordingMode) => {
-    if (isRecording.value) {
-        toast.error(t('recorder.status.stopFirst'))
-        return
-    }
-    mode.value = newMode
-    await initializeStream()
+const toggleSidebar = (name: string) => {
+    activeSidebar.value = activeSidebar.value === name ? null : (name as any)
 }
 
-const initializeStream = async () => {
-    try {
-        if (currentStream.value) {
-            currentStream.value.getTracks().forEach(track => track.stop())
-        }
+// Draggability Logic
+const miniPos = ref({ x: window.innerWidth - 304, y: window.innerHeight - 280 })
+const isDragging = ref(false)
+let dragOffset = { x: 0, y: 0 }
 
-        let stream: MediaStream
-        if (mode.value === 'camera') {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 1280, height: 720 },
-                audio: micEnabled.value
-            })
-        } else if (mode.value === 'screen') {
-            stream = await (navigator.mediaDevices as any).getDisplayMedia({
-                video: true,
-                audio: micEnabled.value
-            })
-        } else if (mode.value === 'audio') {
-            stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            setupAudioVisualizer(stream)
-        } else {
-            // Camera-screen combo (Simplified)
-            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        }
-
-        currentStream.value = stream
-        if (previewVideo.value && mode.value !== 'audio') {
-            previewVideo.value.srcObject = stream
-        }
-    } catch (error: any) {
-        toast.error(t('recorder.status.accessError'))
-    }
+const startDrag = (e: MouseEvent) => {
+    isDragging.value = true
+    dragOffset.x = e.clientX - miniPos.value.x
+    dragOffset.y = e.clientY - miniPos.value.y
+    window.addEventListener('mousemove', onDrag)
+    window.addEventListener('mouseup', stopDrag)
 }
 
-const setupAudioVisualizer = (stream: MediaStream) => {
-    audioContext = new AudioContext()
-    analyser = audioContext.createAnalyser()
-    const source = audioContext.createMediaStreamSource(stream)
-    source.connect(analyser)
-    analyser.fftSize = 128
-    const dataArray = new Uint8Array(analyser.frequencyBinCount)
-
-    const updateVisualizer = () => {
-        if (!analyser) return
-        analyser.getByteFrequencyData(dataArray)
-        audioLevels.value = Array.from(dataArray).slice(0, 50).map(v => `${(v / 255) * 100}%`)
-        
-        // Calculate average for DB meter
-        const sum = dataArray.reduce((a, b) => a + b, 0)
-        currentDB.value = (sum / dataArray.length) / 255
-        
-        requestAnimationFrame(updateVisualizer)
-    }
-    updateVisualizer()
+const onDrag = (e: MouseEvent) => {
+    if (!isDragging.value) return
+    miniPos.value.x = e.clientX - dragOffset.x
+    miniPos.value.y = e.clientY - dragOffset.y
 }
 
-const toggleMic = () => {
-    micEnabled.value = !micEnabled.value
-    if (currentStream.value) {
-        currentStream.value.getAudioTracks().forEach(track => {
-            track.enabled = micEnabled.value
-        })
-    }
+const stopDrag = () => {
+    isDragging.value = false
+    window.removeEventListener('mousemove', onDrag)
+    window.removeEventListener('mouseup', stopDrag)
 }
 
-const toggleBlur = (type: 'background' | 'full') => { blurEffect.value = blurEffect.value === type ? 'none' : type }
-
-const toggleRecording = () => {
-    if (isRecording.value) stopRecording()
-    else startRecording()
+const handleCanvasMouseDown = (e: MouseEvent) => {
+    if (!isAnnotationActive.value) return
+    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect()
+    const scaleX = (e.target as HTMLCanvasElement).width / rect.width
+    const scaleY = (e.target as HTMLCanvasElement).height / rect.height
+    startDrawing((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY)
 }
 
-const startRecording = () => {
-    if (!currentStream.value) return
-    recordedChunks.value = []
-    mediaRecorder.value = new (window as any).MediaRecorder(currentStream.value)
-    mediaRecorder.value.ondataavailable = (e: any) => { if (e.data.size > 0) recordedChunks.value.push(e.data) }
-    mediaRecorder.value.onstop = () => { showFinishDialog.value = true }
-    mediaRecorder.value.start()
-    isRecording.value = true
-    recordingTime.value = 0
-    timer = setInterval(() => {
-        recordingTime.value++
-        if (recordingTime.value >= maxDuration.value) stopRecording()
-    }, 1000)
+const handleCanvasMouseMove = (e: MouseEvent) => {
+    if (!isAnnotationActive.value) return
+    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect()
+    const scaleX = (e.target as HTMLCanvasElement).width / rect.width
+    const scaleY = (e.target as HTMLCanvasElement).height / rect.height
+    draw((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY)
 }
 
-const stopRecording = () => {
-    if (mediaRecorder.value && isRecording.value) {
-        mediaRecorder.value.stop()
-        isRecording.value = false
-        clearInterval(timer)
-    }
+const handleCanvasMouseUp = () => {
+    stopDrawing()
 }
 
-const downloadRecording = () => {
-    const blob = new Blob(recordedChunks.value, { type: 'video/webm' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `rec-${Date.now()}.webm`
-    a.click()
-    showFinishDialog.value = false
-}
-
-const saveToProject = async () => {
-    const tid = toast.loading(t('recorder.status.syncing'))
-    try {
-        const res = await projectStore.createProject({
-            title: `${t('recorder.projectDefault')} ${new Date().toLocaleDateString()}`,
-            mode: 'recording'
-        })
-        toast.success(t('recorder.status.persistenceSuccess'), { id: tid })
-        showFinishDialog.value = false
-        router.push(`/projects/${res.project._id}/editor`)
-    } catch (e) {
-        toast.error(t('recorder.status.persistenceError'), { id: tid })
-    }
-}
-
-const triggerFileUpload = () => fileInput.value?.click()
-const handleFileUpload = (e: Event) => { toast.info(t('recorder.status.extractionSoon')) }
-const formatTime = (sec: number) => {
-    const m = Math.floor(sec / 60).toString().padStart(2, '0')
-    const s = (sec % 60).toString().padStart(2, '0')
-    return `${m}:${s}`
-}
-
-onMounted(initializeStream)
-onUnmounted(() => {
-    if (currentStream.value) currentStream.value.getTracks().forEach(t => t.stop())
-    if (audioContext) audioContext.close()
-    clearInterval(timer)
+onMounted(() => {
+    enumerateDevices()
+    initializeStream()
 })
 </script>
 
@@ -321,308 +235,81 @@ onUnmounted(() => {
 .recorder-page {
     width: 100vw;
     height: 100vh;
-    background: #000;
+    background: #001;
     display: flex;
     flex-direction: column;
     position: relative;
     overflow: hidden;
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
 }
 
-.btn-close {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    cursor: pointer;
-    z-index: 100;
+.action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
 
-    &:hover {
-        background: rgba(255, 255, 255, 0.1);
+    &.primary {
+        background: #f97316;
+        color: #fff;
+        border: none;
+        box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3);
+
+        &:hover {
+            transform: translateY(-2px);
+            background: #fb923c;
+            box-shadow: 0 15px 40px rgba(249, 115, 22, 0.4);
+        }
     }
-}
 
-.recorder-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 20px;
-    z-index: 10;
-
-    .tab-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 24px;
+    &.secondary {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        color: rgba(255, 255, 255, 0.6);
-        cursor: pointer;
-        transition: all 0.2s;
+        color: #fff;
+        backdrop-filter: blur(10px);
 
         &:hover {
             background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        &.active {
-            background: #2563eb;
-            border-color: #2563eb;
-            color: #fff;
+            border-color: rgba(249, 115, 22, 0.4);
         }
     }
-}
 
-.preview-container {
-    flex: 1;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #111;
-}
-
-.preview-video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-
-    &.blurred {
-        filter: blur(10px);
-    }
-}
-
-.audio-visualizer {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    .audio-bars {
-        display: flex;
-        align-items: flex-end;
-        gap: 4px;
-        height: 200px;
-
-        .bar {
-            width: 8px;
-            background: linear-gradient(to top, #3b82f6, #8b5cf6);
-            border-radius: 4px 4px 0 0;
-            transition: height 0.1s;
-        }
-    }
-}
-
-.recording-timer {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(239, 68, 68, 0.9);
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-family: monospace;
-    font-weight: 700;
-    font-size: 16px;
-    z-index: 10;
-}
-
-.controls-overlay {
-    position: absolute;
-    bottom: 40px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    z-index: 10;
-}
-
-.control-bar {
-    background: rgba(20, 20, 20, 0.9);
-    backdrop-filter: blur(20px);
-    padding: 12px 24px;
-    border-radius: 100px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-
-    .ctrl-btn {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
+    &.ghost {
         background: transparent;
         border: none;
-        color: rgba(255, 255, 255, 0.6);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 11px;
 
         &:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        &.active {
-            background: rgba(59, 130, 246, 0.2);
-            color: #3b82f6;
-        }
-    }
-
-    .record-btn {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        border: 4px solid rgba(255, 255, 255, 0.8);
-        background: transparent;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s;
-
-        .inner-circle {
-            width: 48px;
-            height: 48px;
-            background: #ef4444;
-            border-radius: 50%;
-            transition: all 0.3s;
-        }
-
-        &:hover {
-            transform: scale(1.05);
-        }
-
-        &.recording {
-            border-color: rgba(239, 68, 68, 0.5);
-
-            .inner-circle {
-                width: 24px;
-                height: 24px;
-                border-radius: 4px;
-            }
+            color: #ef4444;
         }
     }
 }
 
-.settings-panel {
-    position: absolute;
-    bottom: 140px;
-    right: 50%;
-    transform: translateX(50%);
-    background: rgba(20, 20, 20, 0.95);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 20px;
-    z-index: 20;
+// Transitions
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
-    .btn-close-panel {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: transparent;
-        border: none;
-        color: rgba(255, 255, 255, 0.6);
-        cursor: pointer;
+.scale-enter-active, .scale-leave-active { transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.scale-enter-from { transform: scale(0.5); opacity: 0; }
+.scale-leave-to { transform: scale(1.5); opacity: 0; }
 
-        &:hover {
-            color: #fff;
-        }
-    }
-
-    .settings-header {
-        font-size: 14px;
-        font-weight: 600;
-        color: #fff;
-        margin-bottom: 16px;
-    }
-
-    .blur-options {
-        display: flex;
-        gap: 12px;
-
-        .blur-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-
-            &:hover {
-                background: rgba(255, 255, 255, 0.1);
-                color: #fff;
-            }
-
-            &.active {
-                background: rgba(59, 130, 246, 0.2);
-                border-color: #3b82f6;
-                color: #3b82f6;
-            }
-        }
-    }
+.countdown-circle circle {
+    stroke-linecap: round;
 }
 
-.slide-up-enter-active,
-.slide-up-leave-active {
-    transition: all 0.3s;
-}
-
-.slide-up-enter-from,
-.slide-up-leave-to {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-}
-
-.dialog-footer {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-
-    button {
-        padding: 8px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s;
-    }
-
-    .btn-secondary {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #fff;
-
-        &:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-    }
-
-    .btn-primary {
-        background: #3b82f6;
-        border: none;
-        color: #fff;
-
-        &:hover {
-            background: #2563eb;
-        }
-    }
+.mini-preview-container {
+    cursor: grab;
+    &:active { cursor: grabbing; }
 }
 </style>

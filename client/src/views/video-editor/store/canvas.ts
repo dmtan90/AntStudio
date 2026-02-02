@@ -52,7 +52,9 @@ export const useCanvasStore = defineStore('canvas', {
     editor: null as EditorStoreInstance,
     selectionActive: ref<fabric.Object>(null),
     cropperActive: ref<fabric.Image>(null),
-    trimmerActive: ref<EditorTrim>(null)
+    trimmerActive: ref<EditorTrim>(null),
+    showRulers: ref(true),
+    showGrid: ref(false)
   }),
 
   getters: {
@@ -61,6 +63,9 @@ export const useCanvasStore = defineStore('canvas', {
     },
     instance(state): fabric.Canvas {
       return this.canvas?.instance;
+    },
+    grid(state) {
+      return this.canvas?.grid;
     },
     selection(state): CanvasSelection {
       return this.canvas?.selection;
@@ -120,11 +125,15 @@ export const useCanvasStore = defineStore('canvas', {
       this.editor = useEditorStore();
       const { page, pages } = storeToRefs<EditorStoreInstance>(this.editor);
 
-      // Watch for page changes (which changes the active canvas)
+      // Watch for page changes
       watch([page, pages], ([newPage, newPages]) => {
-        // console.log("Store change events - page:", newPage, "pages count:", newPages?.length);
         this.updateRefs();
       }, { deep: true, immediate: true });
+
+      // Sync Grid state
+      watch(() => this.showGrid, (val) => {
+        this.canvas?.grid?.toggle(val);
+      });
     },
     getSelectionActive() {
       return this.selection?.active;

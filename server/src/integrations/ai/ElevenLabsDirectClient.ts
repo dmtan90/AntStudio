@@ -208,6 +208,58 @@ export class ElevenLabsDirectClient {
     }
 
     /**
+     * Generate Music/Sound Effects using ElevenLabs via Resource Allocation (11labs.net)
+     */
+    async generateMusic(prompt: string, options: any = {}): Promise<any> {
+        try {
+            const licenseKey = this.credentials.serviceKeys?.get?.('voice') || this.credentials.licenseKey;
+
+            if (!licenseKey) {
+                throw new Error('Music license key missing for 11labs-direct');
+            }
+
+            // 1. Request resource allocation from 11labs.net
+            systemLogger.info(`[ElevenLabsDirectClient] Allocating ElevenLabs music resource for license ${licenseKey.substring(0, 8)}...`, 'ElevenLabsDirectClient');
+            const allocationResponse = await axios.post(`${this.directBaseUrl}/api/resource/initial_allocation`, {
+                license_key: licenseKey,
+                text_length: prompt.length,
+                service: 'sound-effects'
+            });
+
+            if (!allocationResponse.data.success || !allocationResponse.data.data?.api_key) {
+                throw new Error('Failed to allocate ElevenLabs music resource: ' + (allocationResponse.data.message || 'No API key allocated'));
+            }
+
+            const allocatedApiKey = allocationResponse.data.data.api_key;
+
+            // 2. Call official ElevenLabs Sound Effects API
+            const response = await axios.post(`https://api.elevenlabs.io/v1/sound-generation`, {
+                text: prompt,
+                duration_seconds: options.duration || 10,
+                prompt_influence: options.prompt_influence || 0.3
+            }, {
+                headers: {
+                    'xi-api-key': allocatedApiKey,
+                    'Content-Type': 'application/json'
+                },
+                responseType: 'arraybuffer'
+            });
+
+            return {
+                sounds: [
+                    {
+                        data: Buffer.from(response.data).toString('base64'),
+                        audioContainer: 'MP3'
+                    }
+                ]
+            };
+        } catch (error: any) {
+            systemLogger.error(`ElevenLabs Music Direct failed: ${error.message}`, 'ElevenLabsDirectClient');
+            throw error;
+        }
+    }
+
+    /**
      * Fallback or Legacy: Poll status of a video operation
      */
     async checkStatus(operationName: string) {

@@ -8,7 +8,11 @@ import { connectDB } from '../utils/db.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { capcutImporter } from '../services/CapCutImporter.js';
 import { canvaImporter } from '../services/CanvaImporter.js';
+import { pptxImporter } from '../services/PptxImporter.js';
+import multer from 'multer';
 import axios from 'axios';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
@@ -334,6 +338,34 @@ router.post('/import', authMiddleware, async (req: AuthRequest, res) => {
 
         res.json({ success: true, data: { template } });
     } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// POST /api/marketplace/import/pptx - Import from PPTX
+router.post('/import/pptx', authMiddleware, upload.single('file'), async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const file = req.file;
+        const userId = req.user!.userId;
+
+        if (!file) {
+            return res.status(400).json({ success: false, error: 'No file uploaded' });
+        }
+
+        const templateData = await pptxImporter.importPptx(file, userId);
+
+        const template = await Template.create({
+            ...templateData,
+            author: userId,
+            authorName: req.user!.email,
+            pricing: { type: 'free' },
+            is_published: false
+        });
+
+        res.json({ success: true, data: { template } });
+    } catch (e: any) {
+        console.error('PPTX Import error:', e);
         res.status(500).json({ success: false, error: e.message });
     }
 });

@@ -374,7 +374,7 @@ export class Editor {
       const scene = JSON.stringify(page.instance.toDatalessJSON(propertiesToInclude));
       const audios: Omit<EditorAudioElement, "buffer" | "source">[] = page.audio.elements.map(({ buffer, source, ...audio }) => audio);
       const data = { fill: page.workspace.fill, height: page.workspace.height, width: page.workspace.width, audios: audios, scene: scene };
-      templates.push({ thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration, transition: page.transition, transitionDuration: page.transitionDuration, transitionEasing: page.transitionEasing });
+      templates.push({ thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration, transition: page.transition, transitionDirection: page.transitionDirection, transitionDuration: page.transitionDuration, transitionEasing: page.transitionEasing });
     }
     return templates;
   }
@@ -388,7 +388,7 @@ export class Editor {
       const scene = JSON.stringify(page.instance.toDatalessJSON(propertiesToInclude));
       const audios: Omit<EditorAudioElement, "buffer" | "source">[] = page.audio.elements.map(({ buffer, source, ...audio }) => audio);
       const data = { fill: page.workspace.fill, height: page.workspace.height, width: page.workspace.width, audios: audios, scene: scene };
-      template = { thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration, transition: page.transition, transitionDuration: page.transitionDuration, transitionEasing: page.transitionEasing };
+      template = { thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration, transition: page.transition, transitionDirection: page.transitionDirection, transitionDuration: page.transitionDuration, transitionEasing: page.transitionEasing };
     }
     return template;
   }
@@ -405,6 +405,7 @@ export class Editor {
             const initialized = !!this.pages[index];
             if (!initialized) this.pages[index] = createInstance(Canvas, this);
             this.pages[index].transition = page.transition;
+            this.pages[index].transitionDirection = page.transitionDirection;
             this.pages[index].transitionDuration = page.transitionDuration;
             this.pages[index].transitionEasing = page.transitionEasing;
             this.pages[index].template.set(page);
@@ -421,6 +422,7 @@ export class Editor {
             const initialized = !!this.pages[offset];
             if (!initialized) this.pages[offset] = createInstance(Canvas, this);
             this.pages[offset].transition = page.transition;
+            this.pages[offset].transitionDirection = page.transitionDirection;
             this.pages[offset].transitionDuration = page.transitionDuration;
             this.pages[offset].transitionEasing = page.transitionEasing;
             this.pages[offset].template.set(page);

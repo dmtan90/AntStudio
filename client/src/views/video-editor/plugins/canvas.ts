@@ -22,6 +22,8 @@ import { CanvasWorkspace } from "video-editor/plugins/workspace";
 import { CanvasChart } from "video-editor/plugins/chart";
 import { CanvasText } from "video-editor/plugins/text";
 import { CanvasAnimations } from "video-editor/plugins/animations";
+import { CanvasAiOverlays } from "video-editor/plugins/ai-overlays";
+import { CanvasGrid } from "video-editor/plugins/grid";
 
 import type { EditorFont } from "video-editor/constants/fonts";
 import { activityIndicator, propertiesToInclude, textLayoutProperties, defaultColor, defaultBackgroundColor, defaultFill, defaultStroke } from "video-editor/fabric/constants";
@@ -49,6 +51,8 @@ export class Canvas {
   animations!: CanvasAnimations;
   workspace!: CanvasWorkspace;
   cloner!: CanvasClone;
+  aiOverlays!: CanvasAiOverlays;
+  grid!: CanvasGrid;
 
   replacer!: CanvasReplace;
   effects!: CanvasEffects;
@@ -66,7 +70,8 @@ export class Canvas {
   elements: fabric.Object[];
   anim!: AnimationTimeline;//default animation for elements
   public initialized: boolean;
-  public transition?: 'none' | 'fade' | 'wipe' | 'slide-left' | 'slide-right' | 'slide-up' | 'slide-down' | 'zoom-in' | 'zoom-out' | 'dip-to-black' | 'dip-to-white';
+  public transition?: 'none' | 'fade' | 'wipe' | 'slide' | 'zoom-in' | 'zoom-out' | 'dip-to-black' | 'dip-to-white' | 'blur' | 'glitch' | 'morph' | 'light-leak' | 'zoom-blur' | 'cube' | 'flip' | 'circle';
+  public transitionDirection?: 'left' | 'right' | 'up' | 'down';
   public transitionDuration?: number;
   public transitionEasing?: string;
 
@@ -190,6 +195,9 @@ export class Canvas {
     this.audio = createInstance(CanvasAudio, this);
     this.timeline = createInstance(CanvasTimeline, this);
     this.animations = createInstance(CanvasAnimations, this);
+    this.animations = createInstance(CanvasAnimations, this);
+    this.aiOverlays = createInstance(CanvasAiOverlays, this);
+    this.grid = createInstance(CanvasGrid, this);
     this.workspace = createInstance(CanvasWorkspace, this, workspace, this.editor.dimension);
 
     this._initEvents();

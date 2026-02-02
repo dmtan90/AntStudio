@@ -61,6 +61,7 @@
     "@types/node": "^20.0.0",
     "@types/three": "^0.182.0",
     "@types/tinycolor2": "^1.4.6",
+    "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "autoprefixer": "^10.4.20",

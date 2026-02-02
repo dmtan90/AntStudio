@@ -261,6 +261,15 @@ export interface IProject extends Document {
     advancedEditorState?: any
     scriptContent?: string
     metadata?: any
+    analytics?: {
+        viewCount: number
+        peakViewers?: number
+        shareCount: number
+        likeCount: number
+        dislikeCount: number
+        assemblyTime?: number // time in ms
+        lastViewedAt?: Date
+    }
     createdAt: Date
     updatedAt: Date
 }
@@ -444,7 +453,16 @@ const ProjectSchema = new Schema<IProject>(
         ],
         advancedEditorState: { type: Schema.Types.Mixed, default: null },
         scriptContent: String,
-        metadata: { type: Schema.Types.Mixed, default: {} }
+        metadata: { type: Schema.Types.Mixed, default: {} },
+        analytics: {
+            viewCount: { type: Number, default: 0 },
+            peakViewers: { type: Number, default: 0 },
+            shareCount: { type: Number, default: 0 },
+            likeCount: { type: Number, default: 0 },
+            dislikeCount: { type: Number, default: 0 },
+            assemblyTime: Number,
+            lastViewedAt: Date
+        }
     },
     {
         timestamps: true

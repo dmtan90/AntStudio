@@ -291,9 +291,68 @@ export class RmbgAI {
     }
   }
 
-  async removeVideoBackground(url: string, id: string): Promise<Blob | null> {
-    console.log("removeVideoBackground not implemented", url, id);
-    return null;
+  async removeVideoBackground(url: string, id: string, onProgress?: (p: number) => void): Promise<Blob | null> {
+    const { videoBackgroundRemover } = await import("video-editor/services/VideoBackgroundRemover");
+    return await videoBackgroundRemover.processVideo(url, { onProgress });
+  }
+
+  async upscale(url: string, factor: number = 2) {
+    try {
+      const upscaler = await pipeline('image-to-image', 'Xenova/swin2SR-classical-sr-x2', {
+        device: this.state.isWebGPUSupported ? 'webgpu' : 'wasm'
+      });
+      const output = await upscaler(url);
+      // @ts-expect-error
+      const canvas = output.toCanvas();
+      return new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob: Blob) => resolve(blob), "image/png");
+      });
+    } catch (error) {
+      console.error("Upscale failed:", error);
+      throw error;
+    }
+  }
+
+  async denoise(url: string) {
+    try {
+      const denoiser = await pipeline('image-to-image', 'Xenova/swinir-denoising-sr-x2', {
+        device: this.state.isWebGPUSupported ? 'webgpu' : 'wasm'
+      });
+      const output = await denoiser(url);
+      // @ts-expect-error
+      const canvas = output.toCanvas();
+      return new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob: Blob) => resolve(blob), "image/png");
+      });
+    } catch (error) {
+      console.error("Denoise failed:", error);
+      throw error;
+    }
+  }
+
+  async vectorize(url: string): Promise<string> {
+    try {
+      const img = await RawImage.fromURL(url);
+      const canvas = img.toCanvas();
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return "";
+      const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+      const step = 2; // Increased resolution for vectorizer
+      for (let y = 0; y < height; y += step) {
+        for (let x = 0; x < width; x += step) {
+          const i = (y * width + x) * 4;
+          if (data[i + 3] > 128) {
+            svg += `<rect x="${x}" y="${y}" width="${step}" height="${step}" fill="rgb(${data[i]},${data[i + 1]},${data[i + 2]})" />`;
+          }
+        }
+      }
+      return svg + '</svg>';
+    } catch (error) {
+      console.error("Vectorization failed:", error);
+      return "";
+    }
   }
 
   async processImage(image: File | String): Promise<File> {

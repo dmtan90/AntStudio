@@ -136,6 +136,21 @@ async function generateCaptions(options: any) {
   return res.data;
 }
 
+async function detectScenes(options: any) {
+  const res = await api.post<{ success: boolean; data: { scenes: any[] } }>(`/ai/detect-scenes`, options);
+  return res.data;
+}
+
+async function detectBeats(options: any) {
+  const res = await api.post<{ success: boolean; data: { beats: number[] } }>(`/ai/detect-beats`, options);
+  return res.data;
+}
+
+async function detectSilence(options: any) {
+  const res = await api.post<{ success: boolean; data: { regions: { start: number, end: number }[] } }>(`/ai/detect-silence`, options);
+  return res.data;
+}
+
 export {
   generateCTA,
   generateDescription,
@@ -148,5 +163,8 @@ export {
   generateVoice,
   generateVideo,
   checkVideoStatus,
-  generateCaptions
+  generateCaptions,
+  detectScenes,
+  detectBeats,
+  detectSilence
 };

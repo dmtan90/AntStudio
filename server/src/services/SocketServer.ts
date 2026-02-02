@@ -31,7 +31,6 @@ export class SocketServer {
     private setupAuthentication() {
         this.io.use(async (socket: Socket, next: (err?: Error) => void) => {
             const token = socket.handshake.auth.token || socket.handshake.query.token;
-            // Mobile app sends projectId in query, web might send roomId in auth
             const roomId = socket.handshake.auth.roomId || socket.handshake.query.projectId || socket.handshake.query.roomId;
 
             if (!token) {
@@ -39,30 +38,47 @@ export class SocketServer {
             }
 
             try {
+                // 1. Try JWT Auth (for Hosts/Co-hosts)
                 const decoded = verifyToken(token as string);
-                if (!decoded) return next(new Error('Invalid token'));
-
-                const user = await User.findById(decoded.userId);
-                if (!user) return next(new Error('User not found'));
-
-                // Attach user and room info to socket
-                socket.data.user = {
-                    id: user._id.toString(),
-                    name: user.name,
-                    avatar: user.avatar, // Add avatar if available
-                    color: '#' + Math.floor(Math.random() * 16777215).toString(16) // Random color for cursor
-                };
-
-                // If roomId/projectId is present, join that room immediately
-                if (roomId) {
-                    socket.data.roomId = roomId;
-                    socket.join(roomId);
+                if (decoded) {
+                    const user = await User.findById(decoded.userId);
+                    if (user) {
+                        socket.data.user = {
+                            id: user._id.toString(),
+                            name: user.name,
+                            avatar: user.avatar,
+                            role: 'host'
+                        };
+                        if (roomId) {
+                            socket.data.roomId = roomId;
+                            socket.join(roomId);
+                        }
+                        socket.join(`user:${user._id.toString()}`);
+                        return next();
+                    }
                 }
 
-                // Join user's personal room for mobile notifications
-                socket.join(`user:${user._id.toString()}`);
+                // 2. Try Guest Token Auth (for Anonymous Guests)
+                const guestInfo = await streamingService.validateGuestToken(token as string);
+                if (guestInfo) {
+                    // Guests always join the room associated with the token (sessionId)
+                    const { sessionId, hostName } = guestInfo;
+                    const displayName = socket.handshake.auth.displayName || 'Guest';
 
-                next();
+                    socket.data.user = {
+                        id: `guest_${socket.id}`,
+                        name: displayName,
+                        role: 'guest',
+                        isAnonymous: true
+                    };
+                    socket.data.roomId = sessionId;
+                    socket.join(sessionId);
+
+                    console.log(`📡 Anonymous Guest "${displayName}" joined Room: ${sessionId}`);
+                    return next();
+                }
+
+                return next(new Error('Authentication error: Invalid token'));
             } catch (err) {
                 next(new Error('Authentication error'));
             }
@@ -114,7 +130,56 @@ export class SocketServer {
                 streamingService.ingestRelayChunk(payload.sessionId, payload.chunk);
             });
 
-            // 6. Neural Handover (Assembly)
+            // 6. Guest Joining Flow
+            socket.on('guest:join', (payload: { displayName: string, streamId?: string }) => {
+                if (roomId && user.role === 'guest') {
+                    console.log(`🙋 Guest Request: ${payload.displayName} in ${roomId}`);
+                    socket.to(roomId).emit('guest:request', {
+                        id: socket.id,
+                        userId: user.id,
+                        name: payload.displayName,
+                        streamId: payload.streamId || `guest_${socket.id}`,
+                        joinedAt: new Date()
+                    });
+                }
+            });
+
+            socket.on('guest:approve', (payload: { guestId: string }) => {
+                if (roomId && user.role === 'host') {
+                    console.log(`✅ Host approved guest: ${payload.guestId}`);
+                    this.io.to(payload.guestId).emit('guest:approved', {
+                        roomId,
+                        hostId: socket.id
+                    });
+                }
+            });
+
+            socket.on('guest:reject', (payload: { guestId: string }) => {
+                if (roomId && user.role === 'host') {
+                    console.log(`❌ Host rejected guest: ${payload.guestId}`);
+                    this.io.to(payload.guestId).emit('guest:rejected');
+                }
+            });
+
+            socket.on('guest:signal', (payload: { to: string, signal: any }) => {
+                // Forward signaling message directly to a specific socket
+                this.io.to(payload.to).emit('guest:signal', {
+                    from: socket.id,
+                    signal: payload.signal
+                });
+            });
+
+            socket.on('guest:control', (payload: { guestId: string, action: string, value: any }) => {
+                if (roomId && user.role === 'host') {
+                    console.log(`🎮 [Studio] Host command: ${payload.action} for ${payload.guestId}`);
+                    this.io.to(payload.guestId).emit('guest:control', {
+                        action: payload.action,
+                        value: payload.value
+                    });
+                }
+            });
+
+            // 7. Neural Handover (Assembly)
             socket.on('neural:handover', async (payload: any) => {
                 await BinaryStreamService.handleNeuralHandover(socket, payload);
             });
@@ -166,7 +231,11 @@ export class SocketServer {
             socket.on('disconnect', () => {
                 if (roomId) {
                     console.log(`👤 User ${user.name} left Room: ${roomId}`);
-                    // Notify others
+
+                    // Explicitly notify that a guest has left
+                    this.io.to(roomId).emit('guest:leave', { guestId: socket.id });
+
+                    // Notify others with full list after a short delay to account for potential re-joining
                     setTimeout(() => this.broadcastRoomUsers(roomId), 1000);
                 }
             });

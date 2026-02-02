@@ -17,6 +17,34 @@ export interface AIGuestPersona {
 export class SyntheticGuestManager {
     private activeGuests: Map<string, { persona: AIGuestPersona, isSpeaking: boolean, isThinking: boolean }> = new Map();
 
+    private personaLibrary: AIGuestPersona[] = [
+        {
+            id: 'tech_expert',
+            name: 'Dr. Nexus',
+            avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=nexus',
+            voiceId: 'en-US-Neural2-F',
+            systemPrompt: 'You are a highly technical AI expert. Answer complex questions with precision.'
+        },
+        {
+            id: 'hype_man',
+            name: 'Sparky',
+            avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=sparky',
+            voiceId: 'en-US-Neural2-A',
+            systemPrompt: 'You are a hype man. Your goal is to keep the energy high and the audience engaged!'
+        },
+        {
+            id: 'comedian',
+            name: 'Giggles',
+            avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=giggles',
+            voiceId: 'en-US-Neural2-D',
+            systemPrompt: 'You are a stand-up comedian. Add humor and witty remarks to the conversation.'
+        }
+    ];
+
+    public getPersonaLibrary() {
+        return this.personaLibrary;
+    }
+
     public async summonGuest(persona: AIGuestPersona) {
         if (this.activeGuests.has(persona.id)) return;
 
@@ -38,13 +66,19 @@ export class SyntheticGuestManager {
         guest.isThinking = true;
         try {
             // Mocking the AI interaction call
-            // In production, this calls the Gemini backend with the guest's systemPrompt
             await new Promise(r => setTimeout(r, 2000));
 
-            const responseText = `That's a fascinating point about the ${prompt.substring(0, 10)}... As an AI, I believe we are entering a new era of synthetic collaboration.`;
+            let responseText = "";
+            if (guest.persona.id === 'hype_man') {
+                responseText = `ABSOLUTELY AMAZING! 🚀 Everyone in the chat, show some love for that point! We are CRUSHING IT today!`;
+            } else if (guest.persona.id === 'tech_expert') {
+                responseText = `From a technical standpoint, the ${prompt.substring(0, 15)} architecture suggests a highly decoupled modular system. Interesting choice.`;
+            } else {
+                responseText = `That's a fascinating point about the ${prompt.substring(0, 10)}... As an AI, I believe we are entering a new era of synthetic collaboration.`;
+            }
 
             // Generate Neural Voice URL
-            const audioUrl = `https://s3.antflow.ai/synth/voice_${guestId}.mp3`;
+            const audioUrl = `https://s3.antflow.ai/synth/voice_${guestId}_${Date.now()}.mp3`;
 
             guest.isThinking = false;
             return { text: responseText, audioUrl };

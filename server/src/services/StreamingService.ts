@@ -4,6 +4,8 @@ import { systemLogger } from '../utils/systemLogger.js';
 import path from 'path';
 import { PassThrough } from 'stream';
 import { User } from '../models/User.js';
+import { GuestToken } from '../models/GuestToken.js';
+import { StreamSessionModel } from '../models/StreamSession.js';
 import { creditManager } from '../utils/CreditManager.js';
 
 // Set FFmpeg path to your discovered binary
@@ -13,6 +15,8 @@ ffmpeg.setFfmpegPath(FFMPEG_BIN);
 import axios from 'axios';
 import crypto from 'crypto';
 import { UserPlatformAccount, SocialPlatform } from '../models/UserPlatformAccount.js';
+import { highlightService } from './HighlightService.js';
+import { redisService } from './RedisService.js';
 
 export interface StreamTarget {
     url: string;      // RTMP Base URL
@@ -44,7 +48,13 @@ import { EventEmitter } from 'events';
 
 export class StreamingService extends EventEmitter {
     private sessions: Map<string, StreamSession> = new Map();
-    private guestTokens: Map<string, string> = new Map(); // token -> sessionId
+    private nodeId: string;
+    private readonly GUEST_TOKEN_PREFIX = 'antflow:guest:token:';
+
+    constructor() {
+        super();
+        this.nodeId = process.env.NODE_ID || `node_${Math.random().toString(36).substring(2, 9)}`;
+    }
 
     /**
      * Helper to authenticate with AMS and return cookie
@@ -108,9 +118,9 @@ export class StreamingService extends EventEmitter {
         userId: string,
         source: string,
         targets: StreamTarget[],
-        options: { loop?: boolean, quality?: any } = {}
+        options: { loop?: boolean, quality?: any, sessionId?: string } = {}
     ): Promise<{ sessionId: string, mode: string }> {
-        const sessionId = `stream_${Date.now()}`;
+        const sessionId = options.sessionId || `stream_${Date.now()}`;
 
         systemLogger.info(`Starting restream for user ${userId} to ${targets.length} targets (Loop: ${options.loop})`, 'StreamingService');
 
@@ -145,23 +155,31 @@ export class StreamingService extends EventEmitter {
         if (source === 'webrtc') {
             if (amsTarget) {
                 this.sessions.set(sessionId, session);
+
+                // Persist State
+                await this.syncSessionToDB(session, { mode: source === 'webrtc' ? 'webrtc_ams' : 'ams' });
+
                 systemLogger.info(`WebRTC session ${sessionId} initialized using AMS Bridge. Browser handles ingest.`, 'StreamingService');
                 return { sessionId, mode: 'webrtc_ams' };
             } else {
                 // Fallback: Use backend relay (WebRTC-to-RTMP)
                 // This initializes FFmpeg to expect a piped input from the browser
-                const session: StreamSession = {
+                const relaySession: StreamSession = {
                     id: sessionId,
                     userId,
                     targets: finalTargets,
-                    status: source === 'webrtc' ? 'live' : 'starting',
-                    startTime: source === 'webrtc' ? new Date() : undefined,
+                    status: 'live',
+                    startTime: new Date(),
                     guestTokens: [],
                     config: options.quality
                 };
 
-                this.initRelayFFmpeg(sessionId, session, externalTargets);
-                this.sessions.set(sessionId, session);
+                this.initRelayFFmpeg(sessionId, relaySession, externalTargets);
+                this.sessions.set(sessionId, relaySession);
+
+                // Persist State
+                await this.syncSessionToDB(relaySession, { mode: 'webrtc_relay' });
+
                 systemLogger.info(`WebRTC session ${sessionId} initialized with BACKEND RELAY bridge.`, 'StreamingService');
 
                 return { sessionId, mode: 'webrtc_relay' };
@@ -194,23 +212,30 @@ export class StreamingService extends EventEmitter {
                 systemLogger.info(`FFmpeg process started: ${cmd}`, 'StreamingService');
                 session.status = 'live';
                 session.startTime = new Date();
+                this.syncSessionToDB(session, { mode: 'file_relay' }).catch(() => { });
             });
 
             command.on('error', (err: Error) => {
                 systemLogger.error(`FFmpeg streaming error: ${err.message}`, 'StreamingService');
                 session.status = 'error';
+                this.syncSessionToDB(session, { mode: 'file_relay' }).catch(() => { });
                 this.stopRestream(sessionId);
             });
 
             command.on('end', () => {
                 systemLogger.info(`FFmpeg stream ended: ${sessionId}`, 'StreamingService');
                 session.status = 'stopped';
+                this.syncSessionToDB(session, { mode: 'file_relay' }).catch(() => { });
             });
 
             const process = command.run();
             session.ffmpegProcess = process;
 
             this.sessions.set(sessionId, session);
+
+            // Persist State
+            await this.syncSessionToDB(session, { mode: 'file_relay' });
+
             return { sessionId, mode: 'file_relay' };
 
         } catch (error: any) {
@@ -309,25 +334,118 @@ export class StreamingService extends EventEmitter {
                 // Ensure we have a proper Node.js Buffer
                 const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
                 session.inputStream.write(buffer);
+                // Maintain rolling buffer for highlights
+                highlightService.appendChunk(sessionId, buffer);
             } catch (err: any) {
                 systemLogger.warn(`Failed to write chunk to relay ${sessionId}: ${err.message}`, 'StreamingService');
             }
         }
     }
-    public generateGuestToken(sessionId: string): string {
+    public async generateGuestToken(sessionId: string): Promise<string> {
         const token = crypto.randomBytes(16).toString('hex');
-        this.guestTokens.set(token, sessionId);
+        const key = `${this.GUEST_TOKEN_PREFIX}${token}`;
+        const ttl = 2 * 60 * 60; // 2 hours
+        const expiresAt = new Date(Date.now() + (ttl * 1000));
 
-        // Auto-expire token after 2 hours
-        setTimeout(() => this.guestTokens.delete(token), 2 * 60 * 60 * 1000);
+        // 1. Save to Database (Source of truth for multiple servers)
+        try {
+            await GuestToken.create({
+                token,
+                sessionId,
+                expiresAt
+            });
+        } catch (error) {
+            systemLogger.error(`Failed to save guest token to DB: ${error}`, 'StreamingService');
+        }
+
+        // 2. Save to Redis for high-speed cache (Optional)
+        try {
+            await redisService.set(key, sessionId, ttl);
+        } catch (e) {
+            // Redis error is fine
+        }
 
         return token;
     }
 
-    public validateGuestToken(token: string): { sessionId: string } | null {
-        const sessionId = this.guestTokens.get(token);
-        if (!sessionId) return null;
-        return { sessionId };
+    public async validateGuestToken(token: string): Promise<any> {
+        const key = `${this.GUEST_TOKEN_PREFIX}${token}`;
+
+        // 1. Check Redis (fast cache)
+        try {
+            const cachedSid = await redisService.get(key);
+            if (cachedSid) return { sessionId: cachedSid };
+        } catch (e) {
+            // Redis miss or error
+        }
+
+        // 2. Check Database (Source of truth)
+        try {
+            const dbToken = await GuestToken.findOne({ token, expiresAt: { $gt: new Date() } });
+            if (dbToken) {
+                // Back-fill redis cache
+                try { await redisService.set(key, dbToken.sessionId, 3600); } catch { }
+
+                // Fetch host info
+                const { User } = await import('../models/User.js');
+                const { UserPlatformAccount } = await import('../models/UserPlatformAccount.js');
+                const session = await StreamSessionModel.findOne({ sessionId: dbToken.sessionId });
+                let hostName = 'A Host';
+                let webrtc: { websocketUrl: string, appName: string } | null = null;
+
+                if (session) {
+                    const host = await User.findById(session.userId);
+                    if (host) hostName = host.name;
+
+                    // Fetch host's AMS info so guest knows where to publish
+                    const amsAccount = await UserPlatformAccount.findOne({
+                        userId: session.userId,
+                        platform: 'ant_media',
+                        isActive: true
+                    });
+
+                    if (amsAccount && amsAccount.credentials?.serverUrl) {
+                        const serverUrl = amsAccount.credentials.serverUrl;
+                        const appName = amsAccount.credentials.appName || 'WebRTCAppEE';
+                        const wsProtocol = serverUrl.startsWith('https') ? 'wss:' : 'ws:';
+                        const wsHost = new URL(serverUrl).host;
+                        webrtc = {
+                            websocketUrl: `${wsProtocol}//${wsHost}/${appName}/websocket`,
+                            appName
+                        };
+                    }
+                }
+
+                return {
+                    sessionId: dbToken.sessionId,
+                    hostName,
+                    webrtc
+                };
+            }
+        } catch (error) {
+            systemLogger.error(`DB validation error for guest token: ${error}`, 'StreamingService');
+        }
+
+        return null;
+    }
+
+    /**
+     * Prepares a session before streaming starts so invites can be generated early.
+     */
+    public async prepareSession(userId: string): Promise<string> {
+        const sessionId = `stream_${Date.now()}`;
+        const session: StreamSession = {
+            id: sessionId,
+            userId,
+            targets: [],
+            status: 'starting'
+        };
+        this.sessions.set(sessionId, session);
+
+        // Register in DB so others know this session exists
+        await this.syncSessionToDB(session, { mode: 'ams' });
+
+        return sessionId;
     }
 
     /**
@@ -360,11 +478,48 @@ export class StreamingService extends EventEmitter {
             );
 
             this.sessions.delete(sessionId);
+
+            // Update DB Status
+            await StreamSessionModel.findOneAndUpdate(
+                { sessionId },
+                { status: 'stopped', endTime: new Date() }
+            );
+
+            await redisService.removeSession(sessionId);
         }
     }
 
     public getSessionStatus(sessionId: string): StreamSession | undefined {
         return this.sessions.get(sessionId);
+    }
+
+    /**
+     * Shared persistence helper
+     */
+    private async syncSessionToDB(session: StreamSession, extra: any = {}) {
+        try {
+            const data = {
+                sessionId: session.id,
+                userId: session.userId,
+                status: session.status,
+                mode: extra.mode || 'ams',
+                nodeId: this.nodeId,
+                targets: session.targets,
+                startTime: session.startTime || new Date()
+            };
+
+            // 1. Save to MongoDB (Permanent truth)
+            await StreamSessionModel.findOneAndUpdate(
+                { sessionId: session.id },
+                data,
+                { upsert: true }
+            );
+
+            // 2. Save to Redis (Fast monitoring)
+            await redisService.registerSession(session.id, data);
+        } catch (e) {
+            systemLogger.error(`Failed to sync session ${session.id} to distributed state: ${e}`, 'StreamingService');
+        }
     }
 }
 

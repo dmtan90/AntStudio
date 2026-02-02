@@ -3,9 +3,15 @@ const require = createRequire(import.meta.url)
 // @ts-ignore - pdf-parse has issues with ES modules
 const pdf = require('pdf-parse')
 import mammoth from 'mammoth'
+// @ts-ignore
+if (typeof window === 'undefined') {
+    (global as any).window = {};
+}
+const pptxParser = require('pptx-parser')
 
 export interface ParsedDocument {
     text: string
+    slides?: string[] // Text per slide/page
     metadata?: {
         title?: string
         author?: string
@@ -18,7 +24,7 @@ export interface ParsedDocument {
  */
 export const parseTxt = async (buffer: Buffer): Promise<ParsedDocument> => {
     const text = buffer.toString('utf-8')
-    return { text }
+    return { text, slides: [text] }
 }
 
 /**
@@ -26,8 +32,13 @@ export const parseTxt = async (buffer: Buffer): Promise<ParsedDocument> => {
  */
 export const parsePdf = async (buffer: Buffer): Promise<ParsedDocument> => {
     const data = await pdf(buffer)
+    // pdf-parse can give us text, but not easily slide-by-slide without more complex logic
+    // For now we'll treat the whole text as one, but we could split by form feeds if available
+    const slides = data.text.split(/\f/).filter((s: string) => s.trim().length > 0)
+
     return {
         text: data.text,
+        slides: slides.length > 0 ? slides : [data.text],
         metadata: {
             title: data.info?.Title,
             author: data.info?.Author,
@@ -42,25 +53,44 @@ export const parsePdf = async (buffer: Buffer): Promise<ParsedDocument> => {
 export const parseDocx = async (buffer: Buffer): Promise<ParsedDocument> => {
     const result = await mammoth.extractRawText({ buffer })
     return {
-        text: result.value
+        text: result.value,
+        slides: [result.value]
     }
 }
 
 /**
- * Parse PPTX file (basic text extraction)
+ * Parse PPTX file (improved extraction)
  */
 export const parsePptx = async (buffer: Buffer): Promise<ParsedDocument> => {
-    // For PPTX, we'll use a simple approach
-    // In production, you might want to use a more sophisticated library
-    // For now, convert to string and extract text patterns
     try {
-        const textContent = buffer.toString('utf-8')
-        // Basic extraction - this is simplified
-        // A better approach would use a dedicated PPTX parser
-        const text = textContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-        return { text }
+        const result = await pptxParser.parse(buffer)
+        const slidesText: string[] = []
+
+        if (result && result.slides) {
+            result.slides.forEach((slide: any) => {
+                let slideText = ''
+                if (slide.elements) {
+                    slide.elements.forEach((el: any) => {
+                        if (el.text) slideText += el.text + ' '
+                    })
+                }
+                slidesText.push(slideText.trim())
+            })
+        }
+
+        return {
+            text: slidesText.join('\n'),
+            slides: slidesText,
+            metadata: {
+                pages: slidesText.length
+            }
+        }
     } catch (error) {
-        throw new Error('Failed to parse PPTX file')
+        console.error('PPTX parse error:', error)
+        // Fallback to basic extraction
+        const textContent = buffer.toString('utf-8')
+        const text = textContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+        return { text, slides: [text] }
     }
 }
 

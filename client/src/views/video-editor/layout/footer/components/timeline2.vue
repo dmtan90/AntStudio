@@ -73,7 +73,7 @@
                                 <div
                                     class="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                                     <span class="text-[10px] font-bold text-white/60 truncate px-2">Scene {{ idx + 1
-                                    }}</span>
+                                        }}</span>
                                 </div>
                                 <div v-if="activePage === idx"
                                     class="absolute bottom-0 inset-x-0 h-0.5 bg-brand-primary"></div>
@@ -84,12 +84,14 @@
                         <div class="track-row h-[64px] mb-1 flex items-center relative">
                             <template v-for="(element, idx) in visualElements" :key="element.name">
                                 <div class="timeline-clip relative rounded-lg border border-white/10 bg-[#1a1a1a] transition-all cursor-move group"
-                                    :class="selectedElement?.name === element.name ? 'border-brand-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'hover:border-white/30'"
-                                    :style="{
+                                    :class="[
+                                        selectedIds.has(element.name) ? 'border-brand-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'hover:border-white/30',
+                                        isItemSelected(element) ? 'bg-brand-primary/20' : 'bg-[#1a1a1a]'
+                                    ]" :style="{
                                         width: ((element.meta?.duration || 5000) / 1000) * pxPerSec + 'px',
                                         height: '64px',
                                         marginLeft: ((element.sceneOffset + (element.meta?.offset || 0)) / 1000) * pxPerSec + 'px'
-                                    }" @click="selectElement(element)"
+                                    }" @click="selectElement($event, element)"
                                     @contextmenu.prevent="openContextMenu($event, element)">
 
                                     <!-- Transition Button (between clips) -->
@@ -103,9 +105,12 @@
                                     </div>
 
                                     <div class="absolute inset-0 flex overflow-hidden rounded-lg">
-                                        <div class="h-full w-full bg-white/5 flex items-center justify-center">
-                                            <component :is="getElementIcon(element.type)" theme="outline" size="24"
-                                                class="text-white/20" />
+                                        <div class="h-full w-full bg-white/5 flex items-center justify-center relative">
+                                            <img v-if="element.type === 'image' || element.type === 'video'"
+                                                :src="element.meta?.thumbnail || element.src"
+                                                class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
+                                            <component v-else :is="getElementIcon(element.type)" theme="outline"
+                                                size="24" class="text-white/20 relative z-10" />
                                         </div>
                                     </div>
 
@@ -134,19 +139,39 @@
                         <!-- Audio Track Area -->
                         <div class="track-row h-14 mb-2 flex items-center relative">
                             <template v-for="audio in audioElements" :key="audio.id">
-                                <div class="timeline-clip-audio relative h-10 rounded-md border border-blue-500/20 bg-blue-500/5 flex items-center px-4 overflow-hidden"
-                                    :style="{
+                                <div class="timeline-clip-audio relative h-10 rounded-md border border-blue-500/20 bg-blue-900/10 flex items-center px-0 overflow-hidden group/audio"
+                                    :data-audio-id="audio.id" :style="{
                                         width: ((audio.meta?.duration || audio.duration * 1000 || 5000) / 1000) * pxPerSec + 'px',
                                         marginLeft: ((audio.sceneOffset + (audio.meta?.offset || audio.offset * 1000 || 0)) / 1000) * pxPerSec + 'px'
-                                    }" @click="selectElement(audio)">
-                                    <div class="flex-1 flex items-center gap-0.5 opacity-40">
-                                        <div v-for="i in 50" :key="i"
-                                            class="w-0.5 bg-blue-400 rounded-full transition-all duration-300"
-                                            :style="{ height: (30 + (i * 7) % 50) + '%' }"></div>
+                                    }" :class="[selectedIds.has(audio.id) ? 'border-blue-400 bg-blue-500/20' : '']"
+                                    @click="selectElement($event, audio)">
+
+                                    <!-- Automation Envelope (SVG) -->
+                                    <div class="automation-envelope absolute inset-0 z-10">
+                                        <svg width="100%" height="100%" preserveAspectRatio="none"
+                                            class="overflow-visible">
+                                            <path :d="getAutomationPath(audio)" fill="none"
+                                                stroke="rgba(251, 146, 60, 0.8)" stroke-width="1.5"
+                                                stroke-dasharray="4 2" />
+                                            <circle v-for="pt in audio.automation" :key="pt.id"
+                                                :cx="getPointX(pt, audio)" :cy="getPointY(pt)" r="3" fill="#fb923c"
+                                                stroke="white" stroke-width="1"
+                                                class="cursor-ns-resize pointer-events-auto hover:r-4 transition-all"
+                                                @mousedown.stop="startKeyframeDrag($event, audio, pt)" />
+                                        </svg>
                                     </div>
+
+                                    <!-- Real Waveform -->
+                                    <div class="flex-1 h-full opacity-60 pointer-events-none">
+                                        <WaveformDisplay :audio-url="audio.url"
+                                            :width="((audio.meta?.duration || audio.duration * 1000 || 5000) / 1000) * pxPerSec"
+                                            :height="40" color="rgba(96, 165, 250, 0.5)" />
+                                    </div>
+
                                     <span
-                                        class="absolute left-2 text-[9px] text-blue-400 font-bold uppercase truncate pr-4">Audio
-                                        {{ audio.id }}</span>
+                                        class="absolute left-2 top-1 text-[8px] text-blue-400/60 font-black uppercase tracking-tighter truncate z-20">
+                                        {{ audio.name || audio.id }}
+                                    </span>
                                 </div>
                             </template>
                         </div>
@@ -158,11 +183,22 @@
                                     :style="{
                                         width: ((subtitle.meta?.duration || 5000) / 1000) * pxPerSec + 'px',
                                         marginLeft: ((subtitle.sceneOffset + (subtitle.meta?.offset || 0)) / 1000) * pxPerSec + 'px'
-                                    }" @click="selectElement(subtitle)">
+                                    }" @click="selectElement($event, subtitle)">
                                     <span class="text-[9px] text-brand-primary font-bold uppercase truncate">{{
                                         subtitle.name }}</span>
                                 </div>
                             </template>
+                        </div>
+
+                        <!-- Lasso Selection Overlay -->
+                        <div v-if="lassoActive"
+                            class="absolute border border-brand-primary bg-brand-primary/10 z-[100] pointer-events-none"
+                            :style="{
+                                left: Math.min(lassoStart.x, lassoEnd.x) + 'px',
+                                top: Math.min(lassoStart.y, lassoEnd.y) + 'px',
+                                width: Math.abs(lassoStart.x - lassoEnd.x) + 'px',
+                                height: Math.abs(lassoStart.y - lassoEnd.y) + 'px'
+                            }">
                         </div>
                     </div>
                 </div>
@@ -264,9 +300,11 @@ import {
     ImageFiles as ImageIcon, Video as VideoIcon, GraphicDesign as Graphic,
     Magic, Delete, Copy, Lock, Unlock, More, Check
 } from '@icon-park/vue-next';
+import WaveformDisplay from '@/components/ui/WaveformDisplay.vue';
 import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
+import { debounce, rafThrottle } from 'video-editor/utils/performance';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
@@ -296,6 +334,21 @@ const sceneOffsets = computed(() => {
 const totalDuration = computed(() => {
     return editor.pages.reduce((acc, page) => acc + ((page.timeline as any)?.duration || 5000), 0) / 1000;
 });
+
+// Waveform cache to prevent re-rendering
+const waveformCache = new Map<string, boolean>();
+const shouldRenderWaveform = (audioId: string, width: number) => {
+    const key = `${audioId}-${Math.floor(width / 10)}`; // Round to reduce cache misses
+    if (!waveformCache.has(key)) {
+        waveformCache.set(key, true);
+    }
+    return true;
+};
+
+// Clear waveform cache when zoom changes significantly
+watch(() => pxPerSec.value, debounce(() => {
+    waveformCache.clear();
+}, 300));
 
 // Unified elements across all scenes
 const visualElements = computed(() => {
@@ -381,8 +434,20 @@ const currentTime = computed(() => {
     return (activeOffset + localSeek) / 1000;
 });
 
-// Selected element
-const selectedElement = ref<any>(null);
+// Selected state
+const selectedIds = ref<Set<string>>(new Set());
+const selectedElement = computed(() => {
+    const primaryId = Array.from(selectedIds.value)[0];
+    if (!primaryId) return null;
+    return [...visualElements.value, ...audioElements.value, ...subtitleElements.value].find(e => (e.id === primaryId || e.name === primaryId));
+});
+
+const isItemSelected = (item: any) => selectedIds.value.has(item.id || item.name);
+
+// Lasso Selection State
+const lassoActive = ref(false);
+const lassoStart = ref({ x: 0, y: 0 });
+const lassoEnd = ref({ x: 0, y: 0 });
 
 // Trim state
 const isTrimming = ref(false);
@@ -457,21 +522,37 @@ const selectScene = (idx: number) => {
     editor.onChangeActivePage(idx);
 };
 
-const selectElement = (element: any) => {
-    selectedElement.value = element;
+const selectElement = (e: MouseEvent, element: any) => {
+    const id = element.id || element.name;
+    const isMulti = e.shiftKey || e.metaKey || e.ctrlKey;
 
-    // Switch to element's scene if needed
+    if (!isMulti) {
+        selectedIds.value.clear();
+        selectedIds.value.add(id);
+    } else {
+        if (selectedIds.value.has(id)) {
+            selectedIds.value.delete(id);
+        } else {
+            selectedIds.value.add(id);
+        }
+    }
+
+    // Update global selection
     if (element.pageIndex !== undefined && element.pageIndex !== editor.page) {
         editor.onChangeActivePage(element.pageIndex);
         setTimeout(() => {
-            (canvasStore.selection as any)?.selectObjectByName(element.name);
+            syncGlobalSelection(element, isMulti);
         }, 100);
     } else {
-        if (element.isAudio || element.type === 'audio') {
-            (canvasStore.selection as any)?.selectAudio(element);
-        } else {
-            (canvasStore.selection as any)?.selectObjectByName(element.name);
-        }
+        syncGlobalSelection(element, isMulti);
+    }
+};
+
+const syncGlobalSelection = (element: any, multiple: boolean) => {
+    if (element.isAudio || element.type === 'audio') {
+        (canvasStore.selection as any)?.selectAudio(element);
+    } else {
+        (canvasStore.selection as any)?.selectObjectByName(element.name, multiple);
     }
 };
 
@@ -494,9 +575,64 @@ const onTimelineClick = (e: MouseEvent, time?: number) => {
     } else if (timelineViewportRef.value) {
         const rect = timelineViewportRef.value.getBoundingClientRect();
         const offsetX = e.clientX - rect.left + timelineViewportRef.value.scrollLeft;
-        const newTime = offsetX / pxPerSec.value;
-        seekToGlobalTime(newTime);
+
+        // If not clicking an item, handle seek and start lasso
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('timeline-content') || target.classList.contains('tracks-area') || target.classList.contains('track-row')) {
+            const newTime = offsetX / pxPerSec.value;
+            seekToGlobalTime(newTime);
+            startLasso(e);
+        }
     }
+};
+
+// Lasso Logic
+const startLasso = (e: MouseEvent) => {
+    lassoActive.value = true;
+    const rect = timelineViewportRef.value!.getBoundingClientRect();
+    const x = e.clientX - rect.left + timelineViewportRef.value!.scrollLeft;
+    const y = e.clientY - rect.top;
+    lassoStart.value = { x, y };
+    lassoEnd.value = { x, y };
+
+    window.addEventListener('mousemove', onLassoMove);
+    window.addEventListener('mouseup', stopLasso);
+};
+
+const onLassoMove = (e: MouseEvent) => {
+    if (!lassoActive.value) return;
+    const rect = timelineViewportRef.value!.getBoundingClientRect();
+    lassoEnd.value = {
+        x: e.clientX - rect.left + timelineViewportRef.value!.scrollLeft,
+        y: e.clientY - rect.top
+    };
+};
+
+const stopLasso = () => {
+    if (!lassoActive.value) return;
+    lassoActive.value = false;
+
+    // Calculate final selection
+    const lLeft = Math.min(lassoStart.value.x, lassoEnd.value.x);
+    const lRight = Math.max(lassoStart.value.x, lassoEnd.value.x);
+    const lTop = Math.min(lassoStart.value.y, lassoEnd.value.y);
+    const lBottom = Math.max(lassoStart.value.y, lassoEnd.value.y);
+
+    const allClips = [...visualElements.value, ...audioElements.value, ...subtitleElements.value];
+
+    allClips.forEach(clip => {
+        const left = ((clip.sceneOffset + (clip.meta?.offset || 0)) / 1000) * pxPerSec.value;
+        const right = left + ((clip.meta?.duration || clip.duration * 1000 || 5000) / 1000) * pxPerSec.value;
+        const id = clip.id || clip.name;
+
+        // Simple horizontal intersection check for now (refine later if needed with vertical)
+        if (lRight >= left && lLeft <= right) {
+            selectedIds.value.add(id);
+        }
+    });
+
+    window.removeEventListener('mousemove', onLassoMove);
+    window.removeEventListener('mouseup', stopLasso);
 };
 
 // Dragging Logic
@@ -694,6 +830,88 @@ onUnmounted(() => {
     window.removeEventListener('mousemove', onDrag);
     window.removeEventListener('mouseup', stopDrag);
 });
+
+// --- Audio Automation Logic ---
+const getAutomationPath = (audio: any) => {
+    const duration = (audio.meta?.duration || audio.duration * 1000 || 5000);
+    const width = (duration / 1000) * pxPerSec.value;
+    const height = 40;
+
+    if (!audio.automation || audio.automation.length === 0) {
+        const vol = audio.volume !== undefined ? audio.volume : 1;
+        const y = height * (1 - vol);
+        return `M 0 ${y} L ${width} ${y}`;
+    }
+
+    const sorted = [...audio.automation].sort((a, b) => a.time - b.time);
+    let path = `M 0 ${height * (1 - (audio.volume || 1))}`;
+
+    sorted.forEach((pt, idx) => {
+        const x = (pt.time / duration) * width;
+        const y = height * (1 - pt.value);
+        if (pt.easing === 'step' && idx > 0) {
+            const prevPt = sorted[idx - 1];
+            path += ` L ${x} ${height * (1 - prevPt.value)}`;
+        }
+        path += ` L ${x} ${y}`;
+    });
+
+    path += ` L ${width} ${height * (1 - sorted[sorted.length - 1].value)}`;
+    return path;
+};
+
+const getPointX = (pt: any, audio: any) => {
+    const duration = (audio.meta?.duration || audio.duration * 1000 || 5000);
+    const width = (duration / 1000) * pxPerSec.value;
+    return (pt.time / duration) * width;
+};
+
+const getPointY = (pt: any) => {
+    return 40 * (1 - pt.value);
+};
+
+const isDraggingKeyframe = ref(false);
+const activeDraggingPoint = ref<any>(null);
+const activeDraggingAudio = ref<any>(null);
+
+const startKeyframeDrag = (e: MouseEvent, audio: any, pt: any) => {
+    isDraggingKeyframe.value = true;
+    activeDraggingPoint.value = pt;
+    activeDraggingAudio.value = audio;
+
+    window.addEventListener('mousemove', onKeyframeDrag);
+    window.addEventListener('mouseup', stopKeyframeDrag);
+    document.body.style.cursor = 'ns-resize';
+};
+
+const onKeyframeDrag = (e: MouseEvent) => {
+    if (!isDraggingKeyframe.value || !activeDraggingPoint.value || !activeDraggingAudio.value) return;
+
+    const clipEl = document.querySelector(`[data-audio-id="${activeDraggingAudio.value.id}"]`);
+    if (!clipEl) return;
+
+    const rect = clipEl.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+
+    let newValue = 1 - (offsetY / 40);
+    newValue = Math.max(0, Math.min(1, newValue));
+
+    activeDraggingPoint.value.value = newValue;
+
+    canvasStore.canvas?.audio.update(activeDraggingAudio.value.id, {
+        automation: [...activeDraggingAudio.value.automation]
+    });
+};
+
+const stopKeyframeDrag = () => {
+    isDraggingKeyframe.value = false;
+    activeDraggingPoint.value = null;
+    activeDraggingAudio.value = null;
+
+    window.removeEventListener('mousemove', onKeyframeDrag);
+    window.removeEventListener('mouseup', stopKeyframeDrag);
+    document.body.style.cursor = '';
+};
 </script>
 
 <style lang="scss" scoped>
@@ -781,6 +999,20 @@ onUnmounted(() => {
 .timeline-scene {
     flex-shrink: 0;
     margin-right: 2px;
+}
+
+.timeline-clip-audio {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+        background-color: rgba(30, 58, 138, 0.2);
+        border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .automation-envelope {
+        background: linear-gradient(180deg, rgba(251, 146, 60, 0.03) 0%, transparent 100%);
+    }
 }
 
 .custom-scrollbar::-webkit-scrollbar {

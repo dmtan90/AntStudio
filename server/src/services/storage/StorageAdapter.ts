@@ -27,4 +27,9 @@ export interface IStorageAdapter {
      * Checks if a file exists.
      */
     exists(key: string): Promise<boolean>;
+
+    /**
+     * Lists files in the storage.
+     */
+    listFiles(prefix?: string): Promise<Array<{ key: string, url: string, size?: number, lastModified?: Date }>>;
 }

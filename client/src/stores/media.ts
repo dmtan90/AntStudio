@@ -47,6 +47,21 @@ export const useMediaStore = defineStore('media', () => {
         }
     }
 
+    async function fetchCloudMedia(prefix?: string) {
+        loading.value = true
+        try {
+            const response = await api.get('/media/cloud/list', {
+                params: { prefix }
+            })
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
     async function deleteMedia(id: string) {
         try {
             await api.delete(`/media/${id}`)
@@ -83,6 +98,7 @@ export const useMediaStore = defineStore('media', () => {
         loading,
         fetchMedia,
         fetchVideos,
+        fetchCloudMedia,
         deleteMedia,
         uploadMedia
     }

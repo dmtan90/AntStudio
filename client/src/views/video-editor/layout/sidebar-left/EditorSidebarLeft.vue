@@ -25,6 +25,8 @@ import VideoMenu from './components/video.vue';
 import ChartMenu from './components/chart.vue';
 import PromptMenu from './components/prompt.vue';
 import AIMenu from './components/ai.vue';
+import CloudMenu from './components/cloud.vue';
+import LayersMenu from './components/layers.vue';
 
 const sidebarComponentMap: Record<string, any> = {
   scene: SceneMenu,
@@ -39,6 +41,8 @@ const sidebarComponentMap: Record<string, any> = {
   format: FormatMenu,
   prompt: PromptMenu,
   ai: AIMenu,
+  cloud: CloudMenu,
+  layers: LayersMenu,
 };
 
 const editor = useEditorStore();
@@ -69,6 +73,11 @@ const items = computed(() => {
     },
     {
       icon: Layers,
+      label: "Layers",
+      value: "layers",
+    },
+    {
+      icon: Grid2X2,
       label: "Element",
       value: "element",
     },
@@ -97,6 +106,11 @@ const items = computed(() => {
       label: "Upload",
       value: "upload",
     },
+    {
+      icon: Grid2X2, // Or find a better cloud/hub icon if available
+      label: "Cloud",
+      value: "cloud",
+    },
     // {
     //   icon: Bot,
     //   label: "AI",
@@ -112,10 +126,10 @@ const items = computed(() => {
 
 const activeSidebarComponent = ref(null);
 watch(sidebarLeft, (menu) => {
-  if(menu){
+  if (menu) {
     activeSidebarComponent.value = shallowRef(sidebarComponentMap[menu]);
   }
-  else{
+  else {
     activeSidebarComponent.value = null;
   }
 });
@@ -128,17 +142,16 @@ const handleDrawerClose = () => {
 
 <template>
   <template v-if="!isTablet">
-    <aside :class="cn('h-16 absolute bottom-0 left-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 flex items-center z-10 gap-2.5 w-screen overflow-x-scroll scrollbar-hidden px-1.5')">
-      <button
-        v-for="{ icon: Icon, label, value } in items"
-        :key="value"
-        :aria-label="value"
+    <aside
+      :class="cn('h-16 absolute bottom-0 left-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-white/10 flex items-center z-10 gap-2.5 w-screen overflow-x-scroll scrollbar-hidden px-1.5')">
+      <button v-for="{ icon: Icon, label, value } in items" :key="value" :aria-label="value"
         :class="cn('min-w-16 h-14 flex flex-col items-center justify-center gap-1.5 transition-all duration-300', editor.sidebarLeft === value ? 'text-brand-primary' : 'text-white/40 hover:text-white')"
-        @click="editor.setActiveSidebarLeft(editor.sidebarLeft === value ? null : value)"
-      >
+        @click="editor.setActiveSidebarLeft(editor.sidebarLeft === value ? null : value)">
         <component :is="Icon" :size="20" :stroke-width="1.5" :class="editor.sidebarLeft === value ? 'scale-110' : ''" />
         <span class="text-[9px] font-bold uppercase tracking-wider">{{ label }}</span>
-        <div v-if="editor.sidebarLeft === value" class="absolute bottom-0 w-8 h-0.5 bg-brand-primary rounded-t-full shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.5)]"></div>
+        <div v-if="editor.sidebarLeft === value"
+          class="absolute bottom-0 w-8 h-0.5 bg-brand-primary rounded-t-full shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.5)]">
+        </div>
       </button>
     </aside>
     <el-drawer :model-value="!!activeSidebarComponent" @update:model-value="handleDrawerClose" direction="ltr">
@@ -147,25 +160,27 @@ const handleDrawerClose = () => {
   </template>
 
   <template v-else>
-    <aside class="w-18 sidebar-wrapper scrollbar-hidden bg-[#050505] flex flex-col items-center py-4 border-r border-white/5 gap-3 shrink-0 z-50 shadow-xl">
-      <button
-        v-for="{ icon: Icon, label, value } in items"
-        :key="value"
-        :aria-label="value"
+    <aside
+      class="w-18 sidebar-wrapper scrollbar-hidden bg-[#050505] flex flex-col items-center py-4 border-r border-white/5 gap-3 shrink-0 z-50 shadow-xl">
+      <button v-for="{ icon: Icon, label, value } in items" :key="value" :aria-label="value"
         class="relative flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-300 group"
         :class="editor.sidebarLeft === value ? 'bg-brand-primary text-black shadow-[0_0_20px_rgba(var(--brand-primary-rgb),0.4)]' : 'text-white/40 hover:bg-white/10 hover:text-white'"
-        @click="editor.setActiveSidebarLeft(editor.sidebarLeft === value ? null : value)"
-      >
-        <component :is="Icon" :size="20" :stroke-width="1.5" :class="cn('transition-transform duration-300', editor.sidebarLeft === value ? 'scale-110' : 'group-hover:scale-110')" />
+        @click="editor.setActiveSidebarLeft(editor.sidebarLeft === value ? null : value)">
+        <component :is="Icon" :size="20" :stroke-width="1.5"
+          :class="cn('transition-transform duration-300', editor.sidebarLeft === value ? 'scale-110' : 'group-hover:scale-110')" />
         <span class="text-[9px] font-bold mt-1.5 uppercase tracking-wide">{{ label }}</span>
-        
+
         <!-- Active Indicator -->
-        <div v-if="editor.sidebarLeft === value" class="absolute -right-[1px] top-1/2 -translate-y-1/2 w-[3px] h-8 bg-brand-primary rounded-l-full shadow-[-2px_0_10px_rgba(var(--brand-primary-rgb),0.5)]"></div>
+        <div v-if="editor.sidebarLeft === value"
+          class="absolute -right-[1px] top-1/2 -translate-y-1/2 w-[3px] h-8 bg-brand-primary rounded-l-full shadow-[-2px_0_10px_rgba(var(--brand-primary-rgb),0.5)]">
+        </div>
       </button>
     </aside>
     <AnimatePresence>
-      <Motion layout :style="{ width: activeSidebarComponent ? (leftSidebarWidth + 'px') : '0px' }" :transition="{ default: { ease: 'easeInOut' }, layout: { duration: 0.3 } }">
-        <aside v-if="activeSidebarComponent" :style="{ width: leftSidebarWidth + 'px' }" class="overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-3xl border-r border-white/5 shrink-0 h-full relative z-40 shadow-2xl">
+      <Motion layout :style="{ width: activeSidebarComponent ? (leftSidebarWidth + 'px') : '0px' }"
+        :transition="{ default: { ease: 'easeInOut' }, layout: { duration: 0.3 } }">
+        <aside v-if="activeSidebarComponent" :style="{ width: leftSidebarWidth + 'px' }"
+          class="overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-3xl border-r border-white/5 shrink-0 h-full relative z-40 shadow-2xl">
           <component :is="activeSidebarComponent.value" :key="editor.sidebarLeft" />
         </aside>
       </Motion>

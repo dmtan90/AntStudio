@@ -194,7 +194,7 @@ export class AIServiceManager {
                 }
 
                 try {
-                    const result = await client.generateContent(prompt, finalModelName);
+                    const result = await client.generateContent(prompt, finalModelName, options);
 
                     // Track usage via centralized manager
                     await aiAccountManager.recordUsage(account, finalModelName);
@@ -212,10 +212,13 @@ export class AIServiceManager {
         try {
             if (providerId === 'google' && provider.generate) {
                 // Genkit Native
+                const { systemPrompt, ...genConfig } = options;
+
                 const result = await provider.generate({
                     model: googleAI.model(finalModelName),
                     prompt: prompt,
-                    config: options
+                    systemInstruction: systemPrompt,
+                    config: genConfig
                 })
                 return result.text
             } else {

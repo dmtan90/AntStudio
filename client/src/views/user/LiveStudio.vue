@@ -1,88 +1,27 @@
 <template>
    <div class="live-studio dark-theme">
-      <StudioHeader :is-live="isLive" :live-time="liveTime" :is-god-mode="isGodMode"
-         :title="currentProject?.title || t('studio.title')" @toggle-god-mode="toggleGodMode" @exit="handleExit" />
+      <StudioHeader :is-live="isLive" :live-time="liveTime" :is-god-mode="studioStore.godModeEnabled"
+         :demo-mode="studioStore.demoMode" :title="currentProject?.title || t('studio.title')"
+         @toggle-god-mode="toggleGodMode" @toggle-demo="studioStore.toggleDemoMode" @exit="handleExit" />
 
       <main class="studio-main">
-         <StudioRail v-model:active-tab="activeTab" :effect-tabs="effectTabs" />
+         <StudioRail v-model:active-tab="activeTab" :effect-tabs="currentTabs" />
 
          <StudioStage :active-likes="activeLikes">
             <template #canvas>
                <div class="relative w-full h-full overflow-hidden rounded-[2.5rem] border border-white/10 shadow-2xl">
                   <canvas ref="outputCanvas" class="main-canvas"></canvas>
+                  <canvas ref="overlayCanvas"
+                     class="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"></canvas>
                   <video ref="sourceVideo" autoplay muted playsinline style="display:none"></video>
 
                   <!-- Network Health Overlay -->
-                  <div v-if="isLive && networkStats"
-                     class="absolute top-8 right-8 flex flex-col items-end gap-2 z-30 animate-in pointer-events-none">
-                     <div
-                        class="px-3 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl flex items-center gap-3">
-                        <div class="flex flex-col items-end">
-                           <span class="text-[8px] font-black text-white/30 uppercase tracking-widest">Network
-                              Health</span>
-                           <div class="flex items-center gap-1.5">
-                              <div class="w-2 h-2 rounded-full"
-                                 :class="networkStats.rtt > 150 ? 'bg-red-500 animate-pulse' : (networkStats.rtt > 100 ? 'bg-yellow-500' : 'bg-green-500')">
-                              </div>
-                              <span class="text-[10px] font-black"
-                                 :class="networkStats.rtt > 150 ? 'text-red-400' : (networkStats.rtt > 100 ? 'text-yellow-400' : 'text-green-400')">
-                                 {{ networkStats.rtt > 150 ? 'CRITICAL' : (networkStats.rtt > 100 ? 'STRESSED' :
-                                    'STABLE') }}
-                              </span>
-                           </div>
-                        </div>
-                     </div>
-
-                     <!-- Stats Detail -->
-                     <div class="flex gap-2">
-                        <div
-                           class="px-3 py-2 bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl flex flex-col items-center min-w-[60px]">
-                           <span class="text-[7px] font-bold text-white/40 uppercase">Bitrate</span>
-                           <span class="text-[11px] font-black text-blue-400">{{ networkStats.bitrate }}k</span>
-                        </div>
-                        <div
-                           class="px-3 py-2 bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl flex flex-col items-center min-w-[60px]">
-                           <span class="text-[7px] font-bold text-white/40 uppercase">RTT</span>
-                           <span class="text-[11px] font-black"
-                              :class="networkStats.rtt > 100 ? 'text-yellow-400' : 'text-white'">{{ networkStats.rtt
-                              }}ms</span>
-                        </div>
-                     </div>
-
-                     <!-- Auto Recommendation Tooltip -->
-                     <div v-if="networkStats.rtt > 100 && streamQuality !== 'low'"
-                        class="mt-2 px-4 py-3 bg-yellow-500/20 backdrop-blur-xl border border-yellow-500/30 rounded-2xl max-w-[200px] shadow-2xl">
-                        <div class="flex gap-3">
-                           <i class="ri-error-warning-fill text-yellow-400 text-xl font-inner-shadow"></i>
-                           <div class="flex flex-col">
-                              <span class="text-[10px] font-black text-yellow-400 uppercase tracking-wider">Lag
-                                 Detected</span>
-                              <p class="text-[9px] font-bold text-white/70 leading-relaxed">Network delay is high.
-                                 Switching to <span class="text-yellow-400 font-black">Low Quality</span> is
-                                 recommended.</p>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
+                  <StudioNetworkStats :is-live="isLive" :stats="networkStats"
+                     :real-chat-velocity="messages.filter(m => Date.now() - m.timestamp < 30000).length"
+                     :session-infra="studioStore.sessionInfra" :quality="streamQuality" />
 
                   <!-- ASL Visual Interpreter (Accessibility) -->
-                  <div v-if="enableASL"
-                     class="asl-interpreter animate-in absolute bottom-8 right-8 w-48 aspect-video bg-black/60 backdrop-blur-xl border border-blue-500/30 rounded-3xl overflow-hidden shadow-2xl z-20">
-                     <div class="absolute inset-0 flex flex-col items-center justify-center p-4">
-                        <div class="w-full flex justify-between items-center mb-2 px-2">
-                           <span class="text-[8px] font-black text-blue-400 uppercase tracking-widest">{{
-                              t('studio.accessibility.aslTitle') }}</span>
-                           <div class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                        </div>
-                        <!-- Mock ASL Animation/Visual -->
-                        <div
-                           class="flex-1 w-full bg-blue-500/10 rounded-xl border border-white/5 flex items-center justify-center">
-                           <i class="ri-hand-coin-line text-3xl text-blue-400"></i>
-                        </div>
-                        <p class="mt-2 text-[9px] font-bold text-white/50 text-center uppercase">{{
-                           t('studio.accessibility.translating') }}</p>
-                     </div>
-                  </div>
+                  <StudioASLOverlay :enabled="enableASL" />
 
                   <!-- Visual Audio Cues (For Hearing Impaired) -->
                   <div
@@ -99,29 +38,40 @@
             </template>
             <template #controls>
                <StageControls :mic-on="micOn" :cam-on="camOn" :is-live="isLive" :is-recording="isRecording"
-                  :platform-count="selectedPlatforms.length" @toggle-mic="micOn = !micOn" @toggle-cam="camOn = !camOn"
-                  @toggle-live="toggleLive" @toggle-record="toggleRecord" @invite-guest="inviteGuest"
-                  @show-platforms="showPlatformSelector = true" @show-settings="showSettings = true" />
+                  :platform-count="selectedPlatforms.length" :guest-count="waitingGuests.length" :is-guest="isGuest"
+                  @toggle-mic="v => micOn = !micOn" @toggle-cam="v => camOn = !camOn" @toggle-live="toggleLive"
+                  @toggle-record="toggleRecord" @capture-highlight="handleHighlight"
+                  @invite-guest="showGuestDrawer = true" @show-platforms="showPlatformSelector = true"
+                  @show-settings="showSettings = true" @exit="handleExit" />
             </template>
          </StudioStage>
 
-         <StudioInteractions :messages="messages" @spawn-like="spawnLike" />
+         <StudioInteractions :messages="messages" @spawn-like="spawnLike" :guest-personas="guestPersonas"
+            :remote-guests="remoteGuests" :invite-guest="inviteGuest" :summon-guest="summonGuest"
+            :toggle-guest="toggleGuest" :add-mobile-cam="generateMobileLink" :toggle-mute="studioStore.muteGuest"
+            :toggle-camera="studioStore.toggleGuestCamera" :remove-guest="studioStore.kickGuest"
+            :assign-slot="studioStore.assignGuestToSlot" :is-guest="isGuest"
+            :guest-video-elements="guestVideoElements" />
+
       </main>
 
+
       <!-- Drawer: Effects Panel -->
-      <div v-if="activeTab" class="effects-drawer glass-dark animate-slide-left">
+      <div v-if="activeTab" class="effects-drawer glass-dark animate-slide-left mt-[64px]">
          <header class="drawer-header">
             <h3 class="drawer-title">{{effectTabs.find(t => t.id === activeTab)?.name || activeTab}}</h3>
             <div class="flex items-center gap-3">
-               <button class="marketplace-shortcut" @click="$router.push('/marketplace')">
+               <!-- <button class="marketplace-shortcut" @click="$router.push('/marketplace')">
                   <shopping size="10" /> {{ t('marketplace.title') }}
-               </button>
+               </button> -->
                <button @click="activeTab = null" class="close-drawer">
                   <close theme="outline" />
                </button>
             </div>
          </header>
          <div class="drawer-content px-4 py-6 scrollbar-hide overflow-y-auto max-h-[calc(100vh-120px)]">
+            <!-- <LayoutSettings v-if="activeTab === 'layout'" /> -->
+
             <FilterSettings v-if="activeTab === 'filters'" :active-filter="currentFilter" :filters="filters"
                :selected-background="selectedBackground || ''" :backgrounds="backgrounds"
                :enable-chromakey="enableChromakey" :chroma-settings="chromaSettings"
@@ -135,12 +85,14 @@
                :show-lower-third="showLowerThird" :show-ticker="showTicker" @toggle-lower-third="toggleLowerThird"
                @toggle-ticker="toggleTicker" />
 
-            <SceneSettings v-else-if="activeTab === 'scenes'" :active-scene="activeScene" :scenes="scenes"
-               @update:active-scene="s => activeScene = s" />
+            <!-- <SceneSettings v-else-if="activeTab === 'scenes'" :active-scene="activeScene.id" :scenes="scenes"
+               @update:active-scene="s => activeScene = s" /> -->
 
-            <GuestSettings v-else-if="activeTab === 'guests'" :guest-personas="guestPersonas"
+            <!-- <GuestSettings v-else-if="activeTab === 'guests'" :guest-personas="guestPersonas"
                :remote-guests="remoteGuests" @invite-guest="inviteGuest" @summon-guest="summonGuest"
-               @toggle-guest="toggleGuest" @add-mobile-cam="generateMobileLink" />
+               @toggle-guest="toggleGuest" @add-mobile-cam="generateMobileLink" @toggle-mute="studioStore.muteGuest"
+               @toggle-camera="studioStore.toggleGuestCamera" @remove-guest="studioStore.kickGuest"
+               @assign-slot="studioStore.assignGuestSlot" /> -->
 
             <LinguisticSettings v-else-if="activeTab === 'linguistic'" :is-translating="isTranslating"
                :enable-asl="enableASL" :source-lang="sourceLang" :target-lang="targetLang"
@@ -164,7 +116,7 @@
       </div>
 
       <!-- Modals -->
-      <el-dialog v-model="showPlatformSelector" :title="t('studio.tabs.scenes')" width="450px" class="glass-dialog">
+      <el-dialog v-model="showPlatformSelector" :title="t('studio.tabs.platforms')" width="450px" class="glass-dialog">
          <div class="platform-list">
             <div v-for="acc in availableAccounts" :key="acc._id" class="p-row glass-selectable"
                :class="{ selected: selectedPlatforms.includes(acc._id) }" @click="togglePlatform(acc._id)">
@@ -222,6 +174,19 @@
             </div>
          </div>
       </transition>
+
+      <!-- Layout Management Drawer -->
+      <!-- <LayoutDrawer v-model="showLayoutDrawer" /> -->
+
+      <!-- AI God Mode Control Panel -->
+      <GodModePanel v-if="!isGuest" />
+
+      <!-- Guest Management Drawer -->
+      <GuestDrawer v-model="showGuestDrawer" />
+      <!-- Product Management Drawer -->
+      <ProductDrawer v-model="showProductDrawer" />
+      <!-- Analytics Drawer -->
+      <AnalyticsDrawer v-model="showAnalyticsDrawer" />
    </div>
 </template>
 
@@ -232,8 +197,9 @@ import { toast } from 'vue-sonner';
 import { useTranslations } from '@/composables/useTranslations';
 import axios from 'axios';
 import {
-   Youtube, Facebook, Tiktok, Close, Shopping, Broadcast, Magic, Effects,
-   GraphicDesign, Translation, ChartHistogram, User, ShareTwo, Hands
+   Youtube, Facebook, Tiktok, Close, Shopping,
+   Broadcast, Magic, Effects, LayoutThree as Layout,
+   GraphicDesign, Translation, ChartHistogram, User, ShareTwo, Hands, Comments
 } from '@icon-park/vue-next';
 
 // Components
@@ -252,24 +218,52 @@ import CommerceSettings from '@/components/studio/drawers/CommerceSettings.vue';
 import EngagementSettings from '@/components/studio/drawers/EngagementSettings.vue';
 import VibeSettings from '@/components/studio/drawers/VibeSettings.vue';
 import CollaborationSettings from '@/components/studio/drawers/CollaborationSettings.vue';
+import LayoutSettings from '@/components/studio/drawers/LayoutSettings.vue';
+import GuestDrawer from '@/components/studio/drawers/GuestDrawer.vue';
+import ProductDrawer from '@/components/studio/drawers/ProductDrawer.vue';
+import AnalyticsDrawer from '@/components/studio/drawers/AnalyticsDrawer.vue';
+import GodModePanel from '@/components/studio/GodModePanel.vue';
 
 // Services
-import { studioDirector } from '@/utils/ai/StudioDirector.js';
+import { studioDirector } from '@/utils/ai/StudioDirector';
 import { syntheticGuestManager } from '@/utils/ai/SyntheticGuestManager.js';
 import { useUserStore } from '@/stores/user.js';
 import { WebRTCPublisher } from '@/utils/ai/WebRTCPublisher.js';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService.js';
+import { useStudioStore } from '@/stores/studio';
+import { QRCodeGenerator } from '@/utils/ai/QRCodeGenerator';
+import { useAudioAnalysis } from '@/composables/useAudioAnalysis';
+
+// Studio Composables
+import { useStudioCanvas } from '@/composables/studio/useStudioCanvas';
+import { useStudioP2P } from '@/composables/studio/useStudioP2P';
+import { useStudioSession } from '@/composables/studio/useStudioSession';
+
+// Studio Overlays
+import StudioNetworkStats from '@/components/studio/overlays/StudioNetworkStats.vue';
+import StudioASLOverlay from '@/components/studio/overlays/StudioASLOverlay.vue';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
+const studioStore = useStudioStore();
 const { t } = useTranslations();
+
+// Role & Session Detection
+const isGuest = computed(() => route.query.role === 'guest' || !!route.query.token);
+const guestName = computed(() => (route.query.guestName as string) || (route.query.name as string) || 'Guest');
+const hostId = computed(() => route.query.hostId as string);
+const waitingGuests = computed(() => studioStore.waitingGuests);
+
+const qualityPresets = {
+   low: { video: 500, audio: 64, fps: 30, width: 640, height: 360, label: 'Low (360p @ 30fps)' },
+   medium: { video: 1200, audio: 128, fps: 30, width: 854, height: 480, label: 'Medium (480p @ 30fps)' },
+   high: { video: 2500, audio: 160, fps: 30, width: 1280, height: 720, label: 'High (720p @ 30fps)' },
+   ultra: { video: 4500, audio: 192, fps: 30, width: 1920, height: 1080, label: 'Ultra (1080p @ 30fps)' }
+};
 
 // State
 const currentProject = ref({ title: 'Dynamic Studio Session' });
-const isLive = ref(false);
-const isRecording = ref(false);
-const liveTime = ref(0);
 const micOn = ref(true);
 const camOn = ref(true);
 const activeTab = ref<string | null>(null);
@@ -281,258 +275,174 @@ const messages = ref<any[]>([]);
 const activeLikes = ref<any[]>([]);
 const currentFilter = ref('none');
 const selectedBackground = ref<string | null>(null);
-const isGodMode = ref(false);
-const currentVibeName = ref('Calm');
-const vibeScore = ref(0);
-const autoAtmosphere = ref(true);
 const branding = ref({ name: 'Alex Thompson', title: 'AI Specialist', color: '#3b82f6' });
 const showLowerThird = ref(false);
+const showGuestDrawer = ref(false);
+const showLayoutDrawer = ref(false);
+const showProductDrawer = ref(false);
+const showAnalyticsDrawer = ref(false);
 const showTicker = ref(false);
-const activeScene = ref('standard');
 const isTranslating = ref(false);
 const sourceLang = ref('en-US');
 const targetLang = ref('vi-VN');
 const currentTranscript = ref('');
 const isFlashDeal = ref(false);
 const activeProductId = ref<string | null>(null);
-const activePoll = ref<any>(null);
 const qaQueue = ref<any[]>([]);
-const activeCollaborators = ref<any[]>([]);
-const remoteGuests = ref<any[]>([]);
-const capturedHighlights = ref<any[]>([]);
+const purchaseNotifications = ref<any[]>([]);
 const enableASL = ref(false);
-const audioLevel = ref(0);
-const guestPersonas = ref<any[]>([]);
-const liveProducts = ref<any[]>([]);
 const streamQuality = ref('high');
 const networkStats = ref<any>(null);
 
-const qualityPresets = {
-   low: { video: 500, audio: 64, fps: 30, width: 640, height: 360, label: 'Low (360p @ 30fps)' },
-   medium: { video: 1200, audio: 128, fps: 30, width: 854, height: 480, label: 'Medium (480p @ 30fps)' },
-   high: { video: 2500, audio: 160, fps: 30, width: 1280, height: 720, label: 'High (720p @ 30fps)' },
-   ultra: { video: 4500, audio: 192, fps: 30, width: 1920, height: 1080, label: 'Ultra (1080p @ 30fps)' }
-};
-
-// Virtual Production State
+// Additional UI State
+const activePoll = ref<any>(null);
 const enableChromakey = ref(false);
-const chromaSettings = ref({ similarity: 0.4, smoothness: 0.08 });
+const chromaSettings = ref({ keyColor: '#00ff00', similarity: 0.1, smoothness: 0.05 });
+const guestPersonas = ref([
+   { id: 'p1', name: 'Cyber Luna', role: 'Fashion AI', avatar: '/avatars/ai1.jpg' },
+   { id: 'p2', name: 'Neo Tech', role: 'Tech Guru', avatar: '/avatars/ai2.jpg' }
+]);
+const currentVibeName = ref('Techno Chill');
+const vibeScore = ref(85);
+const autoAtmosphere = ref(true);
+const activeCollaborators = ref<any[]>([]);
+const currentWebRTCUrl = ref<string | null>(null);
 
-const scenes = [
-   { id: 'standard', name: 'Default' },
-   { id: 'interview', name: 'Interview' },
-   { id: 'grid', name: 'Conference' },
-   { id: 'shoutout', name: 'Shoutout' },
-   { id: 'fullscreen', name: 'Studio Full' }
-];
+// Audio Analysis
+const { audioLevel: hostLevel, isSpeaking: hostSpeaking, updateStream: updateAudioStream } = useAudioAnalysis(null);
+const guestLevels = ref<Record<string, number>>({});
 
 // Template Refs
 const sourceVideo = ref<HTMLVideoElement | null>(null);
-const outputCanvas = ref<HTMLCanvasElement | null>(null);
-const rtcPublisher = ref<WebRTCPublisher | null>(null);
-const mediaRecorder = ref<MediaRecorder | null>(null);
 
-let stream: MediaStream | null = null;
-let timerInterval: any = null;
-const currentSessionId = ref<string | null>(null);
-
-// Logic Methods
-const toggleLive = async () => {
-   if (!isLive.value) {
-      if (selectedPlatforms.value.length === 0) {
-         toast.error(t('studio.messages.selectPlatform'));
-         showPlatformSelector.value = true;
-         return;
-      }
-      try {
-         // Auto-setup live info for platforms that support it if streamKey is missing
-         for (const pId of selectedPlatforms.value) {
-            const acc = availableAccounts.value.find(a => a._id === pId);
-            if (acc && !acc.streamKey && (acc.platform === 'youtube' || acc.platform === 'ant-media')) {
-               toast.info(`Configuring live stream for ${acc.accountName}...`);
-               const infoRes = await axios.get(`/api/platforms/${pId}/live-info`, {
-                  params: {
-                     title: currentProject.value.title,
-                     description: 'Live via AntFlow'
-                  }
-               });
-               if (infoRes.data.success) {
-                  acc.streamKey = infoRes.data.data.streamKey;
-                  acc.rtmpUrl = infoRes.data.data.rtmpUrl;
-               }
-            }
-         }
-
-         // 1. Using platformAccountIds to start the session on backend
-         const quality = (qualityPresets as any)[streamQuality.value];
-         const res = await axios.post('/api/streaming/start', {
-            platformAccountIds: selectedPlatforms.value,
-            source: 'webrtc',
-            quality: {
-               width: quality.width,
-               height: quality.height,
-               videoBitrate: quality.video,
-               audioBitrate: quality.audio,
-               fps: quality.fps
-            }
-         });
-
-         if (res.data.success) {
-            const { sessionId, mode, amsAccount } = res.data.data;
-            currentSessionId.value = sessionId;
-
-            console.log(`[Studio] Start response: session=${sessionId}, mode=${mode}, amsId=${amsAccount?._id}`);
-
-            // 2. Start WebRTC Publisher based on the mode returned by backend
-            if (mode === 'webrtc_ams' && amsAccount) {
-               const serverUrl = amsAccount.credentials.serverUrl;
-               const appName = amsAccount.credentials.appName || 'WebRTCAppEE';
-               const streamId = amsAccount.streamKey;
-
-               console.log(`[Studio] Publishing to bridge: ${serverUrl}/${appName}/${streamId}`);
-
-               if (serverUrl && streamId) {
-                  const wsProtocol = serverUrl.startsWith('https') ? 'wss:' : 'ws:';
-                  const wsHost = new URL(serverUrl).host;
-                  const websocketUrl = `${wsProtocol}//${wsHost}/${appName}/websocket`;
-
-                  const quality = (qualityPresets as any)[streamQuality.value];
-                  rtcPublisher.value = new WebRTCPublisher({
-                     websocketUrl,
-                     streamId,
-                     videoBitrate: quality?.video,
-                     audioBitrate: quality?.audio,
-                     maxFramerate: quality?.fps,
-                     onStats: (stats) => { networkStats.value = stats; }
-                  });
-
-                  const canvasStream = outputCanvas.value!.captureStream(quality?.fps || 30);
-                  if (stream) stream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
-
-                  await rtcPublisher.value.start(canvasStream);
-                  toast.success("Connection synchronized. Stream starting...");
-               }
-            } else if (mode === 'webrtc_relay') {
-               toast.info("Using Direct Backend Relay (Experimental)");
-               startRelayStream(sessionId);
-            }
-
-            isLive.value = true;
-            timerInterval = setInterval(() => liveTime.value++, 1000);
-            toast.success(t('studio.messages.live'));
-            mockChat();
-         }
-      } catch (e: any) {
-         console.error(e);
-         if (rtcPublisher.value) {
-            rtcPublisher.value.stop();
-            rtcPublisher.value = null;
-         }
-         toast.error(e.response?.data?.error || t('studio.messages.liveError'));
-      }
-   } else {
-      isLive.value = false;
-      clearInterval(timerInterval);
-      toast.info(t('studio.messages.stopped'));
-
-      if (rtcPublisher.value) {
-         rtcPublisher.value.stop();
-         rtcPublisher.value = null;
-      }
-
-      if (mediaRecorder.value) {
-         mediaRecorder.value.stop();
-         mediaRecorder.value = null;
-      }
-
-      // Call stop endpoint if necessary
-      try {
-         if (currentSessionId.value) {
-            await axios.post('/api/streaming/stop', { sessionId: currentSessionId.value });
-            currentSessionId.value = null;
-         }
-      } catch (e) { }
-   }
-}
-
-const startRelayStream = (sessionId: string) => {
-   if (!outputCanvas.value) return;
-
-   // 1. Prepare Stream (Video from Canvas + Audio from Mic)
-   const quality = (qualityPresets as any)[streamQuality.value];
-   const canvasStream = outputCanvas.value.captureStream(quality.fps);
-
+watch(micOn, (val) => {
    if (stream) {
-      stream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+      stream.getAudioTracks().forEach(t => t.enabled = val);
    }
+});
 
-   // 2. Initialize MediaRecorder
-   // Match the bitrate to the selected quality to reduce upload bandwidth and decode load
-   const bitrate = quality.video * 1000; // kbps to bps
-
-   let options = { mimeType: 'video/webm;codecs=h264', videoBitsPerSecond: bitrate };
-   if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-      options = { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: bitrate };
+watch(camOn, (val) => {
+   if (stream) {
+      stream.getVideoTracks().forEach(t => t.enabled = val);
    }
+});
+const outputCanvas = ref<HTMLCanvasElement | null>(null);
+const overlayCanvas = ref<HTMLCanvasElement | null>(null);
 
-   mediaRecorder.value = new MediaRecorder(canvasStream, options);
+const hostStream = ref<MediaStream | null>(null);
+const canvasStream = ref<MediaStream | null>(null);
+let stream: MediaStream | null = null; // Still keep for legacy if needed, but we'll use ref
 
-   mediaRecorder.value.ondataavailable = async (event) => {
-      if (event.data.size > 0) {
-         const socket = ActionSyncService.getSocket();
-         if (socket) {
-            // Convert Blob to ArrayBuffer for binary transmission
-            const buffer = await event.data.arrayBuffer();
-            socket.emit('stream:relay', {
-               sessionId,
-               chunk: buffer
-            });
+// Composables Integration
+const { guestVideos, guestVideoElements, syncGuestVideos, stopGuestSubscriber, initiateAsGuest } = useStudioP2P(hostStream, canvasStream, isGuest);
 
-            // Calculate and update stats for Relay mode
-            const bytes = event.data.size;
-            // Approximate bitrate based on 500ms chunks (2 chunks per second)
-            const bitrate = Math.round((bytes * 8 * 2) / 1000); // kbps
+const { isLive, isRecording, liveTime, currentSessionId, toggleLive: baseToggleLive, stopLive } = useStudioSession(
+   outputCanvas,
+   hostStream,
+   {
+      streamQuality,
+      currentProject,
+      selectedPlatforms,
+      availableAccounts,
+      networkStats,
+      qualityPresets
+   }
+);
 
-            networkStats.value = {
-               currentRoundTripTime: 50, // Mock RTT for relay (socket latency usually low)
-               currentBitrate: bitrate,
-               packetLoss: 0,
-               availableOutgoingBitrate: bitrate + 500, // Mock headroom
-               source: 'relay'
-            };
+const { frameCount, audioLevel, startRendering, stopRendering } = useStudioCanvas(
+   outputCanvas,
+   sourceVideo,
+   guestVideos,
+   {
+      streamQuality,
+      enableASL,
+      purchaseNotifications,
+      hostLevel,
+      guestLevels,
+      isGuest,
+      myGuestId: computed(() => studioStore.myGuestId),
+      realChatVelocity: computed(() => {
+         const now = Date.now();
+         return messages.value.filter(m => now - m.timestamp < 30000).length;
+      })
+   },
+   overlayCanvas
+);
+
+// Process AI decisions if God Mode is on
+const processGodModeDecisions = async () => {
+   if (!studioStore.godModeEnabled) return;
+
+   const context = {
+      voiceLevel: audioLevel.value,
+      activeGuests: studioStore.liveGuests.length,
+      chatVelocity: messages.value.filter(m => Date.now() - m.timestamp < 60000).length,
+      currentSceneId: studioStore.activeScene.id,
+      guestLevels: Object.values(guestLevels.value),
+      isTransitioning: false
+   };
+
+   const decision = await studioDirector.tick(context as any);
+   if (decision.action === 'switch_scene' && decision.payload) {
+      studioStore.switchScene(decision.payload);
+      toast.info(`AI Choice: ${decision.payload}`);
+   }
+};
+
+// Watch for God Mode throttled logic
+watch(frameCount, (val) => {
+   if (studioStore.godModeEnabled && val % 120 === 0) { // Every 4 seconds at 30fps
+      processGodModeDecisions();
+   }
+});
+
+watch(isTranslating, (val) => {
+   if (val) {
+      const phrases = [
+         "The potential of AI in entertainment is limitless.",
+         "Autonomous broadcasts are becoming the new standard.",
+         "Real-time commerce bridges the gap between content and sales.",
+         "Welcome to the Singularity phase of AntFlow."
+      ];
+      let i = 0;
+      const interval = setInterval(() => {
+         if (!isTranslating.value) {
+            clearInterval(interval);
+            currentTranscript.value = '';
+            return;
          }
-      }
-   };
+         currentTranscript.value = phrases[i % phrases.length];
+         i++;
+      }, 4000);
+   }
+});
 
-   mediaRecorder.value.onerror = (err) => {
-      console.error('[Relay] Recorder Error:', err);
-      toast.error('Relay stream error');
-   };
-
-   // Start recording with 500ms slices for reliable chunk generation
-   mediaRecorder.value.start(500);
-   console.log(`[Studio] MediaRecorder started with 500ms timeslice`);
-   console.log(`[Studio] Relay stream started for session: ${sessionId}`);
-}
+// Methods & Actions
+const toggleLive = async () => {
+   const result = await baseToggleLive();
+   if (result === 'select_platform') {
+      showPlatformSelector.value = true;
+   }
+};
 
 const toggleGodMode = () => {
-   isGodMode.value = !isGodMode.value;
-   if (isGodMode.value) {
+   studioStore.toggleGodMode();
+   if (studioStore.godModeEnabled) {
       toast.success(t('studio.messages.godModeEnabled'));
-      studioDirector.start();
+      studioDirector.setActive(true);
    } else {
       toast.info(t('studio.messages.godModeDisabled'));
-      studioDirector.stop();
+      studioDirector.setActive(false);
    }
-}
+};
 
-const handleExit = () => {
-   if (isLive.value) {
-      toast.error(t('studio.messages.stopLiveFirst'));
-      return;
-   }
-   router.push('/platforms');
-}
+// const handleExit = () => {
+//    if (isLive.value) {
+//       toast.error(t('studio.messages.stopLiveFirst'));
+//       return;
+//    }
+//    router.push('/dashboard');
+// };
 
 const toggleRecord = () => {
    isRecording.value = !isRecording.value;
@@ -541,7 +451,19 @@ const toggleRecord = () => {
    } else {
       toast.info(t('studio.messages.recordingSaved'));
    }
-}
+};
+
+const handleHighlight = async () => {
+   if (!currentSessionId.value) return;
+   await studioStore.captureHighlight(currentSessionId.value);
+};
+
+watch(() => studioStore.demoMode, (val) => {
+   if (val) {
+      if (!isLive.value) toggleLive();
+      mockChat();
+   }
+});
 
 const spawnLike = () => {
    const id = Math.random().toString(36).substr(2, 9);
@@ -555,12 +477,38 @@ const spawnLike = () => {
    }, 2000);
 }
 
+const spawnPurchaseNotification = (userName: string, productName: string) => {
+   const id = Math.random().toString(36).substr(2, 9);
+   const notification = {
+      id,
+      text: `${userName.toUpperCase()} JUST BOUGHT ${productName.toUpperCase()}!`,
+      opacity: 0,
+      y: 100, // Start position
+      startTime: Date.now()
+   };
+   purchaseNotifications.value.push(notification);
+
+   // Auto-remove after 5 seconds
+   setTimeout(() => {
+      purchaseNotifications.value = purchaseNotifications.value.filter(n => n.id !== id);
+   }, 5000);
+};
+
+const activeScene = computed({
+   get: () => studioStore.activeScene,
+   set: (val) => studioStore.switchScene(val.id)
+});
+
+const remoteGuests = computed(() => studioStore.liveGuests);
+const scenes = computed(() => studioStore.scenes);
+const liveProducts = computed(() => studioStore.liveProducts);
+
 const inviteGuest = () => {
-   toast.info(t('studio.messages.inviteSent'));
+   showGuestDrawer.value = true;
 }
 
 const summonGuest = (persona: any) => {
-   syntheticGuestManager.summon(persona);
+   syntheticGuestManager.summonGuest(persona);
    toast.success(`Summoning ${persona.name}...`);
 }
 
@@ -577,36 +525,57 @@ const toggleTicker = () => {
 }
 
 const generateMobileLink = () => {
-   const link = `${window.location.origin}/remote-cam?session=${Math.random().toString(36).substr(2, 9)}`;
+   const sessionId = currentSessionId.value || Math.random().toString(36).substr(2, 9);
+   const link = `${window.location.origin}/remote-cam?session=${sessionId}&name=MobileCam_${Math.floor(Math.random() * 1000)}`;
    navigator.clipboard.writeText(link);
    toast.success(t('studio.messages.linkCopied'));
 }
 
+
 const triggerFlashDeal = () => {
-   isFlashDeal.value = true;
-   setTimeout(() => isFlashDeal.value = false, 10000);
+   studioStore.startFlashSale({
+      title: 'HOT DEAL: -30% OFF',
+      discount: 0.3
+   });
 }
 
-const toggleProduct = (product: any) => {
-   activeProductId.value = activeProductId.value === product.id ? null : product.id;
+const toggleProduct = (productId: any) => {
+   if (studioStore.activeProductId === productId) {
+      studioStore.removeProduct(productId);
+   } else {
+      const product = studioStore.liveProducts.find((p: any) => p.id === productId || p._id === productId);
+      if (product) studioStore.showcaseProduct(product);
+   }
 }
 
 const mockChat = () => {
-   const mockMsgs = [
-      { id: 1, user: 'User123', text: 'Amazing stream!', avatar: '' },
-      { id: 2, user: 'StreamFan', text: 'How do you do that effect?', avatar: '' }
-   ];
-   let i = 0;
    const interval = setInterval(() => {
       if (!isLive.value) {
          clearInterval(interval);
          return;
       }
-      if (i < mockMsgs.length) {
-         messages.value.push(mockMsgs[i++]);
-         spawnLike();
+      messages.value.push({
+         id: Date.now(),
+         user: 'Fan_' + Math.floor(Math.random() * 1000),
+         text: 'ANTFLOW IS THE FUTURE! 🚀🔥',
+         timestamp: Date.now(),
+         avatar: ''
+      });
+      if (messages.value.length > 50) messages.value.shift();
+
+      // Auto-trigger likes
+      if (Math.random() > 0.5) spawnLike();
+
+      // Occasionally spawn a purchase notification
+      if (Math.random() > 0.8) {
+         const users = ['Alex', 'Karik', 'Suboi', 'JustaTee'];
+         const products = ['Ultra Pro Mic', 'Halo Light', 'AntFlow Box'];
+         spawnPurchaseNotification(
+            users[Math.floor(Math.random() * users.length)],
+            products[Math.floor(Math.random() * products.length)]
+         );
       }
-   }, 5000);
+   }, 3000);
 }
 
 const selectStage = (bg: any) => {
@@ -641,9 +610,21 @@ const fetchAccounts = async () => {
    try {
       const res = await axios.get('/api/platforms');
       availableAccounts.value = res.data.data;
+
+      // Pre-calculate WebRTC URL if AMS is available (needed for guest subs even before going live)
+      const ams = res.data.data.find((a: any) => a.platform === 'ant_media' && a.isActive);
+      if (ams && ams.credentials?.serverUrl) {
+         const serverUrl = ams.credentials.serverUrl;
+         const appName = ams.credentials.appName || 'WebRTCAppEE';
+         const wsProtocol = serverUrl.startsWith('https') ? 'wss:' : 'ws:';
+         const wsHost = new URL(serverUrl).host;
+         currentWebRTCUrl.value = `${wsProtocol}//${wsHost}/${appName}/websocket`;
+      }
       // Ensure Socket is connected for relay/collaboration
       if (userStore.token) {
-         ActionSyncService.connect('studio_global', userStore.token);
+         // Connect to session-specific room if available, otherwise fallback to global
+         const roomId = currentSessionId.value || 'studio_global';
+         ActionSyncService.connect(roomId, userStore.token);
 
          // Listen for relay stream status (errors/stops)
          const socket = ActionSyncService.getSocket();
@@ -654,18 +635,18 @@ const fetchAccounts = async () => {
                   console.warn(`[Studio] Stream stopped by server: ${data.error}`);
                   toast.error(`Stream stopped: ${data.error || 'Server error'}`);
 
-                  // Force stop local state without calling API again (since session is already dead)
+                  // Force stop local state via composable
                   if (isLive.value) {
-                     isLive.value = false;
-                     clearInterval(timerInterval);
-                     if (mediaRecorder.value) {
-                        mediaRecorder.value.stop();
-                        mediaRecorder.value = null;
-                     }
-                     currentSessionId.value = null;
-                     toast.info('Broadcast ended');
+                     stopLive();
                   }
                }
+            });
+
+            // Listen for Live Commerce Purchases
+            socket.off('commerce:purchase');
+            socket.on('commerce:purchase', (data: { userName: string, productName: string }) => {
+               spawnPurchaseNotification(data.userName, data.productName);
+               toast.info(`🛒 ${data.userName} just bought ${data.productName}!`);
             });
          }
       }
@@ -681,77 +662,144 @@ const fetchAccounts = async () => {
       console.error('Failed to fetch platforms', e);
       toast.error('Could not load platform accounts');
    }
-}
+};
+
+const handleKeyPress = (event: KeyboardEvent) => {
+   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+
+   const key = event.key;
+   if (key >= '1' && key <= '9') {
+      const sceneIndex = parseInt(key) - 1;
+      const scene = studioStore.scenes[sceneIndex];
+      if (scene) {
+         studioStore.switchScene(scene.id);
+         toast.info(`Switched to ${scene.name}`);
+      }
+   }
+};
+
+const handleExit = () => {
+   if (isGuest.value) {
+      ActionSyncService.disconnect();
+      return router.push('/');
+   }
+
+   if (isLive.value) {
+      toast.error(t('studio.messages.stopLiveFirst'));
+      return;
+   }
+   router.push('/platforms');
+};
 
 // Lifecycle
 onMounted(async () => {
+   window.addEventListener('keydown', handleKeyPress);
    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+         video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            aspectRatio: 1.777
+         },
+         audio: true
+      });
+      hostStream.value = stream;
+
+      const setCanvasSize = () => {
+         const quality = (qualityPresets as any)[streamQuality.value];
+         if (outputCanvas.value) {
+            outputCanvas.value.width = quality.width;
+            outputCanvas.value.height = quality.height;
+            if (overlayCanvas.value) {
+               overlayCanvas.value.width = quality.width;
+               overlayCanvas.value.height = quality.height;
+            }
+
+            // Capture Canvas Stream for Host (Broadcasting/Recording)
+            if (!isGuest.value && !canvasStream.value) {
+               try {
+                  canvasStream.value = (outputCanvas.value as any).captureStream(30);
+               } catch (e) {
+                  console.error("Failed to capture canvas stream:", e);
+               }
+            }
+         }
+      };
+
+      setCanvasSize();
+
       if (sourceVideo.value) {
          sourceVideo.value.srcObject = stream;
+         updateAudioStream(stream);
          sourceVideo.value.onloadedmetadata = () => {
-            if (outputCanvas.value) {
-               outputCanvas.value.width = sourceVideo.value!.videoWidth;
-               outputCanvas.value.height = sourceVideo.value!.videoHeight;
-            }
+            // Already set by setCanvasSize, but redundant check is fine
+            setCanvasSize();
             sourceVideo.value?.play();
-            startProcessing();
+            startRendering();
          };
+
+         // Fallback if metadata is already loaded or doesn't trigger
+         if (sourceVideo.value.readyState >= 2) {
+            startRendering();
+         }
       }
 
-      await fetchAccounts();
+      if (isGuest.value) {
+         // Guest Startup Flow
+         const token = route.query.token as string;
+         const sessionId = route.query.sessionId as string;
+         if (sessionId && token) {
+            ActionSyncService.connect(sessionId, token, { displayName: guestName.value });
+            if (hostId.value) {
+               setTimeout(() => initiateAsGuest(hostId.value), 2000);
+            }
+         }
+         currentProject.value = { title: `${t('studio.guest')} - ${guestName.value}` };
+      } else {
+         // Host Startup Flow
+         await fetchAccounts();
+         try {
+            const res = await axios.post('/api/streaming/session/prepare');
+            if (res.data.success) {
+               currentSessionId.value = res.data.data.sessionId;
+               studioStore.currentSessionId = res.data.data.sessionId;
+            }
+         } catch (e) {
+            console.error("[Studio] Session prepare failed", e);
+         }
+      }
    } catch (e) {
       console.error(e);
       toast.error("Camera required for studio");
    }
 });
 
-const startProcessing = () => {
-   const render = () => {
-      if (!outputCanvas.value || !sourceVideo.value) return;
-      const ctx = outputCanvas.value.getContext('2d');
-      if (ctx) ctx.drawImage(sourceVideo.value, 0, 0, outputCanvas.value.width, outputCanvas.value.height);
-
-      // Simulate audio analysis for visual cues
-      if (micOn.value) {
-         audioLevel.value = 0.2 + Math.random() * 0.4;
-      } else {
-         audioLevel.value = 0;
-      }
-
-      requestAnimationFrame(render);
-   };
-   render();
-};
-
-// Watcher for quality changes during live
-watch(streamQuality, (newVal) => {
-   if (isLive.value && rtcPublisher.value) {
-      const quality = (qualityPresets as any)[newVal];
-      rtcPublisher.value.updateConfig({
-         videoBitrate: quality?.video,
-         audioBitrate: quality?.audio,
-         maxFramerate: quality?.fps
-      });
-      toast.info(`Quality updated: ${newVal.toUpperCase()}`);
-   }
-});
-
 onUnmounted(() => {
+   window.removeEventListener('keydown', handleKeyPress);
    if (stream) stream.getTracks().forEach(t => t.stop());
-   clearInterval(timerInterval);
+   stopRendering();
 });
 
 const effectTabs = computed(() => [
+   // { id: 'layout', name: t('studio.tabs.layout'), icon: Layout },
    { id: 'filters', name: t('studio.tabs.filters'), icon: Effects },
    { id: 'ai', name: t('studio.tabs.ai'), icon: Magic },
    { id: 'graphics', name: t('studio.tabs.graphics'), icon: GraphicDesign },
-   { id: 'scenes', name: t('studio.tabs.scenes'), icon: Broadcast },
-   { id: 'guests', name: t('studio.tabs.guests'), icon: 'User' },
+   // { id: 'guests', name: t('studio.tabs.guests'), icon: User },
    { id: 'linguistic', name: t('studio.tabs.linguistic'), icon: Translation },
    { id: 'commerce', name: t('studio.tabs.commerce'), icon: Shopping },
    { id: 'engagement', name: t('studio.tabs.engagement'), icon: ChartHistogram }
 ]);
+
+const currentTabs = computed(() => {
+   if (isGuest.value) {
+      return [
+         // { id: 'guests', name: t('studio.tabs.guests'), icon: User },
+         { id: 'engagement', name: t('studio.tabs.chat'), icon: Comments },
+      ];
+   }
+   return effectTabs.value;
+});
 
 const filters = computed(() => [
    { id: 'none', name: t('studio.filters.none'), preview: '#333' },
@@ -764,6 +812,7 @@ const backgrounds = computed(() => [
    { id: 'office', name: t('studio.backgrounds.office'), url: '/bg/office.jpg' },
    { id: 'studio', name: t('studio.backgrounds.studio'), url: '/bg/neon.jpg' }
 ]);
+
 </script>
 
 <style lang="scss" scoped>

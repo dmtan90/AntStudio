@@ -8,14 +8,19 @@
             <div class="timer" v-if="isLive">{{ formatTime(liveTime) }}</div>
         </div>
         <div class="header-center">
+            <h2 class="stream-title">Professional Studio — {{ title }}</h2>
+        </div>
+        <div class="header-right">
             <div class="god-mode-indicator" :class="{ active: isGodMode }" @click="$emit('toggle-god-mode')">
                 <robot theme="outline" size="14" />
                 <span class="text-[9px] font-black uppercase">God Mode: {{ isGodMode ? 'ENGAGED' : 'OFF' }}</span>
                 <div v-if="isGodMode" class="scanline"></div>
             </div>
-            <h2 class="stream-title">Professional Studio — {{ title }}</h2>
-        </div>
-        <div class="header-right">
+            <button class="exit-btn" title="Demo Mode"
+                :class="{ 'text-purple-400 border-purple-400/50 bg-purple-500/10': demoMode }"
+                @click="$emit('toggle-demo')">
+                <magic theme="outline" size="18" />
+            </button>
             <button class="exit-btn" @click="$emit('exit')">
                 <close theme="outline" size="18" />
             </button>
@@ -24,16 +29,17 @@
 </template>
 
 <script setup lang="ts">
-import { Robot, Close } from '@icon-park/vue-next';
+import { Robot, Close, Magic } from '@icon-park/vue-next';
 
-defineProps<{
+const props = defineProps<{
     isLive: boolean;
     liveTime: number;
     isGodMode: boolean;
+    demoMode: boolean;
     title: string;
 }>();
 
-defineEmits(['toggle-god-mode', 'exit']);
+defineEmits(['toggle-god-mode', 'exit', 'toggle-demo']);
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);

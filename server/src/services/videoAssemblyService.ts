@@ -8,6 +8,7 @@ import http from 'http';
 import { Project, IProject } from '../models/Project.js';
 import { S3KeyGenerator, uploadToS3, getSignedS3Url } from '../utils/s3.js';
 import { configService } from '../utils/configService.js';
+import { AnalyticsService } from './AnalyticsService.js';
 
 // Configure ffmpeg with static binaries
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
@@ -82,6 +83,7 @@ export class VideoAssemblyService {
      * Assemble project videos, audio, and transitions
      */
     public static async assembleProject(project: IProject): Promise<AssembleResult> {
+        const startTime = Date.now();
         const workDir = path.join(process.cwd(), 'temp', `assemble_${project._id}`);
 
         // Ensure work dir
@@ -354,6 +356,10 @@ export class VideoAssemblyService {
                 const tlBuffer = fs.readFileSync(timelapsePath);
                 await uploadToS3(uploadedTimelapseKey, tlBuffer, 'video/mp4');
             }
+
+            // Track assembly time
+            const totalAssemblyTime = Date.now() - startTime;
+            await AnalyticsService.setAssemblyTime(project._id.toString(), totalAssemblyTime);
 
             return {
                 finalVideoKey: finalKey,

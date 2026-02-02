@@ -25,6 +25,12 @@ AntFlow/
 └── docker-compose.yml   # Docker Orchestration
 ```
 
+### ⚙️ Architectural Constraints
+
+- **Client-Side Assembly**: All video rendering and assembly for project exports **MUST** happen on the client-side via `useVideoAssembler` and `videoAssembly.worker.ts`.
+- **Stateless Rendering**: The backend should not maintain a render queue or state for video assembly. It only accepts final `Blob` uploads via the `/upload-final-video` route.
+- **Resource Offloading**: This architecture is designed to scale horizontally without requiring massive GPU instances for the backend.
+
 ## 🛠️ Tech Stack
 
 ### Frontend
@@ -34,13 +40,13 @@ AntFlow/
 - **State Management**: Pinia
 - **Styling**: TailwindCSS + Element Plus
 - **Graphics**: Fabric.js (Canvas), Three.js (3D), WebGL
-- **Video Processing**: FFmpeg.wasm
+- **Video Processing**: FFmpeg.wasm + @webav/av-cliper (**Primary Assembly & Export Engine**)
 
 ### Backend
 - **Runtime**: Node.js v18+
 - **Framework**: Express.js
 - **Database**: MongoDB v6.0+
-- **Video Processing**: FFmpeg (Server-side)
+- **Video Processing**: FFmpeg (Used for streaming relay & thumbnailing **ONLY**)
 - **AI Integration**:
   - Google Gemini (Text/Analysis)
   - Google Veo (Video Generation)

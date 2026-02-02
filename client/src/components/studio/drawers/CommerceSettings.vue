@@ -55,13 +55,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useStudioStore } from '@/stores/studio';
 import { Fire, Ranking, ShoppingCart } from '@icon-park/vue-next';
 
-defineProps<{
-    isFlashDeal: boolean;
-    liveProducts: any[];
-    activeProductId: string | null;
-}>();
+const studioStore = useStudioStore();
+
+const isFlashDeal = computed(() => !!studioStore.activeFlashSale);
+const liveProducts = computed(() => studioStore.liveProducts);
+const activeProductId = computed(() => studioStore.activeProductId);
 
 defineEmits(['trigger-flash-deal', 'toggle-product']);
 </script>

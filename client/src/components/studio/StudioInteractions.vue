@@ -1,22 +1,47 @@
 <template>
     <aside class="interaction-panel glass-dark">
         <div class="section-tabs">
+            <button v-if="!isGuest" class="tab-btn" :class="{ active: localActiveTab === 'layout' }"
+                @click="localActiveTab = 'layout'">Layout</button>
+            <button v-if="!isGuest" class="tab-btn" :class="{ active: localActiveTab === 'scene' }"
+                @click="localActiveTab = 'scene'">Guests</button>
             <button class="tab-btn" :class="{ active: localActiveTab === 'chat' }"
                 @click="localActiveTab = 'chat'">Chat</button>
             <button class="tab-btn" :class="{ active: localActiveTab === 'stats' }"
                 @click="localActiveTab = 'stats'">Stats</button>
         </div>
 
-        <div v-if="localActiveTab === 'chat'" class="chat-flow" ref="chatFlow">
-            <div v-for="msg in messages" :key="msg.id" class="chat-message animate-in"
-                :class="{ 'is-social': msg.isSocial }">
-                <div class="msg-header flex items-center gap-2">
-                    <youtube v-if="msg.user.includes('YouTube')" size="12" class="text-red-500" />
-                    <facebook v-else-if="msg.user.includes('FB')" size="12" class="text-blue-500" />
-                    <tiktok v-else-if="msg.user.includes('TikTok')" size="12" class="text-pink-500" />
-                    <span class="user">{{ msg.user }}:</span>
+        <div v-if="localActiveTab === 'layout'"
+            class="layout-flow p-4 animate-in scrollbar-hide overflow-y-auto max-h-[calc(100vh-120px)]">
+            <!-- Layout content placeholder -->
+            <LayoutSettings />
+        </div>
+
+        <div v-else-if="localActiveTab === 'scene'"
+            class="scene-flow p-4 animate-in scrollbar-hide overflow-y-auto max-h-[calc(100vh-120px)]">
+            <!-- Scene content placeholder -->
+            <GuestSettings :guest-personas="guestPersonas" :remote-guests="remoteGuests" @invite-guest="inviteGuest"
+                @summon-guest="summonGuest" @toggle-guest="toggleGuest" @add-mobile-cam="addMobileCam"
+                @toggle-mute="toggleMute" @toggle-camera="toggleCamera" @remove-guest="removeGuest"
+                @assign-slot="assignSlot" :guest-video-elements="guestVideoElements" />
+        </div>
+
+        <div v-else-if="localActiveTab === 'chat'" class="chat-flow" ref="chatFlow">
+            <template v-if="messages.length > 0">
+                <div v-for="msg in messages" :key="msg.id" class="chat-message animate-in"
+                    :class="{ 'is-social': msg.isSocial }">
+                    <div class="msg-header flex items-center gap-2">
+                        <youtube v-if="msg.user.includes('YouTube')" size="12" class="text-red-500" />
+                        <facebook v-else-if="msg.user.includes('FB')" size="12" class="text-blue-500" />
+                        <tiktok v-else-if="msg.user.includes('TikTok')" size="12" class="text-pink-500" />
+                        <span class="user">{{ msg.user }}:</span>
+                    </div>
+                    <span class="text">{{ msg.text }}</span>
                 </div>
-                <span class="text">{{ msg.text }}</span>
+            </template>
+            <div v-else class="empty-chat flex flex-col items-center justify-center h-full opacity-20 gap-4">
+                <broadcast theme="outline" size="48" />
+                <p class="text-[10px] uppercase font-black tracking-[0.2em] text-center">Waiting for engagement...</p>
             </div>
         </div>
 
@@ -28,11 +53,11 @@
             </div>
         </div>
 
-        <div class="interaction-buttons">
-            <button class="interact-btn like" @click="$emit('spawn-like')">
+        <div class="interaction-buttons" v-if="localActiveTab === 'chat'">
+            <button class="interact-btn like" @click="trackEngagement('like')">
                 <like theme="filled" />
             </button>
-            <button class="interact-btn dislike" @click="$emit('spawn-dislike')">
+            <button class="interact-btn dislike" @click="trackEngagement('dislike')">
                 <dislike theme="filled" />
             </button>
         </div>
@@ -41,16 +66,50 @@
 
 <script setup lang="ts">
 import { ref, watch, onUpdated } from 'vue';
-import { Youtube, Facebook, Tiktok, Like, Dislike } from '@icon-park/vue-next';
+import {
+    Youtube, Facebook, Tiktok,
+    Like, Dislike, Broadcast
+} from '@icon-park/vue-next';
+import LayoutSettings from '@/components/studio/drawers/LayoutSettings.vue';
+import GuestSettings from '@/components/studio/drawers/GuestSettings.vue';
+
+import api from '@/utils/api';
 
 const props = defineProps<{
     messages: any[];
+    guestPersonas: any[];
+    remoteGuests: any[];
+    inviteGuest: () => void;
+    summonGuest: (persona: any) => void;
+    toggleGuest: (guestId: string, isVisible: boolean) => void;
+    toggleMute: (guestId: string, muted: boolean) => void;
+    toggleCamera: (guestId: string, camOn: boolean) => void;
+    removeGuest: (guestId: string) => void;
+    assignSlot: (guestId: string, slot: number) => void;
+    addMobileCam: (guestId: string) => void;
+    isGuest: boolean;
+    guestVideoElements: Map<string, HTMLVideoElement>;
 }>();
 
-defineEmits(['spawn-like', 'spawn-dislike']);
-
-const localActiveTab = ref('chat');
+const emit = defineEmits(['spawn-like', 'spawn-dislike']);
+const localActiveTab = ref('layout');
+if (props.isGuest) {
+    localActiveTab.value = 'chat';
+}
 const chatFlow = ref<HTMLElement | null>(null);
+
+const trackEngagement = async (type: 'like' | 'dislike') => {
+    try {
+        const projectId = window.location.pathname.split('/').pop();
+        if (projectId && projectId.length === 24) {
+            await api.post(`/projects/${projectId}/track`, { type });
+            if (type === 'like') emit('spawn-like');
+            else emit('spawn-dislike');
+        }
+    } catch (error) {
+        console.error('[Interactions] Failed to track engagement:', error);
+    }
+};
 
 // Auto-scroll chat to bottom
 onUpdated(() => {

@@ -18,6 +18,7 @@ import { Permission } from '../utils/permissions.js';
 import { licenseGating } from '../middleware/licenseGating.js';
 import { hasSufficientCredits, deductCredits, getCreditCost } from '../utils/credits.js';
 import { uploadToS3 } from '../utils/s3.js';
+import { AnalyticsService } from '../services/AnalyticsService.js';
 
 // Define the file filter function to update the filename encoding
 const fileFilter = (req: AuthRequest, file: any, callback: any) => {
@@ -126,6 +127,9 @@ router.get('/:id', async (req: any, res: Response) => {
         if (!isOwner && !isOrgProject) {
             return res.status(403).json({ success: false, error: 'Access denied: project is outside active context' });
         }
+
+        // Track view asynchronously
+        AnalyticsService.trackView(req.params.id);
 
         res.json({ success: true, data: { project } });
     } catch (error: any) {
@@ -378,6 +382,63 @@ router.post('/:id/stream', rbacMiddleware(Permission.STREAM_START), async (req: 
     }
 });
 
+// POST /api/projects/:id/upload-final-video - Receive client-side rendered video
+router.post('/:id/upload-final-video', rbacMiddleware(Permission.PROJECT_EDIT), upload.fields([
+    { name: 'video', maxCount: 1 },
+    { name: 'review', maxCount: 1 }
+]), async (req: AuthRequest, res: Response) => {
+    try {
+        await connectDB();
+        const projectId = req.params.id;
+        const project = await Project.findOne({ _id: projectId, userId: req.user!.userId });
+
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        const videoFile = files['video']?.[0];
+        const reviewFile = files['review']?.[0];
+
+        if (!videoFile) return res.status(400).json({ success: false, error: 'Video file is required' });
+
+        // 1. Upload Full Video to S3
+        const finalKey = S3KeyGenerator.finalVideo(projectId);
+        await uploadToS3(finalKey, videoFile.buffer, videoFile.mimetype);
+
+        // 2. Upload Review Clip if present
+        let reviewKey = '';
+        if (reviewFile) {
+            reviewKey = S3KeyGenerator.timelapse(projectId); // Using timelapse key for review clips
+            await uploadToS3(reviewKey, reviewFile.buffer, reviewFile.mimetype);
+        }
+
+        // 3. Update Project State
+        project.status = 'completed';
+        project.finalVideo = {
+            ...project.finalVideo,
+            s3Key: finalKey,
+            reviewKey: reviewKey,
+            duration: parseFloat(req.body.duration) || project.finalVideo?.duration || 0,
+            resolution: req.body.resolution || project.finalVideo?.resolution || '1080p',
+            fileSize: videoFile.size,
+            generatedAt: new Date()
+        };
+
+        await project.save();
+
+        res.json({
+            success: true,
+            data: {
+                message: 'Final video uploaded and project finalized',
+                finalVideo: project.finalVideo
+            }
+        });
+
+    } catch (error: any) {
+        console.error('[UploadFinal] Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // DELETE /api/projects/:id - Delete project
 router.delete('/:id', rbacMiddleware(Permission.PROJECT_DELETE), async (req: any, res: Response) => {
     try {
@@ -388,6 +449,68 @@ router.delete('/:id', rbacMiddleware(Permission.PROJECT_DELETE), async (req: any
     } catch (error: any) {
         console.error('Delete project error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to delete project' });
+    }
+});
+
+// POST /api/projects/:id/segments/:segmentId/captions - Generate captions for segment
+router.post('/:id/segments/:segmentId/captions', checkLicenseStatus, rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const { id: projectId, segmentId } = req.params;
+
+        const project = await Project.findOne({ _id: projectId, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        const segment = project.storyboard?.segments?.find((s: any) => s._id.toString() === segmentId);
+        if (!segment) return res.status(404).json({ success: false, error: 'Segment not found' });
+
+        // Determine source media (Video > Audio)
+        let s3Key = segment.generatedVideo?.s3Key;
+        let mimeType = 'video/mp4';
+
+        if (!s3Key && segment.generatedAudio?.s3Key) {
+            s3Key = segment.generatedAudio.s3Key;
+            mimeType = 'audio/mp3'; // or waiver
+        }
+
+        if (!s3Key) return res.status(400).json({ success: false, error: 'No media found to caption' });
+
+        const cost = await getCreditCost('audio'); // Assume captioning maps to audio minutes cost
+        if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
+
+        // Download from S3
+        // We need a helper to get Buffer from S3. Assuming one exists or we import S3 client.
+        // Importing s3 client for getObject
+        const { s3Client, GetObjectCommand } = await import('../utils/s3.js');
+        const s3Params = {
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: s3Key
+        };
+
+        // Get Stream and convert to Buffer
+        const { Body } = await s3Client.send(new GetObjectCommand(s3Params));
+        const chunks = [];
+        for await (const chunk of (Body as any)) {
+            chunks.push(chunk);
+        }
+        const buffer = Buffer.concat(chunks);
+
+        // Generate Captions
+        const { autoCaptionService } = await import('../services/ai/AutoCaptionService.js');
+        const captions = await autoCaptionService.generateCaptions(buffer, mimeType);
+
+        // Update Project
+        segment.captions = captions;
+        segment.markModified('captions'); // Mongoose requires this for mixed types sometimes
+        await project.save();
+
+        await deductCredits(req.user!.userId, 'audio' as any, cost, `Caption Generation: ${segment.title}`);
+
+        res.json({ success: true, data: { captions } });
+
+    } catch (error: any) {
+        console.error('Caption generation error:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -481,5 +604,32 @@ router.post('/:id/assets/upload',
             res.status(500).json({ success: false, error: error.message });
         }
     });
+
+// GET /api/projects/:id/analytics - Get project analytics
+router.get('/:id/analytics', async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const analytics = await AnalyticsService.getProjectAnalytics(req.params.id);
+        if (!analytics) return res.status(404).json({ success: false, error: 'Analytics not found' });
+        res.json({ success: true, data: analytics });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/projects/:id/track - Track engagement
+router.post('/:id/track', async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const { type } = req.body;
+        if (!['like', 'dislike', 'share'].includes(type)) {
+            return res.status(400).json({ success: false, error: 'Invalid tracking type' });
+        }
+        await AnalyticsService.trackEngagement(req.params.id, type as any);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 export default router;

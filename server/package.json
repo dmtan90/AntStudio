@@ -45,7 +45,8 @@
         "stripe": "^20.1.2",
         "systeminformation": "^5.30.6",
         "uuid": "^13.0.0",
-        "ws": "^8.19.0"
+        "ws": "^8.19.0",
+        "nanoid": "^5.1.6"
     },
     "devDependencies": {
         "@types/bcrypt": "^6.0.0",

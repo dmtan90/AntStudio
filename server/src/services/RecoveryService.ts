@@ -161,12 +161,16 @@ export class RecoveryService {
             });
         }
 
-        // Redis Check
-        try {
-            const pong = await redisService.ping();
-            if (pong !== 'PONG') throw new Error('Redis ping failed');
-        } catch (error) {
-            await alertService.sendCriticalAlert('Redis Connectivity Issue', { error: String(error) });
+        // Redis Check (Optional in some environments)
+        if (!redisService.isReady()) {
+            systemLogger.warn('Redis is disconnected or unavailable', 'RecoveryService');
+        } else {
+            try {
+                const pong = await redisService.ping();
+                if (pong !== 'PONG') throw new Error('Redis ping failed');
+            } catch (error) {
+                systemLogger.warn('Redis ping failed despite being ready', 'RecoveryService');
+            }
         }
     }
 

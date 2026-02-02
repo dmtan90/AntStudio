@@ -77,6 +77,29 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         }
     }
 
+    async function importPptx(file: File) {
+        loading.value = true
+        const formData = new FormData()
+        formData.append('file', file)
+        try {
+            const response = await api.post('/marketplace/import/pptx', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                timeout: 300000
+            })
+            if (response.data.success) {
+                toast.success('PPTX Template imported successfully!')
+                return response.data.data.template
+            } else {
+                throw new Error(response.data.error || 'Failed to import PPTX')
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'PPTX Import failed')
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
     return {
         assets,
         templates,
@@ -85,6 +108,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         fetchTemplates,
         useTemplate,
         purchaseAsset,
-        importTemplate
+        importTemplate,
+        importPptx
     }
 })

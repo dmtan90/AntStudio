@@ -11,14 +11,16 @@
         <!-- Left Sidebar: Navigation -->
         <aside v-show="isLeftVisible" class="left-sidebar-nav" :style="{ width: isLeftVisible ? '180px' : '0' }">
           <div class="p-5 flex flex-col gap-2" style="width: 180px">
-            <div class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all"
-              :class="activeTab === 'storyboard' ? 'bg-white/10 text-white' : 'text-[#888] hover:bg-white/5 hover:text-[#ccc]'"
+            <div
+              class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all border border-transparent"
+              :class="activeTab === 'storyboard' ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20' : 'text-[#888] hover:bg-white/5 hover:text-[#ccc]'"
               @click="changeTab('storyboard')">
               <movie-board theme="outline" size="20" />
               <span class="text-sm font-medium">{{ t('projects.editor.storyboard.title') }}</span>
             </div>
-            <div class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all"
-              :class="activeTab === 'timeline' ? 'bg-white/10 text-white' : 'text-[#888] hover:bg-white/5 hover:text-[#ccc]'"
+            <div
+              class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all border border-transparent"
+              :class="activeTab === 'timeline' ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20' : 'text-[#888] hover:bg-white/5 hover:text-[#ccc]'"
               @click="changeTab('timeline')">
               <film theme="outline" size="20" />
               <span class="text-sm font-medium">{{ t('projects.editor.timeline.title') }}</span>
@@ -102,6 +104,35 @@
         </div>
       </aside>
     </div>
+
+    <!-- Export Progress Overlay -->
+    <div v-if="isAssembling"
+      class="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-10 animate-in fade-in duration-500">
+      <div class="w-full max-w-md space-y-8 flex flex-col items-center">
+        <div class="relative w-32 h-32 flex items-center justify-center">
+          <svg class="absolute inset-0 w-full h-full -rotate-90">
+            <circle cx="64" cy="64" r="60" stroke="currentColor" stroke-width="4" fill="transparent"
+              class="text-white/10" />
+            <circle cx="64" cy="64" r="60" stroke="currentColor" stroke-width="4" fill="transparent"
+              class="text-blue-500 transition-all duration-300"
+              :style="{ strokeDasharray: 376.8, strokeDashoffset: 376.8 * (1 - exportProgress / 100) }" />
+          </svg>
+          <span class="text-4xl font-black text-white">{{ Math.round(exportProgress) }}%</span>
+        </div>
+
+        <div class="text-center space-y-2">
+          <h2 class="text-2xl font-black text-white uppercase tracking-widest">{{ t('projects.editor.video.exporting')
+          }}
+          </h2>
+          <p class="text-white/60 font-medium tracking-tight animate-pulse">{{ exportStatus }}</p>
+        </div>
+
+        <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden border border-white/5">
+          <div class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300"
+            :style="{ width: `${exportProgress}%` }" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -115,6 +146,7 @@ import { toast } from 'vue-sonner'
 import { useProjectStore } from '@/stores/project'
 import { useUserStore } from '@/stores/user'
 import { useTranslations } from '@/composables/useTranslations'
+import { useVideoAssembler } from '@/composables/useVideoAssembler'
 
 // Components
 import ProjectEditorHeader from '@/components/projects/editor/ProjectEditorHeader.vue'
@@ -137,6 +169,8 @@ const route = useRoute()
 const projectId = route.params.id as string
 const projectStore = useProjectStore()
 const userStore = useUserStore()
+const { assemble, isAssembling, progress: exportProgress, status: exportStatus } = useVideoAssembler()
+
 let template: EditorTemplate | null = null;
 if (route.params?.template) {
   template = JSON.parse(route.params.template as string) as EditorTemplate;
@@ -202,13 +236,17 @@ const handleExportAction = async (command: string) => {
   if (command === 'video') {
     try {
       toast.info(t('projects.editor.video.starting'))
-      const response = await projectStore.assembleVideo(projectId)
-      toast.success(t('projects.editor.video.completed'))
-      if (response.project?.finalVideo?.s3Url) {
-        window.open(response.project.finalVideo.s3Url, '_blank')
-      }
+      // Default export options
+      await assemble({
+        format: 'mp4',
+        codec: 'h264',
+        resolution: '1080p',
+        fps: 30,
+        bitrate: 'medium',
+        includeAudio: true
+      })
     } catch (error: any) {
-      toast.error(error.response?.data?.message || t('projects.editor.video.error'))
+      toast.error(error.message || t('projects.editor.video.error'))
     }
   } else {
     toast.info(`${command} ${t('projects.editor.header.exportComingSoon')}`)
@@ -622,7 +660,8 @@ const handleUploadImageVideo = async (seg: any) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #000;
+  background-color: #0a0a0a; // Cinematic Dark
+  color: #e5e5e5;
 }
 
 .editor-body {
@@ -636,7 +675,7 @@ const handleUploadImageVideo = async (seg: any) => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #141414;
+  background-color: #0a0a0a; // Unified bg
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
@@ -651,13 +690,14 @@ const handleUploadImageVideo = async (seg: any) => {
   min-height: 0;
   position: relative;
   overflow: hidden;
+  background-color: #000; // Canvas area strictly black
 }
 
 .right-sidebar-panel {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #141414;
+  background-color: #0a0a0a;
   border-left: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
   overflow: hidden;
@@ -693,7 +733,11 @@ const handleUploadImageVideo = async (seg: any) => {
 
   &:hover,
   &:active {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--brand-primary-rgb), 0.5); // Brand highlight
+
+    &::after {
+      background: transparent;
+    }
   }
 }
 

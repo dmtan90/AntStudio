@@ -7,6 +7,8 @@ import api from './api';
  */
 export class ErrorTracker {
     private static isInitialized = false;
+    private static breadcrumbs: string[] = [];
+    private static maxBreadcrumbs = 10;
 
     /**
      * Initializes global error listeners.
@@ -41,7 +43,19 @@ export class ErrorTracker {
         };
 
         this.isInitialized = true;
+        this.addBreadcrumb('System Initialized');
         console.log('🛡️ ClientErrorTracker initialized');
+    }
+
+    /**
+     * Adds a behavioral breadcrumb for debugging.
+     */
+    public static addBreadcrumb(message: string) {
+        const timestamp = new Date().toLocaleTimeString();
+        this.breadcrumbs.push(`[${timestamp}] ${message}`);
+        if (this.breadcrumbs.length > this.maxBreadcrumbs) {
+            this.breadcrumbs.shift();
+        }
     }
 
     /**
@@ -56,6 +70,7 @@ export class ErrorTracker {
             await api.post('/admin/monitoring/client-logs', {
                 type,
                 details,
+                breadcrumbs: this.breadcrumbs,
                 url: window.location.href,
                 userAgent: navigator.userAgent,
                 timestamp: new Date().toISOString()

@@ -36,6 +36,20 @@
             Import from URL
           </button>
 
+          <button @click="triggerPptxUpload" :disabled="isImportingPptx"
+            class="group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3 relative overflow-hidden disabled:opacity-50">
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 opacity-0 group-hover:opacity-10 transition-opacity">
+            </div>
+            <component :is="isImportingPptx ? Loading : 'div'" :class="{ 'animate-spin': isImportingPptx }">
+              <DocDetail v-if="!isImportingPptx" theme="filled" class="text-xl text-orange-400" />
+            </component>
+            {{ isImportingPptx ? 'Importing PPTX...' : 'Import PPTX Slide' }}
+          </button>
+
+          <!-- Hidden File Input -->
+          <input type="file" ref="pptxInput" class="hidden" accept=".pptx" @change="handlePptxFile" />
+
           <div class="flex -space-x-4">
             <div v-for="i in 3" :key="i"
               class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] overflow-hidden bg-white/5 backdrop-blur-md">
@@ -154,11 +168,12 @@
       <div v-if="activeTab === 'public' || activeTab === 'private'" class="mb-12">
         <div class="flex items-center gap-4 mb-2">
           <div class="w-8 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
-          <span class="text-sm font-black uppercase tracking-widest text-gray-500">{{ activeTab === 'public' ? 'Featured
-            Collections' : 'Personal Assets' }}</span>
+          <span class="text-sm font-black uppercase tracking-widest text-gray-500">
+            {{ activeTab === 'public' ? 'Featured Collections' : 'Personal Assets' }}
+          </span>
         </div>
-        <h2 class="text-5xl font-black tracking-tight">{{ activeTab === 'public' ? 'Community Templates' : 'My Library'
-        }}
+        <h2 class="text-5xl font-black tracking-tight">
+          {{ activeTab === 'public' ? 'Community Templates' : 'My Library' }}
         </h2>
       </div>
 
@@ -210,7 +225,9 @@ import {
   Search,
   Equalizer,
   Down,
-  Ghost
+  Ghost,
+  DocDetail,
+  Loading
 } from '@icon-park/vue-next'
 import TemplateCard from '@/components/marketplace/TemplateCard.vue'
 import ImportDialog from '@/components/marketplace/ImportDialog.vue'
@@ -252,6 +269,29 @@ const previewDialog = reactive<{ show: boolean, template: any }>({
   show: false,
   template: null
 })
+
+const pptxInput = ref<HTMLInputElement | null>(null)
+const isImportingPptx = ref(false)
+
+const triggerPptxUpload = () => {
+  pptxInput.value?.click()
+}
+
+const handlePptxFile = async (event: any) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  isImportingPptx.value = true
+  try {
+    const newTemplate = await marketplaceStore.importPptx(file)
+    handleImported(newTemplate)
+  } catch (e) {
+    console.error('Failed to import PPTX:', e)
+  } finally {
+    isImportingPptx.value = false
+    if (pptxInput.value) pptxInput.value.value = ''
+  }
+}
 
 const fetchTemplates = async () => {
   loading.value = true

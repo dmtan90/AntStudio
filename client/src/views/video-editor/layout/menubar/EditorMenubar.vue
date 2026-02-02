@@ -21,12 +21,15 @@ import {
   ZoomOut,
   Config as Settings,
   Edit,
-  Ticket
+  Edit,
+  Ticket,
+  Check
 } from '@icon-park/vue-next';
 import Spinner from 'video-editor/components/ui/spinner.vue';
 import ThemeToggle from 'video-editor/components/ui/theme-toggle.vue';
 
 import { useEditorStore } from 'video-editor/store/editor';
+import { useCanvasStore } from 'video-editor/store/canvas';
 import { useProjectStore } from '@/stores/project';
 import { useUserStore } from '@/stores/user';
 import { useIsTablet } from 'video-editor/hooks/use-media-query';
@@ -38,6 +41,7 @@ import type { EditorMode, EditorTemplate } from 'video-editor/store/editor';
 import type { Dimension } from 'video-editor/plugins/editor'
 
 const editor = useEditorStore();
+const canvasStore = useCanvasStore();
 const projectStore = useProjectStore();
 const userStore = useUserStore();
 const { user } = storeToRefs(userStore);
@@ -202,6 +206,29 @@ const isFormat = (format) => {
         </el-dropdown>
       </div>
 
+
+      <el-dropdown trigger="click" popper-class="cinematic-dropdown">
+        <button class="cinematic-button !h-9 !px-3 !rounded-xl border-white/5 bg-white/5 hover:bg-white/10 group">
+          <Settings :size="16" class="text-white/40 group-hover:text-white transition-colors" />
+        </button>
+        <template #dropdown>
+          <el-dropdown-menu class="cinematic-dropdown-menu">
+            <el-dropdown-item @click="canvasStore.showRulers = !canvasStore.showRulers">
+              <div class="flex items-center justify-between w-full min-w-[120px]">
+                <span class="text-[11px] font-bold">Rulers</span>
+                <Check v-if="canvasStore.showRulers" size="14" class="text-brand-primary" />
+              </div>
+            </el-dropdown-item>
+            <el-dropdown-item @click="canvasStore.showGrid = !canvasStore.showGrid">
+              <div class="flex items-center justify-between w-full min-w-[120px]">
+                <span class="text-[11px] font-bold">Grid</span>
+                <Check v-if="canvasStore.showGrid" size="14" class="text-brand-primary" />
+              </div>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+
       <div class="h-4 w-px bg-white/10 mx-1"></div>
 
       <el-button-group class="cinematic-button-group">
@@ -229,7 +256,7 @@ const isFormat = (format) => {
           <Ticket theme="filled" :size="12" class="text-orange-500 relative z-10" />
         </div>
         <span class="text-[11px] font-black text-orange-500 tracking-wider relative z-10">{{ user.credits?.balance || 0
-        }}</span>
+          }}</span>
         <span class="text-[9px] font-bold text-orange-500/40 uppercase tracking-[0.1em] relative z-10">Credits</span>
       </div>
     </section>

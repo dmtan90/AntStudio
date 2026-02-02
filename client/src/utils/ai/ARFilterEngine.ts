@@ -17,7 +17,42 @@ export class ARFilterEngine {
             if (filterId === 'neon_visor') this.drawNeonVisor(ctx, landmarks);
             if (filterId === 'face_id_overlay') this.drawFaceId(ctx, landmarks);
             if (filterId === 'cyber_horns') this.drawCyberHorns(ctx, landmarks);
+            if (filterId === 'beauty_smooth') this.applyBeautySmooth(ctx, landmarks);
         });
+    }
+
+    private applyBeautySmooth(ctx: CanvasRenderingContext2D, landmarks: any[]) {
+        // Beauty smoothing: 
+        // 1. Identify skin regions (cheeks, forehead)
+        // 2. Apply a subtle blur and brightness boost locally
+        // Landmarks: 10 (Forehead), 50 (Right Cheek), 280 (Left Cheek)
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'soft-light';
+        ctx.filter = 'blur(4px) brightness(1.1) contrast(0.9)';
+
+        // Forehead
+        this.fillFaceArea(ctx, landmarks, [10, 338, 297, 332, 284, 251, 21, 54, 103, 67, 109]);
+
+        // Right Cheek
+        this.fillFaceArea(ctx, landmarks, [50, 123, 147, 213, 192, 214, 210, 211, 32, 208, 199]);
+
+        // Left Cheek
+        this.fillFaceArea(ctx, landmarks, [280, 352, 376, 433, 416, 434, 430, 431, 262, 428, 421]);
+
+        ctx.restore();
+    }
+
+    private fillFaceArea(ctx: CanvasRenderingContext2D, landmarks: any[], indices: number[]) {
+        ctx.beginPath();
+        indices.forEach((idx, i) => {
+            const p = landmarks[idx];
+            if (i === 0) ctx.moveTo(p.x * ctx.canvas.width, p.y * ctx.canvas.height);
+            else ctx.lineTo(p.x * ctx.canvas.width, p.y * ctx.canvas.height);
+        });
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255, 230, 230, 0.2)';
+        ctx.fill();
     }
 
     private drawNeonVisor(ctx: CanvasRenderingContext2D, landmarks: any[]) {

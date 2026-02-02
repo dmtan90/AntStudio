@@ -343,6 +343,23 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    async function generateCaptions(id: string, segmentId: string) {
+        try {
+            const response = await api.post(`/projects/${id}/segments/${segmentId}/captions`)
+            // Update local segment
+            if (currentProject.value?.storyboard?.segments) {
+                const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId)
+                if (segment) {
+                    segment.captions = response.data.data.captions
+                }
+            }
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     async function startStreaming(id: string, streamId: string) {
         try {
             const response = await api.post(`/projects/${id}/stream`, { streamId })
@@ -425,6 +442,7 @@ export const useProjectStore = defineStore('project', () => {
         getAssetStatus,
         uploadAsset,
         generateVoiceover,
+        generateCaptions,
         assembleVideo,
         setProject,
         updateVisualAssetStatus,

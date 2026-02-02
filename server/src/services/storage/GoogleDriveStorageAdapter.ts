@@ -90,4 +90,26 @@ export class GoogleDriveStorageAdapter implements IStorageAdapter {
             return false;
         }
     }
+
+    async listFiles(prefix?: string): Promise<Array<{ key: string, url: string, size?: number, lastModified?: Date }>> {
+        let q = `'${this.rootFolderId}' in parents and trashed = false`;
+        if (prefix) {
+            q += ` and name contains '${prefix}'`;
+        }
+
+        const response = await this.drive.files.list({
+            q: q,
+            fields: 'files(id, name, size, modifiedTime, webContentLink)',
+            orderBy: 'modifiedTime desc'
+        });
+
+        const files = response.data.files || [];
+
+        return files.map(file => ({
+            key: file.id!,
+            url: file.webContentLink || `https://drive.google.com/uc?id=${file.id}`,
+            size: file.size ? parseInt(file.size) : undefined,
+            lastModified: file.modifiedTime ? new Date(file.modifiedTime) : undefined
+        }));
+    }
 }

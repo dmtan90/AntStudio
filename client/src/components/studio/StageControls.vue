@@ -12,36 +12,61 @@
         </div>
 
         <div class="action-zone">
-            <div class="control-group flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
-                <button class="status-indicator live" :class="{ active: isLive }" @click="$emit('toggle-live')">
-                    <broadcast theme="filled" size="14" class="mr-2" />
-                    {{ isLive ? 'LIVE' : 'GO LIVE' }}
-                </button>
-                <button class="status-indicator rec" :class="{ active: isRecording }" @click="$emit('toggle-record')">
-                    <div class="rec-dot mr-2"></div>
-                    {{ isRecording ? 'RECORDING' : 'REC' }}
-                </button>
-            </div>
+            <template v-if="!isGuest">
+                <div class="control-group flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
+                    <button class="status-indicator live" :class="{ active: isLive }" @click="$emit('toggle-live')">
+                        <broadcast theme="filled" size="14" class="mr-2" />
+                        {{ isLive ? 'LIVE' : 'GO LIVE' }}
+                    </button>
+                    <button v-if="isLive" class="status-indicator highlight" @click="$emit('capture-highlight')">
+                        <magic theme="filled" size="14" class="mr-2" />
+                        HIGHLIGHT
+                    </button>
+                    <button class="status-indicator rec" :class="{ active: isRecording }"
+                        @click="$emit('toggle-record')">
+                        <div class="rec-dot mr-2"></div>
+                        {{ isRecording ? 'RECORDING' : 'REC' }}
+                    </button>
+                </div>
+            </template>
+            <template v-else>
+                <div class="flex items-center gap-3 px-6 py-2 bg-green-500/10 rounded-2xl border border-green-500/20">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-[10px] font-black uppercase text-green-500 tracking-widest">On Air</span>
+                </div>
+            </template>
         </div>
 
         <div class="config-controls">
-            <button class="ctrl-btn" title="Invite Guest" @click="$emit('invite-guest')">
-                <user theme="outline" />
-            </button>
-            <button class="ctrl-btn" @click="$emit('show-platforms')">
-                <share-two theme="outline" />
-                <div v-if="platformCount" class="platform-count">{{ platformCount }}</div>
-            </button>
-            <button class="ctrl-btn" @click="$emit('show-settings')">
-                <setting-two theme="outline" />
-            </button>
+            <template v-if="!isGuest">
+                <button class="ctrl-btn" title="Invite Guest" @click="$emit('invite-guest')">
+                    <user theme="outline" />
+                    <div v-if="guestCount" class="platform-count">{{ guestCount }}</div>
+                </button>
+                <button class="ctrl-btn" @click="$emit('show-platforms')">
+                    <Broadcast theme="outline" />
+                    <div v-if="platformCount" class="platform-count">{{ platformCount }}</div>
+                </button>
+                <button class="ctrl-btn" @click="$emit('show-settings')">
+                    <setting-two theme="outline" />
+                </button>
+            </template>
+            <template v-else>
+                <button class="ctrl-btn" @click="$emit('show-settings')">
+                    <setting-two theme="outline" />
+                </button>
+                <button class="ctrl-btn border-red-500/30 text-red-500 hover:bg-red-500/10" @click="$emit('exit')">
+                    <close theme="outline" />
+                </button>
+            </template>
         </div>
     </footer>
 </template>
 
 <script setup lang="ts">
 import {
-    Microphone, Camera, CameraFive, Broadcast, User, ShareTwo, SettingTwo
+    Microphone, Camera, CameraFive, Broadcast,
+    User, ShareTwo, SettingTwo, Magic, Close
 } from '@icon-park/vue-next';
 
 defineProps<{
@@ -50,11 +75,13 @@ defineProps<{
     isLive: boolean;
     isRecording: boolean;
     platformCount: number;
+    guestCount: number;
+    isGuest?: boolean;
 }>();
 
 defineEmits([
-    'toggle-mic', 'toggle-cam', 'toggle-live', 'toggle-record',
-    'invite-guest', 'show-platforms', 'show-settings'
+    'toggle-mic', 'toggle-cam', 'toggle-live', 'toggle-record', 'capture-highlight',
+    'invite-guest', 'show-platforms', 'show-settings', 'exit'
 ]);
 </script>
 
@@ -159,6 +186,16 @@ defineEmits([
                     background: #ff4d4f;
                     animation: pulse 1s infinite;
                 }
+            }
+        }
+
+        &.highlight {
+            background: rgba(168, 85, 247, 0.1);
+            color: #a855f7;
+            border: 1px solid rgba(168, 85, 247, 0.1);
+
+            &:hover {
+                background: rgba(168, 85, 247, 0.2);
             }
         }
 

@@ -169,6 +169,9 @@ importers:
       '@types/tinycolor2':
         specifier: ^1.4.6
         version: 1.4.6
+      '@vitejs/plugin-basic-ssl':
+        specifier: ^2.1.4
+        version: 2.1.4(vite@5.4.21(@types/node@20.19.30)(sass@1.97.3)(terser@5.46.0))
       '@vitejs/plugin-vue':
         specifier: ^5.2.1
         version: 5.2.4(vite@5.4.21(@types/node@20.19.30)(sass@1.97.3)(terser@5.46.0))(vue@3.5.27(typescript@5.9.3))
@@ -298,6 +301,9 @@ importers:
       multer:
         specifier: ^2.0.2
         version: 2.0.2
+      nanoid:
+        specifier: ^5.1.6
+        version: 5.1.6
       node-os-utils:
         specifier: ^2.0.1
         version: 2.0.1
@@ -3190,6 +3196,12 @@ packages:
 
   '@vf.js/vf@6.0.2-v65':
     resolution: {integrity: sha512-W1GtAFKeLIfM/GDO0gKBzteaGJc1+5ND5rpxdOsBLWNkKdqVrMn+pAbf908nkgxGtoNvDbsoFzpmb2/TNRQB9Q==}
+
+  '@vitejs/plugin-basic-ssl@2.1.4':
+    resolution: {integrity: sha512-HXciTXN/sDBYWgeAD4V4s0DN0g72x5mlxQhHxtYu3Tt8BLa6MzcJZUyDVFCdtjNs3bfENVHVzOsmooTVuNgAAw==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    peerDependencies:
+      vite: ^6.0.0 || ^7.0.0
 
   '@vitejs/plugin-vue@5.2.4':
     resolution: {integrity: sha512-7Yx/SXSOcQq5HiiV3orevHUFn+pmMB4cgbEkDYgnkUWb0WfeQ/wa2yFv6D5ICiCQOVpjA7vYDXrC7AGO8yjDHA==}
@@ -10845,6 +10857,10 @@ snapshots:
   '@vf.js/player@2.0.4': {}
 
   '@vf.js/vf@6.0.2-v65': {}
+
+  '@vitejs/plugin-basic-ssl@2.1.4(vite@5.4.21(@types/node@20.19.30)(sass@1.97.3)(terser@5.46.0))':
+    dependencies:
+      vite: 5.4.21(@types/node@20.19.30)(sass@1.97.3)(terser@5.46.0)
 
   '@vitejs/plugin-vue@5.2.4(vite@5.4.21(@types/node@20.19.30)(sass@1.97.3)(terser@5.46.0))(vue@3.5.27(typescript@5.9.3))':
     dependencies:

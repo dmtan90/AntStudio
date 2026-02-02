@@ -35,6 +35,7 @@ import analyticsRouter from './routes/analytics.js';
 import licenseRouter from './routes/license.js';
 import collaborationRouter from './routes/collaboration.js';
 import aiAccountsRouter from './routes/aiAccounts.js';
+import commerceRouter from './routes/commerce.js';
 import monitoringRouter from './routes/monitoring.js';
 import { monitoringService } from './services/monitoringService.js';
 import { systemLogger } from './utils/systemLogger.js';
@@ -128,6 +129,7 @@ app.use('/api/prompts', promptsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/ai-config', aiConfigRoutes);
 app.use('/api/ai', aiRouter);
+app.use('/api/commerce', commerceRouter);
 
 app.use('/api/media', mediaRouter);
 app.use('/api/payment', paymentRouter);

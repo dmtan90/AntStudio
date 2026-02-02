@@ -22,7 +22,7 @@ export class PlatformAuthService {
         const settings = await getAdminSettings();
         const apiConfig = settings.apiConfigs;
         const oauth = apiConfig.oauth;
-        const domain = apiConfig.publicDomain || process.env.FRONTEND_URL || 'http://localhost:5173';
+        const domain = apiConfig.publicDomain || process.env.FRONTEND_URL || 'http://localhost:3000';
 
         // Ensure NO trailing slash for domain
         const baseUrl = domain.replace(/\/$/, '');

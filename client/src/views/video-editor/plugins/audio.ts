@@ -22,6 +22,7 @@ export class CanvasAudio {
   constructor(canvas: Canvas) {
     this._canvas = canvas;
     this.elements = [];
+    this._reverbIR = this._createReverbIR(2.5, 2.0);
     this.context = createInstance(AudioContext);
 
     this._initEvents();
@@ -53,25 +54,165 @@ export class CanvasAudio {
   }
 
   play() {
+    const startTime = this.context.currentTime;
+    const seekTime = this.timeline.seek / 1000;
+
     for (const audio of this.elements) {
       if (audio.muted) continue;
 
-      const gain = this.context.createGain();
+      // Calculate when to start and what part of the buffer to play
+      const clipStartGlobal = audio.offset;
+      const clipEndGlobal = audio.offset + audio.timeline;
+
+      // Determine if clip is relevant to current playhead
+      if (seekTime >= clipEndGlobal) continue;
+
+      const scheduleStart = startTime + Math.max(0, clipStartGlobal - seekTime);
+      const bufferOffset = Math.max(audio.trim, audio.trim + (seekTime - clipStartGlobal));
+      const playDuration = audio.timeline - Math.max(0, seekTime - clipStartGlobal);
+
       const source = this.context.createBufferSource();
-
       source.buffer = audio.buffer;
-      gain.connect(this.context.destination);
-      source.connect(gain);
 
-      gain.gain.setValueAtTime(0, this.context.currentTime + audio.offset);
-      gain.gain.linearRampToValueAtTime(audio.volume, this.context.currentTime + audio.offset + Math.min(audio.fadeIn || 0, audio.timeline / 2));
-      gain.gain.setValueAtTime(audio.volume, this.context.currentTime + audio.offset + audio.timeline - (audio.fadeOut || 0));
-      gain.gain.linearRampToValueAtTime(0, this.context.currentTime + audio.offset + audio.timeline);
+      // 1. EQ & Effects (Existing logic)
+      const lowFilter = this.context.createBiquadFilter();
+      lowFilter.type = 'lowshelf';
+      lowFilter.frequency.value = 200;
+      lowFilter.gain.value = audio.effects?.eq.low || 0;
+
+      const midFilter = this.context.createBiquadFilter();
+      midFilter.type = 'peaking';
+      midFilter.frequency.value = 1000;
+      midFilter.Q.value = 1;
+      midFilter.gain.value = audio.effects?.eq.mid || 0;
+
+      const highFilter = this.context.createBiquadFilter();
+      highFilter.type = 'highshelf';
+      highFilter.frequency.value = 3000;
+      highFilter.gain.value = audio.effects?.eq.high || 0;
+
+      const compressor = this.context.createDynamicsCompressor();
+      if (audio.effects?.compressor.enabled || audio.effects?.enhancement?.studio) {
+        const threshold = audio.effects?.enhancement?.studio ? -24 : audio.effects.compressor.threshold;
+        const ratio = audio.effects?.enhancement?.studio ? 12 : audio.effects.compressor.ratio;
+
+        compressor.threshold.setValueAtTime(threshold, this.context.currentTime);
+        compressor.ratio.setValueAtTime(ratio, this.context.currentTime);
+        compressor.attack.setValueAtTime(audio.effects?.compressor.enabled ? audio.effects.compressor.attack : 0.003, this.context.currentTime);
+        compressor.release.setValueAtTime(audio.effects?.compressor.enabled ? audio.effects.compressor.release : 0.25, this.context.currentTime);
+      } else {
+        compressor.threshold.setValueAtTime(0, this.context.currentTime);
+        compressor.ratio.setValueAtTime(1, this.context.currentTime);
+      }
+
+      // 1.5 Studio Enhancement Nodes
+      const deRumble = this.context.createBiquadFilter();
+      deRumble.type = 'highpass';
+      deRumble.frequency.value = 100;
+
+      const clarity = this.context.createBiquadFilter();
+      clarity.type = 'peaking';
+      clarity.frequency.value = 3000;
+      clarity.Q.value = 1;
+      clarity.gain.value = audio.effects?.enhancement?.studio ? 6 : 0;
+
+      const analyser = this.context.createAnalyser();
+      analyser.fftSize = 256;
+      audio.analyser = analyser;
+
+      // 4. Gain (Automation + Fades)
+      const gain = this.context.createGain();
+
+      if (audio.automation && audio.automation.length > 0) {
+        // --- Automation Keyframes Logic ---
+        const sorted = [...audio.automation].sort((a, b) => a.time - b.time);
+
+        // Find initial volume at the point we are starting to play
+        let initialVolume = audio.volume;
+        const clipSeekTime = Math.max(0, seekTime - clipStartGlobal) * 1000; // in ms
+
+        const pastPoints = sorted.filter(p => p.time <= clipSeekTime);
+        if (pastPoints.length > 0) {
+          initialVolume = pastPoints[pastPoints.length - 1].value * audio.volume;
+        }
+
+        gain.gain.setValueAtTime(initialVolume, startTime);
+
+        sorted.forEach(pt => {
+          const ptGlobalTime = audio.offset + (pt.time / 1000);
+          const ptContextTime = startTime + (ptGlobalTime - seekTime);
+
+          if (ptContextTime > startTime) {
+            if (pt.easing === 'step') {
+              gain.gain.setValueAtTime(pt.value * audio.volume, ptContextTime);
+            } else {
+              gain.gain.linearRampToValueAtTime(pt.value * audio.volume, ptContextTime);
+            }
+          }
+        });
+      } else {
+        // --- Classic Fades Logic ---
+        const fadeInUntilTime = scheduleStart + Math.min(audio.fadeIn || 0, audio.timeline / 2);
+        const fadeOutStartTime = scheduleStart + audio.timeline - Math.max(0, seekTime - clipStartGlobal) - (audio.fadeOut || 0);
+        const clipEndTime = scheduleStart + playDuration;
+
+        gain.gain.setValueAtTime(0, scheduleStart);
+        gain.gain.linearRampToValueAtTime(audio.volume, fadeInUntilTime);
+        gain.gain.setValueAtTime(audio.volume, Math.max(scheduleStart, fadeOutStartTime));
+        gain.gain.linearRampToValueAtTime(0, clipEndTime);
+      }
+
+      const reverb = this.context.createConvolver();
+      reverb.buffer = this._reverbIR;
+
+      const reverbGain = this.context.createGain();
+      reverbGain.gain.value = audio.effects?.reverb?.mix || 0;
+
+      // 2. Echo (Delay) Node
+      const delay = this.context.createDelay(5.0);
+      const delayFeedback = this.context.createGain();
+      const delayMix = this.context.createGain();
+
+      if (audio.effects?.echo?.enabled) {
+        delay.delayTime.value = audio.effects.echo.delayTime || 0.3;
+        delayFeedback.gain.value = audio.effects.echo.feedback || 0.4;
+        delayMix.gain.value = audio.effects.echo.mix || 0.5;
+
+        delay.connect(delayFeedback);
+        delayFeedback.connect(delay); // Feedback loop
+      }
+
+      // Connect Chain
+      source.connect(deRumble);
+      deRumble.connect(clarity);
+      clarity.connect(lowFilter);
+      lowFilter.connect(midFilter);
+      midFilter.connect(highFilter);
+      highFilter.connect(compressor);
+      compressor.connect(analyser);
+
+      // Reverb is parallel to the dry signal or serial? 
+      // Usually "Mix" implies a blend. We'll use parallel routing for the reverb.
+      analyser.connect(gain);
+
+      if (audio.effects?.reverb?.enabled) {
+        analyser.connect(reverb);
+        reverb.connect(reverbGain);
+        reverbGain.connect(gain);
+      }
+
+      if (audio.effects?.echo?.enabled) {
+        analyser.connect(delay);
+        delay.connect(delayMix);
+        delayMix.connect(gain);
+      }
+
+      gain.connect(this.context.destination);
 
       audio.playing = true;
       audio.source = source;
 
-      audio.source.start(this.context.currentTime + audio.offset, Math.max(this.timeline.seek / 1000, audio.trim), audio.timeline);
+      source.start(scheduleStart, bufferOffset, playDuration);
       audio.source.addEventListener("ended", () => (audio.playing = false));
     }
   }
@@ -80,17 +221,113 @@ export class CanvasAudio {
     for (const audio of audios) {
       if (audio.muted) continue;
 
-      const gain = context.createGain();
       const source = context.createBufferSource();
-
       source.buffer = audio.buffer;
-      gain.connect(context.destination);
-      source.connect(gain);
 
-      gain.gain.setValueAtTime(0, context.currentTime + audio.offset);
-      gain.gain.linearRampToValueAtTime(audio.volume, context.currentTime + audio.offset + Math.min(audio.fadeIn || 0, audio.timeline / 2));
-      gain.gain.setValueAtTime(audio.volume, context.currentTime + audio.offset + audio.timeline - (audio.fadeOut || 0));
-      gain.gain.linearRampToValueAtTime(0, context.currentTime + audio.offset + audio.timeline);
+      // Replicate the effects chain for recording/exporting
+      const lowFilter = context.createBiquadFilter();
+      lowFilter.type = 'lowshelf';
+      lowFilter.frequency.value = 200;
+      lowFilter.gain.value = audio.effects?.eq.low || 0;
+
+      const midFilter = context.createBiquadFilter();
+      midFilter.type = 'peaking';
+      midFilter.frequency.value = 1000;
+      midFilter.gain.value = audio.effects?.eq.mid || 0;
+
+      const highFilter = context.createBiquadFilter();
+      highFilter.type = 'highshelf';
+      highFilter.frequency.value = 3000;
+      highFilter.gain.value = audio.effects?.eq.high || 0;
+
+      const compressor = context.createDynamicsCompressor();
+      if (audio.effects?.compressor.enabled || audio.effects?.enhancement?.studio) {
+        const threshold = audio.effects?.enhancement?.studio ? -24 : audio.effects.compressor.threshold;
+        const ratio = audio.effects?.enhancement?.studio ? 12 : audio.effects.compressor.ratio;
+
+        compressor.threshold.setValueAtTime(threshold, context.currentTime);
+        compressor.ratio.setValueAtTime(ratio, context.currentTime);
+        compressor.attack.setValueAtTime(audio.effects?.compressor.enabled ? audio.effects.compressor.attack : 0.003, context.currentTime);
+        compressor.release.setValueAtTime(audio.effects?.compressor.enabled ? audio.effects.compressor.release : 0.25, context.currentTime);
+      }
+
+      const deRumble = context.createBiquadFilter();
+      deRumble.type = 'highpass';
+      deRumble.frequency.value = 100;
+
+      const clarity = context.createBiquadFilter();
+      clarity.type = 'peaking';
+      clarity.frequency.value = 3000;
+      clarity.Q.value = 1;
+      clarity.gain.value = audio.effects?.enhancement?.studio ? 6 : 0;
+
+      const gain = context.createGain();
+
+      if (audio.automation && audio.automation.length > 0) {
+        const sorted = [...audio.automation].sort((a, b) => a.time - b.time);
+
+        // Initial volume
+        let initialVolume = audio.volume;
+        if (sorted[0].time > 0) {
+          gain.gain.setValueAtTime(audio.volume, context.currentTime + audio.offset);
+        }
+
+        sorted.forEach(pt => {
+          const ptContextTime = context.currentTime + audio.offset + (pt.time / 1000);
+          if (pt.easing === 'step') {
+            gain.gain.setValueAtTime(pt.value * audio.volume, ptContextTime);
+          } else {
+            gain.gain.linearRampToValueAtTime(pt.value * audio.volume, ptContextTime);
+          }
+        });
+      } else {
+        gain.gain.setValueAtTime(0, context.currentTime + audio.offset);
+        gain.gain.linearRampToValueAtTime(audio.volume, context.currentTime + audio.offset + Math.min(audio.fadeIn || 0, audio.timeline / 2));
+        gain.gain.setValueAtTime(audio.volume, context.currentTime + audio.offset + audio.timeline - (audio.fadeOut || 0));
+        gain.gain.linearRampToValueAtTime(0, context.currentTime + audio.offset + audio.timeline);
+      }
+
+      const reverb = context.createConvolver();
+      reverb.buffer = this._reverbIR;
+      const reverbGain = context.createGain();
+      reverbGain.gain.value = audio.effects?.reverb?.mix || 0;
+
+      // Echo (Delay) for record
+      const delay = context.createDelay(5.0);
+      const delayFeedback = context.createGain();
+      const delayMix = context.createGain();
+
+      if (audio.effects?.echo?.enabled) {
+        delay.delayTime.value = audio.effects.echo.delayTime || 0.3;
+        delayFeedback.gain.value = audio.effects.echo.feedback || 0.4;
+        delayMix.gain.value = audio.effects.echo.mix || 0.5;
+
+        delay.connect(delayFeedback);
+        delayFeedback.connect(delay);
+      }
+
+      source.connect(deRumble);
+      deRumble.connect(clarity);
+      clarity.connect(lowFilter);
+      lowFilter.connect(midFilter);
+      midFilter.connect(highFilter);
+      highFilter.connect(compressor);
+
+      compressor.connect(gain);
+
+      if (audio.effects?.reverb?.enabled) {
+        compressor.connect(reverb);
+        reverb.connect(reverbGain);
+        reverbGain.connect(gain);
+      }
+
+      if (audio.effects?.echo?.enabled) {
+        compressor.connect(delay);
+        delay.connect(delayMix);
+        delayMix.connect(gain);
+      }
+
+      gain.connect(context.destination);
 
       audio.source = source;
       source.start(context.currentTime + audio.offset, audio.trim, audio.timeline);
@@ -101,7 +338,11 @@ export class CanvasAudio {
     for (const audio of audios) {
       if (!audio.playing) continue;
       audio.playing = false;
-      audio.source.stop();
+      try {
+        audio.source.stop();
+      } catch (e) {
+        // Source might not have started yet if seek was at 0
+      }
     }
   }
 
@@ -239,5 +480,23 @@ export class CanvasAudio {
     }
 
     return result;
+  }
+
+  private _reverbIR: AudioBuffer | null = null;
+  private _createReverbIR(duration: number, decay: number) {
+    const ctx = new AudioContext();
+    const sampleRate = ctx.sampleRate;
+    const length = sampleRate * duration;
+    const impulse = ctx.createBuffer(2, length, sampleRate);
+    const left = impulse.getChannelData(0);
+    const right = impulse.getChannelData(1);
+
+    for (let i = 0; i < length; i++) {
+      const n = i / length;
+      const envelope = Math.pow(1 - n, decay);
+      left[i] = (Math.random() * 2 - 1) * envelope;
+      right[i] = (Math.random() * 2 - 1) * envelope;
+    }
+    return impulse;
   }
 }

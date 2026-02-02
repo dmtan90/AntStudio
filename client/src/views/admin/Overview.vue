@@ -1,113 +1,111 @@
 <template>
-  <div class="admin-dashboard">
-    <div class="stats-grid">
-      <el-card shadow="hover" class="stat-card">
-        <template #header>Total Users</template>
-        <div class="stat-value">{{ stats?.totalUsers || 0 }}</div>
-        <div class="stat-trend positive">+12% from last month</div>
-      </el-card>
-      <el-card shadow="hover" class="stat-card">
-        <template #header>Monthly Revenue</template>
-        <div class="stat-value">${{ stats?.monthlyRevenue || 0 }}</div>
-        <div class="stat-trend positive">+8% from last month</div>
-      </el-card>
-      <el-card shadow="hover" class="stat-card">
-        <template #header>Active Subscriptions</template>
-        <div class="stat-value">{{ stats?.activeSubscriptions || 0 }}</div>
-        <div class="stat-trend">Stable</div>
-      </el-card>
-      <el-card shadow="hover" class="stat-card">
-        <template #header>Storage Used (S3)</template>
-        <div class="stat-value">{{ stats?.storageUsed || 0 }} GB</div>
-        <div class="stat-trend negative">+15% from last month</div>
-      </el-card>
+  <div class="admin-dashboard p-6 animate-in">
+    <header class="mb-10">
+      <h1 class="text-3xl font-black uppercase tracking-tighter">Command Center</h1>
+      <p class="text-[10px] font-black opacity-30 uppercase tracking-[0.3em]">AntFlow Enterprise Orchestration</p>
+    </header>
+
+    <div class="stats-grid mb-10">
+      <div v-for="card in statCards" :key="card.label" class="premium-stat-card">
+        <div class="card-content">
+          <span class="label text-[10px] font-black uppercase opacity-40 tracking-widest block mb-2">{{ card.label }}</span>
+          <div class="flex items-end gap-3">
+             <span class="value text-4xl font-black tracking-tighter">{{ card.value }}</span>
+             <span v-if="card.trend" :class="['trend text-[10px] font-bold px-2 py-0.5 rounded-full', card.isPositive ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400']">
+               {{ card.trend }}
+             </span>
+          </div>
+        </div>
+        <div class="card-glow" :style="{ background: card.color }"></div>
+      </div>
     </div>
 
-    <!-- Charts Section -->
-    <div class="charts-section">
-      <el-row :gutter="24">
-        <el-col :span="12" :xs="24" class="mb-4">
-          <el-card class="chart-card">
-            <template #header>User Growth</template>
-            <div class="chart-container">
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Analytics Content -->
+      <div class="lg:col-span-2 space-y-8">
+        <div class="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden h-[400px]">
+           <div class="flex justify-between items-center mb-6 relative z-10">
+              <h3 class="text-xs font-black uppercase tracking-widest opacity-50 text-white">Platform Velocity</h3>
+              <div class="flex gap-4">
+                 <button class="text-[10px] font-black uppercase opacity-30 hover:opacity-100 transition-opacity">User Growth</button>
+                 <button class="text-[10px] font-black uppercase opacity-30 hover:opacity-100 transition-opacity">Revenue</button>
+              </div>
+           </div>
+           <div class="h-[300px] relative z-10">
               <Line v-if="chartData.userGrowth" :data="chartData.userGrowth" :options="chartOptions" />
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :span="12" :xs="24" class="mb-4">
-          <el-card class="chart-card">
-            <template #header>Revenue Trend</template>
-            <div class="chart-container">
-              <Line v-if="chartData.revenue" :data="chartData.revenue" :options="revenueChartOptions" />
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
+           </div>
+        </div>
 
-    <!-- Tables Section -->
-    <div class="dashboard-content">
-      <el-row :gutter="24">
-        <!-- Recent Signups -->
-        <el-col :span="8" :xs="24" class="mb-4">
-           <el-card class="dashboard-table-card">
-            <template #header>Recent Signups</template>
-            <el-table :data="stats?.recentSignups || []" style="width: 100%" size="small">
-              <el-table-column prop="name" label="User">
-                <template #default="scope">
-                  <div class="user-mini">
-                    <div class="avatar-xs">{{ scope.row.name.charAt(0) }}</div>
-                    <span class="truncate">{{ scope.row.name }}</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <div class="glass-panel p-6 rounded-3xl border border-white/5">
+              <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-6 text-white">Recent Signups</h3>
+              <div class="space-y-4">
+                 <div v-for="user in stats?.recentSignups?.slice(0, 4)" :key="user.email" class="flex items-center justify-between group">
+                    <div class="flex items-center gap-3">
+                       <div class="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-[10px] font-black group-hover:bg-blue-500/20 transition-colors">
+                          {{ user.name.charAt(0) }}
+                       </div>
+                       <div>
+                          <p class="text-xs font-bold text-white">{{ user.name }}</p>
+                          <p class="text-[9px] font-black opacity-30 uppercase">{{ user.email }}</p>
+                       </div>
+                    </div>
+                    <span class="text-[9px] font-black opacity-20 uppercase">{{ new Date(user.createdAt).toLocaleDateString() }}</span>
+                 </div>
+              </div>
+           </div>
+
+           <div class="glass-panel p-6 rounded-3xl border border-white/5">
+              <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-6 text-white">Tier Migrations</h3>
+               <div class="space-y-4">
+                 <div v-for="upgrade in stats?.recentUpgrades?.slice(0, 4)" :key="upgrade.email" class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                       <div class="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center">
+                          <trending-up theme="outline" size="14" class="text-green-400" />
+                       </div>
+                       <p class="text-xs font-bold text-white">{{ upgrade.name }}</p>
+                    </div>
+                    <span class="text-[9px] font-black bg-white/5 px-2 py-0.5 rounded-md uppercase tracking-widest text-blue-400">
+                       {{ upgrade.subscription?.plan }}
+                    </span>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </div>
+
+      <!-- Infrastructure Sidebar -->
+      <div class="space-y-8">
+         <div class="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden">
+            <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-6 text-white relative z-10">Neural Pulse</h3>
+            <div class="space-y-6 relative z-10">
+               <div v-for="svc in healthItems" :key="svc.name" class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                     <div :class="['w-2 h-2 rounded-full', svc.status === 'ok' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]']"></div>
+                     <span class="text-[11px] font-bold text-white/80">{{ svc.name }}</span>
                   </div>
-                </template>
-              </el-table-column>
-              <el-table-column prop="createdAt" label="Date" width="100">
-                <template #default="scope">
-                  {{ new Date(scope.row.createdAt).toLocaleDateString() }}
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
-        
-        <!-- Recent Upgrades -->
-        <el-col :span="8" :xs="24" class="mb-4">
-           <el-card class="dashboard-table-card">
-            <template #header>Recent Upgrades</template>
-            <el-table :data="stats?.recentUpgrades || []" style="width: 100%" size="small">
-              <el-table-column prop="name" label="User" />
-              <el-table-column prop="subscription.plan" label="Plan">
-                 <template #default="scope">
-                    <el-tag size="small" effect="dark" type="success">{{ scope.row.subscription?.plan?.toUpperCase() }}</el-tag>
-                 </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
+                  <span class="text-[9px] font-black opacity-30 uppercase tracking-widest">{{ svc.latency }}ms</span>
+               </div>
+            </div>
+            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full"></div>
+         </div>
 
-        <!-- System Health -->
-        <el-col :span="8" :xs="24" class="mb-4">
-          <el-card class="system-health">
-            <template #header>System Health</template>
-            <div class="health-item">
-              <span>Database (MongoDB)</span>
-              <el-tag type="success" size="small">Operational</el-tag>
+         <div class="glass-panel p-6 rounded-3xl border border-white/5">
+            <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-6 text-white">Fleet Status</h3>
+            <div class="p-6 bg-white/5 rounded-2xl border border-white/5 flex flex-col items-center">
+               <div class="text-4xl font-black text-white mb-2">{{ systemHealth?.cpuUsage || 0 }}%</div>
+               <p class="text-[9px] font-black opacity-30 uppercase tracking-[0.2em] mb-4">Total Cluster Load</p>
+               <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                  <div class="bg-blue-500 h-full transition-all duration-500" :style="{ width: (systemHealth?.cpuUsage || 0) + '%' }"></div>
+               </div>
             </div>
-            <div class="health-item">
-              <span>Storage (AWS S3)</span>
-              <el-tag type="success" size="small">Operational</el-tag>
-            </div>
-            <div class="health-item">
-              <span>Gemini AI Service</span>
-              <el-tag type="success" size="small">Operational</el-tag>
-            </div>
-            <div class="health-item">
-              <span>Veo3 Video Service</span>
-              <el-tag type="warning" size="small">High Latency</el-tag>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+         </div>
+
+         <button class="w-full py-4 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white" @click="$router.push('/admin/infra-health')">
+            Manage Infrastructure
+         </button>
+      </div>
     </div>
   </div>
 </template>
@@ -143,10 +141,31 @@ ChartJS.register(
 
 const adminStore = useAdminStore()
 const { stats } = storeToRefs(adminStore)
+const systemHealth = ref<any>(null);
+const healthItems = ref([
+    { name: 'Core API Hub', status: 'ok', latency: 42 },
+    { name: 'S3 Asset Matrix', status: 'ok', latency: 120 },
+    { name: 'Gemini Neural Cluster', status: 'ok', latency: 1350 },
+    { name: 'Redis Cache Cluster', status: 'ok', latency: 2 }
+]);
 
-const fetchStats = async () => {
+const statCards = computed(() => [
+   { label: 'Total Command Units', value: stats.value?.totalUsers || 0, trend: '+12%', isPositive: true, color: 'rgba(59, 130, 246, 0.3)' },
+   { label: 'Monthly Delta revenue', value: `$${stats.value?.monthlyRevenue || 0}`, trend: '+8.4%', isPositive: true, color: 'rgba(16, 185, 129, 0.3)' },
+   { label: 'Enterprise Nodes', value: stats.value?.activeSubscriptions || 0, trend: 'Stable', isPositive: true, color: 'rgba(168, 85, 247, 0.3)' },
+   { label: 'Storage Footprint', value: `${stats.value?.storageUsed || 0} GB`, trend: '+2.1%', isPositive: false, color: 'rgba(245, 158, 11, 0.3)' }
+]);
+
+const fetchAllData = async () => {
   try {
-    await adminStore.fetchStats()
+    const [statsRes, healthRes] = await Promise.all([
+        adminStore.fetchStats(),
+        api.get('/admin/monitoring/health')
+    ]);
+    
+    if (healthRes.data.success) {
+        systemHealth.value = healthRes.data.data;
+    }
   } catch (error: any) {
     if (error.response?.status === 403) {
       toast.error('Access denied: You do not have admin permissions')
@@ -231,143 +250,61 @@ const revenueChartOptions = {
 }
 
 onMounted(() => {
-  fetchStats()
+  fetchAllData()
 })
 </script>
 
 <style lang="scss" scoped>
 .admin-dashboard {
-  padding-bottom: 40px;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.03), transparent 40%);
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
-  margin-bottom: 32px;
 }
 
-.stat-card {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  transition: all 0.3s ease;
+.premium-stat-card {
+   position: relative;
+   background: rgba(255, 255, 255, 0.02);
+   backdrop-filter: blur(20px);
+   border: 1px solid rgba(255, 255, 255, 0.05);
+   border-radius: 2rem;
+   padding: 24px;
+   overflow: hidden;
+   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+   
+   &:hover {
+      transform: translateY(-4px);
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+   }
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  }
-
-  :deep(.el-card__header) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 16px 24px;
-  }
-  
-  :deep(.el-card__body) {
-    padding: 24px;
-  }
+   .card-glow {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      right: -50px;
+      bottom: -50px;
+      filter: blur(40px);
+      border-radius: 50%;
+      opacity: 0.2;
+   }
 }
 
-.stat-value {
-  font-size: 36px;
-  font-weight: 800;
-  color: #fff;
-  margin-bottom: 8px;
-  letter-spacing: -1px;
+.glass-panel {
+   background: rgba(10, 10, 10, 0.4);
+   backdrop-filter: blur(40px);
 }
 
-.stat-trend {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.4);
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.animate-in {
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.positive { color: #10b981; }
-.negative { color: #ef4444; }
-
-.charts-section {
-  margin-bottom: 32px;
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-.chart-card {
-  height: 350px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  
-  :deep(.el-card__body) { flex: 1; padding: 16px; min-height: 0; }
-  :deep(.el-card__header) {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      color: rgba(255, 255, 255, 0.6);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-  }
-}
-
-.chart-container {
-  height: 100%;
-  width: 100%;
-}
-
-.dashboard-table-card, .system-health {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  height: 100%;
-
-  :deep(.el-card__header) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: #fff;
-    font-weight: 600;
-    padding: 16px 24px;
-  }
-  
-  :deep(.el-card__body) { padding: 0; }
-}
-
-.user-mini {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  
-  .avatar-xs {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #333;
-    color: #fff;
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .truncate { font-size: 13px; color: #fff; }
-}
-
-.health-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-  
-  &:last-child { border-bottom: none; }
-}
-
-.mb-4 { margin-bottom: 24px; }
 </style>

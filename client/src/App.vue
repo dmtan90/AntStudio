@@ -24,9 +24,9 @@ const layouts = {
 }
 
 const layout = computed(() => {
-  // Force none layout for login and register
-  if (route.path === '/login' || route.path === '/register') return layouts.none
-  
+  // Force none layout for sensitive/public standalone pages
+  if (route.path === '/login' || route.path === '/register' || route.path === '/live/join') return layouts.none
+
   const layoutName = (route.meta.layout as string) || 'default'
   return layouts[layoutName as keyof typeof layouts] || layouts.default
 })

@@ -41,6 +41,30 @@ router.get('/stats', async (req: AuthRequest, res) => {
 });
 
 /**
+ * GET /api/admin/monitoring/health
+ */
+router.get('/health', async (req: AuthRequest, res) => {
+    try {
+        const health = await monitoringService.getDetailedHealth();
+        res.json({ success: true, data: health, error: null });
+    } catch (error: any) {
+        res.status(500).json({ success: false, data: null, error: error.message });
+    }
+});
+
+/**
+ * GET /api/admin/monitoring/heartbeat
+ */
+router.get('/heartbeat', async (req: AuthRequest, res) => {
+    try {
+        const heartbeats = await monitoringService.getHeartbeat();
+        res.json({ success: true, data: heartbeats, error: null });
+    } catch (error: any) {
+        res.status(500).json({ success: false, data: null, error: error.message });
+    }
+});
+
+/**
  * GET /api/admin/monitoring/history
  * Get historical metrics for charts
  */

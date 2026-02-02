@@ -94,4 +94,28 @@ export class S3StorageAdapter implements IStorageAdapter {
             throw e;
         }
     }
+
+    async listFiles(prefix?: string): Promise<Array<{ key: string, url: string, size?: number, lastModified?: Date }>> {
+        const command = new ListObjectsV2Command({
+            Bucket: this.bucket,
+            Prefix: prefix
+        });
+
+        const response = await this.client.send(command);
+        const contents = response.Contents || [];
+
+        return await Promise.all(contents.map(async (obj) => {
+            let url = `https://${this.bucket}.s3.${configService.aws.region}.amazonaws.com/${obj.Key}`;
+            if (configService.aws.endpoint) {
+                url = `${configService.aws.endpoint}/${this.bucket}/${obj.Key}`;
+            }
+
+            return {
+                key: obj.Key!,
+                url: url,
+                size: obj.Size,
+                lastModified: obj.LastModified
+            };
+        }));
+    }
 }

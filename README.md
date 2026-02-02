@@ -132,6 +132,10 @@ antstudio/
 - **MediaPipe**: Face detection, body segmentation
 - **Custom**: Commerce Intelligence, Vibe Engine, AI Director
 
+> [!IMPORTANT]
+> **Architectural Decision: Client-Side Video Assembly**
+> AntStudio uses a **Decentralized Rendering Architecture**. All video assembly, encoding, and final exports are processed on the **client-side (browser)** using WebWorkers and `@webav/av-cliper`. The backend serves only as an asset repository and data orchestrator. **DO NOT** implement backend rendering services to avoid unnecessary GPU/CPU load on the server cluster.
+
 ## 🚀 Quick Start (Docker)
 
 The easiest way to run AntFlow is with Docker.

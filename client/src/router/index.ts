@@ -40,7 +40,7 @@ const routes: Array<RouteRecordRaw> = [
         props: true
     },
     {
-        path: '/projects/:id/editor',
+        path: '/projects/editor/:id',
         name: 'project-editor',
         component: () => import('@/views/video-editor/views/Editor.vue'),
         meta: { requiresAuth: true, layout: 'none' },
@@ -122,7 +122,13 @@ const routes: Array<RouteRecordRaw> = [
         path: '/live/join',
         name: 'live-join',
         component: () => import('@/views/user/GuestRoom.vue'),
-        meta: { requiresAuth: false, layout: 'auth' }
+        meta: { requiresAuth: false, layout: 'none' }
+    },
+    {
+        path: '/join/:token',
+        redirect: to => {
+            return { path: '/live/join', query: { token: to.params.token } }
+        }
     },
     {
         path: '/admin',
@@ -146,6 +152,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '/admin/license',
         name: 'admin-license',
         component: () => import('@/views/admin/Licenses.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true, layout: 'app' }
+    },
+    {
+        path: '/admin/activation',
+        name: 'admin-activation',
+        component: () => import('@/views/admin/Activation.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, layout: 'app' }
     },
     {
@@ -277,6 +289,12 @@ router.beforeEach(async (to, from, next) => {
     const isSysAdmin = userStore.user?.role === 'sys-admin'
 
     if (to.meta.requiresAuth && !isAuthenticated) {
+        // console.log("token", to.query.token, "path", to.path);
+        // Feature: Allow Guest Access to Studio with token
+        if (to.path === '/live/studio' && to.query.token) {
+            next()
+            return
+        }
         next({ name: 'login', query: { redirect: to.fullPath } })
         return
     }

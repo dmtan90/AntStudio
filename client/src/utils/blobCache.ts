@@ -9,6 +9,7 @@ const CACHE_NAME = 'antflow-blob-cache-v1'
 export class BlobCache {
     private static instance: BlobCache
     private cachePromise: Promise<Cache> | null = null
+    private objectUrls = new Map<string, string>() // Key: original URL, Value: Object URL
 
     private constructor() {
         if ('caches' in window) {
@@ -104,6 +105,11 @@ export class BlobCache {
      * If not in cache, optionally fetch it.
      */
     async getBlobUrl(url: string, fetchIfMissing = false, fetchOptions?: RequestInit): Promise<string | null> {
+        // Check local memory first for speed and to avoid multiple object URLs for same blob
+        if (this.objectUrls.has(url)) {
+            return this.objectUrls.get(url)!
+        }
+
         let blob = await this.get(url)
 
         if (!blob && fetchIfMissing) {
@@ -111,10 +117,23 @@ export class BlobCache {
         }
 
         if (blob) {
-            return URL.createObjectURL(blob)
+            const blobUrl = URL.createObjectURL(blob)
+            this.objectUrls.set(url, blobUrl)
+            return blobUrl
         }
 
         return null
+    }
+
+    /**
+     * Clear specific Object URL memory.
+     */
+    public revokeUrl(url: string): void {
+        const objectUrl = this.objectUrls.get(url)
+        if (objectUrl) {
+            URL.revokeObjectURL(objectUrl)
+            this.objectUrls.delete(url)
+        }
     }
 
     /**
@@ -139,6 +158,11 @@ export class BlobCache {
         if (!('caches' in window)) return false
 
         try {
+            // Revoke all tracking object URLs before clearing
+            for (const objectUrl of this.objectUrls.values()) {
+                URL.revokeObjectURL(objectUrl)
+            }
+            this.objectUrls.clear()
             return await caches.delete(CACHE_NAME)
         } catch (error) {
             console.error('BlobCache clear error:', error)

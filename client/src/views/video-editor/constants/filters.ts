@@ -372,6 +372,35 @@ export const adjustments: Array<Adjustment> = [
       return instance
     }
   },
+  {
+    name: "FilmGrain",
+    value: "FilmGrain",
+    filter: (intensity = 0) => {
+      return createInstance((f.Image.filters as any).FilmGrain, {
+        uIntensity: intensity / 100,
+        uTime: Math.random()
+      })
+    }
+  },
+  {
+    name: "Vignette",
+    value: "Vignette",
+    filter: (intensity = 0) => {
+      return createInstance((f.Image.filters as any).Vignette, {
+        uIntensity: intensity / 100,
+        uSize: 0.5
+      })
+    }
+  },
+  {
+    name: "ChromaticAberration",
+    value: "ChromaticAberration",
+    filter: (intensity = 0) => {
+      return createInstance((f.Image.filters as any).ChromaticAberration, {
+        uIntensity: intensity / 100
+      })
+    }
+  },
 ]
 
 export const filters: Array<Filter> = [

@@ -76,6 +76,21 @@ export class CanvasTimeline {
     if (anim.currentTime < this.duration) {
       this.seek = anim.currentTime;
       this._toggleElements();
+
+      // Update dynamic filters like FilmGrain
+      for (const object of this.canvas._objects) {
+        if (!object.visible || !object.filters) continue;
+        let needsApply = false;
+        object.filters.forEach((f: any) => {
+          if (f.type === 'FilmGrain') {
+            f.uTime = Math.random();
+            needsApply = true;
+          }
+        });
+        if (needsApply) {
+          object.applyFilters();
+        }
+      }
     } else {
       this.pause();
       this.seek = 0;

@@ -625,7 +625,9 @@
             "commerce": "Commerce",
             "engagement": "Engagement",
             "vibe": "Vibe",
-            "collaboration": "Collaboration"
+            "collaboration": "Collaboration",
+            "platforms": "Platforms",
+            "layout": "Layout"
         },
         "filters": {
             "none": "Normal",

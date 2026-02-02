@@ -1,6 +1,7 @@
 <template>
-    <div class="preview-stage">
+    <div class="preview-stage" @dragover.prevent="onDragOver" @drop="onDrop">
         <div class="canvas-wrapper glass-dark" ref="canvasWrapper">
+
             <!-- Real-time Render Canvas (Injected via slot from Parent) -->
             <slot name="canvas"></slot>
 
@@ -21,11 +22,61 @@
 
 <script setup lang="ts">
 import { Like } from '@icon-park/vue-next';
+import { useStudioStore } from '@/stores/studio';
 
 defineProps<{
     activeLikes: any[];
 }>();
+
+const studioStore = useStudioStore();
+
+const onDragOver = (event: DragEvent) => {
+    // Simply allow drop
+};
+
+const onDrop = (event: DragEvent) => {
+    const guestId = event.dataTransfer?.getData('application/antflow-guest');
+    if (!guestId) return;
+
+    // Calculate slot based on drop position relative to stage
+    // For now, simpler: map to regions based on rects if multiple slots
+    // Or just assign to first available slot if generic drop on stage
+
+    // Advanced: Calculate which region was dropped on
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    // Find the best region in current scene
+    const regions = studioStore.activeScene.layout.regions;
+    let bestRegion = regions[0];
+    let minDistance = Infinity;
+
+    regions.forEach(r => {
+        const centerX = r.x + r.width / 2;
+        const centerY = r.y + r.height / 2;
+        const dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+        if (dist < minDistance) {
+            minDistance = dist;
+            bestRegion = r;
+        }
+    });
+
+    if (bestRegion) {
+        if (bestRegion.source === 'host') {
+            studioStore.swapWithHost(guestId);
+        } else if (bestRegion.source.startsWith('guest')) {
+            const slotIdx = parseInt(bestRegion.source.replace('guest', '')) - 1;
+            studioStore.assignGuestToSlot(guestId, slotIdx);
+        }
+    } else {
+        // Fallback or generic slot 1
+        studioStore.assignGuestToSlot(guestId, 0);
+    }
+
+};
 </script>
+
 
 <style scoped lang="scss">
 .preview-stage {

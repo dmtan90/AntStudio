@@ -5,6 +5,7 @@ export interface WebRTCConfig {
     audioBitrate?: number; // In kbps
     maxFramerate?: number;
     onStats?: (stats: WebRTCStats) => void;
+    onDisconnect?: () => void;
 }
 
 export interface WebRTCStats {
@@ -52,8 +53,15 @@ export class WebRTCPublisher {
             };
 
             this.ws!.onerror = (err) => {
-                console.error("[WebRTC] WebSocket error:", err);
-                reject(new Error("WebSocket connection failed"));
+                console.warn("[WebRTC] WebSocket connection failed. Ant Media Server may be offline.");
+                this.config.onDisconnect?.();
+                // Instead of rejecting immediately, we can check for a mock mode or retry
+                reject(new Error("AMS_OFFLINE"));
+            };
+
+            this.ws!.onclose = () => {
+                console.warn("[WebRTC] Signaling socket closed");
+                this.config.onDisconnect?.();
             };
 
             this.ws!.onmessage = async (event) => {
@@ -144,6 +152,8 @@ export class WebRTCPublisher {
             if (this.pc?.iceConnectionState === 'connected') {
                 this.applyBitrateConstraints();
                 this.startStatsInterval();
+            } else if (this.pc?.iceConnectionState === 'disconnected' || this.pc?.iceConnectionState === 'failed' || this.pc?.iceConnectionState === 'closed') {
+                this.config.onDisconnect?.();
             }
         };
 

@@ -38,6 +38,8 @@
         </main>
         <AIPromptModal />
         <EditorPreviewModal />
+        <KeyboardShortcutsPanel />
+        <ExportDialog ref="exportDialogRef" />
       </section>
     </template>
 
@@ -76,6 +78,9 @@ import EditorCanvas from 'video-editor/components/editor/EditorCanvas.vue';
 import EditorRecorder from 'video-editor/components/editor/EditorRecorder.vue';
 import EditorControls from 'video-editor/layout/controls/EditorControls.vue';
 import Spinner from 'video-editor/components/ui/spinner.vue';
+import KeyboardShortcutsPanel from 'video-editor/layout/modals/KeyboardShortcutsPanel.vue';
+import ExportDialog from 'video-editor/layout/modals/ExportDialog.vue';
+import { useKeyboardShortcuts } from 'video-editor/composables/useKeyboardShortcuts';
 
 const editor = useEditorStore();
 const { status, pages, timelineOpen, sidebarRight } = storeToRefs(editor);
@@ -84,6 +89,18 @@ canvasStore.registerEvents();
 const { selectionActive: active } = storeToRefs(canvasStore);
 const isTablet = useIsTablet();
 useInitializeEditor();
+
+// Initialize keyboard shortcuts
+const exportDialogRef = ref<InstanceType<typeof ExportDialog> | null>(null);
+const { shortcuts, showShortcutsPanel } = useKeyboardShortcuts();
+
+// Provide export dialog ref to keyboard shortcuts
+watch(exportDialogRef, (dialog) => {
+  if (dialog && (window as any).__exportDialog === undefined) {
+    (window as any).__exportDialog = dialog;
+  }
+});
+
 const pageSize = computed(() => pages.value?.length || 0);
 // watch([status, pageSize, pages], (value) => {
 //   console.log("status", value)

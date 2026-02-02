@@ -1,5 +1,11 @@
 <template>
     <aside class="side-rail left-rail glass-dark">
+        <!-- <div class="rail-item" :class="{ active: activeTab === 'scenes' }"
+            @click="$emit('update:activeTab', 'scenes')">
+            <video-two theme="outline" size="20" />
+            <span class="label">Scenes</span>
+        </div> -->
+
         <div v-for="tab in effectTabs" :key="tab.id" class="rail-item" :class="{ active: activeTab === tab.id }"
             @click="$emit('update:activeTab', tab.id)">
             <component :is="getIcon(tab.icon)" theme="outline" size="20" />

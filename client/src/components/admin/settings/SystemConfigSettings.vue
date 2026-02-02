@@ -51,27 +51,87 @@
             </el-form>
         </el-card>
 
-        <!-- AWS S3 -->
-        <el-card class="settings-section">
-            <template #header>AWS S3 Storage</template>
-            <el-form :model="apiConfigs.aws" label-position="top" v-if="apiConfigs">
-                <el-form-item label="Access Key ID">
-                    <el-input v-model="apiConfigs.aws.accessKeyId" class="glass-input" />
-                </el-form-item>
-                <el-form-item label="Secret Access Key">
-                    <el-input v-model="apiConfigs.aws.secretAccessKey" type="password" show-password
-                        class="glass-input" />
-                </el-form-item>
-                <el-form-item label="Bucket Name">
-                    <el-input v-model="apiConfigs.aws.bucketName" class="glass-input" />
-                </el-form-item>
-                <el-form-item label="Region">
-                    <el-input v-model="apiConfigs.aws.region" class="glass-input" />
-                </el-form-item>
-                <el-form-item label="Endpoint (for S3-compatible)">
-                    <el-input v-model="apiConfigs.aws.endpoint" placeholder="https://..." class="glass-input" />
-                </el-form-item>
-            </el-form>
+        <!-- Multi-Cloud Storage Hub -->
+        <el-card class="settings-section md:col-span-3 xl:col-span-3">
+            <template #header>
+                <div class="flex justify-between items-center w-full">
+                    <span>Multi-Cloud Storage Hub</span>
+                    <el-radio-group v-model="apiConfigs.storage.activeProvider" size="small" class="premium-radio">
+                        <el-radio-button label="s3">AWS S3</el-radio-button>
+                        <el-radio-button label="google_drive">Google Drive</el-radio-button>
+                    </el-radio-group>
+                </div>
+            </template>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-2">
+                <!-- AWS S3 (Active/Inactive state based on selection) -->
+                <div :class="['storage-provider-card p-6 rounded-3xl border transition-all', apiConfigs.storage.activeProvider === 's3' ? 'bg-blue-600/5 border-blue-500/30' : 'bg-white/2 border-white/5 opacity-50 grayscale']">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-400">
+                            <i class="at-brand-aws text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-black uppercase text-xs tracking-widest">Amazon S3</h3>
+                            <p class="text-[10px] text-gray-500">Industry standard object storage</p>
+                        </div>
+                    </div>
+                    
+                    <el-form :model="apiConfigs.aws" label-position="top" size="small">
+                        <el-row :gutter="20">
+                            <el-col :span="12">
+                                <el-form-item label="Access Key ID">
+                                    <el-input v-model="apiConfigs.aws.accessKeyId" class="glass-input" />
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="Secret Access Key">
+                                    <el-input v-model="apiConfigs.aws.secretAccessKey" type="password" show-password class="glass-input" />
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row :gutter="20">
+                            <el-col :span="12">
+                                <el-form-item label="Bucket Name">
+                                    <el-input v-model="apiConfigs.aws.bucketName" class="glass-input" />
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="Region">
+                                    <el-input v-model="apiConfigs.aws.region" class="glass-input" />
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-form-item label="Custom Endpoint (S3-Compatible)">
+                            <el-input v-model="apiConfigs.aws.endpoint" placeholder="https://..." class="glass-input" />
+                        </el-form-item>
+                    </el-form>
+                </div>
+
+                <!-- Google Drive -->
+                <div :class="['storage-provider-card p-6 rounded-3xl border transition-all', apiConfigs.storage.activeProvider === 'google_drive' ? 'bg-green-600/5 border-green-500/30' : 'bg-white/2 border-white/5 opacity-50 grayscale']">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-2xl bg-green-500/20 flex items-center justify-center text-green-400">
+                            <i class="at-brand-drive text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-black uppercase text-xs tracking-widest">Google Drive</h3>
+                            <p class="text-[10px] text-gray-500">Ideal for team collaboration</p>
+                        </div>
+                    </div>
+
+                    <el-form :model="apiConfigs.storage.googleDrive" label-position="top" size="small">
+                        <el-form-item label="Service Account Email">
+                            <el-input v-model="apiConfigs.storage.googleDrive.clientEmail" placeholder="...-sa@project.iam.gserviceaccount.com" class="glass-input" />
+                        </el-form-item>
+                        <el-form-item label="Private Key (PEM format)">
+                            <el-input v-model="apiConfigs.storage.googleDrive.privateKey" type="textarea" :rows="3" placeholder="-----BEGIN PRIVATE KEY-----..." class="glass-input" />
+                        </el-form-item>
+                        <el-form-item label="Root Folder ID">
+                            <el-input v-model="apiConfigs.storage.googleDrive.rootFolderId" placeholder="folder-uuid-from-url" class="glass-input" />
+                        </el-form-item>
+                    </el-form>
+                </div>
+            </div>
         </el-card>
 
         <!-- Stripe -->

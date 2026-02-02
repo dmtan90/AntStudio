@@ -211,7 +211,7 @@ const activePopup2 = ref(false);
     </div>
 
     <!-- Collapsible Intensity Slider for common adjustments -->
-    <div v-if="active && (name == 'Noise' || name == 'Pixelate' || name == 'Blur' || !excludeSliders.includes(name))" class="pl-8 pr-2">
+    <div v-if="active && (name == 'Noise' || name == 'Pixelate' || name == 'Blur' || name == 'FilmGrain' || name == 'Vignette' || name == 'ChromaticAberration' || !excludeSliders.includes(name))" class="pl-8 pr-2">
         <el-slider 
             v-if="name == 'Noise'" 
             :min="0" :max="1000" :step="10" 
@@ -230,6 +230,27 @@ const activePopup2 = ref(false);
             v-model="intensity" 
             class="cinematic-slider" 
         />
+        <el-slider 
+            v-else-if="name == 'FilmGrain'" 
+            :min="0" :max="100" :step="1" 
+            v-model="intensity" 
+            @change="onChange"
+            class="cinematic-slider" 
+        />
+        <el-slider 
+            v-else-if="name == 'ChromaticAberration'" 
+            :min="0" :max="100" :step="1" 
+            v-model="intensity" 
+            @change="onChange"
+            class="cinematic-slider" 
+        />
+        <div v-else-if="name == 'Vignette'" class="space-y-4">
+            <div class="space-y-2">
+                <Label class="text-[9px] text-white/30 uppercase tracking-[0.2em]">Intensity</Label>
+                <el-slider :min="0" :max="100" :step="1" v-model="intensity" @change="onChange" class="cinematic-slider" />
+            </div>
+            <!-- Vignette Size could be added here if I expose it in constants -->
+        </div>
         <el-slider 
             v-else-if="!excludeSliders.includes(name)" 
             :min="-100" :max="100" :step="1" 

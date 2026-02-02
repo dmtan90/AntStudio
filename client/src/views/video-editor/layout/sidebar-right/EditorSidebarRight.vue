@@ -18,6 +18,7 @@ import StrokeSidebar from './components/stroke.vue';
 import AISidebar from './components/ai.vue';
 import VisualSidebar from './components/visual.vue';
 import PositionSidebar from './components/position.vue';
+import TransitionSidebar from './components/transition.vue';
 
 const rightSidebarWidth = '280px';
 
@@ -66,6 +67,10 @@ const sidebarComponentMap: Record<string, SidebarMapValue> = {
   position: {
     Component: PositionSidebar,
     close: (selected) => !selected,
+  },
+  transition: {
+    Component: TransitionSidebar,
+    close: () => false, // Always keep open when active
   },
 };
 
