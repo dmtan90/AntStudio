@@ -125,6 +125,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: false, layout: 'none' }
     },
     {
+        path: '/remote-cam',
+        name: 'remote-cam',
+        component: () => import('@/views/user/RemoteCam.vue'),
+        meta: { requiresAuth: false, layout: 'none' }
+    },
+    {
         path: '/join/:token',
         redirect: to => {
             return { path: '/live/join', query: { token: to.params.token } }
