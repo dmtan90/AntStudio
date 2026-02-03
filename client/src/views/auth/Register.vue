@@ -12,7 +12,10 @@
       <transition name="fade-up" appear>
         <GCard class="auth-card" :hoverable="false">
           <div class="logo">
-            <h1 class="brand">AntStudio</h1>
+            <div v-if="uiStore.logo" class="flex justify-center mb-6">
+              <img :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="h-16 w-auto object-contain" />
+            </div>
+            <h1 v-else class="brand">{{ uiStore.appName }}</h1>
             <p>Create wonderful videos with AI</p>
           </div>
 
@@ -61,6 +64,7 @@ import type { FormRules } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { ref, reactive } from 'vue'
 import { useUserStore } from '@/stores/user'
+import { useUIStore } from '@/stores/ui'
 import GCard from '@/components/ui/GCard.vue'
 import GInput from '@/components/ui/GInput.vue'
 import GButton from '@/components/ui/GButton.vue'
@@ -68,6 +72,7 @@ import { getFileUrl } from '@/utils/api'
 
 const router = useRouter()
 const userStore = useUserStore()
+const uiStore = useUIStore()
 
 const formRef = ref()
 const loading = ref(false)

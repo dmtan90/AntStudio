@@ -8,10 +8,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { Toaster } from 'vue-sonner'
 import 'vue-sonner/style.css'
+import { useUIStore } from '@/stores/ui'
 
 const route = useRoute()
 
@@ -36,9 +37,33 @@ import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+const uiStore = useUIStore()
+
+watchEffect(() => {
+  if (uiStore.appName) {
+    document.title = `${uiStore.appName} - AI-Powered Video Production`
+    
+    // Update meta tags
+    const metaTitle = document.querySelector('meta[name="title"]')
+    if (metaTitle) metaTitle.setAttribute('content', `${uiStore.appName} - AI-Powered Video Production`)
+    
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+    if (ogTitle) ogTitle.setAttribute('content', `${uiStore.appName} - AI-Powered Video Production`)
+    
+    const twitterTitle = document.querySelector('meta[name="twitter:title"]')
+    if (twitterTitle) twitterTitle.setAttribute('content', `${uiStore.appName} - AI-Powered Video Production`)
+  }
+  
+  const faviconUrl = uiStore.getFaviconUrl
+  if (faviconUrl) {
+    const favicon = document.querySelector('link[rel="icon"]')
+    if (favicon) favicon.setAttribute('href', faviconUrl)
+  }
+})
 
 onMounted(() => {
   userStore.fetchProfile()
+  uiStore.fetchAppConfig()
 })
 </script>
 

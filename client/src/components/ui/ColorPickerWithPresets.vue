@@ -1,3 +1,4 @@
+```vue
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { ChromePicker, tinycolor } from 'vue-color';
@@ -5,6 +6,7 @@ import { ColorFilter as Pipette, Time as History, ApplicationOne as Presets } fr
 import { toast } from 'vue-sonner';
 import { darkHexCodes, lightHexCodes, pastelHexCodes } from 'video-editor/constants/editor';
 import { cn } from '@/utils/ui';
+import { useUIStore } from '@/stores/ui';
 
 interface Props {
   modelValue: string;
@@ -21,13 +23,16 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['update:modelValue', 'change']);
 
+const uiStore = useUIStore();
+const localStorageKey = computed(() => `${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_recent_colors`);
+
 const recentColors = ref<string[]>([]);
 const activeTab = ref<'presets' | 'recent'>('presets');
 const eyeDropperStatus = !!window.EyeDropper;
 
 // Load recent colors from localStorage
 onMounted(() => {
-  const stored = localStorage.getItem('antflow_recent_colors');
+  const stored = localStorage.getItem(localStorageKey.value);
   if (stored) {
     try {
       recentColors.value = JSON.parse(stored);
@@ -44,8 +49,8 @@ const saveRecentColor = (color: string) => {
   const hex = tinycolor(color).toHexString();
   
   const filtered = recentColors.value.filter(c => c.toLowerCase() !== hex.toLowerCase());
-  recentColors.value = [hex, ...filtered].slice(0, 16);
-  localStorage.setItem('antflow_recent_colors', JSON.stringify(recentColors.value));
+  recentColors.value = [hex, ...filtered].slice(0, 10); // Changed slice to 10
+  localStorage.setItem(localStorageKey.value, JSON.stringify(recentColors.value));
 };
 
 const internalColor = computed({

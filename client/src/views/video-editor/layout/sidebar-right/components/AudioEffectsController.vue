@@ -6,11 +6,12 @@ import { ElSlider, ElSwitch } from 'element-plus';
 import { GraphicDesign, MusicOne, Waves, Equalizer, Close, Loading } from '@icon-park/vue-next';
 import SpectrumAnalyzer from './SpectrumAnalyzer.vue';
 import { toast } from 'vue-sonner';
-import axios from 'axios';
 import { ref } from 'vue';
+import { useAIStore } from '@/stores/ai';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
+const aiStore = useAIStore();
 
 const activeAudio = computed(() => {
     if (editor.selection.active?.type === 'audio') {
@@ -103,7 +104,7 @@ const enhanceAudio = async () => {
         const formData = new FormData();
         formData.append('file', audioBlob, 'audio.mp3');
 
-        const response = await axios.post('/api/ai/enhance-audio', formData);
+        const response = await aiStore.enhanceAudio(formData);
 
         if (response.data.success) {
             toast.success('Audio enhanced successfully!', { id: 'enhance-audio' });

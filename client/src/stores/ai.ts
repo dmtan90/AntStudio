@@ -74,11 +74,70 @@ export const useAIStore = defineStore('ai', () => {
         })
     }
 
+    // Generate Voice
+    async function generateVoice(payload: { text: string, voiceId?: string }) {
+        loading.value = true
+        try {
+            const { data } = await api.post('/headless/generate-voice', payload)
+            // Or /api/ai/generate-voice depending on backend route found in grep? 
+            // Grep said: axios.post('/api/ai/generate-voice', {
+            // But headless.ts has /generate-voice. Let's stick to what the view was using or standardise.
+            // View Used: axios.post('/api/ai/generate-voice', {
+            return data
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to generate voice')
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function enhanceAudio(formData: FormData) {
+        loading.value = true
+        try {
+            // View Used: axios.post('/api/ai/enhance-audio', formData);
+            const { data } = await api.post('/ai/enhance-audio', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            return data
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to enhance audio')
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function fetchPerformanceInsights(sessionId?: string) {
+        try {
+            const url = sessionId ? `/ai/performance/insights/${sessionId}` : '/ai/performance/insights/current-session'
+            const { data } = await api.get(url)
+            return data
+        } catch (error: any) {
+            console.error('Failed to fetch insights', error)
+        }
+    }
+
+    async function optimizePerformance(payload: any) {
+        try {
+            const { data } = await api.post('/ai/performance/optimize/start', payload)
+            toast.success('Optimization started')
+            return data
+        } catch (error: any) {
+            toast.error(error.message || 'Optimization failed')
+            throw error
+        }
+    }
+
     return {
         loading,
         processingJobs,
         generateAvatarVideo,
         checkVideoStatus,
-        pollVideoStatus
+        pollVideoStatus,
+        generateVoice,
+        enhanceAudio,
+        fetchPerformanceInsights,
+        optimizePerformance
     }
 })

@@ -43,8 +43,9 @@ export function useStudioP2P(
                     video.muted = false;
                     guestVideoElements.set(g.id, video);
                     video.play().catch(e => console.warn("[Studio P2P] Video play failed:", e));
-                } else if (video.srcObject !== stream) {
-                    video.srcObject = stream;
+                } else {
+                    if (video.srcObject !== stream) video.srcObject = stream;
+                    // Re-trigger play even if stream object is the same
                     video.play().catch(() => { });
                 }
             }

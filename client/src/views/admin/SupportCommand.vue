@@ -134,8 +134,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { User, IdCard, FileZip, Pic, Download, CheckOne, Send, FolderClose } from '@icon-park/vue-next';
-import axios from 'axios';
+
+import { useSupportStore } from '@/stores/support';
 import { toast } from 'vue-sonner';
+
+const supportStore = useSupportStore();
 
 const tickets = ref<any[]>([]);
 const search = ref('');
@@ -155,8 +158,8 @@ const openCount = computed(() => tickets.value.filter(t => t.status === 'open').
 
 const fetchTickets = async () => {
     try {
-        const res = await axios.get('/api/support/admin/tickets');
-        tickets.value = res.data.data.tickets;
+        const data = await supportStore.fetchAdminTickets();
+        tickets.value = data.tickets;
     } catch (e) { }
 };
 
@@ -172,9 +175,7 @@ const updateStatus = async () => {
 const sendReply = async () => {
     if (!replyText.value.trim() || !selectedId.value) return;
     try {
-        const res = await axios.post(`/api/support/tickets/${selectedId.value}/messages`, {
-            text: replyText.value
-        });
+        await supportStore.replyToTicket(selectedId.value, { message: replyText.value });
         // In real app, push response to list. Here we refresh or mock.
         const ticket = tickets.value.find(t => t._id === selectedId.value);
         if (ticket) {
@@ -186,7 +187,7 @@ const sendReply = async () => {
         }
         replyText.value = '';
     } catch (e) {
-        toast.error('Transmission failed.');
+        // Error handled in store but we can catch logic here if needed
     }
 };
 

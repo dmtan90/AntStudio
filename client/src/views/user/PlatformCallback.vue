@@ -23,41 +23,72 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import axios from 'axios';
+import { usePlatformStore } from '@/stores/platform';
+import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
 import { CloseOne } from '@icon-park/vue-next';
 
 const route = useRoute();
 const router = useRouter();
+const platformStore = usePlatformStore();
+const adminStore = useAdminStore();
 
 const loading = ref(true);
 const error = ref('');
 
 const platform = computed(() => route.params.platform as string);
+const type = computed(() => route.query.type as string || 'platform');
+
 const platformName = computed(() => {
     const p = platform.value;
-    return p ? p.charAt(0).toUpperCase() + p.slice(1) : 'Platform';
+    if (p === 'payment') return 'Payment Gateway';
+    return p ? p.charAt(0).toUpperCase() + p.slice(1) : 'Service';
 });
 
 onMounted(async () => {
     const code = route.query.code as string;
+    const state = route.query.state as string;
+    const paymentSuccess = route.query.success === 'true' || route.query.payment_intent;
 
-    if (!code) {
-        error.value = 'Authorization code missing';
+    // 1. Handle Errors from Provider
+    if (route.query.error) {
+        error.value = route.query.error_description as string || route.query.error as string;
         loading.value = false;
         return;
     }
 
     try {
-        await axios.post(`/api/platforms/callback/${platform.value}`, { code });
-        toast.success(`Successfully connected to ${platformName.value}`);
-        // Redirect back to settings after short delay
-        setTimeout(() => {
-            router.push('/platforms');
-        }, 1000);
+        // 2. Route based on Type/Platform
+        if (platform.value === 'google' && type.value === 'ai-account') {
+            // AI Account Auth (e.g. Google for Antigravity)
+            if (!code) throw new Error('Authorization code missing');
+            await adminStore.handleAIAuthCallback('google', code, state);
+            toast.success("AI Account successfully linked");
+            setTimeout(() => router.push('/admin/ai-accounts'), 1500);
+
+        } else if (platform.value === 'payment') {
+            // Payment Gateway Callback
+            if (paymentSuccess) {
+                toast.success("Payment processed successfully");
+                setTimeout(() => router.push('/billing'), 1500);
+            } else {
+                error.value = "Payment was cancelled or failed.";
+                loading.value = false;
+            }
+
+        } else {
+            // Standard Social/Streaming Platform
+            if (!code) throw new Error('Authorization code missing');
+            await platformStore.handleCallback(platform.value, code);
+            // Redirection logic
+            setTimeout(() => {
+                const redirect = route.query.redirect as string || '/platforms';
+                router.push(redirect);
+            }, 1000);
+        }
     } catch (e: any) {
-        console.error(e);
-        error.value = e.response?.data?.error || 'Failed to exchange token';
+        console.error('[Callback] Proccessing failed:', e);
+        error.value = e.response?.data?.error || e.message || 'Failed to exchange credentials';
         loading.value = false;
     }
 });

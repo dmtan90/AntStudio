@@ -234,6 +234,7 @@ import { ref, watch, onUnmounted, computed } from 'vue'
 import { AntMediaService } from '@/utils/antMedia'
 import { useAdminStore } from '@/stores/admin'
 import { useProjectStore } from '@/stores/project'
+import { useUIStore } from '@/stores/ui'
 import { Download, VideoPlay, Share, Loading, ArrowDown, Delete } from '@element-plus/icons-vue'
 import { getFileUrl } from '@/utils/api'
 import GMedia from '@/components/ui/GMedia.vue'
@@ -248,9 +249,10 @@ const emit = defineEmits(['update:modelValue'])
 
 const adminStore = useAdminStore()
 const projectStore = useProjectStore()
+const uiStore = useUIStore()
 const visible = ref(props.modelValue)
 
-const streamId = ref('antflow-' + Math.random().toString(36).substr(2, 6))
+const streamId = ref(uiStore.appName.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substr(2, 9))
 const isStreaming = ref(false)
 const isSavingVoD = ref(false)
 const showSimulcast = ref(false)
@@ -291,7 +293,8 @@ const downloadVideo = async () => {
     if (!url) return
     const a = document.createElement('a')
     a.href = url
-    a.download = `antflow-render-${Date.now()}.${format.value}`
+    const appSlug = uiStore.appName.toLowerCase().replace(/\s+/g, '_')
+    a.download = `${appSlug}_render_${Date.now()}.${format.value}`
     a.click()
 }
 

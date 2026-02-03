@@ -43,7 +43,7 @@ export const generateImage = async (
         loras?: Array<{ id: string; weight: number }>
         s3Key?: string
     } = {}
-): Promise<{ s3Key: string, s3Url: string }> => {
+): Promise<{ s3Key: string, s3Url?: string }> => {
     let optimizedPrompt: string = prompt;
 
     // Enhance character context with Archive Memory if available
@@ -68,7 +68,7 @@ export const generateImage = async (
         const mimeType = result.mimeType || 'image/png';
         const s3Key = options.s3Key || `projects/${projectId}/images/${filename}.png`;
         const uploadResult = await uploadToS3(s3Key, buffer, mimeType);
-        return { s3Key: uploadResult.key, s3Url: '' }; // Deprecated: Use s3Key and construct /api/s3/ proxy URL
+        return { s3Key: uploadResult.key }; // Deprecated: Use s3Key and construct /api/s3/ proxy URL
     } catch (error: any) {
         // Fallback or Error handling...
         throw error;
@@ -85,6 +85,7 @@ export interface Veo3GenerateOptions {
     aspectRatio?: '16:9' | '9:16' | '1:1'
     loras?: Array<{ id: string; weight: number }>
     characterImages?: string[]
+    metadata?: any
 }
 
 export const generateVideo = async (options: Veo3GenerateOptions): Promise<{ jobId: string }> => {

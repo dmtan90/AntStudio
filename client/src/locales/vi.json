@@ -148,7 +148,7 @@
                 "segments": "phân đoạn",
                 "confirmCreate": "Bắt đầu",
                 "startOver": "Bắt đầu lại",
-                "thinking": "AntStudio đang xử lý ý tưởng của bạn...",
+                "thinking": "{appName} đang xử lý ý tưởng của bạn...",
                 "analyzing": "Đang phân tích yêu cầu...",
                 "sec": "giây",
                 "landscape": "Ngang",

@@ -81,7 +81,7 @@ const saving = ref(false);
 const settings = computed(() => adminStore.settings);
 
 const suggestedRedirectUri = computed(() => {
-    return `${window.location.origin}/api/ai/auth/google/callback`;
+    return `${window.location.origin}/platforms/callback/google`;
 });
 
 const KNOWN_PROVIDERS = [

@@ -24,9 +24,35 @@
                     </div>
                 </div>
             </div>
+            <div v-else-if="showCreatePoll" class="p-6 bg-white/5 border border-white/10 rounded-3xl animate-in">
+                <div class="mb-4">
+                    <label class="text-[8px] font-black opacity-30 uppercase block mb-2">Question</label>
+                    <input v-model="newPoll.question"
+                        class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs focus:border-blue-500/50 outline-none"
+                        placeholder="Ask your audience..." />
+                </div>
+                <div class="space-y-2 mb-4">
+                    <label class="text-[8px] font-black opacity-30 uppercase block mb-1">Options</label>
+                    <input v-for="(opt, i) in newPoll.options" :key="i" v-model="newPoll.options[i]"
+                        class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-[11px] focus:border-blue-500/50 outline-none"
+                        :placeholder="'Option ' + (i + 1)" />
+                </div>
+                <div class="flex gap-2">
+                    <button class="flex-1 py-2 rounded-xl bg-blue-500 text-white text-[10px] font-black uppercase"
+                        @click="handleStartPoll">Launch Poll</button>
+                    <button class="px-4 rounded-xl bg-white/5 text-[10px] font-bold uppercase"
+                        @click="showCreatePoll = false">Cancel</button>
+                </div>
+            </div>
             <div v-else class="empty-notif p-8 text-center border border-dashed border-white/10 rounded-3xl">
                 <chart-histogram theme="outline" size="24" class="mx-auto mb-3 opacity-20" />
-                <p class="opacity-30 text-[10px] uppercase font-black tracking-widest">No active poll in progress</p>
+                <p class="opacity-30 text-[10px] uppercase font-black tracking-widest mb-4">No active poll in progress
+                </p>
+                <button
+                    class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase hover:bg-white/10 transition-all"
+                    @click="showCreatePoll = true">
+                    Create New Poll
+                </button>
             </div>
         </section>
 
@@ -49,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, reactive } from 'vue';
 import { ChartHistogram, CommentOne } from '@icon-park/vue-next';
 
 defineProps<{
@@ -56,5 +83,26 @@ defineProps<{
     qaQueue: any[];
 }>();
 
-defineEmits(['start-poll', 'feature-question']);
+const emit = defineEmits(['start-poll', 'feature-question']);
+
+const showCreatePoll = ref(false);
+const newPoll = reactive({
+    question: '',
+    options: ['', '']
+});
+
+const handleStartPoll = () => {
+    if (!newPoll.question || newPoll.options.some(o => !o)) return;
+
+    emit('start-poll', {
+        id: 'poll_' + Date.now(),
+        question: newPoll.question,
+        options: newPoll.options.map(o => ({ label: o, votes: 0 })),
+        totalVotes: 1 // Start at 1 to avoid /0 or just use 0 and check later
+    });
+
+    showCreatePoll.value = false;
+    newPoll.question = '';
+    newPoll.options = ['', ''];
+};
 </script>

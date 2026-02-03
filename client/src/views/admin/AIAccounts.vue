@@ -201,11 +201,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Plus, User, Refresh, Delete, Wallet, Copy, Loading, Gemini, Brain, VideoTwo, Pic, Down, Up, Power, Edit } from '@icon-park/vue-next';
-import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { getFileUrl } from '@/utils/api';
+import { useAdminStore } from '@/stores/admin';
+import { useRoute } from 'vue-router';
 
 const route = useRoute();
+const adminStore = useAdminStore();
 const loading = ref(true);
 const accounts = ref<any[]>([]);
 const expandedIds = ref<Set<string>>(new Set());
@@ -222,7 +224,7 @@ const isCreatingProject = ref<string | null>(null);
 const toggleActive = async (account: any) => {
   try {
     const newState = account.isActive === false ? true : false;
-    await axios.patch(`/api/admin/ai/accounts/${account._id}`, { isActive: newState });
+    await adminStore.updateAIAccount(account._id, { isActive: newState });
     account.isActive = newState;
     toast.success(`Account ${newState ? 'enabled' : 'disabled'}`);
   } catch (e) {
@@ -235,7 +237,7 @@ const editProjectId = async (account: any) => {
   if (newId === null || newId === account.projectId) return;
 
   try {
-    await axios.patch(`/api/admin/ai/accounts/${account._id}`, { projectId: newId });
+    await adminStore.updateAIAccount(account._id, { projectId: newId });
     account.projectId = newId;
     toast.success('Project ID updated');
   } catch (e) {
@@ -248,9 +250,10 @@ const createNewProject = async (account: any) => {
 
   isCreatingProject.value = account._id;
   try {
-    const res = await axios.post(`/api/admin/ai/accounts/${account._id}/create-project`);
-    account.projectId = res.data.data.projectId;
-    toast.success('New project created successfully');
+    const data = await adminStore.createProject(account._id);
+    if (data && data.data) {
+      account.projectId = data.data.projectId;
+    }
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Project creation failed');
   } finally {
@@ -320,8 +323,8 @@ const isExpanded = (id: string) => expandedIds.value.has(id);
 const fetchAccounts = async (silent = false) => {
   if (!silent) loading.value = true;
   try {
-    const res = await axios.get('/api/admin/ai/accounts');
-    accounts.value = res.data.data;
+    const data = await adminStore.fetchAIAccounts();
+    if (data && data.data) accounts.value = data.data;
   } catch (e: any) {
     if (!silent) toast.error('Failed to load AI accounts');
   } finally {
@@ -331,8 +334,11 @@ const fetchAccounts = async (silent = false) => {
 
 const addAccount = async (isAntigravity = false) => {
   try {
-    const res = await axios.get(`/api/admin/ai/accounts/auth-url?isAntigravity=${isAntigravity}`);
-    window.location.href = res.data.data.url;
+    const redirectUri = `${window.location.origin}/platforms/callback/google?type=ai-account`;
+    const data = await adminStore.getAuthUrl('google', redirectUri);
+    if (data && data.data && data.data.url) {
+      window.location.href = data.data.url;
+    }
   } catch (e) {
     toast.error('Could not initiate OAuth flow');
   }
@@ -347,7 +353,7 @@ const add11LabsAccount = async () => {
   const token = undefined;
   try {
     toast.info('Integrating 11Labs account...');
-    await axios.post('/api/admin/ai/accounts/direct', {
+    await adminStore.addDirectAccount({
       email,
       // licenseKey,
       accessToken: token || undefined,
@@ -355,7 +361,6 @@ const add11LabsAccount = async () => {
       providerId: '11labs'
     });
     await fetchAccounts(true);
-    toast.success('11Labs account integrated with Quota Bypass active');
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Failed to add account');
   }
@@ -364,9 +369,8 @@ const add11LabsAccount = async () => {
 const syncAccount = async (id: string) => {
   try {
     toast.info('Syncing status...');
-    await axios.post(`/api/admin/ai/accounts/${id}/sync`);
+    await adminStore.syncAccount(id);
     await fetchAccounts(true);
-    toast.success('Account synced successfully');
   } catch (e) {
     toast.error('Sync failed');
   }
@@ -375,9 +379,8 @@ const syncAccount = async (id: string) => {
 const deleteAccount = async (id: string) => {
   if (!confirm('Are you sure you want to remove this account?')) return;
   try {
-    await axios.delete(`/api/admin/ai/accounts/${id}`);
+    await adminStore.deleteAIAccount(id);
     accounts.value = accounts.value.filter(a => a._id !== id);
-    toast.success('Account removed');
   } catch (e) {
     toast.error('Failed to remove account');
   }

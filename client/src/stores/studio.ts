@@ -95,6 +95,15 @@ export interface EngagementMetrics {
     shares: number;
 }
 
+export interface ResourceAsset {
+    id: string;
+    name: string;
+    type: 'image' | 'video';
+    url: string;
+    thumbnail: string;
+    addedAt: number;
+}
+
 export interface StreamHealth {
     bitrate: number;
     rtt: number;
@@ -296,6 +305,37 @@ export const useStudioStore = defineStore('studio', () => {
     const coHosts = ref<CoHost[]>([]);
     const maxGuests = ref(4);
 
+    const guestPermissions = ref({
+        autoApprove: false,
+        micEnabled: true,
+        camEnabled: true
+    });
+
+    const visualSettings = ref({
+        beauty: {
+            smoothing: 0,
+            brightness: 0.5,
+            sharpen: 0,
+            denoise: 0,
+            redEye: false
+        },
+        background: {
+            mode: 'none' as 'none' | 'blur' | 'virtual',
+            blurLevel: 'low' as 'low' | 'medium' | 'high',
+            assetUrl: null as string | null,
+            isAssetVideo: false
+        }
+    });
+
+    const backgroundAssets = ref([
+        { id: 'none', name: 'None', url: '', thumbnail: '', isVideo: false },
+        { id: 'blur', name: 'Blur', url: '', thumbnail: '', isVideo: false },
+        { id: 'office', name: 'Modern Office', url: '/bg/office.jpg', thumbnail: '/bg/office.jpg', isVideo: false },
+        { id: 'studio', name: 'Pro Studio', url: '/bg/neon.jpg', thumbnail: '/bg/neon.jpg', isVideo: false },
+        { id: 'cyberpunk', name: 'Cyberpunk City', url: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80', thumbnail: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&w=150', isVideo: false },
+        { id: 'nebula', name: 'Nebula Space', url: 'https://images.unsplash.com/photo-1464802686167-b939a67e06a1?auto=format&fit=crop&q=80', thumbnail: 'https://images.unsplash.com/photo-1464802686167-b939a67e06a1?auto=format&fit=crop&w=150', isVideo: false }
+    ]);
+
     // Commerce
     const featuredProducts = ref<Product[]>([]);
     const liveProducts = ref<any[]>([]);
@@ -338,6 +378,14 @@ export const useStudioStore = defineStore('studio', () => {
 
 
     const isRemoteUpdate = ref(false);
+
+    // Screen Sharing
+    const isScreenSharing = ref(false);
+    const screenStreamId = ref<string | null>(null);
+
+    // Resource Pool
+    const resourcePool = ref<ResourceAsset[]>([]);
+    const activeMediaId = ref<string | null>(null);
 
     // ============================================
     // Computed
@@ -485,22 +533,52 @@ export const useStudioStore = defineStore('studio', () => {
             console.warn('[Studio] Max guests reached');
             return false;
         }
+
+        // Auto-approve if enabled
+        if (guestPermissions.value.autoApprove) {
+            console.log('[Studio] Auto-approving guest joining:', guest.name);
+            // Add directly to live with live status
+            const approvedGuest = { ...guest, status: 'live' as const };
+            liveGuests.value.push(approvedGuest);
+
+            // Signal approval after a short delay to ensure socket stability and guest readiness
+            setTimeout(() => {
+                console.log('[Studio] Triggering approval signal for auto-approved guest:', guest.id);
+                approveGuest(guest.id);
+            }, 1000);
+            return true;
+        }
+
         waitingGuests.value.push(guest);
         return true;
     }
 
     function approveGuest(guestId: string) {
         const index = waitingGuests.value.findIndex(g => g.id === guestId);
-        if (index !== -1 && liveGuests.value.length < maxGuests.value) {
+
+        if (index !== -1) {
             const guest = waitingGuests.value[index];
             liveGuests.value.push({ ...guest, status: 'live' });
             waitingGuests.value.splice(index, 1);
-
-            // Notify via signaling
-            const socket = ActionSyncService.getSocket();
-            if (socket) {
-                socket.emit('guest:approve', { guestId });
+        } else {
+            // Check if they are already in live (e.g. from auto-approve path)
+            const guestInLive = liveGuests.value.find(g => g.id === guestId);
+            if (guestInLive) {
+                guestInLive.status = 'live';
             }
+        }
+
+        // Notify via signaling
+        const socket = ActionSyncService.getSocket();
+        if (socket) {
+            console.log('[Studio] Sending approval signal to guest:', guestId);
+            socket.emit('guest:approve', {
+                guestId,
+                permissions: {
+                    micEnabled: guestPermissions.value.micEnabled,
+                    camEnabled: guestPermissions.value.camEnabled
+                }
+            });
         }
     }
 
@@ -880,6 +958,37 @@ export const useStudioStore = defineStore('studio', () => {
     // Return
     // ============================================
 
+    function updateVisualSettings(settings: Partial<typeof visualSettings.value>) {
+        visualSettings.value = {
+            ...visualSettings.value,
+            ...settings
+        };
+        broadcastCurrentState();
+    }
+
+    function resetVisualSettings() {
+        visualSettings.value = {
+            beauty: {
+                smoothing: 0,
+                brightness: 0.5,
+                sharpen: 0,
+                denoise: 0,
+                redEye: false
+            },
+            background: {
+                mode: 'none',
+                blurLevel: 'low',
+                assetUrl: null,
+                isAssetVideo: false
+            }
+        };
+        broadcastCurrentState();
+    }
+
+    const addCustomBackground = (asset: any) => {
+        backgroundAssets.value.push(asset);
+    };
+
     return {
         // State
         activeScene,
@@ -894,6 +1003,8 @@ export const useStudioStore = defineStore('studio', () => {
         guestJoinLink,
         coHosts,
         maxGuests,
+        guestPermissions,
+        visualSettings,
         featuredProducts,
         liveProducts,
         activeProductId,
@@ -905,6 +1016,7 @@ export const useStudioStore = defineStore('studio', () => {
         godModeEnabled,
         autoDirectorSettings,
         myGuestId,
+        backgroundAssets,
 
         // Computed
         guestSlotMap,
@@ -959,6 +1071,25 @@ export const useStudioStore = defineStore('studio', () => {
         fetchSessionInfra,
         appendHighlightChunk,
         broadcastCurrentState,
-        applyRemoteState
+        applyRemoteState,
+        updateVisualSettings,
+        resetVisualSettings,
+        addCustomBackground,
+
+        // Screen Sharing & Resources
+        isScreenSharing,
+        screenStreamId,
+        resourcePool,
+        activeMediaId,
+        addResource(resource: ResourceAsset) {
+            resourcePool.value.unshift(resource);
+        },
+        removeResource(id: string) {
+            resourcePool.value = resourcePool.value.filter(r => r.id !== id);
+        },
+        setMedia(id: string | null) {
+            activeMediaId.value = id;
+            broadcastCurrentState();
+        }
     };
 });

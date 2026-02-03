@@ -74,12 +74,22 @@ export class StudioDirector {
             }
         }
 
-        // 4. Guest Coordination (Synthetic interactions)
-        if (voiceLevel < 0.05 && activeGuests > 0 && !this.guestReplyTimer) {
+        // 4. Guest Coordination (Synthetic interactions / Auto-Chime)
+        if (!this.guestReplyTimer) {
             const guests = syntheticGuestManager.getGuests();
             if (guests.length > 0) {
-                this.guestReplyTimer = setTimeout(() => { this.guestReplyTimer = null; }, 10000);
-                return { action: 'trigger_guest', payload: { guestId: guests[0].persona.id } };
+
+                // IF: Chat is exploding, trigger a reaction
+                if (chatVelocity > 15) {
+                    this.guestReplyTimer = setTimeout(() => { this.guestReplyTimer = null; }, 15000);
+                    return { action: 'trigger_guest', payload: { guestId: guests[0].persona.id, prompt: "React with excitement to the chat activity!" } };
+                }
+
+                // IF: Long silence, guest should chime in
+                if (voiceLevel < 0.05 && now - this.lastSwitchTime > 12000) {
+                    this.guestReplyTimer = setTimeout(() => { this.guestReplyTimer = null; }, 20000);
+                    return { action: 'trigger_guest', payload: { guestId: guests[0].persona.id, prompt: "The studio is a bit quiet, start a conversation or offer a thought." } };
+                }
             }
         }
 

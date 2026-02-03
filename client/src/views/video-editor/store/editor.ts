@@ -3,6 +3,7 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { defineStore } from 'pinia';
 import { throttle } from 'lodash';
 import { useProjectStore } from '@/stores/project';
+import { useUIStore } from '@/stores/ui';
 
 import { Editor, type EditorStatus, type EditorMode, type ExportProgress, type ExportMode } from "video-editor/plugins/editor";
 import { Canvas } from "video-editor/plugins/canvas";
@@ -114,6 +115,22 @@ export const useEditorStore = defineStore('editor', {
     totalDuration(state): number {
       const pages = (state._editor as any).pages as Canvas[];
       return pages.reduce((acc, page) => acc + (page.timeline?.duration || 5000), 0);
+    },
+    markers(state) {
+      return (state._editor as any).markers || [];
+    },
+    currentTime(state): number {
+      const editor = state._editor as any;
+      const pages = editor.pages as Canvas[];
+      const activeIndex = editor.page;
+
+      let acc = 0;
+      for (let i = 0; i < activeIndex; i++) {
+        acc += (pages[i].timeline?.duration || 5000);
+      }
+
+      const localSeek = (pages[activeIndex]?.timeline?.seek || 0);
+      return (acc + localSeek) / 1000;
     }
   },
 
@@ -190,8 +207,8 @@ export const useEditorStore = defineStore('editor', {
       return this._editor.getPageById(id);
     },
 
-    addPage(template?: EditorTemplatePage) {
-      this._editor.addPage(template);
+    addPage(template?: EditorTemplatePage, index?: number) {
+      this._editor.addPage(template, index);
     },
 
     deleteActivePage() {
@@ -214,6 +231,37 @@ export const useEditorStore = defineStore('editor', {
       this._editor.reorderPages(newPages);
     },
 
+    setPageTransition(index: number, transition: string, duration?: number) {
+      const page = this._editor.pages[index];
+      if (page) {
+        page.transition = transition as any;
+        if (duration !== undefined) {
+          page.transitionDuration = duration;
+        }
+        this._editor.onModified?.();
+      }
+    },
+
+    async splitPage(index: number, timeMs: number) {
+      await this._editor.splitPage(index, timeMs);
+    },
+
+    async splitSceneAtPlayhead() {
+      const index = this.page;
+      const page = this.pages[index];
+      if (!page) return;
+
+      const seek = (page.timeline as any)?.seek || 0; // ms
+      const duration = (page.timeline as any)?.duration || 5000; // ms
+
+      // Protect against micro-splits (min 500ms)
+      if (seek > 500 && seek < duration - 500) {
+        await this.splitPage(index, seek);
+      } else {
+        console.warn("Cannot split: Playhead too close to start or end of scene.");
+      }
+    },
+
     onChangeActivePage(index: number) {
       this._editor.onChangeActivePage(index);
     },
@@ -228,6 +276,14 @@ export const useEditorStore = defineStore('editor', {
 
     onToggleTimeline(mode?: "open" | "close") {
       this._editor.onToggleTimeline(mode);
+    },
+
+    addMarker(time: number, label?: string) {
+      this._editor.addMarker(time, label);
+    },
+
+    removeMarker(id: string) {
+      this._editor.removeMarker(id);
     },
 
     changeStatus(status: EditorStatus) {
@@ -246,6 +302,10 @@ export const useEditorStore = defineStore('editor', {
       this._editor.resize(dimensions, changeArtboards);
     },
 
+    onModified() {
+      this._editor.onModified?.();
+    },
+
     async saveProject() {
       if (this.instance.saving) return;
       const projectStore = useProjectStore();
@@ -259,8 +319,9 @@ export const useEditorStore = defineStore('editor', {
           pages
         };
 
+        const uiStore = useUIStore();
         // 1. Save to LocalStorage for crash recovery
-        localStorage.setItem(`antflow_autosave_${this.id}`, JSON.stringify(projectData));
+        localStorage.setItem(`${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_autosave_${this.id}`, JSON.stringify(projectData));
 
         // 2. Save to Server if it's a real project
         if (this.id && !this.id.startsWith('preview_')) {
@@ -284,6 +345,46 @@ export const useEditorStore = defineStore('editor', {
 
     getCanvasInstance(page: number): any {
       return (this._editor.pages[page] as any)?.instance;
+    },
+
+    seekToGlobalTime(seconds: number) {
+      const ms = seconds * 1000;
+      const pages = (this._editor as any).pages as Canvas[];
+      let acc = 0;
+      let targetPage = 0;
+      let localTime = 0;
+
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+        const pageDuration = (page.timeline as any)?.duration || 5000;
+        const start = acc;
+        const end = start + pageDuration;
+
+        if (ms >= start && ms < end) {
+          targetPage = i;
+          localTime = ms - start;
+          break;
+        } else if (i === pages.length - 1 && ms >= end) {
+          targetPage = i;
+          localTime = pageDuration;
+        }
+        acc += pageDuration;
+      }
+
+      if (targetPage !== this.page) {
+        this.onChangeActivePage(targetPage);
+        setTimeout(() => {
+          const instance = this.getCanvasInstance(targetPage);
+          if (instance?.timeline) {
+            (instance.timeline as any).set("seek", localTime);
+          }
+        }, 50);
+      } else {
+        const instance = this.getCanvasInstance(targetPage);
+        if (instance?.timeline) {
+          (instance.timeline as any).set("seek", localTime);
+        }
+      }
     }
   }
 });

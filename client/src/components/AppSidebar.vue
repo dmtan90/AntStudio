@@ -203,7 +203,6 @@ import {
   DataServer,
   DatabaseNetwork
 } from '@icon-park/vue-next'
-import axios from 'axios'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/stores/ui'
@@ -290,15 +289,15 @@ const checkForUpdates = async () => {
   try {
     // Only check if we are in Edge mode
     if (userStore.systemMode === 'master') return
-    const res = await axios.get('/api/releases/latest')
-    if (res.data.success) {
+    const data = await uiStore.checkForUpdates()
+    if (data && data.success) {
       // Simple version compare logic 
       // In real app, use semver
       // Assuming locally we have a version in config or env, mocking '1.0.0' for now
       const currentVersion = '1.4.0'
-      if (res.data.data.release.version !== currentVersion) {
+      if (data.data.release.version !== currentVersion) {
         updateAvailable.value = true
-        latestVersion.value = res.data.data.release.version
+        latestVersion.value = data.data.release.version
       }
     }
   } catch (e) { }

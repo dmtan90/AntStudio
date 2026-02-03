@@ -21,7 +21,6 @@ import {
   ZoomOut,
   Config as Settings,
   Edit,
-  Edit,
   Ticket,
   Check
 } from '@icon-park/vue-next';
@@ -270,6 +269,20 @@ const isFormat = (format) => {
         <span class="text-[10px] uppercase tracking-[0.2em]">Flow</span>
         <ChevronRight :size="12" class="opacity-40" />
       </el-button>
+
+      <div class="h-5 w-px bg-white/10 mx-1"></div>
+
+      <!-- Auto-save Status -->
+      <div class="flex items-center gap-2 px-2">
+        <div v-if="editor.saving" class="flex items-center gap-1.5">
+          <Spinner size="xs" class="text-brand-primary/60" />
+          <span class="text-[8px] font-bold text-white/30 uppercase tracking-[0.1em]">Saving...</span>
+        </div>
+        <div v-else class="flex items-center gap-1.5 opacity-40 hover:opacity-100 transition-opacity">
+          <Check :size="10" class="text-brand-primary" />
+          <span class="text-[8px] font-bold text-white/30 uppercase tracking-[0.1em]">Saved</span>
+        </div>
+      </div>
 
       <div class="h-5 w-px bg-white/10 mx-1"></div>
 

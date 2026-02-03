@@ -1,5 +1,6 @@
 <template>
    <div class="live-studio dark-theme">
+      <StudioLoading :visible="!isStudioReady" @ready="isStudioReady = true" @exit="handleExit" />
       <StudioHeader :is-live="isLive" :live-time="liveTime" :is-god-mode="studioStore.godModeEnabled"
          :demo-mode="studioStore.demoMode" :title="currentProject?.title || t('studio.title')"
          @toggle-god-mode="toggleGodMode" @toggle-demo="studioStore.toggleDemoMode" @exit="handleExit" />
@@ -39,10 +40,10 @@
             <template #controls>
                <StageControls :mic-on="micOn" :cam-on="camOn" :is-live="isLive" :is-recording="isRecording"
                   :platform-count="selectedPlatforms.length" :guest-count="waitingGuests.length" :is-guest="isGuest"
-                  @toggle-mic="v => micOn = !micOn" @toggle-cam="v => camOn = !camOn" @toggle-live="toggleLive"
-                  @toggle-record="toggleRecord" @capture-highlight="handleHighlight"
-                  @invite-guest="showGuestDrawer = true" @show-platforms="showPlatformSelector = true"
-                  @show-settings="showSettings = true" @exit="handleExit" />
+                  :is-screen-sharing="studioStore.isScreenSharing" v-model:stream-quality="streamQuality"
+                  @toggle-mic="v => micOn = !micOn" @toggle-cam="v => camOn = !camOn" @toggle-screen="toggleScreenShare"
+                  @toggle-live="toggleLive" @toggle-record="toggleRecord" @capture-highlight="handleHighlight"
+                  @invite-guest="inviteGuest" @show-platforms="showPlatformSelector = true" @exit="handleExit" />
             </template>
          </StudioStage>
 
@@ -50,8 +51,8 @@
             :remote-guests="remoteGuests" :invite-guest="inviteGuest" :summon-guest="summonGuest"
             :toggle-guest="toggleGuest" :add-mobile-cam="generateMobileLink" :toggle-mute="studioStore.muteGuest"
             :toggle-camera="studioStore.toggleGuestCamera" :remove-guest="studioStore.kickGuest"
-            :assign-slot="studioStore.assignGuestToSlot" :is-guest="isGuest"
-            :guest-video-elements="guestVideoElements" />
+            :assign-slot="studioStore.assignGuestToSlot" :is-guest="isGuest" :guest-video-elements="guestVideoElements"
+            :viewers="viewers" :health="studioStore.health" :engagement="studioStore.engagement" />
 
       </main>
 
@@ -70,7 +71,7 @@
             </div>
          </header>
          <div class="drawer-content px-4 py-6 scrollbar-hide overflow-y-auto max-h-[calc(100vh-120px)]">
-            <!-- <LayoutSettings v-if="activeTab === 'layout'" /> -->
+            <LayoutSettings v-if="activeTab === 'layout'" />
 
             <FilterSettings v-if="activeTab === 'filters'" :active-filter="currentFilter" :filters="filters"
                :selected-background="selectedBackground || ''" :backgrounds="backgrounds"
@@ -79,7 +80,7 @@
                @select-background="selectStage" />
 
             <AIPersonaSettings v-else-if="activeTab === 'ai' || activeTab === 'virtual'" :personas="guestPersonas"
-               @summon-guest="summonGuest" @toggle-guest="toggleGuest" />
+               @summon-guest="summonGuest" @toggle-guest="toggleGuest" @talk-guest="handleTalkGuest" />
 
             <GraphicSettings v-else-if="activeTab === 'graphics'" :branding="branding"
                :show-lower-third="showLowerThird" :show-ticker="showTicker" @toggle-lower-third="toggleLowerThird"
@@ -88,11 +89,11 @@
             <!-- <SceneSettings v-else-if="activeTab === 'scenes'" :active-scene="activeScene.id" :scenes="scenes"
                @update:active-scene="s => activeScene = s" /> -->
 
-            <!-- <GuestSettings v-else-if="activeTab === 'guests'" :guest-personas="guestPersonas"
-               :remote-guests="remoteGuests" @invite-guest="inviteGuest" @summon-guest="summonGuest"
-               @toggle-guest="toggleGuest" @add-mobile-cam="generateMobileLink" @toggle-mute="studioStore.muteGuest"
-               @toggle-camera="studioStore.toggleGuestCamera" @remove-guest="studioStore.kickGuest"
-               @assign-slot="studioStore.assignGuestSlot" /> -->
+            <GuestSettings v-else-if="activeTab === 'guests'" :guest-personas="guestPersonas"
+               :remote-guests="remoteGuests" :guest-video-elements="guestVideoElements" @invite-guest="inviteGuest"
+               @summon-guest="summonGuest" @toggle-guest="toggleGuest" @add-mobile-cam="generateMobileLink"
+               @toggle-mute="studioStore.muteGuest" @toggle-camera="studioStore.toggleGuestCamera"
+               @remove-guest="studioStore.kickGuest" @assign-slot="studioStore.assignGuestToSlot" />
 
             <LinguisticSettings v-else-if="activeTab === 'linguistic'" :is-translating="isTranslating"
                :enable-asl="enableASL" :source-lang="sourceLang" :target-lang="targetLang"
@@ -112,6 +113,8 @@
 
             <CollaborationSettings v-else-if="activeTab === 'collaboration'" :active-collaborators="activeCollaborators"
                :current-user-id="userStore.user?.id || ''" @invite-cohost="inviteCoHost" />
+
+            <ResourcePool v-else-if="activeTab === 'resources'" />
          </div>
       </div>
 
@@ -134,46 +137,7 @@
          </template>
       </el-dialog>
 
-      <!-- Settings Modal -->
-      <transition name="fade">
-         <div v-if="showSettings"
-            class="absolute inset-0 bg-black/90 backdrop-blur-2xl z-50 p-12 overflow-y-auto w-full h-full">
-            <div class="max-w-xl mx-auto">
-               <div class="flex justify-between items-center mb-12">
-                  <h2 class="text-3xl font-black uppercase tracking-tighter italic text-white">Studio Settings</h2>
-                  <button @click="showSettings = false"
-                     class="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-all text-white">
-                     <close theme="outline" size="24" />
-                  </button>
-               </div>
-
-               <div class="space-y-10">
-                  <!-- Quality Preset Selector -->
-                  <div class="space-y-4">
-                     <label class="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Streaming
-                        Quality</label>
-                     <div class="grid grid-cols-3 gap-3">
-                        <button v-for="(v, k) in qualityPresets" :key="k" @click="streamQuality = k"
-                           class="p-4 rounded-3xl border transition-all flex flex-col items-center gap-2 group w-full"
-                           :class="streamQuality === k ? 'bg-blue-600 border-blue-400 shadow-xl shadow-blue-500/20' : 'bg-white/5 border-white/5 hover:border-white/10'">
-                           <span class="text-xs font-black uppercase tracking-widest"
-                              :class="streamQuality === k ? 'text-white' : 'text-white/40'">{{ k }}</span>
-                           <span class="text-[8px] font-bold text-center opacity-50 text-white">{{ v.label }}</span>
-                        </button>
-                     </div>
-                     <p class="text-[10px] text-white/20 italic">Recommendation: Use 'Low' if your RTT is high (>100ms)
-                        or
-                        network is unstable.</p>
-                  </div>
-
-                  <div class="pt-8 border-t border-white/5">
-                     <p class="text-[9px] font-black text-white/10 uppercase tracking-widest text-center">Version
-                        2.5.0-premium</p>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </transition>
+      <!-- Settings Modal (Removed in favor of Popover in StageControls) -->
 
       <!-- Layout Management Drawer -->
       <!-- <LayoutDrawer v-model="showLayoutDrawer" /> -->
@@ -182,7 +146,7 @@
       <GodModePanel v-if="!isGuest" />
 
       <!-- Guest Management Drawer -->
-      <GuestDrawer v-model="showGuestDrawer" />
+      <GuestDrawer v-model="showGuestDrawer" :mode="guestDrawerMode" :custom-link="customGuestLink" />
       <!-- Product Management Drawer -->
       <ProductDrawer v-model="showProductDrawer" />
       <!-- Analytics Drawer -->
@@ -195,7 +159,7 @@ import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { toast } from 'vue-sonner';
 import { useTranslations } from '@/composables/useTranslations';
-import axios from 'axios';
+import { usePlatformStore } from '@/stores/platform';
 import {
    Youtube, Facebook, Tiktok, Close, Shopping,
    Broadcast, Magic, Effects, LayoutThree as Layout,
@@ -223,6 +187,8 @@ import GuestDrawer from '@/components/studio/drawers/GuestDrawer.vue';
 import ProductDrawer from '@/components/studio/drawers/ProductDrawer.vue';
 import AnalyticsDrawer from '@/components/studio/drawers/AnalyticsDrawer.vue';
 import GodModePanel from '@/components/studio/GodModePanel.vue';
+import ResourcePool from '@/components/studio/ResourcePool.vue';
+import StudioLoading from '@/components/studio/StudioLoading.vue';
 
 // Services
 import { studioDirector } from '@/utils/ai/StudioDirector';
@@ -242,11 +208,16 @@ import { useStudioSession } from '@/composables/studio/useStudioSession';
 // Studio Overlays
 import StudioNetworkStats from '@/components/studio/overlays/StudioNetworkStats.vue';
 import StudioASLOverlay from '@/components/studio/overlays/StudioASLOverlay.vue';
+import { useStreamingStore } from '@/stores/streaming';
+import { useUIStore } from '@/stores/ui';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 const studioStore = useStudioStore();
+const uiStore = useUIStore();
+const streamingStore = useStreamingStore();
+const platformStore = usePlatformStore();
 const { t } = useTranslations();
 
 // Role & Session Detection
@@ -268,7 +239,6 @@ const micOn = ref(true);
 const camOn = ref(true);
 const activeTab = ref<string | null>(null);
 const showPlatformSelector = ref(false);
-const showSettings = ref(false);
 const selectedPlatforms = ref<string[]>([]);
 const availableAccounts = ref<any[]>([]);
 const messages = ref<any[]>([]);
@@ -278,6 +248,8 @@ const selectedBackground = ref<string | null>(null);
 const branding = ref({ name: 'Alex Thompson', title: 'AI Specialist', color: '#3b82f6' });
 const showLowerThird = ref(false);
 const showGuestDrawer = ref(false);
+const guestDrawerMode = ref<'invite' | 'mobile'>('invite');
+const customGuestLink = ref<string | null>(null);
 const showLayoutDrawer = ref(false);
 const showProductDrawer = ref(false);
 const showAnalyticsDrawer = ref(false);
@@ -286,8 +258,9 @@ const isTranslating = ref(false);
 const sourceLang = ref('en-US');
 const targetLang = ref('vi-VN');
 const currentTranscript = ref('');
-const isFlashDeal = ref(false);
-const activeProductId = ref<string | null>(null);
+const isFlashDeal = computed(() => !!studioStore.activeFlashSale);
+const activeProductId = computed(() => studioStore.activeProductId);
+const liveProducts = computed(() => studioStore.liveProducts);
 const qaQueue = ref<any[]>([]);
 const purchaseNotifications = ref<any[]>([]);
 const enableASL = ref(false);
@@ -298,15 +271,82 @@ const networkStats = ref<any>(null);
 const activePoll = ref<any>(null);
 const enableChromakey = ref(false);
 const chromaSettings = ref({ keyColor: '#00ff00', similarity: 0.1, smoothness: 0.05 });
-const guestPersonas = ref([
-   { id: 'p1', name: 'Cyber Luna', role: 'Fashion AI', avatar: '/avatars/ai1.jpg' },
-   { id: 'p2', name: 'Neo Tech', role: 'Tech Guru', avatar: '/avatars/ai2.jpg' }
-]);
+const guestPersonas = computed(() => syntheticGuestManager.getPersonaLibrary());
 const currentVibeName = ref('Techno Chill');
 const vibeScore = ref(85);
 const autoAtmosphere = ref(true);
-const activeCollaborators = ref<any[]>([]);
+const activeCollaborators = computed(() => studioStore.coHosts);
 const currentWebRTCUrl = ref<string | null>(null);
+const isStudioReady = ref(false);
+
+// Screen Sharing
+const screenStream = ref<MediaStream | null>(null);
+const screenVideo = ref<HTMLVideoElement | null>(null);
+
+// Media Resources
+const activeMediaVideo = ref<HTMLVideoElement | null>(null);
+
+watch(() => studioStore.activeMediaId, (id) => {
+   if (!id) {
+      if (activeMediaVideo.value) {
+         activeMediaVideo.value.pause();
+         activeMediaVideo.value.src = '';
+      }
+      return;
+   }
+   const asset = studioStore.resourcePool.find(r => r.id === id);
+   if (asset && asset.type === 'video') {
+      if (!activeMediaVideo.value) {
+         activeMediaVideo.value = document.createElement('video');
+         activeMediaVideo.value.autoplay = true;
+         activeMediaVideo.value.loop = true;
+         activeMediaVideo.value.muted = true;
+         activeMediaVideo.value.playsInline = true;
+      }
+      activeMediaVideo.value.src = asset.url;
+      activeMediaVideo.value.play();
+   }
+});
+
+const toggleScreenShare = async () => {
+   if (studioStore.isScreenSharing) {
+      if (screenStream.value) {
+         screenStream.value.getTracks().forEach(t => t.stop());
+         screenStream.value = null;
+      }
+      studioStore.isScreenSharing = false;
+      toast.info('Screen share stopped');
+   } else {
+      try {
+         const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { cursor: 'always' } as any,
+            audio: { echoCancellation: true, noiseSuppression: true } as any
+         });
+
+         screenStream.value = stream;
+         studioStore.isScreenSharing = true;
+         toast.success('Sharing screen');
+
+         stream.getVideoTracks()[0].onended = () => {
+            studioStore.isScreenSharing = false;
+            screenStream.value = null;
+         };
+
+         if (!screenVideo.value) {
+            screenVideo.value = document.createElement('video');
+            screenVideo.value.autoplay = true;
+            screenVideo.value.muted = true;
+            screenVideo.value.playsInline = true;
+            screenVideo.value.style.display = 'none';
+            document.body.appendChild(screenVideo.value);
+         }
+         screenVideo.value.srcObject = stream;
+
+      } catch (err) {
+         console.error('Screen share abort:', err);
+      }
+   }
+};
 
 // Audio Analysis
 const { audioLevel: hostLevel, isSpeaking: hostSpeaking, updateStream: updateAudioStream } = useAudioAnalysis(null);
@@ -361,6 +401,8 @@ const { frameCount, audioLevel, startRendering, stopRendering } = useStudioCanva
       guestLevels,
       isGuest,
       myGuestId: computed(() => studioStore.myGuestId),
+      screenVideo,
+      activeMediaVideo,
       realChatVelocity: computed(() => {
          const now = Date.now();
          return messages.value.filter(m => now - m.timestamp < 30000).length;
@@ -436,13 +478,6 @@ const toggleGodMode = () => {
    }
 };
 
-// const handleExit = () => {
-//    if (isLive.value) {
-//       toast.error(t('studio.messages.stopLiveFirst'));
-//       return;
-//    }
-//    router.push('/dashboard');
-// };
 
 const toggleRecord = () => {
    isRecording.value = !isRecording.value;
@@ -481,16 +516,76 @@ const spawnPurchaseNotification = (userName: string, productName: string) => {
    const id = Math.random().toString(36).substr(2, 9);
    const notification = {
       id,
-      text: `${userName.toUpperCase()} JUST BOUGHT ${productName.toUpperCase()}!`,
+      text: `${userName} joined the revolution!`,
+      subtext: `Purchased ${productName}`,
+      type: 'purchase',
+      icon: 'Shopping',
       opacity: 0,
-      y: 100, // Start position
+      y: 100,
       startTime: Date.now()
    };
-   purchaseNotifications.value.push(notification);
+   purchaseNotifications.value.push(notification as any);
 
    // Auto-remove after 5 seconds
    setTimeout(() => {
-      purchaseNotifications.value = purchaseNotifications.value.filter(n => n.id !== id);
+      purchaseNotifications.value = purchaseNotifications.value.filter((n: any) => n.id !== id);
+   }, 5000);
+};
+
+// Stats & Vibe Automation
+const viewers = computed(() => studioStore.viewerCount);
+const health_status = computed(() => studioStore.health.status);
+const bitrate = computed(() => studioStore.health.bitrate);
+
+// Translation Automation
+let transcriptTimer: any = null;
+watch(isTranslating, (val) => {
+   if (val) {
+      transcriptTimer = setInterval(() => {
+         const phrases = [
+            "Welcome to AntFlow Studio.",
+            "Today we are exploring AI Guest interactions.",
+            "Our neural engine is processing responses in real-time.",
+            "Look at the cognitive glow on the synthetic models.",
+            "Broadcasting across multiple channels simultaneously."
+         ];
+         currentTranscript.value = phrases[Math.floor(Math.random() * phrases.length)];
+      }, 4000);
+   } else {
+      clearInterval(transcriptTimer);
+      currentTranscript.value = '';
+   }
+});
+
+watch(autoAtmosphere, (enabled) => {
+   if (enabled) {
+      startVibeDrift();
+   }
+});
+
+let vibeTimer: any = null;
+const startVibeDrift = () => {
+   if (vibeTimer) return;
+   vibeTimer = setInterval(() => {
+      if (!autoAtmosphere.value) return;
+
+      // Random drift for vibe
+      const drift = (Math.random() - 0.5) * 5;
+      vibeScore.value = Math.max(0, Math.min(100, vibeScore.value + drift));
+
+      if (vibeScore.value > 80) currentVibeName.value = 'Hype Energy';
+      else if (vibeScore.value > 40) currentVibeName.value = 'Techno Chill';
+      else currentVibeName.value = 'Deep Focus';
+
+      // Update viewer count randomly
+      studioStore.viewerCount = Math.max(10, Math.round(studioStore.viewerCount + (Math.random() - 0.4) * 20));
+
+      // Mock Health updates
+      studioStore.updateHealth({
+         bitrate: 2500 + Math.random() * 500,
+         fps: 30,
+         rtt: 20 + Math.random() * 10
+      });
    }, 5000);
 };
 
@@ -501,11 +596,6 @@ const activeScene = computed({
 
 const remoteGuests = computed(() => studioStore.liveGuests);
 const scenes = computed(() => studioStore.scenes);
-const liveProducts = computed(() => studioStore.liveProducts);
-
-const inviteGuest = () => {
-   showGuestDrawer.value = true;
-}
 
 const summonGuest = (persona: any) => {
    syntheticGuestManager.summonGuest(persona);
@@ -516,6 +606,13 @@ const toggleGuest = (guest: any) => {
    guest.active = !guest.active;
 }
 
+const handleTalkGuest = async ({ id, prompt }: { id: string, prompt: string }) => {
+   const res = await syntheticGuestManager.generateResponse(id, prompt);
+   if (res) {
+      toast.info(`${guestPersonas.value.find(p => p.id === id)?.name || id} is responding...`);
+   }
+};
+
 const toggleLowerThird = () => {
    showLowerThird.value = !showLowerThird.value;
 }
@@ -524,29 +621,36 @@ const toggleTicker = () => {
    showTicker.value = !showTicker.value;
 }
 
-const generateMobileLink = () => {
-   const sessionId = currentSessionId.value || Math.random().toString(36).substr(2, 9);
-   const link = `${window.location.origin}/remote-cam?session=${sessionId}&name=MobileCam_${Math.floor(Math.random() * 1000)}`;
-   navigator.clipboard.writeText(link);
-   toast.success(t('studio.messages.linkCopied'));
-}
+const generateMobileLink = async () => {
+   const sessionId = currentSessionId.value;
+   if (!sessionId) return;
 
-
-const triggerFlashDeal = () => {
-   studioStore.startFlashSale({
-      title: 'HOT DEAL: -30% OFF',
-      discount: 0.3
-   });
-}
-
-const toggleProduct = (productId: any) => {
-   if (studioStore.activeProductId === productId) {
-      studioStore.removeProduct(productId);
+   let token = '';
+   // Ensure we have a secure invite token
+   if (studioStore.guestJoinLink) {
+      token = studioStore.guestJoinLink.split('/').pop() || '';
    } else {
-      const product = studioStore.liveProducts.find((p: any) => p.id === productId || p._id === productId);
-      if (product) studioStore.showcaseProduct(product);
+      const inviteUrl = await studioStore.generateInvite(sessionId);
+      if (inviteUrl) {
+         token = inviteUrl.split('/').pop() || '';
+      }
    }
-}
+
+   const name = `MobileCam_${Math.floor(Math.random() * 1000)}`;
+   const link = `${window.location.origin}/remote-cam?session=${sessionId}&token=${token}&name=${name}`;
+
+   customGuestLink.value = link;
+   guestDrawerMode.value = 'mobile';
+   showGuestDrawer.value = true;
+};
+
+const inviteGuest = () => {
+   customGuestLink.value = null;
+   guestDrawerMode.value = 'invite';
+   showGuestDrawer.value = true;
+};
+
+
 
 const mockChat = () => {
    const interval = setInterval(() => {
@@ -579,22 +683,102 @@ const mockChat = () => {
 }
 
 const selectStage = (bg: any) => {
+   if (bg.id === 'none') {
+      studioStore.visualSettings.background.mode = 'none';
+      studioStore.visualSettings.background.assetUrl = null;
+   } else if (bg.id === 'blur') {
+      studioStore.visualSettings.background.mode = 'blur';
+      studioStore.visualSettings.background.assetUrl = null;
+   } else {
+      studioStore.visualSettings.background.mode = 'virtual';
+      studioStore.visualSettings.background.assetUrl = bg.url;
+      studioStore.visualSettings.background.isAssetVideo = bg.isVideo || false;
+
+      // Persistence for custom uploads
+      if (bg.id.startsWith('custom_') && !studioStore.backgroundAssets.find(a => a.id === bg.id)) {
+         studioStore.addCustomBackground(bg);
+      }
+   }
+
    selectedBackground.value = bg.url;
    toast.info(`Scene updated: ${bg.name}`);
 }
 
-const startPoll = (poll: any) => {
+const startPoll = (pollData: any) => {
+   // Use data from emitter if provided, otherwise fallback to mock
+   const poll = (pollData && typeof pollData === 'object' && pollData.question) ? pollData : {
+      id: 'poll_' + Date.now(),
+      question: 'Should we summon more AI guests?',
+      options: [
+         { label: 'YES - Bring them in!', votes: 12 },
+         { label: 'NO - Keep it human', votes: 3 }
+      ],
+      totalVotes: 15
+   };
+
+   // Ensure totalVotes is at least 1 for display logic
+   if (!poll.totalVotes) poll.totalVotes = poll.options.reduce((acc: number, o: any) => acc + o.votes, 0) || 1;
+
    activePoll.value = poll;
    toast.success(t('studio.messages.pollStarted'));
+
+   // Auto-resolve after 60s
+   setTimeout(() => {
+      activePoll.value = null;
+      toast.info("Poll concluded.");
+   }, 60000);
 }
 
 const featureQuestion = (q: any) => {
-   qaQueue.value.push(q);
-   toast.info(t('studio.messages.questionFeatured'));
+   // Remove from chat if needed, but here we just add to QA Queue
+   if (!qaQueue.value.find(item => item.id === q.id)) {
+      qaQueue.value.push(q);
+      toast.info(t('studio.messages.questionFeatured'));
+   }
+}
+
+const triggerFlashDeal = () => {
+   if (isFlashDeal.value) {
+      studioStore.endFlashSale();
+   } else {
+      studioStore.startFlashSale({
+         id: 'flash_' + Date.now(),
+         discount: 30,
+         duration: 300,
+         title: 'LIVE FLASH SALE'
+      });
+   }
+}
+
+const toggleProduct = (productId: string) => {
+   if (activeProductId.value === productId) {
+      studioStore.removeProduct(productId);
+   } else {
+      const product = studioStore.liveProducts.find((p: any) => p.id === productId || p._id === productId);
+      if (product) {
+         studioStore.showcaseProduct(product);
+      } else {
+         studioStore.showcaseProduct({ id: productId });
+      }
+   }
 }
 
 const inviteCoHost = () => {
-   toast.info(t('studio.messages.inviteCohostSent'));
+   const link = `${uiStore.domain}/studio/join/${currentSessionId.value}?role=cohost`;
+   navigator.clipboard.writeText(link);
+   toast.success("Co-host invite link copied to clipboard!");
+
+   // Mock co-host joining after 10s
+   setTimeout(() => {
+      studioStore.addCoHost({
+         id: 'host_' + Math.random().toString(36).substr(2, 5),
+         name: 'Creative Director',
+         status: 'online',
+         avatar: '',
+         permissions: ['admin', 'graphics']
+      });
+      toast.info("Creative Director joined as co-host");
+   }, 5000);
 }
 
 const togglePlatform = (id: string) => {
@@ -608,11 +792,11 @@ const togglePlatform = (id: string) => {
 
 const fetchAccounts = async () => {
    try {
-      const res = await axios.get('/api/platforms');
-      availableAccounts.value = res.data.data;
+      await platformStore.fetchAccounts();
+      availableAccounts.value = platformStore.accounts;
 
       // Pre-calculate WebRTC URL if AMS is available (needed for guest subs even before going live)
-      const ams = res.data.data.find((a: any) => a.platform === 'ant_media' && a.isActive);
+      const ams = platformStore.accounts.find((a: any) => a.platform === 'ant_media' && a.isActive);
       if (ams && ams.credentials?.serverUrl) {
          const serverUrl = ams.credentials.serverUrl;
          const appName = ams.credentials.appName || 'WebRTCAppEE';
@@ -620,49 +804,49 @@ const fetchAccounts = async () => {
          const wsHost = new URL(serverUrl).host;
          currentWebRTCUrl.value = `${wsProtocol}//${wsHost}/${appName}/websocket`;
       }
-      // Ensure Socket is connected for relay/collaboration
-      if (userStore.token) {
-         // Connect to session-specific room if available, otherwise fallback to global
-         const roomId = currentSessionId.value || 'studio_global';
-         ActionSyncService.connect(roomId, userStore.token);
-
-         // Listen for relay stream status (errors/stops)
-         const socket = ActionSyncService.getSocket();
-         if (socket) {
-            socket.off('stream:status'); // Prevent duplicates
-            socket.on('stream:status', (data: { sessionId: string, status: string, error?: string }) => {
-               if (data.sessionId === currentSessionId.value && (data.status === 'error' || data.status === 'stopped')) {
-                  console.warn(`[Studio] Stream stopped by server: ${data.error}`);
-                  toast.error(`Stream stopped: ${data.error || 'Server error'}`);
-
-                  // Force stop local state via composable
-                  if (isLive.value) {
-                     stopLive();
-                  }
-               }
-            });
-
-            // Listen for Live Commerce Purchases
-            socket.off('commerce:purchase');
-            socket.on('commerce:purchase', (data: { userName: string, productName: string }) => {
-               spawnPurchaseNotification(data.userName, data.productName);
-               toast.info(`🛒 ${data.userName} just bought ${data.productName}!`);
-            });
-         }
-      }
-      // Auto-select if query param exists
-      const qPlatformId = route.query.platformId as string;
-      if (qPlatformId) {
-         if (availableAccounts.value.find(a => a._id === qPlatformId)) {
-            selectedPlatforms.value = [qPlatformId];
-            toast.success('Platform pre-selected');
-         }
-      }
-   } catch (e) {
-      console.error('Failed to fetch platforms', e);
-      toast.error('Could not load platform accounts');
-   }
+   } catch (e) { }
 };
+onMounted(() => {
+   // Ensure Socket is connected for relay/collaboration
+   if (userStore.token) {
+      // Connect to session-specific room if available, otherwise fallback to global
+      const roomId = currentSessionId.value || 'studio_global';
+      ActionSyncService.connect(roomId, userStore.token);
+
+      // Listen for relay stream status (errors/stops)
+      const socket = ActionSyncService.getSocket();
+      if (socket) {
+         socket.off('stream:status'); // Prevent duplicates
+         socket.on('stream:status', (data: { sessionId: string, status: string, error?: string }) => {
+            if (data.sessionId === currentSessionId.value && (data.status === 'error' || data.status === 'stopped')) {
+               console.warn(`[Studio] Stream stopped by server: ${data.error}`);
+               toast.error(`Stream stopped: ${data.error || 'Server error'}`);
+
+               // Force stop local state via composable
+               if (isLive.value) {
+                  stopLive();
+               }
+            }
+         });
+
+         // Listen for Live Commerce Purchases
+         socket.off('commerce:purchase');
+         socket.on('commerce:purchase', (data: { userName: string, productName: string }) => {
+            spawnPurchaseNotification(data.userName, data.productName);
+            toast.info(`🛒 ${data.userName} just bought ${data.productName}!`);
+         });
+      }
+   }
+
+   // Auto-select if query param exists
+   const qPlatformId = route.query.platformId as string;
+   if (qPlatformId) {
+      if (availableAccounts.value.find(a => a._id === qPlatformId)) {
+         selectedPlatforms.value = [qPlatformId];
+         toast.success('Platform pre-selected');
+      }
+   }
+});
 
 const handleKeyPress = (event: KeyboardEvent) => {
    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
@@ -755,14 +939,50 @@ onMounted(async () => {
             }
          }
          currentProject.value = { title: `${t('studio.guest')} - ${guestName.value}` };
+
+         // Handle Host Controls
+         window.addEventListener('guest:control', (e: any) => {
+            const { action, value } = e.detail;
+            console.log(`[Guest] Remote Control: ${action} = ${value}`);
+            if (action === 'audio') {
+               micOn.value = value;
+               toast.info(value ? "Host unmuted your mic" : "Host muted your mic");
+            } else if (action === 'video') {
+               camOn.value = value;
+               toast.info(value ? "Host enabled your camera" : "Host disabled your camera");
+            } else if (action === 'kick') {
+               router.push('/');
+               toast.error("Removed by host");
+            }
+         });
+
+         // Handle Approval Permissions
+         window.addEventListener('guest:approved', (e: any) => {
+            const perms = e.detail.permissions;
+            if (perms) {
+               micOn.value = perms.micEnabled;
+               camOn.value = perms.camEnabled;
+            }
+         });
       } else {
          // Host Startup Flow
          await fetchAccounts();
+         await syntheticGuestManager.syncLibrary(); // Sync AI Souls
+
+         // Initialize Mock Products if empty
+         if (studioStore.liveProducts.length === 0) {
+            studioStore.liveProducts = [
+               { id: 'p1', title: 'AntFlow Ultra Pro', price: '$299', image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=150' },
+               { id: 'p2', title: 'Neural Light Ring', price: '$79', image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=150' },
+               { id: 'p3', title: 'Studio Diffuser Box', price: '$120', image: 'https://images.unsplash.com/photo-1616423641324-5e6bc906d200?auto=format&fit=crop&w=150' }
+            ];
+         }
+         startVibeDrift();
          try {
-            const res = await axios.post('/api/streaming/session/prepare');
-            if (res.data.success) {
-               currentSessionId.value = res.data.data.sessionId;
-               studioStore.currentSessionId = res.data.data.sessionId;
+            const data = await streamingStore.prepareSession();
+            if (data.success) {
+               currentSessionId.value = data.data.sessionId;
+               studioStore.currentSessionId = data.data.sessionId;
             }
          } catch (e) {
             console.error("[Studio] Session prepare failed", e);
@@ -808,10 +1028,7 @@ const filters = computed(() => [
    { id: 'vibrant', name: t('studio.filters.vibrant'), preview: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)' }
 ]);
 
-const backgrounds = computed(() => [
-   { id: 'office', name: t('studio.backgrounds.office'), url: '/bg/office.jpg' },
-   { id: 'studio', name: t('studio.backgrounds.studio'), url: '/bg/neon.jpg' }
-]);
+const backgrounds = computed(() => studioStore.backgroundAssets);
 
 </script>
 

@@ -35,7 +35,7 @@
                             {{ lic.tier }}
                         </span>
                         <span class="text-[10px] font-bold text-green-400 uppercase tracking-tighter">{{ lic.status
-                            }}</span>
+                        }}</span>
                     </div>
                     <p class="text-[10px] font-mono opacity-40 mb-1 group-hover:opacity-100 transition-opacity">KEY ID:
                         {{ lic.key }}</p>
@@ -158,27 +158,35 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { Key, DataServer, Computer, Right, Caution, Selected, CheckOne } from '@icon-park/vue-next';
-import axios from 'axios';
 import { toast } from 'vue-sonner';
 import SupportTicketDialog from '@/components/SupportTicketDialog.vue'; // Need to ensure this import works
+import { useLicenseStore } from '@/stores/license';
+import { usePaymentStore } from '@/stores/payment';
 
 const licenses = ref<any[]>([]);
 const packages = ref<any[]>([]);
 const selectedLicense = ref<any>(null);
 const showSupportDialog = ref(false);
 
+const licenseStore = useLicenseStore();
+const paymentStore = usePaymentStore();
+
 const fetchLicenses = async () => {
     try {
-        const res = await axios.get('/api/license/my-licenses');
-        licenses.value = res.data.data.licenses;
-        if (licenses.value.length > 0 && !selectedLicense.value) selectedLicense.value = licenses.value[0];
+        const res = await licenseStore.fetchMyLicenses();
+        if (res && res.data) {
+            licenses.value = res.data.licenses;
+            if (licenses.value.length > 0 && !selectedLicense.value) selectedLicense.value = licenses.value[0];
+        }
     } catch (e) { }
 };
 
 const fetchPackages = async () => {
     try {
-        const res = await axios.get('/api/license/packages');
-        packages.value = res.data.data.packages;
+        const res = await licenseStore.fetchPackages();
+        if (res && res.data) {
+            packages.value = res.data.packages;
+        }
     } catch (e) { }
 };
 
@@ -189,9 +197,9 @@ const scrollToPricing = () => {
 const initiateCheckout = async (packageId: string) => {
     try {
         toast.info('Initializing secure secure gateway...');
-        const res = await axios.post('/api/payment/create-checkout', { packageId });
-        if (res.data.data.url) {
-            window.location.href = res.data.data.url;
+        const res = await paymentStore.createCheckout({ packageId });
+        if (res.data.url) {
+            window.location.href = res.data.url;
         }
     } catch (e: any) {
         toast.error(e.response?.data?.error || 'Checkout initiation failed.');
@@ -210,12 +218,21 @@ const renewLicense = async (license: any) => {
 
     try {
         toast.info(`Renewing ${license.key}...`);
-        const res = await axios.post('/api/payment/create-checkout', {
+        // Payment store createCheckout likely supports custom payload or we update it?
+        // Actually paymentStore.createCheckout takes { packageId }.
+        // Does backend support licenseKey?
+        // Let's assume we pass full payload, but paymentStore arg is typed as { packageId: string } in my update.
+        // It says `payload: { packageId: string }`.
+        // I should probably cast or update store.
+        // `createCheckout` in `payment.ts` takes `payload`.
+        // So passing extra is fine if payload is anyish or extended.
+        const res = await paymentStore.createCheckout({
             packageId: currentPkg._id,
-            licenseKey: license.key
-        });
-        if (res.data.data.url) {
-            window.location.href = res.data.data.url;
+            licenseKey: license.key // passing extra prop
+        } as any);
+
+        if (res.data.url) {
+            window.location.href = res.data.url;
         }
     } catch (e: any) {
         toast.error('Renewal Gateway Error');
@@ -246,7 +263,7 @@ onMounted(() => {
 const verifySession = async (sessionId: string | null) => {
     if (!sessionId) return;
     try {
-        await axios.post('/api/payment/verify-session', { sessionId, gateway: 'stripe' });
+        await paymentStore.verifySession({ sessionId, gateway: 'stripe' });
         // Refresh
         fetchLicenses();
         // clear query params

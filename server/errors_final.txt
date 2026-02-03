@@ -1,0 +1,35 @@
+src/debug-license.ts(6,25): error TS2307: Cannot find module '../models/License.js' or its corresponding type declarations.
+src/debug-license.ts(25,49): error TS7006: Parameter 'l' implicitly has an 'any' type.
+src/routes/aiAccounts.ts(34,44): error TS2551: Property 'aiOAuth' does not exist on type '{ stripe: { secretKey: string; publicKey: string; webhookSecret: string; }; paypal: { clientId: string; clientSecret: string; webhookSecret: string; }; aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string; }; ... 5 more ...; publicDomain?: string | undefined; }'. Did you mean 'oauth'?
+src/routes/auth.ts(520,35): error TS2339: Property 'oauthProviders' does not exist on type 'Document<unknown, {}, IAdminSettings, {}, DefaultSchemaOptions> & IAdminSettings & Required<{ _id: ObjectId; }> & { ...; } & { ...; }'.
+src/routes/auth.ts(521,37): error TS2339: Property 'oauthProviders' does not exist on type 'Document<unknown, {}, IAdminSettings, {}, DefaultSchemaOptions> & IAdminSettings & Required<{ _id: ObjectId; }> & { ...; } & { ...; }'.
+src/routes/commerce.ts(112,17): error TS2339: Property 'io' does not exist on type 'typeof import("D:/Workspace/Gits/CamHub/ams/AntFlow/server/src/services/SocketServer", { with: { "resolution-mode": "import" } })'.
+src/routes/mobileStreaming.ts(2,32): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../middleware/auth.js'?
+src/routes/mobileStreaming.ts(10,28): error TS2339: Property 'user' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/mobileStreaming.ts(61,28): error TS2339: Property 'user' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/mobileStreaming.ts(100,28): error TS2339: Property 'user' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/mobileStreaming.ts(133,28): error TS2339: Property 'user' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/platforms.ts(475,30): error TS2552: Cannot find name 's3Url'. Did you mean 'URL'?
+src/routes/platforms.ts(476,36): error TS2304: Cannot find name 'axios'.
+src/routes/streaming.ts(253,75): error TS2339: Property 'id' does not exist on type '{ userId: string; email: string; role: string; currentOrganizationId?: string | undefined; }'.
+src/services/ai/SilenceDetectionService.ts(35,31): error TS7006: Parameter 'err' implicitly has an 'any' type.
+src/services/ai/SilenceDetectionService.ts(35,36): error TS7006: Parameter 'data' implicitly has an 'any' type.
+src/services/ai/SilenceDetectionService.ts(44,35): error TS7006: Parameter 'commandLine' implicitly has an 'any' type.
+src/services/ai/SilenceDetectionService.ts(47,36): error TS7006: Parameter 'stderrLine' implicitly has an 'any' type.
+src/services/ai/SilenceDetectionService.ts(63,35): error TS7006: Parameter 'err' implicitly has an 'any' type.
+src/services/HighlightService.ts(58,42): error TS2339: Property 'uploadFile' does not exist on type 'Promise<IStorageAdapter>'.
+src/services/HighlightService.ts(64,24): error TS2304: Cannot find name 'key'.
+src/services/HighlightService.ts(65,17): error TS1117: An object literal cannot have multiple properties with the same name.
+src/services/RedisService.ts(28,35): error TS2351: This expression is not constructable.
+  Type 'typeof import("D:/Workspace/Gits/CamHub/ams/AntFlow/node_modules/.pnpm/ioredis@5.9.2/node_modules/ioredis/built/index")' has no construct signatures.
+src/services/RedisService.ts(30,35): error TS2351: This expression is not constructable.
+  Type 'typeof import("D:/Workspace/Gits/CamHub/ams/AntFlow/node_modules/.pnpm/ioredis@5.9.2/node_modules/ioredis/built/index")' has no construct signatures.
+src/services/RedisService.ts(35,37): error TS7006: Parameter 'times' implicitly has an 'any' type.
+src/utils/ai/AIAccountManager.ts(49,45): error TS2551: Property 'aiOAuth' does not exist on type '{ stripe: { secretKey: string; publicKey: string; webhookSecret: string; }; paypal: { clientId: string; clientSecret: string; webhookSecret: string; }; aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string; }; ... 5 more ...; publicDomain?: string | undefined; }'. Did you mean 'oauth'?
+src/utils/ai/providers/GoogleTTSProvider.ts(4,13): error TS2564: Property 'client' has no initializer and is not definitely assigned in the constructor.
+src/utils/facebookAuth.ts(9,41): error TS2339: Property 'social' does not exist on type '{ stripe: { secretKey: string; publicKey: string; webhookSecret: string; }; paypal: { clientId: string; clientSecret: string; webhookSecret: string; }; aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string; }; ... 5 more ...; publicDomain?: string | undefined; }'.
+src/utils/facebookAuth.ts(39,41): error TS2339: Property 'social' does not exist on type '{ stripe: { secretKey: string; publicKey: string; webhookSecret: string; }; paypal: { clientId: string; clientSecret: string; webhookSecret: string; }; aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string; }; ... 5 more ...; publicDomain?: string | undefined; }'.
+src/utils/facebookAuth.ts(40,45): error TS2339: Property 'social' does not exist on type '{ stripe: { secretKey: string; publicKey: string; webhookSecret: string; }; paypal: { clientId: string; clientSecret: string; webhookSecret: string; }; aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string; }; ... 5 more ...; publicDomain?: string | undefined; }'.
+src/utils/googleAuth.ts(9,44): error TS2339: Property 'social' does not exist on type '{ stripe: { secretKey: string; publicKey: string; webhookSecret: string; }; paypal: { clientId: string; clientSecret: string; webhookSecret: string; }; aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string; }; ... 5 more ...; publicDomain?: string | undefined; }'.
+src/utils/googleAuth.ts(41,44): error TS2339: Property 'social' does not exist on type '{ stripe: { secretKey: string; publicKey: string; webhookSecret: string; }; paypal: { clientId: string; clientSecret: string; webhookSecret: string; }; aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string; }; ... 5 more ...; publicDomain?: string | undefined; }'.
+src/utils/googleAuth.ts(42,48): error TS2339: Property 'social' does not exist on type '{ stripe: { secretKey: string; publicKey: string; webhookSecret: string; }; paypal: { clientId: string; clientSecret: string; webhookSecret: string; }; aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string; }; ... 5 more ...; publicDomain?: string | undefined; }'.

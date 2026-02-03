@@ -80,14 +80,22 @@ import {
    Broadcast, CameraFive, VideoFile, Youtube,
    Facebook, Tiktok, Connection
 } from '@icon-park/vue-next';
-import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { usePlatformStore } from '@/stores/platform';
+import { useProjectStore } from '@/stores/project';
+import { useStreamingStore } from '@/stores/streaming';
+import { storeToRefs } from 'pinia';
 
 const router = useRouter();
+const platformStore = usePlatformStore();
+const projectStore = useProjectStore();
+const streamingStore = useStreamingStore();
+
+const { accounts: platforms } = storeToRefs(platformStore);
+const { projects: finishedProjects } = storeToRefs(projectStore);
+
 const mode = ref('studio');
-const platforms = ref<any[]>([]);
 const selectedPlatforms = ref<string[]>([]);
-const finishedProjects = ref<any[]>([]);
 const selectedProjectId = ref<string | null>(null);
 const loopEnabled = ref(true);
 const loading = ref(true);
@@ -101,12 +109,11 @@ const isConfigValid = computed(() => {
 const fetchData = async () => {
    try {
       loading.value = true;
-      const [platRes, projRes] = await Promise.all([
-         axios.get('/api/platforms'),
-         axios.get('/api/projects?status=completed')
+      await Promise.all([
+         platformStore.fetchAccounts(),
+         projectStore.fetchProjects({ status: 'completed' })
       ]);
-      platforms.value = platRes.data.data;
-      finishedProjects.value = projRes.data.data;
+      // Data is reactive via storeToRefs, no need to manually assign
    } finally {
       loading.value = false;
    }
@@ -127,17 +134,16 @@ const startStream = async () => {
    } else {
       const toastId = toast.loading("Initializing restream engine...");
       try {
-         const res = await axios.post('/api/streaming/start', {
+         await streamingStore.startStream({
             projectId: selectedProjectId.value,
             platformAccountIds: selectedPlatforms.value,
             loop: loopEnabled.value
          });
 
-         if (res.data.success) {
-            toast.success("Automated restream started! Check your platforms.", { id: toastId });
-            router.push('/dashboard');
-         }
+         toast.success("Automated restream started! Check your platforms.", { id: toastId });
+         router.push('/dashboard');
       } catch (e: any) {
+         // Error toast might be handled in store, but we update the loading toast here
          toast.error(e.response?.data?.error || "Failed to start restream", { id: toastId });
       }
    }

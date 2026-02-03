@@ -95,11 +95,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { User, Iphone, Microphone, VoiceOff as MicrophoneM, Close, Camera, CameraFive, FullSelection } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
-import GuestVideoPreview from './GuestVideoPreview.vue';
+import { useUIStore } from '@/stores/ui';
 
 const studioStore = useStudioStore();
+const uiStore = useUIStore();
+const appSlug = computed(() => uiStore.appName.toLowerCase().replace(/\s+/g, '-'));
+const guestDndType = computed(() => `application/${appSlug.value}-guest`);
 
 const props = defineProps<{
     guestPersonas: any[];

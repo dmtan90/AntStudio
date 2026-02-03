@@ -4,6 +4,10 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
 import { NeuralArchive } from '../models/NeuralArchive.js';
+import { digitalDoubleService } from '../services/ai/DigitalDoubleService.js';
+import multer from 'multer';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = express.Router();
 
@@ -28,12 +32,12 @@ router.get('/archive/:entityId', async (req: AuthRequest, res: Response) => {
 });
 
 /**
- * POST /api/neural/archive/:entityId/style - Update tactical LoRAs
+ * POST /api/neural/archive/:entityId/update - Holistic synchronization
  */
-router.post('/archive/:entityId/style', rbacMiddleware(Permission.AI_TUNE), async (req: AuthRequest, res: Response) => {
+router.post('/archive/:entityId/update', rbacMiddleware(Permission.AI_TUNE), async (req: AuthRequest, res: Response) => {
     try {
-        await NeuralArchiveService.updateStyling(req.user!.userId, req.params.entityId, req.body.loras);
-        res.json({ success: true, message: 'Neural styling weights recalibrated.' });
+        await NeuralArchiveService.updateNeuralArchive(req.user!.userId, req.params.entityId, req.body);
+        res.json({ success: true, message: 'Neural Soul updated and synchronized.' });
     } catch (e: any) {
         res.status(400).json({ success: false, error: e.message });
     }
@@ -49,6 +53,28 @@ router.post('/archive/:entityId/event', async (req: AuthRequest, res: Response) 
         res.json({ success: true, message: 'Mission event archived to neural memory.' });
     } catch (e: any) {
         res.status(400).json({ success: false, error: e.message });
+    }
+});
+
+/**
+ * POST /api/neural/archive/:entityId/digital-double - Generate 3D texture map from photo
+ */
+router.post('/archive/:entityId/digital-double', upload.single('photo'), async (req: AuthRequest, res: Response) => {
+    try {
+        const file = req.file;
+        if (!file) return res.status(400).json({ success: false, error: 'No photo uploaded' });
+
+        const visual = await digitalDoubleService.generateDigitalDouble(
+            req.user!.userId,
+            req.params.entityId,
+            file.buffer,
+            file.mimetype
+        );
+
+        res.json({ success: true, data: visual, message: 'Digital Double initialized successfully.' });
+    } catch (e: any) {
+        console.error('[NeuralRoute] Digital Double Failed:', e);
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 

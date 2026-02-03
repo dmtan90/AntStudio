@@ -24,7 +24,7 @@
           <el-option label="BLOCKED" value="blocked" />
           <el-option label="APPROVED" value="approved" />
        </el-select>
-       <el-input v-model="search" placeholder="SEARCH PROMPTS..." size="small" class="glass-input flex-1" />
+       <el-input v-model="searchQuery" placeholder="SEARCH PROMPTS..." size="small" class="glass-input flex-1" />
     </div>
 
     <div class="audit-list space-y-4">
@@ -72,13 +72,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { TextMessage, VideoFile } from '@icon-park/vue-next';
+import { ref, computed } from 'vue';
+import { useUIStore } from '@/stores/ui';
+import {
+    Audit, Search, Filter, Caution, Check, Close,
+    CameraFive, Play, FileText, DeleteOne
+} from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 
+const uiStore = useUIStore();
 const loading = ref(false);
 const filterStatus = ref('');
-const search = ref('');
+const searchQuery = ref('');
 
 const audits = ref([
  { id: '1', type: 'text', content: 'Create a video of a heated political riot with explicit violence...', user: { name: 'John Doe' }, tenant: { name: 'Acme News' }, scores: { toxicity: 0.92 }, status: 'blocked', timestamp: '2 mins ago' },

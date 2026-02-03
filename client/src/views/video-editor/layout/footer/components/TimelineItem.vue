@@ -251,13 +251,22 @@ const handleDragTrack = (x: number, y: number) => {
   // 1. Define Snap Points (in pixels)
   const snapPoints: number[] = [
     0,
-    (canvas.value.timeline.duration / 1000) * SEEK_TIME_WIDTH.value,
+    (timelineMs.value / 1000) * SEEK_TIME_WIDTH.value,
     (timeline.value?.seek || 0) * SEEK_TIME_WIDTH.value
   ];
 
+  // Add 1-second grid snap points
+  for (let s = 1; s < timelineMs.value / 1000; s++) {
+    snapPoints.push(s * SEEK_TIME_WIDTH.value);
+  }
+
   // Add other elements' bounds as snap points
+  // If we are in a unified timeline, we should consider all elements across all scenes
+  // For now, elements.value usually contains elements of the active scene.
+  // To support cross-scene snapping, we'd need access to all project elements.
+  // Let's at least ensure we snap accurately to our own scene boundaries.
   elements.value.forEach(el => {
-    if (el.name === props.element.name) return;
+    if (el.name === props.element.name || el.id === props.element.id) return;
     const offset = (el.meta?.offset || el.offset * 1000) / 1000 * SEEK_TIME_WIDTH.value;
     const duration = (el.meta?.duration || el.duration * 1000) / 1000 * SEEK_TIME_WIDTH.value;
     snapPoints.push(offset);
@@ -267,16 +276,17 @@ const handleDragTrack = (x: number, y: number) => {
   // 2. Check for Snapping
   const myWidth = widthInSecond.value;
   let snappedX: number | null = null;
+  const SNAP_THRESHOLD_INNER = 8; // tighter snap for better feel
 
   for (const point of snapPoints) {
     // Snap my start to point
-    if (Math.abs(targetX - point) < SNAP_THRESHOLD) {
+    if (Math.abs(targetX - point) < SNAP_THRESHOLD_INNER) {
       targetX = point;
       snappedX = point;
       break;
     }
     // Snap my end to point
-    if (Math.abs((targetX + myWidth) - point) < SNAP_THRESHOLD) {
+    if (Math.abs((targetX + myWidth) - point) < SNAP_THRESHOLD_INNER) {
       targetX = point - myWidth;
       snappedX = point;
       break;

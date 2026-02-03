@@ -3,11 +3,12 @@
     <!-- Global Navigation -->
     <nav class="fixed top-0 left-0 w-full z-[100] transition-all duration-500" :class="{ 'bg-black/80 backdrop-blur-2xl border-b border-white/5 py-4': scrolled, 'py-8': !scrolled }">
       <div class="container mx-auto px-6 flex justify-between items-center">
-        <div class="flex items-center gap-2 group cursor-pointer">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
-            <camera-five size="24" theme="filled" fill="#fff" />
+        <div class="flex items-center gap-2 group cursor-pointer" @click="$router.push('/')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform overflow-hidden">
+            <img v-if="uiStore.logo" :src="getFileUrl(uiStore.logo)" class="w-full h-full object-contain" />
+            <camera-five v-else size="24" theme="filled" fill="#fff" />
           </div>
-          <span class="text-xl font-black tracking-tighter uppercase group-hover:tracking-normal transition-all">AntStudio</span>
+          <span class="text-xl font-black tracking-tighter uppercase group-hover:tracking-normal transition-all">{{ uiStore.appName }}</span>
         </div>
 
         <div class="hidden lg:flex items-center gap-10">
@@ -62,8 +63,11 @@
       <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
         <div class="brand-side space-y-4">
           <div class="flex items-center gap-2 opacity-100">
-            <camera-five size="24" fill="#fff" />
-            <span class="text-xl font-black tracking-tighter uppercase">AntStudio</span>
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden">
+              <img v-if="uiStore.logo" :src="getFileUrl(uiStore.logo)" class="w-full h-full object-contain" />
+              <camera-five v-else size="18" fill="#fff" />
+            </div>
+            <span class="text-xl font-black tracking-tighter uppercase">{{ uiStore.appName }}</span>
           </div>
           <p class="text-[10px] text-gray-500 leading-relaxed">The global infrastructure for next-gen broadcast and AI-driven content monetization.</p>
         </div>
@@ -76,7 +80,7 @@
         </div>
       </div>
       <div class="container mx-auto px-6 pt-20 flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-gray-700">
-        <p>© 2026 AntStudio Systems. All rights reserved.</p>
+        <p>© 2026 {{ uiStore.appName }} Systems. All rights reserved.</p>
         <div class="flex gap-6">
           <span>Privacy Policy</span>
           <span>Terms of Service</span>
@@ -91,6 +95,10 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { CameraFive } from '@icon-park/vue-next';
 import LandingHero from '@/components/marketing/LandingHero.vue';
 import B2BShowcase from '@/components/marketing/B2BShowcase.vue';
+import { useUIStore } from '@/stores/ui';
+import { getFileUrl } from '@/utils/api';
+
+const uiStore = useUIStore();
 
 const scrolled = ref(false);
 

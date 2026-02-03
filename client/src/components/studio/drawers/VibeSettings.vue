@@ -39,13 +39,38 @@
                 <el-switch v-model="localAutoAtmosphere"
                     @change="$emit('update:autoAtmosphere', localAutoAtmosphere)" />
             </div>
-            <div
-                class="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 group hover:border-blue-500/30 cursor-pointer transition-all">
-                <music-list theme="outline" size="16" class="opacity-40 group-hover:text-blue-400" />
-                <div class="flex-1">
-                    <p class="text-[10px] font-bold">Dynamic Music FX</p>
-                    <p class="text-[9px] opacity-40">Syncing beats to chat energy</p>
+
+            <div class="space-y-3">
+                <div
+                    class="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 group hover:border-blue-500/30 cursor-pointer transition-all">
+                    <music-list theme="outline" size="16" class="opacity-40 group-hover:text-blue-400" />
+                    <div class="flex-1">
+                        <p class="text-[10px] font-bold">Dynamic Music FX</p>
+                        <p class="text-[9px] opacity-40">Syncing beats to chat energy ({{ localAutoAtmosphere ? 'ACTIVE'
+                            :
+                            'PAUSED' }})</p>
+                    </div>
                 </div>
+
+                <div v-if="localAutoAtmosphere" class="animate-in">
+                    <div class="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+                        <p class="text-[9px] font-black uppercase tracking-widest opacity-60">
+                            SENTIMENT_TRACKING_IN_PROGRESS</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Environment Presets -->
+        <section>
+            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">ATMOSPHERE_PRESETS</h4>
+            <div class="grid grid-cols-2 gap-2">
+                <button v-for="p in ['Cinematic', 'Vibrant', 'Muted', 'Cyberpunk']" :key="p"
+                    class="py-2 px-3 rounded-xl border border-white/5 bg-white/5 text-[9px] font-black uppercase hover:border-blue-500/30 transition-all"
+                    :class="{ 'border-blue-500/50 bg-blue-500/10 text-blue-400': vibeName.includes(p) }">
+                    {{ p }}
+                </button>
             </div>
         </section>
     </div>

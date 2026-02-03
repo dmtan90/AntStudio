@@ -37,7 +37,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Peoples, Broadcast, Close } from '@icon-park/vue-next';
-import axios from 'axios';
+import { useOrganizationStore } from '@/stores/organization';
 import { toast } from 'vue-sonner';
 
 const route = useRoute();
@@ -47,6 +47,7 @@ const joining = ref(false);
 const invitation = ref<any>(null);
 const orgName = ref('');
 const error = ref('');
+const orgStore = useOrganizationStore();
 
 const checkInvitation = async () => {
     const token = route.query.token;
@@ -71,8 +72,9 @@ const checkInvitation = async () => {
 
 const handleAccept = async () => {
     joining.value = true;
+
     try {
-        await axios.post('/api/organizations/accept-invite', { token: invitation.value.token });
+        await orgStore.acceptInviteByToken(invitation.value.token);
         toast.success("Tactical Link Established! Welcome to the team.");
         router.push('/organization');
     } catch (e: any) {

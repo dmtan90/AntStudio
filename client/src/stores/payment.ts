@@ -47,12 +47,35 @@ export const usePaymentStore = defineStore('payment', () => {
         }
     }
 
+    async function createCheckout(payload: { packageId: string }) {
+        try {
+            const res = await api.post('/payment/create-checkout', payload);
+            return res.data;
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to create checkout');
+            throw error;
+        }
+    }
+
+    async function verifySession(payload: { sessionId: string, gateway: string }) {
+        try {
+            const res = await api.post('/payment/verify-session', payload);
+            toast.success('Payment verified successfully');
+            return res.data;
+        } catch (error: any) {
+            toast.error('Payment verification failed');
+            throw error;
+        }
+    }
+
     return {
         transactions,
         stats,
         loading,
         fetchTransactions,
         fetchAdminTransactions,
-        fetchAdminStats
+        fetchAdminStats,
+        createCheckout,
+        verifySession
     }
 })

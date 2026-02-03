@@ -54,6 +54,7 @@ onMounted(() => {
 });
 
 watch(() => props.guestId, attachVideo);
+watch(() => props.videoElements?.get(props.guestId)?.srcObject, attachVideo);
 watch(() => props.videoElements?.size, attachVideo);
 </script>
 

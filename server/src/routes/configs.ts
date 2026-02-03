@@ -49,14 +49,17 @@ router.get('/plans', async (req, res) => {
 router.get('/public', async (req, res) => {
     try {
         await connectDB();
-        const settings = await AdminSettings.findOne().select('whitelabel');
+        const adminSettings = await AdminSettings.findOne();
+        const settings = adminSettings?.whitelabel;
+        const domain = adminSettings?.apiConfigs?.publicDomain;
 
         res.json({
             success: true,
-            data: settings?.whitelabel || {
-                appName: 'AntFlow',
-                logo: '',
-                favicon: ''
+            data: {
+                appName: settings?.appName || 'AntStudio',
+                logo: settings?.logo || '/logo.png',
+                favicon: settings?.favicon || '/favicon.png',
+                domain: domain || 'https://studio.agrhub.com'
             }
         });
     } catch (error: any) {

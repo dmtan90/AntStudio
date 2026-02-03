@@ -4,7 +4,7 @@
       <header class="text-center max-w-3xl mx-auto mb-20 space-y-4">
         <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500">Commercial Infrastructure</h2>
         <h3 class="text-4xl lg:text-5xl font-black text-white leading-tight">Built for the <span class="text-gray-500">Enterprise Economy.</span></h3>
-        <p class="text-gray-400 text-lg">Deploy AntFlow on your own infrastructure and become the provider. Scale your own B2B ecosystem with industrial-grade tools.</p>
+        <p class="text-gray-400 text-lg">Deploy {{ uiStore.appName }} on your own infrastructure and become the provider. Scale your own B2B ecosystem with industrial-grade tools.</p>
       </header>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -67,6 +67,9 @@
 
 <script setup lang="ts">
 import { ShareTwo, Peoples, ChartHistogram, CheckOne } from '@icon-park/vue-next';
+import { useUIStore } from '@/stores/ui';
+
+const uiStore = useUIStore();
 </script>
 
 <style lang="scss" scoped>

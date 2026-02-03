@@ -110,8 +110,9 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
 import { Help, Close, UploadOne, Delete, Loading } from '@icon-park/vue-next';
-import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { useSupportStore } from '@/stores/support';
+import { useAdminStore } from '@/stores/admin';
 
 const props = defineProps<{
     modelValue: boolean;
@@ -119,6 +120,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(['update:modelValue']);
+
+const supportStore = useSupportStore();
+const adminStore = useAdminStore();
 
 const submitting = ref(false);
 const attachments = ref<File[]>([]);
@@ -149,13 +153,13 @@ const removeAttachment = (idx: number) => {
 const generateLogBundle = async () => {
     try {
         toast.info('Compiling local telemetry...');
-        // In a real scenario, this calls the backend export endpoint and blobs the result
-        const res = await axios.get('/api/admin/monitoring/export-diagnostics', { responseType: 'blob' });
+        const res = await adminStore.exportDiagnostics();
+        // adminStore.exportDiagnostics returns the Axios response with blob
         const file = new File([res.data], 'tactical_logs_bundle.zip', { type: 'application/zip' });
         attachments.value.push(file);
         toast.success('Log bundle attached successfully.');
     } catch (e) {
-        toast.error('Failed to extract local logs automatically.');
+        // Error handling already in store, but we can add specific user feedback here if needed
     }
 };
 
@@ -163,6 +167,7 @@ const submitTicket = async () => {
     submitting.value = true;
     try {
         // 1. Upload Attachments (Mock for now, normally presigned S3)
+        // In a real scenario, this logic might be moved to a store action "uploadAttachments"
         const uploadedFiles = attachments.value.map(f => ({
             fileName: f.name,
             s3Key: `support/uploads/${Date.now()}_${f.name}`,
@@ -170,13 +175,14 @@ const submitTicket = async () => {
         }));
 
         // 2. Submit Ticket Metadata
-        await axios.post('/api/support/tickets', {
+        await supportStore.createTicket({
             ...form,
             attachments: uploadedFiles,
-            instanceId: 'edge-local-01' // Would come from config
-        });
+            instanceId: 'edge-local-01', // Would come from config
+            category: 'technical' // Default category
+        } as any);
 
-        toast.success('Ticket dispatched to Master Command.');
+        // Success toast is handled in supportStore
         emit('update:modelValue', false);
 
         // Reset
@@ -185,7 +191,7 @@ const submitTicket = async () => {
         form.dataConsent = false;
         attachments.value = [];
     } catch (e: any) {
-        toast.error(e.response?.data?.error || 'Transmission failed.');
+        // Error toast handled in store
     } finally {
         submitting.value = false;
     }

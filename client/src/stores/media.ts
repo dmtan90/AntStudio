@@ -17,11 +17,11 @@ export const useMediaStore = defineStore('media', () => {
         return message
     }
 
-    async function fetchMedia(purpose?: string) {
+    async function fetchMedia(params: any = {}) {
         loading.value = true
         try {
             const response = await api.get('/media/list', {
-                params: { purpose }
+                params
             })
             resources.value = response.data.media || []
             return response.data
@@ -31,6 +31,11 @@ export const useMediaStore = defineStore('media', () => {
         } finally {
             loading.value = false
         }
+    }
+
+    // Alias for deprecated calls if any, or just consistent naming
+    async function fetchMediaList(purpose?: string) {
+        return fetchMedia(purpose)
     }
 
     async function fetchVideos() {

@@ -90,7 +90,7 @@
                                             :class="['w-1.5 h-1.5 rounded-full animate-pulse', lic.status === 'valid' ? 'bg-green-400' : 'bg-red-400']"></span>
                                         <span
                                             :class="['text-[10px] font-bold uppercase', lic.status === 'valid' ? 'text-green-400' : 'text-red-400']">{{
-                                            lic.status }}</span>
+                                                lic.status }}</span>
                                     </span>
                                 </td>
                                 <td class="p-6 text-right">
@@ -110,8 +110,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import { ref, onMounted, computed } from 'vue';
+import { useLicenseStore } from '@/stores/license';
 import { toast } from 'vue-sonner';
+
+const licenseStore = useLicenseStore();
 
 const licenses = ref<any[]>([]);
 const loading = ref(true);
@@ -132,9 +135,9 @@ const stats = computed(() => {
 const fetchFleet = async () => {
     try {
         loading.value = true;
-        const res = await axios.get('/api/license/all');
-        if (res.data.success) {
-            licenses.value = res.data.data.licenses;
+        const data = await licenseStore.fetchAllLicenses();
+        if (data.success) {
+            licenses.value = data.licenses;
         }
     } catch (e) {
         toast.error('Tactical Downlink Failure: Could not reach Registry Hub.');

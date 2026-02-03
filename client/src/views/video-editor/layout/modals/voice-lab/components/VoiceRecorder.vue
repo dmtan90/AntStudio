@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
-import axios from 'axios';
+// removed duplicate toast import
 import { useQueryClient } from '@tanstack/vue-query';
+import { useVoiceStore } from '@/stores/voice';
 import { Microphone, Pause as Stop, Play, Upload, Delete, Check } from '@icon-park/vue-next';
 
 const emit = defineEmits(['complete']);
 const queryClient = useQueryClient();
+const voiceStore = useVoiceStore();
 
 const name = ref('');
 const description = ref('');
@@ -64,9 +66,7 @@ const handleClone = async () => {
     formData.append('files', audioBlob.value, 'sample.mp3');
 
     try {
-        await axios.post('/api/voice/clone', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await voiceStore.cloneVoice(formData);
 
         toast.success('Voice cloned successfully!');
         queryClient.invalidateQueries({ queryKey: ['voices'] });

@@ -206,6 +206,250 @@ export const useAdminStore = defineStore('admin', () => {
         }
     }
 
+    async function fetchLatestRelease() {
+        try {
+            const response = await api.get('/releases/latest')
+            return response.data
+        } catch (error) {
+            // Silently fail or just return null/undefined as this is often for UI badges
+            return null
+        }
+    }
+
+
+
+    // Monitoring Actions
+    async function fetchMonitoringStats() {
+        try {
+            const res = await api.get('/admin/monitoring/stats')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function fetchMonitoringHistory(limit = 60) {
+        try {
+            const res = await api.get(`/admin/monitoring/history?limit=${limit}`)
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function fetchMonitoringLogs(params: any) {
+        try {
+            const res = await api.get('/admin/monitoring/logs', { params })
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function fetchClientLogs() {
+        try {
+            const res = await api.get('/admin/monitoring/client-logs')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function exportDiagnostics() {
+        // Returns blob usually
+        try {
+            const res = await api.get('/admin/monitoring/export-diagnostics', { responseType: 'blob' })
+            return res
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function fetchMonitoringSettings() {
+        try {
+            const res = await api.get('/admin/monitoring/settings')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function updateMonitoringSettings(payload: any) {
+        try {
+            await api.patch('/admin/monitoring/settings', payload)
+            toast.success('Monitoring settings updated')
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function clearMonitoringLogs() {
+        try {
+            await api.delete('/admin/monitoring/logs')
+            toast.success('Logs cleared')
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    // Logs View Actions
+    async function fetchSystemLogs(params: any) {
+        try {
+            const res = await api.get('/admin/logs', { params })
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function fetchLogSettings() {
+        try {
+            const res = await api.get('/admin/logs/settings')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function updateLogSettings(payload: any) {
+        try {
+            await api.patch('/admin/logs/settings', payload)
+            toast.success('Log settings updated')
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function clearSystemLogs() {
+        try {
+            await api.delete('/admin/logs')
+            toast.success('System logs cleared')
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    // Network Control Actions
+    async function fetchNetworkSnapshot() {
+        try {
+            const { data } = await api.get('/network/snapshot')
+            return data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function triggerNetworkEvent(type: string) {
+        try {
+            await api.post('/network/event/global', { eventType: type })
+            toast.success(`Network event ${type} triggered`)
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    // AI Accounts Actions
+    async function updateAIAccount(id: string, payload: any) {
+        try {
+            await api.patch(`/admin/ai/accounts/${id}`, payload)
+            toast.success('AI Account updated')
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function fetchAIPerformance() {
+        try {
+            const res = await api.get('/ai/performance/insights/current-session')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function toggleAIOptimization(payload: any) {
+        try {
+            const res = await api.post('/ai/performance/optimize/start', payload)
+            toast.success("AI Optimizer Engaged")
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function fetchAIAccounts() {
+        try {
+            const res = await api.get('/admin/ai/accounts')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function getAuthUrl(platform: string, redirectUri?: string) {
+        try {
+            const res = await api.get(`/admin/ai/auth/${platform}`, {
+                params: { redirectUri }
+            })
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function handleAIAuthCallback(platform: string, code: string, state?: string) {
+        try {
+            const res = await api.post(`/admin/ai/auth/${platform}/callback`, { code, state })
+            toast.success('AI Account connected successfully')
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function createProject(accountId: string) {
+        try {
+            const res = await api.post(`/admin/ai/accounts/${accountId}/create-project`)
+            toast.success('GCP Project created')
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function addDirectAccount(payload: any) {
+        try {
+            const res = await api.post('/admin/ai/accounts/direct', payload)
+            toast.success('Account added')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function syncAccount(id: string) {
+        try {
+            await api.post(`/admin/ai/accounts/${id}/sync`)
+            toast.success('Sync started')
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function deleteAIAccount(id: string) {
+        try {
+            await api.delete(`/admin/ai/accounts/${id}`)
+            toast.success('Account deleted')
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
     return {
         users,
         settings,
@@ -225,6 +469,33 @@ export const useAdminStore = defineStore('admin', () => {
         generateTemplate,
         fetchReleases,
         createRelease,
-        deleteRelease
+        deleteRelease,
+        fetchLatestRelease,
+
+        // New exports
+        fetchMonitoringStats,
+        fetchMonitoringHistory,
+        fetchMonitoringLogs,
+        fetchClientLogs,
+        exportDiagnostics,
+        fetchMonitoringSettings,
+        updateMonitoringSettings,
+        clearMonitoringLogs,
+        fetchSystemLogs,
+        fetchLogSettings,
+        updateLogSettings,
+        clearSystemLogs,
+        fetchNetworkSnapshot,
+        triggerNetworkEvent,
+        updateAIAccount,
+        fetchAIAccounts,
+        getAuthUrl,
+        addDirectAccount,
+        syncAccount,
+        deleteAIAccount,
+        handleAIAuthCallback,
+        createProject,
+        fetchAIPerformance,
+        toggleAIOptimization
     }
 })

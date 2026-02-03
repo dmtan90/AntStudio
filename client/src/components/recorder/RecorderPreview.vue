@@ -2,8 +2,7 @@
     <div class="preview-container relative flex-1 overflow-hidden flex items-center justify-center">
         <!-- Canvas Elements passed as refs from parent -->
         <!-- Since we want to keep logic in parent/composable, we'll use refs here -->
-        <canvas ref="processingCanvas" class="hidden-canvas"></canvas>
-        <canvas ref="displayCanvas" v-show="mode !== 'audio'" class="preview-video"
+        <canvas ref="processingCanvas" v-show="mode !== 'audio'" class="preview-video"
             :class="{ 'asl-frame': enableAslAssist }"></canvas>
 
         <!-- ASL Assist Overlay -->
@@ -93,11 +92,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'update:processingCanvas', canvas: HTMLCanvasElement | null): void
-    (e: 'update:displayCanvas', canvas: HTMLCanvasElement | null): void
 }>()
 
 const processingCanvas = ref<HTMLCanvasElement | null>(null)
-const displayCanvas = ref<HTMLCanvasElement | null>(null)
 
 const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
@@ -107,7 +104,6 @@ const formatTime = (sec: number) => {
 
 onMounted(() => {
     emit('update:processingCanvas', processingCanvas.value)
-    emit('update:displayCanvas', displayCanvas.value)
 })
 </script>
 

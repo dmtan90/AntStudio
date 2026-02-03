@@ -1,4 +1,3 @@
-import axios from "axios";
 import { api } from "video-editor/config/api";
 import { type EditorProduct, type EditorBrand } from "video-editor/schema/adapter";
 import { useQuery } from "@tanstack/vue-query";

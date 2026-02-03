@@ -30,7 +30,8 @@
         </div>
         <div class="setting-item">
           <label>Recipient Email</label>
-          <input type="email" v-model="settings.notificationEmail" placeholder="admin@example.com" class="dark-input" @blur="saveSettings" />
+          <input type="email" v-model="settings.notificationEmail" placeholder="admin@example.com" class="dark-input"
+            @blur="saveSettings" />
         </div>
         <div class="setting-item">
           <label>Minimum Alert Level</label>
@@ -43,12 +44,14 @@
         <div class="setting-item">
           <label>Log Retention (Days)</label>
           <div class="flex items-center gap-2">
-            <input type="number" v-model.number="settings.retentionDays" min="1" max="365" class="dark-input w-24" @blur="saveSettings" />
+            <input type="number" v-model.number="settings.retentionDays" min="1" max="365" class="dark-input w-24"
+              @blur="saveSettings" />
             <span class="text-xs opacity-60">DAYS</span>
           </div>
         </div>
       </div>
-      <p class="settings-hint">System will automatically send an email alert when an error matching these rules is detected. Logs are kept for the specified number of days before auto-deletion.</p>
+      <p class="settings-hint">System will automatically send an email alert when an error matching these rules is
+        detected. Logs are kept for the specified number of days before auto-deletion.</p>
     </div>
 
     <div class="logs-content">
@@ -68,8 +71,9 @@
           <div class="filter-group">
             <label>Search:</label>
             <div class="search-box">
-               <search theme="outline" size="14" class="search-icon" />
-               <input v-model="filter.search" placeholder="Filter message..." class="dark-input search-input" @input="debounceFetch" />
+              <search theme="outline" size="14" class="search-icon" />
+              <input v-model="filter.search" placeholder="Filter message..." class="dark-input search-input"
+                @input="debounceFetch" />
             </div>
           </div>
         </div>
@@ -85,12 +89,14 @@
       <!-- Console Output -->
       <div class="console-wrapper cinematic-card" ref="consoleRef">
         <div v-if="loading && !logs.length" class="loading-overlay">
-           <el-icon class="is-loading"><Loading /></el-icon>
-           <span>Connecting to log stream...</span>
+          <el-icon class="is-loading">
+            <Loading />
+          </el-icon>
+          <span>Connecting to log stream...</span>
         </div>
         <div v-else-if="!logs.length" class="empty-logs">
-           <terminal theme="outline" size="48" />
-           <p>No logs matching your filters found.</p>
+          <terminal theme="outline" size="48" />
+          <p>No logs matching your filters found.</p>
         </div>
         <div v-else class="console-lines">
           <div v-for="log in logs" :key="log._id" :class="['log-line', log.level]">
@@ -99,24 +105,18 @@
             <span class="source">[{{ log.source }}]</span>
             <span class="message">{{ log.message }}</span>
             <div v-if="log.metadata" class="metadata-toggle" @click="toggleMetadata(log._id)">
-                {{ expandedMetadata.has(log._id) ? 'Collapse' : 'View Metadata' }}
+              {{ expandedMetadata.has(log._id) ? 'Collapse' : 'View Metadata' }}
             </div>
-            <pre v-if="expandedMetadata.has(log._id)" class="metadata-block">{{ JSON.stringify(log.metadata, null, 2) }}</pre>
+            <pre v-if="expandedMetadata.has(log._id)"
+              class="metadata-block">{{ JSON.stringify(log.metadata, null, 2) }}</pre>
           </div>
         </div>
       </div>
-      
+
       <!-- Pagination -->
       <div class="pagination-footer">
-        <el-pagination
-          v-model:current-page="filter.page"
-          :page-size="100"
-          layout="prev, pager, next"
-          :total="totalLogs"
-          @current-change="fetchLogs"
-          background
-          small
-        />
+        <el-pagination v-model:current-page="filter.page" :page-size="100" layout="prev, pager, next" :total="totalLogs"
+          @current-change="fetchLogs" background small />
       </div>
     </div>
   </div>
@@ -125,9 +125,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { SettingConfig, Delete, Search, Loading, Terminal } from '@icon-park/vue-next';
-import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { useAdminStore } from '@/stores/admin';
 
+const adminStore = useAdminStore();
 const logs = ref<any[]>([]);
 const totalLogs = ref(0);
 const loading = ref(false);
@@ -156,9 +157,11 @@ const fetchLogs = async (silent: any = false) => {
   const isSilent = typeof silent === 'boolean' ? silent : false;
   if (!isSilent) loading.value = true;
   try {
-    const res = await axios.get('/api/admin/logs', { params: filter });
-    logs.value = res.data.data.logs;
-    totalLogs.value = res.data.data.total;
+    const data = await adminStore.fetchSystemLogs(filter);
+    if (data && data.data) {
+      logs.value = data.data.logs;
+      totalLogs.value = data.data.total;
+    }
   } catch (e) {
     if (!isSilent) toast.error('Failed to load logs');
   } finally {
@@ -167,41 +170,40 @@ const fetchLogs = async (silent: any = false) => {
 };
 
 const debounceFetch = () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-        filter.page = 1;
-        fetchLogs();
-    }, 500);
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    filter.page = 1;
+    fetchLogs();
+  }, 500);
 };
 
 const fetchSettings = async () => {
   try {
-    const res = await axios.get('/api/admin/logs/settings');
-    if (res.data.data) {
-        Object.assign(settings, res.data.data);
+    const data = await adminStore.fetchLogSettings();
+    if (data && data.data) {
+      Object.assign(settings, data.data);
     }
-  } catch (e) {}
+  } catch (e) { }
 };
 
 const saveSettings = async () => {
   try {
-    await axios.patch('/api/admin/logs/settings', settings);
-    toast.success('Log settings updated');
+    await adminStore.updateLogSettings(settings);
+    // toast handled by store or here
   } catch (e) {
     toast.error('Failed to save settings');
   }
 };
 
 const clearLogs = async () => {
-    if (!confirm('Are you sure you want to permanently delete all system logs?')) return;
-    try {
-        await axios.delete('/api/admin/logs');
-        logs.value = [];
-        totalLogs.value = 0;
-        toast.success('All logs cleared');
-    } catch (e) {
-        toast.error('Failed to clear logs');
-    }
+  if (!confirm('Are you sure you want to permanently delete all system logs?')) return;
+  try {
+    await adminStore.clearSystemLogs();
+    logs.value = [];
+    totalLogs.value = 0;
+  } catch (e) {
+    toast.error('Failed to clear logs');
+  }
 };
 
 const formatTimestamp = (ts: string) => {
@@ -209,22 +211,22 @@ const formatTimestamp = (ts: string) => {
 };
 
 const toggleMetadata = (id: string) => {
-    if (expandedMetadata.value.has(id)) expandedMetadata.value.delete(id);
-    else expandedMetadata.value.add(id);
+  if (expandedMetadata.value.has(id)) expandedMetadata.value.delete(id);
+  else expandedMetadata.value.add(id);
 };
 
 watch(autoRefresh, (val) => {
-    if (val) startPolling();
-    else stopPolling();
+  if (val) startPolling();
+  else stopPolling();
 });
 
 const startPolling = () => {
-    stopPolling();
-    timer = setInterval(() => fetchLogs(true), 5000);
+  stopPolling();
+  timer = setInterval(() => fetchLogs(true), 5000);
 };
 
 const stopPolling = () => {
-    if (timer) clearInterval(timer);
+  if (timer) clearInterval(timer);
 };
 
 onMounted(() => {
@@ -252,8 +254,18 @@ onUnmounted(() => {
   align-items: center;
   margin-bottom: 24px;
 
-  h1 { font-size: 24px; font-weight: 700; color: #fff; margin: 0; }
-  .subtitle { color: rgba(255, 255, 255, 0.5); font-size: 14px; margin-top: 4px; }
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+  }
+
+  .subtitle {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    margin-top: 4px;
+  }
 }
 
 .settings-panel {
@@ -261,8 +273,12 @@ onUnmounted(() => {
   padding: 24px;
   border: 1px solid rgba(59, 130, 246, 0.2);
 
-  h3 { margin: 0 0 20px 0; font-size: 16px; color: #fff; }
-  
+  h3 {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    color: #fff;
+  }
+
   .settings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -274,7 +290,12 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 8px;
 
-    label { font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; }
+    label {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+    }
   }
 
   .settings-hint {
@@ -299,23 +320,47 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 10px;
-    label { font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, 0.4); }
+
+    label {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.4);
+    }
   }
 
   .search-box {
     position: relative;
-    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.4; }
-    .search-input { padding-left: 32px; width: 240px; }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.4;
+    }
+
+    .search-input {
+      padding-left: 32px;
+      width: 240px;
+    }
   }
 
   .auto-refresh {
     display: flex;
     align-items: center;
     gap: 8px;
-    label { font-size: 12px; color: rgba(255, 255, 255, 0.4); }
+
+    label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+    }
   }
 
-  .log-count { font-size: 11px; font-weight: 800; color: rgba(255, 255, 255, 0.3); }
+  .log-count {
+    font-size: 11px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.3);
+  }
 }
 
 .console-wrapper {
@@ -347,42 +392,98 @@ onUnmounted(() => {
   padding: 2px 8px;
   border-radius: 4px;
 
-  &:hover { background: rgba(255, 255, 255, 0.03); }
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
 
-  .timestamp { color: #555; margin-right: 8px; flex-shrink: 0; }
-  .level { font-weight: 800; margin-right: 8px; width: 60px; display: inline-block; }
-  .source { color: #3b82f6; margin-right: 12px; opacity: 0.8; }
-  .message { color: #ddd; }
+  .timestamp {
+    color: #555;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
 
-  &.info .level { color: #10b981; }
-  &.warn { background: rgba(245, 158, 11, 0.03); .level { color: #f59e0b; } .message { color: #fbbf24; } }
-  &.error { background: rgba(239, 68, 68, 0.05); .level { color: #ef4444; } .message { color: #f87171; } }
-  &.debug { opacity: 0.5; .level { color: #8b5cf6; } }
+  .level {
+    font-weight: 800;
+    margin-right: 8px;
+    width: 60px;
+    display: inline-block;
+  }
+
+  .source {
+    color: #3b82f6;
+    margin-right: 12px;
+    opacity: 0.8;
+  }
+
+  .message {
+    color: #ddd;
+  }
+
+  &.info .level {
+    color: #10b981;
+  }
+
+  &.warn {
+    background: rgba(245, 158, 11, 0.03);
+
+    .level {
+      color: #f59e0b;
+    }
+
+    .message {
+      color: #fbbf24;
+    }
+  }
+
+  &.error {
+    background: rgba(239, 68, 68, 0.05);
+
+    .level {
+      color: #ef4444;
+    }
+
+    .message {
+      color: #f87171;
+    }
+  }
+
+  &.debug {
+    opacity: 0.5;
+
+    .level {
+      color: #8b5cf6;
+    }
+  }
 }
 
 .metadata-toggle {
-    display: inline-block;
-    font-size: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 1px 6px;
-    border-radius: 4px;
-    margin-left: 10px;
-    cursor: pointer;
-    color: rgba(255, 255, 255, 0.4);
-    &:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  display: inline-block;
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 10px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.4);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
 }
 
 .metadata-block {
-    margin: 8px 0 8px 24px;
-    padding: 12px;
-    background: #141414;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-    font-size: 11px;
-    color: #888;
+  margin: 8px 0 8px 24px;
+  padding: 12px;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #888;
 }
 
-.loading-overlay, .empty-logs {
+.loading-overlay,
+.empty-logs {
   position: absolute;
   inset: 0;
   display: flex;
@@ -402,7 +503,8 @@ onUnmounted(() => {
   padding: 8px;
 }
 
-.dark-input, .dark-select {
+.dark-input,
+.dark-select {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -424,13 +526,29 @@ onUnmounted(() => {
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.2);
-    &:hover { background: #ef4444; color: #fff; }
+
+    &:hover {
+      background: #ef4444;
+      color: #fff;
+    }
   }
 }
 
 /* Scrollbar styling */
-.console-lines::-webkit-scrollbar { width: 8px; }
-.console-lines::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-.console-lines::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 4px; }
-.console-lines::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
+.console-lines::-webkit-scrollbar {
+  width: 8px;
+}
+
+.console-lines::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.console-lines::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.console-lines::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
 </style>

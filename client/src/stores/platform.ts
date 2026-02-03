@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import api from '@/utils/api';
 import { toast } from 'vue-sonner';
 
 export const usePlatformStore = defineStore('platform', {
@@ -39,6 +40,20 @@ export const usePlatformStore = defineStore('platform', {
                 return res.data;
             } catch (error: any) {
                 console.error('Get Auth URL Error:', error);
+                throw error;
+            }
+        },
+
+        async handleCallback(platform: string, code: string) {
+            try {
+                const res = await api.post(`/platforms/callback/${platform}`, { code });
+                toast.success(`Successfully connected to ${platform}`);
+                // Refresh accounts
+                await this.fetchAccounts();
+                return res.data;
+            } catch (error: any) {
+                console.error('Callback Error:', error);
+                toast.error('Failed to complete authentication');
                 throw error;
             }
         },

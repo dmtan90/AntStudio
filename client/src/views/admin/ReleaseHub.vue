@@ -41,7 +41,7 @@
                     </div>
                     <div>
                         <label class="text-[10px] font-black uppercase text-gray-500">Artifact URL (S3/CDN)</label>
-                        <input v-model="form.downloadUrl" placeholder="https://cdn.antstudio.ai/builds/..."
+                        <input v-model="form.downloadUrl" :placeholder="'https://cdn.' + uiStore.appName.toLowerCase().replace(/\s+/g, '') + '.ai/builds/...'"
                             class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
                     </div>
                     <div class="flex justify-end gap-2 mt-6">
@@ -86,11 +86,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
+import { useUIStore } from '@/stores/ui';
 import { Download } from '@icon-park/vue-next';
 import api from '@/utils/api';
 import { toast } from 'vue-sonner';
 import { useAdminStore } from '@/stores/admin';
 
+const uiStore = useUIStore();
 const adminStore = useAdminStore();
 const releases = ref<any[]>([]);
 const showUpload = ref(false);

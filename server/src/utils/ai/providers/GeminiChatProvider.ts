@@ -10,7 +10,7 @@ export class GeminiChatProvider {
         return !!account;
     }
 
-    async generateText(prompt: string, modelId: string = 'gemini-1.5-flash', options: any = {}) {
+    async generateText(prompt: string | any[], modelId: string = 'gemini-1.5-flash', options: any = {}) {
         try {
             const account = await aiAccountManager.getOptimalAccount('text');
             if (!account) throw new Error('No active AI accounts available');
@@ -36,9 +36,14 @@ export class GeminiChatProvider {
         }
     }
 
-    async generateJson(prompt: string, modelId: string, options: any = {}) {
-        const jsonPrompt = `${prompt}\n\nRespond ONLY with valid JSON. No markdown.`;
-        const result = await this.generateText(jsonPrompt, modelId, options);
+    async generateJson(prompt: string | any[], modelId: string, options: any = {}) {
+        let fullPrompt: any[] = [];
+        if (Array.isArray(prompt)) {
+            fullPrompt = [...prompt, { text: "\n\nRespond ONLY with valid JSON. No markdown." }];
+        } else {
+            fullPrompt = [{ text: `${prompt}\n\nRespond ONLY with valid JSON. No markdown.` }];
+        }
+        const result = await this.generateText(fullPrompt, modelId, options);
         let text = result.text.trim();
         if (text.startsWith('```json')) text = text.replace(/```json\n?/, '').replace(/\n?```/, '');
         try {

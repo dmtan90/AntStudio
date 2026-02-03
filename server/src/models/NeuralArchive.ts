@@ -22,6 +22,10 @@ export interface INeuralArchive extends Document {
             description: string;
             date: Date;
         }>;
+        knowledgeEntries: Array<{
+            title: string;
+            content: string;
+        }>;
     };
 
     // Stylistic Weights (LoRAs/Embeddings)
@@ -32,6 +36,14 @@ export interface INeuralArchive extends Document {
             trigger?: string; // "in style of pixar"
         }>;
         embeddings: string[];
+    };
+
+    // Visual Identity (Digital Double)
+    visualIdentity?: {
+        avatarUrl?: string;      // The source photo
+        textureMapUrl?: string;  // The Gemini-synthesized UV map
+        glbUrl?: string;         // The base reference model
+        lastGenerated?: Date;
     };
 
     lastUpdated: Date;
@@ -56,6 +68,10 @@ const NeuralArchiveSchema = new Schema<INeuralArchive>({
             missionId: String,
             description: String,
             date: { type: Date, default: Date.now }
+        }],
+        knowledgeEntries: [{
+            title: String,
+            content: String
         }]
     },
 
@@ -66,6 +82,13 @@ const NeuralArchiveSchema = new Schema<INeuralArchive>({
             trigger: String
         }],
         embeddings: [String]
+    },
+
+    visualIdentity: {
+        avatarUrl: String,
+        textureMapUrl: String,
+        glbUrl: String,
+        lastGenerated: Date
     },
 
     lastUpdated: { type: Date, default: Date.now }

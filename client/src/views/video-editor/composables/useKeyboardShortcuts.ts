@@ -6,6 +6,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
+import { useUIStore } from '@/stores/ui';
 import { toast } from 'vue-sonner';
 import { defaultFont } from 'video-editor/constants/fonts';
 
@@ -36,12 +37,15 @@ const DEFAULT_SHORTCUTS: Omit<KeyboardShortcut, 'action'>[] = [
     { id: 'undo', name: 'Undo', description: 'Undo last action', category: 'editing', keys: ['ctrl', 'z'], enabled: true },
     { id: 'redo', name: 'Redo', description: 'Redo last action', category: 'editing', keys: ['ctrl', 'y'], enabled: true },
     { id: 'duplicate', name: 'Duplicate', description: 'Duplicate selected element', category: 'editing', keys: ['ctrl', 'd'], enabled: true },
+    { id: 'split-scene', name: 'Split Scene', description: 'Split active scene at playhead', category: 'editing', keys: ['s'], enabled: true },
 
     // Timeline
     { id: 'zoom-in', name: 'Zoom In', description: 'Zoom in timeline', category: 'timeline', keys: ['+'], enabled: true },
     { id: 'zoom-out', name: 'Zoom Out', description: 'Zoom out timeline', category: 'timeline', keys: ['-'], enabled: true },
     { id: 'frame-forward', name: 'Next Frame', description: 'Move forward one frame', category: 'timeline', keys: ['arrowright'], enabled: true },
+    { id: 'frame-forward', name: 'Next Frame', description: 'Move forward one frame', category: 'timeline', keys: ['arrowright'], enabled: true },
     { id: 'frame-backward', name: 'Previous Frame', description: 'Move backward one frame', category: 'timeline', keys: ['arrowleft'], enabled: true },
+    { id: 'add-marker', name: 'Add Marker', description: 'Add marker at playhead', category: 'timeline', keys: ['m'], enabled: true },
 
     // Selection
     { id: 'select-all', name: 'Select All', description: 'Select all elements', category: 'selection', keys: ['ctrl', 'a'], enabled: true },
@@ -61,12 +65,15 @@ const DEFAULT_SHORTCUTS: Omit<KeyboardShortcut, 'action'>[] = [
 export function useKeyboardShortcuts() {
     const editor = useEditorStore();
     const canvas = useCanvasStore();
+    const uiStore = useUIStore();
     const shortcuts = ref<KeyboardShortcut[]>([]);
     const showShortcutsPanel = ref(false);
 
+    const localStorageKey = computed(() => `${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_keyboard_shortcuts`);
+
     // Load custom shortcuts from localStorage
     const loadShortcuts = () => {
-        const saved = localStorage.getItem('antflow_keyboard_shortcuts');
+        const saved = localStorage.getItem(localStorageKey.value);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
@@ -92,7 +99,7 @@ export function useKeyboardShortcuts() {
 
     const saveShortcuts = () => {
         const toSave = shortcuts.value.map(({ action, ...rest }) => rest);
-        localStorage.setItem('antflow_keyboard_shortcuts', JSON.stringify(toSave));
+        localStorage.setItem(localStorageKey.value, JSON.stringify(toSave));
     };
 
     const getActionForShortcut = (id: string): (() => void) => {
@@ -105,13 +112,13 @@ export function useKeyboardShortcuts() {
                 }
             },
             'rewind': () => {
-                const current = canvas.timeline?.seek || 0;
-                canvas.timeline?.set('seek', Math.max(0, current - 5000) / 1000);
+                const current = editor.currentTime || 0;
+                editor.seekToGlobalTime(Math.max(0, current - 5));
             },
             'forward': () => {
-                const current = canvas.timeline?.seek || 0;
-                const max = canvas.timeline?.duration || 0;
-                canvas.timeline?.set('seek', Math.min(max, current + 5000) / 1000);
+                const current = editor.currentTime || 0;
+                const max = (editor.totalDuration || 0) / 1000;
+                editor.seekToGlobalTime(Math.min(max, current + 5));
             },
             'pause': () => canvas.timeline?.pause(),
             'goto-start': () => canvas.timeline?.set('seek', 0),
@@ -136,6 +143,12 @@ export function useKeyboardShortcuts() {
             'undo': () => canvas.history?.undo(),
             'redo': () => canvas.history?.redo(),
             'duplicate': () => canvas.cloner?.clone(),
+            'split-scene': () => editor.splitSceneAtPlayhead(),
+            'add-marker': () => {
+                const current = editor.currentTime || 0;
+                editor.addMarker(current, `Marker ${editor.markers.length + 1}`);
+                toast.success('Marker added');
+            },
             'zoom-in': () => {
                 const current = editor.timelineZoom;
                 editor.setTimelineZoom(Math.min(5, current + 0.2));

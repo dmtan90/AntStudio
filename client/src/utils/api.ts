@@ -117,4 +117,35 @@ export function getFileUrl(path: string | undefined | null, options?: { cached?:
     return url
 }
 
+
+export async function uploadFile(file: File | Blob, purpose: string = 'media'): Promise<string> {
+    const formData = new FormData()
+    // If it's a blob without name (like from MediaRecorder), giving it a name is good practice
+    // but FormData might handle it. explicit generic name is safer.
+    if (file instanceof Blob && !(file instanceof File)) {
+        const ext = file.type.split('/')[1] || 'webm';
+        formData.append('file', file, `recording-${Date.now()}.${ext}`)
+    } else {
+        formData.append('file', file)
+    }
+    formData.append('purpose', purpose)
+
+    const response = await api.post("/media/upload", formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+
+    // Handle AntStudio response structure
+    const data = response.data
+    // If interceptor already unwrapped it:
+    const key = data.key || (data.data && data.data.key)
+
+    if (!key) {
+        throw new Error('Upload failed: No key returned')
+    }
+
+    return `/api/s3/${key}`
+}
+
 export default api

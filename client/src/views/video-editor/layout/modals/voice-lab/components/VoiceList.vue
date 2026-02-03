@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import axios from 'axios';
+import { useVoiceStore } from '@/stores/voice';
 import { toast } from 'vue-sonner';
 import { PlayOne, Pause, User, Robot } from '@icon-park/vue-next';
 import Spinner from 'video-editor/components/ui/spinner.vue';
@@ -9,12 +9,12 @@ import Spinner from 'video-editor/components/ui/spinner.vue';
 const emit = defineEmits(['select']);
 const playingPreview = ref<string | null>(null);
 const audio = ref<HTMLAudioElement | null>(null);
+const voiceStore = useVoiceStore();
 
 const { data: voices, isLoading, error } = useQuery({
     queryKey: ['voices'],
     queryFn: async () => {
-        const { data } = await axios.get('/api/voice/list');
-        return data.data || [];
+        return await voiceStore.fetchVoices();
     },
     staleTime: 1000 * 60 * 5, // 5 mins
 });

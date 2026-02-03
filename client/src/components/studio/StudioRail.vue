@@ -23,6 +23,12 @@
             <span class="label">Vibe</span>
         </div>
 
+        <div class="rail-item" :class="{ active: activeTab === 'resources' }"
+            @click="$emit('update:activeTab', 'resources')">
+            <folder-open theme="outline" size="20" />
+            <span class="label">Assets</span>
+        </div>
+
         <div class="rail-item" :class="{ active: activeTab === 'guests' }" @click="$emit('update:activeTab', 'guests')">
             <peoples theme="outline" size="20" />
             <span class="label">AI Guests</span>
@@ -37,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { VideoTwo, Heart, Peoples, ConnectionPoint } from '@icon-park/vue-next';
+import { VideoTwo, Heart, Peoples, ConnectionPoint, FolderOpen } from '@icon-park/vue-next';
 import * as Icons from '@icon-park/vue-next';
 
 defineProps<{

@@ -53,6 +53,58 @@ export const useLicenseStore = defineStore('license', () => {
         return tiers.indexOf(tier.value) >= tiers.indexOf(requiredTier);
     }
 
+    async function deleteLicense(id: string) {
+        try {
+            await api.delete(`/licenses/${id}`)
+            licenses.value = licenses.value.filter(l => l._id !== id)
+            toast.success('License deleted successfully')
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function fetchAllLicenses() {
+        loading.value = true
+        try {
+            const response = await api.get('/license/all')
+            return response.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function fetchMyLicenses() {
+        try {
+            const res = await api.get('/license/my-licenses');
+            return res.data;
+        } catch (error: any) {
+            console.error('Failed to fetch licenses', error);
+        }
+    }
+
+    async function fetchPackages() {
+        try {
+            const res = await api.get('/license/packages');
+            return res.data;
+        } catch (error: any) {
+            console.error('Failed to fetch packages', error);
+        }
+    }
+
+    async function activateLicense(payload: { key: string }) {
+        try {
+            const res = await api.post('/license/activate', payload);
+            await fetchLicenseStatus(); // Upgrade state immediately
+            return res.data;
+        } catch (error: any) {
+            throw error; // Let caller handle UI feedback if needed
+        }
+    }
+
     return {
         key,
         status,
@@ -63,6 +115,10 @@ export const useLicenseStore = defineStore('license', () => {
         isPro,
         isEnterprise,
         fetchLicenseStatus,
-        checkFeature
+        checkFeature,
+        fetchMyLicenses,
+        fetchPackages,
+        activateLicense,
+        fetchAllLicenses
     };
 });

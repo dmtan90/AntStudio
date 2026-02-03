@@ -470,7 +470,10 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
             // Warehouse upload (stream from S3 or URL)
             // const axios = (await import('axios')).default;
 
-            // const videoRes = await axios.get(s3Url, { responseType: 'stream' });
+            // Ensure we have a URL, generating signed fallback if needed
+            const { getSignedS3Url } = await import('../utils/s3.js');
+            const videoUrl = s3Url || await getSignedS3Url(s3Key);
+            const videoRes = await axios.get(videoUrl, { responseType: 'stream' });
             // videoStream = videoRes.data;
         } else {
             return res.status(400).json({ success: false, error: 'No video source provided' });

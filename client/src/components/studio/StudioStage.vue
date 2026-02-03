@@ -21,14 +21,20 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue';
 import { Like } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
+import { useUIStore } from '@/stores/ui';
 
 defineProps<{
     activeLikes: any[];
 }>();
 
 const studioStore = useStudioStore();
+const uiStore = useUIStore();
+const appSlug = computed(() => uiStore.appName.toLowerCase().replace(/\s+/g, '-'));
+const guestDndType = computed(() => `application/${appSlug.value}-guest`);
+const activeRegion = ref<string | null>(null);
 
 const onDragOver = (event: DragEvent) => {
     // Simply allow drop

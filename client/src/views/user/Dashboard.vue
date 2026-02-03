@@ -101,11 +101,14 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useProjectStore } from '@/stores/project'
+import { useUIStore } from '@/stores/ui'
 import { storeToRefs } from 'pinia'
 import { PlayOne, Star, Credit } from '@icon-park/vue-next'
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue'
 import { useTranslations } from '@/composables/useTranslations'
 import AppTour from '@/components/ui/AppTour.vue'
+
+const uiStore = useUIStore()
 
 const { t, setLocale } = useTranslations()
 const router = useRouter()
@@ -127,7 +130,7 @@ const oneStep = [
 ]
 
 const onTourFinish = () => {
-  localStorage.setItem('antflow_create_project_tour_completed', 'true');
+  localStorage.setItem(`${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_create_project_tour_completed`, 'true');
   showTour.value = false;
 }
 
@@ -158,7 +161,7 @@ const handleCommand = (cmd: string) => {
 const initializeData = async () => {
   try {
     // Check if tour should be shown
-    if (!localStorage.getItem('antflow_create_project_tour_completed')) {
+    if (!localStorage.getItem(`${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_create_project_tour_completed`)) {
       setTimeout(() => {
         showTour.value = true
       }, 1000)
@@ -171,7 +174,7 @@ const initializeData = async () => {
     if (user.value?.language) {
       setLocale(user.value.language)
     }
-    await projectStore.fetchProjects(1, 20)
+    await projectStore.fetchProjects()
   } catch (error) {
     console.error('Failed to initialize dashboard:', error)
   }

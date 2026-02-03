@@ -112,12 +112,14 @@ import GSegmented from '@/components/ui/GSegmented.vue'
 import GMedia from '@/components/ui/GMedia.vue'
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue'
 import { useProjectStore } from '@/stores/project'
+import { useUIStore } from '@/stores/ui'
 import { storeToRefs } from 'pinia'
 import { getFileUrl } from '@/utils/api'
 
 const { t } = useTranslations()
 const router = useRouter()
 const projectStore = useProjectStore()
+const uiStore = useUIStore()
 
 const { projects, loadingList: loading } = storeToRefs(projectStore)
 const searchQuery = ref('')
@@ -147,7 +149,7 @@ const tourSteps = [
 ]
 
 const onTourFinish = () => {
-  localStorage.setItem('antflow_tour_completed', 'true')
+  localStorage.setItem(`${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_tour_completed`, 'true')
 }
 
 const handleProjectCreation = (type: string) => {
@@ -253,7 +255,7 @@ onMounted(() => {
   projectStore.fetchProjects()
 
   // Check if tour should be shown
-  if (!localStorage.getItem('antflow_tour_completed')) {
+  if (!localStorage.getItem(`${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_tour_completed`)) {
     setTimeout(() => {
       showTour.value = true
     }, 1000)

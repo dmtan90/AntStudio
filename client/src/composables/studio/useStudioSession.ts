@@ -1,7 +1,8 @@
 import { ref, watch, onUnmounted, type Ref } from 'vue';
-import axios from 'axios';
 import { useStudioStore } from '@/stores/studio';
 import { useUserStore } from '@/stores/user.js';
+import { usePlatformStore } from '@/stores/platform';
+import { useStreamingStore } from '@/stores/streaming';
 import { WebRTCPublisher } from '@/utils/ai/WebRTCPublisher.js';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService.js';
 import { useTranslations } from '@/composables/useTranslations';
@@ -22,6 +23,8 @@ export function useStudioSession(
     const { t } = useTranslations();
     const studioStore = useStudioStore();
     const userStore = useUserStore();
+    const platformStore = usePlatformStore();
+    const streamingStore = useStreamingStore();
 
     const isLive = ref(false);
     const isRecording = ref(false);
@@ -64,21 +67,23 @@ export function useStudioSession(
                     const acc = options.availableAccounts.value.find(a => a._id === pId);
                     if (acc && !acc.streamKey && (acc.platform === 'youtube' || acc.platform === 'ant-media')) {
                         toast.info(`Configuring live stream for ${acc.accountName}...`);
-                        const infoRes = await axios.get(`/api/platforms/${pId}/live-info`, {
-                            params: {
-                                title: options.currentProject.value.title,
-                                description: 'Live via AntFlow'
-                            }
+                        const data = await platformStore.fetchLiveInfo(pId, {
+                            title: options.currentProject.value.title,
+                            description: 'Live via AntFlow'
                         });
-                        if (infoRes.data.success) {
-                            acc.streamKey = infoRes.data.data.streamKey;
-                            acc.rtmpUrl = infoRes.data.data.rtmpUrl;
+
+                        // Store updates the account automatically, but we might need to update our local reference if it's a copy
+                        // However, availableAccounts is a Ref passed in, and likely comes from store or is reactive.
+                        // But just in case, fetchLiveInfo returns data which has streamKey/rtmpUrl
+                        if (data) {
+                            acc.streamKey = data.streamKey;
+                            acc.rtmpUrl = data.rtmpUrl;
                         }
                     }
                 }
 
                 const quality = options.qualityPresets[options.streamQuality.value];
-                const res = await axios.post('/api/streaming/start', {
+                const resData = await streamingStore.startStream({
                     platformAccountIds: options.selectedPlatforms.value,
                     sessionId: currentSessionId.value,
                     source: 'webrtc',
@@ -91,8 +96,20 @@ export function useStudioSession(
                     }
                 });
 
-                if (res.data.success) {
-                    const { sessionId, mode, amsAccount } = res.data.data;
+                if (resData) {
+                    // startStream returns res.data which corresponds to 'data' in axios response? 
+                    // Let's check streaming.ts: returns res.data.
+                    // And res.data usually has { success: true, data: { ... } } or just the data content?
+                    // api.js usually returns response object. 
+                    // streaming.ts: const res = await api.post(...) -> return res.data
+                    // In previous axios call: res.data.data
+                    // So here resData is likely { success: true, data: {...} } or just the object?
+                    // Wait, api.js usually returns the axios response.
+                    // streaming.ts says `return res.data`.
+                    // So resData IS the body.
+
+                    const { sessionId, mode, amsAccount } = resData.data || resData; // Handle potential wrapping
+
                     currentSessionId.value = sessionId;
                     studioStore.currentSessionId = sessionId;
 
@@ -111,7 +128,8 @@ export function useStudioSession(
             } catch (e: any) {
                 console.error(e);
                 cleanupPublishers();
-                toast.error(e.response?.data?.error || t('studio.messages.liveError'));
+                // Error toast handled in store mostly, but fallback:
+                // toast.error(e.response?.data?.error || t('studio.messages.liveError'));
             }
         } else {
             stopLive();
@@ -127,7 +145,7 @@ export function useStudioSession(
 
         try {
             if (currentSessionId.value) {
-                await axios.post('/api/streaming/stop', { sessionId: currentSessionId.value });
+                await streamingStore.stopStream(currentSessionId.value);
                 currentSessionId.value = null;
             }
         } catch (e) { }

@@ -52,6 +52,7 @@ export class Editor {
   public page: number;
   public pages: Canvas[];
   public status: EditorStatus;
+  public markers: { id: string, time: number, label?: string }[] = [];
 
   public sidebarLeft: string | null;
   public sidebarRight: string | null;
@@ -502,13 +503,20 @@ export class Editor {
     return page;
   }
 
-  addPage(template?: EditorTemplatePage) {
+  addPage(template?: EditorTemplatePage, index?: number) {
     const canvas = createInstance(Canvas, this);
     if (template) {
       canvas.template?.set(template);
     }
-    this.pages.push(canvas);
-    this.onChangeActivePage(this.pages.length - 1);
+
+    if (typeof index === 'number') {
+      this.pages.splice(index, 0, canvas);
+      this.onChangeActivePage(index);
+    } else {
+      this.pages.push(canvas);
+      this.onChangeActivePage(this.pages.length - 1);
+    }
+
     this.onModified?.();
   }
 
@@ -539,7 +547,7 @@ export class Editor {
     const length = this.pages.length;
     if (index < length) {
       const template = await this.exportPageTemplate(index);
-      this.addPage(template);
+      this.addPage(template, index + 1);
     }
   }
 
@@ -589,6 +597,113 @@ export class Editor {
         this.mode = this.mode === "creator" ? "adapter" : "creator";
         break;
     }
+  }
+
+  addMarker(time: number, label?: string) {
+    this.markers.push({ id: nanoid(), time, label });
+    this.markers.sort((a, b) => a.time - b.time);
+    this.onModified?.();
+  }
+
+  removeMarker(id: string) {
+    const index = this.markers.findIndex(m => m.id === id);
+    if (index !== -1) {
+      this.markers.splice(index, 1);
+      this.onModified?.();
+    }
+  }
+
+  async splitPage(index: number, timeMs: number) {
+    const page = this.pages[index];
+    if (!page) return;
+    const originalDuration = page.timeline.duration;
+    if (timeMs <= 100 || timeMs >= originalDuration - 100) return;
+
+    // 1. Export current page template
+    const template = await this.exportPageTemplate(index);
+
+    // 2. Adjust first page duration and elements
+    page.timeline.set("duration", timeMs / 1000);
+    const objects1 = page.instance.getObjects();
+    objects1.forEach(obj => {
+      if (obj.name === 'artboard') return;
+      const offset = obj.meta?.offset || 0;
+      const duration = obj.meta?.duration || 0;
+      if (offset >= timeMs) {
+        page.instance.remove(obj);
+      } else if (offset + duration > timeMs) {
+        page.onChangeObjectTimelineProperty(obj, "duration", timeMs - offset);
+      }
+    });
+
+    // Handle audio for page 1
+    page.audio.elements.forEach(audio => {
+      const offset = (audio.offset || 0) * 1000;
+      const duration = (audio.timeline || 0) * 1000;
+      if (offset >= timeMs) {
+        page.audio.delete(audio.id);
+      } else if (offset + duration > timeMs) {
+        page.audio.update(audio.id, { timeline: (timeMs - offset) / 1000 });
+      }
+    });
+
+    // 3. Manipulate template for Page 2
+    const sceneData2 = JSON.parse(template.data.scene);
+    const audios2 = [...(template.data.audios || [])];
+
+    // Adjust scene elements for Page 2
+    sceneData2.objects = sceneData2.objects.filter((obj: any) => {
+      if (obj.name === 'artboard') return true;
+      const offset = obj.meta?.offset || 0;
+      const duration = obj.meta?.duration || 0;
+      return offset + duration > timeMs;
+    }).map((obj: any) => {
+      if (obj.name === 'artboard') return obj;
+      const offset = obj.meta?.offset || 0;
+      const duration = obj.meta?.duration || 0;
+      if (offset < timeMs) {
+        // Spanning element: trim and shift offset to 0
+        const cutAmount = timeMs - offset;
+        obj.meta.offset = 0;
+        obj.meta.duration = duration - cutAmount;
+        if (obj.type === 'video' || obj.is_video) {
+          obj.trimStart = (obj.trimStart || 0) + cutAmount;
+        }
+      } else {
+        // Future element: just shift offset
+        obj.meta.offset = offset - timeMs;
+      }
+      return obj;
+    });
+
+    // Adjust audios for Page 2
+    const filteredAudios2 = audios2.filter((audio: any) => {
+      const offset = (audio.offset || 0) * 1000;
+      const duration = (audio.timeline || 0) * 1000;
+      return offset + duration > timeMs;
+    }).map((audio: any) => {
+      const offset = (audio.offset || 0) * 1000;
+      const duration = (audio.timeline || 0) * 1000;
+      if (offset < timeMs) {
+        const cutAmount = timeMs - offset;
+        audio.offset = 0;
+        audio.timeline = (duration - cutAmount) / 1000;
+        audio.trim = (audio.trim || 0) + (cutAmount / 1000);
+      } else {
+        audio.offset = (offset - timeMs) / 1000;
+      }
+      return audio;
+    });
+
+    template.data.scene = JSON.stringify(sceneData2);
+    template.data.audios = filteredAudios2;
+    template.duration = originalDuration - timeMs;
+    template.id = undefined; // Generate a new ID
+
+    // 4. Insert new page after current
+    this.addPage(template, index + 1);
+
+    this.onModified?.();
   }
 
   onToggleTimeline(mode?: "open" | "close") {

@@ -59,7 +59,7 @@ interface ISegment {
     }
     generatedAudio?: {
         s3Key: string
-        s3Url: string
+        s3Url?: string
         status: 'pending' | 'generating' | 'completed' | 'failed'
         generatedAt?: Date
     }
@@ -173,7 +173,7 @@ export interface IProject extends Document {
         scriptFile?: {
             originalName: string
             s3Key: string
-            s3Url: string
+            s3Url?: string
             fileType: 'txt' | 'pdf' | 'docx' | 'pptx'
             uploadedAt: Date
         }
@@ -200,7 +200,7 @@ export interface IProject extends Document {
     }
     finalVideo?: {
         s3Key: string
-        s3Url: string
+        s3Url?: string
         reviewKey?: string
         reviewUrl?: string
         duration: number
@@ -208,7 +208,7 @@ export interface IProject extends Document {
         fileSize: number
         backgroundMusic?: {
             s3Key: string
-            s3Url: string
+            s3Url?: string
             volume: number
         }
         subtitles?: {

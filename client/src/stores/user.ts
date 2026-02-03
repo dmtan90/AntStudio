@@ -73,15 +73,31 @@ export const useUserStore = defineStore('user', () => {
         }
     }
 
-    async function register(userData: any) {
+    async function register(payload: any) {
         try {
-            const response = await api.post('/auth/register', userData)
-            const { token: newToken, user: createdUser } = response.data
-            setToken(newToken)
-            setUser(createdUser)
+            const response = await api.post('/auth/register', payload)
+            if (response.data.token) {
+                token.value = response.data.token
+                user.value = response.data.user
+                setToken(response.data.token)
+            }
             return response.data
         } catch (error) {
-            handleError(error)
+            throw error
+        }
+    }
+
+    async function registerOwner(payload: any) {
+        try {
+            const response = await api.post('/auth/register-owner', payload)
+            // Owner registration might not auto-login or might return token
+            if (response.data.token) {
+                token.value = response.data.token
+                user.value = response.data.user
+                setToken(response.data.token)
+            }
+            return response.data
+        } catch (error) {
             throw error
         }
     }

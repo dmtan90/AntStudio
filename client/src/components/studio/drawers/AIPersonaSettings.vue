@@ -3,23 +3,53 @@
         <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">Neural Personas</h4>
         <div class="grid grid-cols-1 gap-4">
             <div v-for="g in personas" :key="g.id"
-                class="p-4 rounded-3xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-blue-500/30 cursor-pointer transition-all"
+                class="p-4 rounded-3xl bg-white/5 border border-white/5 flex flex-col gap-4 group hover:border-blue-500/30 cursor-pointer transition-all"
                 @click="$emit('summon-guest', g)">
-                <div class="flex items-center gap-4">
-                    <div class="relative">
-                        <el-avatar :src="g.avatarUrl" :size="48"
-                            class="border-2 border-white/10 group-hover:border-blue-500/50 transition-all" />
-                        <div v-if="g.active"
-                            class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-black flex items-center justify-center">
-                            <check theme="outline" size="8" fill="#000" />
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <el-avatar :src="g.avatarUrl" :size="48"
+                                class="border-2 border-white/10 group-hover:border-blue-500/50 transition-all" />
+                            <div v-if="g.active"
+                                class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-black flex items-center justify-center">
+                                <check theme="outline" size="8" fill="#000" />
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-widest">{{ g.name }}</p>
+                            <p class="text-[9px] opacity-40 italic">{{ g.personality || 'Synthetic Intelligence' }}</p>
                         </div>
                     </div>
-                    <div>
-                        <p class="text-xs font-black uppercase tracking-widest">{{ g.name }}</p>
-                        <p class="text-[9px] opacity-40 italic">{{ g.personality || 'Synthetic Intelligence' }}</p>
+                    <el-switch v-model="g.active" @change="$emit('toggle-guest', g)" @click.stop />
+                </div>
+
+                <!-- Interaction controls for active guests -->
+                <div v-if="g.active" class="flex flex-col gap-3 animate-in fade-in slide-in-from-top-1" @click.stop>
+                    <div class="flex gap-2">
+                        <button
+                            class="flex-1 py-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                            @click="$emit('talk-guest', { id: g.id, prompt: 'Introduce yourself to the audience' })">
+                            Introduce
+                        </button>
+                        <button
+                            class="flex-1 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                            @click="$emit('talk-guest', { id: g.id, prompt: 'React to the current vibe' })">
+                            React
+                        </button>
+                    </div>
+
+                    <!-- Custom Prompt Input -->
+                    <div class="relative flex items-center bg-white/5 rounded-2xl border border-white/5 p-1">
+                        <input v-model="customPrompts[g.id]" type="text"
+                            class="bg-transparent border-none text-[10px] text-white px-3 py-1.5 focus:ring-0 w-full placeholder:opacity-20"
+                            placeholder="Type a message..." @keydown.enter="sendCustomPrompt(g.id)" />
+                        <button
+                            class="w-8 h-8 flex items-center justify-center rounded-xl bg-blue-500 hover:bg-blue-400 text-black transition-all"
+                            :disabled="!customPrompts[g.id]" @click="sendCustomPrompt(g.id)">
+                            <send theme="outline" size="14" />
+                        </button>
                     </div>
                 </div>
-                <el-switch v-model="g.active" @change="$emit('toggle-guest', g)" @click.stop />
             </div>
         </div>
 
@@ -36,11 +66,22 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Magic } from '@icon-park/vue-next';
+import { ref, reactive } from 'vue';
+import { Check, Magic, Send } from '@icon-park/vue-next';
 
 defineProps<{
     personas: any[];
 }>();
 
-defineEmits(['summon-guest', 'toggle-guest']);
+const emit = defineEmits(['summon-guest', 'toggle-guest', 'talk-guest']);
+
+const customPrompts = reactive<Record<string, string>>({});
+
+const sendCustomPrompt = (id: string) => {
+    const prompt = customPrompts[id];
+    if (!prompt) return;
+
+    emit('talk-guest', { id, prompt });
+    customPrompts[id] = '';
+};
 </script>

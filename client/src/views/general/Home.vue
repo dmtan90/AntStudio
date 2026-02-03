@@ -4,15 +4,10 @@
     <!-- Hero Section -->
     <section id="overview" class="hero-cinematic">
       <div class="video-bg-container">
-        <video 
-          autoplay 
-          muted 
-          loop 
-          playsinline 
-          class="video-bg"
-          :poster="heroBackground"
-        >
-          <source :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/RNDR_TunnelVidoes_stretched_005_1440x1080.mp4')" type="video/mp4">
+        <video autoplay muted loop playsinline class="video-bg" :poster="heroBackground">
+          <source
+            :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/RNDR_TunnelVidoes_stretched_005_1440x1080.mp4')"
+            type="video/mp4">
         </video>
         <div class="video-overlay"></div>
       </div>
@@ -20,10 +15,10 @@
       <div class="hero-content">
         <transition name="fade-up" appear>
           <div class="hero-inner">
-            <h1 class="glow-title">AntStudio</h1>
+            <h1 class="glow-title">{{ uiStore.appName }}</h1>
             <p class="hero-tagline">Where the next wave of storytelling happens with AI</p>
             <div class="action-row">
-              <router-link to="/dashboard" class="hero-btn-primary">Start with AntStudio</router-link>
+              <router-link to="/dashboard" class="hero-btn-primary">Start with {{ uiStore.appName }}</router-link>
             </div>
           </div>
         </transition>
@@ -33,23 +28,18 @@
     <!-- App Intro -->
     <section class="app-intro">
       <div class="container">
-        <h2 class="intro-title">AntStudio is an AI filmmaking tool built with and for creatives.</h2>
+        <h2 class="intro-title">{{ uiStore.appName }} is an AI filmmaking tool built with and for creatives.</h2>
         <p class="intro-text">
           Seamlessly create cinematic clips, scenes and stories using <br />
           next-generation capable generative AI models.
         </p>
-        
+
         <div class="app-frame glass">
           <div class="frame-content">
-            <video 
-              autoplay 
-              muted 
-              loop 
-              playsinline 
-              class="frame-video"
-              :poster="heroBackground"
-            >
-              <source :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4')" type="video/mp4">
+            <video autoplay muted loop playsinline class="frame-video" :poster="heroBackground">
+              <source
+                :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4')"
+                type="video/mp4">
             </video>
             <div class="play-trigger">
               <play-one theme="filled" size="64" fill="#fff" />
@@ -63,16 +53,12 @@
     <section id="capabilities" class="features-tabs">
       <div class="container">
         <div class="tab-triggers">
-          <button 
-            v-for="tab in featureTabs" 
-            :key="tab.id"
-            @click="activeFeature = tab.id"
-            :class="{ active: activeFeature === tab.id }"
-          >
+          <button v-for="tab in featureTabs" :key="tab.id" @click="activeFeature = tab.id"
+            :class="{ active: activeFeature === tab.id }">
             {{ tab.name }}
           </button>
         </div>
-        
+
         <div class="tab-content">
           <transition name="fade-slide" mode="out-in">
             <div :key="activeFeature" class="feature-detail-v2">
@@ -100,11 +86,13 @@
         <div class="section-top">
           <h2 class="section-title">Partners</h2>
         </div>
-        
+
         <div class="partners-grid-v2">
           <div class="partner-card glass">
             <video autoplay muted loop playsinline class="partner-video">
-              <source :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4')" type="video/mp4">
+              <source
+                :src="getFileUrl('https://storage.googleapis.com/pinhole-about-assets-prod-us/video-section/video.mp4')"
+                type="video/mp4">
             </video>
             <div class="partner-info">
               <h3>Collaborating with the world's best creators</h3>
@@ -121,19 +109,13 @@
         <div class="gallery-header">
           <router-link to="/flow-gallery" class="watch-short-btn">Watch Short Films</router-link>
         </div>
-        
+
         <div class="gallery-focus-grid">
-          <div v-for="(img, idx) in galleryImages" :key="idx" class="gallery-focus-item" :class="{ 'focal': img.focal }">
+          <div v-for="(img, idx) in galleryImages" :key="idx" class="gallery-focus-item"
+            :class="{ 'focal': img.focal }">
             <div class="img-wrapper glass">
-              <video 
-                v-if="img.focal"
-                autoplay 
-                muted 
-                loop 
-                playsinline 
-                class="gallery-video"
-                :poster="getFileUrl(img.src)"
-              >
+              <video v-if="img.focal" autoplay muted loop playsinline class="gallery-video"
+                :poster="getFileUrl(img.src)">
                 <source :src="getFileUrl(img.video)" type="video/mp4">
               </video>
               <img v-else :src="getFileUrl(img.src)" :alt="img.title" />
@@ -149,7 +131,7 @@
       <div class="container">
         <h2 class="pricing-title">Start creating</h2>
         <p class="pricing-subtitle">Monthly credits reset at no charge or upgrade to one of our plans below.</p>
-        
+
         <div class="pricing-grid">
           <!-- Plans -->
           <div v-for="plan in plans" :key="plan.name" class="price-item" :class="{ highlighted: plan.name === 'Pro' }">
@@ -192,7 +174,7 @@
     <!-- Footer -->
     <footer class="ant-footer">
       <div class="container footer-content">
-        <div class="footer-left">AntStudio</div>
+        <div class="footer-left">{{ uiStore.appName }}</div>
         <div class="footer-right">
           <router-link to="/privacy">Privacy</router-link>
           <router-link to="/terms">Terms of Service</router-link>
@@ -205,7 +187,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useConfigStore } from '@/stores/config'
-import { 
+import { useUIStore } from '@/stores/ui'
+import { storeToRefs } from 'pinia'
+import {
   PlayOne,
   Comments,
   Info,
@@ -226,31 +210,32 @@ const activeFeature = ref('consistent')
 const activeSection = ref('overview')
 
 const configStore = useConfigStore()
+const uiStore = useUIStore()
 const { plans, creditPackages } = storeToRefs(configStore)
 
 const featureTabs = [
-  { 
-    id: 'consistent', 
-    name: 'Consistent', 
-    content: 'Bring your own assets, or generate them in AntFlow. Then easily manage and reference them as you start to generate clips.',
+  {
+    id: 'consistent',
+    name: 'Consistent',
+    content: `Bring your own assets, or generate them in ${uiStore.appName}. Then easily manage and reference them as you start to generate clips.`,
     videos: [
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Consistent/16x9/01_Ingredients_Edit%201%2016x9_250516d.mp4',
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Consistent/16x9/02_Ingredients%20to%20video_Edit03_16x9_250516e.mp4',
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Consistent/16x9/03%20Frames%20to%20Video_250516a.mp4'
     ]
   },
-  { 
-    id: 'seamless', 
-    name: 'Seamless', 
+  {
+    id: 'seamless',
+    name: 'Seamless',
     content: 'Transition between scenes with mathematical precision. AI-powered world building that feels organic and immersive.',
     videos: [
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Seamless/16x9/04%20Scene%20Builder_250513c_1.mp4',
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Seamless/16x9/05_JumpTo_250516a.mp4'
     ]
   },
-  { 
-    id: 'cinematic', 
-    name: 'Cinematic', 
+  {
+    id: 'cinematic',
+    name: 'Cinematic',
     content: 'Elevate your story with world-class camera controls and cinematic models designed for the big screen.',
     videos: [
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Cinematic/16x9/07_CameraControls_Edit02%2016x9_250516e.mp4',
@@ -264,41 +249,41 @@ const currentFeature = computed(() => {
 })
 
 const galleryImages = ref([
-  { 
-    src: gallery7, 
-    title: 'ZOO BREAK', 
+  {
+    src: gallery7,
+    title: 'ZOO BREAK',
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/Animals-in-Random-Places.mp4',
-    focal: false 
+    focal: false
   },
-  { 
-    src: galleryMicroverse, 
-    title: 'MICROVERSE', 
+  {
+    src: galleryMicroverse,
+    title: 'MICROVERSE',
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/Under-the-Microscope.mp4',
-    focal: true 
+    focal: true
   },
-  { 
-    src: gallery9, 
-    title: 'WINDOW SEAT', 
+  {
+    src: gallery9,
+    title: 'WINDOW SEAT',
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/View-from-Train.mp4',
-    focal: false 
+    focal: false
   },
-  { 
-    src: galleryRocket, 
-    title: 'COTTON SPACE', 
+  {
+    src: galleryRocket,
+    title: 'COTTON SPACE',
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/It_sAll-Yarn.mp4',
-    focal: false 
+    focal: false
   },
-  { 
-    src: gallery10, 
-    title: 'GIRAFFE RUN', 
+  {
+    src: gallery10,
+    title: 'GIRAFFE RUN',
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/Tiny-Planet-Big-People.mp4',
-    focal: false 
+    focal: false
   },
-  { 
-    src: gallery11, 
-    title: 'SAND WAVES', 
+  {
+    src: gallery11,
+    title: 'SAND WAVES',
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/Queso-Mundo.mp4',
-    focal: false 
+    focal: false
   }
 ])
 
@@ -307,7 +292,7 @@ let galleryTimer: any = null
 const rotateGallery = () => {
   const currentIndex = galleryImages.value.findIndex(img => img.focal)
   const nextIndex = (currentIndex + 1) % galleryImages.value.length
-  
+
   galleryImages.value.forEach((img, idx) => {
     img.focal = idx === nextIndex
   })
@@ -407,7 +392,7 @@ section {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%);
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.7) 100%);
 }
 
 .hero-content {
@@ -423,7 +408,7 @@ section {
   margin: 0;
   line-height: 0.8;
   letter-spacing: -6px;
-  background: linear-gradient(to bottom, #fff 40%, rgba(255,255,255,0.4));
+  background: linear-gradient(to bottom, #fff 40%, rgba(255, 255, 255, 0.4));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -432,15 +417,17 @@ section {
 
 @keyframes glow-blur {
   0% {
-    filter: blur(0px) drop-shadow(0 0 10px rgba(255,255,255,0));
+    filter: blur(0px) drop-shadow(0 0 10px rgba(255, 255, 255, 0));
     opacity: 1;
   }
+
   50% {
-    filter: blur(4px) drop-shadow(0 0 30px rgba(255,255,255,0.4));
+    filter: blur(4px) drop-shadow(0 0 30px rgba(255, 255, 255, 0.4));
     opacity: 0.8;
   }
+
   100% {
-    filter: blur(0px) drop-shadow(0 0 10px rgba(255,255,255,0));
+    filter: blur(0px) drop-shadow(0 0 10px rgba(255, 255, 255, 0));
     opacity: 1;
   }
 }
@@ -468,7 +455,7 @@ section {
 
 .hero-btn-primary:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(255,255,255,0.1);
+  box-shadow: 0 20px 40px rgba(255, 255, 255, 0.1);
 }
 
 /* Intro Section */
@@ -487,7 +474,7 @@ section {
 
 .intro-text {
   font-size: 20px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1.6;
   margin-bottom: 80px;
 }
@@ -519,7 +506,7 @@ section {
   transform: translate(-50%, -50%);
   width: 100px;
   height: 100px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
   border-radius: 50%;
   display: flex;
@@ -543,7 +530,7 @@ section {
   justify-content: flex-start;
   gap: 60px;
   margin-bottom: 60px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 20px;
 }
 
@@ -635,7 +622,7 @@ section {
 .partner-video {
   width: 100%;
   border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
 .partner-info h3 {
@@ -647,7 +634,7 @@ section {
 
 .partner-info p {
   font-size: 18px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1.6;
 }
 
@@ -725,10 +712,11 @@ section {
   overflow: hidden;
   border-radius: 20px;
   margin-bottom: 24px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
-.gallery-video, .img-wrapper img {
+.gallery-video,
+.img-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -761,7 +749,7 @@ section {
 
 .pricing-subtitle {
   font-size: 18px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
   margin-bottom: 80px;
 }
 
@@ -770,7 +758,7 @@ section {
   font-weight: 700;
   margin: 60px 0 40px;
   opacity: 0.8;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 20px;
 }
 
@@ -791,7 +779,7 @@ section {
   min-width: 280px;
   max-width: 400px;
   text-align: left;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 40px;
 }
 
@@ -826,7 +814,7 @@ section {
 .plan-features li {
   margin-bottom: 12px;
   font-size: 16px;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .price-item.highlighted {
@@ -856,7 +844,7 @@ section {
 /* Footer */
 .ant-footer {
   padding: 120px 0 40px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .footer-content {
@@ -892,35 +880,69 @@ section {
 .fade-up-enter-active {
   transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .fade-up-enter-from {
   opacity: 0;
   transform: translateY(40px);
 }
 
-.fade-slide-enter-active, .fade-slide-leave-active {
+.fade-slide-enter-active,
+.fade-slide-leave-active {
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .fade-slide-enter-from {
   opacity: 0;
   transform: translateX(20px);
 }
+
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateX(-20px);
 }
 
 @media (max-width: 1024px) {
-  .hero-inner h1 { font-size: 100px; }
-  .feature-detail-v2 { grid-template-columns: 1fr; gap: 40px; }
-  .pricing-grid { flex-direction: column; align-items: center; }
-  .price-item { border-top: 1px solid rgba(255,255,255,0.1); width: 100%; }
+  .hero-inner h1 {
+    font-size: 100px;
+  }
+
+  .feature-detail-v2 {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .pricing-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .price-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
-  .nav-links-center, .nav-right { display: none; }
-  .gallery-focus-grid { grid-template-columns: 1fr; }
-  .tab-triggers { gap: 30px; }
-  .tab-triggers button { font-size: 24px; }
-  .glow-title { font-size: 80px; }
+
+  .nav-links-center,
+  .nav-right {
+    display: none;
+  }
+
+  .gallery-focus-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tab-triggers {
+    gap: 30px;
+  }
+
+  .tab-triggers button {
+    font-size: 24px;
+  }
+
+  .glow-title {
+    font-size: 80px;
+  }
 }
 </style>

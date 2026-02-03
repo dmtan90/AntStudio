@@ -310,6 +310,9 @@ importers:
       nodemailer:
         specifier: ^7.0.12
         version: 7.0.12
+      pdf-img-convert:
+        specifier: ^2.0.0
+        version: 2.0.0
       pdf-parse:
         specifier: ^2.4.5
         version: 2.4.5
@@ -4917,6 +4920,9 @@ packages:
     resolution: {integrity: sha512-p3EcsicXjit7SaskXHs1hA91QxgTw46Fv6EFKKGS5DRFLD8yKnohjF3hxoju94b/OcMZoQukzpPpBE9uLVKzgQ==}
     engines: {node: '>= 0.4'}
 
+  is-url@1.2.4:
+    resolution: {integrity: sha512-ITvGim8FhRiYe4IQ5uHSkj7pVaPDrCTkNd3yq3cV7iZAcJdHTUMPMEHcqSOy9xZ9qFenQCvi+2wjH9a1nXqHww==}
+
   is-weakmap@2.0.2:
     resolution: {integrity: sha512-K5pXYOm9wqY1RgjpL3YTkF39tni1XajUIkawTLUo9EZEVUFga5gSQJF8nNS7ZwJQ02y+1YCNYcMh+HIf1ZqE+w==}
     engines: {node: '>= 0.4'}
@@ -5665,10 +5671,17 @@ packages:
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
+  pdf-img-convert@2.0.0:
+    resolution: {integrity: sha512-aRKW7ObK0NtKFJGFyNe8zQujfTTrOIGBT8TuzLYwxlqhhz43mQyZW4Wa/MZ8HFrlaNhJGevGFmt2wWuCJ2plfw==}
+
   pdf-parse@2.4.5:
     resolution: {integrity: sha512-mHU89HGh7v+4u2ubfnevJ03lmPgQ5WU4CxAVmTSh/sxVTEDYd1er/dKS/A6vg77NX47KTEoihq8jZBLr8Cxuwg==}
     engines: {node: '>=20.16.0 <21 || >=22.3.0'}
     hasBin: true
+
+  pdfjs-dist@4.10.38:
+    resolution: {integrity: sha512-/Y3fcFrXEAsMjJXeL9J8+ZG9U01LbuWaYypvDW2ycW1jL269L3js3DVBjDJ0Up9Np1uqDXsDrRihHANhZOlwdQ==}
+    engines: {node: '>=20'}
 
   pdfjs-dist@5.4.296:
     resolution: {integrity: sha512-DlOzet0HO7OEnmUmB6wWGJrrdvbyJKftI1bhMitK7O2N8W2gc757yyYBbINy9IDafXAV9wmKr9t7xsTaNKRG5Q==}
@@ -9263,7 +9276,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
-    optional: true
 
   '@mediapipe/tasks-vision@0.10.32': {}
 
@@ -11111,8 +11123,7 @@ snapshots:
   abab@2.0.6:
     optional: true
 
-  abbrev@1.1.1:
-    optional: true
+  abbrev@1.1.1: {}
 
   abbrev@2.0.0: {}
 
@@ -11217,8 +11228,7 @@ snapshots:
 
   append-field@1.0.0: {}
 
-  aproba@2.1.0:
-    optional: true
+  aproba@2.1.0: {}
 
   archiver-utils@5.0.2:
     dependencies:
@@ -11247,7 +11257,6 @@ snapshots:
     dependencies:
       delegates: 1.0.0
       readable-stream: 3.6.2
-    optional: true
 
   arg@4.1.3: {}
 
@@ -11474,7 +11483,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
-    optional: true
 
   chart.js@4.5.1:
     dependencies:
@@ -11519,8 +11527,7 @@ snapshots:
     dependencies:
       readdirp: 4.1.2
 
-  chownr@2.0.0:
-    optional: true
+  chownr@2.0.0: {}
 
   chownr@3.0.0: {}
 
@@ -11561,8 +11568,7 @@ snapshots:
       color-name: 2.1.0
     optional: true
 
-  color-support@1.1.3:
-    optional: true
+  color-support@1.1.3: {}
 
   color@5.0.3:
     dependencies:
@@ -11614,8 +11620,7 @@ snapshots:
       ini: 1.3.8
       proto-list: 1.2.4
 
-  console-control-strings@1.1.0:
-    optional: true
+  console-control-strings@1.1.0: {}
 
   content-disposition@0.5.4:
     dependencies:
@@ -11752,7 +11757,6 @@ snapshots:
   decompress-response@4.2.1:
     dependencies:
       mimic-response: 2.1.0
-    optional: true
 
   deep-rename-keys@0.2.1:
     dependencies:
@@ -11775,8 +11779,7 @@ snapshots:
 
   delayed-stream@1.0.0: {}
 
-  delegates@1.0.0:
-    optional: true
+  delegates@1.0.0: {}
 
   denque@2.1.0: {}
 
@@ -12375,7 +12378,6 @@ snapshots:
   fs-minipass@2.1.0:
     dependencies:
       minipass: 3.3.6
-    optional: true
 
   fs.realpath@1.0.0: {}
 
@@ -12412,7 +12414,6 @@ snapshots:
       string-width: 4.2.3
       strip-ansi: 6.0.1
       wide-align: 1.1.5
-    optional: true
 
   gaxios@6.7.1:
     dependencies:
@@ -12710,8 +12711,7 @@ snapshots:
     dependencies:
       has-symbols: 1.1.0
 
-  has-unicode@2.0.1:
-    optional: true
+  has-unicode@2.0.1: {}
 
   has-value@0.3.1:
     dependencies:
@@ -12973,6 +12973,8 @@ snapshots:
   is-typed-array@1.1.15:
     dependencies:
       which-typed-array: 1.1.20
+
+  is-url@1.2.4: {}
 
   is-weakmap@2.0.2: {}
 
@@ -13315,7 +13317,6 @@ snapshots:
   make-dir@3.1.0:
     dependencies:
       semver: 6.3.1
-    optional: true
 
   make-error@1.3.6: {}
 
@@ -13377,8 +13378,7 @@ snapshots:
   mime@3.0.0:
     optional: true
 
-  mimic-response@2.1.0:
-    optional: true
+  mimic-response@2.1.0: {}
 
   minimatch@10.1.1:
     dependencies:
@@ -13405,10 +13405,8 @@ snapshots:
   minipass@3.3.6:
     dependencies:
       yallist: 4.0.0
-    optional: true
 
-  minipass@5.0.0:
-    optional: true
+  minipass@5.0.0: {}
 
   minipass@7.1.2: {}
 
@@ -13416,7 +13414,6 @@ snapshots:
     dependencies:
       minipass: 3.3.6
       yallist: 4.0.0
-    optional: true
 
   minizlib@3.1.0:
     dependencies:
@@ -13430,8 +13427,7 @@ snapshots:
     dependencies:
       minimist: 1.2.8
 
-  mkdirp@1.0.4:
-    optional: true
+  mkdirp@1.0.4: {}
 
   mlly@1.8.0:
     dependencies:
@@ -13514,8 +13510,7 @@ snapshots:
       object-assign: 4.1.1
       thenify-all: 1.6.0
 
-  nan@2.24.0:
-    optional: true
+  nan@2.24.0: {}
 
   nanoid@3.3.11: {}
 
@@ -13570,7 +13565,6 @@ snapshots:
   nopt@5.0.0:
     dependencies:
       abbrev: 1.1.1
-    optional: true
 
   nopt@7.2.1:
     dependencies:
@@ -13590,7 +13584,6 @@ snapshots:
       console-control-strings: 1.1.0
       gauge: 3.0.2
       set-blocking: 2.0.0
-    optional: true
 
   nth-check@2.1.1:
     dependencies:
@@ -13718,10 +13711,24 @@ snapshots:
 
   pathe@2.0.3: {}
 
+  pdf-img-convert@2.0.0:
+    dependencies:
+      canvas: 2.11.2
+      is-url: 1.2.4
+      node-fetch: 3.3.2
+      pdfjs-dist: 4.10.38
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
   pdf-parse@2.4.5:
     dependencies:
       '@napi-rs/canvas': 0.1.80
       pdfjs-dist: 5.4.296
+
+  pdfjs-dist@4.10.38:
+    optionalDependencies:
+      '@napi-rs/canvas': 0.1.80
 
   pdfjs-dist@5.4.296:
     optionalDependencies:
@@ -14139,7 +14146,6 @@ snapshots:
   rimraf@3.0.2:
     dependencies:
       glob: 7.2.3
-    optional: true
 
   rimraf@5.0.10:
     dependencies:
@@ -14298,8 +14304,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  set-blocking@2.0.0:
-    optional: true
+  set-blocking@2.0.0: {}
 
   set-function-length@1.2.2:
     dependencies:
@@ -14396,20 +14401,17 @@ snapshots:
 
   sift@17.1.3: {}
 
-  signal-exit@3.0.7:
-    optional: true
+  signal-exit@3.0.7: {}
 
   signal-exit@4.1.0: {}
 
-  simple-concat@1.0.1:
-    optional: true
+  simple-concat@1.0.1: {}
 
   simple-get@3.1.1:
     dependencies:
       decompress-response: 4.2.1
       once: 1.4.0
       simple-concat: 1.0.1
-    optional: true
 
   simple-update-notifier@2.0.0:
     dependencies:
@@ -14712,7 +14714,6 @@ snapshots:
       minizlib: 2.1.2
       mkdirp: 1.0.4
       yallist: 4.0.0
-    optional: true
 
   tar@7.5.6:
     dependencies:
@@ -15351,7 +15352,6 @@ snapshots:
   wide-align@1.1.5:
     dependencies:
       string-width: 4.2.3
-    optional: true
 
   winston-transport@4.9.0:
     dependencies:

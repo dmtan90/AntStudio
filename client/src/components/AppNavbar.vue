@@ -2,7 +2,10 @@
   <nav class="app-navbar glass">
     <div class="navbar-container">
       <div class="navbar-left">
-        <router-link to="/" class="brand">AntStudio</router-link>
+        <router-link to="/" class="brand flex items-center">
+          <img v-if="uiStore.logo" :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="h-8 w-auto object-contain mr-2" />
+          <span v-else>{{ uiStore.appName }}</span>
+        </router-link>
         <div v-if="user" class="nav-links">
           <template v-if="isHomePage">
             <a v-for="link in landingLinks" :key="link.id" :href="link.to" class="nav-link"
@@ -214,6 +217,7 @@ import GSelect from '@/components/ui/GSelect.vue'
 import GButton from '@/components/ui/GButton.vue'
 import GMedia from '@/components/ui/GMedia.vue'
 import { useUserStore } from '@/stores/user'
+import { useUIStore } from '@/stores/ui'
 import { storeToRefs } from 'pinia'
 import SubscriptionPlansDialog from '@/components/subscription/SubscriptionPlansDialog.vue'
 
@@ -221,6 +225,7 @@ const router = useRouter()
 const route = useRoute()
 const { t, setLocale, currentLocale } = useTranslations()
 const userStore = useUserStore()
+const uiStore = useUIStore()
 const { user } = storeToRefs(userStore)
 
 const fileInput = ref<HTMLElement | null>(null)

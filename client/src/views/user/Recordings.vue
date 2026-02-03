@@ -80,6 +80,7 @@ import {
    Magic, Broadcast, More
 } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
+import { useMediaStore } from '@/stores/media';
 
 import { getFileUrl } from '@/utils/api';
 
@@ -87,16 +88,16 @@ const loading = ref(true);
 const recordings = ref<any[]>([]);
 const showPreview = ref(false);
 const currentRec = ref<any>(null);
+const mediaStore = useMediaStore();
 
 const fetchData = async () => {
    try {
       loading.value = true;
-      const res = await axios.get('/api/media/list', {
-         params: { purpose: 'recording', limit: 50 }
-      });
+      loading.value = true;
+      const data = await mediaStore.fetchMedia({ purpose: 'recording', limit: 50 });
 
-      if (res.data.success) {
-         recordings.value = res.data.data.media.map((m: any) => ({
+      if (data.success) {
+         recordings.value = data.data.media.map((m: any) => ({
             id: m._id,
             title: m.fileName,
             date: new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase(),

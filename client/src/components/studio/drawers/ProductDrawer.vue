@@ -124,9 +124,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { Shopping, Close, Ranking, Check } from '@icon-park/vue-next';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Close, Shopping, Lightning, Flashlamp, ShoppingCart, Share, PreviewOpen, DeleteOne as Trash } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
+import { useUIStore } from '@/stores/ui';
 import { toast } from 'vue-sonner';
 
 const props = defineProps<{
@@ -141,6 +142,12 @@ const isVisible = computed({
 const emit = defineEmits(['update:modelValue']);
 
 const studioStore = useStudioStore();
+const uiStore = useUIStore();
+const isLive = ref(false);
+const activeTab = ref('products');
+const flashTimer = ref<any>(null);
+
+const shopUrl = computed(() => `${uiStore.domain}/shop/`);
 const isFlashSaleActive = computed(() => !!studioStore.activeFlashSale);
 const products = computed(() => studioStore.liveProducts);
 

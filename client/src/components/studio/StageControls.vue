@@ -9,6 +9,10 @@
                 <camera v-if="camOn" theme="filled" />
                 <camera-five v-else theme="outline" />
             </button>
+            <button v-if="!isGuest" class="ctrl-btn" :class="{ active: isScreenSharing }"
+                @click="$emit('toggle-screen')">
+                <share-two theme="outline" />
+            </button>
         </div>
 
         <div class="action-zone">
@@ -47,14 +51,22 @@
                     <Broadcast theme="outline" />
                     <div v-if="platformCount" class="platform-count">{{ platformCount }}</div>
                 </button>
-                <button class="ctrl-btn" @click="$emit('show-settings')">
-                    <setting-two theme="outline" />
-                </button>
+                <SettingsPopover v-model:stream-quality="localStreamQuality">
+                    <template #trigger>
+                        <button class="ctrl-btn">
+                            <setting-two theme="outline" />
+                        </button>
+                    </template>
+                </SettingsPopover>
             </template>
             <template v-else>
-                <button class="ctrl-btn" @click="$emit('show-settings')">
-                    <setting-two theme="outline" />
-                </button>
+                <SettingsPopover v-model:stream-quality="localStreamQuality">
+                    <template #trigger>
+                        <button class="ctrl-btn">
+                            <setting-two theme="outline" />
+                        </button>
+                    </template>
+                </SettingsPopover>
                 <button class="ctrl-btn border-red-500/30 text-red-500 hover:bg-red-500/10" @click="$emit('exit')">
                     <close theme="outline" />
                 </button>
@@ -64,12 +76,14 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import {
     Microphone, Camera, CameraFive, Broadcast,
     User, ShareTwo, SettingTwo, Magic, Close
 } from '@icon-park/vue-next';
+import SettingsPopover from '@/components/studio/popovers/SettingsPopover.vue';
 
-defineProps<{
+const props = defineProps<{
     micOn: boolean;
     camOn: boolean;
     isLive: boolean;
@@ -77,12 +91,19 @@ defineProps<{
     platformCount: number;
     guestCount: number;
     isGuest?: boolean;
+    isScreenSharing?: boolean;
+    streamQuality?: string;
 }>();
 
-defineEmits([
-    'toggle-mic', 'toggle-cam', 'toggle-live', 'toggle-record', 'capture-highlight',
-    'invite-guest', 'show-platforms', 'show-settings', 'exit'
+const emit = defineEmits([
+    'toggle-mic', 'toggle-cam', 'toggle-screen', 'toggle-live', 'toggle-record', 'capture-highlight',
+    'invite-guest', 'show-platforms', 'show-settings', 'exit', 'update:streamQuality'
 ]);
+
+const localStreamQuality = computed({
+    get: () => props.streamQuality || 'high',
+    set: (val) => emit('update:streamQuality', val)
+});
 </script>
 
 <style scoped lang="scss">

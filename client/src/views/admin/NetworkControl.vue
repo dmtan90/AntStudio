@@ -104,15 +104,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { Earth, Peoples, More, Terminal, ChartPie } from '@icon-park/vue-next';
-import axios from 'axios';
-import { toast } from 'vue-sonner';
 
+import { toast } from 'vue-sonner';
+import { useAdminStore } from '@/stores/admin';
+
+const adminStore = useAdminStore();
 const snapshots = ref<any[]>([]);
 
 const fetchSnapshots = async () => {
     try {
-        const { data } = await axios.get('/api/network/snapshot');
-        if (data.success) {
+        const data = await adminStore.fetchNetworkSnapshot();
+        if (data && data.success) {
             snapshots.value = data.data;
         }
     } catch (e) { }
@@ -124,8 +126,7 @@ const totalViewers = computed(() => {
 
 const triggerGlobalEvent = async (type: string) => {
     try {
-        await axios.post('/api/network/event/global', { eventType: type });
-        toast.success(`Broadcasting global ${type} pulse to entire network!`);
+        await adminStore.triggerNetworkEvent(type);
     } catch (e) {
         toast.error("Global pulse failed to propagate.");
     }

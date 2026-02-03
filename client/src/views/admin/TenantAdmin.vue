@@ -138,7 +138,7 @@
                 <div class="w-10 h-10 rounded bg-indigo-500/20 flex items-center justify-center text-indigo-400"><share-two size="20" /></div>
                 <div class="flex-1">
                    <p class="text-xs font-bold">Stripe Connect</p>
-                   <p class="text-[8px] opacity-40">Connected to AntFlow Shared Gateway</p>
+                   <p class="text-[8px] opacity-40">Connected to {{ uiStore.appName }} Shared Gateway</p>
                 </div>
                 <check-one class="text-green-500" />
              </div>
@@ -158,7 +158,7 @@
                 <div v-for="sub in managedSubs" :key="sub.id" class="sub-tenant-item p-4 bg-white/5 rounded-xl border border-white/5 flex justify-between items-center">
                    <div>
                       <p class="text-xs font-bold">{{ sub.name }}</p>
-                      <p class="text-[8px] opacity-40 uppercase">{{ sub.subdomain }}.antflow.ai</p>
+                      <p class="text-[8px] opacity-40 uppercase">{{ sub.subdomain }}.antstudio.ai</p>
                    </div>
                    <div class="flex items-center gap-6">
                       <div class="text-right">
@@ -265,15 +265,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Magic, SettingTwo, ChartHistogram, CameraFive, ShareTwo, CheckOne, Diamond, PhoneOne, Peoples, SettingOne } from '@icon-park/vue-next';
+import { ref, onMounted } from 'vue';
+import { useUIStore } from '@/stores/ui';
+import { 
+  BuildingTwo, SettingTwo, Lightning, Tool, 
+  Switch, Close, Save, Edit, CameraFive,
+  Shield, Key, LinkOne, ChartHistogram, ShareTwo, CheckOne, Diamond, PhoneOne, Peoples, SettingOne
+} from '@icon-park/vue-next';
+
+const uiStore = useUIStore();
 import { toast } from 'vue-sonner';
 
 // Mock Tenant Data
 const tenant = ref<any>({
-  name: 'Future Broadcasting',
+  name: uiStore.appName,
   tenantType: 'master', // 'master' or 'sub'
-  branding: { companyName: 'Future Broadcasting', primaryColor: '#3b82f6', logo: '' },
+  branding: { companyName: uiStore.appName, primaryColor: '#3b82f6', logo: '' },
   deployment: { mode: 'public' },
   license: { type: 'enterprise', maxSeats: 500, features: ['all'] },
   usage: { totalUsers: 142 },

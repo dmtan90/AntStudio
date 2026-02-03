@@ -1,14 +1,20 @@
 import { toast } from 'vue-sonner';
+import api from './api';
+import { aiAudioAnalyzer } from './AIAudioAnalyzer';
 
 /**
  * Interface for a Synthetic AI Guest persona.
  */
 export interface AIGuestPersona {
-    id: string;
+    id: string; // This maps to entityId in NeuralArchive
     name: string;
     avatarUrl: string;
     voiceId: string;
     systemPrompt: string;
+    visualIdentity?: {
+        glbUrl: string;
+        textureMapUrl?: string;
+    };
 }
 
 /**
@@ -16,30 +22,40 @@ export interface AIGuestPersona {
  */
 export class SyntheticGuestManager {
     private activeGuests: Map<string, { persona: AIGuestPersona, isSpeaking: boolean, isThinking: boolean }> = new Map();
+    private audioAnalysers: Map<string, { stop: () => void }> = new Map();
 
     private personaLibrary: AIGuestPersona[] = [
         {
-            id: 'tech_expert',
-            name: 'Dr. Nexus',
+            id: 'sh_nexus',
+            name: 'Nexus Prime',
             avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=nexus',
             voiceId: 'en-US-Neural2-F',
-            systemPrompt: 'You are a highly technical AI expert. Answer complex questions with precision.'
-        },
-        {
-            id: 'hype_man',
-            name: 'Sparky',
-            avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=sparky',
-            voiceId: 'en-US-Neural2-A',
-            systemPrompt: 'You are a hype man. Your goal is to keep the energy high and the audience engaged!'
-        },
-        {
-            id: 'comedian',
-            name: 'Giggles',
-            avatarUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=giggles',
-            voiceId: 'en-US-Neural2-D',
-            systemPrompt: 'You are a stand-up comedian. Add humor and witty remarks to the conversation.'
+            systemPrompt: 'You are a highly technical AI expert.',
+            visualIdentity: { glbUrl: '/assets/models/ai_guest_base.glb' }
         }
     ];
+
+    /**
+     * Synchronize library with Neural Archive (Souls)
+     */
+    public async syncLibrary() {
+        try {
+            const { data } = await api.get('/neural/list');
+            if (data?.data && Array.isArray(data.data)) {
+                this.personaLibrary = data.data.map((soul: any) => ({
+                    id: soul.entityId,
+                    name: soul.identity.name,
+                    avatarUrl: soul.visualIdentity?.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${soul.entityId}`,
+                    voiceId: soul.customization?.voiceId || 'en-US-Neural2-F',
+                    systemPrompt: soul.identity.description,
+                    visualIdentity: soul.visualIdentity || { glbUrl: '/assets/models/ai_guest_base.glb' }
+                }));
+                console.log(`[SyntheticGuest] Synced ${this.personaLibrary.length} souls from archive.`);
+            }
+        } catch (e) {
+            console.warn('[SyntheticGuest] Failed to sync library, using defaults');
+        }
+    }
 
     public getPersonaLibrary() {
         return this.personaLibrary;
@@ -50,9 +66,17 @@ export class SyntheticGuestManager {
 
         this.activeGuests.set(persona.id, { persona, isSpeaking: false, isThinking: false });
         toast.success(`AI Orchestrator: Summoned ${persona.name} to the Studio.`);
+
+        // Notify rendering worker to add 3D model
+        this.notifyWorker('add-3d-guest', {
+            id: `guest_${persona.id}`,
+            glbUrl: persona.visualIdentity?.glbUrl,
+            textureUrl: persona.visualIdentity?.textureMapUrl
+        });
     }
 
     public removeGuest(id: string) {
+        this.stopSpeaking(id);
         this.activeGuests.delete(id);
     }
 
@@ -64,30 +88,63 @@ export class SyntheticGuestManager {
         if (!guest) return null;
 
         guest.isThinking = true;
+        this.notifyWorker('update-3d-thinking', { id: `guest_${guestId}`, isThinking: true });
+
         try {
-            // Mocking the AI interaction call
-            await new Promise(r => setTimeout(r, 2000));
+            // 1. Generate Dialogue Text
+            const talkRes = await api.post('/ai/guest/talk', { entityId: guestId, prompt });
+            const responseText = talkRes.data.text;
 
-            let responseText = "";
-            if (guest.persona.id === 'hype_man') {
-                responseText = `ABSOLUTELY AMAZING! 🚀 Everyone in the chat, show some love for that point! We are CRUSHING IT today!`;
-            } else if (guest.persona.id === 'tech_expert') {
-                responseText = `From a technical standpoint, the ${prompt.substring(0, 15)} architecture suggests a highly decoupled modular system. Interesting choice.`;
-            } else {
-                responseText = `That's a fascinating point about the ${prompt.substring(0, 10)}... As an AI, I believe we are entering a new era of synthetic collaboration.`;
-            }
-
-            // Generate Neural Voice URL
-            const audioUrl = `https://s3.antflow.ai/synth/voice_${guestId}_${Date.now()}.mp3`;
+            // 2. Generate TTS Audio
+            const ttsRes = await api.post('/ai/guest/tts', { text: responseText, voiceId: guest.persona.voiceId });
+            const audioUrl = ttsRes.data.url;
 
             guest.isThinking = false;
+            this.notifyWorker('update-3d-thinking', { id: `guest_${guestId}`, isThinking: false });
+
+            // 3. Start Audio Analysis for Lip-sync
+            this.startSpeaking(guestId, audioUrl);
+
             return { text: responseText, audioUrl };
 
         } catch (error) {
             guest.isThinking = false;
+            this.notifyWorker('update-3d-thinking', { id: `guest_${guestId}`, isThinking: false });
             console.error("[SyntheticGuest] Dialogue failed:", error);
             return null;
         }
+    }
+
+    private startSpeaking(id: string, audioUrl: string) {
+        this.stopSpeaking(id);
+
+        const guest = this.activeGuests.get(id);
+        if (guest) guest.isSpeaking = true;
+
+        const analysis = aiAudioAnalyzer.analyze(audioUrl, (level: number) => {
+            this.notifyWorker('update-3d-audio', {
+                id: `guest_${id}`,
+                audioLevel: level
+            });
+        });
+
+        if (analysis) {
+            this.audioAnalysers.set(id, analysis);
+        }
+    }
+
+    private stopSpeaking(id: string) {
+        const analysis = this.audioAnalysers.get(id);
+        if (analysis) {
+            analysis.stop();
+            this.audioAnalysers.delete(id);
+        }
+        const guest = this.activeGuests.get(id);
+        if (guest) guest.isSpeaking = false;
+    }
+
+    private notifyWorker(type: string, payload: any) {
+        window.dispatchEvent(new CustomEvent('studio-worker-command', { detail: { type, payload } }));
     }
 
     public getGuests() {

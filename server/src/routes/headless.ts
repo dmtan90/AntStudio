@@ -48,14 +48,14 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
         await connectDB();
         const { prompt, count } = req.body;
 
-        const { s3Key, s3Url } = await generateImage(
+        const { s3Key } = await generateImage(
             prompt,
             req.user!.userId,
             `headless_${Date.now()}`,
             { aspectRatio: '16:9' }
         );
 
-        res.json({ success: true, data: { url: s3Url || s3Key } });
+        res.json({ success: true, data: { url: s3Key } });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -67,14 +67,14 @@ router.post('/generate-voice', async (req: AuthRequest, res) => {
         await connectDB();
         const { text, voiceId } = req.body;
 
-        const { s3Key, s3Url } = await generateAudio(
+        const { s3Key } = await generateAudio(
             text,
             req.user!.userId,
             `headless_voice_${Date.now()}`,
             { voice: voiceId || 'gentle_female' }
         );
 
-        res.json({ success: true, data: { url: s3Url || s3Key } });
+        res.json({ success: true, data: { url: s3Key } });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }

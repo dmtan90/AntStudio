@@ -34,15 +34,19 @@ export class NeuralArchiveService {
     }
 
     /**
-     * Apply tactical LoRA weights to an AI personality.
+     * Holistic update of a neural archive.
      */
-    static async updateStyling(userId: string, entityId: string, loras: Array<{ id: string; weight: number; trigger?: string }>): Promise<void> {
-        await NeuralArchive.findOneAndUpdate(
-            { userId, entityId },
-            {
-                $set: { 'customization.loras': loras, lastUpdated: new Date() }
-            }
-        );
+    static async updateNeuralArchive(userId: string, entityId: string, data: {
+        identity?: INeuralArchive['identity'];
+        loras?: INeuralArchive['customization']['loras'];
+        knowledgeEntries?: INeuralArchive['memory']['knowledgeEntries'];
+    }): Promise<void> {
+        const update: any = { lastUpdated: new Date() };
+        if (data.identity) update['identity'] = data.identity;
+        if (data.loras) update['customization.loras'] = data.loras;
+        if (data.knowledgeEntries) update['memory.knowledgeEntries'] = data.knowledgeEntries;
+
+        await NeuralArchive.findOneAndUpdate({ userId, entityId }, { $set: update });
     }
 
     /**
@@ -54,6 +58,24 @@ export class NeuralArchiveService {
             {
                 $push: { 'memory.summaries': summary },
                 $set: { lastUpdated: new Date() }
+            }
+        );
+    }
+
+    /**
+     * Update visual identity (Digital Double) for an AI soul.
+     */
+    static async updateVisualIdentity(userId: string, entityId: string, visual: INeuralArchive['visualIdentity']): Promise<void> {
+        await NeuralArchive.findOneAndUpdate(
+            { userId, entityId },
+            {
+                $set: {
+                    'visualIdentity': {
+                        ...visual,
+                        lastGenerated: new Date()
+                    },
+                    lastUpdated: new Date()
+                }
             }
         );
     }

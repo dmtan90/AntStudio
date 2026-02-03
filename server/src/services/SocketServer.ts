@@ -133,7 +133,7 @@ export class SocketServer {
             // 6. Guest Joining Flow
             socket.on('guest:join', (payload: { displayName: string, streamId?: string }) => {
                 if (roomId && user.role === 'guest') {
-                    console.log(`🙋 Guest Request: ${payload.displayName} in ${roomId}`);
+                    console.log(`🙋 Guest Request: ${payload.displayName} (ID: ${socket.id}) in Room: ${roomId}`);
                     socket.to(roomId).emit('guest:request', {
                         id: socket.id,
                         userId: user.id,
@@ -141,16 +141,21 @@ export class SocketServer {
                         streamId: payload.streamId || `guest_${socket.id}`,
                         joinedAt: new Date()
                     });
+                } else {
+                    console.warn(`⚠️ Blocked guest:join from non-guest or missing roomId. Role: ${user.role}, Room: ${roomId}`);
                 }
             });
 
-            socket.on('guest:approve', (payload: { guestId: string }) => {
+            socket.on('guest:approve', (payload: { guestId: string, permissions: any }) => {
                 if (roomId && user.role === 'host') {
-                    console.log(`✅ Host approved guest: ${payload.guestId}`);
+                    console.log(`✅ Host in ${roomId} approved guest: ${payload.guestId}. Emitting guest:approved...`);
                     this.io.to(payload.guestId).emit('guest:approved', {
                         roomId,
-                        hostId: socket.id
+                        hostId: socket.id,
+                        permissions: payload.permissions
                     });
+                } else {
+                    console.warn(`⚠️ Blocked guest:approve from non-host. Role: ${user.role}`);
                 }
             });
 

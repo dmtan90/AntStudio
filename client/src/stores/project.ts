@@ -36,11 +36,15 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     // Actions
-    async function fetchProjects(page = 1, limit = 20) {
+    async function fetchProjects(params: any = {}) {
         loadingList.value = true
         try {
             const response = await api.get('/projects', {
-                params: { page, limit }
+                params: {
+                    page: pagination.value.page,
+                    limit: pagination.value.limit,
+                    ...params
+                }
             })
             projects.value = response.data.projects || []
             pagination.value = response.data.pagination || pagination.value

@@ -238,9 +238,9 @@ import { ref, onMounted, onUnmounted, reactive, watch, computed, nextTick } from
 import { SettingConfig, Delete, Cpu, Memory, FolderOpen, Connection, Loading, Terminal, Help } from '@icon-park/vue-next';
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import axios from 'axios';
 import { io } from 'socket.io-client';
 import { useUserStore } from '@/stores/user';
+import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
 import SupportTicketDialog from '@/components/SupportTicketDialog.vue';
 
@@ -273,6 +273,7 @@ const socket = ref<any>(null);
 
 // Intervals
 const authStore = useUserStore();
+const adminStore = useAdminStore();
 let statsTimer: any = null;
 let historyTimer: any = null;
 let logsTimer: any = null;
@@ -281,27 +282,31 @@ let debounceTimer: any = null;
 // Methods
 const fetchStats = async () => {
     try {
-        const res = await axios.get('/api/admin/monitoring/stats');
-        Object.assign(stats, res.data.data);
+        const data = await adminStore.fetchMonitoringStats();
+        if (data && data.data) Object.assign(stats, data.data);
     } catch (e) { }
 };
 
 const fetchHistory = async () => {
     try {
-        const res = await axios.get('/api/admin/monitoring/history?limit=60');
-        history.value = res.data.data;
+        const data = await adminStore.fetchMonitoringHistory(60);
+        if (data && data.data) history.value = data.data;
     } catch (e) { }
 };
 
 const fetchLogs = async (silent = false) => {
     try {
         const [res, clientRes] = await Promise.all([
-            axios.get('/api/admin/monitoring/logs', { params: logFilter }),
-            axios.get('/api/admin/monitoring/client-logs')
+            adminStore.fetchMonitoringLogs(logFilter),
+            adminStore.fetchClientLogs()
         ]);
-        logs.value = res.data.data.logs;
-        totalLogs.value = res.data.data.total;
-        clientLogs.value = clientRes.data.data;
+        if (res && res.data) {
+            logs.value = res.data.logs;
+            totalLogs.value = res.data.total;
+        }
+        if (clientRes && clientRes.data) {
+            clientLogs.value = clientRes.data;
+        }
     } catch (e) {
         if (!silent) toast.error('Failed to load logs');
     }
@@ -310,7 +315,7 @@ const fetchLogs = async (silent = false) => {
 const exportDiagnostics = async () => {
     exporting.value = true;
     try {
-        await axios.get('/api/admin/monitoring/export-diagnostics');
+        await adminStore.exportDiagnostics();
         toast.success('Diagnostic bundle sent to developer (dmtan90@gmail.com)');
     } catch (e) {
         toast.error('Failed to export diagnostics');
@@ -321,25 +326,24 @@ const exportDiagnostics = async () => {
 
 const fetchSettings = async () => {
     try {
-        const res = await axios.get('/api/admin/monitoring/settings');
-        if (res.data.data) Object.assign(settings, res.data.data);
+        const data = await adminStore.fetchMonitoringSettings();
+        if (data && data.data) Object.assign(settings, data.data);
     } catch (e) { }
 };
 
 const saveSettings = async () => {
     try {
-        await axios.patch('/api/admin/monitoring/settings', settings);
-        toast.success('Monitoring settings updated');
+        await adminStore.updateMonitoringSettings(settings);
+        // toast success managed by store mostly but double check
     } catch (e) { toast.error('Failed to save settings'); }
 };
 
 const clearLogs = async () => {
     if (!confirm('Clear all system logs?')) return;
     try {
-        await axios.delete('/api/admin/monitoring/logs');
+        await adminStore.clearMonitoringLogs();
         logs.value = [];
         realtimeLogs.value = '';
-        toast.success('Logs cleared');
     } catch (e) { }
 };
 

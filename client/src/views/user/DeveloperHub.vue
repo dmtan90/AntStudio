@@ -97,14 +97,15 @@
                         <p class="text-[10px] font-black opacity-30 uppercase mb-2">Authenticating requests</p>
                         <div class="p-4 bg-black/60 rounded-xl font-mono text-[10px] leading-relaxed">
                            <span class="text-purple-400">curl</span> -X GET <span
-                              class="text-blue-400">"https://api.antflow.ai/api/projects"</span> \<br />
-                           &nbsp;&nbsp;-H <span class="text-green-400">"x-api-key: ant_8a2d...91fc"</span>
+                              class="text-blue-400">"{{ uiStore.domain }}/api/projects"</span> \<br />
+                           &nbsp;&nbsp;-H <span class="text-green-400">"x-api-key: {{ uiStore.appName.toLowerCase().replace(/\s+/g, '_') }}_8a2d...91fc"</span>
                         </div>
                      </div>
                      <div class="doc-block">
                         <p class="text-[10px] font-black opacity-30 uppercase mb-2">Verifying Webhooks</p>
-                        <p class="text-[10px] text-gray-500 leading-relaxed italic">All requests from AntFlow include an
-                           <span class="text-white">x-antflow-signature</span> header based on your Webhook Secret.</p>
+                        <p class="text-[10px] text-gray-500 leading-relaxed italic">All requests from {{ uiStore.appName }} include an
+                           <span class="text-white">x-{{ uiStore.appName.toLowerCase().replace(/\s+/g, '-') }}-signature</span> header based on your Webhook Secret.
+                        </p>
                      </div>
                   </div>
                </div>
@@ -175,9 +176,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useUIStore } from '@/stores/ui';
 import { KeyOne, Key, DeleteOne, ConnectionPoint, Search } from '@icon-park/vue-next';
-import { toast } from 'vue-sonner';
-import axios from 'axios';
+import { useDeveloperStore } from '@/stores/developer';
+
+const uiStore = useUIStore();
 
 const loading = ref(false);
 const generating = ref(false);
@@ -192,15 +195,17 @@ const rawKey = ref('');
 const keyForm = ref({ name: '' });
 const webhookForm = ref({ url: '', events: ['ai.job.completed'] });
 
+const devStore = useDeveloperStore();
+
 const fetchData = async () => {
    loading.value = true;
    try {
-      const [{ data: keys }, { data: hooks }] = await Promise.all([
-         axios.get('/api/developer/keys'),
-         axios.get('/api/developer/webhooks')
+      await Promise.all([
+         devStore.fetchKeys(),
+         devStore.fetchWebhooks()
       ]);
-      apiKeys.value = keys.data;
-      webhooks.value = hooks.data;
+      apiKeys.value = devStore.keys;
+      webhooks.value = devStore.webhooks;
    } catch (e) {
       toast.error("Telemetry failure: Failed to sync developer assets");
    } finally {
@@ -210,15 +215,15 @@ const fetchData = async () => {
 
 const handleGenerateKey = async () => {
    generating.value = true;
-   try {
-      const { data } = await axios.post('/api/developer/keys', keyForm.value);
-      if (data.success) {
-         rawKey.value = data.data.rawKey;
-         showGenKey.value = false;
-         showNewKeyDialog.value = true;
-         keyForm.value.name = '';
-         fetchData();
-      }
+    try {
+       const data = await devStore.createKey({ name: keyForm.value.name, scopes: ['all'] });
+       if (data) {
+          rawKey.value = data.apiKey; // Using data.apiKey as per common response
+          showGenKey.value = false;
+          showNewKeyDialog.value = true;
+          keyForm.value.name = '';
+          apiKeys.value = devStore.keys;
+       }
    } catch (e: any) {
       toast.error(e.response?.data?.error || "Strategic error generating token");
    } finally {
@@ -228,9 +233,10 @@ const handleGenerateKey = async () => {
 
 const revokeKey = async (id: string) => {
    try {
-      await axios.delete(`/api/developer/keys/${id}`);
+      await devStore.deleteKey(id);
       toast.success("Tactical access revoked.");
-      fetchData();
+      // update local
+      apiKeys.value = devStore.keys;
    } catch (e) {
       toast.error("Failed to revoke access token.");
    }
@@ -238,12 +244,13 @@ const revokeKey = async (id: string) => {
 
 const handleAddWebhook = async () => {
    try {
-      const { data } = await axios.post('/api/developer/webhooks', webhookForm.value);
-      if (data.success) {
+      const data = await devStore.createWebhook(webhookForm.value);
+      if (data) {
          toast.success("Event subscription established.");
          showAddWebhook.value = false;
          webhookForm.value = { url: '', events: ['ai.job.completed'] };
-         fetchData();
+         // update local
+         webhooks.value = devStore.webhooks;
       }
    } catch (e: any) {
       toast.error(e.response?.data?.error || "Failed to subscribe to events");
@@ -252,9 +259,10 @@ const handleAddWebhook = async () => {
 
 const deleteWebhook = async (id: string) => {
    try {
-      await axios.delete(`/api/developer/webhooks/${id}`);
+      await devStore.deleteWebhook(id);
       toast.success("Subscription terminated.");
-      fetchData();
+      // update local
+      webhooks.value = devStore.webhooks;
    } catch (e) {
       toast.error("Failed to terminate subscription.");
    }

@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import { useUIStore } from '@/stores/ui'
 import {
   DashboardOne as DashboardIcon,
   Peoples as PeopleIcon,
@@ -68,6 +69,7 @@ import {
 } from '@icon-park/vue-next'
 
 const route = useRoute()
+const uiStore = useUIStore()
 </script>
 
 <style scoped>

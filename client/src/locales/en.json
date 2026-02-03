@@ -152,7 +152,7 @@
                 "segments": "segments",
                 "confirmCreate": "Start Now",
                 "startOver": "Start Over",
-                "thinking": "AntStudio is processing your idea...",
+                "thinking": "{appName} is processing your idea...",
                 "analyzing": "Analyzing requirements...",
                 "sec": "sec",
                 "landscape": "Landscape",

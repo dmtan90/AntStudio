@@ -67,8 +67,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { Robot, ChartLine } from '@icon-park/vue-next';
 import { Line } from 'vue-chartjs';
-import axios from 'axios';
+import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
+
+const adminStore = useAdminStore();
 
 const optimizationActive = ref(false);
 const insights = ref<any>({});
@@ -77,8 +79,8 @@ const snapshots = ref<any[]>([]);
 
 const fetchInsights = async () => {
     try {
-        const { data } = await axios.get('/api/ai/performance/insights/current-session');
-        if (data.success) {
+        const data = await adminStore.fetchAIPerformance();
+        if (data && data.success) {
             insights.value = data.data;
             if (data.data.insight && !insightHistory.value.includes(data.data.insight)) {
                 insightHistory.value.unshift(data.data.insight);
@@ -90,12 +92,11 @@ const fetchInsights = async () => {
 const toggleOptimization = async () => {
     try {
         if (optimizationActive.value) {
-            await axios.post('/api/ai/performance/optimize/start', {
+            await adminStore.toggleAIOptimization({
                 projectId: 'current-session',
                 initialStyle: 'standard',
                 candidates: ['neon', 'cinematic', 'noir', 'dreamy']
             });
-            toast.success("AI Optimizer Engaged");
         } else {
             toast.info("AI Optimizer Disengaged");
         }

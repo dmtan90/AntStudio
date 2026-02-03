@@ -17,7 +17,8 @@ import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
 import { licenseGating } from '../middleware/licenseGating.js';
 import { hasSufficientCredits, deductCredits, getCreditCost } from '../utils/credits.js';
-import { uploadToS3 } from '../utils/s3.js';
+import { uploadToS3, S3KeyGenerator, getS3Client } from '../utils/s3.js';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { AnalyticsService } from '../services/AnalyticsService.js';
 
 // Define the file filter function to update the filename encoding
@@ -156,7 +157,7 @@ router.put('/:id', rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res
 });
 
 // POST /api/projects/preview - Quick preview
-router.post('/preview', checkLicenseStatus, licenseGating('trial'), async (req: any, res: Response) => {
+router.post('/preview', checkLicenseStatus, licenseGating('trial'), upload.array('files'), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { topic, history, targetDuration } = req.body;
@@ -189,13 +190,13 @@ router.post('/preview', checkLicenseStatus, licenseGating('trial'), async (req: 
           "closingMessage": ""
         }`;
 
-        const finalAnalysis = await generateJSON<any>(analysisPrompt, 'gemini-2.0-flash-exp');
+        const finalAnalysis = await generateJSON<any>(analysisPrompt, 'gemini-1.5-flash');
 
         // 3. Generate storyboard
         const storyboard = await generateStoryboardIteratively(
             topic,
             finalAnalysis.analysis,
-            targetDuration || 60,
+            targetDuration ? parseInt(targetDuration as string) : 60,
             detectedLanguage
         );
 
@@ -232,7 +233,7 @@ router.post('/:id/analyze', checkLicenseStatus, rbacMiddleware(Permission.PROJEC
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const prompt = `Analyze the script and provide deep visual context for the project: ${project.title}. Script: ${project.description}`;
-        const analysis = await generateJSON<any>(prompt, 'gemini-2.0-flash-exp');
+        const analysis = await generateJSON<any>(prompt, 'gemini-1.5-flash');
 
         project.scriptAnalysis = { ...analysis, analyzedAt: new Date() };
         project.status = 'analyzing';
@@ -278,7 +279,7 @@ router.post('/:id/generate-visual-plan', checkLicenseStatus, rbacMiddleware(Perm
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const stylePrompt = `Create a detailed visual art direction for ${project.title}. Style: ${project.videoStyle || 'Cinematic'}`;
-        const brief = await generateJSON<any>(stylePrompt, 'gemini-2.0-flash-exp');
+        const brief = await generateJSON<any>(stylePrompt, 'gemini-1.5-flash');
 
         project.creativeBrief = { ...brief, generatedAt: new Date() };
         await project.save();
@@ -422,6 +423,7 @@ router.post('/:id/upload-final-video', rbacMiddleware(Permission.PROJECT_EDIT), 
             fileSize: videoFile.size,
             generatedAt: new Date()
         };
+        project.status = 'completed'; // Moved this line to be consistent with the instruction's implied context
 
         await project.save();
 
@@ -461,7 +463,7 @@ router.post('/:id/segments/:segmentId/captions', checkLicenseStatus, rbacMiddlew
         const project = await Project.findOne({ _id: projectId, userId: req.user!.userId });
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
-        const segment = project.storyboard?.segments?.find((s: any) => s._id.toString() === segmentId);
+        const segment = project.storyboard?.segments?.find((s: any) => s._id.toString() === segmentId) as any;
         if (!segment) return res.status(404).json({ success: false, error: 'Segment not found' });
 
         // Determine source media (Video > Audio)
@@ -480,8 +482,7 @@ router.post('/:id/segments/:segmentId/captions', checkLicenseStatus, rbacMiddlew
 
         // Download from S3
         // We need a helper to get Buffer from S3. Assuming one exists or we import S3 client.
-        // Importing s3 client for getObject
-        const { s3Client, GetObjectCommand } = await import('../utils/s3.js');
+        const s3Client = getS3Client();
         const s3Params = {
             Bucket: process.env.S3_BUCKET_NAME,
             Key: s3Key

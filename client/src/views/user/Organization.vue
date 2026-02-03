@@ -40,7 +40,7 @@
                             <div class="flex items-center gap-3">
                                 <span class="text-[10px] opacity-30 italic">Joined {{ new
                                     Date(member.joinedAt).toLocaleDateString()
-                                    }}</span>
+                                }}</span>
                                 <el-dropdown trigger="click" @command="(cmd) => handleMemberAction(cmd, member)">
                                     <button class="icon-btn-sm"><more-one theme="outline" size="14" /></button>
                                     <template #dropdown>
@@ -80,7 +80,7 @@
                             <div class="flex items-center gap-3">
                                 <span class="text-[10px] opacity-30 italic">Expires {{ new
                                     Date(invite.expiresAt).toLocaleDateString()
-                                    }}</span>
+                                }}</span>
                                 <button
                                     class="text-[10px] text-red-500 font-black uppercase hover:underline">Revoke</button>
                             </div>
@@ -151,11 +151,11 @@
         <el-dialog v-model="showCreateDialog" title="Project Intelligence Setup" width="500px" class="glass-dialog">
             <el-form label-position="top" :model="createForm">
                 <el-form-item label="Organization Name">
-                    <el-input v-model="createForm.name" placeholder="e.g. AntStudio Labs" class="glass-input" />
+                    <el-input v-model="createForm.name" :placeholder="'e.g. ' + uiStore.appName + ' Labs'" class="glass-input" />
                 </el-form-item>
                 <el-form-item label="Entity Identifier (Slug)">
-                    <el-input v-model="createForm.slug" placeholder="antstudio-labs" class="glass-input">
-                        <template #prepend>antflow.ai/org/</template>
+                    <el-input v-model="createForm.slug" placeholder="labs" class="glass-input">
+                        <template #prepend>{{ uiStore.domain.replace('https://', '').replace('http://', '') }}/org/</template>
                     </el-input>
                 </el-form-item>
                 <el-form-item label="Strategic Mission (Description)">
@@ -174,7 +174,7 @@
         <el-dialog v-model="showInviteDialog" title="Recruit New Specialist" width="500px" class="glass-dialog">
             <el-form label-position="top" :model="inviteForm">
                 <el-form-item label="Specialist Email">
-                    <el-input v-model="inviteForm.email" placeholder="e.g. agent@antflow.ai" class="glass-input" />
+                    <el-input v-model="inviteForm.email" :placeholder="'e.g. agent@' + uiStore.appName.toLowerCase().replace(/\s+/g, '') + '.ai'" class="glass-input" />
                 </el-form-item>
                 <el-form-item label="Access Level">
                     <el-select v-model="inviteForm.role" placeholder="Select role" class="glass-input">
@@ -195,19 +195,24 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useUIStore } from '@/stores/ui';
 import { Peoples, MoreOne, GraphicDesign, Mail } from '@icon-park/vue-next';
-import axios from 'axios';
+import { useOrganizationStore } from '@/stores/organization';
+import { storeToRefs } from 'pinia';
 import { toast } from 'vue-sonner';
 
-const loading = ref(true);
-const creating = ref(false);
-const inviting = ref(false);
+const uiStore = useUIStore();
+
+const creators = ref<any[]>([]); // local creators if needed, or from store
 const showCreateDialog = ref(false);
 const showInviteDialog = ref(false);
+const creating = ref(false);
+const inviting = ref(false);
 
-const organizations = ref<any[]>([]);
-const activeOrg = ref<any>(null);
-const pendingInvites = ref<any[]>([]);
+// Use storeToRefs for reactive store connection
+const orgStore = useOrganizationStore();
+const { organizations, activeOrg, loading, invitations } = storeToRefs(orgStore);
+const pendingInvites = computed(() => invitations.value.filter((i: any) => i.status === 'pending'));
 
 const createForm = ref({
     name: '',
@@ -221,40 +226,21 @@ const inviteForm = ref({
 });
 
 const fetchOrganizations = async () => {
-    loading.value = true;
-    try {
-        const { data } = await axios.get('/api/organizations');
-        organizations.value = data.data;
-        if (data.data.length > 0) {
-            activeOrg.value = data.data[0];
-            fetchPendingInvites();
-        }
-    } catch (e: any) {
-        toast.error("Telemetry failure: Failed to sync teams");
-    } finally {
-        loading.value = false;
+    await orgStore.fetchOrganizations();
+    if (orgStore.activeOrg) {
+        await orgStore.fetchInvitations(orgStore.activeOrg._id);
     }
 };
 
-const fetchPendingInvites = async () => {
-    if (!activeOrg.value) return;
-    try {
-        const { data } = await axios.get(`/api/organizations/${activeOrg.value._id}/invitations`);
-        pendingInvites.value = data.data;
-    } catch (e) { }
-};
 
 const handleCreate = async () => {
     creating.value = true;
     try {
-        const { data } = await axios.post('/api/organizations', createForm.value);
-        if (data.success) {
-            toast.success("Intelligence Unit Established!");
-            showCreateDialog.value = false;
-            fetchOrganizations();
-        }
+        await orgStore.createOrganization(createForm.value);
+        showCreateDialog.value = false;
+        // Store updates list automatically
     } catch (e: any) {
-        toast.error(e.response?.data?.error || "Strategic error establishing team");
+        // Error handled in store
     } finally {
         creating.value = false;
     }
@@ -264,22 +250,21 @@ const handleInvite = async () => {
     if (!activeOrg.value) return;
     inviting.value = true;
     try {
-        await axios.post(`/api/organizations/${activeOrg.value._id}/invitations`, inviteForm.value);
-        toast.success("Tactical Commission Dispatched!");
+        await orgStore.sendInvite(activeOrg.value._id, inviteForm.value);
         showInviteDialog.value = false;
         inviteForm.value = { email: '', role: 'editor' };
-        fetchPendingInvites();
+        // Store updates invitations
     } catch (e: any) {
-        toast.error(e.response?.data?.error || "Failed to dispatch commission");
+        // Handled in store
     } finally {
         inviting.value = false;
     }
 };
 
 const handleOrgSwitch = (orgId: string) => {
-    activeOrg.value = organizations.value.find(o => o._id === orgId);
-    fetchPendingInvites();
-    toast.info(`Context switched to ${activeOrg.value.name}`);
+    activeOrg.value = organizations.value.find((o: any) => o._id === orgId);
+    orgStore.fetchInvitations(orgId);
+    toast.info(`Context switched to ${activeOrg.value?.name}`);
 };
 
 const handleMemberAction = (cmd: string, member: any) => {

@@ -42,14 +42,14 @@ export class CloudCodeClient {
     /**
      * Generate content (Text generation via Agent Gateway)
      */
-    public async generateContent(prompt: string, modelId: string = 'gemini-2.0-flash', options: any = {}) {
+    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.0-flash', options: any = {}) {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         const headers = await this.getHeaders();
 
-        // const url = `${CloudCodeClient.AGENT_ENDPOINT}/projects/${projectId}/agent:generateContent`;
         const url = `${CloudCodeClient.AGENT_ENDPOINT}/v1internal:generateContent`;
 
-        // UNIFIED AGENT WRAPPER (Matched to Antigravity research)
+        const parts = Array.isArray(prompt) ? prompt : [{ text: prompt }];
+
         const payload = {
             project: projectId,
             requestId: this.generateRequestId(),
@@ -57,7 +57,7 @@ export class CloudCodeClient {
                 contents: [
                     {
                         role: 'user',
-                        parts: [{ text: prompt }]
+                        parts: parts
                     }
                 ],
                 generationConfig: {

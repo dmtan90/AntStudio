@@ -28,7 +28,7 @@ if (typeof window !== 'undefined') {
 }
 
 export function useTranslations() {
-    const t = (path: string) => {
+    const t = (path: string, params?: Record<string, string>) => {
         const keys = path.split('.')
 
         // Try current locale
@@ -42,19 +42,30 @@ export function useTranslations() {
             current = current[key]
         }
 
-        if (found && typeof current === 'string') return current
-
-        // Fallback to English
-        if (currentLocale.value !== 'en') {
+        let result = path
+        if (found && typeof current === 'string') {
+            result = current
+        } else if (currentLocale.value !== 'en') {
+            // Fallback to English
             let fallback = translations['en']
             for (const key of keys) {
-                if (!fallback || typeof fallback !== 'object' || !fallback[key]) return path
+                if (!fallback || typeof fallback !== 'object' || !fallback[key]) {
+                    fallback = null
+                    break
+                }
                 fallback = fallback[key]
             }
-            if (typeof fallback === 'string') return fallback
+            if (typeof fallback === 'string') result = fallback
         }
 
-        return path
+        // Replace parameters
+        if (params && typeof result === 'string') {
+            Object.entries(params).forEach(([key, value]) => {
+                result = result.replace(new RegExp(`{${key}}`, 'g'), value)
+            })
+        }
+
+        return result
     }
 
     const setLocale = (locale: Locale) => {

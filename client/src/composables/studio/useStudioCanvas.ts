@@ -1,6 +1,7 @@
-import { ref, type Ref, onUnmounted, watch } from 'vue';
+import { ref, type Ref, onUnmounted, watch, onMounted } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { QRCodeGenerator } from '@/utils/ai/QRCodeGenerator';
+import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
 // @ts-ignore
 import StudioWorker from '@/workers/studio.render.worker?worker';
 
@@ -18,6 +19,8 @@ export function useStudioCanvas(
         isGuest?: Ref<boolean>;
         myGuestId?: Ref<string | null>;
         useWebGL?: Ref<boolean>;
+        screenVideo?: Ref<HTMLVideoElement | null>;
+        activeMediaVideo?: Ref<HTMLVideoElement | null>;
     },
     overlayCanvas?: Ref<HTMLCanvasElement | null>
 ) {
@@ -30,11 +33,20 @@ export function useStudioCanvas(
     const audioLevel = ref(0);
 
     let animationFrameId: number | null = null;
+    let lastAIProcessTime = 0;
+    const AI_PROCESS_INTERVAL = 40; // Process AI every 40ms (25fps) for smoother segmentation
 
     // Worker State
     let worker: Worker | null = null;
     let isWorkerEnabled = false;
     const bridgedStreams = new Set<string>();
+
+    // AI Processing Canvas
+    let aiCanvas: HTMLCanvasElement | null = null;
+    let aiCtx: CanvasRenderingContext2D | null = null;
+    let cachedMaskImageData: ImageData | null = null;
+    let forceFirstMask = true;
+    let lastBackgroundSyncTime = 0;
 
     const initWorker = () => {
         if (!outputCanvas.value || options.useWebGL?.value === false || options.isGuest?.value) return false;
@@ -71,6 +83,12 @@ export function useStudioCanvas(
                 if (studioStore.activeScene) {
                     worker.postMessage({ type: 'update-scene', payload: { scene: JSON.parse(JSON.stringify(studioStore.activeScene)) } });
                 }
+
+                // Push current background asset if any immediately
+                if (studioStore.visualSettings.background.assetUrl) {
+                    updateBackgroundAsset(studioStore.visualSettings.background.assetUrl);
+                }
+                forceFirstMask = true;
 
                 console.log("Studio Rendering Worker Initialized");
                 return true;
@@ -124,6 +142,18 @@ export function useStudioCanvas(
             bridgeStream(key, video);
         });
 
+        // 1.5 Bridge Screen Share
+        if (options.screenVideo?.value && studioStore.isScreenSharing) {
+            currentActiveIds.add('screen');
+            bridgeStream('screen', options.screenVideo.value);
+        }
+
+        // 1.6 Bridge Active Media
+        if (options.activeMediaVideo?.value && studioStore.activeMediaId) {
+            currentActiveIds.add('media');
+            bridgeStream('media', options.activeMediaVideo.value);
+        }
+
         // 2. Remove what is no longer active
         bridgedStreams.forEach(id => {
             if (!currentActiveIds.has(id)) {
@@ -141,9 +171,64 @@ export function useStudioCanvas(
         }
     }, { deep: true });
 
+    watch(() => studioStore.visualSettings, (newSettings) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({ type: 'update-settings', payload: JSON.parse(JSON.stringify(newSettings)) });
+        }
+    }, { deep: true, immediate: true });
+
     watch(() => guestVideos.value, () => {
         if (isWorkerEnabled) checkNewStreams();
     }, { deep: true });
+
+    // Handle Background Asset Changes
+    let bgVideoElement: HTMLVideoElement | null = null;
+    const updateBackgroundAsset = async (url: string | null) => {
+        if (!isWorkerEnabled || !worker || !url) return;
+
+        if (studioStore.visualSettings.background.isAssetVideo) {
+            if (!bgVideoElement) {
+                bgVideoElement = document.createElement('video');
+                bgVideoElement.crossOrigin = 'anonymous';
+                bgVideoElement.muted = true;
+                bgVideoElement.loop = true;
+            }
+            bgVideoElement.src = url;
+            await bgVideoElement.play();
+        } else {
+            if (bgVideoElement) {
+                bgVideoElement.pause();
+                bgVideoElement.src = '';
+            }
+            try {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.src = url;
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                });
+                const bitmap = await createImageBitmap(img);
+                worker.postMessage({ type: 'update-background', payload: { backgroundData: bitmap } }, [bitmap]);
+            } catch (e) {
+                console.error("[Studio Canvas] Background load failed:", e);
+            }
+        }
+    };
+
+    watch(() => studioStore.visualSettings.background.assetUrl, (url) => {
+        updateBackgroundAsset(url);
+    }, { immediate: true });
+
+    // Initialize AI Engine
+    onMounted(async () => {
+        try {
+            await liveAIEngine.initialize();
+            console.log('[Studio Canvas] AI Engine initialized');
+        } catch (error) {
+            console.error('[Studio Canvas] Failed to initialize AI engine:', error);
+        }
+    });
 
 
     const overlayDirty = ref(true);
@@ -167,6 +252,7 @@ export function useStudioCanvas(
                 // If worker is active, send updated dimensions
                 if (isWorkerEnabled && worker && outputCanvas.value) { // Use outputCanvas for worker dimensions
                     worker.postMessage({ type: 'resize', payload: { width: outputCanvas.value.width, height: outputCanvas.value.height } });
+                    forceFirstMask = true;
                 }
             });
             resizeObserver.observe(overlayCanvas.value);
@@ -183,9 +269,24 @@ export function useStudioCanvas(
     };
 
     const startWorkerLoop = () => {
-        const loop = () => {
+        const loop = (time: number) => {
             checkNewStreams();
             if (!studioStore.godModeEnabled) audioLevel.value = options.hostLevel.value;
+
+            // Process AI for segmentation (if background effects are enabled)
+            const needsSegmentation = studioStore.visualSettings.background.mode !== 'none';
+            if (needsSegmentation && sourceVideo.value && (forceFirstMask || time - lastAIProcessTime > AI_PROCESS_INTERVAL)) {
+                processAISegmentation(sourceVideo.value, time);
+                lastAIProcessTime = time;
+                forceFirstMask = false;
+
+                // If virtual background is video, send frame too
+                if (studioStore.visualSettings.background.mode === 'virtual' && bgVideoElement && !bgVideoElement.paused) {
+                    createImageBitmap(bgVideoElement).then(bitmap => {
+                        worker?.postMessage({ type: 'update-background', payload: { backgroundData: bitmap } }, [bitmap]);
+                    });
+                }
+            }
 
             // Hybrid Rendering: Draw Overlays on Main Thread ONLY if dirty
             const hasNotifications = options.purchaseNotifications.value.length > 0;
@@ -221,9 +322,15 @@ export function useStudioCanvas(
                 }
             }
 
+            // Periodic background re-sync (every 2 seconds)
+            if (studioStore.visualSettings.background.mode === 'virtual' && time - lastBackgroundSyncTime > 2000) {
+                updateBackgroundAsset(studioStore.visualSettings.background.assetUrl);
+                lastBackgroundSyncTime = time;
+            }
+
             animationFrameId = requestAnimationFrame(loop);
         };
-        loop();
+        requestAnimationFrame(loop);
     };
 
 
@@ -572,6 +679,12 @@ export function useStudioCanvas(
             if (options.isGuest?.value) return guestVideos.value['host'] || null;
             return sourceVideo.value;
         }
+        if (source === 'screen') {
+            return options.screenVideo?.value || null;
+        }
+        if (source === 'media') {
+            return options.activeMediaVideo?.value || null;
+        }
         if (source.startsWith('guest')) {
             if (options.isGuest?.value) {
                 const remoteStream = guestVideos.value[source];
@@ -604,8 +717,78 @@ export function useStudioCanvas(
         ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     };
 
+    const processAISegmentation = (video: HTMLVideoElement, timestamp: number) => {
+        if (!worker || !video.videoWidth || !video.videoHeight) return;
+
+        try {
+            // Process frame through AI engine
+            const results = liveAIEngine.processFrame(video, timestamp, {
+                enableSegmentation: true,
+                enableFace: false,
+                enableHands: false
+            });
+
+            if (results.segmentationMask) {
+                // Create canvas if needed
+                if (!aiCanvas) {
+                    aiCanvas = document.createElement('canvas');
+                    aiCtx = aiCanvas.getContext('2d', { willReadFrequently: true });
+                }
+
+                if (aiCanvas && aiCtx) {
+                    // Resize canvas to match video
+                    if (aiCanvas.width !== video.videoWidth || aiCanvas.height !== video.videoHeight) {
+                        aiCanvas.width = video.videoWidth;
+                        aiCanvas.height = video.videoHeight;
+                    }
+
+                    // Convert mask to ImageData
+                    const mask = results.segmentationMask;
+                    const canvasWidth = aiCanvas.width;
+                    const canvasHeight = aiCanvas.height;
+
+                    if (!cachedMaskImageData || cachedMaskImageData.width !== canvasWidth || cachedMaskImageData.height !== canvasHeight) {
+                        cachedMaskImageData = aiCtx.createImageData(canvasWidth, canvasHeight);
+                    }
+
+                    const data = cachedMaskImageData.data;
+
+                    // MediaPipe mask is a Float32Array or Uint8Array
+                    const maskData = mask.getAsFloat32Array?.() || mask.getAsUint8Array?.();
+
+                    if (maskData) {
+                        // FAST PATH: Optimized loop for RGBA mask generation
+                        // We also normalize mask values to 0-255
+                        for (let i = 0; i < maskData.length; i++) {
+                            // MediaPipe Selfie Segmenter: 1.0 is person, 0.0 is background
+                            const val = maskData[i] * 255;
+                            const idx = i << 2; // i * 4
+                            data[idx] = val;     // R (used by shader)
+                            data[idx + 1] = val; // G
+                            data[idx + 2] = val; // B
+                            data[idx + 3] = 255; // A
+                        }
+
+                        if (timestamp % 1000 < 50) {
+                            console.log('[Studio Canvas] Sending mask update at timestamp:', timestamp);
+                        }
+
+                        // Send to worker
+                        worker.postMessage({
+                            type: 'update-mask',
+                            payload: { maskData: cachedMaskImageData }
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('[Studio Canvas] AI segmentation error:', error);
+        }
+    };
+
     onUnmounted(() => {
         stopRendering();
+        liveAIEngine.close();
     });
 
     return {

@@ -268,7 +268,10 @@ import { getFileUrl } from '@/utils/api'
 import { useMediaStore } from '@/stores/media'
 import { useVoiceStore } from '@/stores/voice'
 import { useAIStore } from '@/stores/ai'
-import { Plus, PlayOne, Check, Up, Down, Mic, Close, UploadTwo, CloseOne } from '@icon-park/vue-next'
+import {
+    Plus, PlayOne, Check, Up, Down,
+    Microphone as Mic, Close, UploadTwo, CloseOne
+} from '@icon-park/vue-next'
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -496,7 +499,7 @@ const generateAvatarVideo = async () => {
         const voice = allVoices.value.find(v => v.id === selectedVoice.value)
 
         const data = await aiStore.generateAvatarVideo({
-            avatarId: selectedAvatar.value,
+            avatarId: String(selectedAvatar.value),
             avatarImage: avatar?.img,
             voiceId: selectedVoice.value,
             voiceProvider: voice?.provider,

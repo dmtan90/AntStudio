@@ -16,7 +16,7 @@ export const translateToEnglish = async (text: string, language?: string): Promi
     }
     const prompt = `Translate the following text to English. Only return the translation, nothing else:\n\n${text}`
     try {
-        const translation = await generateText(prompt, 'gemini-2.0-flash-exp')
+        const translation = await generateText(prompt, 'gemini-1.5-flash')
         return translation.trim()
     } catch (error) {
         console.error('Translation failed, using original text:', error)

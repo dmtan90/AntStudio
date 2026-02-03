@@ -52,7 +52,7 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
             _id: project._id,
             projectTitle: project.title,
             s3Key: project.finalVideo?.s3Key,
-            s3Url: project.finalVideo?.s3Url,
+            s3Url: project.finalVideo?.s3Url || '',
             reviewKey: project.finalVideo?.reviewKey,
             reviewUrl: project.finalVideo?.reviewUrl,
             duration: project.finalVideo?.duration,

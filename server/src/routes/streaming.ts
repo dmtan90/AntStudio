@@ -41,10 +41,10 @@ router.post('/start', async (req: AuthRequest, res) => {
         // If projectId is provided, get the final video URL
         if (projectId) {
             const project = await Project.findOne({ _id: projectId, userId: req.user?.userId });
-            if (!project || !project.finalVideo?.s3Url) {
+            if (!project || (!project.finalVideo?.s3Url && !project.finalVideo?.s3Key)) {
                 return res.status(404).json({ success: false, error: 'Project video not found or not completed' });
             }
-            finalSource = project.finalVideo.s3Url;
+            finalSource = project.finalVideo.s3Url || project.finalVideo.s3Key;
         }
 
         if (!finalSource || !platformAccountIds?.length) {

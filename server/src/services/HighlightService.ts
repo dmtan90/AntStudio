@@ -37,7 +37,7 @@ export class HighlightService {
     /**
      * Capture the last X seconds and save as a highlight
      */
-    public async captureHighlight(sessionId: string, durationMs: number = 15000): Promise<{ s3Url: string, id: string } | null> {
+    public async captureHighlight(sessionId: string, durationMs: number = 15000): Promise<{ s3Url?: string, s3Key: string, id: string } | null> {
         const buffer = this.buffers.get(sessionId);
         if (!buffer || buffer.chunks.length === 0) {
             systemLogger.warn(`[HighlightService] No buffer found for session ${sessionId}`, 'HighlightService');
@@ -61,7 +61,8 @@ export class HighlightService {
 
             return {
                 id: highlightId,
-                s3Url: result
+                s3Key: key,
+                id: highlightId
             };
         } catch (error: any) {
             systemLogger.error(`[HighlightService] Failed to upload highlight: ${error.message}`, 'HighlightService');

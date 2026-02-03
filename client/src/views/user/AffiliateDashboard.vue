@@ -3,7 +3,7 @@
     <header class="page-header flex justify-between items-start mb-8">
        <div>
           <h1 class="text-3xl font-black text-white tracking-tight mb-2">Partner & Affiliate Hub</h1>
-          <p class="text-gray-400">Scale the AntStudio ecosystem and earn commissions on every referral.</p>
+          <p class="text-gray-400">Scale the {{ uiStore.appName }} ecosystem and earn commissions on every referral.</p>
        </div>
        <div v-if="affiliate" class="status-badge px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
           <span class="text-[10px] font-black uppercase text-green-400">{{ affiliate.status }} PARTNER</span>
@@ -14,7 +14,7 @@
        <div class="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-400">
           <peoples size="40" />
        </div>
-       <h2 class="text-2xl font-black mb-4">Join the AntStudio Partner Program</h2>
+       <h2 class="text-2xl font-black mb-4">Join the {{ uiStore.appName }} Partner Program</h2>
        <p class="text-gray-400 mb-8 px-12">Earn a 20% recurring commission for every user or business you refer to the platform. No caps, no limits.</p>
        <button class="primary-btn px-12 py-4 text-sm font-black" @click="joinProgram">BECOME A PARTNER NOW</button>
     </div>
@@ -105,7 +105,7 @@
                 </li>
                 <li class="flex gap-3 items-start">
                    <div class="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center text-purple-400 flex-shrink-0"><video-two size="12" /></div>
-                   <p class="text-[10px] leading-relaxed opacity-60">Create a "How-to" video on YouTube showing AntFlow's AI capabilities with your link in the bio.</p>
+                   <p class="text-[10px] leading-relaxed opacity-60">Create a "How-to" video on YouTube showing {{ uiStore.appName }}'s AI capabilities with your link in the bio.</p>
                 </li>
              </ul>
           </section>
@@ -116,9 +116,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useUIStore } from '@/stores/ui';
 import { Peoples, ShareTwo, History, CheckOne, Lightning, VideoTwo } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 
+const uiStore = useUIStore();
 // Mock Data
 const affiliate = ref<any>({
   status: 'active',
@@ -128,7 +130,7 @@ const affiliate = ref<any>({
   balance: { unpaid: 450.00, totalEarned: 2480.00 }
 });
 
-const referralLink = computed(() => `https://antstudio.ai/?ref=${affiliate.value?.referralCode}`);
+const referralLink = computed(() => `${uiStore.domain}/?ref=${affiliate.value?.referralCode}`);
 
 const statCards = computed(() => ({
   'Total Traffic': affiliate.value?.metrics.totalClicks || 0,

@@ -107,15 +107,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useUIStore } from '@/stores/ui';
 import { ConnectionPoint, DatabaseNetwork } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 import api from '@/utils/api';
 
+const uiStore = useUIStore();
+const appSlug = computed(() => uiStore.appName.toLowerCase().replace(/\s+/g, '-'));
+
 const regions = ref<any[]>([]);
 const dbNodes = ref([
-   { id: 'master', host: 'db-master-01.antflow.internal', role: 'WRITER', uptime: 'Active' },
-   { id: 'read1', host: 'db-replica-01.antflow.internal', role: 'READER', uptime: 'Active' },
+   { id: 'master', host: `db-master-01.${appSlug.value}.internal`, role: 'WRITER', uptime: 'Active' },
+   { id: 'read1', host: `db-replica-01.${appSlug.value}.internal`, role: 'READER', uptime: 'Active' },
 ]);
 
 const heartbeats = ref<any[]>([]);

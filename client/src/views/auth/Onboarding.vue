@@ -11,14 +11,16 @@
             <div class="flex h-full w-[850px] min-h-[550px] bg-black/40 backdrop-blur-[50px]">
                 <div class="w-1/3 border-r border-white/5 p-8 flex flex-col justify-between">
                     <div>
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 mb-8 shadow-lg shadow-blue-500/20"></div>
+                        <div
+                            class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 mb-8 shadow-lg shadow-blue-500/20">
+                        </div>
                         <h2 class="text-xs font-black uppercase tracking-widest text-white/40 mb-2">Setup Assistant</h2>
                         <h1 class="text-xl font-bold text-white leading-tight">Initialize Your AntStudio</h1>
                     </div>
-                    
+
                     <div class="space-y-3">
                         <div v-for="s in [0, 1, 2, 3]" :key="s" class="flex items-center gap-3">
-                            <div class="w-1.5 h-1.5 rounded-full transition-all duration-500" 
+                            <div class="w-1.5 h-1.5 rounded-full transition-all duration-500"
                                 :class="step === s ? 'bg-blue-500 scale-125' : 'bg-white/10'"></div>
                             <span class="text-[10px] uppercase font-bold tracking-tighter transition-all"
                                 :class="step === s ? 'text-white' : 'text-white/20'">
@@ -30,22 +32,22 @@
 
                 <!-- Main Content Area -->
                 <div class="flex-1 p-12 relative flex flex-col justify-center">
-                    
+
                     <!-- STEP 0: Regional & Language -->
                     <div v-if="step === 0" class="animate-macos-in">
                         <h2 class="text-3xl font-black mb-2 tracking-tight">Select Region</h2>
-                        <p class="text-sm text-white/50 mb-10">Choose your primary language and region for localized services.</p>
-                        
+                        <p class="text-sm text-white/50 mb-10">Choose your primary language and region for localized
+                            services.</p>
+
                         <div class="grid grid-cols-2 gap-4 mb-10">
-                            <div v-for="lang in languages" :key="lang.code"
-                                @click="selectedLang = lang.code"
+                            <div v-for="lang in languages" :key="lang.code" @click="selectedLang = lang.code"
                                 :class="['p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3',
                                     selectedLang === lang.code ? 'bg-white/10 border-blue-500/50' : 'bg-white/5 border-transparent hover:bg-white/8']">
                                 <span class="text-2xl">{{ lang.flag }}</span>
                                 <span class="font-bold text-sm">{{ lang.name }}</span>
                             </div>
                         </div>
-                        
+
                         <button @click="nextStep" class="macos-btn primary">Continue</button>
                     </div>
 
@@ -66,13 +68,15 @@
                     <!-- STEP 2: License Activation -->
                     <div v-if="step === 2" class="animate-macos-in">
                         <h2 class="text-3xl font-black mb-2 tracking-tight">Activation</h2>
-                        <p class="text-sm text-white/50 mb-10">Paste your high-fidelity license key to unlock features.</p>
+                        <p class="text-sm text-white/50 mb-10">Paste your high-fidelity license key to unlock features.
+                        </p>
                         <div class="space-y-6">
                             <el-input v-model="licenseKey" placeholder="LIC-XXXX-XXXX" class="font-mono text-center" />
                             <button @click="activateLicense" :disabled="loading" class="macos-btn purple w-full">
                                 {{ loading ? 'Validating...' : 'Authorize Registry' }}
                             </button>
-                            <p class="text-center text-[10px] font-bold text-white/30 uppercase tracking-widest cursor-pointer hover:text-white transition-colors">
+                            <p
+                                class="text-center text-[10px] font-bold text-white/30 uppercase tracking-widest cursor-pointer hover:text-white transition-colors">
                                 Get a trial key
                             </p>
                         </div>
@@ -83,16 +87,23 @@
                         <h2 class="text-3xl font-black mb-2 tracking-tight">Calibration</h2>
                         <p class="text-sm text-white/50 mb-10">Finalize storage and AI unit configuration.</p>
                         <div class="grid grid-cols-2 gap-4 mb-10">
-                            <div class="p-6 bg-white/5 rounded-3xl text-center border border-white/5 hover:border-green-500/30 transition-all cursor-pointer group">
-                                <database-network theme="outline" class="mb-3 mx-auto text-white/20 group-hover:text-green-400" size="24" />
-                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Cloud Storage</p>
+                            <div
+                                class="p-6 bg-white/5 rounded-3xl text-center border border-white/5 hover:border-green-500/30 transition-all cursor-pointer group">
+                                <database-network theme="outline"
+                                    class="mb-3 mx-auto text-white/20 group-hover:text-green-400" size="24" />
+                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Cloud
+                                    Storage</p>
                             </div>
-                            <div class="p-6 bg-white/5 rounded-3xl text-center border border-white/5 hover:border-blue-500/30 transition-all cursor-pointer group">
-                                <brain theme="outline" class="mb-3 mx-auto text-white/20 group-hover:text-blue-400" size="24" />
-                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Neural Units</p>
+                            <div
+                                class="p-6 bg-white/5 rounded-3xl text-center border border-white/5 hover:border-blue-500/30 transition-all cursor-pointer group">
+                                <brain theme="outline" class="mb-3 mx-auto text-white/20 group-hover:text-blue-400"
+                                    size="24" />
+                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Neural
+                                    Units</p>
                             </div>
                         </div>
-                        <button @click="completeOnboarding" class="macos-btn success w-full">DEPLOY PRODUCTION HUB</button>
+                        <button @click="completeOnboarding" class="macos-btn success w-full">DEPLOY PRODUCTION
+                            HUB</button>
                     </div>
 
                 </div>
@@ -104,13 +115,16 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { DatabaseNetwork, Brain } from '@icon-park/vue-next';
-import axios from 'axios';
+import { DatabaseNetwork, Brain, AtSign, Key, Config, DataServer } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 import { useTranslations } from '@/composables/useTranslations';
+import { useUserStore } from '@/stores/user';
+import { useLicenseStore } from '@/stores/license';
 
 const router = useRouter();
 const { setLocale } = useTranslations();
+const userStore = useUserStore();
+const licenseStore = useLicenseStore();
 
 const step = ref(0);
 const loading = ref(false);
@@ -138,8 +152,8 @@ const nextStep = () => {
 const registerOwner = async () => {
     loading.value = true;
     try {
-        await axios.post('/api/auth/register-owner', ownerForm.value);
-        toast.success('Identity established.');
+        await userStore.registerOwner(ownerForm.value);
+        toast.success('Identity established. Authenticating registry...');
         step.value = 2;
     } catch (e: any) {
         toast.error(e.response?.data?.error || 'Registration failed');
@@ -149,16 +163,16 @@ const registerOwner = async () => {
 const activateLicense = async () => {
     loading.value = true;
     try {
-        await axios.post('/api/license/activate', { key: licenseKey.value });
-        toast.success('License activated.');
+        await licenseStore.activateLicense({ key: licenseKey.value });
+        toast.success('Neural handshake established. Tier confirmed.');
         step.value = 3;
     } catch (e: any) {
-        toast.error(e.response?.data?.error || 'Activation failed');
+        toast.error(e.response?.data?.error || 'License activation failed');
     } finally { loading.value = false; }
 };
 
 const completeOnboarding = () => {
-    toast.success('AntStudio is ready!');
+    toast.success('AntStudio Edge is now mission-ready!');
     router.push('/dashboard');
 };
 </script>
@@ -166,7 +180,7 @@ const completeOnboarding = () => {
 <style lang="scss" scoped>
 .onboarding-page {
     min-height: 100vh;
-    background: #000;
+    background: radial-gradient(circle at center, #0a0a0c 0%, #000 100%);
     overflow: hidden;
     position: relative;
     font-family: 'Inter', sans-serif;
@@ -176,6 +190,7 @@ const completeOnboarding = () => {
     position: absolute;
     inset: 0;
     z-index: 0;
+
     .blob {
         position: absolute;
         width: 600px;
@@ -184,8 +199,18 @@ const completeOnboarding = () => {
         filter: blur(100px);
         opacity: 0.15;
     }
-    .blob-1 { background: #3b82f6; top: -100px; left: -100px; }
-    .blob-2 { background: #8b5cf6; bottom: -100px; right: -100px; }
+
+    .blob-1 {
+        background: #3b82f6;
+        top: -100px;
+        left: -100px;
+    }
+
+    .blob-2 {
+        background: #8b5cf6;
+        bottom: -100px;
+        right: -100px;
+    }
 }
 
 .glass-container {
@@ -205,9 +230,29 @@ const completeOnboarding = () => {
     border: none;
     cursor: pointer;
 
-    &.primary { background: #fff; color: #000; &:hover { opacity: 0.9; transform: translateY(-1px); } }
-    &.purple { background: #8b5cf6; color: #fff; &:hover { background: #a78bfa; } }
-    &.success { background: #10b981; color: #fff; }
+    &.primary {
+        background: #fff;
+        color: #000;
+
+        &:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+    }
+
+    &.purple {
+        background: #8b5cf6;
+        color: #fff;
+
+        &:hover {
+            background: #a78bfa;
+        }
+    }
+
+    &.success {
+        background: #10b981;
+        color: #fff;
+    }
 }
 
 .animate-macos-in {
@@ -215,8 +260,15 @@ const completeOnboarding = () => {
 }
 
 @keyframes macos-slide-up {
-    from { opacity: 0; transform: translateY(30px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 :deep(.el-input__wrapper) {
@@ -224,60 +276,5 @@ const completeOnboarding = () => {
     border-radius: 12px !important;
     padding: 12px 16px !important;
     font-weight: 600;
-}
-</style>
-
-
-<script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { AtSign, Key, Config, DataServer, Brain } from '@icon-park/vue-next';
-import axios from 'axios';
-import { toast } from 'vue-sonner';
-
-const router = useRouter();
-const step = ref(1);
-const loading = ref(false);
-
-const ownerForm = ref({ name: '', email: '', password: '' });
-const licenseKey = ref('');
-
-const registerOwner = async () => {
-    loading.value = true;
-    try {
-        await axios.post('/api/auth/register-owner', ownerForm.value);
-        toast.success('Command registered. Authenticating registry...');
-        step.value = 2;
-    } catch (e: any) {
-        toast.error(e.response?.data?.error || 'Registration failed');
-    } finally { loading.value = false; }
-};
-
-const activateLicense = async () => {
-    loading.value = true;
-    try {
-        await axios.post('/api/license/activate', { key: licenseKey.value });
-        toast.success('Neural handshake established. Tier confirmed.');
-        step.value = 3;
-    } catch (e: any) {
-        toast.error(e.response?.data?.error || 'License activation failed');
-    } finally { loading.value = false; }
-};
-
-const completeOnboarding = () => {
-    toast.success('AntStudio Edge is now mission-ready!');
-    router.push('/dashboard');
-};
-</script>
-
-<style lang="scss" scoped>
-.onboarding-page {
-    min-height: 100vh;
-    background: radial-gradient(circle at center, #0a0a0c 0%, #000 100%);
-}
-
-.glass-card {
-    backdrop-filter: blur(40px);
-    background: rgba(255, 255, 255, 0.02);
 }
 </style>

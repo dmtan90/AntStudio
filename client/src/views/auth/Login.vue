@@ -13,7 +13,10 @@
       <transition name="fade-up" appear>
         <GCard class="auth-card" :hoverable="false">
           <div class="logo">
-            <h1 class="brand">AntStudio</h1>
+            <div v-if="uiStore.logo" class="flex justify-center mb-6">
+              <img :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="h-16 w-auto object-contain" />
+            </div>
+            <h1 v-else class="brand">{{ uiStore.appName }}</h1>
             <p>Everyone can be a director with AI</p>
           </div>
 
@@ -75,7 +78,7 @@
 
           <div class="auth-footer">
             <p>
-              New to AntStudio?
+              New to {{ uiStore.appName }}?
               <router-link to="/register" class="link">Create an account</router-link>
             </p>
             <router-link to="/" class="back-home">Back to Home</router-link>
@@ -111,11 +114,13 @@ import { useRouter, useRoute } from 'vue-router'
 import { ref, reactive, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { useUserStore } from '@/stores/user'
+import { useUIStore } from '@/stores/ui'
 import { getFileUrl } from '@/utils/api'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const uiStore = useUIStore()
 
 const loading = ref(false)
 const form = reactive({

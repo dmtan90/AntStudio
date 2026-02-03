@@ -76,28 +76,33 @@ export class ActionSyncService {
 
         this.socket.on('guest:request', (payload: { id: string, name: string, streamId: string, joinedAt: Date }) => {
             console.log('[ActionSync] Guest Request:', payload);
-            studio.addGuest({
-                id: payload.id,
-                name: payload.name,
-                streamId: payload.streamId,
-                socketId: payload.id,
-                type: 'real',
-                status: 'waiting',
-                audioEnabled: true,
-                videoEnabled: true,
-                joinedAt: payload.joinedAt
-            });
-            // Show notification for host
-            import('vue-sonner').then(({ toast }) => {
-                toast.info(`Guest Join Request: ${payload.name}`, {
-                    description: 'Check the Guests panel to approve/reject.',
-                    duration: 10000
+
+            // Only host-like roles should add guests to their store to avoid loops
+            if (!window.location.search.includes('role=guest')) {
+                studio.addGuest({
+                    id: payload.id,
+                    name: payload.name,
+                    streamId: payload.streamId,
+                    socketId: payload.id,
+                    type: 'real',
+                    status: 'waiting',
+                    audioEnabled: true,
+                    videoEnabled: true,
+                    joinedAt: payload.joinedAt
                 });
-            });
+
+                // Show notification for host
+                import('vue-sonner').then(({ toast }) => {
+                    toast.info(`Guest Join Request: ${payload.name}`, {
+                        description: 'Check the Guests panel to approve/reject.',
+                        duration: 10000
+                    });
+                });
+            }
         });
 
         this.socket.on('guest:approved', (payload: any) => {
-            console.log('[ActionSync] You have been approved!');
+            console.log('🎉 [ActionSync] You have been approved!', payload);
             window.dispatchEvent(new CustomEvent('guest:approved', { detail: payload }));
         });
 

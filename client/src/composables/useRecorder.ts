@@ -3,11 +3,11 @@ import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import { useTranslations } from '@/composables/useTranslations'
 import { toast } from 'vue-sonner'
-import axios from 'axios'
 import { arFilterEngine } from '@/utils/ai/ARFilterEngine'
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine'
 import { liveSpeechAPI } from '@/utils/ai/LiveSpeechAPI'
 import { WebRTCPublisher } from '@/utils/ai/WebRTCPublisher'
+import { useRecorderCanvas } from './useRecorderCanvas'
 import {
     Camera, Monitor, Voice, Cpu, CloseOne, CheckOne, Loading, Download, Share, Magic, BroadcastRadio, Effects, MicrophoneOne, SettingConfig
 } from '@icon-park/vue-next'
@@ -195,7 +195,21 @@ export function useRecorder() {
 
     const overlayFile = ref<{ element: HTMLImageElement | HTMLVideoElement, type: 'image' | 'video', x: number, y: number, width: number, height: number, aspect: number } | null>(null)
 
-    // --- Logic ---
+    const { startRendering, stopRendering: stopCanvasRendering } = useRecorderCanvas(
+        processingCanvas,
+        sourceVideo,
+        webcamVideo,
+        annotationCanvas,
+        {
+            mode,
+            layoutPreset,
+            camSettings,
+            appliedFilter,
+            enableBeauty,
+            beautySettings,
+            isRecording
+        }
+    );
 
     const enumerateDevices = async () => {
         const devices = await navigator.mediaDevices.enumerateDevices()
@@ -298,88 +312,15 @@ export function useRecorder() {
             if (processingCanvas.value) { processingCanvas.value.width = vw; processingCanvas.value.height = vh }
             if (displayCanvas.value) { displayCanvas.value.width = vw; displayCanvas.value.height = vh }
             annotationCanvas.width = vw; annotationCanvas.height = vh
-            startRenderLoop()
+
+            // Start the optimized WebGL rendering
+            startRendering();
         }
         setupAudioVisualizer(stream)
         if (secondaryStream.value) {
             if (!webcamVideo.value) webcamVideo.value = document.createElement('video')
             webcamVideo.value.srcObject = secondaryStream.value; webcamVideo.value.muted = true; webcamVideo.value.playsInline = true; webcamVideo.value.autoplay = true; webcamVideo.value.play()
         }
-    }
-
-    const startRenderLoop = () => {
-        if (renderRequestId) cancelAnimationFrame(renderRequestId)
-        const ctx = processingCanvas.value?.getContext('2d'), dCtx = displayCanvas.value?.getContext('2d')
-        if (!ctx || !dCtx || !sourceVideo.value) return
-
-        const render = async () => {
-            if (!sourceVideo.value || sourceVideo.value.readyState < 2) { renderRequestId = requestAnimationFrame(render); return }
-            const timestamp = performance.now(), video = sourceVideo.value!
-
-            ctx.save()
-            const filter = videoFilters.find(f => f.id === appliedFilter.value)
-            ctx.filter = filter?.css || 'none'
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-
-            // 1. Backgrounds
-            if ((mode.value === 'audio' || mode.value === 'podcast') && !video.videoWidth) {
-                if (podcastSettings.value.backgroundType === 'none') { ctx.fillStyle = podcastSettings.value.bg; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height) }
-            } else if (mode.value === 'autopilot' && autopilotData.value) {
-                const sc = autopilotData.value.scenes[currentSlideIndex.value]
-                if (sc?.image) {
-                    let img = slideImageObjects.value[currentSlideIndex.value]
-                    if (!img) { img = new Image(); img.crossOrigin = 'anonymous'; img.src = sc.image; slideImageObjects.value[currentSlideIndex.value] = img }
-                    if (img.complete) ctx.drawImage(img, 0, 0, ctx.canvas.width, ctx.canvas.height)
-                }
-            }
-
-            // 2. Process AI
-            let ai: any = {}
-            const aiSource = mode.value === 'autopilot' ? video : (webcamVideo.value || video)
-            if (aiSource && (aiSource as HTMLVideoElement).videoWidth > 0 && !(aiSource as HTMLVideoElement).paused && document.visibilityState === 'visible') {
-                ai = await liveAIEngine.processFrame(aiSource, timestamp, { enableFace: true, enableHands: enableAslAssist.value, enableSegmentation: true })
-            }
-
-            // 3. Main Drawing
-            if (mode.value === 'camera' || mode.value === 'camera-screen' || mode.value === 'screen') {
-                if (layoutPreset.value === 'cam-full') ctx.drawImage(video, 0, 0, ctx.canvas.width, ctx.canvas.height)
-                else if (layoutPreset.value === 'split' && secondaryStream.value) {
-                    ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, ctx.canvas.width / 2, ctx.canvas.height)
-                } else ctx.drawImage(video, 0, 0, ctx.canvas.width, ctx.canvas.height)
-            } else if (mode.value === 'podcast' && analyser) {
-                // Draw Podcast Visualizers
-                const dataArray = new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(dataArray)
-                ctx.fillStyle = podcastSettings.value.bg; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-                // (Waveform drawing logic removed for brevity, will re-add if needed or keep it simple)
-            }
-
-            // 4. PIP
-            if (mode.value === 'camera-screen' && secondaryStream.value && layoutPreset.value === 'pip') {
-                const v2 = webcamVideo.value!
-                if (v2.readyState >= 2) {
-                    const s = camSettings.value, pw = ctx.canvas.width * (s.size / 100), ph = (pw / v2.videoWidth) * v2.videoHeight
-                    ctx.drawImage(v2, s.x, s.y, pw, ph)
-                }
-            } else if (mode.value === 'camera-screen' && secondaryStream.value && layoutPreset.value === 'split') {
-                const v2 = webcamVideo.value!
-                if (v2.readyState >= 2) ctx.drawImage(v2, 0, 0, v2.videoWidth, v2.videoHeight, ctx.canvas.width / 2, 0, ctx.canvas.width / 2, ctx.canvas.height)
-            }
-
-            // 5. Teleprompter Logic
-            if (isTeleprompterActive.value && isTeleprompterScrolling.value && isRecording.value) {
-                teleprompterScrollPos.value += teleprompterSpeed.value * 0.5
-            }
-
-            // 6. Drawing Annotations
-            if (isAnnotationActive.value) {
-                ctx.drawImage(annotationCanvas, 0, 0)
-            }
-
-            ctx.restore()
-            dCtx.clearRect(0, 0, dCtx.canvas.width, dCtx.canvas.height); dCtx.drawImage(ctx.canvas, 0, 0)
-            renderRequestId = requestAnimationFrame(render)
-        }
-        render()
     }
 
     const startRecording = () => {
@@ -428,7 +369,7 @@ export function useRecorder() {
     }
 
     onMounted(() => { window.addEventListener('keydown', handleKeyDown); enumerateDevices(); initializeStream() })
-    onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); if (currentStream.value) currentStream.value.getTracks().forEach(t => t.stop()); if (audioContext) audioContext.close(); if (renderRequestId) cancelAnimationFrame(renderRequestId); clearInterval(timer) })
+    onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); if (currentStream.value) currentStream.value.getTracks().forEach(t => t.stop()); if (audioContext) audioContext.close(); stopCanvasRendering(); clearInterval(timer) })
 
     return {
         mode, isRecording, recordingTime, maxDuration, micEnabled, activeSidebar, appliedFilter, showFinishDialog, enableAslAssist, aslMode, enableBeauty, beautySettings, currentDb, isAiActive, processingCanvas, displayCanvas, sourceVideo, webcamVideo, activeCaptions, currentCaption, translatedCaption, targetLanguage, isStreaming, streamConfig, streamStats, publisher, fileInput, presentationInput, resourcePool, activeOverlays, autopilotData, currentSlideIndex, isAnalyzing, selectedAvatar, selectedVoice, currentStream, secondaryStream, audioLevels, isScreenShareEnded, avatarPresets, tabs, camSettings, overlayFile, podcastSettings,

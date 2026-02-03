@@ -4,71 +4,85 @@
         <RecorderHeader :mode="mode" :tabs="tabs" @switch-mode="switchMode" />
 
         <!-- Preview Area -->
-        <RecorderPreview v-model:processing-canvas="processingCanvas" v-model:display-canvas="displayCanvas"
-            :mode="mode" :show-mini-preview="showMiniPreview" :mini-pos="miniPos" :is-dragging="isDragging"
-            @start-drag="startDrag" @mousedown="handleCanvasMouseDown" @mousemove="handleCanvasMouseMove" @mouseup="handleCanvasMouseUp"
-            :is-recording="isRecording" :recording-time="recordingTime" :max-duration="maxDuration"
-            :mic-enabled="micEnabled" :enable-asl-assist="enableAslAssist" :is-streaming="isStreaming"
-            :stream-stats="streamStats" :active-captions="activeCaptions" :current-caption="currentCaption"
-            :translated-caption="translatedCaption" :audio-levels="audioLevels" :current-db="currentDb" />
-        
+        <RecorderPreview v-model:processing-canvas="processingCanvas" :mode="mode" :show-mini-preview="showMiniPreview"
+            :mini-pos="miniPos" :is-dragging="isDragging" @start-drag="startDrag" @mousedown="handleCanvasMouseDown"
+            @mousemove="handleCanvasMouseMove" @mouseup="handleCanvasMouseUp" :is-recording="isRecording"
+            :recording-time="recordingTime" :max-duration="maxDuration" :mic-enabled="micEnabled"
+            :enable-asl-assist="enableAslAssist" :is-streaming="isStreaming" :stream-stats="streamStats"
+            :active-captions="activeCaptions" :current-caption="currentCaption" :translated-caption="translatedCaption"
+            :audio-levels="audioLevels" :current-db="currentDb" />
+
         <!-- Teleprompter Overlay -->
         <Transition name="fade">
-            <div v-if="isTeleprompterActive" class="teleprompter-overlay fixed top-32 left-1/2 -translate-x-1/2 w-[600px] h-[240px] z-[180] rounded-3xl overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl pointer-events-none">
-                <div class="teleprompter-content p-8 pt-20" :style="{ transform: `translateY(-${teleprompterScrollPos}px)` }">
-                    <p :style="{ fontSize: teleprompterFontSize + 'px', lineHeight: 1.5 }" class="text-white font-bold text-center drop-shadow-lg">
+            <div v-if="isTeleprompterActive"
+                class="teleprompter-overlay fixed top-32 left-1/2 -translate-x-1/2 w-[600px] h-[240px] z-[180] rounded-3xl overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl pointer-events-none">
+                <div class="teleprompter-content p-8 pt-20"
+                    :style="{ transform: `translateY(-${teleprompterScrollPos}px)` }">
+                    <p :style="{ fontSize: teleprompterFontSize + 'px', lineHeight: 1.5 }"
+                        class="text-white font-bold text-center drop-shadow-lg">
                         {{ teleprompterScript }}
                     </p>
                 </div>
                 <!-- Reading Line Indicator -->
-                <div class="absolute top-[60px] left-0 right-0 h-px bg-orange-500/50 shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-                <div class="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/80 to-transparent pointer-events-none"></div>
-                <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+                <div
+                    class="absolute top-[60px] left-0 right-0 h-px bg-orange-500/50 shadow-[0_0_10px_rgba(249,115,22,0.5)]">
+                </div>
+                <div
+                    class="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                </div>
+                <div
+                    class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
+                </div>
             </div>
         </Transition>
-        
+
         <!-- Recording Countdown Overlay -->
         <Transition name="fade">
-            <div v-if="isCountdownActive" class="countdown-overlay fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
+            <div v-if="isCountdownActive"
+                class="countdown-overlay fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none">
                 <div class="flex flex-col items-center">
                     <div class="countdown-circle relative flex items-center justify-center">
                         <svg class="absolute w-64 h-64 -rotate-90">
-                            <circle cx="128" cy="128" r="120" stroke="rgba(249, 115, 22, 0.2)" stroke-width="8" fill="transparent" />
+                            <circle cx="128" cy="128" r="120" stroke="rgba(249, 115, 22, 0.2)" stroke-width="8"
+                                fill="transparent" />
                             <circle cx="128" cy="128" r="120" stroke="#f97316" stroke-width="8" fill="transparent"
-                                :stroke-dasharray="753.98" :stroke-dashoffset="753.98 * (1 - countdownValue/3)"
+                                :stroke-dasharray="753.98" :stroke-dashoffset="753.98 * (1 - countdownValue / 3)"
                                 class="transition-all duration-1000 ease-linear" />
                         </svg>
                         <Transition name="scale" mode="out-in">
-                            <span :key="countdownValue" class="text-[120px] font-black text-white italic drop-shadow-[0_0_30px_rgba(249,115,22,0.5)]">
+                            <span :key="countdownValue"
+                                class="text-[120px] font-black text-white italic drop-shadow-[0_0_30px_rgba(249,115,22,0.5)]">
                                 {{ countdownValue }}
                             </span>
                         </Transition>
                     </div>
-                    <span class="text-orange-400 font-bold uppercase tracking-[0.3em] mt-8 animate-pulse text-xl">Get Ready!</span>
+                    <span class="text-orange-400 font-bold uppercase tracking-[0.3em] mt-8 animate-pulse text-xl">Get
+                        Ready!</span>
                 </div>
             </div>
         </Transition>
 
         <!-- Draggable Mini Preview (Webcam) -->
-        <div v-if="mode === 'screen' && !isScreenShareEnded && !showFinishDialog" 
+        <div v-if="mode === 'screen' && !isScreenShareEnded && !showFinishDialog"
             class="mini-preview-container fixed z-[150] w-[280px] aspect-video rounded-3xl overflow-hidden border-2 border-orange-500/50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all"
             :style="{ left: miniPos.x + 'px', top: miniPos.y + 'px', transform: isDragging ? 'scale(1.02)' : 'scale(1)' }"
             @mousedown="startDrag">
-            <div class="absolute top-3 left-3 z-10 px-2 py-0.5 rounded-full bg-black/40 border border-white/10 backdrop-blur-md flex items-center gap-1.5 pointer-events-none">
+            <div
+                class="absolute top-3 left-3 z-10 px-2 py-0.5 rounded-full bg-black/40 border border-white/10 backdrop-blur-md flex items-center gap-1.5 pointer-events-none">
                 <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
                 <span class="text-[8px] font-bold text-white uppercase tracking-wider">Live Cam</span>
             </div>
-            <video ref="miniCamVideo" :srcObject="webcamVideo" autoplay muted playsinline class="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] pointer-events-none" />
+            <video ref="miniCamVideo" :srcObject="webcamVideo" autoplay muted playsinline
+                class="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] pointer-events-none" />
         </div>
 
         <!-- Bottom Controls -->
         <RecorderControls :mode="mode" :is-recording="isRecording" :mic-enabled="micEnabled"
             :enable-beauty="enableBeauty" :is-streaming="isStreaming" :active-sidebar="activeSidebar"
             :is-screen-share-ended="isScreenShareEnded" :is-annotation-active="isAnnotationActive"
-            :layout-preset="layoutPreset" :is-teleprompter-active="isTeleprompterActive"
-            @toggle-sidebar="toggleSidebar" @toggle-mic="toggleMic"
-            @toggle-ai="toggleAI" @toggle-recording="toggleRecording" @toggle-live="toggleLiveStream"
-            @trigger-upload="triggerFileUpload" @initialize-stream="initializeStream"
+            :layout-preset="layoutPreset" :is-teleprompter-active="isTeleprompterActive" @toggle-sidebar="toggleSidebar"
+            @toggle-mic="toggleMic" @toggle-ai="toggleAI" @toggle-recording="toggleRecording"
+            @toggle-live="toggleLiveStream" @trigger-upload="triggerFileUpload" @initialize-stream="initializeStream"
             @update:is-annotation-active="v => isAnnotationActive = v" />
 
         <!-- Side Panel -->
@@ -78,39 +92,33 @@
             :beauty-settings="beautySettings" :active-captions="activeCaptions" :target-language="targetLanguage"
             :resource-pool="resourcePool" :active-overlays="activeOverlays" :stream-config="streamConfig"
             :autopilot-data="autopilotData" :is-recording="isRecording" :current-slide-index="currentSlideIndex"
-            :podcast-settings="podcastSettings" :avatar-presets="avatarPresets"
-            :selected-avatar="selectedAvatar" :selected-voice="selectedVoice"
-            :video-devices="videoDevices" :audio-devices="audioDevices"
-            :selected-camera-id="selectedCameraId" :selected-mic-id="selectedMicId"
-            :mic-volume="micVolume"
+            :podcast-settings="podcastSettings" :avatar-presets="avatarPresets" :selected-avatar="selectedAvatar"
+            :selected-voice="selectedVoice" :video-devices="videoDevices" :audio-devices="audioDevices"
+            :selected-camera-id="selectedCameraId" :selected-mic-id="selectedMicId" :mic-volume="micVolume"
             @close="activeSidebar = null" @update:applied-filter="v => appliedFilter = v"
             @update:enable-asl-assist="v => enableAslAssist = v" @update:asl-mode="v => aslMode = v"
-            @update:beauty-settings="v => beautySettings = v"
-            @toggle-ai-filter="toggleAIFilter" @toggle-captions="toggleCaptions" @update:target-language="v => targetLanguage = v"
+            @update:beauty-settings="v => beautySettings = v" @toggle-ai-filter="toggleAIFilter"
+            @toggle-captions="toggleCaptions" @update:target-language="v => targetLanguage = v"
             @trigger-presentation-upload="triggerPresentationUpload" @trigger-resource-upload="triggerResourceUpload"
             @toggle-overlay="toggleOverlay" @update:current-slide-index="v => currentSlideIndex = v"
             @update:selected-avatar="v => selectedAvatar = v" @update:selected-voice="v => selectedVoice = v"
             @update:selected-mic-id="v => { if (isRecording) { toast.error('Cannot change mic while recording'); return; }; selectedMicId = v; initializeStream() }"
-            @update:mic-volume="v => micVolume = v"
-            @start-autopilot="startAutopilotSession" @update:podcast-settings="v => podcastSettings = { ...podcastSettings, ...v }"
+            @update:mic-volume="v => micVolume = v" @start-autopilot="startAutopilotSession"
+            @update:podcast-settings="v => podcastSettings = { ...podcastSettings, ...v }"
             @update:audio-advanced="v => podcastSettings = { ...podcastSettings, ...v }"
-            @update:cam-settings="v => camSettings = { ...camSettings, ...v }"
-            :layout-preset="layoutPreset" :is-teleprompter-active="isTeleprompterActive"
-            :is-teleprompter-scrolling="isTeleprompterScrolling" :teleprompter-script="teleprompterScript"
-            :teleprompter-speed="teleprompterSpeed" :teleprompter-font-size="teleprompterFontSize"
-            @update:layout-preset="v => layoutPreset = v"
+            @update:cam-settings="v => camSettings = { ...camSettings, ...v }" :layout-preset="layoutPreset"
+            :is-teleprompter-active="isTeleprompterActive" :is-teleprompter-scrolling="isTeleprompterScrolling"
+            :teleprompter-script="teleprompterScript" :teleprompter-speed="teleprompterSpeed"
+            :teleprompter-font-size="teleprompterFontSize" @update:layout-preset="v => layoutPreset = v"
             @update:is-teleprompter-active="v => isTeleprompterActive = v"
             @update:is-teleprompter-scrolling="v => isTeleprompterScrolling = v"
             @update:teleprompter-script="v => teleprompterScript = v"
             @update:teleprompter-speed="v => teleprompterSpeed = v"
             @update:teleprompter-font-size="v => teleprompterFontSize = v"
-            @update:teleprompter-scroll-pos="v => teleprompterScrollPos = v"
-            :is-annotation-active="isAnnotationActive" :annotation-tool="annotationTool"
-            :annotation-color="annotationColor" :annotation-size="annotationSize"
-            @update:is-annotation-active="v => isAnnotationActive = v"
-            @update:annotation-tool="v => annotationTool = v"
-            @update:annotation-color="v => annotationColor = v"
-            @update:annotation-size="v => annotationSize = v"
+            @update:teleprompter-scroll-pos="v => teleprompterScrollPos = v" :is-annotation-active="isAnnotationActive"
+            :annotation-tool="annotationTool" :annotation-color="annotationColor" :annotation-size="annotationSize"
+            @update:is-annotation-active="v => isAnnotationActive = v" @update:annotation-tool="v => annotationTool = v"
+            @update:annotation-color="v => annotationColor = v" @update:annotation-size="v => annotationSize = v"
             @clear-annotations="clearAnnotations" />
 
         <!-- Hidden Inputs -->
@@ -123,7 +131,8 @@
             class="finish-dialog glass-dialog">
             <div class="flex flex-col gap-6 py-4">
                 <!-- Video Preview Player -->
-                <div v-if="recordedVideoUrl" class="aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-2xl">
+                <div v-if="recordedVideoUrl"
+                    class="aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-2xl">
                     <video :src="recordedVideoUrl" controls class="w-full h-full object-contain" />
                 </div>
 
@@ -297,12 +306,30 @@ onMounted(() => {
 }
 
 // Transitions
-.fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.5s ease;
+}
 
-.scale-enter-active, .scale-leave-active { transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.scale-enter-from { transform: scale(0.5); opacity: 0; }
-.scale-leave-to { transform: scale(1.5); opacity: 0; }
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.scale-enter-active,
+.scale-leave-active {
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.scale-enter-from {
+    transform: scale(0.5);
+    opacity: 0;
+}
+
+.scale-leave-to {
+    transform: scale(1.5);
+    opacity: 0;
+}
 
 .countdown-circle circle {
     stroke-linecap: round;
@@ -310,6 +337,9 @@ onMounted(() => {
 
 .mini-preview-container {
     cursor: grab;
-    &:active { cursor: grabbing; }
+
+    &:active {
+        cursor: grabbing;
+    }
 }
 </style>

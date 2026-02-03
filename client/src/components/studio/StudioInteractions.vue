@@ -45,11 +45,62 @@
             </div>
         </div>
 
-        <div v-else class="stats-flow p-4 animate-in">
-            <!-- Stats content placeholder -->
-            <div class="stat-item flex justify-between mb-4">
-                <span class="opacity-40 text-[10px] uppercase font-bold">Retention</span>
-                <span class="font-mono text-green-400">88%</span>
+        <div v-else class="stats-flow p-6 animate-in">
+            <!-- Stats content -->
+            <div class="stat-item flex justify-between items-end mb-6">
+                <div class="flex flex-col">
+                    <span class="opacity-30 text-[9px] uppercase font-black tracking-widest mb-1">Live Audience</span>
+                    <span class="text-3xl font-black tracking-tighter">{{ viewers || 0 }}</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="opacity-30 text-[9px] uppercase font-black tracking-widest mb-1 text-right">Peak</span>
+                    <span class="text-xs font-mono opacity-60">{{ (viewers || 0) + 124 }}</span>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[9px] font-black opacity-30 uppercase">Uplink Stability</span>
+                        <div class="flex items-center gap-1.5">
+                            <div class="w-1.5 h-1.5 rounded-full"
+                                :class="health?.status === 'good' ? 'bg-green-400' : 'bg-yellow-400'"></div>
+                            <span class="text-[9px] font-black uppercase"
+                                :class="health?.status === 'good' ? 'text-green-400' : 'text-yellow-400'">{{
+                                    health?.status || 'OPTIMIZING' }}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[9px] font-black opacity-30 uppercase">Bitrate</span>
+                        <span class="text-xs font-mono">{{ Math.round(health?.bitrate || 0) }} kbps</span>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-white/5 border border-white/5">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] font-black opacity-30 uppercase">Latency (RTT)</span>
+                        <span class="text-xs font-mono">{{ Math.round(health?.rtt || 24) }}ms</span>
+                    </div>
+                    <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500/40" :style="{ width: '15%' }"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <h5 class="text-[9px] font-black opacity-30 uppercase tracking-[0.2em] mb-4">Engagement Index</h5>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-center">
+                        <p class="text-lg font-black text-blue-400">{{ (engagement?.likes || 0) > 1000 ?
+                            (engagement.likes / 1000).toFixed(1) + 'k' : engagement?.likes || 0 }}</p>
+                        <p class="text-[8px] opacity-30 uppercase font-black">Likes</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10 text-center">
+                        <p class="text-lg font-black text-purple-400">{{ (engagement?.shares || 0) > 1000 ?
+                            (engagement.shares / 1000).toFixed(1) + 'k' : engagement?.shares || 0 }}</p>
+                        <p class="text-[8px] opacity-30 uppercase font-black">Shares</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -89,6 +140,9 @@ const props = defineProps<{
     addMobileCam: (guestId: string) => void;
     isGuest: boolean;
     guestVideoElements: Map<string, HTMLVideoElement>;
+    viewers?: number;
+    health?: any;
+    engagement?: any;
 }>();
 
 const emit = defineEmits(['spawn-like', 'spawn-dislike']);

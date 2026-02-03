@@ -18,6 +18,9 @@ import { sceneDetectionService } from '../services/ai/SceneDetectionService.js';
 import { audioAnalysisService } from '../services/ai/AudioAnalysisService.js';
 import { silenceDetectionService } from '../services/ai/SilenceDetectionService.js';
 
+import { aiGuestService } from '../services/ai/AIGuestService.js';
+import { ttsService } from '../services/ai/TTSService.js';
+
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -50,7 +53,7 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
         // Enhance prompt with style
         const fullPrompt = style ? `${style} style. ${prompt}` : prompt;
 
-        const { s3Key, s3Url } = await generateImage(
+        const { s3Key } = await generateImage(
             fullPrompt,
             userId, // Using userId as projectId for now or 'user-gen'
             `gen_img_${Date.now()}`,
@@ -95,7 +98,7 @@ router.post('/generate-voice', async (req: AuthRequest, res) => {
             return res.status(402).json({ success: false, error: ce.message });
         }
 
-        const { s3Key, s3Url } = await generateAudio(
+        const { s3Key } = await generateAudio(
             text,
             userId,
             `gen_voice_${Date.now()}`,
@@ -336,6 +339,46 @@ router.post('/detect-silence', upload.single('file'), async (req: AuthRequest, r
     }
 });
 
+// ============================================================================
+// AI GUEST INTERACTION
+// ============================================================================
+
+/**
+ * POST /api/ai/guest/talk - Generate personality-driven response
+ */
+router.post('/guest/talk', async (req: AuthRequest, res) => {
+    try {
+        const { entityId, prompt } = req.body;
+        const userId = req.user!.userId;
+
+        if (!entityId || !prompt) {
+            return res.status(400).json({ success: false, error: 'EntityId and Prompt are required' });
+        }
+
+        const result = await aiGuestService.generateGuestDialogue(userId, entityId, prompt);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('[AI/Guest] Talk Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/guest/tts - Generate voice for text
+ */
+router.post('/guest/tts', async (req: AuthRequest, res) => {
+    try {
+        const { text, voiceId } = req.body;
+        if (!text) return res.status(400).json({ success: false, error: 'Text is required' });
+
+        const result = await ttsService.synthesizeSpeech(text, voiceId);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('[AI/Guest] TTS Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // POST /api/ai/generate-captions
 router.post('/generate-captions', upload.single('file'), async (req: AuthRequest, res) => {
     try {
@@ -558,9 +601,9 @@ router.post('/analyze-product', upload.single('file'), async (req, res) => {
                 const imagePrompt = `Professional product photography of ${product.name}, ${product.description ? product.description.substring(0, 100) : ''}, high quality, studio lighting, 4k`;
 
                 // Using a temp/random project ID as we don't have one here contextually, or use 'temp'
-                const { s3Key, s3Url } = await generateImage(imagePrompt, 'temp-analysis', `gen_${Date.now()}`, { aspectRatio: '1:1' });
+                const { s3Key } = await generateImage(imagePrompt, 'temp-analysis', `gen_${Date.now()}`, { aspectRatio: '1:1' });
 
-                product.images = [{ id: Math.floor(Math.random() * 10000), url: s3Url || s3Key }];
+                product.images = [{ id: Math.floor(Math.random() * 10000), url: s3Key }];
             } catch (imageError) {
                 console.warn('Failed to generate AI product image:', imageError);
                 // Fallback placeholder
@@ -651,6 +694,7 @@ router.post('/convert-presentation', upload.single('file'), async (req: AuthRequ
 
         if (fileType === 'pdf') {
             // Import dynamically to avoid startup issues if not installed yet (though we just installed it)
+            // @ts-ignore
             const pdf2img = (await import('pdf-img-convert')).default;
 
             // Convert PDF pages to images (Uint8Array[])
@@ -795,6 +839,7 @@ router.post('/autopilot/analyze', upload.single('file'), async (req: AuthRequest
         // 2. Handle Visuals (PDF -> Images)
         let slideImages: string[] = [];
         if (fileType === 'pdf') {
+            // @ts-ignore
             const pdf2img = (await import('pdf-img-convert')).default;
             const outputImages = await pdf2img.convert(file.buffer, {
                 width: 1920,

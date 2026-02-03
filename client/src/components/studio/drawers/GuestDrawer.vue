@@ -1,18 +1,23 @@
 <template>
-  <el-dialog v-model="isVisible" :show-close="false" :align-center="true" :width="500"
+  <el-dialog v-model="isVisible" :show-close="false" :align-center="true" :width="540"
     class="guest-drawer-modal glass-dark">
     <template #header>
       <div class="flex justify-between items-center p-6 border-b border-white/5">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-blue-500/20 flex items-center justify-center">
-            <share-two theme="outline" size="20" class="text-blue-400" />
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center">
+            <iphone v-if="mode === 'mobile'" theme="outline" size="24" class="text-blue-400" />
+            <share-two v-else theme="outline" size="24" class="text-blue-400" />
           </div>
           <div>
-            <h2 class="text-lg font-black text-white uppercase tracking-tighter">Invite Guests</h2>
-            <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Connect with your audience</p>
+            <h2 class="text-xl font-black text-white uppercase tracking-tighter">
+              {{ mode === 'mobile' ? 'Add Mobile Cam' : 'Invite Guests' }}
+            </h2>
+            <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+              {{ mode === 'mobile' ? 'Link your secondary device' : 'Connect with your audience' }}
+            </p>
           </div>
         </div>
-        <button @click="$emit('update:modelValue', false)" class="close-btn">
+        <button @click="isVisible = false" class="close-btn">
           <close theme="outline" size="20" />
         </button>
       </div>
@@ -26,7 +31,7 @@
           <span class="text-[9px] font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">SECURE LINK</span>
         </div>
         <div class="relative group">
-          <input type="text" readonly :value="guestLink"
+          <input type="text" readonly :value="activeLink"
             class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-5 pr-32 text-sm font-mono text-white group-hover:border-blue-500/30 transition-all outline-none" />
           <button @click="copyLink"
             class="absolute right-2 top-2 bottom-2 px-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
@@ -36,16 +41,12 @@
       </section>
 
       <div class="grid grid-cols-2 gap-8">
-        <!-- Section: QR Code (Mock) -->
+        <!-- Section: QR Code -->
         <section class="space-y-4">
           <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Scan to Join</h4>
           <div
             class="aspect-square bg-white rounded-3xl p-4 flex items-center justify-center shadow-2xl shadow-blue-500/10 group cursor-pointer border-4 border-white group-hover:scale-105 transition-all">
-            <!-- Mock QR with icon -->
-            <div class="relative">
-              <div class="absolute inset-0 bg-blue-500/5 blur-xl"></div>
-              <qrcode theme="outline" size="120" class="text-black relative" />
-            </div>
+            <img :src="qrCodeUrl" class="w-full h-full object-contain" alt="Join QR Code" />
           </div>
           <p class="text-[9px] text-center text-white/30 font-bold">Fastest for mobile guests</p>
         </section>
@@ -56,15 +57,15 @@
           <div class="space-y-3">
             <div class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
               <span class="text-[10px] font-bold text-white/60">Auto-Approve</span>
-              <el-switch size="small" v-model="autoApprove" />
+              <el-switch size="small" v-model="studioStore.guestPermissions.autoApprove" />
             </div>
             <div class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
               <span class="text-[10px] font-bold text-white/60">Mic Enabled</span>
-              <el-switch size="small" v-model="micEnabled" />
+              <el-switch size="small" v-model="studioStore.guestPermissions.micEnabled" />
             </div>
             <div class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
               <span class="text-[10px] font-bold text-white/60">Cam Enabled</span>
-              <el-switch size="small" v-model="camEnabled" />
+              <el-switch size="small" v-model="studioStore.guestPermissions.camEnabled" />
             </div>
           </div>
         </section>
@@ -99,7 +100,7 @@
     </div>
 
     <template #footer>
-      <div class="text-center">
+      <div class="text-center pb-6">
         <p class="text-[10px] text-white/20 font-bold">Max 4 guests per session • Link expires in 24 hours</p>
       </div>
     </template>
@@ -109,36 +110,43 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { ShareTwo, Close, PayCodeOne as Qrcode, User } from '@icon-park/vue-next';
+import { ShareTwo, Close, User, Iphone } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
 import { toast } from 'vue-sonner';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: boolean;
-}>();
+  mode?: 'invite' | 'mobile';
+  customLink?: string | null;
+}>(), {
+  mode: 'invite',
+  customLink: null
+});
+
+const emit = defineEmits(['update:modelValue']);
 
 const isVisible = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
 });
 
-const emit = defineEmits(['update:modelValue']);
-
 const studioStore = useStudioStore();
 const copied = ref(false);
-const autoApprove = ref(false);
-const micEnabled = ref(true);
-const camEnabled = ref(true);
 const { guestJoinLink } = storeToRefs(studioStore);
 
-const guestLink = computed(() => guestJoinLink.value || 'https://localhost:3000/join/init...');
+const activeLink = computed(() => props.customLink || guestJoinLink.value || 'Generating secure link...');
 const waitingGuests = computed(() => studioStore.waitingGuests);
 
+const qrCodeUrl = computed(() => {
+  if (!activeLink.value || activeLink.value.includes('Generating')) return '';
+  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(activeLink.value)}`;
+});
+
 const copyLink = () => {
-  if (guestLink.value) {
-    navigator.clipboard.writeText(guestLink.value);
+  if (activeLink.value) {
+    navigator.clipboard.writeText(activeLink.value);
     copied.value = true;
-    toast.success('Invitation link copied to clipboard');
+    toast.success('Link copied to clipboard');
     setTimeout(() => (copied.value = false), 2000);
   }
 };
@@ -146,25 +154,17 @@ const copyLink = () => {
 const approveGuest = (id: string) => {
   studioStore.approveGuest(id);
   studioStore.broadcastCurrentState();
-  toast.success('Guest approved and added to live stream');
+  toast.success('Guest approved');
 };
 
 const rejectGuest = (id: string) => {
   studioStore.rejectGuest(id);
-  toast.info('Guest invitation rejected');
+  toast.info('Invitation rejected');
 };
 
 onMounted(() => {
-  if (studioStore.currentSessionId) {
+  if (props.mode === 'invite' && !guestJoinLink.value && studioStore.currentSessionId) {
     studioStore.generateInvite(studioStore.currentSessionId);
-  } else if (!guestJoinLink.value) {
-    studioStore.generateGuestLink();
-  }
-});
-
-watch(() => studioStore.currentSessionId, (newId) => {
-  if (newId) {
-    studioStore.generateInvite(newId);
   }
 });
 </script>

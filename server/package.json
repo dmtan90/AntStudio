@@ -36,8 +36,10 @@
         "mammoth": "^1.11.0",
         "mongoose": "^9.1.2",
         "multer": "^2.0.2",
+        "nanoid": "^5.1.6",
         "node-os-utils": "^2.0.1",
         "nodemailer": "^7.0.12",
+        "pdf-img-convert": "^2.0.0",
         "pdf-parse": "^2.4.5",
         "playwright": "^1.58.0",
         "pptx-parser": "^1.1.7-beta.9",
@@ -45,8 +47,7 @@
         "stripe": "^20.1.2",
         "systeminformation": "^5.30.6",
         "uuid": "^13.0.0",
-        "ws": "^8.19.0",
-        "nanoid": "^5.1.6"
+        "ws": "^8.19.0"
     },
     "devDependencies": {
         "@types/bcrypt": "^6.0.0",
