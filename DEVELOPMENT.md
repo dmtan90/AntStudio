@@ -89,6 +89,17 @@ AWS_S3_BUCKET=
 # AI Services
 GEMINI_API_KEY=
 ELEVENLABS_API_KEY=
+
+# Payment Gateways
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
+PAYPAL_WEBHOOK_ID=
+
+# License Portal
+LICENSE_PORTAL_URL=https://license.antflow.ai
+LICENSE_VERIFICATION_KEY=
 ```
 
 #### Frontend (.env)
@@ -122,6 +133,20 @@ pnpm dev
 The application will be available at:
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:4000`
+
+### 4. Webhook Configuration (Payments)
+
+To test payments locally, you need to expose your local server or use provider CLIs.
+
+**Stripe:**
+```bash
+stripe listen --forward-to localhost:4000/api/webhooks/stripe
+```
+Copy the webhook secret (`whsec_...`) to your `.env` file.
+
+**PayPal:**
+1. Configure a webhook in the PayPal Developer Dashboard pointing to your ngrok URL (e.g., `https://your-ngrok.io/api/webhooks/paypal`).
+2. Event types required: `PAYMENT.SALE.COMPLETED`, `BILLING.SUBSCRIPTION.CREATED`, `BILLING.SUBSCRIPTION.CANCELLED`.
 
 ## 🧪 Testing
 

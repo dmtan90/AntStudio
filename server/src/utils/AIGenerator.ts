@@ -3,7 +3,7 @@ import config from './config.js'
 import { configService } from './configService.js'
 import { uploadToS3 } from './s3.js'
 import { buildCharacterSheetPrompt, buildScenePrompt, buildVeoVideoPrompt } from './PromptBuilder.js'
-import { NeuralArchiveService } from '../services/NeuralArchiveService.js'
+import { VTuberService } from '../services/VTuberService.js'
 
 /**
  * AI GENERATOR UTILITIES

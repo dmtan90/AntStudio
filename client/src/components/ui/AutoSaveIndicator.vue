@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { Check, CloseOne } from '@icon-park/vue-next'
-import { formatDistanceToNow } from 'date-fns'
+
 
 interface Props {
     status: 'idle' | 'saving' | 'saved' | 'error'
@@ -46,7 +46,10 @@ const props = defineProps<Props>()
 
 const timeAgo = computed(() => {
     if (!props.lastSavedAt) return ''
-    return formatDistanceToNow(props.lastSavedAt, { addSuffix: true })
+    const seconds = Math.floor((new Date().getTime() - props.lastSavedAt.getTime()) / 1000);
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
 })
 
 // Auto-hide "Saved" status after 2 seconds

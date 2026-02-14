@@ -37,7 +37,7 @@ export function useVideoAssembler() {
 
         try {
             // Initialize Worker
-            worker = new Worker(new URL('../workers/videoAssembly.worker.ts', import.meta.url), {
+            worker = new Worker(new URL('../workers/VideoAssembly.worker.ts', import.meta.url), {
                 type: 'module'
             });
 

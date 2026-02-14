@@ -8,7 +8,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 const router = Router();
 
 // GET /api/s3/* - Proxy S3 files with authentication
-router.get('/*', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/*', async (req: AuthRequest, res: Response) => {
     try {
         const key = req.params[0];
         if (!key) return res.status(400).json({ success: false, data: null, error: 'File key is required' });

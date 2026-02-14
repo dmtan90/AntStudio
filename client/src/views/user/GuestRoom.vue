@@ -128,11 +128,13 @@ import {
 import api from '@/utils/api';
 import { toast } from 'vue-sonner';
 import { useUserStore } from '@/stores/user';
+import { useStreamingStore } from '@/stores/streaming';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const streamingStore = useStreamingStore();
 const loading = ref(true);
 const error = ref<string | null>(null);
 const hostName = ref('Alpha Production');
@@ -168,17 +170,17 @@ const validateToken = async () => {
    }
 
    try {
-      const res = await api.get(`/streaming/guest/validate/${token}`);
-      if (res.data?.sessionId) {
-         sessionId.value = res.data.sessionId;
-         if (res.data.hostName) {
-            hostName.value = res.data.hostName;
+      const data = await streamingStore.validateGuestToken(token);
+      if (data?.sessionId) {
+         sessionId.value = data.sessionId;
+         if (data.hostName) {
+            hostName.value = data.hostName;
          }
          // webrtcConfig is no longer needed for guest publishing
          initMedia();
       }
       else {
-         error.value = res.data?.error || "Expired or invalid invite.";
+         error.value = data?.error || "Expired or invalid invite.";
       }
    } catch (e: any) {
       error.value = e.response?.data?.error || "Expired or invalid invite.";
@@ -363,11 +365,15 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .guest-room {
-   background: radial-gradient(circle at 50% 10%, #151515 0%, #050505 100%);
+   background: #0a0a0a;
+   background-image: 
+       radial-gradient(circle at 50% 10%, rgba(59, 130, 246, 0.1), transparent 500px),
+       radial-gradient(circle at 10% 90%, rgba(168, 85, 247, 0.05), transparent 500px);
+   font-family: 'Outfit', sans-serif;
 }
 
 .brand-header {
-   opacity: 0.4;
+   opacity: 0.6;
    transition: opacity 0.3s;
 
    &:hover {
@@ -379,7 +385,128 @@ onUnmounted(() => {
    width: 80px;
    height: 80px;
    border-radius: 50%;
-   @include flex-center;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: rgba(255, 255, 255, 0.03);
+   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+   background: rgba(20, 20, 25, 0.6);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 24px;
+   backdrop-filter: blur(24px) saturate(180%);
+   box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.ctrl-btn {
+   width: 56px;
+   height: 56px;
+   border-radius: 50%;
+   background: rgba(255, 255, 255, 0.03);
+   color: #fff;
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   cursor: pointer;
+   transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+
+   &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.15);
+   }
+
+   &.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+   }
+}
+
+.primary-btn {
+   background: #3b82f6;
+   color: white;
+   font-weight: 800;
+   border-radius: 16px;
+   transition: all 0.2s;
+   border: none;
+   cursor: pointer;
+   font-size: 14px;
+   letter-spacing: 0.05em;
+   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+   
+   &:hover:not(:disabled) {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+   }
+   
+   &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+   }
+}
+
+.glass-input :deep(.el-input__wrapper) {
+   background: rgba(0, 0, 0, 0.3) !important;
+   box-shadow: none !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   border-radius: 12px !important;
+   color: white !important;
+   font-weight: 600;
+   
+   &:hover {
+       border-color: rgba(255, 255, 255, 0.2) !important;
+       background: rgba(0, 0, 0, 0.4) !important;
+   }
+   
+   &.is-focus {
+       border-color: #3b82f6 !important;
+       background: rgba(0, 0, 0, 0.5) !important;
+       box-shadow: 0 0 0 1px #3b82f6 !important;
+   }
+}
+
+.onboarding-flow {
+   animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+   padding-bottom: 80px;
+}
+
+.loading-spinner {
+   width: 20px;
+   height: 20px;
+   border: 2px solid rgba(255, 255, 255, 0.1);
+   border-top-color: #fff;
+   border-radius: 50%;
+   animation: spin 1s linear infinite;
+}
+
+.animate-fade-in {
+   animation: fadeIn 1s ease-out;
+}
+
+@keyframes fadeIn {
+   from { opacity: 0; }
+   to { opacity: 0.6; }
+}
+
+@keyframes spin {
+   to { transform: rotate(360deg); }
+}
+
+@keyframes slideUp {
+   from {
+      opacity: 0;
+      transform: translateY(20px);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
 }
 
 .ctrl-btn {

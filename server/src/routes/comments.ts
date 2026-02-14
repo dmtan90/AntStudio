@@ -21,8 +21,8 @@ router.get('/', async (req: AuthRequest, res) => {
         if (resolved !== undefined) filter.resolved = resolved === 'true';
 
         const comments = await Comment.find(filter)
-            .populate('author', 'name email avatar')
-            .populate('replies.author', 'name email avatar')
+            .populate('userId', 'name email avatar')
+            .populate('replies.userId', 'name email avatar')
             .sort({ createdAt: -1 });
 
         res.json({ success: true, data: { comments } });
@@ -35,7 +35,7 @@ router.get('/', async (req: AuthRequest, res) => {
 router.post('/', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { projectId, segmentId, timestamp, content } = req.body;
+        const { projectId, segmentId, timestamp, content, userName } = req.body;
 
         if (!projectId || !content) {
             return res.status(400).json({ success: false, error: 'projectId and content are required' });
@@ -45,11 +45,12 @@ router.post('/', async (req: AuthRequest, res) => {
             projectId,
             segmentId,
             timestamp,
-            author: req.user!.userId,
+            userId: req.user!.userId,
+            userName: userName || req.user!.email.split('@')[0], // Fallback to email prefix
             content
         });
 
-        await comment.populate('author', 'name email avatar');
+        await comment.populate('userId', 'name email avatar');
 
         res.json({ success: true, data: { comment } });
     } catch (e: any) {
@@ -72,15 +73,15 @@ router.post('/:id/reply', async (req: AuthRequest, res) => {
             {
                 $push: {
                     replies: {
-                        author: req.user!.userId,
+                        userId: req.user!.userId,
                         content,
                         createdAt: new Date()
                     }
                 }
             },
             { new: true }
-        ).populate('author', 'name email avatar')
-            .populate('replies.author', 'name email avatar');
+        ).populate('userId', 'name email avatar')
+            .populate('replies.userId', 'name email avatar');
 
         if (!comment) {
             return res.status(404).json({ success: false, error: 'Comment not found' });
@@ -102,8 +103,8 @@ router.patch('/:id/resolve', async (req: AuthRequest, res) => {
             req.params.id,
             { resolved: resolved !== undefined ? resolved : true },
             { new: true }
-        ).populate('author', 'name email avatar')
-            .populate('replies.author', 'name email avatar');
+        ).populate('userId', 'name email avatar')
+            .populate('replies.userId', 'name email avatar');
 
         if (!comment) {
             return res.status(404).json({ success: false, error: 'Comment not found' });
@@ -126,7 +127,7 @@ router.delete('/:id', async (req: AuthRequest, res) => {
         }
 
         // Only author can delete
-        if (comment.author.toString() !== req.user!.userId) {
+        if (comment.userId.toString() !== req.user!.userId) {
             return res.status(403).json({ success: false, error: 'Unauthorized' });
         }
 

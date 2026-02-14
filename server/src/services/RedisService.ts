@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { systemLogger } from '../utils/systemLogger.js';
 import { NodeHeartbeat } from '../models/NodeHeartbeat.js';
 
@@ -6,7 +6,7 @@ import { NodeHeartbeat } from '../models/NodeHeartbeat.js';
  * Service to manage distributed state across the AntFlow cluster.
  */
 export class RedisService {
-    private client: any | null = null;
+    private client: Redis | null = null;
     private readonly nodeId: string;
     private readonly SESSION_KEY_PREFIX = 'antflow:session:';
     private readonly HEARTBEAT_KEY_PREFIX = 'antflow:node:';
@@ -23,7 +23,6 @@ export class RedisService {
             const db = parseInt(process.env.REDIS_DB || '0');
             const redisUri = process.env.REDIS_URI;
 
-            // @ts-ignore
             if (redisUri) {
                 this.client = new Redis(redisUri);
             } else {
@@ -32,7 +31,7 @@ export class RedisService {
                     port,
                     password,
                     db,
-                    retryStrategy: (times) => {
+                    retryStrategy: (times: number) => {
                         const delay = Math.min(times * 50, 2000);
                         return delay;
                     }
@@ -68,7 +67,7 @@ export class RedisService {
     public async ping(): Promise<string> {
         if (!this.isReady()) return 'OFFLINE';
         try {
-            return await this.client.ping();
+            return await this.client!.ping();
         } catch (e) {
             return 'ERROR';
         }
@@ -85,7 +84,7 @@ export class RedisService {
                     lastSeen: Date.now(),
                     ip: process.env.NODE_IP || '127.0.0.1'
                 };
-                await this.client.set(`${this.HEARTBEAT_KEY_PREFIX}${this.nodeId}`, JSON.stringify(nodeInfo), 'EX', 15);
+                await this.client!.set(`${this.HEARTBEAT_KEY_PREFIX}${this.nodeId}`, JSON.stringify(nodeInfo), 'EX', 15);
             } catch (e) { }
         }, 10000);
 
@@ -222,7 +221,7 @@ export class RedisService {
     public async del(key: string): Promise<void> {
         if (!this.isReady()) return;
         try {
-            await this.client.del(key);
+            await this.client!.del(key);
         } catch (e) {
             // Silence
         }
@@ -234,9 +233,9 @@ export class RedisService {
     public async invalidatePattern(pattern: string): Promise<void> {
         if (!this.isReady()) return;
         try {
-            const keys = await this.client.keys(pattern);
+            const keys = await this.client!.keys(pattern);
             if (keys.length > 0) {
-                await this.client.del(...keys);
+                await this.client!.del(...keys);
             }
         } catch (e) {
             systemLogger.warn(`[Redis] Failed to invalidate pattern ${pattern}`, 'RedisService');

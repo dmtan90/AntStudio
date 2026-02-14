@@ -12,6 +12,8 @@ const Schema = z.object({
   objective: z.string(),
   brand: EditorBrandSchema,
   adapter: z.union([z.literal("create"), z.literal("edit")]),
+  ratio: z.string().optional(),
+  headless: z.boolean().optional(),
 });
 
 export function useInitializeEditor() {
@@ -29,6 +31,9 @@ export function useInitializeEditor() {
     if (!whitelistOrigins.includes(event.origin) || isInitialized.value) return;
     try {
       const payload = Schema.parse(JSON.parse(event.data));
+      if (payload.headless) editor.isHeadless = true;
+      if (payload.ratio) editor.targetRatio = payload.ratio;
+      
       editor.adapter.initialize({ product: payload.product, objective: payload.objective, brand: payload.brand, mode: payload.adapter });
       editor.initialize("adapter");
       isInitialized.value = true;

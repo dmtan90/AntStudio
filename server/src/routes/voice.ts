@@ -28,10 +28,13 @@ const getGoogleTTS = async () => {
     // Dynamic token sourcing from standard accounts
     const { aiAccountManager } = await import('../utils/ai/AIAccountManager.js');
     const account = await aiAccountManager.getOptimalAccount('audio');
-    if (account && account.providerId === 'google' && account.accountType === 'standard') {
+    if (account && account.providerId === 'google') {
         const token = await aiAccountManager.refreshAccessToken(account);
         if (typeof (provider as any).updateClient === 'function') {
-            (provider as any).updateClient({ accessToken: token });
+            (provider as any).updateClient({ 
+                accessToken: token,
+                projectId: account.projectId
+            });
         }
     }
 

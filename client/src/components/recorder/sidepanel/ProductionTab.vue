@@ -17,7 +17,7 @@
         </div>
 
         <!-- Teleprompter Controls -->
-        <div class="panel-section">
+        <div class="panel-section" data-guide="teleprompter">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="section-title">Teleprompter</h3>
                 <el-switch v-model="localIsTeleprompterActive" @change="v => emit('update:is-teleprompter-active', v as boolean)" />
@@ -108,23 +108,28 @@
             </div>
         </div>
 
-        <!-- Recording Quality (Mockup for now) -->
+        <!-- Recording Quality -->
         <div class="panel-section">
             <h3 class="section-title">Video Quality</h3>
             <div class="mt-4 space-y-4">
-                <div class="bg-white/5 rounded-2xl p-4 border border-white/5 flex items-center justify-between group hover:border-orange-500/30 transition-all cursor-not-allowed opacity-60">
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold uppercase text-white/40 tracking-widest">Resolution</span>
-                        <span class="text-sm font-bold text-white">Full HD (1080p)</span>
-                    </div>
-                    <loading theme="outline" size="16" class="animate-spin opacity-20" />
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Resolution</label>
+                    <el-select :model-value="recordingQuality.resolution" 
+                        @update:model-value="v => emit('update:recording-quality', { ...recordingQuality, resolution: v })" 
+                        class="glass-select w-full" size="small">
+                        <el-option label="HD (720p)" value="720p" />
+                        <el-option label="Full HD (1080p)" value="1080p" />
+                        <el-option label="4K Ultra HD" value="4k" />
+                    </el-select>
                 </div>
-                <div class="bg-white/5 rounded-2xl p-4 border border-white/5 flex items-center justify-between group hover:border-orange-500/30 transition-all cursor-not-allowed opacity-60">
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold uppercase text-white/40 tracking-widest">FPS</span>
-                        <span class="text-sm font-bold text-white">30 FPS</span>
-                    </div>
-                    <loading theme="outline" size="16" class="animate-spin opacity-20" />
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Frame Rate</label>
+                    <el-select :model-value="recordingQuality.fps" 
+                        @update:model-value="v => emit('update:recording-quality', { ...recordingQuality, fps: v })" 
+                        class="glass-select w-full" size="small">
+                        <el-option label="30 FPS" :value="30" />
+                        <el-option label="60 FPS" :value="60" />
+                    </el-select>
                 </div>
             </div>
         </div>
@@ -134,7 +139,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { PlayOne, PauseOne, Refresh, Loading, Pencil, HighLight, Delete } from '@icon-park/vue-next'
-import { ElSwitch, ElSlider } from 'element-plus'
+import { ElSwitch, ElSlider, ElSelect, ElOption } from 'element-plus'
 
 const props = defineProps<{
     layoutPreset: string
@@ -147,6 +152,7 @@ const props = defineProps<{
     annotationTool: 'pen' | 'highlighter'
     annotationColor: string
     annotationSize: number
+    recordingQuality: { resolution: string; fps: number }
 }>()
 
 const emit = defineEmits<{
@@ -162,6 +168,7 @@ const emit = defineEmits<{
     (e: 'update:annotation-color', val: string): void
     (e: 'update:annotation-size', val: number): void
     (e: 'clear-annotations'): void
+    (e: 'update:recording-quality', val: any): void
 }>()
 
 const colors = ['#f97316', '#22c55e', '#3b82f6', '#eab308', '#ec4899', '#ffffff']

@@ -10,7 +10,7 @@ export class GeminiChatProvider {
         return !!account;
     }
 
-    async generateText(prompt: string | any[], modelId: string = 'gemini-1.5-flash', options: any = {}) {
+    async generateText(prompt: string | any[], modelId: string = 'gemini-2.5-flash', options: any = {}) {
         try {
             const account = await aiAccountManager.getOptimalAccount('text');
             if (!account) throw new Error('No active AI accounts available');
@@ -83,7 +83,7 @@ export class GeminiChatProvider {
     /**
      * Generate Image via Vertex AI Imagen
      */
-    async generateImage(prompt: string, modelId: string = 'imagen-3.0-generate-001', options: any = {}) {
+    async generateImage(prompt: string | any[], modelId: string = 'imagen-3.0-generate-001', options: any = {}) {
         try {
             const account = await aiAccountManager.getOptimalAccount('image');
             if (!account) throw new Error('No active AI accounts available');

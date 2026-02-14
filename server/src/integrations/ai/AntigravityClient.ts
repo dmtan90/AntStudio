@@ -55,17 +55,21 @@ export class AntigravityClient {
     /**
      * Common generateContent wrapper (Agentic Architecture)
      */
-    public async generateContent(prompt: string, modelId: string = 'gemini-2.5-flash', options: any = {}): Promise<{ text: string }> {
+    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.0-flash', options: any = {}): Promise<{ text: string }> {
         const token = await aiAccountManager.refreshAccessToken(this.account);
         const headers = this.getHeaders(token);
         const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;
+
+        const parts = Array.isArray(prompt) ? prompt : [{ text: prompt as string }];
+        const projectId = await aiAccountManager.discoverProjectId(this.account);
+        console.log(`[AntigravityClient] generateContent project: ${projectId}, model: ${modelId}`);
 
         const payload: any = {
             requestId: this.generateRequestId(),
             request: {
                 contents: [{
                     role: 'user',
-                    parts: [{ text: prompt }]
+                    parts: parts
                 }],
                 generationConfig: {
                     temperature: 1,
@@ -82,7 +86,6 @@ export class AntigravityClient {
             requestType: 'agent'
         };
 
-        const projectId = await aiAccountManager.discoverProjectId(this.account);
         payload.project = projectId;
 
         try {
@@ -98,25 +101,61 @@ export class AntigravityClient {
 
             return { text: candidates[0].content?.parts?.[0]?.text || '' };
         } catch (error: any) {
-            console.error(`[AntigravityClient] generateContent failed:`, error.message);
+            if (axios.isAxiosError(error) && error.response) {
+                console.error(`[AntigravityClient] generateContent API Error (${error.response.status}):`, JSON.stringify(error.response.data, null, 2));
+            } else {
+                console.error(`[AntigravityClient] generateContent failed:`, error.message);
+            }
+            
+            if (error.response?.status === 404 && !options._isRetry) {
+                 console.warn('[AntigravityClient] 404 received. Project ID might be invalid. Attempting re-discovery or fallback...');
+                 try {
+                     // Force re-discovery by clearing cached ID
+                     const oldProjectId = this.account.projectId;
+                     this.account.projectId = undefined;
+                     const newProjectId = await aiAccountManager.discoverProjectId(this.account);
+                     
+                     // If re-discovery gives the same ID, try a standard fallback
+                     // If re-discovery gives the same ID, try a standard fallback
+                    //  if (newProjectId === oldProjectId) {
+                    //      console.warn('[AntigravityClient] Re-discovery returned same ID. Trying cloudaicompanion-default fallback...');
+                    //      this.account.projectId = 'cloudaicompanion-default';
+                    //  }
+					 this.account.projectId = newProjectId;
+                     
+                     console.log(`[AntigravityClient] Retrying with Project: ${this.account.projectId}`);
+                     return await this.generateContent(prompt, modelId, { ...options, _isRetry: true });
+                 } catch (discoveryError: any) {
+                     console.error('[AntigravityClient] Project re-discovery/fallback failed:', discoveryError.message);
+                 }
+            }
+
             throw error;
         }
+
     }
 
     /**
      * Generate Image (Imagen 3.5 via Agent Gateway)
      */
-    public async generateImage(prompt: string, modelId: string = 'gemini-3-pro-image'): Promise<{ url: string }> {
+    public async generateImage(prompt: string | any[], modelId: string = 'gemini-3-pro-image'): Promise<{ url: string }> {
         const token = await aiAccountManager.refreshAccessToken(this.account);
         const headers = this.getHeaders(token);
         const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;
+
+        let parts: any[] = [];
+        if (Array.isArray(prompt)) {
+            parts = prompt;
+        } else {
+            parts = [{ text: prompt }];
+        }
 
         const payload: any = {
             requestId: this.generateRequestId(),
             request: {
                 contents: [{
                     role: 'user',
-                    parts: [{ text: prompt }]
+                    parts: parts
                 }],
                 generationConfig: {
                     candidateCount: 1,
@@ -250,11 +289,7 @@ export class AntigravityClient {
 
         try {
             console.log(`[AntigravityClient] Fetching available models for ${this.account.email}...`);
-            const response = await axios.post(url, {
-                metadata: {
-                    ideType: 'ANTIGRAVITY'
-                }
-            }, { headers });
+            const response = await axios.post(url, {}, { headers });
 
             // The response usually contains a 'models' array or similar
             const models = response.data.models || response.data.availableModels || [];

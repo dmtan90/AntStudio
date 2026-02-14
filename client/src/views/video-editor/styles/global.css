@@ -92,7 +92,7 @@
 
 @layer components {
   .bg-transparent-pattern {
-    background-image: url("/images/transparent-background.jpg");
+    background-image: url("/transparent-background.jpg");
     background-size: 120%;
   }
 }

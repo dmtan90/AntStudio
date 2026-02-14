@@ -19,12 +19,12 @@ export const useAIStore = defineStore('ai', () => {
     }) {
         loading.value = true
         try {
-            const response = await api.post('/ai/generate-avatar-video', payload)
-            const jobId = response.data.data?.jobId
+            const res: any = await api.post('/ai/generate-avatar-video', payload)
+            const jobId = res.data?.jobId
             if (jobId) {
                 processingJobs.value.set(jobId, { status: 'processing', type: 'avatar-video' })
             }
-            return response.data.data
+            return res.data
         } catch (error: any) {
             toast.error('Failed to start avatar video generation: ' + (error.response?.data?.error || error.message))
             throw error
@@ -36,8 +36,8 @@ export const useAIStore = defineStore('ai', () => {
     // Check Video Status
     async function checkVideoStatus(jobId: string) {
         try {
-            const response = await api.get(`/ai/video-status/${jobId}`)
-            const data = response.data.data
+            const res: any = await api.get(`/ai/video-status/${jobId}`)
+            const data = res.data
 
             if (data.status === 'completed' || data.status === 'failed') {
                 processingJobs.value.delete(jobId)
@@ -129,6 +129,19 @@ export const useAIStore = defineStore('ai', () => {
         }
     }
 
+    async function analyzeProduct(url: string) {
+        loading.value = true;
+        try {
+            const res: any = await api.post('/ai/analyze-product', { url });
+            return res.data;
+        } catch (error: any) {
+            console.error('AI Product Analysis Error:', error);
+            throw error;
+        } finally {
+            loading.value = false;
+        }
+    }
+
     return {
         loading,
         processingJobs,
@@ -138,6 +151,7 @@ export const useAIStore = defineStore('ai', () => {
         generateVoice,
         enhanceAudio,
         fetchPerformanceInsights,
-        optimizePerformance
+        optimizePerformance,
+        analyzeProduct
     }
 })

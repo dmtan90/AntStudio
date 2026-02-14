@@ -516,8 +516,8 @@ const handleUpgrade = async (planId: string) => {
     const data = await userStore.createCheckoutSession({ planId, billingCycle: billingCycle.value })
 
     // API returns { data: { url: ... } } or just { url: ... } depending on endpoint standard
-    if (data?.data?.url || data?.url) {
-      window.location.href = data.data?.url || data.url
+    if (data?.url) {
+      window.location.href = data.url
     } else {
       toast.success(`Successfully upgraded to ${planId}! (Simulation)`)
       await userStore.fetchProfile(true)

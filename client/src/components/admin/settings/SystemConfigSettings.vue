@@ -1,7 +1,7 @@
 <template>
     <div class="api-grid grid grid-cols-1 md:grid-cols-3 xl:grid-cols-3 gap-6">
         <!-- Public Domain -->
-        <el-card class="settings-section md:col-span-3 xl:col-span-3">
+        <el-card class="settings-section">
             <template #header>System Domain</template>
             <el-form :model="apiConfigs" label-position="top">
                 <el-form-item label="Public Domain (URL)">
@@ -49,6 +49,66 @@
                     </el-col>
                 </el-row>
             </el-form>
+        </el-card>
+
+        <!-- Stripe -->
+        <el-card class="settings-section">
+            <template #header>Payment Gateways</template>
+            <el-tabs class="nested-tabs">
+                <el-tab-pane label="Stripe">
+                    <el-form :model="apiConfigs.stripe" label-position="top" v-if="apiConfigs">
+                        <el-form-item label="Public Key">
+                            <el-input v-model="apiConfigs.stripe.publicKey" class="glass-input" />
+                        </el-form-item>
+                        <el-form-item label="Secret Key">
+                            <el-input v-model="apiConfigs.stripe.secretKey" type="password" show-password
+                                class="glass-input" />
+                        </el-form-item>
+                        <el-form-item label="Webhook Secret">
+                            <el-input v-model="apiConfigs.stripe.webhookSecret" type="password" show-password
+                                class="glass-input" />
+                        </el-form-item>
+                    </el-form>
+                </el-tab-pane>
+                <el-tab-pane label="PayPal">
+                    <el-form :model="apiConfigs.paypal" label-position="top" v-if="apiConfigs">
+                        <el-form-item label="Client ID">
+                            <el-input v-model="apiConfigs.paypal.clientId" 
+                                placeholder="Your PayPal Client ID" 
+                                class="glass-input" />
+                            <div class="text-[11px] text-gray-500 mt-1">
+                                Get this from PayPal Developer Dashboard → My Apps & Credentials
+                            </div>
+                        </el-form-item>
+                        <el-form-item label="Client Secret">
+                            <el-input v-model="apiConfigs.paypal.clientSecret" 
+                                type="password" 
+                                show-password
+                                placeholder="Your PayPal Client Secret"
+                                class="glass-input" />
+                        </el-form-item>
+                        <el-form-item label="Webhook Secret (Optional)">
+                            <el-input v-model="apiConfigs.paypal.webhookSecret" 
+                                type="password" 
+                                show-password
+                                placeholder="Webhook ID from PayPal"
+                                class="glass-input" />
+                            <div class="text-[11px] text-gray-500 mt-1">
+                                Used for verifying webhook events from PayPal
+                            </div>
+                        </el-form-item>
+                        <el-form-item label="Mode">
+                            <el-radio-group v-model="apiConfigs.paypal.mode" size="small">
+                                <el-radio-button label="sandbox">Sandbox (Testing)</el-radio-button>
+                                <el-radio-button label="live">Live (Production)</el-radio-button>
+                            </el-radio-group>
+                            <div class="text-[11px] text-gray-500 mt-1">
+                                Use Sandbox mode for testing, Live mode for production
+                            </div>
+                        </el-form-item>
+                    </el-form>
+                </el-tab-pane>
+            </el-tabs>
         </el-card>
 
         <!-- Multi-Cloud Storage Hub -->
@@ -132,32 +192,6 @@
                     </el-form>
                 </div>
             </div>
-        </el-card>
-
-        <!-- Stripe -->
-        <el-card class="settings-section">
-            <template #header>Payment Gateways</template>
-            <el-tabs class="nested-tabs">
-                <el-tab-pane label="Stripe">
-                    <el-form :model="apiConfigs.stripe" label-position="top" v-if="apiConfigs">
-                        <el-form-item label="Public Key">
-                            <el-input v-model="apiConfigs.stripe.publicKey" class="glass-input" />
-                        </el-form-item>
-                        <el-form-item label="Secret Key">
-                            <el-input v-model="apiConfigs.stripe.secretKey" type="password" show-password
-                                class="glass-input" />
-                        </el-form-item>
-                        <el-form-item label="Webhook Secret">
-                            <el-input v-model="apiConfigs.stripe.webhookSecret" type="password" show-password
-                                class="glass-input" />
-                        </el-form-item>
-                    </el-form>
-                </el-tab-pane>
-                <el-tab-pane label="PayPal">
-                    <!-- Placeholder -->
-                    <div class="text-sm opacity-50 p-4">PayPal configuration coming soon.</div>
-                </el-tab-pane>
-            </el-tabs>
         </el-card>
 
         <!-- Social Login / OAuth -->

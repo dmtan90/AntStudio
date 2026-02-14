@@ -109,11 +109,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useUIStore } from '@/stores/ui';
+import { useAdminStore } from '@/stores/admin';
 import { ConnectionPoint, DatabaseNetwork } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
-import api from '@/utils/api';
 
 const uiStore = useUIStore();
+const adminStore = useAdminStore();
 const appSlug = computed(() => uiStore.appName.toLowerCase().replace(/\s+/g, '-'));
 
 const regions = ref<any[]>([]);
@@ -129,20 +130,20 @@ let pollInterval: any = null;
 
 const fetchMetrics = async () => {
    try {
-      const [healthRes, heartbeatRes] = await Promise.all([
-         api.get('/admin/monitoring/health'),
-         api.get('/admin/monitoring/heartbeat')
+      const [healthData, heartbeatData] = await Promise.all([
+         adminStore.fetchMonitoringHealth(),
+         adminStore.fetchMonitoringHeartbeat()
       ]);
 
-      if (healthRes.data.success) {
-         systemHealth.value = healthRes.data.data;
+      if (healthData) {
+         systemHealth.value = healthData;
       }
 
-      if (heartbeatRes.data.success) {
-         regions.value = heartbeatRes.data.data;
+      if (heartbeatData) {
+         regions.value = heartbeatData;
          // Add to log
          const now = new Date().toLocaleTimeString();
-         heartbeatRes.data.data.forEach((r: any) => {
+         heartbeatData.forEach((r: any) => {
             heartbeats.value.unshift({ t: now, region: r.name, load: r.load });
          });
          // Keep last 50

@@ -4,6 +4,8 @@ export enum SocialPlatform {
     YOUTUBE = 'youtube',
     FACEBOOK = 'facebook',
     TIKTOK = 'tiktok',
+    INSTAGRAM = 'instagram',
+    TWITCH = 'twitch',
     ANT_MEDIA = 'ant-media',
     CUSTOM_RTMP = 'custom-rtmp'
 }
@@ -38,7 +40,7 @@ export interface IUserPlatformAccount extends Document {
 }
 
 const UserPlatformAccountSchema: Schema = new Schema({
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     platform: {
         type: String,
         enum: Object.values(SocialPlatform),
@@ -57,6 +59,10 @@ const UserPlatformAccountSchema: Schema = new Schema({
         serverUrl: { type: String },
         scope: { type: String },
         appName: { type: String },
+    },
+
+    stats: {
+        uploads: { type: Number, default: 0 }
     },
 
     streamKey: { type: String },

@@ -44,16 +44,18 @@ export class CanvasTimeline {
   }
 
   private _toggleElements(ms = this.seek) {
+    if (!this.canvas) return;
     for (const object of this.canvas._objects) {
       if (!object.excludeFromTimeline || FabricUtils.isAnimatedTextElement(object)) {
         this._toggleElement(object, ms);
       }
     }
-    this.canvas.requestRenderAll();
+    this.canvas.renderAll();
   }
 
   private _toggleElement(object: fabric.Object, ms = this.seek) {
-    const hidden = object.meta!.offset > ms || object.meta!.offset + object.meta!.duration < ms;
+    if (!object.meta) return;
+    const hidden = object.meta.offset > ms || object.meta.offset + object.meta.duration < ms;
     object.visible = !FabricUtils.isTextboxElement(object) || !this.playing ? !hidden : false;
     if (object.clipPath) object.clipPath.visible = object.visible;
     if (FabricUtils.isVideoElement(object) || FabricUtils.isGifElement(object) || FabricUtils.isAudioElement(object)) {
@@ -73,6 +75,7 @@ export class CanvasTimeline {
   }
 
   private _update(anim: anime.AnimeInstance) {
+    if (!this.canvas) return;
     if (anim.currentTime < this.duration) {
       this.seek = anim.currentTime;
       this._toggleElements();
@@ -95,7 +98,8 @@ export class CanvasTimeline {
       this.pause();
       this.seek = 0;
     }
-    // console.log("_update", this.duration, anim.currentTime);
+    this.canvas.requestRenderAll();
+    this._canvas.editor.onTick?.();
   }
 
   private _complete(_: anime.AnimeInstance) {
@@ -109,6 +113,15 @@ export class CanvasTimeline {
   private _initializeTimeline() {
     this.animations.dispose();
     this._timeline = anime.timeline({ duration: this.duration, autoplay: false, begin: this._begin.bind(this), update: this._update.bind(this), complete: this._complete.bind(this) });
+
+    // Add dummy tween to ensure timeline ticks for the full duration even if no animations are present
+    this._timeline.add({
+      targets: { ms: 0 },
+      ms: this.duration,
+      duration: this.duration,
+      easing: 'linear'
+    }, 0);
+
     this.animations.initialize(this.canvas, this._timeline!, this.duration);
   }
 
@@ -150,19 +163,22 @@ export class CanvasTimeline {
     this.playing = true;
     this._timeline!.seek(this.seek);
     this._timeline!.play();
+    this._canvas.editor.onTick?.();
   }
 
   pause() {
     this.playing = false;
     this.canvas.fire("timeline:stop");
-    this._timeline!.pause();
+    if (this._timeline) this._timeline.pause();
     this.animations.deactivate();
     this._resetTimeline();
+    this._canvas.editor.onTick?.();
   }
 
   set(property: "duration" | "seek", seconds: number) {
     this[property] = seconds * 1000;
     this._toggleElements();
+    this._canvas.editor.onTick?.();
   }
 
   destroy() {

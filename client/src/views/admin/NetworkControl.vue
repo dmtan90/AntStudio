@@ -59,7 +59,7 @@
                     <div v-if="node.status === 'online'"
                         class="w-full h-full flex flex-col items-center justify-center gap-2">
                         <Terminal theme="outline" size="30" class="opacity-10" />
-                        <span class="text-[9px] font-black opacity-20 uppercase tracking-[4px]">Active Neural
+                        <span class="text-[9px] font-black opacity-20 uppercase tracking-[4px]">Active VTuber
                             Pipeline</span>
                     </div>
                     <div v-else class="text-[10px] font-black opacity-10 uppercase tracking-widest italic">Node
@@ -114,8 +114,8 @@ const snapshots = ref<any[]>([]);
 const fetchSnapshots = async () => {
     try {
         const data = await adminStore.fetchNetworkSnapshot();
-        if (data && data.success) {
-            snapshots.value = data.data;
+        if (data) {
+            snapshots.value = data;
         }
     } catch (e) { }
 };

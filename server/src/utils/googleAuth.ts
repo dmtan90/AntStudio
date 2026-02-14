@@ -1,18 +1,28 @@
 import config from './config.js';
 import { AdminSettings } from '../models/AdminSettings.js';
+import connectDB from './db.js';
+
+const getDomain = async () => {
+    await connectDB();
+    const adminSettings = await AdminSettings.findOne();
+    const settings = adminSettings?.whitelabel;
+    const domain = adminSettings?.apiConfigs?.publicDomain;
+    return domain || process.env.PUBLIC_BASE_URL || 'https://localhost:3000';
+}
 
 /**
  * Get Google OAuth 2.0 authorization URL for login
  */
 export const getGoogleLoginUrl = async (state?: string): Promise<string> => {
     const settings = await AdminSettings.findOne();
-    const clientId = settings?.apiConfigs?.social?.google?.clientId;
+    const clientId = settings?.apiConfigs?.oauth?.google?.clientId;
+    const domain = await getDomain();
 
     if (!clientId) {
         throw new Error('Google Client ID not configured');
     }
 
-    const redirectUri = `${config.public.baseUrl}/api/auth/google/callback`;
+    const redirectUri = `${domain}/api/auth/google/callback`;
     const scope = 'openid email profile';
 
     const params = new URLSearchParams({
@@ -38,14 +48,15 @@ export const getGoogleUserInfo = async (code: string): Promise<{
     picture?: string;
 }> => {
     const settings = await AdminSettings.findOne();
-    const clientId = settings?.apiConfigs?.social?.google?.clientId;
-    const clientSecret = settings?.apiConfigs?.social?.google?.clientSecret;
+    const clientId = settings?.apiConfigs?.oauth?.google?.clientId;
+    const clientSecret = settings?.apiConfigs?.oauth?.google?.clientSecret;
+    const domain = await getDomain();
 
     if (!clientId || !clientSecret) {
         throw new Error('Google OAuth credentials not configured');
     }
 
-    const redirectUri = `${config.public.baseUrl}/api/auth/google/callback`;
+    const redirectUri = `${domain}/api/auth/google/callback`;
 
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {

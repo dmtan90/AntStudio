@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { generateJSON, generateText, generateImage, generateAudio, generateVideo, checkVideoStatus } from '../utils/AIGenerator.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { parseDocument } from '../utils/documentParser.js';
@@ -19,6 +19,7 @@ import { audioAnalysisService } from '../services/ai/AudioAnalysisService.js';
 import { silenceDetectionService } from '../services/ai/SilenceDetectionService.js';
 
 import { aiGuestService } from '../services/ai/AIGuestService.js';
+import { aiProducerService } from '../services/ai/AIProducerService.js';
 import { ttsService } from '../services/ai/TTSService.js';
 
 const router = Router();
@@ -348,14 +349,14 @@ router.post('/detect-silence', upload.single('file'), async (req: AuthRequest, r
  */
 router.post('/guest/talk', async (req: AuthRequest, res) => {
     try {
-        const { entityId, prompt } = req.body;
+        const { entityId, prompt, context } = req.body;
         const userId = req.user!.userId;
 
         if (!entityId || !prompt) {
             return res.status(400).json({ success: false, error: 'EntityId and Prompt are required' });
         }
 
-        const result = await aiGuestService.generateGuestDialogue(userId, entityId, prompt);
+        const result = await aiGuestService.generateGuestDialogue(userId, entityId, prompt, context);
         res.json({ success: true, data: result });
     } catch (error: any) {
         console.error('[AI/Guest] Talk Error:', error);
@@ -368,13 +369,58 @@ router.post('/guest/talk', async (req: AuthRequest, res) => {
  */
 router.post('/guest/tts', async (req: AuthRequest, res) => {
     try {
-        const { text, voiceId } = req.body;
+        const { text, voiceId, provider, language } = req.body;
         if (!text) return res.status(400).json({ success: false, error: 'Text is required' });
 
-        const result = await ttsService.synthesizeSpeech(text, voiceId);
-        res.json({ success: true, data: result });
+        const result = await ttsService.generateSpeech({
+            text,
+            voiceId: voiceId || 'en-US-Standard-A',
+            provider: provider || 'google',
+            language: language || 'en-US'
+        });
+        res.json({ success: true, data: { url: result.media.url } });
     } catch (error: any) {
         console.error('[AI/Guest] TTS Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/producer/suggest - Generate director notes
+ */
+router.post('/producer/suggest', async (req: AuthRequest, res) => {
+    try {
+        const { studioState } = req.body;
+        const userId = req.user!.userId;
+
+        if (!studioState) return res.status(400).json({ success: false, error: 'StudioState is required' });
+
+        const result = await aiProducerService.generateSuggestions(userId, studioState);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('[AI/Producer] Suggest Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/vision/analyze - Analyze stream canvas image
+ */
+router.post('/vision/analyze', async (req: AuthRequest, res) => {
+    try {
+        const { image, prompt } = req.body;
+        if (!image) return res.status(400).json({ success: false, error: 'Image is required' });
+
+        const analysisPrompt = prompt || "Analyze this live stream frame. What is happening? Suggest one director improvement (lighting, framing, or content). Return a concise response.";
+        
+        // Use AI Manager with image support
+        const result = await aiManager.generateText(analysisPrompt, 'gemini-2.5-flash', 'google', {
+            images: [image] // Array of base64 strings or URLs
+        });
+
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('[AI/Vision] Analyze Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1005,6 +1051,69 @@ router.post('/performance/optimize/start', authMiddleware, adminMiddleware, asyn
         styleABTestingEngine.startOptimization(projectId, initialStyle, candidates);
         res.json({ success: true, message: 'Autonomous optimization cycle engaged' });
     } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================================================
+// AI GUEST / VTUBER INTERACTION
+// ============================================================================
+
+/**
+ * POST /api/ai/guest/talk
+ * Generate personality-driven dialogue for an AI guest.
+ */
+router.post('/guest/talk', async (req: AuthRequest, res: Response) => {
+    try {
+        const { entityId, prompt, context } = req.body;
+        const userId = req.user!.userId;
+
+        // Extract from context if nested (for frontend compatibility)
+        const type = req.body.type || context?.type;
+        const userName = req.body.userName || context?.userName || 'Someone';
+        const giftName = req.body.giftName || context?.giftName;
+        const amount = req.body.amount || context?.amount;
+        const content = req.body.content || context?.content || prompt;
+
+        if (!entityId) return res.status(400).json({ success: false, error: 'entityId is required' });
+
+        let result;
+        if (type === 'gift') {
+            result = await aiGuestService.generateGiftReaction(userId, entityId, userName, giftName, amount);
+        } else if (type === 'chat') {
+            result = await aiGuestService.generateChatReaction(userId, entityId, userName, content);
+        } else {
+            result = await aiGuestService.generateGuestDialogue(userId, entityId, prompt, context);
+        }
+
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('[AI/Guest] Talk Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/guest/tts
+ * Generate TTS audio for an AI guest.
+ */
+router.post('/guest/tts', async (req: AuthRequest, res: Response) => {
+    try {
+        const { text, voiceId, provider, language } = req.body;
+        const userId = req.user!.userId;
+
+        if (!text) return res.status(400).json({ success: false, error: 'text is required' });
+
+        const audioResult = await ttsService.generateSpeech({
+            text,
+            provider: provider || 'google',
+            voiceId: voiceId || 'en-US-Neural2-F',
+            language: language || 'en-US'
+        });
+
+        res.json({ success: true, data: { url: audioResult.media.url } });
+    } catch (error: any) {
+        console.error('[AI/Guest] TTS Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

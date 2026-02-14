@@ -1,140 +1,80 @@
-# AntFlow Deployment Guide
+# 🚀 AntFlow Deployment Guide
 
-This document outlines the deployment strategies for AntStudio/AntFlow, covering Single Tenant, Multiple Tenant, and Edge computing modes.
+This guide describes how to deploy the AntFlow Standalone Engine (Backend + Frontend) as a system service on various platforms.
 
-## 1. Cloud Deployment (Master Mode)
+## 📋 Prerequisites
+- **Binary**: Ensure you have built the binaries using `pnpm run build:standalone` in the `server` directory.
+- **Port**: The default port is **4000**. Ensure it's open or configured in your firewall.
+- **Database**: MongoDB and Redis should be accessible (as configured in your `.env`).
 
-The standard deployment configuration for centralized management.
+---
 
-### Prerequisites
-- Docker & Docker Compose
-- Nginx (Reverse Proxy)
-- SSL Certificate (Let's Encrypt recommended)
-- Domain Name (e.g., `app.antflow.ai`)
+## 🪟 Windows Deployment
 
-### Configuration (docker-compose.yml)
+1. **Locate Script**: Go to `server/scripts/service-windows.ps1`.
+2. **Run as Admin**: Open PowerShell as **Administrator**.
+3. **Install Service**:
+   ```powershell
+   .\service-windows.ps1 -Action install
+   ```
+4. **Start Service**:
+   ```powershell
+   .\service-windows.ps1 -Action start
+   ```
+   *The service is configured to **auto-restart** after 10s, 30s, and 60s if it crashes.*
 
-Use the root `docker-compose.yml` for standard deployment.
+---
 
-```bash
-# 1. Update environment variables in docker-compose.yml
-# 2. Start services
-docker-compose up -d --build
-```
+## 🐧 Linux Deployment (Ubuntu/Debian/CentOS)
 
-### Nginx Configuration
+1. **Locate Script**: `server/scripts/service-linux.sh`.
+2. **Set Permissions**:
+   ```bash
+   chmod +x service-linux.sh
+   ```
+3. **Install Service**:
+   ```bash
+   sudo ./service-linux.sh install
+   ```
+4. **Commands**:
+   - `sudo ./service-linux.sh start`
+   - `sudo ./service-linux.sh status`
+   - `sudo ./service-linux.sh stop`
+   *Uses `systemd` with `Restart=always` policy.*
 
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name app.antflow.ai;
+---
 
-    # Frontend
-    location / {
-        proxy_pass http://localhost:80;
-    }
+## 🍎 macOS Deployment
 
-    # Backend API
-    location /api/ {
-        proxy_pass http://localhost:4000/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-}
-```
+1. **Locate Script**: `server/scripts/service-macos.sh`.
+2. **Install**:
+   ```bash
+   chmod +x service-macos.sh
+   ./service-macos.sh install
+   ```
+3. **Unload/Stop**:
+   ```bash
+   ./service-macos.sh stop
+   ```
+   *Uses `launchd` with `KeepAlive` set to true.*
 
-## 2. Enterprise Deployment (Multiple Tenant)
+---
 
-For B2B scenarios where you host isolated environments for different organizations.
+## 🌐 Nginx Configuration (Reverse Proxy)
 
-### Architecture
-- **Global Load Balancer**: Routes traffic based on subdomain (e.g., `org1.antflow.ai`).
-- **Shared or Isolated DB**: Configurable via `ClusterManager`.
-- **White-labeling**: Branding assets served dynamically.
+To serve the application via a domain with SSL:
+1. Copy `server/scripts/nginx.conf` to `/etc/nginx/sites-available/antflow`.
+2. Update `server_name` to your domain.
+3. Enable the site:
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/antflow /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl restart nginx
+   ```
 
-### Setup
+---
 
-1. Use `docker-compose.enterprise.yml`.
-2. Configure `BASE_DOMAIN` in your environment.
-
-```bash
-export BASE_DOMAIN=antflow.enterprise.com
-docker-compose -f docker-compose.enterprise.yml up -d
-```
-
-### Tenant Setup
-Tenants are managed via the Super Admin panel.
-1. Go to `Admin -> Tenants`.
-2. Create new Tenant.
-3. Assign domain alias and resource quotas.
-
-## 3. Edge Mode Deployment (Single Tenant)
-
-Optimized for on-premise or edge node deployment (e.g., local rendering nodes, high-security internal networks).
-
-### Use Case
-- Zero-latency video processing.
-- High-security data requirements (air-gapped).
-- GPU-accelerated local rendering.
-
-### Configuration
-
-Create a `docker-compose.edge.yml`:
-
-```yaml
-version: '3.8'
-services:
-  antflow-edge:
-    image: antflow/edge-node:latest
-    network_mode: host
-    environment:
-      - MODE=EDGE
-      - SYNC_SERVER=https://master.antflow.ai
-      - LOCAL_GPU=true
-    volumes:
-      - ./data:/data/db
-```
-
-### Synchronization
-Edge nodes can optionally sync metadata back to the Master server if configured. Video assets remain local by default.
-
-## 4. Scaling & Clusters
-
-AntFlow supports database read/write splitting and read-replicas for high availability.
-
-### Database Cluster
-Edit `server/.env`:
-
-```ini
-MQ_URI=amqp://localhost
-MONGODB_URI=mongodb://primary-node:27017/antflow
-MONGODB_READ_REPLICAS=mongodb://read-node-1:27017/antflow,mongodb://read-node-2:27017/antflow
-```
-
-The `ClusterManager` service will automatically route write operations to the primary node and load-balance read operations across replicas.
-
-## 5. CI/CD Pipeline
-
-We recommend setting up a standard pipeline (GitHub Actions / GitLab CI):
-
-1. **Test**: Run `pnpm test`
-2. **Build**: Run `pnpm build`
-3. **Containerize**: Push images to registry
-4. **Deploy**: SSH to target server and update stack
-
-```yaml
-# Example GitHub Action snippet
-deploy:
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v2
-    - name: Deploy to Production
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        script: |
-          cd /opt/antflow
-          git pull
-          docker-compose up -d --build
-```
+## 🛡️ Security & Reliability
+- **Bundled & Packed**: Source code is bundled and delivered as an executable.
+- **Auto-Restart**: All service handlers are configured to restart the engine automatically upon unexpected crashes.
+- **Environment**: Keep your `.env` file in the same directory as the binary or set system environment variables.

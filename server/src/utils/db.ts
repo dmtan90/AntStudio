@@ -28,3 +28,4 @@ export const getDB = (mode: 'read' | 'write' = 'write') => {
 };
 
 export default connectDB;
+

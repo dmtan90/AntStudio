@@ -1,7 +1,7 @@
 import { markRaw, ref } from "vue"
 import { nanoid } from "nanoid";
 import { fabric } from "fabric";
-import { floor, isUndefined } from "lodash";
+import { floor, isUndefined, debounce } from "lodash";
 // import { AnimationTimeline } from "canvas";
 type AnimationTimeline = fabric.AnimationTimeline;
 import type { EditorAudioElement } from "video-editor/types/editor";
@@ -34,6 +34,7 @@ import { CanvasClone } from "video-editor/plugins/clone";
 import { defaultSpringConfig } from "video-editor/constants/animations";
 import { Editor, type Dimension } from "./editor";
 import { getFileUrl } from "@/utils/api";
+import { blobCache } from "@/utils/blobCache"; // Import BlobCache
 
 export class Canvas {
   id: string;
@@ -75,6 +76,8 @@ export class Canvas {
   public transitionDuration?: number;
   public transitionEasing?: string;
 
+  public _jsonState: any = null; // Persisted state when unmounted
+
   constructor(editor: Editor) {
     this.id = nanoid();
     this.name = "Untitled Page";
@@ -85,6 +88,11 @@ export class Canvas {
 
     this.editor = editor;
     this.template = createInstance(CanvasTemplate, this);
+
+    // Initialize non-visual plugins immediately
+    // this.audio = createInstance(CanvasAudio, this); // Moved to mount()
+    // this.timeline = createInstance(CanvasTimeline, this); // Moved to mount()
+    // history, alignment, selection, etc depend on instance, so initialized in mount()
   }
 
   private _toggleControls(object: fabric.Object, enabled: boolean) {
@@ -170,46 +178,176 @@ export class Canvas {
     this.instance.on("clip:added", this._refreshElements.bind(this));
     this.instance.on("clip:removed", this._refreshElements.bind(this));
     this.instance.on("object:layer", this._refreshElements.bind(this));
+
+    // Request thumbnail update on changes
+    this.instance.on("object:added", () => this.requestThumbnailUpdate());
+    this.instance.on("object:modified", () => this.requestThumbnailUpdate());
+    this.instance.on("object:removed", () => this.requestThumbnailUpdate());
   }
 
-  initialize(element: HTMLCanvasElement, workspace: HTMLDivElement) {
-    console.log("initialize canvas", this.id);
-    const props = { width: workspace.offsetWidth, height: workspace.offsetHeight, backgroundColor: "#F0F0F0" };
-    this.instance = markRaw(createInstance(fabric.Canvas, element, { stateful: true, centeredRotation: true, preserveObjectStacking: true, renderOnAddRemove: false, controlsAboveOverlay: true, ...props }));
-    this.artboard = markRaw(createInstance(fabric.Rect, { name: "artboard", rx: 0, ry: 0, selectable: false, absolutePositioned: true, hoverCursor: "default", excludeFromExport: true, excludeFromTimeline: true }));
+  // Lifecycle Methods
+  mount(instance: fabric.Canvas, workspaceEl?: HTMLDivElement) {
+    console.log("Mounting Canvas:", this.id);
+    this.instance = instance;
 
+    // Initialize plugins that require the fabric instance
+    this.audio = createInstance(CanvasAudio, this); // Moved from constructor
+    this.timeline = createInstance(CanvasTimeline, this); // Moved from constructor
     this.history = createInstance(CanvasHistory, this);
     this.alignment = createInstance(CanvasAlignment, this);
     this.selection = createInstance(CanvasSelection, this);
     this.replacer = createInstance(CanvasReplace, this);
-
     this.effects = createInstance(CanvasEffects, this);
     this.clipper = createInstance(CanvasClipMask, this);
     this.cropper = createInstance(CanvasCropper, this);
     this.trimmer = createInstance(CanvasTrimmer, this);
     this.hotkeys = createInstance(CanvasHotkeys, this);
     this.cloner = createInstance(CanvasClone, this);
-
     this.text = markRaw(createInstance(CanvasText, this));
     this.chart = markRaw(createInstance(CanvasChart, this));
-    this.audio = createInstance(CanvasAudio, this);
-    this.timeline = createInstance(CanvasTimeline, this);
-    this.animations = createInstance(CanvasAnimations, this);
     this.animations = createInstance(CanvasAnimations, this);
     this.aiOverlays = createInstance(CanvasAiOverlays, this);
     this.grid = createInstance(CanvasGrid, this);
-    this.workspace = createInstance(CanvasWorkspace, this, workspace, this.editor.dimension);
 
+    // Always setup Artboard first
+    this.artboard = markRaw(createInstance(fabric.Rect, { name: "artboard", rx: 0, ry: 0, selectable: false, absolutePositioned: true, hoverCursor: "default", excludeFromExport: true, excludeFromTimeline: true }));
+    this.instance.clipPath = this.artboard;
+    this.instance.add(this.artboard);
+
+    // Workspace Initialization - MUST be after artboard creation
+    if (workspaceEl) {
+      this.workspace = createInstance(CanvasWorkspace, this, workspaceEl, this.editor.dimension);
+    } else {
+      console.warn("Mount called without workspace element. CanvasWorkspace plugin might fail.");
+    }
+
+    // Initialize events and guidelines after workspace
     this._initEvents();
     CanvasGuidelines.initializeAligningGuidelines(this.instance);
 
-    this.instance.clipPath = this.artboard;
-    this.instance.add(this.artboard).renderAll();
-    if (this.template.pending) this.template.load();
+    if (this._jsonState) {
+      this.hydrateFromJson(this._jsonState);
+    } else if (this.template.pending) {
+      this.template.load();
+    } else {
+      // New blank canvas
+      if (this.workspace) this.workspace.resizeArtboard(this.editor.dimension);
+      this.instance.requestRenderAll();
+    }
+
     this.initialized = true;
-    console.log("Canvas initialized", this.id);
+    // Initial thumbnail
+    setTimeout(() => this.requestThumbnailUpdate(), 1000);
   }
 
+  unmount() {
+    console.log("Unmounting Canvas:", this.id);
+    if (!this.instance) return;
+
+    // Persist State
+    this._jsonState = this.instance.toDatalessJSON(propertiesToInclude);
+
+    // Capture Thumbnail for timeline preview - final snapshot
+    this.captureThumbnail(2000);
+
+    // NOTE: Audio elements are tracked in `this.audio.elements` which is separate from fabric canvas, 
+    // so we don't lose them. Visuals are in JSON.
+
+    // Cleanup Events
+    this.instance.off("object:added");
+    this.instance.off("object:modified");
+    this.instance.off("object:removed");
+    this.instance.off('before:selection:cleared');
+    this.instance.off("object:moving");
+    this.instance.off("object:scaling");
+    this.instance.off("object:rotating");
+    this.instance.off("clip:added");
+    this.instance.off("clip:removed");
+    this.instance.off("object:layer");
+    this.instance.off("mouse:wheel");
+    this.instance.off("touch:gesture");
+    this.instance.off("selection:created");
+    this.instance.off("selection:cleared");
+
+    // Destroy ephemeral plugins
+    // this.history?.destroy?.(); // History does not need explicit destroy logic
+    this.workspace?.destroy?.();
+    this.audio?.destroy?.();
+
+    // We DO NOT dispose the instance here, as it is shared. 
+    // We just detach our logic from it.
+    this.instance = undefined as any;
+    this.initialized = false;
+  }
+
+  async hydrateFromJson(json: any) {
+    if (!this.instance) return;
+
+    // PRE-PROCESSING: Restore Blob URLs
+    // Case 1: Runtime switch (src=blob, originalSrc=s3). Fabric loads blob fine.
+    // Case 2: Lazy Load from DB (src=s3, originalSrc=undefined). Fabric loads s3 (slow/cors). 
+    // We want to force Case 2 to become Case 1.
+
+    const objects = json.objects || [];
+    if (objects.length > 0) {
+      // We must process sequentially or parallel before loadFromJSON
+      // Just like template.ts does.
+      for (const object of objects) {
+        if ((object.type === 'image' || object.type === 'video' || object.type === 'gif') && object.src) {
+          // If it is NOT a blob url, we assume it's a persistent URL to be cached
+          if (!object.src.startsWith('blob:')) {
+            const originalUrl = object.src;
+            // check if we already have originalSrc, if so, prefer that? 
+            // No, if src is S3, use it.
+            const blobUrl = await getFileUrl(originalUrl, { cached: true });
+            if (blobUrl) {
+              object.src = blobUrl;
+              object.originalSrc = originalUrl;
+            }
+          } else if (object.originalSrc && object.src.startsWith('blob:')) {
+            // Runtime state. Ensure blob is still valid? 
+            // Blob URLs are session-bound. They are valid.
+          }
+
+          // Setup CORS
+          const isInternal = object.src.startsWith('/') || object.src.startsWith(window.location.origin) || object.src.startsWith('blob:');
+          if (!isInternal && object.src.startsWith('http')) {
+            object.crossOrigin = undefined;
+          } else {
+            object.crossOrigin = 'anonymous';
+          }
+        }
+      }
+    }
+
+    await createPromise<void>((resolve) => {
+      this.instance.loadFromJSON(json, resolve);
+    });
+
+    // Apply Post-Load Fixes (Async Blob Swapping)
+    const loadedObjects = this.instance.getObjects();
+    for (const obj of loadedObjects) {
+      if ((obj as any).originalSrc) {
+        const blobUrl = await blobCache.getBlobUrl((obj as any).originalSrc, true); // Fetch if missing
+        if (blobUrl) {
+          if (obj.type === 'image' || obj.type === 'video' || obj.type === 'gif') {
+            (obj as any).setSrc(blobUrl, () => this.instance.requestRenderAll());
+          }
+        }
+      }
+    }
+
+    // Re-assign Artboard reference (it was recreated by loadFromJSON)
+    const artboard = this.instance.getObjects().find(o => o.name === 'artboard');
+    if (artboard) {
+      this.artboard = markRaw(artboard as fabric.Rect);
+      this.instance.clipPath = this.artboard;
+    }
+
+    this.instance.requestRenderAll();
+  }
+
+  // initialize() REMOVED in favor of mount()
   onToggleControls(visible?: boolean) {
     if (isUndefined(visible)) this.controls = !this.controls;
     else this.controls = visible;
@@ -959,6 +1097,62 @@ export class Canvas {
       }
       this.instance.requestRenderAll();
     }
+  }
+
+  public captureThumbnail(timeMs: number = 2000) {
+    if (!this.instance || !this.initialized) return;
+
+    // Skip if playing to avoid stuttering and seek interference
+    if (this.timeline?.playing) return;
+
+    // Use current timeline seek to restore later
+    const originalSeek = this.timeline?.seek || 0;
+
+    // Jump to representative time
+    this.timeline?.set("seek", timeMs / 1000);
+    this.instance.renderAll();
+
+    try {
+      const artboard = this.artboard;
+      if (!artboard) return;
+
+      // Temporarily reset viewport transform to capture true artboard pixels
+      const vpt = this.instance.viewportTransform?.slice();
+      this.instance.setViewportTransform([1, 0, 0, 1, 0, 0]);
+
+      this.thumbnail = this.instance.toDataURL({
+        format: 'webp',
+        quality: 0.8,
+        multiplier: 1.0, // Full resolution capture for better filmstrip quality
+        left: artboard.left,
+        top: artboard.top,
+        width: artboard.width,
+        height: artboard.height
+      });
+
+      // Restore viewport transform
+      if (vpt) this.instance.setViewportTransform(vpt);
+      // console.log("Thumbnail updated for artboard", this.id);
+    } catch (e) {
+      console.warn("Failed to capture optimized thumbnail", e);
+    }
+
+    // Restore original seek
+    this.timeline?.set("seek", originalSeek / 1000);
+    this.instance.renderAll();
+
+    // Trigger specific thumbnail tick to update UI
+    this.editor.onThumbnailUpdated?.();
+  }
+
+  // Debounced update
+  private _thumbnailTimeout: any = null;
+  public requestThumbnailUpdate() {
+    if (this._thumbnailTimeout) clearTimeout(this._thumbnailTimeout);
+    this._thumbnailTimeout = setTimeout(() => {
+      this.captureThumbnail(2000);
+      this._thumbnailTimeout = null;
+    }, 2000); // 2 seconds debounce
   }
 
   destroy() {

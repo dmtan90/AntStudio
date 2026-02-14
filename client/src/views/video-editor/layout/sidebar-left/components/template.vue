@@ -60,7 +60,7 @@ const options = [
           </div>
         </div>
 
-        <div class="flex flex-col gap-3 px-5 pb-10">
+        <div class="flex flex-col gap-3 px-5 pb-10 overflow-y-auto custom-scrollbar max-h-[500px]">
           <CloudTemplateContent v-if="activeTab == 'cloud'" />
           <LocalTemplateContent v-else />
         </div>

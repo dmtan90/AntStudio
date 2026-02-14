@@ -20,7 +20,7 @@ const templeteRef = ref<HTMLDivElement | null>(null);
 // let endOfTemplete = false;
 // let loading = false;
 const fetchNextTemplete = () => {
-  if(loading.value || !hasNextPage.value){
+  if (loading.value || !hasNextPage.value) {
     return;
   }
   const page = currentPage.value + 1;
@@ -48,13 +48,13 @@ watch(templeteRef, (elRef) => {
 });
 
 watch(error, (value) => {
-  if(value){
+  if (value) {
     toast.error(value);
   }
 });
 
 onUnmounted(() => {
-  if(templeteRef.value){
+  if (templeteRef.value) {
     templeteRef.value.removeEventListener("scrollend", fetchNextTemplete);
   }
 });
@@ -62,29 +62,29 @@ onUnmounted(() => {
 const loadTemplate = (template: any, mode: string) => {
   console.log("template", template);
   const _template = Object.assign({}, template);
-  if(template.pages.length == 0){
+  if (template.pages.length == 0) {
     return;
   }
 
-  if(_template.pages.length > 1){
+  if (_template.pages.length > 1) {
     _template.pages = [];
     const pages = template.pages;
     const ratio = dimension.value.width / dimension.value.height;
-    for(let i = 0; i < pages.length; i++){
+    for (let i = 0; i < pages.length; i++) {
       let page = pages[i];
       const pageRatio = page.data ? (page.data.width / page.data.height) : 0;
-      if(pageRatio == ratio){
+      if (pageRatio == ratio) {
         _template.pages.push(page);
         break;
       }
     }
 
-    if(_template.pages.length == 0){
+    if (_template.pages.length == 0) {
       _template.pages.push(template.pages[0]);
     }
   }
 
-  if(mode == "newScene"){
+  if (mode == "newScene") {
     editor.addPage(_template.pages[0]);
     return;
   }
@@ -95,7 +95,7 @@ const loadTemplate = (template: any, mode: string) => {
 </script>
 
 <template>
-  <div class="px-5 grid grid-cols-2 gap-4 relative overflow-y-auto custom-scrollbar max-h-[500px]" ref="templeteRef">
+  <div class="px-5 grid grid-cols-2 gap-4 relative" ref="templeteRef">
     <template v-if="!templates || !templates.length">
       <el-skeleton v-for="(_, index) in 6" :key="index" animated class="w-full aspect-square rounded-xl !bg-white/5" />
       <div v-if="!loading" class="absolute inset-0 flex items-center justify-center">
@@ -104,19 +104,20 @@ const loadTemplate = (template: any, mode: string) => {
     </template>
     <template v-else>
       <template v-for="(template, index) in templates" :key="template.id">
-        <button v-if="template.pages.length > 0" 
-          class="relative w-full aspect-square rounded-xl overflow-hidden group border border-white/5 bg-white/5 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] shadow-sm hover:shadow-xl hover:shadow-purple-500/5" 
-          @click="loadTemplate(template, 'replace')"
-          @mouseover="templates[index].play = true" 
-          @mouseleave="templates[index].play = false"
-        >
-          <video v-if="templates[index].play" :src="getFileUrl(template.pages[0].preview)" class="absolute left-0 top-0 z-10 h-full w-full object-cover" autoplay loop />
-          <img :src="getFileUrl(template.pages[0].thumbnail)" :alt="template.name" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
-          
+        <button v-if="template.pages.length > 0"
+          class="relative w-full aspect-square rounded-xl overflow-hidden group border border-white/5 bg-white/5 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] shadow-sm hover:shadow-xl hover:shadow-purple-500/5"
+          @click="loadTemplate(template, 'replace')" @mouseover="templates[index].play = true"
+          @mouseleave="templates[index].play = false">
+          <video v-if="templates[index].play" :src="getFileUrl(template.pages[0].preview)"
+            class="absolute left-0 top-0 z-10 h-full w-full object-cover" autoplay loop />
+          <img :src="getFileUrl(template.pages[0].thumbnail)" :alt="template.name"
+            class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
+
           <!-- Actions Menu -->
           <div class="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
             <el-dropdown placement="bottom-end" @command="(cmd) => loadTemplate(template, cmd)">
-              <button class="w-7 h-7 rounded-lg bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary transition-all">
+              <button
+                class="w-7 h-7 rounded-lg bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-brand-primary hover:border-brand-primary transition-all">
                 <MoreOne :size="14" />
               </button>
               <template #dropdown>
@@ -128,8 +129,10 @@ const loadTemplate = (template: any, mode: string) => {
             </el-dropdown>
           </div>
 
-          <div class="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-            <span class="text-[9px] font-bold text-white uppercase tracking-wider line-clamp-1">{{ template.name }}</span>
+          <div
+            class="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span class="text-[9px] font-bold text-white uppercase tracking-wider line-clamp-1">{{ template.name
+              }}</span>
           </div>
         </button>
       </template>

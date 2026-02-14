@@ -1,10 +1,11 @@
-import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+
 
 const router = Router();
 
 // Initialize mobile stream
-router.post('/start', authMiddleware, async (req, res) => {
+router.post('/start', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { title, description, platforms, privacy, aiDirectorEnabled, commerceEnabled } = req.body;
         const userId = req.user?.id;
@@ -55,10 +56,10 @@ router.post('/start', authMiddleware, async (req, res) => {
 });
 
 // Stop mobile stream
-router.post('/stop', authMiddleware, async (req, res) => {
+router.post('/stop', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { streamId } = req.body;
-        const userId = req.user?.id;
+        const userId = req.user?.userId;
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
@@ -94,10 +95,10 @@ router.post('/stop', authMiddleware, async (req, res) => {
 });
 
 // Get live analytics
-router.get('/analytics', authMiddleware, async (req, res) => {
+router.get('/analytics', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { streamId } = req.query;
-        const userId = req.user?.id;
+        const userId = req.user?.userId;
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
@@ -127,10 +128,10 @@ router.get('/analytics', authMiddleware, async (req, res) => {
 });
 
 // Configure streaming platforms
-router.post('/platforms', authMiddleware, async (req, res) => {
+router.post('/platforms', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { youtube, facebook, tiktok } = req.body;
-        const userId = req.user?.id;
+        const userId = req.user?.userId;
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });

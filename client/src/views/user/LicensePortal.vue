@@ -252,21 +252,74 @@ onMounted(() => {
     fetchLicenses();
     fetchPackages();
 
-    // Check for success/cancel params from stripe
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success')) {
-        toast.success('Transaction Completed. Empire expanded.');
-        verifySession(urlParams.get('session_id'));
-    }
+    // Handle payment callbacks from Stripe/PayPal
+    handlePaymentCallback();
 });
 
+const handlePaymentCallback = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const gateway = urlParams.get('gateway');
+    const reason = urlParams.get('reason');
+
+    if (!payment) return;
+
+    // Success
+    if (payment === 'success') {
+        const gatewayName = gateway === 'stripe' ? 'Stripe' : gateway === 'paypal' ? 'PayPal' : 'Payment Gateway';
+        toast.success(`🎉 Payment successful via ${gatewayName}! Your license has been activated.`, {
+            duration: 5000
+        });
+        
+        // Refresh licenses to show new/renewed license
+        setTimeout(() => {
+            fetchLicenses();
+        }, 1000);
+    }
+
+    // Failed
+    if (payment === 'failed') {
+        let errorMessage = 'Payment failed. Please try again.';
+        
+        switch (reason) {
+            case 'missing_session':
+            case 'missing_token':
+                errorMessage = 'Payment session expired. Please try again.';
+                break;
+            case 'verification_failed':
+            case 'capture_failed':
+                errorMessage = 'Payment verification failed. Please contact support if charged.';
+                break;
+            case 'error':
+                errorMessage = 'An error occurred during payment processing.';
+                break;
+        }
+        
+        toast.error(errorMessage, { duration: 7000 });
+    }
+
+    // Cancelled
+    if (payment === 'cancelled') {
+        const gatewayName = gateway === 'stripe' ? 'Stripe' : gateway === 'paypal' ? 'PayPal' : 'payment';
+        toast.info(`Payment was cancelled. You can try again anytime.`, {
+            duration: 4000
+        });
+    }
+
+    // Clean URL after showing notification
+    if (payment) {
+        setTimeout(() => {
+            window.history.replaceState({}, '', window.location.pathname);
+        }, 500);
+    }
+};
+
+// Legacy verify session method (kept for backward compatibility)
 const verifySession = async (sessionId: string | null) => {
     if (!sessionId) return;
     try {
         await paymentStore.verifySession({ sessionId, gateway: 'stripe' });
-        // Refresh
         fetchLicenses();
-        // clear query params
         window.history.replaceState({}, '', window.location.pathname);
     } catch (e) { }
 };

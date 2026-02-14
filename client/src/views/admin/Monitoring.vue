@@ -283,14 +283,14 @@ let debounceTimer: any = null;
 const fetchStats = async () => {
     try {
         const data = await adminStore.fetchMonitoringStats();
-        if (data && data.data) Object.assign(stats, data.data);
+        if (data) Object.assign(stats, data);
     } catch (e) { }
 };
 
 const fetchHistory = async () => {
     try {
         const data = await adminStore.fetchMonitoringHistory(60);
-        if (data && data.data) history.value = data.data;
+        if (data) history.value = data;
     } catch (e) { }
 };
 
@@ -327,7 +327,7 @@ const exportDiagnostics = async () => {
 const fetchSettings = async () => {
     try {
         const data = await adminStore.fetchMonitoringSettings();
-        if (data && data.data) Object.assign(settings, data.data);
+        if (data) Object.assign(settings, data);
     } catch (e) { }
 };
 

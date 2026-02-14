@@ -114,7 +114,7 @@ export function createGaussianBlurShader(gl: WebGLRenderingContext, horizontal: 
             vec2 texelSize = 1.0 / u_resolution;
             vec2 direction = u_horizontal ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
             
-            float blurRadius = u_blurStrength * 10.0;
+            float blurRadius = u_blurStrength * 5.0;
             vec4 result = texture2D(u_texture, v_texCoord) * getWeight(0);
             
             for (int i = 1; i < 5; i++) {
@@ -141,12 +141,24 @@ export function createBlurCompositeShader(gl: WebGLRenderingContext): ShaderProg
         uniform sampler2D u_blurred;  // Fully blurred texture
         uniform sampler2D u_mask;     // AI Mask
         uniform float u_feather;     // Feathering amount
+        uniform bool u_flipX;        // Horizontal flip for mask to match video mirror
+        uniform vec2 u_maskScale;    // Scale to match video crop
+        uniform vec2 u_maskOffset;   // Offset to match video crop
         varying vec2 v_texCoord;
         
         void main() {
             vec4 original = texture2D(u_texture, v_texCoord);
             vec4 blurred = texture2D(u_blurred, v_texCoord);
-            float mask = texture2D(u_mask, v_texCoord).r;
+            
+            // Calculate Mask UV to match original video crop
+            vec2 maskUV = v_texCoord;
+            if (u_flipX) maskUV.x = 1.0 - maskUV.x;
+            maskUV = maskUV * u_maskScale + u_maskOffset;
+            
+            // Clamp to avoid edge artifacts if precision is slightly off
+            // maskUV = clamp(maskUV, 0.0, 1.0); // Optional, texture wrapping should handle it
+            
+            float mask = texture2D(u_mask, maskUV).r;
             
             // Feather the mask
             float factor = smoothstep(0.5 - u_feather, 0.5 + u_feather, mask);
@@ -155,7 +167,7 @@ export function createBlurCompositeShader(gl: WebGLRenderingContext): ShaderProg
         }
     `;
 
-    return compileShaderProgram(gl, fragmentSource, ['u_texture', 'u_blurred', 'u_mask', 'u_feather']);
+    return compileShaderProgram(gl, fragmentSource, ['u_texture', 'u_blurred', 'u_mask', 'u_feather', 'u_flipX', 'u_maskScale', 'u_maskOffset']);
 }
 
 /**
@@ -227,12 +239,21 @@ export function createVirtualBackgroundShader(gl: WebGLRenderingContext): Shader
         uniform sampler2D u_background; // Background image/video
         uniform sampler2D u_mask; // Segmentation mask
         uniform float u_feather; // Edge feathering amount
+        uniform bool u_flipX;        // Horizontal flip for mask to match video mirror
+        uniform vec2 u_maskScale;    // Scale to match video crop
+        uniform vec2 u_maskOffset;   // Offset to match video crop
         varying vec2 v_texCoord;
         
         void main() {
             vec4 original = texture2D(u_texture, v_texCoord);
             vec4 background = texture2D(u_background, v_texCoord);
-            float mask = texture2D(u_mask, v_texCoord).r;
+            
+            // Calculate Mask UV to match original video crop
+            vec2 maskUV = v_texCoord;
+            if (u_flipX) maskUV.x = 1.0 - maskUV.x;
+            maskUV = maskUV * u_maskScale + u_maskOffset;
+            
+            float mask = texture2D(u_mask, maskUV).r;
             
             // Feather the mask edges for smoother compositing
             float featheredMask = smoothstep(0.5 - u_feather, 0.5 + u_feather, mask);
@@ -241,7 +262,7 @@ export function createVirtualBackgroundShader(gl: WebGLRenderingContext): Shader
         }
     `;
 
-    return compileShaderProgram(gl, fragmentSource, ['u_texture', 'u_background', 'u_mask', 'u_feather']);
+    return compileShaderProgram(gl, fragmentSource, ['u_texture', 'u_background', 'u_mask', 'u_feather', 'u_flipX', 'u_maskScale', 'u_maskOffset']);
 }
 
 /**

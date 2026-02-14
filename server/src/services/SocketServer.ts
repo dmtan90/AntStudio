@@ -1,34 +1,66 @@
 import { Server, Socket } from 'socket.io';
-import { createServer } from 'http';
+import { Server as HTTPServer } from 'http';
 import { verifyToken } from '../utils/jwt.js';
 import { User } from '../models/User.js';
 import { BinaryStreamService } from './BinaryStreamService.js';
 import { streamingService } from './StreamingService.js';
+import { StreamSessionModel } from '../models/StreamSession.js';
+import { UserPlatformAccount } from '../models/UserPlatformAccount.js';
+import { PlatformAuthService } from './PlatformAuthService.js';
+import { aiPerformanceService } from './ai/AIPerformanceService.js';
+import { geminiLiveService } from './GeminiLiveService.js';
+import { audienceInteractionService } from './ai/AudienceInteractionService.js';
+import { gamificationService } from './gamification/GamificationService.js';
+import { virtualEconomyService } from './economy/VirtualEconomyService.js';
+import { analyticsService } from './analytics/AnalyticsService.js';
+import { autoDirectorService } from './ai/AutoDirectorService.js';
 
 /**
- * Socket.io Server Manager for real-time collaboration.
+ * Unified Socket.io Server Manager for collaboration, gaming, and engagement.
+ * Merged from legacy SocketService and SocketServer.
  */
 export class SocketServer {
-    private io: Server;
+    private io: Server | null = null;
+    private userSockets: Map<string, Set<string>> = new Map(); // userId -> Set of socket IDs
 
-    constructor(httpServer: any) {
+    constructor() {
+        // Singleton pattern: initialization happens via .initialize(server)
+    }
+
+    /**
+     * Initializes the Socket.io server with the given HTTP server.
+     */
+    public initialize(httpServer: HTTPServer) {
+        if (this.io) {
+            console.warn('⚠️ [SocketServer] Already initialized');
+            return;
+        }
+
         this.io = new Server(httpServer, {
-            path: '/api/socket.io',
+            allowEIO3: true,
+            path: '/socket.io',
             cors: {
-                origin: '*', // Adjust based on production needs
-                methods: ['GET', 'POST']
+                origin: '*',
+                methods: ['GET', 'POST'],
+                credentials: true
             }
         });
+		this.io.listen(4001);
 
         this.setupAuthentication();
         this.setupHandlers();
         this.setupServiceListeners();
+        this.startChatSyncWorker();
+
+        console.log("🚀 [SocketServer] Unified Socket.io running at /socket.io");
     }
 
     /**
      * Middleware to authenticate socket connections with JWT.
      */
     private setupAuthentication() {
+        if (!this.io) return;
+
         this.io.use(async (socket: Socket, next: (err?: Error) => void) => {
             const token = socket.handshake.auth.token || socket.handshake.query.token;
             const roomId = socket.handshake.auth.roomId || socket.handshake.query.projectId || socket.handshake.query.roomId;
@@ -47,13 +79,22 @@ export class SocketServer {
                             id: user._id.toString(),
                             name: user.name,
                             avatar: user.avatar,
-                            role: 'host'
+                            role: 'host',
+                            email: user.email
                         };
                         if (roomId) {
                             socket.data.roomId = roomId;
                             socket.join(roomId);
                         }
-                        socket.join(`user:${user._id.toString()}`);
+                        
+                        // User tracking logic
+                        const userId = user._id.toString();
+                        socket.join(`user:${userId}`);
+                        if (!this.userSockets.has(userId)) {
+                            this.userSockets.set(userId, new Set());
+                        }
+                        this.userSockets.get(userId)!.add(socket.id);
+
                         return next();
                     }
                 }
@@ -61,8 +102,7 @@ export class SocketServer {
                 // 2. Try Guest Token Auth (for Anonymous Guests)
                 const guestInfo = await streamingService.validateGuestToken(token as string);
                 if (guestInfo) {
-                    // Guests always join the room associated with the token (sessionId)
-                    const { sessionId, hostName } = guestInfo;
+                    const { sessionId } = guestInfo;
                     const displayName = socket.handshake.auth.displayName || 'Guest';
 
                     socket.data.user = {
@@ -74,40 +114,47 @@ export class SocketServer {
                     socket.data.roomId = sessionId;
                     socket.join(sessionId);
 
-                    console.log(`📡 Anonymous Guest "${displayName}" joined Room: ${sessionId}`);
+                    console.log(`📡 [SocketServer] Anonymous Guest "${displayName}" joined Room: ${sessionId}`);
                     return next();
                 }
 
                 return next(new Error('Authentication error: Invalid token'));
             } catch (err) {
+                console.error('❌ [SocketServer] Auth error:', err);
                 next(new Error('Authentication error'));
             }
         });
     }
 
     /**
-     * Setups event handlers for collaborative actions.
+     * Setups event handlers for collaborative and engagement actions.
      */
     private setupHandlers() {
+        if (!this.io) return;
+
         this.io.on('connection', (socket: Socket) => {
+            const transportName = socket.conn.transport.name;
+            console.log(`🔌 [SocketServer] New connection: ${socket.id} (${transportName})`);
+
+            socket.conn.on('upgrade', () => {
+                console.log(`🚀 [SocketServer] Upgraded to ${socket.conn.transport.name} for ${socket.id}`);
+            });
+
             const roomId = socket.data.roomId;
             const user = socket.data.user;
 
-            if (roomId) {
+            if (roomId && user) {
                 console.log(`👤 User ${user.name} joined Room: ${roomId}`);
-
-                // Notify others in the room
                 this.broadcastRoomUsers(roomId);
             }
 
-            // 1. Layer Property Sync
+            // --- 1. Studio Collaboration (Legacy SocketServer logic) ---
             socket.on('layer:update', (payload: { id: string, props: any }) => {
                 if (roomId) socket.to(roomId).emit('layer:update', payload);
             });
 
-            // 2. Selection Sync
             socket.on('layer:select', (payload: { id: string }) => {
-                if (roomId) {
+                if (roomId && user) {
                     socket.to(roomId).emit('layer:select', {
                         id: payload.id,
                         userId: user.id,
@@ -120,20 +167,65 @@ export class SocketServer {
                 if (roomId) socket.to(roomId).emit('studio:state', state);
             });
 
-            // 4. Low-Latency Neural Streaming
-            socket.on('neural:stream', (payload: { type: 'audio' | 'video' | 'meta', chunk: any }) => {
-                if (roomId) BinaryStreamService.streamChunk(this.io, roomId, payload.type, payload.chunk);
+            socket.on('performance:snapshot', (data: any) => {
+                if (roomId) aiPerformanceService.recordSnapshot(roomId, data);
             });
 
-            // 5. Global WebRTC Ingest Relay (AMS Fallback)
+            socket.on('neural:stream', (payload: { type: 'audio' | 'video' | 'meta', chunk: any }) => {
+                if (roomId && this.io) BinaryStreamService.streamChunk(this.io, roomId, payload.type, payload.chunk);
+            });
+
             socket.on('stream:relay', (payload: { sessionId: string, chunk: Buffer }) => {
                 streamingService.ingestRelayChunk(payload.sessionId, payload.chunk);
             });
 
-            // 6. Guest Joining Flow
+            // --- 2. Engagement & Gameplay (Legacy SocketService logic) ---
+            
+            // Hive Voting
+            socket.on('hive:vote', (data: { optionIndex: number }) => {
+                audienceInteractionService.castVote(user?.id || socket.id, data.optionIndex);
+                if (user?.id) gamificationService.addXp(user.id, 50, 'poll');
+            });
+
+            socket.on('hive:request', (data: { type: any, payload: any, cost: number }) => {
+                if (user?.id) {
+                    audienceInteractionService.submitDirectorRequest(user.id, user.name || 'Anonymous', data.type, data.payload, data.cost);
+                }
+            });
+
+            // Chat Sentiment
+            socket.on('chat:message', (data: { text: string }) => {
+                audienceInteractionService.ingestChatMessage(data.text);
+                analyticsService.trackMessage();
+                if (user?.id) gamificationService.addXp(user.id, 10, 'chat');
+            });
+
+            // AI Director Controls
+            socket.on('director:voice_activity', (data: { level: number }) => {
+                if (user?.id) autoDirectorService.handleVoiceActivity(user.id, data.level);
+            });
+
+            socket.on('director:toggle_mode', (data: { enabled: boolean }) => {
+                if (user?.id) autoDirectorService.toggleDirector(data.enabled);
+            });
+
+            // Economy
+            socket.on('economy:purchase_item', async (data: { itemId: string }) => {
+                if (user?.id) {
+                    const result = await virtualEconomyService.purchaseItem(user.id, data.itemId);
+                    if (!result.success) {
+                        socket.emit('economy:error', { message: result.message });
+                    } else {
+                        const item = virtualEconomyService.getCatalog().find(i => i.id === data.itemId);
+                        if (item) analyticsService.trackSpend(item.cost);
+                        analyticsService.trackEvent('purchase', `User ${user.id} bought ${data.itemId}`, item?.cost);
+                    }
+                }
+            });
+
+            // --- 3. Guest Management ---
             socket.on('guest:join', (payload: { displayName: string, streamId?: string }) => {
-                if (roomId && user.role === 'guest') {
-                    console.log(`🙋 Guest Request: ${payload.displayName} (ID: ${socket.id}) in Room: ${roomId}`);
+                if (roomId && user?.role === 'guest') {
                     socket.to(roomId).emit('guest:request', {
                         id: socket.id,
                         userId: user.id,
@@ -141,42 +233,27 @@ export class SocketServer {
                         streamId: payload.streamId || `guest_${socket.id}`,
                         joinedAt: new Date()
                     });
-                } else {
-                    console.warn(`⚠️ Blocked guest:join from non-guest or missing roomId. Role: ${user.role}, Room: ${roomId}`);
                 }
             });
 
             socket.on('guest:approve', (payload: { guestId: string, permissions: any }) => {
-                if (roomId && user.role === 'host') {
-                    console.log(`✅ Host in ${roomId} approved guest: ${payload.guestId}. Emitting guest:approved...`);
+                if (roomId && user?.role === 'host' && this.io) {
                     this.io.to(payload.guestId).emit('guest:approved', {
                         roomId,
                         hostId: socket.id,
                         permissions: payload.permissions
                     });
-                } else {
-                    console.warn(`⚠️ Blocked guest:approve from non-host. Role: ${user.role}`);
                 }
             });
 
             socket.on('guest:reject', (payload: { guestId: string }) => {
-                if (roomId && user.role === 'host') {
-                    console.log(`❌ Host rejected guest: ${payload.guestId}`);
+                if (roomId && user?.role === 'host' && this.io) {
                     this.io.to(payload.guestId).emit('guest:rejected');
                 }
             });
 
-            socket.on('guest:signal', (payload: { to: string, signal: any }) => {
-                // Forward signaling message directly to a specific socket
-                this.io.to(payload.to).emit('guest:signal', {
-                    from: socket.id,
-                    signal: payload.signal
-                });
-            });
-
             socket.on('guest:control', (payload: { guestId: string, action: string, value: any }) => {
-                if (roomId && user.role === 'host') {
-                    console.log(`🎮 [Studio] Host command: ${payload.action} for ${payload.guestId}`);
+                if (roomId && user?.role === 'host' && this.io) {
                     this.io.to(payload.guestId).emit('guest:control', {
                         action: payload.action,
                         value: payload.value
@@ -184,16 +261,18 @@ export class SocketServer {
                 }
             });
 
-            // 7. Neural Handover (Assembly)
-            socket.on('neural:handover', async (payload: any) => {
-                await BinaryStreamService.handleNeuralHandover(socket, payload);
+            socket.on('guest:signal', (payload: { to: string, signal: any }) => {
+                if (this.io) {
+                    this.io.to(payload.to).emit('guest:signal', {
+                        from: socket.id,
+                        signal: payload.signal
+                    });
+                }
             });
 
-            // --- Mobile Collaboration Events ---
-
-            // Cursor Movement
+            // --- 4. Mobile Collaboration & Updates ---
             socket.on('cursor:move', (data: { timestamp: number, trackId?: string }) => {
-                if (roomId) {
+                if (roomId && user) {
                     socket.to(roomId).emit('cursor:move', {
                         userId: user.id,
                         position: {
@@ -205,26 +284,22 @@ export class SocketServer {
                 }
             });
 
-            // Comments
-            socket.on('comment:add', (data: { text: string, timestamp: number }) => {
-                if (roomId) {
+            socket.on('comment:add', (data: { content: string, timestamp: number }) => {
+                if (roomId && user && this.io) {
                     const comment = {
-                        id: Date.now().toString(), // Simple ID generation
+                        id: Date.now().toString(),
                         userId: user.id,
                         userName: user.name,
-                        text: data.text,
+                        content: data.content,
                         timestamp: data.timestamp,
                         createdAt: new Date().toISOString()
                     };
-
-                    // Broadcast to everyone INCLUDING sender (so they see their own comment confirmed)
                     this.io.to(roomId).emit('comment:new', comment);
                 }
             });
 
-            // Project Updates
             socket.on('project:update', (data: { action: string, data: any }) => {
-                if (roomId) {
+                if (roomId && user) {
                     socket.to(roomId).emit('project:update', {
                         userId: user.id,
                         action: data.action,
@@ -233,15 +308,22 @@ export class SocketServer {
                 }
             });
 
+            // Lifecycle
             socket.on('disconnect', () => {
-                if (roomId) {
-                    console.log(`👤 User ${user.name} left Room: ${roomId}`);
+                if (user?.id) {
+                    console.log(`❌ [SocketServer] User disconnected: ${user.name} (${socket.id})`);
+                    
+                    // Tracking cleanup
+                    const userSocketSet = this.userSockets.get(user.id);
+                    if (userSocketSet) {
+                        userSocketSet.delete(socket.id);
+                        if (userSocketSet.size === 0) this.userSockets.delete(user.id);
+                    }
 
-                    // Explicitly notify that a guest has left
-                    this.io.to(roomId).emit('guest:leave', { guestId: socket.id });
-
-                    // Notify others with full list after a short delay to account for potential re-joining
-                    setTimeout(() => this.broadcastRoomUsers(roomId), 1000);
+                    if (roomId) {
+                        this.io?.to(roomId).emit('guest:leave', { guestId: socket.id });
+                        setTimeout(() => this.broadcastRoomUsers(roomId), 1000);
+                    }
                 }
             });
         });
@@ -251,75 +333,128 @@ export class SocketServer {
      * Broadcasts the list of active users in a room
      */
     private async broadcastRoomUsers(roomId: string) {
+        if (!this.io) return;
         try {
             const sockets = await this.io.in(roomId).fetchSockets();
             const users = sockets.map(s => s.data.user).filter(u => u);
-
-            // Deduplicate users (in case same user has multiple connections)
             const uniqueUsers = Array.from(new Map(users.map(u => [u.id, u])).values());
-
             this.io.to(roomId).emit('users:update', uniqueUsers);
         } catch (error) {
-            console.error('Error broadcasting room users:', error);
+            console.error('[SocketServer] Error broadcasting room users:', error);
         }
     }
 
-    /**
-     * Emit project update to specific user (for mobile app)
-     */
-    emitProjectUpdate(userId: string, projectId: string, update: any) {
-        this.io.to(`user:${userId}`).emit('project:updated', {
+    /** Utility methods for external services **/
+
+    public emitToUser(userId: string, event: string, data: any) {
+        if (!this.io) return;
+        this.io.to(`user:${userId}`).emit(event, data);
+    }
+
+    public emitToAll(event: string, data: any) {
+        if (!this.io) return;
+        this.io.emit(event, data);
+    }
+
+    public emitProjectUpdate(userId: string, projectId: string, update: any) {
+        this.emitToUser(userId, 'project:updated', {
             projectId,
             ...update,
             timestamp: new Date().toISOString()
         });
     }
 
-    /**
-     * Emit job completion to specific user (for mobile app)
-     */
-    emitJobCompleted(userId: string, jobId: string, result: any) {
-        this.io.to(`user:${userId}`).emit('job:completed', {
+    public emitJobCompleted(userId: string, jobId: string, result: any) {
+        this.emitToUser(userId, 'job:completed', {
             jobId,
             result,
             timestamp: new Date().toISOString()
         });
     }
 
-    /**
-     * Listen to internal service events and broadcast to sockets
-     */
-    private setupServiceListeners() {
-        streamingService.on('session:stopped', (data: { sessionId: string, reason: string, status: string }) => {
-            // We need to find the user/room associated with this session?
-            // Currently session doesn't store room ID, but we can emit to the user directly
-            const session = streamingService.getSessionStatus(data.sessionId);
-            if (session) {
-                // If we knew the room, we could emit to room
-                // For now, emit to user's personal channel
-                this.io.to(`user:${session.userId}`).emit('stream:status', {
-                    sessionId: data.sessionId,
-                    status: data.status,
-                    error: data.reason
-                });
-            }
-        });
-    }
-
-    /**
-     * Emit notification to specific user (for mobile app)
-     */
-    emitNotification(userId: string, notification: any) {
-        this.io.to(`user:${userId}`).emit('notification:new', {
+    public emitNotification(userId: string, notification: any) {
+        this.emitToUser(userId, 'notification:new', {
             ...notification,
             timestamp: new Date().toISOString()
         });
     }
 
-    /**
-     * Get Socket.IO instance for external use
-     */
-    getIO() {
+    public getConnectedUsers(): string[] {
+        return Array.from(this.userSockets.keys());
+    }
+
+    public isUserOnline(userId: string): boolean {
+        return this.userSockets.has(userId);
+    }
+
+    public getIO() {
         return this.io;
     }
+
+    /** Internal service listeners & workers **/
+
+    private setupServiceListeners() {
+        if (!this.io) return;
+
+        // Auto-Director Cut Handover
+        autoDirectorService.on('cut', (payload) => {
+            this.io?.emit('director:cut', payload);
+        });
+
+        // Gemini Live & Quests
+        geminiLiveService.on('audio:chunk', (data) => this.io?.to(data.sessionId).emit('ai:audio', data));
+        geminiLiveService.on('text:response', (data) => this.io?.to(data.sessionId).emit('ai:text', data));
+        geminiLiveService.on('user:transcript', (data) => this.io?.to(data.sessionId).emit('ai:user_transcript', data));
+        geminiLiveService.on('tool:call', (data) => this.io?.to(data.sessionId).emit('ai:tool_call', data));
+        geminiLiveService.on('quest:created', (data) => this.io?.to(data.sessionId).emit('quest:created', data.quest));
+        geminiLiveService.on('quest:updated', (data) => this.io?.to(data.sessionId).emit('quest:updated', data));
+        geminiLiveService.on('quest:evaluated', (data) => this.io?.to(data.sessionId).emit('quest:evaluated', data));
+        geminiLiveService.on('quest:floor_assigned', (data) => this.io?.to(data.sessionId).emit('quest:floor_assigned', data));
+        geminiLiveService.on('swarm:message', (data) => this.io?.to(data.sessionId).emit('ai:swarm_message', data));
+        geminiLiveService.on('session:interrupted', (data) => this.io?.to(data.sessionId).emit('ai:interrupted', data));
+        geminiLiveService.on('session:error', (data) => this.io?.to(data.sessionId).emit('ai:error', data));
+    }
+
+    private startChatSyncWorker() {
+        setInterval(async () => {
+            if (!this.io) return;
+            try {
+                const activeSessions = await StreamSessionModel.find({
+                    status: 'live',
+                    'targets.externalChatId': { $exists: true, $ne: null }
+                });
+
+                for (const session of activeSessions) {
+                    for (const target of session.targets) {
+                        if (!target.externalChatId) continue;
+                        const account = await UserPlatformAccount.findById(target.accountId);
+                        if (!account) continue;
+
+                        try {
+                            const credentials = await PlatformAuthService.getValidCredentials(account);
+                            const messages = await PlatformAuthService.getLiveChatMessages(
+                                account.platform as any,
+                                credentials,
+                                target.externalChatId
+                            );
+
+                            if (messages.length > 0) {
+                                this.io.to(session.sessionId).emit('chat:external', {
+                                    sessionId: session.sessionId,
+                                    platform: account.platform,
+                                    messages
+                                });
+                            }
+                        } catch (err: any) {
+                            console.error(`[ChatSync] Worker error for ${account.platform}:`, err.message);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('[ChatSync] Global worker error:', error);
+            }
+        }, 8000);
+    }
 }
+
+export const socketServer = new SocketServer();

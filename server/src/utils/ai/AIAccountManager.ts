@@ -46,7 +46,7 @@ export class AIAccountManager {
      */
     private async getCredentials() {
         const settings = await AdminSettings.findOne();
-        const creds = settings?.apiConfigs?.aiOAuth?.google;
+        const creds = settings?.apiConfigs?.oauth?.google;
 
         if (!creds || !creds.clientId) {
             console.warn('[AIAccountManager] No Google OAuth credentials found in AdminSettings');
@@ -363,14 +363,22 @@ export class AIAccountManager {
     /**
      * Get the most optimal account for a task
      */
-    public async getOptimalAccount(type: 'text' | 'image' | 'video' | 'audio'): Promise<IAIAccount | null> {
+    public async getOptimalAccount(type: 'text' | 'image' | 'video' | 'audio', accountType?: string): Promise<IAIAccount | null> {
         // Build base query
         const query: any = { isActive: true, status: 'ready' };
+        if (accountType) query.accountType = accountType;
 
         // Prefer specific account types based on task if needed
         if (type === 'video') {
             // For video, 11labs-direct and antigravity are top tier
             // We can search for all then sort
+        } else if (type === 'text') {
+            // 11labs-direct does not support text generation (LLM), so exclude it
+            query.accountType = { $ne: '11labs-direct' };
+        } else if (type === 'audio' && !accountType) {
+            // Default to standard google for audio if not specified
+            const standard = await AIAccount.findOne({ ...query, accountType: 'standard', providerId: 'google' });
+            if (standard) return standard;
         }
 
         const accounts = await AIAccount.find(query);
@@ -448,6 +456,17 @@ export class AIAccountManager {
         if (account.accountType === '11labs-direct') {
             console.log(`[AIAccountManager] Skipping project discovery for 11labs-direct account: ${account.email}`);
             return '';
+        }
+
+        // Validate cached Project ID for Antigravity accounts
+        if (account.accountType === 'antigravity' && account.projectId) {
+            const isHexId = /^[0-9a-fA-F]{24}$/.test(account.projectId); // Likely a userId, not a project ID
+            const isTooShort = !account.projectId.includes('-') && account.projectId.length < 10;
+
+            if (isHexId || isTooShort) {
+                console.warn(`[AIAccountManager] Suspicious Project ID (${account.projectId}) found for ${account.email}. Forcing rediscovery...`);
+                account.projectId = undefined; // Force rediscovery
+            }
         }
 
         if (account.projectId && !account.projectId.includes('default')) return account.projectId;

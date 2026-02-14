@@ -39,16 +39,16 @@ export const useProjectStore = defineStore('project', () => {
     async function fetchProjects(params: any = {}) {
         loadingList.value = true
         try {
-            const response = await api.get('/projects', {
+            const res : any = await api.get('/projects', {
                 params: {
                     page: pagination.value.page,
                     limit: pagination.value.limit,
                     ...params
                 }
             })
-            projects.value = response.data.projects || []
-            pagination.value = response.data.pagination || pagination.value
-            return response.data
+            projects.value = res.data?.projects || []
+            pagination.value = res.data?.pagination || pagination.value
+            return res.data
         } catch (error) {
             handleError(error, 'projects.loadFailed')
             throw error
@@ -61,9 +61,9 @@ export const useProjectStore = defineStore('project', () => {
         if (!id) return
         isProcessing.value = true
         try {
-            const response = await api.get(`/projects/${id}`)
-            currentProject.value = response.data.project
-            return response.data
+            const res : any = await api.get(`/projects/${id}`)
+            currentProject.value = res.data.project
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -75,13 +75,13 @@ export const useProjectStore = defineStore('project', () => {
     async function createProject(projectData: any) {
         isProcessing.value = true
         try {
-            const response = await api.post('/projects', projectData)
-            const newProject = response.data.project
+            const res : any = await api.post('/projects', projectData)
+            const newProject = res.data.project
             if (newProject) {
                 projects.value.unshift(newProject)
             }
             toast.success(t('projects.new.success'))
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -100,8 +100,8 @@ export const useProjectStore = defineStore('project', () => {
             }
 
             // Persist to Backend
-            const response = await api.put(`/projects/${idToUse}`, updateData)
-            return response.data
+            const res : any = await api.put(`/projects/${idToUse}`, updateData)
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -126,8 +126,8 @@ export const useProjectStore = defineStore('project', () => {
         isGenerating.value = true
         try {
             const url = projectId ? `/projects/${projectId}/preview` : '/projects/preview'
-            const response = await api.post(url, inputData)
-            return response.data
+            const res : any = await api.post(url, inputData)
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -139,12 +139,12 @@ export const useProjectStore = defineStore('project', () => {
     async function analyzeProduct(inputData: any) {
         isGenerating.value = true
         try {
-            const response = await api.post('/ai/analyze-product', inputData, {
+            const res : any = await api.post('/ai/analyze-product', inputData, {
                 headers: {
                     'Content-Type': inputData instanceof FormData ? 'multipart/form-data' : 'application/json'
                 }
             })
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -155,17 +155,17 @@ export const useProjectStore = defineStore('project', () => {
 
     async function chat(id: string, message: string) {
         try {
-            const response = await api.post(`/projects/${id}/chat`, { message })
+            const res : any = await api.post(`/projects/${id}/chat`, { message })
             if (currentProject.value) {
                 if (!currentProject.value.chatHistory) currentProject.value.chatHistory = []
                 currentProject.value.chatHistory.push({
                     author: 'ai',
-                    content: response.data.response, // Backend returns { response: string }
+                    content: res.data.response,
                     type: 'text',
                     timestamp: new Date()
                 })
             }
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -174,8 +174,8 @@ export const useProjectStore = defineStore('project', () => {
 
     async function generateVisualPlan(id: string) {
         try {
-            const response = await api.post(`/projects/${id}/generate-visual-plan`)
-            return response.data
+            const res : any = await api.post(`/projects/${id}/generate-visual-plan`)
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -184,9 +184,9 @@ export const useProjectStore = defineStore('project', () => {
 
     async function generateStoryboardAssetsBatch(id: string) {
         try {
-            const response = await api.post(`/projects/${id}/storyboard/generate-assets`)
+            const res : any = await api.post(`/projects/${id}/storyboard/generate-assets`)
             toast.success(t('projects.editor.storyboard.batchStartSuccess') || 'Batch generation started')
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -195,8 +195,8 @@ export const useProjectStore = defineStore('project', () => {
 
     async function generateAsset(id: string, assetData: any) {
         try {
-            const response = await api.post(`/projects/${id}/assets/generate`, assetData)
-            return response.data
+            const res : any = await api.post(`/projects/${id}/assets/generate`, assetData)
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -205,8 +205,8 @@ export const useProjectStore = defineStore('project', () => {
 
     async function getAssetStatus(id: string, jobId: string) {
         try {
-            const response = await api.get(`/projects/${id}/assets/status/${jobId}`)
-            return response.data
+            const res : any = await api.get(`/projects/${id}/assets/status/${jobId}`)
+            return res.data
         } catch (error) {
             // Silently fail or minimal log for polling
             return { success: false, error: error.message }
@@ -215,12 +215,12 @@ export const useProjectStore = defineStore('project', () => {
 
     async function assembleVideo(id: string) {
         try {
-            const response = await api.post(`/projects/${id}/assemble-video`)
-            if (response.data.data.finalVideo && currentProject.value) {
-                currentProject.value.finalVideo = response.data.data.finalVideo
+            const res : any = await api.post(`/projects/${id}/assemble-video`)
+            if (res.data?.finalVideo && currentProject.value) {
+                currentProject.value.finalVideo = res.data.finalVideo
                 currentProject.value.status = 'completed'
             }
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -313,7 +313,7 @@ export const useProjectStore = defineStore('project', () => {
             formData.append('entityType', entityType)
             formData.append('entityId', entityId)
 
-            const response = await api.post(`/projects/${id}/assets/upload`, formData, {
+            const res : any = await api.post(`/projects/${id}/assets/upload`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -323,7 +323,7 @@ export const useProjectStore = defineStore('project', () => {
             await fetchProject(id)
 
             toast.success(t('projects.editor.uploadSuccess'))
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error, 'projects.editor.uploadFailed')
             throw error
@@ -332,15 +332,15 @@ export const useProjectStore = defineStore('project', () => {
 
     async function generateVoiceover(id: string, segmentId: string, options: any) {
         try {
-            const response = await api.post(`/projects/${id}/segments/${segmentId}/generate-voiceover`, options)
+            const res : any = await api.post(`/projects/${id}/segments/${segmentId}/generate-voiceover`, options)
             // Update local segment
             if (currentProject.value?.storyboard?.segments) {
                 const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId)
                 if (segment) {
-                    segment.generatedAudio = response.data.data.generatedAudio
+                    segment.generatedAudio = res.data.generatedAudio
                 }
             }
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -349,15 +349,15 @@ export const useProjectStore = defineStore('project', () => {
 
     async function generateCaptions(id: string, segmentId: string) {
         try {
-            const response = await api.post(`/projects/${id}/segments/${segmentId}/captions`)
+            const res : any = await api.post(`/projects/${id}/segments/${segmentId}/captions`)
             // Update local segment
             if (currentProject.value?.storyboard?.segments) {
                 const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId)
                 if (segment) {
-                    segment.captions = response.data.data.captions
+                    segment.captions = res.data.captions
                 }
             }
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -366,8 +366,8 @@ export const useProjectStore = defineStore('project', () => {
 
     async function startStreaming(id: string, streamId: string) {
         try {
-            const response = await api.post(`/projects/${id}/stream`, { streamId })
-            return response.data
+            const res : any = await api.post(`/projects/${id}/stream`, { streamId })
+            return res.data
         } catch (error) {
             throw error
         }
@@ -375,8 +375,8 @@ export const useProjectStore = defineStore('project', () => {
 
     async function addStreamEndpoint(id: string, streamId: string, rtmpUrl: string) {
         try {
-            const response = await api.post(`/projects/${id}/stream/endpoint`, { streamId, rtmpUrl })
-            return response.data
+            const res : any = await api.post(`/projects/${id}/stream/endpoint`, { streamId, rtmpUrl })
+            return res.data
         } catch (error) {
             throw error
         }
@@ -384,7 +384,7 @@ export const useProjectStore = defineStore('project', () => {
 
     async function uploadFinalVideo(id: string, formData: FormData, onProgress?: (percent: number) => void) {
         try {
-            const response = await api.post(`/projects/${id}/upload-final-video`, formData, {
+            const res : any = await api.post(`/projects/${id}/upload-final-video`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 onUploadProgress: (progressEvent) => {
                     if (onProgress) {
@@ -393,7 +393,7 @@ export const useProjectStore = defineStore('project', () => {
                     }
                 }
             })
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error, 'projects.editor.uploadFailed')
             throw error
@@ -402,8 +402,8 @@ export const useProjectStore = defineStore('project', () => {
 
     async function saveToVoD(id: string) {
         try {
-            const response = await api.post(`/projects/${id}/vod`)
-            return response.data
+            const res : any = await api.post(`/projects/${id}/vod`)
+            return res.data
         } catch (error) {
             throw error
         }
@@ -411,13 +411,21 @@ export const useProjectStore = defineStore('project', () => {
 
     async function uploadMedia(formData: FormData) {
         try {
-            const response = await api.post('/media/upload', formData, {
+            const res : any = await api.post('/media/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error, 'projects.editor.uploadFailed')
             throw error
+        }
+    }
+
+    async function trackEngagement(id: string, type: 'like' | 'dislike') {
+        try {
+            await api.post(`/projects/${id}/track`, { type })
+        } catch (error) {
+            console.error('Failed to track engagement', error)
         }
     }
 
@@ -458,6 +466,7 @@ export const useProjectStore = defineStore('project', () => {
         addStreamEndpoint,
         saveToVoD,
         uploadMedia,
-        uploadFinalVideo
+        uploadFinalVideo,
+        trackEngagement
     }
 })

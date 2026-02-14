@@ -1,9 +1,9 @@
-import { ref, type Ref, onUnmounted, watch, onMounted } from 'vue';
+import { ref, type Ref, reactive, onUnmounted, watch, onMounted } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { QRCodeGenerator } from '@/utils/ai/QRCodeGenerator';
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
 // @ts-ignore
-import StudioWorker from '@/workers/studio.render.worker?worker';
+import StudioWorker from '@/workers/StudioRender.worker?worker';
 
 export function useStudioCanvas(
     outputCanvas: Ref<HTMLCanvasElement | null>,
@@ -11,7 +11,7 @@ export function useStudioCanvas(
     guestVideos: Ref<Record<string, HTMLVideoElement>>,
     options: {
         streamQuality: Ref<string>;
-        enableASL: Ref<boolean>;
+        enableAsl: Ref<boolean>;
         purchaseNotifications: Ref<any[]>;
         hostLevel: Ref<number>;
         guestLevels: Ref<Record<string, number>>;
@@ -28,13 +28,18 @@ export function useStudioCanvas(
     const frameCount = ref(0);
     const lastRenderTime = ref(0);
     const transitionStartTime = ref(0);
+    const audioLevel = ref(0);
+    const faceFrame = reactive({ x: 0.5, y: 0.5, w: 1, h: 1, targetX: 0.5, targetY: 0.5 });
+    
+    let isAIProcessing = false;
+
     const transitionProgress = ref(0);
     const qrCodeImages = new Map<string, HTMLImageElement>();
-    const audioLevel = ref(0);
 
     let animationFrameId: number | null = null;
+    let isRendering = false;
     let lastAIProcessTime = 0;
-    const AI_PROCESS_INTERVAL = 40; // Process AI every 40ms (25fps) for smoother segmentation
+    const AI_PROCESS_INTERVAL = 30; // 33fps tracking
 
     // Worker State
     let worker: Worker | null = null;
@@ -79,6 +84,7 @@ export function useStudioCanvas(
                 worker.postMessage({ type: 'init', payload: { canvas: offscreen } }, [offscreen]);
                 worker.postMessage({ type: 'resize', payload: { width: canvas.width, height: canvas.height } });
                 isWorkerEnabled = true;
+                checkNewStreams();
 
                 if (studioStore.activeScene) {
                     worker.postMessage({ type: 'update-scene', payload: { scene: JSON.parse(JSON.stringify(studioStore.activeScene)) } });
@@ -91,6 +97,16 @@ export function useStudioCanvas(
                 forceFirstMask = true;
 
                 console.log("Studio Rendering Worker Initialized");
+
+                // Listen for guest commands and forward to worker
+                const handleWorkerCommand = (e: any) => {
+                    if (isWorkerEnabled && worker) {
+                        worker.postMessage(e.detail);
+                    }
+                };
+                window.addEventListener('studio-worker-command', handleWorkerCommand);
+                // Listener management is now handled at top-level to avoid lifecycle warnings
+
                 return true;
             }
         } catch (e) {
@@ -98,6 +114,16 @@ export function useStudioCanvas(
         }
         return false;
     };
+
+    // Cleanup worker commands on unmount (hoisted)
+    onUnmounted(() => {
+        const handleWorkerCommand = (e: any) => {
+            if (isWorkerEnabled && worker) {
+                worker.postMessage(e.detail);
+            }
+        };
+        window.removeEventListener('studio-worker-command', handleWorkerCommand);
+    });
 
     const bridgeStream = (id: string, element: HTMLVideoElement) => {
         if (!worker || !element.srcObject || bridgedStreams.has(id)) return;
@@ -107,7 +133,9 @@ export function useStudioCanvas(
             const track = stream.getVideoTracks()[0];
             if (!track) return;
 
-            const processor = new MediaStreamTrackProcessor({ track });
+            // Clone the track to avoid locking the original for main-thread AI capture
+            const clonedTrack = track.clone();
+            const processor = new MediaStreamTrackProcessor({ track: clonedTrack });
             const readable = processor.readable;
 
             worker.postMessage({ type: 'add-stream', payload: { id, stream: readable } }, [readable]);
@@ -128,7 +156,7 @@ export function useStudioCanvas(
                 currentActiveIds.add('host');
                 bridgeStream('host', sourceVideo.value);
             } else if (options.myGuestId?.value) {
-                const myGuest = studioStore.liveGuests.find(g => g.id === options.myGuestId?.value);
+                const myGuest = studioStore.liveGuests.find(g => g.uuid === options.myGuestId?.value);
                 if (myGuest && myGuest.slotIndex !== undefined) {
                     const id = `guest${myGuest.slotIndex + 1}`;
                     currentActiveIds.add(id);
@@ -138,6 +166,7 @@ export function useStudioCanvas(
         }
 
         Object.entries(guestVideos.value).forEach(([key, video]) => {
+            console.log(`[Studio Canvas] Bridging guest video: ${key}, hasVideo: ${!!video}, readyState: ${video.readyState}`);
             currentActiveIds.add(key);
             bridgeStream(key, video);
         });
@@ -173,13 +202,34 @@ export function useStudioCanvas(
 
     watch(() => studioStore.visualSettings, (newSettings) => {
         if (isWorkerEnabled && worker) {
-            worker.postMessage({ type: 'update-settings', payload: JSON.parse(JSON.stringify(newSettings)) });
+            const token = localStorage.getItem('auth-token');
+            worker.postMessage({ 
+                type: 'update-settings', 
+                payload: {
+                    ...JSON.parse(JSON.stringify(newSettings)),
+                    authToken: token 
+                } 
+            });
+        }
+    }, { deep: true, immediate: true });
+    
+    watch(() => studioStore.guestSlotMap, (newSlots) => {
+        if (isWorkerEnabled && worker) {
+			console.log("update-guest-slots");
+            worker.postMessage({ type: 'update-guest-slots', payload: { slots: JSON.parse(JSON.stringify(newSlots)) } });
         }
     }, { deep: true, immediate: true });
 
-    watch(() => guestVideos.value, () => {
+    watch([
+        () => guestVideos.value,
+        () => sourceVideo.value,
+        () => options.screenVideo?.value,
+        () => options.activeMediaVideo?.value,
+        () => studioStore.isScreenSharing,
+        () => studioStore.activeMediaId
+    ], () => {
         if (isWorkerEnabled) checkNewStreams();
-    }, { deep: true });
+    }, { deep: true, immediate: true });
 
     // Handle Background Asset Changes
     let bgVideoElement: HTMLVideoElement | null = null;
@@ -220,11 +270,47 @@ export function useStudioCanvas(
         updateBackgroundAsset(url);
     }, { immediate: true });
 
+    // Handle Brand Logo Changes (Phase 18)
+    const updateBrandLogo = async (url: string | null) => {
+        if (!isWorkerEnabled || !worker || !url) return;
+        try {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = url;
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+            const bitmap = await createImageBitmap(img);
+            worker.postMessage({ type: 'update-brand-logo', payload: { logoData: bitmap } }, [bitmap]);
+            console.log('[Studio Canvas] Brand logo updated');
+        } catch (e) {
+            console.error("[Studio Canvas] Brand logo load failed:", e);
+        }
+    };
+
+    watch(() => studioStore.visualSettings.branding.logoUrl, (url) => {
+        updateBrandLogo(url);
+    }, { immediate: true });
+
     // Initialize AI Engine
     onMounted(async () => {
         try {
             await liveAIEngine.initialize();
             console.log('[Studio Canvas] AI Engine initialized');
+
+            // --- LATENCY FIX: Worker-to-Worker Direct Channel ---
+            if (isWorkerEnabled && worker && liveAIEngine.getWorker()) {
+                const channel = new MessageChannel();
+                
+                // Send port1 to Render Worker
+                worker.postMessage({ type: 'SETUP_AI_CHANNEL' }, [channel.port1]);
+                
+                // Send port2 to AI Tracking Worker
+                liveAIEngine.getWorker()!.postMessage({ type: 'SETUP_CHANNEL' }, [channel.port2]);
+                
+                console.log('[Studio Canvas] Worker-to-Worker Direct Channel Established');
+            }
         } catch (error) {
             console.error('[Studio Canvas] Failed to initialize AI engine:', error);
         }
@@ -261,6 +347,14 @@ export function useStudioCanvas(
     });
 
     const startRendering = () => {
+        if (isRendering) {
+            console.warn('[Studio Canvas] Rendering loop already active. Ignoring start request.');
+            return;
+        }
+
+        console.log('[Studio Canvas] Starting rendering loop...');
+        isRendering = true;
+
         if (initWorker()) {
             startWorkerLoop();
         } else {
@@ -270,13 +364,16 @@ export function useStudioCanvas(
 
     const startWorkerLoop = () => {
         const loop = (time: number) => {
-            checkNewStreams();
+            if (!isRendering) return;
+            // checkNewStreams(); // Moved to watch() for efficiency
             if (!studioStore.godModeEnabled) audioLevel.value = options.hostLevel.value;
 
-            // Process AI for segmentation (if background effects are enabled)
-            const needsSegmentation = studioStore.visualSettings.background.mode !== 'none';
-            if (needsSegmentation && sourceVideo.value && (forceFirstMask || time - lastAIProcessTime > AI_PROCESS_INTERVAL)) {
-                processAISegmentation(sourceVideo.value, time);
+            // Process AI for framing and segmentation
+            if (sourceVideo.value && sourceVideo.value.readyState >= 2 && (forceFirstMask || time - lastAIProcessTime > AI_PROCESS_INTERVAL)) {
+                // Always process for framing, but skip heavy segmentation if background mode is 'none'
+                const skipSegmentation = studioStore.visualSettings.background.mode === 'none';
+                processAISegmentation(sourceVideo.value, time, skipSegmentation);
+                
                 lastAIProcessTime = time;
                 forceFirstMask = false;
 
@@ -336,6 +433,7 @@ export function useStudioCanvas(
 
     const start2DLoop = () => {
         const render = (time: number) => {
+            if (!isRendering) return;
             const delta = time - lastRenderTime.value;
             const targetFps = options.streamQuality.value === 'low' ? 24 : 30;
             const frameInterval = 1000 / targetFps;
@@ -377,7 +475,7 @@ export function useStudioCanvas(
             }
             renderCommerceOverlays(ctx, canvas);
 
-            if (options.enableASL.value) {
+            if (options.enableAsl.value) {
                 // ASL logic
             }
 
@@ -391,6 +489,9 @@ export function useStudioCanvas(
     };
 
     const stopRendering = () => {
+        isRendering = false;
+        console.log('[Studio Canvas] Stopping rendering loop...');
+
         if (worker) {
             worker.terminate();
             worker = null;
@@ -446,7 +547,7 @@ export function useStudioCanvas(
         ctx.clip();
 
         if (sourceElement) {
-            drawImageCover(ctx, sourceElement, x, y, w, h);
+            drawImageCover(ctx, sourceElement, x, y, w, h, region.source === 'host');
         } else {
             const guest = getGuestForRegion(region.source);
             if (guest) {
@@ -646,7 +747,7 @@ export function useStudioCanvas(
         ctx.fill();
 
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.font = 'bold 20px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(name.toUpperCase(), x + 10 + tagW / 2, y + h - 10 - 8);
     };
@@ -686,19 +787,38 @@ export function useStudioCanvas(
             return options.activeMediaVideo?.value || null;
         }
         if (source.startsWith('guest')) {
-            if (options.isGuest?.value) {
-                const remoteStream = guestVideos.value[source];
-                if (remoteStream) return remoteStream;
-                const guestInSlot = studioStore.guestSlotMap[source];
-                if (guestInSlot?.id === options.myGuestId?.value) return sourceVideo.value;
-                return null;
+            // Debug: Log lookup attempts
+            // console.log(`[StudioCanvas] Looking up source: ${source}`);
+            
+            // First check if 'source' is a direct ID match (e.g. 'pachan')
+            if (guestVideos.value[source]) return guestVideos.value[source];
+
+            // Otherwise, treat 'source' as a slot name (e.g. 'guest1') and resolve ID
+            const guestInSlot = studioStore.guestSlotMap[source];
+            if (guestInSlot) {
+                 // console.log(`[StudioCanvas] Resolved ${source} -> ${guestInSlot.uuid}`);
+                 if (guestVideos.value[guestInSlot.uuid]) {
+                     return guestVideos.value[guestInSlot.uuid];
+                 } else {
+                     // console.warn(`[StudioCanvas] Video stream missing for ${guestInSlot.uuid}`);
+                 }
             }
-            return guestVideos.value[source] || null;
+
+            if (options.isGuest?.value) {
+                 const remoteStream = guestVideos.value[source];
+                 if (remoteStream) return remoteStream;
+                 
+                 // If I am this guest, return my local feed (sourceVideo)
+                 if (guestInSlot?.uuid === options.myGuestId?.value) return sourceVideo.value;
+                 return null;
+            }
+            
+            return null;
         }
         return null;
     };
 
-    const drawImageCover = (ctx: CanvasRenderingContext2D, img: any, x: number, y: number, w: number, h: number) => {
+    const drawImageCover = (ctx: CanvasRenderingContext2D, img: any, x: number, y: number, w: number, h: number, useFaceFraming = false) => {
         const imgW = img instanceof HTMLVideoElement ? img.videoWidth : img.width;
         const imgH = img instanceof HTMLVideoElement ? img.videoHeight : img.height;
         if (!imgW || !imgH) {
@@ -706,89 +826,118 @@ export function useStudioCanvas(
             ctx.fillRect(x, y, w, h);
             return;
         }
+
+        // Smoothly interpolate face frame
+        if (useFaceFraming) {
+            faceFrame.x += (faceFrame.targetX - faceFrame.x) * 0.1;
+            faceFrame.y += (faceFrame.targetY - faceFrame.y) * 0.1;
+        } else {
+            faceFrame.x = 0.5;
+            faceFrame.y = 0.5;
+        }
+
         const imgRatio = imgW / imgH;
         const destRatio = w / h;
         let sx, sy, sw, sh;
+        
         if (imgRatio > destRatio) {
-            sw = imgH * destRatio; sh = imgH; sx = (imgW - sw) / 2; sy = 0;
+            sw = imgH * destRatio; 
+            sh = imgH; 
+            
+            // horizontal centering/framing
+            const centerX = imgW * faceFrame.x;
+            sx = Math.max(0, Math.min(imgW - sw, centerX - sw / 2));
+            sy = 0;
         } else {
-            sw = imgW; sh = imgW / destRatio; sx = 0; sy = (imgH - sh) / 2;
+            sw = imgW; 
+            sh = imgW / destRatio; 
+            
+            // vertical centering/framing
+            const centerY = imgH * faceFrame.y;
+            sx = 0; 
+            sy = Math.max(0, Math.min(imgH - sh, centerY - sh / 2));
         }
         ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
     };
 
-    const processAISegmentation = (video: HTMLVideoElement, timestamp: number) => {
-        if (!worker || !video.videoWidth || !video.videoHeight) return;
+    let lastMaskTimestamp = -1;
 
-        try {
-            // Process frame through AI engine
-            const results = liveAIEngine.processFrame(video, timestamp, {
-                enableSegmentation: true,
-                enableFace: false,
-                enableHands: false
-            });
+    const processAISegmentation = async (video: HTMLVideoElement, timestamp: number, skipSegmentation = false) => {
+        if (!worker || !video.videoWidth || isAIProcessing || !studioStore.aiEnabled) return;
 
-            if (results.segmentationMask) {
-                // Create canvas if needed
-                if (!aiCanvas) {
-                    aiCanvas = document.createElement('canvas');
-                    aiCtx = aiCanvas.getContext('2d', { willReadFrequently: true });
+        isAIProcessing = true;
+		if(liveAIEngine && liveAIEngine.isInitialized){
+            try {
+                const stream = video.srcObject as MediaStream;
+                const track = stream?.getVideoTracks()[0];
+                
+                if (!track) {
+                    if (timestamp % 200 === 0) console.warn("[Studio Canvas] No video track found on active video source");
+                    isAIProcessing = false;
+                    return;
                 }
 
-                if (aiCanvas && aiCtx) {
-                    // Resize canvas to match video
-                    if (aiCanvas.width !== video.videoWidth || aiCanvas.height !== video.videoHeight) {
-                        aiCanvas.width = video.videoWidth;
-                        aiCanvas.height = video.videoHeight;
+                // Phase 95: Enable Face Tracking for real-time framing
+                const results = await liveAIEngine.processFrame(track, timestamp, { 
+                    enableSegmentation: !skipSegmentation,
+                    enableFace: true 
+                });
+
+                // 1. Process Face Framing
+                if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+                    const landmarks = results.faceLandmarks[0];
+                    // Landmark 1 is usually the nose or center of face
+                    // Or we can average a few landmarks (0-16 for jaw, 1 for nose, etc)
+                    // Simplified: Use landmark 1 (nose tip) for centering
+                    const nose = landmarks[1];
+                    if (nose) {
+                        faceFrame.targetX = nose.x;
+                        faceFrame.targetY = nose.y;
+
+                        if (Date.now() % 1000 < 100) {
+                            // console.log(`[Studio Canvas] Nose Landmark: x=${nose.x.toFixed(2)}, y=${nose.y.toFixed(2)}`);
+                        }
+
+                        // Forward to worker for advanced rendering mode
+                        if (worker) {
+                            worker.postMessage({ 
+                                type: 'update-face-frame', 
+                                payload: { x: nose.x, y: nose.y } 
+                            });
+                        }
                     }
+                }
 
-                    // Convert mask to ImageData
-                    const mask = results.segmentationMask;
-                    const canvasWidth = aiCanvas.width;
-                    const canvasHeight = aiCanvas.height;
-
-                    if (!cachedMaskImageData || cachedMaskImageData.width !== canvasWidth || cachedMaskImageData.height !== canvasHeight) {
-                        cachedMaskImageData = aiCtx.createImageData(canvasWidth, canvasHeight);
-                    }
-
-                    const data = cachedMaskImageData.data;
-
-                    // MediaPipe mask is a Float32Array or Uint8Array
-                    const maskData = mask.getAsFloat32Array?.() || mask.getAsUint8Array?.();
-
+                // 2. Process Segmentation Mask
+                if (results.segmentationMask && results.timestamp && results.timestamp > lastMaskTimestamp) {
+                    lastMaskTimestamp = results.timestamp;
+                    const maskData = results.segmentationMask;
+                    
                     if (maskData) {
-                        // FAST PATH: Optimized loop for RGBA mask generation
-                        // We also normalize mask values to 0-255
-                        for (let i = 0; i < maskData.length; i++) {
-                            // MediaPipe Selfie Segmenter: 1.0 is person, 0.0 is background
-                            const val = maskData[i] * 255;
-                            const idx = i << 2; // i * 4
-                            data[idx] = val;     // R (used by shader)
-                            data[idx + 1] = val; // G
-                            data[idx + 2] = val; // B
-                            data[idx + 3] = 255; // A
-                        }
-
-                        if (timestamp % 1000 < 50) {
-                            console.log('[Studio Canvas] Sending mask update at timestamp:', timestamp);
-                        }
-
-                        // Send to worker
+                        if (timestamp % 100 === 0) console.log("[Studio Canvas] Sending fresh mask to worker", maskData.length);
                         worker.postMessage({
                             type: 'update-mask',
-                            payload: { maskData: cachedMaskImageData }
-                        });
+                            payload: { 
+                                maskData, 
+                                width: (results as any).maskWidth || video.videoWidth, 
+                                height: (results as any).maskHeight || video.videoHeight 
+                            }
+                        }, [maskData.buffer]); 
                     }
                 }
+            } catch (err) {
+                console.warn("[Studio Canvas] AI Segmentation failed:", err);
+            } finally {
+                isAIProcessing = false;
             }
-        } catch (error) {
-            console.error('[Studio Canvas] AI segmentation error:', error);
+		} else {
+            isAIProcessing = false;
         }
     };
 
     onUnmounted(() => {
         stopRendering();
-        liveAIEngine.close();
+        liveAIEngine?.close();
     });
 
     return {

@@ -3,10 +3,20 @@
     <div class="sidebar-header">
       <div class="brand-section" v-if="!collapsed">
         <router-link to="/" class="brand">
-          <template v-if="uiStore.logo">
+          <!-- <template v-if="uiStore.logo">
             <img :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="brand-logo" />
           </template>
-          <span v-else>{{ uiStore.appName }}</span>
+          <el-icon v-else>
+            <img src="@/assets/images/logo.png" alt="" />
+          </el-icon> -->
+          <el-image :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="brand-logo">
+            <template #error>
+              <el-icon>
+                <img src="/logo.png" alt="" />
+              </el-icon>
+            </template>
+          </el-image>
+          <span>{{ uiStore.appName }}</span>
         </router-link>
       </div>
       <button class="toggle-btn" @click="collapsed = !collapsed">
@@ -34,17 +44,17 @@
           <folder-open theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.projects') }}</span>
         </router-link>
-        <router-link to="/marketplace" class="nav-item" :class="{ active: route.path === '/marketplace' }">
+        <router-link to="/templates" class="nav-item" :class="{ active: route.path === '/templates' }">
           <shopping theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Templates</span>
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.templates') }}</span>
         </router-link>
-        <router-link to="/organization" class="nav-item" :class="{ active: route.path === '/organization' }">
+        <!-- <router-link to="/organization" class="nav-item" :class="{ active: route.path === '/organization' }">
           <peoples theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Team</span>
-        </router-link>
-        <router-link to="/neural-archive" class="nav-item" :class="{ active: route.path === '/neural-archive' }">
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.team') }}</span>
+        </router-link> -->
+        <router-link to="/vtubers" class="nav-item" :class="{ active: route.path === '/vtubers' }">
           <brain theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Neural Archive</span>
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.avatars') }}</span>
         </router-link>
         <router-link to="/gallery" class="nav-item" :class="{ active: route.path === '/gallery' }">
           <video-two theme="outline" size="20" />
@@ -52,19 +62,19 @@
         </router-link>
         <router-link to="/platforms" class="nav-item" :class="{ active: route.path === '/platforms' }">
           <connection theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Platforms</span>
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.platforms') }}</span>
         </router-link>
-        <router-link to="/platforms/cms" class="nav-item" :class="{ active: route.path === '/platforms/cms' }">
-          <chart-line theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Creator Hub</span>
+        <router-link to="/viral-hub" class="nav-item" :class="{ active: route.path === '/viral-hub' }">
+          <share-two theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.viralHub') }}</span>
         </router-link>
         <router-link to="/recordings" class="nav-item" :class="{ active: route.path === '/recordings' }">
           <video-file theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Archives</span>
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.archives') }}</span>
         </router-link>
-        <router-link to="/merchant/orders" class="nav-item" :class="{ active: route.path === '/merchant/orders' }">
+        <router-link to="/merchants" class="nav-item" :class="{ active: route.path === '/merchants' }">
           <shopping theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">Merchant Hub</span>
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.merchantHub') }}</span>
         </router-link>
         <router-link to="/resources" class="nav-item" :class="{ active: route.path === '/resources' }">
           <book-one theme="outline" size="20" />
@@ -78,7 +88,7 @@
         <router-link v-if="userStore.systemMode === 'master'" to="/license-portal" class="nav-item"
           :class="{ active: route.path === '/license-portal' }">
           <key theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text text-amber-400">License Hub</span>
+          <span v-if="!collapsed" class="nav-text text-amber-400">{{ t('nav.licenseHub') }}</span>
         </router-link>
 
         <router-link v-if="user?.role === 'sys-admin'" to="/license" class="nav-item"
@@ -116,36 +126,36 @@
             <router-link to="/admin/ai-accounts" class="nav-item sub-item"
               :class="{ active: route.path.startsWith('/admin/ai-accounts') }">
               <robot theme="outline" size="18" />
-              <span class="nav-text">AI Accounts</span>
+              <span class="nav-text">{{ t('nav.aiAccounts') }}</span>
             </router-link>
 
             <router-link v-if="userStore.systemMode === 'master'" to="/admin/fleet" class="nav-item sub-item"
               :class="{ active: route.path === '/admin/fleet' }">
               <data-server theme="outline" size="18" />
-              <span class="nav-text text-blue-400">Fleet Command</span>
+              <span class="nav-text text-blue-400">{{ t('nav.fleetCommand') }}</span>
             </router-link>
 
             <router-link to="/admin/monitoring" class="nav-item sub-item"
               :class="{ active: route.path.startsWith('/admin/monitoring') }">
               <terminal theme="outline" size="18" />
-              <span class="nav-text">Monitoring</span>
+              <span class="nav-text">{{ t('nav.monitoring') }}</span>
             </router-link>
 
             <router-link to="/admin/infra-health" class="nav-item sub-item"
               :class="{ active: route.path.startsWith('/admin/infra-health') }">
               <database-network theme="outline" size="18" />
-              <span class="nav-text">Infrastructure</span>
+              <span class="nav-text">{{ t('nav.infrastructure') }}</span>
             </router-link>
 
             <router-link to="/admin/network" class="nav-item sub-item"
               :class="{ active: route.path.startsWith('/admin/network') }">
               <earth theme="outline" size="18" />
-              <span class="nav-text">Network Hub</span>
+              <span class="nav-text">{{ t('nav.networkHub') }}</span>
             </router-link>
-            <router-link to="/developer-hub" class="nav-item sub-item"
-              :class="{ active: route.path === '/developer-hub' }">
+            <router-link to="/developer" class="nav-item sub-item"
+              :class="{ active: route.path === '/developer' }">
               <connection-point theme="outline" size="20" />
-              <span v-if="!collapsed" class="nav-text">Developer Hub</span>
+              <span v-if="!collapsed" class="nav-text">{{ t('nav.developerHub') }}</span>
             </router-link>
           </div>
         </div>
@@ -201,7 +211,8 @@ import {
   Download,
   ConnectionPoint,
   DataServer,
-  DatabaseNetwork
+  DatabaseNetwork,
+  ShareTwo
 } from '@icon-park/vue-next'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -290,14 +301,14 @@ const checkForUpdates = async () => {
     // Only check if we are in Edge mode
     if (userStore.systemMode === 'master') return
     const data = await uiStore.checkForUpdates()
-    if (data && data.success) {
+    if (data) {
       // Simple version compare logic 
       // In real app, use semver
       // Assuming locally we have a version in config or env, mocking '1.0.0' for now
       const currentVersion = '1.4.0'
-      if (data.data.release.version !== currentVersion) {
+      if (data.release.version !== currentVersion) {
         updateAvailable.value = true
-        latestVersion.value = data.data.release.version
+        latestVersion.value = data.release.version
       }
     }
   } catch (e) { }

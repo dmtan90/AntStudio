@@ -2,7 +2,7 @@
     <div class="controls-overlay absolute bottom-0 left-0 right-0 p-8 flex flex-col items-center gap-6 z-50">
         <!-- Main Controls -->
         <div
-            class="controls-bar flex items-center justify-center gap-4 px-6 py-3 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative">
+            class="controls-bar recorder-controls flex items-center justify-center gap-4 px-6 py-3 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative">
 
             <button class="ctrl-btn" :class="{ 'active': activeSidebar === 'filters' }"
                 @click="emit('toggle-sidebar', 'filters')" title="Filters">

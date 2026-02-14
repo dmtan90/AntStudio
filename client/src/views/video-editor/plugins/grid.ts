@@ -22,9 +22,9 @@ export class CanvasGrid {
     }
 
     private _renderGrid() {
-        if (!this.visible || !this.instance.contextTop) return;
+        if (!this.visible || !(this.instance as any).contextTop) return;
 
-        const ctx = this.instance.contextTop;
+        const ctx = (this.instance as any).contextTop;
         const vpt = this.instance.viewportTransform;
         if (!vpt) return;
 

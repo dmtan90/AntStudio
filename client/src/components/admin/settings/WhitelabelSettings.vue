@@ -68,10 +68,10 @@ import { ref } from 'vue';
 import { Upload } from '@icon-park/vue-next';
 import { useProjectStore } from '@/stores/project';
 import { toast } from 'vue-sonner';
+import { getFileUrl } from '@/utils/api';
 
 const props = defineProps<{
     whitelabel: any;
-    getFileUrl: (path: string) => string;
 }>();
 
 const projectStore = useProjectStore();
@@ -99,8 +99,8 @@ const handleFileChange = async (event: Event, type: 'logo' | 'favicon') => {
         formData.append('type', 'whitelabel'); // Identifier for the backend if needed
 
         const res = await projectStore.uploadMedia(formData);
-        if (res.success && res.data?.url) {
-            props.whitelabel[type] = res.data.url;
+        if (res?.url) {
+            props.whitelabel[type] = res.url;
             toast.success(`Successfully uploaded whitelabel ${type}`);
         }
     } catch (e) {

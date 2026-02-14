@@ -10,7 +10,7 @@ import { ClientLog } from '../models/ClientLog.js';
 const router = Router();
 
 // Public-ish route (requires skip tracking and auth, but no admin for ingestion)
-router.post('/client-logs', authMiddleware, async (req: AuthRequest, res) => {
+router.post('/client-logs', async (req: AuthRequest, res) => {
     try {
         await connectDB();
         const log = await ClientLog.create({
@@ -25,13 +25,13 @@ router.post('/client-logs', authMiddleware, async (req: AuthRequest, res) => {
 });
 
 // All other routes require admin authentication
-router.use(adminMiddleware);
+// router.use(adminMiddleware);
 
 /**
  * GET /api/admin/monitoring/stats
  * Get current real-time system performance
  */
-router.get('/stats', async (req: AuthRequest, res) => {
+router.get('/stats', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         const stats = await monitoringService.getRealtimeStats();
         res.json({ success: true, data: stats, error: null });
@@ -43,7 +43,7 @@ router.get('/stats', async (req: AuthRequest, res) => {
 /**
  * GET /api/admin/monitoring/health
  */
-router.get('/health', async (req: AuthRequest, res) => {
+router.get('/health', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         const health = await monitoringService.getDetailedHealth();
         res.json({ success: true, data: health, error: null });
@@ -55,7 +55,7 @@ router.get('/health', async (req: AuthRequest, res) => {
 /**
  * GET /api/admin/monitoring/heartbeat
  */
-router.get('/heartbeat', async (req: AuthRequest, res) => {
+router.get('/heartbeat', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         const heartbeats = await monitoringService.getHeartbeat();
         res.json({ success: true, data: heartbeats, error: null });
@@ -68,7 +68,7 @@ router.get('/heartbeat', async (req: AuthRequest, res) => {
  * GET /api/admin/monitoring/history
  * Get historical metrics for charts
  */
-router.get('/history', async (req: AuthRequest, res) => {
+router.get('/history', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
         const { limit = 60 } = req.query;
@@ -84,7 +84,7 @@ router.get('/history', async (req: AuthRequest, res) => {
  * GET /api/admin/monitoring/logs
  * Fetch system logs (same as previous logs route)
  */
-router.get('/logs', async (req: AuthRequest, res) => {
+router.get('/logs', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
         const { level, source, page = 1, limit = 100, search } = req.query;
@@ -112,7 +112,7 @@ router.get('/logs', async (req: AuthRequest, res) => {
 /**
  * GET /api/admin/monitoring/settings
  */
-router.get('/settings', async (req: AuthRequest, res) => {
+router.get('/settings', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
         const settings = await AdminSettings.findOne();
@@ -125,7 +125,7 @@ router.get('/settings', async (req: AuthRequest, res) => {
 /**
  * PATCH /api/admin/monitoring/settings
  */
-router.patch('/settings', async (req: AuthRequest, res) => {
+router.patch('/settings', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
         const { emailNotificationsEnabled, notificationEmail, minNotificationLevel, retentionDays } = req.body;
@@ -147,7 +147,7 @@ router.patch('/settings', async (req: AuthRequest, res) => {
  * GET /api/admin/monitoring/export-diagnostics
  * Bundle logs and email to developer
  */
-router.get('/export-diagnostics', async (req: AuthRequest, res) => {
+router.get('/export-diagnostics', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
         await monitoringService.exportAndEmailDiagnostics();

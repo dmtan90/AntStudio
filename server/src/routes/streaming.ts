@@ -6,6 +6,8 @@ import { UserPlatformAccount } from '../models/UserPlatformAccount.js';
 import { Project } from '../models/Project.js';
 import { connectDB } from '../utils/db.js';
 import { getAdminSettings } from '../models/AdminSettings.js';
+import { PlatformAuthService } from '../services/PlatformAuthService.js';
+
 
 const router = Router();
 
@@ -18,7 +20,7 @@ router.get('/guest/validate/:token', async (req, res) => {
         const info = await streamingService.validateGuestToken(req.params.token);
         if (!info) return res.status(404).json({ success: false, error: 'Invalid or expired token' });
 
-        res.json({ success: true, ...info });
+        res.json({ success: true, data: info });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -37,10 +39,11 @@ router.post('/start', async (req: AuthRequest, res) => {
         const { source, platformAccountIds, loop, projectId, quality } = req.body;
 
         let finalSource = source;
+        let project: any = null;
 
         // If projectId is provided, get the final video URL
         if (projectId) {
-            const project = await Project.findOne({ _id: projectId, userId: req.user?.userId });
+            project = await Project.findOne({ _id: projectId, userId: req.user?.userId });
             if (!project || (!project.finalVideo?.s3Url && !project.finalVideo?.s3Key)) {
                 return res.status(404).json({ success: false, error: 'Project video not found or not completed' });
             }
@@ -81,13 +84,44 @@ router.post('/start', async (req: AuthRequest, res) => {
             }
         }
 
-        // 2. Prepare targets
-        const targets: StreamTarget[] = accounts.map(acc => ({
-            url: acc.rtmpUrl || getDefaultRtmpUrl(acc.platform),
-            key: acc.streamKey || '',
-            platform: acc.platform,
-            accountId: acc._id.toString()
-        })).filter(t => t.url && t.key);
+        // 2. Prepare targets (Dynamically fetch for YT/FB)
+        const targetTasks = accounts.map(async (acc) => {
+            let url = acc.rtmpUrl;
+            let key = acc.streamKey;
+            let externalChatId = undefined;
+
+            if (acc.platform === 'youtube' || acc.platform === 'facebook') {
+                try {
+                    console.log(`[Streaming] Fetching dynamic live info for ${acc.platform} (${acc.accountName})`);
+                    const credentials = await PlatformAuthService.getValidCredentials(acc);
+                    const liveInfo = await PlatformAuthService.getLiveStreamInfo(
+                        acc.platform as any,
+                        credentials,
+                        { title: project?.title || 'AntFlow Live', description: project?.description || '' }
+                    );
+                    url = liveInfo.rtmpUrl;
+                    key = liveInfo.streamKey;
+                    externalChatId = liveInfo.externalChatId;
+                    
+                    // Update account with latest info
+                    acc.rtmpUrl = url;
+                    acc.streamKey = key;
+                    await acc.save();
+                } catch (e: any) {
+                    console.error(`[Streaming] Dynamic info fetch failed for ${acc.platform}:`, e.message);
+                }
+            }
+
+            return {
+                url: url || '',
+                key: key || '',
+                platform: acc.platform,
+                accountId: acc._id.toString(),
+                externalChatId
+            };
+        });
+
+        const targets = (await Promise.all(targetTasks)).filter(t => t.url && (t.key || t.platform === 'facebook'));
 
         if (!targets.length) {
             return res.status(400).json({ success: false, error: 'Invalid streaming configuration for selected platforms' });
@@ -98,7 +132,7 @@ router.post('/start', async (req: AuthRequest, res) => {
             req.user?.userId.toString() || 'unknown',
             finalSource,
             targets,
-            { loop: !!loop, quality }
+            { loop: !!loop, quality, projectId }
         );
 
         res.json({
@@ -151,6 +185,7 @@ router.get('/status/:id', (req: AuthRequest, res) => {
 });
 
 import { highlightService } from '../services/HighlightService.js';
+import { socketServer } from '../services/SocketServer.js';
 
 /**
  * POST /api/streaming/:id/highlight
@@ -159,10 +194,42 @@ import { highlightService } from '../services/HighlightService.js';
 router.post('/status/:id/highlight', async (req: AuthRequest, res) => {
     try {
         const sessionId = req.params.id;
+        const { description, importance } = req.body;
         const result = await highlightService.captureHighlight(sessionId);
 
         if (!result) {
             return res.status(400).json({ success: false, error: 'Highlight capture not available for this session mode or buffer is empty.' });
+        }
+
+        // If session has a projectId, attach highlight to the project
+        const session = streamingService.getSessionStatus(sessionId);
+        if (session?.projectId) {
+            await connectDB();
+            await Project.findByIdAndUpdate(session.projectId, {
+                $push: {
+                    visualAssets: {
+                        name: `Highlight_${result.id}`,
+                        description: description || 'AI Captured Moment',
+                        type: 'video',
+                        status: 'ready',
+                        url: result.s3Url,
+                        s3Key: result.s3Key,
+                        metadata: {
+                            importance: importance || 5,
+                            capturedAt: new Date(),
+                            sessionId
+                        },
+                        createdAt: new Date()
+                    }
+                }
+            });
+            console.log(`[Streaming] Highlight attached to project ${session.projectId}`);
+
+            // Notify user via Socket.IO
+            socketServer.emitProjectUpdate(req.user!.userId, session.projectId, {
+                type: 'highlight_captured',
+                highlight: result
+            });
         }
 
         res.json({ success: true, data: result });
@@ -250,7 +317,8 @@ function getDefaultRtmpUrl(platform: string): string {
  */
 router.post('/session/prepare', async (req: AuthRequest, res) => {
     try {
-        const sessionId = await streamingService.prepareSession(req.user!.id);
+        const { projectId } = req.body;
+        const sessionId = await streamingService.prepareSession(req.user!.id, projectId);
         res.json({ success: true, data: { sessionId } });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
@@ -273,7 +341,7 @@ router.post('/invite', async (req: AuthRequest, res) => {
         const host = apiConfig.publicDomain || process.env.FRONTEND_URL || 'http://localhost:3000';
         const inviteUrl = `${host}/join/${token}`;
 
-        res.json({ success: true, token, inviteUrl });
+        res.json({ success: true, data: { token, inviteUrl } });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }

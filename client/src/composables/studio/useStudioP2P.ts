@@ -32,16 +32,16 @@ export function useStudioP2P(
         }
 
         studioStore.liveGuests.forEach((g) => {
-            const stream = guestStreams.get(g.id);
+            const stream = guestStreams.get(g.uuid);
             if (stream) {
-                let video = guestVideoElements.get(g.id);
+                let video = guestVideoElements.get(g.uuid);
                 if (!video) {
                     video = document.createElement('video');
                     video.autoplay = true;
                     video.playsInline = true;
                     video.srcObject = stream;
                     video.muted = false;
-                    guestVideoElements.set(g.id, video);
+                    guestVideoElements.set(g.uuid, video);
                     video.play().catch(e => console.warn("[Studio P2P] Video play failed:", e));
                 } else {
                     if (video.srcObject !== stream) video.srcObject = stream;
@@ -71,16 +71,19 @@ export function useStudioP2P(
 
         const nextVideos: Record<string, HTMLVideoElement> = {};
 
-        // Use the centralized map to ensure consistency with labels/placeholders
+        // 1. Map by Slot (e.g. guest1, guest2)
         Object.entries(studioStore.guestSlotMap).forEach(([slotKey, g]: [string, any]) => {
-            // g can be null if the slot is empty, so check for g.id
             if (g && g.id) {
-
                 const video = guestVideoElements.get(g.id);
                 if (video) {
                     nextVideos[slotKey] = video;
                 }
             }
+        });
+
+        // 2. Map by Direct ID (Critical for Synthetic Guests & Canvas Lookup)
+        guestVideoElements.forEach((video, id) => {
+            nextVideos[id] = video;
         });
 
         // If guest, ensure host video is mapped
@@ -231,11 +234,11 @@ export function useStudioP2P(
 
                         // Identify stream owner
                         let targetId = 'host';
-                        const matchedGuest = studioStore.liveGuests.find(g => g.streamId === incomingStream.id || g.id === from);
+                        const matchedGuest = studioStore.liveGuests.find(g => g.streamId === incomingStream.id || g.uuid === from);
 
                         if (matchedGuest) {
-                            targetId = matchedGuest.id;
-                            if (matchedGuest.id === from && matchedGuest.streamId !== incomingStream.id) {
+                            targetId = matchedGuest.uuid;
+                            if (matchedGuest.uuid === from && matchedGuest.streamId !== incomingStream.id) {
                                 matchedGuest.streamId = incomingStream.id;
                                 studioStore.broadcastCurrentState();
                             }
@@ -362,7 +365,7 @@ export function useStudioP2P(
     });
 
     watch(() => studioStore.liveGuests, (guests) => {
-        const activeIds = new Set(guests.map(g => g.id));
+        const activeIds = new Set(guests.map(g => g.uuid));
         for (const guestId of p2pConnections.keys()) {
             // Protected: Do not disconnect Host if we are Guest
             if (isGuestMode?.value && guestId === connectedHostId.value) continue;
@@ -374,12 +377,58 @@ export function useStudioP2P(
         syncGuestVideos();
     }, { deep: true, immediate: true });
 
+    const addSyntheticGuest = (uuid: string, stream: MediaStream) => {
+        console.log(`[Studio P2P] Adding synthetic guest stream: ${uuid}`);
+        
+        // Register with UUID (primary identifier)
+        guestStreams.set(uuid, stream);
+        
+        // ALSO register by slot ID for rendering compatibility
+        // The rendering worker currently expects slot-based lookups (guest1, guest2, etc.)
+        const guest = studioStore.liveGuests.find(g => g.uuid === uuid);
+        if (guest && guest.slotIndex !== undefined) {
+            const slotId = `guest${guest.slotIndex + 1}`;
+            console.log(`[Studio P2P] Mapping guest ${uuid} to slot ${slotId}`);
+            guestStreams.set(slotId, stream);
+        }
+        
+        // Create video element with UUID key
+        let video = guestVideoElements.get(uuid);
+        if (!video) {
+            video = document.createElement('video');
+            video.autoplay = true;
+            video.playsInline = true;
+            video.muted = true; // Synthetic guests are mixed via audio context, so mute video elem to avoid echo? 
+                                // Actually we probably want it muted here and handle audio blending separately or 
+                                // rely on the stream's track. If it's from captureStream of canvas, it might not have audio yet.
+                                // But VirtualGuest logic handles audio.
+            video.srcObject = stream;
+            guestVideoElements.set(uuid, video);
+            video.play().catch(e => console.warn("[Studio P2P] Synthetic video play failed:", e));
+        } else {
+            video.srcObject = stream;
+            video.play();
+        }
+        
+        // Also register video element with slot ID for rendering
+        if (guest && guest.slotIndex !== undefined) {
+            const slotId = `guest${guest.slotIndex + 1}`;
+            if (slotId !== uuid) {
+                guestVideoElements.set(slotId, video); // Reuse same video element
+            }
+        }
+
+        // Force a sync to update the reactive guestVideos ref
+        syncGuestVideos();
+    };
+
     return {
         guestVideos,
         guestVideoElements, // Expose for sidebar previews
         stopGuestSubscriber,
         syncGuestVideos,
-        initiateAsGuest
+        initiateAsGuest,
+        addSyntheticGuest
     };
 }
 

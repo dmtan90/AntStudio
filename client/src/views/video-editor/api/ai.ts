@@ -31,20 +31,20 @@ interface AnalyzeProductResponse {
 async function generateHeadline(product: EditorProduct, _objective: string) {
   const body: GenerateContentParams = { description: product.description, product_name: product.name };
   const res = await api.post<GenerateContentResponse>(`/ai/headlines`, body);
-  return res.data.data;
+  return res.data?.data ?? res.data;
 }
 
 async function generateDescription(product: EditorProduct, _objective: string) {
   const body: GenerateContentParams = { description: product.description, product_name: product.name };
   const res = await api.post<GenerateContentResponse>(`/ai/subheadlines`, body);
-  return res.data.data;
+  return res.data?.data ?? res.data;
 }
 
 async function generateCTA(product: EditorProduct, objective: string) {
   // Simplified params for backend, it handles defaults/limits
   const body = { name: product.name, description: product.description, objective };
   const res = await api.post<GenerateContentResponse>(`/ai/ad-cta`, body);
-  return res.data.data;
+  return res.data?.data ?? res.data;
 }
 
 async function analyzeProduct(
@@ -66,7 +66,7 @@ async function analyzeProduct(
       },
     }
   );
-  return res.data.data;
+  return (res.data as any)?.data ?? res.data as any;
 }
 
 function useGenerateHeadlineSuggestions(product: EditorProduct, objective: string) {
@@ -112,42 +112,42 @@ interface GenerateVideoParams {
 
 async function generateImage(params: GenerateImageParams) {
   const res = await api.post<{ success: boolean; data: { media: any; url: string } }>(`/ai/generate-image`, params);
-  return res.data;
+  return res.data?.data ?? res.data;
 }
 
 async function generateVoice(params: GenerateVoiceParams) {
   const res = await api.post<{ success: boolean; data: { media: any; url: string } }>(`/ai/generate-voice`, params);
-  return res.data;
+  return res.data?.data ?? res.data;
 }
 
 async function generateVideo(params: GenerateVideoParams) {
   const res = await api.post<{ success: boolean; data: { jobId: string } }>(`/ai/generate-video`, params);
-  return res.data;
+  return res.data?.data ?? res.data;
 }
 
 async function checkVideoStatus(jobId: string) {
   const res = await api.get<{ success: boolean; data: { status: string; progress?: number; videoUrl?: string; media?: any } }>(`/ai/video-status/${jobId}`);
-  return res.data;
+  return res.data?.data ?? res.data;
 }
 
 async function generateCaptions(options: any) {
   const res = await api.post<{ success: boolean; data: any }>(`/ai/generate-captions`, options);
-  return res.data;
+  return res.data?.data ?? res.data;
 }
 
 async function detectScenes(options: any) {
   const res = await api.post<{ success: boolean; data: { scenes: any[] } }>(`/ai/detect-scenes`, options);
-  return res.data;
+  return res.data?.data ?? res.data;
 }
 
 async function detectBeats(options: any) {
   const res = await api.post<{ success: boolean; data: { beats: number[] } }>(`/ai/detect-beats`, options);
-  return res.data;
+  return res.data?.data ?? res.data;
 }
 
 async function detectSilence(options: any) {
   const res = await api.post<{ success: boolean; data: { regions: { start: number, end: number }[] } }>(`/ai/detect-silence`, options);
-  return res.data;
+  return res.data?.data ?? res.data;
 }
 
 export {
@@ -165,5 +165,35 @@ export {
   generateCaptions,
   detectScenes,
   detectBeats,
-  detectSilence
+  detectSilence,
+  extractTextFromImage,
+  generateImageCaption,
+  detectObjects,
+  detectFaces,
+  detectLandmarks
 };
+
+async function extractTextFromImage(options: any) {
+  const res = await api.post<{ success: boolean; data: { text: string } }>(`/ai/extract-text`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function generateImageCaption(options: any) {
+  const res = await api.post<{ success: boolean; data: { caption: string } }>(`/ai/generate-caption`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function detectObjects(options: any) {
+  const res = await api.post<{ success: boolean; data: { objects: any[] } }>(`/ai/detect-objects`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function detectFaces(options: any) {
+  const res = await api.post<{ success: boolean; data: { faces: any[] } }>(`/ai/detect-faces`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function detectLandmarks(options: any) {
+  const res = await api.post<{ success: boolean; data: { landmarks: any } }>(`/ai/detect-landmarks`, options);
+  return res.data?.data ?? res.data;
+}

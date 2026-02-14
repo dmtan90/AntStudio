@@ -172,6 +172,35 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- VTuber Section -->
+                <div class="panel-section border-t border-white/5 pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] font-bold text-orange-400 uppercase">AI Avatar</span>
+                            <span class="text-[9px] text-white/40">Virtual Guest Presence</span>
+                        </div>
+                        <el-switch :model-value="isVTuberActive" 
+                            @update:model-value="v => $emit('update:isVTuberActive', !!v)"
+                            size="small" />
+                    </div>
+
+                    <div v-if="isVTuberActive" class="space-y-4">
+                        <div class="grid grid-cols-3 gap-2">
+                             <div v-for="av in avatarPresets" :key="av.id"
+                                class="av-mini-card p-2 rounded-xl border transition-all cursor-pointer flex flex-col items-center gap-1.5"
+                                :class="selectedAvatar === av.id ? 'bg-orange-500/10 border-orange-500/40' : 'bg-white/5 border-white/5'"
+                                @click="$emit('update:selectedAvatar', av.id)">
+                                <div class="w-10 h-10 rounded-full overflow-hidden border"
+                                    :class="selectedAvatar === av.id ? 'border-orange-500' : 'border-white/10'">
+                                    <img :src="av.image" class="w-full h-full object-cover" />
+                                </div>
+                                <span class="text-[7px] font-bold uppercase truncate w-full text-center"
+                                    :class="selectedAvatar === av.id ? 'text-orange-400' : 'text-white/40'">{{ av.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -191,6 +220,9 @@ const props = defineProps<{
     targetLanguage: string
     camSettings: any
     resourcePool: any[]
+    isVTuberActive: boolean
+    avatarPresets: any[]
+    selectedAvatar: string
 }>()
 
 const filteredResources = computed(() => {
@@ -207,5 +239,7 @@ defineEmits<{
     (e: 'update:targetLanguage', val: string): void
     (e: 'update:camSettings', val: any): void
     (e: 'trigger-resource-upload'): void
+    (e: 'update:isVTuberActive', val: boolean): void
+    (e: 'update:selectedAvatar', id: string): void
 }>()
 </script>

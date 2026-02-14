@@ -23,12 +23,14 @@ export interface StreamTarget {
     key: string;      // Stream Key
     platform: string; // e.g. "youtube"
     accountId?: string;
+    externalChatId?: string;
 }
 
 // Finalized targets
 export interface StreamSession {
     id: string;
     userId: string;
+    projectId?: string; // Associated project for highlights/assets
     targets: StreamTarget[];
     status: 'starting' | 'live' | 'error' | 'stopped';
     startTime?: Date;
@@ -118,7 +120,7 @@ export class StreamingService extends EventEmitter {
         userId: string,
         source: string,
         targets: StreamTarget[],
-        options: { loop?: boolean, quality?: any, sessionId?: string } = {}
+        options: { loop?: boolean, quality?: any, sessionId?: string, projectId?: string } = {}
     ): Promise<{ sessionId: string, mode: string }> {
         const sessionId = options.sessionId || `stream_${Date.now()}`;
 
@@ -146,6 +148,7 @@ export class StreamingService extends EventEmitter {
         const session: StreamSession = {
             id: sessionId,
             userId,
+            projectId: options.projectId,
             targets: finalTargets,
             status: source === 'webrtc' ? 'live' : 'starting',
             startTime: source === 'webrtc' ? new Date() : undefined,
@@ -167,6 +170,7 @@ export class StreamingService extends EventEmitter {
                 const relaySession: StreamSession = {
                     id: sessionId,
                     userId,
+                    projectId: options.projectId,
                     targets: finalTargets,
                     status: 'live',
                     startTime: new Date(),
@@ -432,11 +436,12 @@ export class StreamingService extends EventEmitter {
     /**
      * Prepares a session before streaming starts so invites can be generated early.
      */
-    public async prepareSession(userId: string): Promise<string> {
+    public async prepareSession(userId: string, projectId?: string): Promise<string> {
         const sessionId = `stream_${Date.now()}`;
         const session: StreamSession = {
             id: sessionId,
             userId,
+            projectId,
             targets: [],
             status: 'starting'
         };
@@ -501,10 +506,17 @@ export class StreamingService extends EventEmitter {
             const data = {
                 sessionId: session.id,
                 userId: session.userId,
+                projectId: session.projectId,
                 status: session.status,
                 mode: extra.mode || 'ams',
                 nodeId: this.nodeId,
-                targets: session.targets,
+                targets: session.targets.map(t => ({
+                    url: t.url,
+                    key: t.key,
+                    platform: t.platform,
+                    accountId: t.accountId,
+                    externalChatId: t.externalChatId
+                })),
                 startTime: session.startTime || new Date()
             };
 

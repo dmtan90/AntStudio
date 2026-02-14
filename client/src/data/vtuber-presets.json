@@ -1,0 +1,181 @@
+{
+  "live2d": [
+    {
+      "id": "preset-live2d-hiyori",
+      "name": "Hiyori (Anime Girl)",
+      "description": "Cute anime character with expressive animations and idle motions",
+      "category": "anime",
+      "thumbnail": "https://raw.githubusercontent.com/guansss/pixi-live2d-display/master/test/assets/hiyori/hiyori.png",
+      "tags": ["anime", "cute", "expressive"],
+      "visualIdentity": {
+        "modelType": "live2d",
+        "live2dModelUrl": "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/hiyori/hiyori.model.json",
+        "live2dConfig": {
+          "scale": 0.15,
+          "position": { "x": 0, "y": 0 },
+          "idleMotion": "Idle",
+          "talkMotion": "TapBody"
+        },
+        "backgroundUrl": "https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800"
+      },
+      "identity": {
+        "name": "Hiyori",
+        "description": "A cheerful anime character perfect for entertainment and gaming content",
+        "traits": ["cheerful", "energetic", "friendly"]
+      },
+      "customization": {
+        "voiceConfig": {
+          "provider": "google",
+          "language": "ja-JP",
+          "voiceId": "ja-JP-Neural2-B"
+        },
+        "loras": []
+      }
+    },
+    {
+      "id": "preset-live2d-shizuku",
+      "name": "Shizuku (School Girl)",
+      "description": "Elegant school girl character with gentle animations",
+      "category": "anime",
+      "thumbnail": "https://raw.githubusercontent.com/guansss/pixi-live2d-display/master/test/assets/shizuku/shizuku.png",
+      "tags": ["anime", "elegant", "school"],
+      "visualIdentity": {
+        "modelType": "live2d",
+        "live2dModelUrl": "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/shizuku/shizuku.model.json",
+        "live2dConfig": {
+          "scale": 0.15,
+          "position": { "x": 0, "y": 0 },
+          "idleMotion": "idle",
+          "talkMotion": "tap_body"
+        },
+        "backgroundUrl": "https://images.unsplash.com/photo-1557682268-e3955ed5d83f?w=800"
+      },
+      "identity": {
+        "name": "Shizuku",
+        "description": "An elegant character ideal for educational and tutorial content",
+        "traits": ["elegant", "calm", "intelligent"]
+      },
+      "customization": {
+        "voiceConfig": {
+          "provider": "google",
+          "language": "ja-JP",
+          "voiceId": "ja-JP-Neural2-C"
+        },
+        "loras": []
+      }
+    }
+  ],
+  "static": [
+    {
+      "id": "preset-static-professional-male",
+      "name": "Professional Male Avatar",
+      "description": "Clean professional headshot for business and corporate content",
+      "category": "business",
+      "thumbnail": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
+      "tags": ["business", "professional", "corporate"],
+      "visualIdentity": {
+        "modelType": "static",
+        "staticImageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
+        "backgroundUrl": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800"
+      },
+      "identity": {
+        "name": "Professional Avatar",
+        "description": "A polished professional persona for business presentations and corporate videos",
+        "traits": ["professional", "confident", "articulate"]
+      },
+      "customization": {
+        "voiceConfig": {
+          "provider": "google",
+          "language": "en-US",
+          "voiceId": "en-US-Neural2-D"
+        },
+        "loras": []
+      }
+    },
+    {
+      "id": "preset-static-professional-female",
+      "name": "Professional Female Avatar",
+      "description": "Elegant professional headshot for business and educational content",
+      "category": "business",
+      "thumbnail": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=600&fit=crop",
+      "tags": ["business", "professional", "education"],
+      "visualIdentity": {
+        "modelType": "static",
+        "staticImageUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=600&fit=crop",
+        "backgroundUrl": "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800"
+      },
+      "identity": {
+        "name": "Professional Avatar",
+        "description": "A sophisticated professional persona for educational and business content",
+        "traits": ["professional", "knowledgeable", "approachable"]
+      },
+      "customization": {
+        "voiceConfig": {
+          "provider": "google",
+          "language": "en-US",
+          "voiceId": "en-US-Neural2-F"
+        },
+        "loras": []
+      }
+    },
+    {
+      "id": "preset-static-casual-creator",
+      "name": "Casual Content Creator",
+      "description": "Friendly and approachable avatar for vlogs and casual content",
+      "category": "entertainment",
+      "thumbnail": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=600&fit=crop",
+      "tags": ["casual", "vlog", "entertainment"],
+      "visualIdentity": {
+        "modelType": "static",
+        "staticImageUrl": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=600&fit=crop",
+        "backgroundUrl": "https://images.unsplash.com/photo-1557683316-973673baf926?w=800"
+      },
+      "identity": {
+        "name": "Casual Creator",
+        "description": "A friendly and relatable persona perfect for vlogs and entertainment",
+        "traits": ["friendly", "creative", "energetic"]
+      },
+      "customization": {
+        "voiceConfig": {
+          "provider": "google",
+          "language": "en-US",
+          "voiceId": "en-US-Neural2-A"
+        },
+        "loras": []
+      }
+    },
+    {
+      "id": "preset-static-educator",
+      "name": "Educational Instructor",
+      "description": "Authoritative and knowledgeable avatar for educational content",
+      "category": "education",
+      "thumbnail": "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=400&h=600&fit=crop",
+      "tags": ["education", "instructor", "knowledge"],
+      "visualIdentity": {
+        "modelType": "static",
+        "staticImageUrl": "https://images.unsplash.com/photo-1556157382-97eda2d62296?w=400&h=600&fit=crop",
+        "backgroundUrl": "https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=800"
+      },
+      "identity": {
+        "name": "Educational Instructor",
+        "description": "An authoritative and knowledgeable persona for teaching and tutorials",
+        "traits": ["knowledgeable", "patient", "clear"]
+      },
+      "customization": {
+        "voiceConfig": {
+          "provider": "google",
+          "language": "en-US",
+          "voiceId": "en-US-Neural2-J"
+        },
+        "loras": []
+      }
+    }
+  ],
+  "categories": [
+    { "id": "anime", "name": "Anime", "color": "#FF0050" },
+    { "id": "business", "name": "Business", "color": "#3B82F6" },
+    { "id": "education", "name": "Education", "color": "#10B981" },
+    { "id": "entertainment", "name": "Entertainment", "color": "#F59E0B" },
+    { "id": "gaming", "name": "Gaming", "color": "#8B5CF6" }
+  ]
+}

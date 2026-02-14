@@ -13,7 +13,21 @@
         "pricing": "Bảng giá",
         "signIn": "Đăng nhập",
         "signUp": "Đăng ký",
-        "marketplace": "Chợ Template"
+        "templates": "Mẫu",
+        "avatars": "VTubers",
+        "platforms": "Nền tảng",
+        "creatorHub": "Trung tâm Sáng tạo",
+        "viralHub": "Trung tâm Viral",
+        "archives": "Kho lưu trữ",
+        "merchantHub": "Trung tâm Thương mại",
+        "licenseHub": "Trung tâm Cấp phép",
+        "aiAccounts": "Tài khoản AI",
+        "fleetCommand": "Lệnh Hạm đội",
+        "monitoring": "Giám sát",
+        "infrastructure": "Hạ tầng",
+        "networkHub": "Trung tâm Mạng lưới",
+        "developerHub": "Trung tâm Phát triển",
+        "team": "Đội ngũ"
     },
     "profile": {
         "title": "Cài đặt cá nhân",

@@ -6,6 +6,7 @@ import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
 import { cn } from '@/utils/ui';
+import { createInstance } from 'video-editor/lib/utils';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
@@ -44,14 +45,15 @@ const onOpenEyeDropper = async () => {
 <template>
   <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
     <!-- Header -->
-    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header">
-      <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700"></div>
+    <div
+      class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header">
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700">
+      </div>
       <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Stroke</h2>
       <div class="flex items-center gap-2 relative z-10">
-        <button 
-            @click="canvas.onChangeActiveObjectProperty('stroke', disabled ? '#000000' : '')"
-            class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300"
-        >
+        <button @click="canvas.onChangeActiveObjectProperty('stroke', disabled ? '#000000' : '')"
+          class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300">
           <template v-if="disabled">
             <EyeOff :size="14" />
           </template>
@@ -59,31 +61,31 @@ const onOpenEyeDropper = async () => {
             <Eye :size="14" />
           </template>
         </button>
-        <button 
-            @click="editor.setActiveSidebarRight(null)"
-            class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300" 
-        >
+        <button @click="editor.setActiveSidebarRight(null)"
+          class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300">
           <X :size="14" />
         </button>
       </div>
     </div>
 
     <!-- Content -->
-    <section :class="cn('flex-1 overflow-y-auto custom-scrollbar relative px-5 pt-6 pb-20 transition-all duration-500', disabled ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100 pointer-events-auto')">
-      <div class="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-50"></div>
-      
-      <!-- Color Picker -->
-      <div class="flex flex-col gap-6 mb-10">
-        <ColorPickerWithPresets
-          v-model="color"
-          @change="(val) => canvas.onChangeActiveObjectProperty('stroke', val)"
-        />
-      </div>
-      
+    <section
+      :class="cn('flex-1 overflow-y-auto custom-scrollbar relative px-5 pt-6 pb-20 transition-all duration-500', disabled ? 'opacity-30 pointer-events-none grayscale' : 'opacity-100 pointer-events-auto')">
+      <div
+        class="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-50">
       </div>
 
-       <!-- Bottom Fade -->
-       <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-80"></div>
+      <!-- Color Picker -->
+      <div class="flex flex-col gap-6 mb-10">
+        <ColorPickerWithPresets v-model="color" @change="(val) => canvas.onChangeActiveObjectProperty('stroke', val)" />
+      </div>
+
+
+
+      <!-- Bottom Fade -->
+      <div
+        class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0a] to-transparent z-20 pointer-events-none opacity-80">
+      </div>
     </section>
   </div>
 </template>

@@ -80,10 +80,10 @@ const snapshots = ref<any[]>([]);
 const fetchInsights = async () => {
     try {
         const data = await adminStore.fetchAIPerformance();
-        if (data && data.success) {
-            insights.value = data.data;
-            if (data.data.insight && !insightHistory.value.includes(data.data.insight)) {
-                insightHistory.value.unshift(data.data.insight);
+        if (data) {
+            insights.value = data;
+            if (data.insight && !insightHistory.value.includes(data.insight)) {
+                insightHistory.value.unshift(data.insight);
             }
         }
     } catch (e) { }

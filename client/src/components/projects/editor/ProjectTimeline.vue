@@ -339,14 +339,12 @@
 
             <!-- Lower-Third Track -->
             <div class="track-row h-12 flex items-center relative border-t border-white/5">
-              <div class="track-label w-32 px-4 text-[10px] font-bold uppercase tracking-wider text-purple-400">
-                {{ t('projects.editor.timeline.lowerThirds') }}
-              </div>
-              <div class="track-content flex-1 relative h-full flex items-center gap-1 group"
-                :style="{ width: (seg.duration / (seg.speed || 1)) * pxPerSec + 'px' }">
-                <template v-if="seg.lowerThirds && seg.lowerThirds.length > 0">
-                  <div class="flex w-full h-full items-center relative overflow-hidden">
-                    <div v-for="(lt, ltIdx) in seg.lowerThirds" :key="lt.id"
+              <template v-for="seg in timelineSegments" :key="seg._id + '_lowerthird'">
+                <div class="track-content flex-1 relative h-full flex items-center gap-1 group"
+                  :style="{ width: (seg.duration / (seg.speed || 1)) * pxPerSec + 'px' }">
+                  <template v-if="seg.lowerThirds && seg.lowerThirds.length > 0">
+                    <div class="flex w-full h-full items-center relative overflow-hidden">
+                      <div v-for="(lt, ltIdx) in seg.lowerThirds" :key="lt.id"
                       class="absolute top-1 bottom-1 bg-purple-500/20 rounded px-2 flex items-center justify-center text-[9px] text-purple-400 font-medium whitespace-nowrap overflow-hidden border border-purple-500/30 cursor-pointer hover:bg-purple-500/30 transition-colors"
                       :style="{
                         left: (lt.startTime * pxPerSec) + 'px',
@@ -371,6 +369,7 @@
                   </div>
                 </template>
               </div>
+            </template>
             </div>
 
             <!-- Music Track Area -->

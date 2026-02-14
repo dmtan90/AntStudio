@@ -18,7 +18,8 @@
         <div class="action-zone">
             <template v-if="!isGuest">
                 <div class="control-group flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
-                    <button class="status-indicator live" :class="{ active: isLive }" @click="$emit('toggle-live')">
+                    <button class="status-indicator live" :class="{ active: isLive }" @click="$emit('toggle-live')"
+                        data-guide="go-live">
                         <broadcast theme="filled" size="14" class="mr-2" />
                         {{ isLive ? 'LIVE' : 'GO LIVE' }}
                     </button>

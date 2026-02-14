@@ -69,6 +69,12 @@ AntStudio is the world's first **fully autonomous AI-powered entertainment platf
   - **Voice Cloning**: Create instant digital twins using **ElevenLabs**
   - **Text-to-Speech**: High-quality synthesis via ElevenLabs or Google Gemini
 
+- 💳 **Monetization & Licensing**:
+  - **Hybrid Payment System**: Seamless integration with **Stripe** and **PayPal** for diverse billing options.
+  - **License Portal**: Enterprise-grade license key verification and management.
+  - **Smart Subscriptions**: Automated recurring billing, trial management, and webhook callbacks.
+  - **Usage Tracking**: Granular credit tracking for AI generation features.
+
 - 🏢 **Enterprise Features**:
   - White-label multi-tenant architecture
   - Global CDN delivery
@@ -124,7 +130,8 @@ antstudio/
 - WebRTC + Socket.io
 - **AI Integrations**: Google Vertex AI, ElevenLabs, Custom models
 - AWS S3 (Storage)
-- Stripe (Payments)
+- **Payments**: Stripe (Connect/Checkout), PayPal (Smart Buttons)
+- **Licensing**: Custom License Portal Integration
 
 **AI Services:**
 - **Google**: Gemini, Veo 3, Imagen 3

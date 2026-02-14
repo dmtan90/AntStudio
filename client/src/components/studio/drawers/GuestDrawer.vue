@@ -1,6 +1,6 @@
 <template>
   <el-dialog v-model="isVisible" :show-close="false" :align-center="true" :width="540"
-    class="guest-drawer-modal glass-dark">
+    class="guest-drawer-modal glass-dark" :destroy-on-close="true">
     <template #header>
       <div class="flex justify-between items-center p-6 border-b border-white/5">
         <div class="flex items-center gap-4">
@@ -77,7 +77,7 @@
         }})
         </h4>
         <div class="space-y-3">
-          <div v-for="guest in waitingGuests" :key="guest.id"
+          <div v-for="guest in waitingGuests" :key="guest.uuid"
             class="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between animate-in fade-in slide-in-from-bottom-2">
             <div class="flex items-center gap-4">
               <el-avatar :src="guest.avatar" :size="32">
@@ -89,9 +89,9 @@
               </div>
             </div>
             <div class="flex gap-2">
-              <button @click="approveGuest(guest.id)"
+              <button @click="approveGuest(guest.uuid)"
                 class="px-4 py-2 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase hover:bg-green-400 transition-all">Approve</button>
-              <button @click="rejectGuest(guest.id)"
+              <button @click="rejectGuest(guest.uuid)"
                 class="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl text-[10px] font-black uppercase hover:bg-red-500/20 transition-all">Reject</button>
             </div>
           </div>
@@ -134,11 +134,14 @@ const studioStore = useStudioStore();
 const copied = ref(false);
 const { guestJoinLink } = storeToRefs(studioStore);
 
-const activeLink = computed(() => props.customLink || guestJoinLink.value || 'Generating secure link...');
+const activeLink = computed(() => props.customLink || guestJoinLink.value || "Generating URL...");
 const waitingGuests = computed(() => studioStore.waitingGuests);
 
 const qrCodeUrl = computed(() => {
-  if (!activeLink.value || activeLink.value.includes('Generating')) return '';
+  if (!activeLink.value || activeLink.value === "Generating URL..."){
+    studioStore.generateInvite(studioStore.currentSessionId);
+    return '';
+  }
   return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(activeLink.value)}`;
 });
 
@@ -163,6 +166,7 @@ const rejectGuest = (id: string) => {
 };
 
 onMounted(() => {
+  console.log("onMounted", props.mode);
   if (props.mode === 'invite' && !guestJoinLink.value && studioStore.currentSessionId) {
     studioStore.generateInvite(studioStore.currentSessionId);
   }

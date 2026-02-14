@@ -4,6 +4,7 @@ import { User } from '../models/User.js';
 
 export interface AuthRequest extends Request {
     user?: {
+        id: string; // Alias for userId
         userId: string;
         email: string;
         role: string;
@@ -31,7 +32,11 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
             return res.status(401).json({ success: false, data: null, error: 'User not found or inactive' });
         }
 
-        req.user = decoded;
+        req.user = {
+            ...decoded,
+            id: decoded.userId
+        } as any;
+
         next();
     } catch (error) {
         return res.status(401).json({ success: false, data: null, error: 'Authentication failed' });

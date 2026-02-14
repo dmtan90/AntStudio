@@ -78,7 +78,7 @@
       <!-- Infrastructure Sidebar -->
       <div class="space-y-8">
          <div class="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden">
-            <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-6 text-white relative z-10">Neural Pulse</h3>
+            <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-6 text-white relative z-10">VTuber Pulse</h3>
             <div class="space-y-6 relative z-10">
                <div v-for="svc in healthItems" :key="svc.name" class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
@@ -145,7 +145,7 @@ const systemHealth = ref<any>(null);
 const healthItems = ref([
     { name: 'Core API Hub', status: 'ok', latency: 42 },
     { name: 'S3 Asset Matrix', status: 'ok', latency: 120 },
-    { name: 'Gemini Neural Cluster', status: 'ok', latency: 1350 },
+    { name: 'Gemini VTuber Cluster', status: 'ok', latency: 1350 },
     { name: 'Redis Cache Cluster', status: 'ok', latency: 2 }
 ]);
 
@@ -158,16 +158,16 @@ const statCards = computed(() => [
 
 const fetchAllData = async () => {
   try {
-    const [statsRes, healthRes] = await Promise.all([
+    const [statsRes, healthData] = await Promise.all([
         adminStore.fetchStats(),
-        api.get('/admin/monitoring/health')
+        adminStore.fetchMonitoringHealth()
     ]);
     
-    if (healthRes.data.success) {
-        systemHealth.value = healthRes.data.data;
+    if (healthData) {
+        systemHealth.value = healthData;
     }
   } catch (error: any) {
-    if (error.response?.status === 403) {
+    if (error.status === 403) {
       toast.error('Access denied: You do not have admin permissions')
       return
     }

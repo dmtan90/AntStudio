@@ -16,7 +16,21 @@
         "signIn": "Sign In",
         "signUp": "Sign Up",
         "license": "License",
-        "marketplace": "Marketplace"
+        "templates": "Templates",
+        "avatars": "VTubers",
+        "platforms": "Platforms",
+        "creatorHub": "Creator Hub",
+        "viralHub": "Viral Hub",
+        "archives": "Archives",
+        "merchantHub": "Merchant Hub",
+        "licenseHub": "License Hub",
+        "aiAccounts": "AI Accounts",
+        "fleetCommand": "Fleet Command",
+        "monitoring": "Monitoring",
+        "infrastructure": "Infrastructure",
+        "networkHub": "Network Hub",
+        "developerHub": "Developer Hub",
+        "team": "Team"
     },
     "profile": {
         "title": "Profile Settings",
@@ -692,9 +706,9 @@
             "persistenceSuccess": "Mission persistent.",
             "persistenceError": "Tactical failure during persistence",
             "extractionSoon": "Enhanced file extraction coming soon.",
-            "accessError": "Strategic Failure: Could not access neural capture unit",
+            "accessError": "Strategic Failure: Could not access VTuber capture unit",
             "stopFirst": "Stop recording before switching modes"
         },
-        "projectDefault": "Neural Session"
+        "projectDefault": "VTuber Session"
     }
 }

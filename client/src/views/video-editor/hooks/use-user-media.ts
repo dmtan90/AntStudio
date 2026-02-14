@@ -38,7 +38,7 @@ export const useUserMediaStore = defineStore("userMedia", () => {
 
         try {
             const res = await api.get(`/media/list?purpose=${purpose}&page=${page}&limit=20`);
-            const { media, pagination } = res.data.data;
+            const { media, pagination } = res.data?.data ?? res.data;
 
             // Transform backend media to UserMediaItem if needed (backend returns _id, key, etc directly)
             // We might need to ensure 'url' exists. If backend returns key, we might need to check if it's external or relative.

@@ -45,7 +45,7 @@ class NotificationService {
         }
     }
 
-    public async sendToTopic(topic: string, title: string, body: string) {
+    public async sendToTopic(topic: string, title: string, body: string, data?: any) {
         if (!this.initialized) return;
 
         try {
@@ -54,7 +54,8 @@ class NotificationService {
                 notification: {
                     title,
                     body
-                }
+                },
+                data: data ? this.sanitizeData(data) : undefined
             });
         } catch (error) {
             console.error('❌ Failed to send topic notification:', error);

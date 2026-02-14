@@ -1,6 +1,6 @@
 import { ref, type Ref, onUnmounted, watch, onMounted } from 'vue';
 // @ts-ignore
-import StudioWorker from '@/workers/studio.render.worker?worker';
+import StudioWorker from '@/workers/StudioRender.worker?worker';
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
 
 export function useRecorderCanvas(
@@ -16,6 +16,9 @@ export function useRecorderCanvas(
         enableBeauty: Ref<boolean>;
         beautySettings: Ref<any>;
         isRecording: Ref<boolean>;
+        isVTuberActive: Ref<boolean>;
+        vtuberStream: Ref<MediaStream | null>;
+        whiteboardContent: Ref<MediaStream | ImageBitmap | null>;
     }
 ) {
     const frameCount = ref(0);
@@ -108,12 +111,23 @@ export function useRecorderCanvas(
                 });
             } else if (options.layoutPreset.value === 'split') {
                 scene.layout.regions.push({
-                    source: 'screen',
-                    x: 0, y: 0, width: 50, height: 100
-                });
-                scene.layout.regions.push({
                     source: 'host',
                     x: 50, y: 0, width: 50, height: 100
+                });
+            }
+        } else if (options.mode.value === 'whiteboard') {
+            // Presentation layout: Content 75%, Host 25% (PiP or Side)
+            scene.layout.regions.push({
+                source: 'screen', // Mapping whiteboard content to screen source for worker
+                x: 0, y: 0, width: 100, height: 100
+            });
+            
+            if (options.isVTuberActive.value || (options.camSettings.value.enableCamInWhiteboard !== false)) {
+                scene.layout.regions.push({
+                    source: 'host',
+                    x: 75, y: 70, width: 22, height: 25,
+                    shape: 'circle',
+                    border: { color: '#ffffff', width: 2 }
                 });
             }
         }
@@ -163,15 +177,48 @@ export function useRecorderCanvas(
 
         const currentActiveIds = new Set<string>();
 
-        if (sourceVideo.value && sourceVideo.value.srcObject) {
-            const id = (options.mode.value === 'camera') ? 'host' : 'screen';
-            currentActiveIds.add(id);
-            bridgeStream(id, sourceVideo.value);
-        }
-
-        if (webcamVideo.value && webcamVideo.value.srcObject) {
+        // 1. Host Source (Cam or VTuber)
+        if (options.isVTuberActive.value && options.vtuberStream.value) {
+            currentActiveIds.add('host');
+            // Bridge VTuber stream
+            if (worker && !bridgedStreams.has('host')) {
+                const track = options.vtuberStream.value.getVideoTracks()[0];
+                if (track) {
+                    const processor = new MediaStreamTrackProcessor({ track });
+                    const readable = processor.readable;
+                    worker.postMessage({ type: 'add-stream', payload: { id: 'host', stream: readable } }, [readable]);
+                    bridgedStreams.add('host');
+                }
+            }
+        } else if (sourceVideo.value && sourceVideo.value.srcObject && options.mode.value === 'camera') {
+            currentActiveIds.add('host');
+            bridgeStream('host', sourceVideo.value);
+        } else if (webcamVideo.value && webcamVideo.value.srcObject) {
             currentActiveIds.add('host');
             bridgeStream('host', webcamVideo.value);
+        }
+
+        // 2. Screen/Content Source
+        if (options.mode.value === 'whiteboard' && options.whiteboardContent.value) {
+            currentActiveIds.add('screen');
+            if (options.whiteboardContent.value instanceof MediaStream) {
+                // Bridge whiteboard screen share
+                if (worker && !bridgedStreams.has('screen')) {
+                     const track = (options.whiteboardContent.value as MediaStream).getVideoTracks()[0];
+                     if (track) {
+                         const processor = new MediaStreamTrackProcessor({ track });
+                         const readable = processor.readable;
+                         worker.postMessage({ type: 'add-stream', payload: { id: 'screen', stream: readable } }, [readable]);
+                         bridgedStreams.add('screen');
+                     }
+                }
+            } else if (options.whiteboardContent.value instanceof ImageBitmap) {
+                // Transfer image bitmap to worker (imported slide)
+                worker.postMessage({ type: 'update-background', payload: { backgroundData: options.whiteboardContent.value } }, [options.whiteboardContent.value]);
+            }
+        } else if (sourceVideo.value && sourceVideo.value.srcObject && (options.mode.value === 'screen' || options.mode.value === 'camera-screen')) {
+            currentActiveIds.add('screen');
+            bridgeStream('screen', sourceVideo.value);
         }
 
         // Cleanup stale streams
@@ -219,45 +266,21 @@ export function useRecorderCanvas(
         animationFrameId = requestAnimationFrame(loop);
     };
 
-    const processAISegmentation = (video: HTMLVideoElement, timestamp: number) => {
+    const processAISegmentation = async (video: HTMLVideoElement, timestamp: number) => {
         if (!worker || !video.videoWidth) return;
 
-        const results = liveAIEngine.processFrame(video, timestamp, { enableSegmentation: true });
+        const results = await liveAIEngine.processFrame(video, timestamp, { enableSegmentation: true });
         if (results.segmentationMask) {
-            if (!aiCanvas) {
-                aiCanvas = document.createElement('canvas');
-                aiCtx = aiCanvas.getContext('2d', { willReadFrequently: true });
-            }
-
-            if (aiCanvas && aiCtx) {
-                if (aiCanvas.width !== video.videoWidth || aiCanvas.height !== video.videoHeight) {
-                    aiCanvas.width = video.videoWidth;
-                    aiCanvas.height = video.videoHeight;
-                }
-
-                const mask = results.segmentationMask;
-                if (!cachedMaskImageData || cachedMaskImageData.width !== aiCanvas.width) {
-                    cachedMaskImageData = aiCtx.createImageData(aiCanvas.width, aiCanvas.height);
-                }
-
-                const data = cachedMaskImageData.data;
-                const maskData = mask.getAsFloat32Array?.() || mask.getAsUint8Array?.();
-
-                if (maskData) {
-                    for (let i = 0; i < maskData.length; i++) {
-                        const val = maskData[i] * 255;
-                        const idx = i << 2;
-                        data[idx] = val;
-                        data[idx + 1] = val;
-                        data[idx + 2] = val;
-                        data[idx + 3] = 255;
+            const maskData = results.segmentationMask;
+            if (maskData) {
+                worker.postMessage({
+                    type: 'update-mask',
+                    payload: { 
+                        maskData, 
+                        width: video.videoWidth, 
+                        height: video.videoHeight 
                     }
-
-                    worker.postMessage({
-                        type: 'update-mask',
-                        payload: { maskData: cachedMaskImageData }
-                    });
-                }
+                }, [maskData.buffer]);
             }
         }
     };

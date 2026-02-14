@@ -7,13 +7,13 @@ import { toast } from 'vue-sonner';
 interface CuratedTemplatesCache {
   data: any | null;
   timestamp: number;
-  page: number;
+  page: number;//start from 1
 }
 
 const curatedTemplatesCache: CuratedTemplatesCache = {
   data: null,
   timestamp: 0,
-  page: 0,
+  page: 1, //start from 1
 };
 
 // Cache duration: 5 minutes
@@ -25,14 +25,14 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const totalResults = ref(0);
-  const currentPage = ref(0);
+  const currentPage = ref(1);
   const hasNextPage = ref(false);
   const hasPrevPage = ref(false);
 
   const clearCuratedTemplatesCache = () => {
     curatedTemplatesCache.data = null;
     curatedTemplatesCache.timestamp = 0;
-    curatedTemplatesCache.page = 0;
+    curatedTemplatesCache.page = 1;
   };
 
   const mapTemplates = (templates: any[]) => {
@@ -71,12 +71,12 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     }
   };
 
-  const searchTemplates = async (query: string, page = 0) => {
+  const searchTemplates = async (query: string, page = 1) => {
     const url = `/marketplace/templates?query=${encodeURIComponent(query)}&page=${page}&limit=${DEFAULT_LIMIT}&tab=public`;
     await fetchTemplates(url);
   };
 
-  const searchTemplatesAppend = async (query: string, page = 0) => {
+  const searchTemplatesAppend = async (query: string, page = 1) => {
     loading.value = true;
     error.value = null;
 
@@ -98,7 +98,7 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     }
   };
 
-  const loadCuratedtemplates = async (page = 0) => {
+  const loadCuratedtemplates = async (page = 1) => {
     const now = Date.now();
     const isCacheValid = curatedTemplatesCache.data && curatedTemplatesCache.page === page && now - curatedTemplatesCache.timestamp < CACHE_DURATION;
 
@@ -113,7 +113,7 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
       return;
     }
 
-    const url = `/media/templates?page=${page}&per_page=${DEFAULT_LIMIT}&public=true`;
+    const url = `/marketplace/templates?page=${page}&limit=${DEFAULT_LIMIT}&public=true`;
     loading.value = true;
     error.value = null;
 
@@ -139,12 +139,12 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     }
   };
 
-  const loadCuratedtemplatesAppend = async (page = 0) => {
+  const loadCuratedtemplatesAppend = async (page = 1) => {
     loading.value = true;
     error.value = null;
 
     try {
-      const url = `/media/templates?page=${page}&per_page=${DEFAULT_LIMIT}&public=true`;
+      const url = `/marketplace/templates?page=${page}&limit=${DEFAULT_LIMIT}&public=true`;
       const response = await api.get(url);
       const data = response.data;
 
@@ -165,13 +165,13 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     templates.value = [];
     error.value = null;
     totalResults.value = 0;
-    currentPage.value = 0;
+    currentPage.value = 1;
     hasNextPage.value = false;
     hasPrevPage.value = false;
     clearCuratedTemplatesCache();
   };
 
-  const refreshCuratedTemplates = async (page = 0) => {
+  const refreshCuratedTemplates = async (page = 1) => {
     clearCuratedTemplatesCache();
     await loadCuratedtemplates(page);
   };

@@ -14,7 +14,7 @@
                 <!-- Step 1: Select Avatar -->
                 <div v-if="currentStep === 1" class="step-content">
                     <div class="header-section">
-                        <h2>Select AI Avatar</h2>
+                        <h2>Select VTuber</h2>
                         <p>Choose a presenter for your video.</p>
                     </div>
 
@@ -42,6 +42,9 @@
                                 <div class="upload-placeholder">
                                     <Plus class="text-4xl" />
                                     <span>Upload Custom</span>
+                                    <div class="mt-2 text-[10px] text-gray-400">
+                                        Support for Static VTuber Puppet
+                                    </div>
                                 </div>
                                 <input type="file" ref="fileInput" class="hidden" accept="image/*"
                                     @change="onFileSelected" />
@@ -203,7 +206,8 @@
                 <button v-if="currentStep === 1" class="btn-cancel" @click="$router.push('/dashboard')">Cancel</button>
                 <button v-if="currentStep === 3" class="btn-cancel" @click="resetSetup">Create New</button>
 
-                <button v-if="currentStep < 3" class="btn-next" :disabled="loading" @click="handleNext">
+                <button v-if="currentStep < 3" class="btn-next" :disabled="loading" @click="handleNext"
+                    data-guide="generate-btn">
                     <span v-if="loading">Processing...</span>
                     <span v-else>{{ currentStep === 2 ? 'Generate Video' : 'Next' }}</span>
                 </button>
@@ -256,6 +260,9 @@
                 </div>
             </div>
         </transition>
+        
+        <!-- User Guide -->
+        <UserGuide :steps="avatarSetupGuide" storage-key="avatar-setup-guide-completed" />
     </div>
 </template>
 
@@ -272,6 +279,8 @@ import {
     Plus, PlayOne, Check, Up, Down,
     Microphone as Mic, Close, UploadTwo, CloseOne
 } from '@icon-park/vue-next'
+import UserGuide from '@/components/common/UserGuide.vue'
+import { avatarSetupGuide } from '@/config/userGuides'
 
 const router = useRouter()
 const projectStore = useProjectStore()
@@ -355,6 +364,8 @@ const onFileSelected = async (e: Event) => {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('purpose', 'avatar')
+        // Automatically mark as static VTuber puppet for now if uploaded via this flow
+        formData.append('modelType', 'static')
 
         const data = await mediaStore.uploadMedia(formData);
 
@@ -552,8 +563,28 @@ const handleDownload = () => {
     document.body.removeChild(link)
 }
 
-const handleUpload = () => {
-    toast.info('Feature coming soon: Saving to media library')
+const handleUpload = async () => {
+    if (!generatedVideoUrl.value) return;
+    
+    try {
+        toast.info('Saving to library...');
+        
+        // 1. Fetch blob
+        const response = await fetch(getFileUrl(generatedVideoUrl.value));
+        const blob = await response.blob();
+        
+        // 2. Upload
+        const formData = new FormData();
+        const filename = `avatar-video-${Date.now()}.mp4`;
+        formData.append('file', blob, filename);
+        formData.append('purpose', 'render');
+        
+        await mediaStore.uploadMedia(formData);
+        toast.success('Saved to Media Library');
+    } catch (error) {
+        console.error('Failed to save video:', error);
+        toast.error('Failed to save to library');
+    }
 }
 
 const resetSetup = () => {

@@ -145,6 +145,12 @@
           </div>
         </div>
       </section>
+      
+      <!-- Section: AI Predictive Analytics -->
+      <section class="space-y-4">
+        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">AI Intelligence</h4>
+        <PredictiveTrends />
+      </section>
     </div>
 
     <template #footer>
@@ -162,6 +168,7 @@ import {
   Effects, PreviewCloseOne, Youtube, Facebook, Tiktok
 } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
+import PredictiveTrends from '../analytics/PredictiveTrends.vue';
 
 const props = defineProps<{
   modelValue: boolean;

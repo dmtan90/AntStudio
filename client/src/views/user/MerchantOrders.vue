@@ -11,11 +11,11 @@
       <div class="header-stats flex gap-8">
          <div class="stat">
             <span class="label">Total Revenue</span>
-            <span class="value text-green-500">$24,402</span>
+            <span class="value text-green-500">{{ marketplaceStore.commerceStats.currency }} {{ marketplaceStore.commerceStats.totalRevenue.toLocaleString() }}</span>
          </div>
          <div class="stat">
             <span class="label">Pending Orders</span>
-            <span class="value text-orange-500">18</span>
+            <span class="value text-orange-500">{{ marketplaceStore.commerceStats.pendingOrders }}</span>
          </div>
       </div>
     </header>
@@ -76,22 +76,32 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { Shopping, Broadcast, VideoFile, More } from '@icon-park/vue-next';
+import { useMarketplaceStore } from '@/stores/marketplace';
+
+const marketplaceStore = useMarketplaceStore();
 
 const loading = ref(true);
 const orders = ref<any[]>([]);
 
 const fetchData = async () => {
-    // Mocking orders for now
-    setTimeout(() => {
-        orders.value = [
-          { id: '82941', customer: 'John Smith', product: 'AntFlow Pro Gear', amount: '$29.99', source: 'live', status: 'Pending' },
-          { id: '82942', customer: 'Sarah Connor', product: 'Creator Masterclass', amount: '$99.00', source: 'live', status: 'Shipped' },
-          { id: '82943', customer: 'Alex Reed', product: 'AntFlow Hoodie', amount: '$45.00', source: 'video', status: 'Delivered' },
-          { id: '82944', customer: 'Mike Tyson', product: 'AntFlow Pro Gear', amount: '$29.99', source: 'live', status: 'Cancelled' },
-          { id: '82945', customer: 'Elon Musk', product: 'Hyper Edition Cap', amount: '$50.00', source: 'live', status: 'Pending' }
-        ];
+    try {
+        await marketplaceStore.fetchCommerceStats();
+        const data = await marketplaceStore.fetchOrders();
+        if (data.success) {
+            orders.value = data.data.map((o: any) => ({
+                id: o._id.substring(o._id.length - 6), // Short ID
+                customer: o.customerName,
+                product: o.productName,
+                amount: `${o.currency} ${o.amount}`,
+                source: o.source,
+                status: o.status.charAt(0).toUpperCase() + o.status.slice(1)
+            }));
+        }
+    } catch (e) {
+        console.error("Failed to load orders", e);
+    } finally {
         loading.value = false;
-    }, 800);
+    }
 };
 
 onMounted(fetchData);
@@ -109,6 +119,7 @@ onMounted(fetchData);
 .status-badge {
   padding: 4px 10px; border-radius: 8px; font-size: 9px; font-weight: 900; text-transform: uppercase;
   &.pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+  &.processing { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
   &.shipped { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
   &.delivered { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
   &.cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; }

@@ -12,7 +12,7 @@ import { getFileUrl } from "@/utils/api";
 
 export class CanvasAudio {
   private _canvas: Canvas;
-  private context: AudioContext;
+  private context: AudioContext | null = null;
 
   private _gainEndOffset = 0;
   private _gainStartOffset = 2;
@@ -23,9 +23,15 @@ export class CanvasAudio {
     this._canvas = canvas;
     this.elements = [];
     this._reverbIR = this._createReverbIR(2.5, 2.0);
-    this.context = createInstance(AudioContext);
-
+    // Context will be created on-demand
     this._initEvents();
+  }
+
+  private _ensureContext(): AudioContext {
+    if (!this.context || this.context.state === 'closed') {
+      this.context = createInstance(AudioContext);
+    }
+    return this.context;
   }
 
   private get canvas() {
@@ -53,75 +59,107 @@ export class CanvasAudio {
     this.canvas.on("timeline:stop", this._timelineStopEvent.bind(this));
   }
 
-  play() {
-    const startTime = this.context.currentTime;
+  async play() {
+    const context = this._ensureContext();
+    if (context.state === 'suspended') {
+      await context.resume();
+    }
+    const startTime = context.currentTime;
     const seekTime = this.timeline.seek / 1000;
+
+    // Calculate global start time of THIS scene on the timeline
+    // This is needed because 'audio.offset' is relative to the scene, not the global timeline
+    const allPages = this._canvas.editor.pages;
+    const pageIndex = allPages.findIndex(p => p.id === this._canvas.id);
+    let sceneGlobalStart = 0;
+    if (pageIndex > 0) {
+      for (let i = 0; i < pageIndex; i++) {
+        sceneGlobalStart += (allPages[i].timeline?.duration || 0) / 1000;
+      }
+    }
 
     for (const audio of this.elements) {
       if (audio.muted) continue;
 
       // Calculate when to start and what part of the buffer to play
-      const clipStartGlobal = audio.offset;
-      const clipEndGlobal = audio.offset + audio.timeline;
+      const clipStartGlobal = sceneGlobalStart + audio.offset;
+      const clipEndGlobal = clipStartGlobal + audio.timeline;
 
       // Determine if clip is relevant to current playhead
+      // If playhead is past the clip, skip it
       if (seekTime >= clipEndGlobal) continue;
 
-      const scheduleStart = startTime + Math.max(0, clipStartGlobal - seekTime);
-      const bufferOffset = Math.max(audio.trim, audio.trim + (seekTime - clipStartGlobal));
-      const playDuration = audio.timeline - Math.max(0, seekTime - clipStartGlobal);
+      // If clip ends before playhead starts (shouldn't happen with above check, but for safety)
+      if (clipEndGlobal <= seekTime) continue;
 
-      const source = this.context.createBufferSource();
+      let scheduleStart = startTime;
+      let bufferOffset = audio.trim;
+      let playDuration = audio.timeline;
+
+      if (seekTime > clipStartGlobal) {
+        // Mid-clip playback
+        const timeIntoClip = seekTime - clipStartGlobal;
+        bufferOffset += timeIntoClip;
+        playDuration -= timeIntoClip;
+      } else {
+        // Future start playback
+        scheduleStart += (clipStartGlobal - seekTime);
+      }
+
+      // Safety check
+      if (playDuration <= 0) continue;
+
+      const source = context.createBufferSource();
       source.buffer = audio.buffer;
 
       // 1. EQ & Effects (Existing logic)
-      const lowFilter = this.context.createBiquadFilter();
+      const lowFilter = context.createBiquadFilter();
       lowFilter.type = 'lowshelf';
       lowFilter.frequency.value = 200;
       lowFilter.gain.value = audio.effects?.eq.low || 0;
 
-      const midFilter = this.context.createBiquadFilter();
+      const midFilter = context.createBiquadFilter();
       midFilter.type = 'peaking';
       midFilter.frequency.value = 1000;
       midFilter.Q.value = 1;
       midFilter.gain.value = audio.effects?.eq.mid || 0;
 
-      const highFilter = this.context.createBiquadFilter();
+      const highFilter = context.createBiquadFilter();
       highFilter.type = 'highshelf';
       highFilter.frequency.value = 3000;
       highFilter.gain.value = audio.effects?.eq.high || 0;
 
-      const compressor = this.context.createDynamicsCompressor();
+      const compressor = context.createDynamicsCompressor();
       if (audio.effects?.compressor.enabled || audio.effects?.enhancement?.studio) {
         const threshold = audio.effects?.enhancement?.studio ? -24 : audio.effects.compressor.threshold;
         const ratio = audio.effects?.enhancement?.studio ? 12 : audio.effects.compressor.ratio;
 
-        compressor.threshold.setValueAtTime(threshold, this.context.currentTime);
-        compressor.ratio.setValueAtTime(ratio, this.context.currentTime);
-        compressor.attack.setValueAtTime(audio.effects?.compressor.enabled ? audio.effects.compressor.attack : 0.003, this.context.currentTime);
-        compressor.release.setValueAtTime(audio.effects?.compressor.enabled ? audio.effects.compressor.release : 0.25, this.context.currentTime);
+        compressor.threshold.setValueAtTime(threshold, context.currentTime);
+        compressor.ratio.setValueAtTime(ratio, context.currentTime);
+        compressor.attack.setValueAtTime(audio.effects?.compressor.enabled ? audio.effects.compressor.attack : 0.003, context.currentTime);
+        compressor.release.setValueAtTime(audio.effects?.compressor.enabled ? audio.effects.compressor.release : 0.25, context.currentTime);
       } else {
-        compressor.threshold.setValueAtTime(0, this.context.currentTime);
-        compressor.ratio.setValueAtTime(1, this.context.currentTime);
+        compressor.threshold.setValueAtTime(0, context.currentTime);
+        compressor.ratio.setValueAtTime(1, context.currentTime);
       }
 
       // 1.5 Studio Enhancement Nodes
-      const deRumble = this.context.createBiquadFilter();
+      const deRumble = context.createBiquadFilter();
       deRumble.type = 'highpass';
       deRumble.frequency.value = 100;
 
-      const clarity = this.context.createBiquadFilter();
+      const clarity = context.createBiquadFilter();
       clarity.type = 'peaking';
       clarity.frequency.value = 3000;
       clarity.Q.value = 1;
       clarity.gain.value = audio.effects?.enhancement?.studio ? 6 : 0;
 
-      const analyser = this.context.createAnalyser();
+      const analyser = context.createAnalyser();
       analyser.fftSize = 256;
       audio.analyser = analyser;
 
       // 4. Gain (Automation + Fades)
-      const gain = this.context.createGain();
+      const gain = context.createGain();
 
       if (audio.automation && audio.automation.length > 0) {
         // --- Automation Keyframes Logic ---
@@ -162,16 +200,16 @@ export class CanvasAudio {
         gain.gain.linearRampToValueAtTime(0, clipEndTime);
       }
 
-      const reverb = this.context.createConvolver();
+      const reverb = context.createConvolver();
       reverb.buffer = this._reverbIR;
 
-      const reverbGain = this.context.createGain();
+      const reverbGain = context.createGain();
       reverbGain.gain.value = audio.effects?.reverb?.mix || 0;
 
       // 2. Echo (Delay) Node
-      const delay = this.context.createDelay(5.0);
-      const delayFeedback = this.context.createGain();
-      const delayMix = this.context.createGain();
+      const delay = context.createDelay(5.0);
+      const delayFeedback = context.createGain();
+      const delayMix = context.createGain();
 
       if (audio.effects?.echo?.enabled) {
         delay.delayTime.value = audio.effects.echo.delayTime || 0.3;
@@ -207,7 +245,7 @@ export class CanvasAudio {
         delayMix.connect(gain);
       }
 
-      gain.connect(this.context.destination);
+      gain.connect(context.destination);
 
       audio.playing = true;
       audio.source = source;
@@ -394,18 +432,19 @@ export class CanvasAudio {
   }
 
   async add(url: string, name: string, visual = false, _id?: string) {
+    const context = this._ensureContext();
     const resolvedUrl = await getFileUrl(url, { cached: true });
     const response: Response = await fetch(resolvedUrl);
     const data: ArrayBuffer = await response.arrayBuffer();
-    const buffer: AudioBuffer = await this.context.decodeAudioData(data);
+    const buffer: AudioBuffer = await context.decodeAudioData(data);
 
     const id = _id || FabricUtils.elementID("audio");
     const duration = buffer.duration;
     const timeline = Math.min(duration, this.timeline.duration / 1000);
 
-    const source = this.context.createBufferSource();
+    const source = context.createBufferSource();
     source.buffer = buffer;
-    source.connect(this.context.destination);
+    source.connect(context.destination);
 
     const audio: EditorAudioElement = { id, buffer, url, timeline, name, duration, source, muted: false, playing: false, trim: 0, offset: 0, volume: 1, fadeIn: 0, fadeOut: 0, trimStart: 0, trimEnd: 0, visible: true, visualEnabled: false, visualType: 'bars', visualProps: {}, type: 'audio' };
     this.elements.push(audio);
@@ -423,16 +462,17 @@ export class CanvasAudio {
   }
 
   async initialize(audios: Omit<EditorAudioElement, "buffer" | "source">[]) {
+    const context = this._ensureContext();
     for (const audio of audios) {
       try {
         const resolvedUrl = await getFileUrl(audio.url, { cached: true });
         const response: Response = await fetch(resolvedUrl);
         const data: ArrayBuffer = await response.arrayBuffer();
-        const buffer: AudioBuffer = await this.context.decodeAudioData(data);
+        const buffer: AudioBuffer = await context.decodeAudioData(data);
 
-        const source = this.context.createBufferSource();
+        const source = context.createBufferSource();
         source.buffer = buffer;
-        source.connect(this.context.destination);
+        source.connect(context.destination);
 
         const element: EditorAudioElement = Object.assign({ buffer, source }, audio);
         this.elements.push(element);
@@ -498,5 +538,17 @@ export class CanvasAudio {
       right[i] = (Math.random() * 2 - 1) * envelope;
     }
     return impulse;
+  }
+
+
+  destroy() {
+    this.stop();
+    if (this.context && this.context.state !== 'closed') {
+      this.context.close();
+    }
+    this.context = null;
+    this.elements = [];
+    this.canvas.off("timeline:start", this._timelineStartEvent);
+    this.canvas.off("timeline:stop", this._timelineStopEvent);
   }
 }

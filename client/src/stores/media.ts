@@ -20,11 +20,11 @@ export const useMediaStore = defineStore('media', () => {
     async function fetchMedia(params: any = {}) {
         loading.value = true
         try {
-            const response = await api.get('/media/list', {
+            const res: any = await api.get('/media/list', {
                 params
             })
-            resources.value = response.data.media || []
-            return response.data
+            resources.value = res.data.media || []
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -41,9 +41,9 @@ export const useMediaStore = defineStore('media', () => {
     async function fetchVideos() {
         loading.value = true
         try {
-            const response = await api.get('/videos/list')
-            videos.value = response.data.videos || []
-            return response.data
+            const res: any = await api.get('/videos/list')
+            videos.value = res.data.videos || []
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -55,10 +55,10 @@ export const useMediaStore = defineStore('media', () => {
     async function fetchCloudMedia(prefix?: string) {
         loading.value = true
         try {
-            const response = await api.get('/media/cloud/list', {
+            const res: any = await api.get('/media/cloud/list', {
                 params: { prefix }
             })
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -80,17 +80,17 @@ export const useMediaStore = defineStore('media', () => {
 
     async function uploadMedia(formData: FormData) {
         try {
-            const response = await api.post('/media/upload', formData, {
+            const res: any = await api.post('/media/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             })
-            const newMedia = response.data.media
+            const newMedia = res.data.media
             if (newMedia) {
                 resources.value.unshift(newMedia)
             }
             toast.success(t('common.updateSuccess'))
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -105,6 +105,26 @@ export const useMediaStore = defineStore('media', () => {
         fetchVideos,
         fetchCloudMedia,
         deleteMedia,
-        uploadMedia
+        uploadMedia,
+        async searchYouTubeMusic(params: { query: string; preferCovers: boolean; language: string; maxResults: number }) {
+            try {
+                const res: any = await api.post('/media/youtube/search', params);
+                return res.data;
+            } catch (error) {
+                console.error('[MediaStore] YouTube search failed:', error);
+                handleError(error);
+                throw error;
+            }
+        },
+        async fetchYouTubeMetadata(params: { videoId: string; fetchLyrics: boolean; songTitle: string }) {
+            try {
+                const res: any = await api.post('/media/youtube/metadata', params);
+                return res.data;
+            } catch (error) {
+                console.error('[MediaStore] Fetch metadata failed:', error);
+                handleError(error);
+                throw error;
+            }
+        }
     }
 })

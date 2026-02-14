@@ -1,19 +1,15 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { configService } from '../../utils/configService.js';
+import { GoogleGenAI } from '@google/genai';
+import { geminiPool } from '../../utils/gemini.js';
 import { vibeEngine } from './VibeEngine.js';
 
 /**
  * Service for real-time generative AI music (Google Music FX).
  */
 export class MusicFXService {
-    private genAI: GoogleGenerativeAI;
     private currentVibe: string = 'neutral';
     private currentIntensity: number = 0.5;
 
-    constructor() {
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || '';
-        this.genAI = new GoogleGenerativeAI(apiKey);
-    }
+    constructor() {}
 
     /**
      * Generates a unique music loop based on current stream vibe.
@@ -23,7 +19,8 @@ export class MusicFXService {
             this.currentVibe = vibe;
             this.currentIntensity = intensity;
 
-            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Placeholder for Music FX Direct API
+            const modelName = "gemini-2.5-flash";
+            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
 
             const prompt = `
                 Generate a 30-second seamless music loop. 

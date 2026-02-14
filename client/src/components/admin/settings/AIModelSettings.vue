@@ -4,16 +4,21 @@
         <div class="settings-section cinematic-panel p-6">
             <div class="panel-header flex justify-between items-center mb-6">
                 <span class="text-xs font-black uppercase tracking-widest opacity-60">Neural Provider Registry</span>
-                <el-dropdown @command="handleProviderCommand">
-                    <el-button plain bg round size="small">Add Intelligence Core</el-button>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item v-for="p in knownProviders" :key="p.id" :command="p"
-                                :disabled="providers.some(pr => pr.id === p.id)">{{ p.name }}</el-dropdown-item>
-                            <el-dropdown-item command="custom">Custom Provider</el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
+                <div class="flex gap-2">
+                    <el-button v-if="geminiApiKeys" plain bg round size="small" type="primary" @click="showGeminiPool = true">
+                        Gemini Pool Manager
+                    </el-button>
+                    <el-dropdown @command="handleProviderCommand">
+                        <el-button plain bg round size="small">Add Intelligence Core</el-button>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item v-for="p in knownProviders" :key="p.id" :command="p"
+                                    :disabled="providers.some(pr => pr.id === p.id)">{{ p.name }}</el-dropdown-item>
+                                <el-dropdown-item command="custom">Custom Provider</el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
+                </div>
             </div>
             <div class="cinematic-table-container">
                 <div
@@ -64,6 +69,56 @@
             </div>
         </div>
 
+        <!-- Gemini Pool Management Dialog -->
+        <el-dialog v-model="showGeminiPool" title="Gemini API Key Pool" width="800px" class="cinematic-dialog">
+            <div class="space-y-6">
+                <!-- Bulk Add -->
+                <div class="bulk-add-section p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <h5 class="text-[10px] font-black uppercase tracking-widest opacity-60 mb-3">Bulk Add Keys (Comma Separated)</h5>
+                    <div class="flex gap-3">
+                        <el-input v-model="bulkKeys" type="textarea" :rows="2" placeholder="Paste multiple keys here..." class="glass-input" />
+                        <el-button type="primary" class="h-auto" @click="handleBulkAdd">Import</el-button>
+                    </div>
+                </div>
+
+                <!-- Key List -->
+                <div class="key-list space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    <div v-for="(k, idx) in geminiApiKeys" :key="idx" 
+                        class="p-4 bg-white/2 border border-white/5 rounded-2xl flex items-center justify-between hover:bg-white/5 transition-all">
+                        <div class="flex items-center gap-4 flex-1">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+                                <key theme="outline" size="16" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <el-input v-model="k.label" size="small" class="label-input" placeholder="Label" />
+                                    <el-tag v-if="k.usageCount > 0" size="small" effect="plain" round class="usage-tag">
+                                        {{ k.usageCount }} calls
+                                    </el-tag>
+                                </div>
+                                <code class="text-[10px] font-mono opacity-40 block truncate">{{ k.key }}</code>
+                            </div>
+                        </div>
+                        
+                        <!-- Quota Info -->
+                        <div class="quota-info px-4 flex gap-6 text-[10px] shrink-0">
+                            <div v-for="(q, model) in k.quotas" :key="model" class="text-center">
+                                <p class="opacity-30 uppercase font-black tracking-tighter">{{ model }}</p>
+                                <p :class="q.used >= q.limit ? 'text-red-400' : 'text-green-400'">{{ q.used }}/{{ q.limit }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <el-switch v-model="k.isActive" size="small" />
+                            <button class="icon-btn text-red-500" @click="removeKey(idx)">
+                                <delete theme="outline" size="14" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </el-dialog>
+
         <!-- AI Account Manager OAuth -->
         <!-- Move to System config -->
         <!-- <div class="settings-section cinematic-panel p-6">
@@ -103,7 +158,7 @@
         </div> -->
 
         <!-- Neural Session Sync -->
-        <div class="settings-section cinematic-panel p-6">
+        <!-- <div class="settings-section cinematic-panel p-6">
             <div class="flex items-center gap-3 mb-6">
                 <div class="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
                     <refresh theme="outline" size="20" />
@@ -125,11 +180,10 @@
                         @change="saveCookies" />
                 </el-form-item>
                 <div class="flex gap-3">
-                    <!-- <el-button plain bg round @click="saveCookies">Save Session Cookies</el-button> -->
                     <el-button type="success" plain bg round @click="$emit('sync-google')">Save Cookies</el-button>
                 </div>
             </el-form>
-        </div>
+        </div> -->
     </div>
 </template>
 
@@ -139,6 +193,7 @@ import { SettingTwo, Delete, User, Refresh } from '@icon-park/vue-next';
 
 const props = defineProps<{
     providers: any[];
+    geminiApiKeys?: any[];
     aiOAuth: any;
     googleCookies?: string;
     flowCookies?: string;
@@ -148,8 +203,12 @@ const props = defineProps<{
 
 const emit = defineEmits([
     'add-provider', 'remove-provider', 'configure-provider',
-    'save-cookies', 'sync-google'
+    'save-cookies', 'sync-google',
+    'add-gemini-key', 'remove-gemini-key', 'bulk-add-gemini-keys'
 ]);
+
+const showGeminiPool = ref(false);
+const bulkKeys = ref('');
 
 const localGoogleCookies = ref(props.googleCookies || '');
 const localFlowCookies = ref(props.flowCookies || '');
@@ -167,6 +226,16 @@ const saveCookies = () => {
         googleCookies: localGoogleCookies.value,
         flowCookies: localFlowCookies.value
     });
+};
+
+const handleBulkAdd = () => {
+    if (!bulkKeys.value.trim()) return;
+    emit('bulk-add-gemini-keys', bulkKeys.value);
+    bulkKeys.value = '';
+};
+
+const removeKey = (idx: number) => {
+    emit('remove-gemini-key', idx);
 };
 </script>
 
@@ -193,5 +262,29 @@ const saveCookies = () => {
         background: rgba(255, 255, 255, 0.1);
         border-color: rgba(255, 255, 255, 0.2);
     }
+}
+
+.label-input {
+    :deep(.el-input__wrapper) {
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0;
+        height: 20px;
+        input {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    }
+}
+
+.usage-tag {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    font-size: 8px !important;
+    height: 16px;
+    padding: 0 6px;
 }
 </style>

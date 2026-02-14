@@ -6,14 +6,19 @@ import { toast } from 'vue-sonner'
 export const useMarketplaceStore = defineStore('marketplace', () => {
     const assets = ref<any[]>([])
     const templates = ref<any[]>([])
+    const commerceStats = ref({
+        totalRevenue: 0,
+        pendingOrders: 0,
+        currency: 'USD'
+    })
     const loading = ref(false)
 
     async function fetchAssets(params: any = {}) {
         loading.value = true
         try {
-            const response = await api.get('/marketplace/assets', { params })
-            assets.value = response.data.data
-            return response.data.data
+            const res: any = await api.get('/marketplace/assets', { params })
+            assets.value = res.data
+            return res.data
         } catch (error: any) {
             console.error('Failed to fetch assets', error)
             throw error
@@ -25,9 +30,9 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
     async function fetchTemplates(params: any = {}) {
         loading.value = true
         try {
-            const response = await api.get('/marketplace/templates', { params })
-            templates.value = response.data?.templates || []
-            return response.data
+            const res: any = await api.get('/marketplace/templates', { params })
+            templates.value = res.data
+            return res.data
         } catch (error: any) {
             console.error('Failed to fetch templates', error)
             throw error
@@ -38,8 +43,8 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
 
     async function useTemplate(id: string) {
         try {
-            const response = await api.post(`/marketplace/templates/${id}/use`)
-            return response.data.data
+            const res: any = await api.post(`/marketplace/templates/${id}/use`)
+            return res.data
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to use template')
             throw error
@@ -49,9 +54,9 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
     async function purchaseAsset(id: string) {
         loading.value = true
         try {
-            const response = await api.post(`/marketplace/purchase/${id}`)
+            const res: any = await api.post(`/marketplace/purchase/${id}`)
             toast.success('Asset purchased successfully')
-            return response.data
+            return res.data
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Purchase failed')
             throw error
@@ -63,11 +68,11 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
     async function importTemplate(url: string) {
         loading.value = true
         try {
-            const response = await api.post('/marketplace/import', { url }, { timeout: 120000 })
-            if (response.data.success) {
-                return response.data.data.template
+            const res: any = await api.post('/marketplace/import', { url }, { timeout: 120000 })
+            if (res.success) {
+                return res.data.template
             } else {
-                throw new Error(response.data.error || 'Failed to import template')
+                throw new Error(res.error || 'Failed to import template')
             }
         } catch (error: any) {
             const msg = error.response?.data?.error || 'Target platform blocked scraping or URL is invalid.'
@@ -82,15 +87,15 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         const formData = new FormData()
         formData.append('file', file)
         try {
-            const response = await api.post('/marketplace/import/pptx', formData, {
+            const res: any = await api.post('/marketplace/import/pptx', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 timeout: 300000
             })
-            if (response.data.success) {
+            if (res.success) {
                 toast.success('PPTX Template imported successfully!')
-                return response.data.data.template
+                return res.data.template
             } else {
-                throw new Error(response.data.error || 'Failed to import PPTX')
+                throw new Error(res.error || 'Failed to import PPTX')
             }
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'PPTX Import failed')
@@ -100,15 +105,45 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         }
     }
 
+    async function fetchOrders() {
+        loading.value = true
+        try {
+            const res: any = await api.get('/commerce/orders')
+            if (res.success && res.data.stats) {
+                commerceStats.value = res.data.stats
+            }
+            return res.data
+        } catch (error: any) {
+            console.error('Failed to fetch orders', error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function fetchCommerceStats() {
+        try {
+            const res: any = await api.get('/commerce/stats')
+            if (res.success) {
+                commerceStats.value = res.data
+            }
+        } catch (error) {
+            console.error('Failed to fetch commerce stats', error)
+        }
+    }
+
     return {
         assets,
         templates,
+        commerceStats,
         loading,
         fetchAssets,
         fetchTemplates,
         useTemplate,
         purchaseAsset,
         importTemplate,
-        importPptx
+        importPptx,
+        fetchOrders,
+        fetchCommerceStats
     }
 })

@@ -96,8 +96,8 @@ const fetchData = async () => {
       loading.value = true;
       const data = await mediaStore.fetchMedia({ purpose: 'recording', limit: 50 });
 
-      if (data.success) {
-         recordings.value = data.data.media.map((m: any) => ({
+      if (data) {
+         recordings.value = data.media.map((m: any) => ({
             id: m._id,
             title: m.fileName,
             date: new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase(),

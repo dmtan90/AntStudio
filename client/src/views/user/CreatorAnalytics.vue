@@ -9,23 +9,25 @@
         <div class="grid grid-cols-4 gap-4 mb-8">
             <div class="metric-card glass-card p-4 rounded-xl border border-white/5">
                 <p class="label text-[10px] font-black uppercase opacity-40 mb-1">Peak Viewers</p>
-                <p class="value text-2xl font-bold">12,402</p>
-                <span class="trend up text-green-500 text-xs">+18% vs avg</span>
+                <p class="value text-2xl font-bold">{{ stats?.peakViewers?.toLocaleString() || 0 }}</p>
+                <span class="trend up text-green-500 text-xs">{{ stats?.peakViewersTrend || '0% vs avg' }}</span>
             </div>
             <div class="metric-card glass-card p-4 rounded-xl border border-white/5">
                 <p class="label text-[10px] font-black uppercase opacity-40 mb-1">Engagement Score</p>
-                <p class="value text-2xl font-bold">94.8</p>
-                <span class="trend up text-green-500 text-xs text-purple-400">High Viral Potential</span>
+                <p class="value text-2xl font-bold">{{ stats?.engagementScore?.toFixed(1) || '0.0' }}</p>
+                <span class="trend up text-green-500 text-xs" :class="stats?.engagementScore > 80 ? 'text-purple-400' : ''">
+                    {{ stats?.engagementScore > 80 ? 'High Viral Potential' : 'Stable Engagement' }}
+                </span>
             </div>
             <div class="metric-card glass-card p-4 rounded-xl border border-white/5">
                 <p class="label text-[10px] font-black uppercase opacity-40 mb-1">Avg Watch Time</p>
-                <p class="value text-2xl font-bold">14m 20s</p>
+                <p class="value text-2xl font-bold">{{ stats?.avgWatchTime || '0m 0s' }}</p>
                 <span class="trend text-xs opacity-40">Stable</span>
             </div>
             <div class="metric-card glass-card p-4 rounded-xl border border-white/5">
                 <p class="label text-[10px] font-black uppercase opacity-40 mb-1">Commerce Revenue</p>
-                <p class="value text-2xl font-bold text-green-400">$8,240</p>
-                <span class="trend up text-green-500 text-xs">Flash Deal Impact</span>
+                <p class="value text-2xl font-bold text-green-400">${{ (stats?.commerceRevenue || 0).toLocaleString() }}</p>
+                <span class="trend up text-green-500 text-xs">{{ stats?.revenueContext || 'N/A' }}</span>
             </div>
         </div>
 
@@ -45,7 +47,7 @@
                 </div>
                 <!-- Mock Chart Visual -->
                 <div class="chart-container h-64 w-full bg-black/20 rounded-xl relative flex items-end px-4 gap-1">
-                    <div v-for="h in mockData" :key="h"
+                    <div v-for="h in chartData" :key="h"
                         class="flex-1 bg-gradient-to-t from-blue-500/20 to-blue-500/80 rounded-t-sm transition-all hover:opacity-100 opacity-60"
                         :style="{ height: h + '%' }"></div>
 
@@ -93,17 +95,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Download } from '@icon-park/vue-next';
+import { useAnalyticsStore } from '@/stores/analytics';
+import { storeToRefs } from 'pinia';
 
-// Mock Data for Visualization
-const mockData = Array.from({ length: 40 }, () => 30 + Math.random() * 60);
-const clips = ref([
-    { id: 1, reason: "High Chat Velocity (Viral)", time: "00:14:20", duration: "0:30", score: 98, thumb: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=300" },
-    { id: 2, reason: "Flash Deal Conversion Spike", time: "00:28:45", duration: "0:45", score: 95, thumb: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=300" },
-    { id: 3, reason: "Loud Audio Reaction", time: "00:41:10", duration: "0:25", score: 88, thumb: "https://images.unsplash.com/photo-1516280440614-6697288d5d38?auto=format&fit=crop&w=300" },
-    { id: 4, reason: "Guest Joining", time: "00:05:00", duration: "1:00", score: 75, thumb: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&w=300" }
-]);
+const analyticsStore = useAnalyticsStore();
+const { stats, recentClips: clips, loading: isLoading } = storeToRefs(analyticsStore);
+
+// Chart data based on stats heatmap or fall back to mock
+const chartData = computed(() => {
+    if (stats.value?.heatmap && stats.value.heatmap.length > 0) {
+        return stats.value.heatmap;
+    }
+    // Return empty array or baseline if no data
+    return Array.from({ length: 40 }, () => 10 + Math.random() * 20);
+});
+
+onMounted(async () => {
+    await analyticsStore.fetchOverview();
+});
 </script>
 
 <style lang="scss" scoped>

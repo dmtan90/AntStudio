@@ -2,7 +2,7 @@
     <div class="google-vids-timeline flex flex-col h-full bg-[#0a0a0a] overflow-hidden">
         <!-- Top Controls Bar -->
         <div
-            class="timeline-controls h-12 border-b border-white/5 bg-[#0a0a0a] flex items-center justify-between px-4 shrink-0">
+            class="timeline-controls h-12 border-b border-white/5 bg-[#111] flex items-center justify-between px-4 shrink-0">
             <!-- Left: Playback Controls -->
             <div class="playback-controls flex items-center gap-4">
                 <button class="ctrl-btn-large bg-brand-primary text-black hover:scale-110 transition-transform"
@@ -44,158 +44,146 @@
             </div>
         </div>
 
-        <!-- Scene Cards Row -->
-        <div ref="timelineContainer"
-            class="scenes-row flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar bg-[#111] p-4 relative"
-            @click="handleTimelineClick" @mousedown.stop>
-            <div class="scenes-container flex items-start gap-2 h-full relative"
-                :style="{ minWidth: totalWidth + 'px' }">
+        <!-- Unified Timeline Body -->
+        <div class="timeline-main-area flex-1 flex overflow-hidden relative">
 
-                <!-- Playhead -->
-                <div class="playhead absolute top-0 bottom-0 w-0.5 bg-brand-primary z-50 pointer-events-none"
-                    :style="{ left: playheadPosition + 'px' }">
-                    <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-brand-primary rotate-45 pointer-events-auto cursor-ew-resize hover:scale-125 transition-transform"
-                        @mousedown.stop="startScrub"></div>
-                </div>
-
-                <!-- Markers -->
-                <div v-for="marker in markers" :key="marker.id"
-                    class="absolute top-0 bottom-0 z-40 w-px bg-yellow-500/50 pointer-events-none"
-                    :style="{ left: (marker.time * pxPerSec) + 'px' }">
-                    <div class="absolute -top-1 left-0 -translate-x-1/2 w-2 h-2 bg-yellow-500 rotate-45"></div>
-                    <div class="absolute top-2 left-1.5 text-[8px] text-yellow-500 font-bold opacity-50">{{ marker.label
-                        }}</div>
-                </div>
-
-                <template v-for="(page, index) in pages" :key="page.id">
-                    <SceneCard :scene="page" :index="index" :active="activePage === index" :show-timing="showTiming"
-                        :zoom="pxPerSec" draggable="true" :class="{ 'dragging': draggingIndex === index }"
-                        @dragstart="onDragStart($event, index)" @dragend="onDragEnd" @dragover.prevent
-                        @drop="onDrop($event, index)" @select="selectScene(index)"
-                        @select-element="(el) => selectElement(el, index)" />
-
-                    <!-- Transition Trigger between scenes (if not last) -->
-                    <TransitionTrigger v-if="index < pages.length - 1"
-                        :model-value="pages[index + 1].transition || 'none'"
-                        :duration-value="pages[index + 1].transitionDuration"
-                        @update:model-value="(val) => updateTransition(index + 1, 'transition', val)"
-                        @update:duration-value="(val) => updateTransition(index + 1, 'transitionDuration', val)" />
-                </template>
-
-                <!-- Add Scene Button -->
-                <button
-                    class="add-scene-btn flex items-center justify-center min-w-[120px] h-[180px] border-2 border-dashed border-white/20 rounded-12px hover:border-white/40 hover:bg-white/5 transition-all"
-                    :class="{ 'h-[100px]': !showTiming }" @click="addScene">
-                    <Plus :size="32" class="text-white/40" />
-                </button>
-            </div>
-        </div>
-
-        <!-- Subtitle Track (Full Width) -->
-        <div class="subtitle-track h-12 border-t border-white/5 bg-[#0d0d0d] flex items-center px-4 shrink-0 cursor-pointer overflow-hidden"
-            @click="handleTimelineClick">
-            <div class="track-label flex items-center gap-2 w-40 text-[10px] uppercase font-bold text-white/30">
-                <Quote :size="12" />
-                <span>Subtitles</span>
-            </div>
-            <div class="subtitle-container flex-1 h-8 bg-white/5 rounded-md relative overflow-x-auto no-scrollbar"
-                ref="subtitleContainer">
-                <div class="relative h-full" :style="{ width: totalWidth + 'px' }">
-                    <div v-for="sub in allSubtitles" :key="sub.id"
-                        class="subtitle-item absolute top-1 bottom-1 bg-yellow-500/20 border border-yellow-500/40 rounded flex items-center px-2 text-[9px] text-yellow-200/80 whitespace-nowrap overflow-hidden"
-                        :style="{
-                            left: (sub.globalOffset / 1000 * pxPerSec) + 'px',
-                            width: ((sub.meta?.duration || 3000) / 1000 * pxPerSec) + 'px'
-                        }" @click.stop="selectElement(sub, sub.pageIndex)" @dblclick.stop="startEditing(sub)">
-
-                        <!-- Editing Input -->
-                        <input v-if="editingId === sub.id" ref="subtitleInputRef" v-model="editingText"
-                            class="w-full h-full bg-black/50 text-yellow-200 font-bold border-none outline-none p-0 m-0"
-                            @blur="saveSubtitle(sub)" @keyup.enter="saveSubtitle(sub)" @keyup.esc="cancelEditing"
-                            @click.stop />
-
-                        <!-- Display Text -->
-                        <span v-else class="w-full h-full truncate pointer-events-none">{{ sub.text || 'Subtitle'
-                            }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Progress Bar (Overlay) -->
-        <div v-if="exporting.active"
-            class="export-progress-bar absolute top-0 left-0 right-0 h-1 z-50 bg-white/5 overflow-hidden">
-            <div class="h-full bg-primary transition-all duration-300"
-                :style="{ width: formatPercent(exporting.progress) }">
-            </div>
-            <div class="absolute top-2 right-4 text-[10px] text-primary font-bold uppercase tracking-widest">
-                Exporting: {{ formatPercent(exporting.progress) }}
-            </div>
-        </div>
-
-        <!-- Audio Section (Full Width) -->
-        <div class="audio-section border-t border-white/5 bg-[#0d0d0d] flex-col shrink-0">
-            <!-- Voiceover Track -->
-            <div class="voiceover-track h-12 flex items-center px-4 border-b border-white/5 cursor-pointer overflow-hidden"
-                @click="handleTimelineClick">
-                <div class="track-label flex items-center gap-2 w-40 text-[10px] uppercase font-bold text-red-400/50">
-                    <Record :size="12" />
-                    <span>Voiceover</span>
-                    <!-- Record Button -->
+            <!-- Left Fixed Labels (Ultra Minimalist) -->
+            <div
+                class="timeline-labels w-4 flex flex-col border-r border-white/5 bg-[#0a0a0a] z-30 shrink-0 select-none">
+                <!-- Scenes Space -->
+                <div class="h-[64px] border-b border-white/5"></div>
+                <!-- Narration Space -->
+                <div class="h-[28px] mb-[5px] border-b border-white/5 relative">
                     <button
-                        class="record-btn-mini ml-auto p-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-full transition-all"
+                        class="record-btn-mini absolute -right-2 top-1/2 -translate-y-1/2 p-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-full transition-all z-40"
                         :class="{ 'recording pulse': isRecording }" @click.stop="toggleRecording">
-                        <Record :size="10" />
+                        <Record :size="8" />
                     </button>
                 </div>
-                <div class="track-items flex-1 h-8 bg-white/3 rounded-md relative overflow-x-auto no-scrollbar"
-                    ref="voContainer">
-                    <div class="relative h-full" :style="{ width: totalWidth + 'px' }">
-                        <div v-for="vo in voiceoverElements" :key="vo.id"
-                            class="audio-item voiceover absolute top-1 bottom-1 bg-red-500/20 border border-red-500/40 rounded flex items-center px-2 text-[9px] text-red-200/80 whitespace-nowrap overflow-hidden"
-                            :style="{
-                                left: (vo.globalOffset / 1000 * pxPerSec) + 'px',
-                                width: ((vo.duration || 3) * pxPerSec) + 'px'
-                            }" @click.stop="selectElement(vo, vo.pageIndex)">
-                            <Music :size="10" class="mr-1" /> {{ vo.name || 'Voiceover' }}
+                <!-- Music Space -->
+                <div class="h-[28px]"></div>
+            </div>
+
+            <!-- Scrollable Tracks Content -->
+            <div ref="timelineContainer"
+                class="timeline-tracks flex-1 overflow-x-auto overflow-y-auto custom-scrollbar bg-[#111] relative"
+                @click="handleTimelineClick" @mousedown.stop>
+
+                <div class="tracks-content relative pt-8" :style="{ minWidth: totalWidth + 'px' }"
+                    @mousemove="handleMouseMove" @mouseenter="showIndicator = true" @mouseleave="showIndicator = false">
+
+                    <!-- Hover Time Indicator -->
+                    <div v-if="showIndicator"
+                        class="hover-indicator absolute top-0 bottom-0 w-px bg-white/20 z-50 pointer-events-none"
+                        :style="{ left: hoverX + 'px' }">
+                        <div
+                            class="hover-bubble absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-white text-black text-[11px] font-bold rounded shadow-xl whitespace-nowrap z-[60]">
+                            {{ formatTimeValue(hoverTime) }}
+                        </div>
+                    </div>
+
+                    <!-- Playhead (Global) -->
+                    <div class="playhead absolute top-0 bottom-0 w-px bg-brand-primary z-50 pointer-events-none"
+                        :style="{ left: playheadPosition + 'px' }">
+                        <!-- Playhead Handle -->
+                        <div class="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-brand-primary rotate-45 pointer-events-auto cursor-ew-resize hover:scale-125 transition-transform"
+                            @mousedown.stop="startScrub"></div>
+                    </div>
+
+                    <!-- Markers -->
+                    <div v-for="marker in markers" :key="marker.id"
+                        class="absolute top-0 bottom-0 z-40 w-px bg-yellow-500/50 pointer-events-none"
+                        :style="{ left: ((marker.time / 1000 * pxPerSec)) + 'px' }">
+                        <div class="absolute -top-1 left-0 -translate-x-1/2 w-2 h-2 bg-yellow-500 rotate-45"></div>
+                    </div>
+
+                    <!-- Scenes Track -->
+                    <div
+                        class="track-row scenes-track h-[64px] flex items-center gap-0 py-0 pl-0 relative border-b border-white/5">
+                        <template v-for="(page, index) in pages" :key="page.id">
+                            <SceneCard :scene="page" :index="index" :active="activePage === index"
+                                :show-timing="showTiming" :zoom="pxPerSec" draggable="true"
+                                :class="{ 'dragging': draggingIndex === index }" @dragstart="onDragStart($event, index)"
+                                @dragend="onDragEnd" @dragover.prevent @drop="onDrop($event, index)"
+                                @select="selectScene(index)" @select-element="(el) => selectElement(el, index)" />
+
+                            <!-- Transition Button (Overlay at the seam) -->
+                            <div v-if="index < pages.length - 1"
+                                class="transition-trigger-area w-0 h-full relative z-30 overflow-visible">
+                                <div
+                                    class="absolute inset-y-0 left-0 -translate-x-1/2 flex items-center pointer-events-auto">
+                                    <TransitionTrigger :model-value="pages[index + 1].transition || 'none'"
+                                        :duration-value="pages[index + 1].transitionDuration"
+                                        @update:model-value="(val) => updateTransition(index + 1, 'transition', val)"
+                                        @update:duration-value="(val) => updateTransition(index + 1, 'transitionDuration', val)" />
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Add Scene Button -->
+                        <button
+                            class="add-scene-btn flex items-center justify-center min-w-[120px] h-[48px] border-2 border-dashed border-white/20 rounded-12px hover:border-white/40 hover:bg-white/5 transition-all ml-4"
+                            @click="addScene">
+                            <Plus :size="24" class="text-white/40" />
+                        </button>
+                    </div>
+
+                    <!-- Narration Track (Merged Subtitles & Voiceover) -->
+                    <div
+                        class="track-row h-[28px] mb-[5px] border-b border-white/5 flex items-center px-0 pl-0 relative">
+                        <div
+                            class="track-items-container flex-1 h-[22px] bg-white/5 rounded-md relative overflow-hidden">
+                            <!-- Subtitles -->
+                            <div v-for="sub in allSubtitles" :key="sub.id"
+                                class="subtitle-item absolute top-0.5 h-3 bg-yellow-500/30 border border-yellow-500/40 rounded flex items-center px-1 text-[7px] text-yellow-200/90 whitespace-nowrap overflow-hidden z-10"
+                                :style="{
+                                    left: (sub.globalOffset / 1000 * pxPerSec) + 'px',
+                                    width: ((sub.meta?.duration || 3000) / 1000 * pxPerSec) + 'px'
+                                }" @click.stop="selectElement(sub, sub.pageIndex)" @dblclick.stop="startEditing(sub)">
+                                <span class="truncate">{{ sub.text || 'Subtitle' }}</span>
+                            </div>
+
+                            <!-- Voiceovers -->
+                            <div v-for="vo in voiceoverElements" :key="vo.id"
+                                class="audio-item voiceover absolute bottom-0.5 h-4 bg-red-500/20 border border-red-500/40 rounded flex items-center px-1 text-[8px] text-red-200/80 whitespace-nowrap overflow-hidden"
+                                :style="{
+                                    left: (vo.globalOffset / 1000 * pxPerSec) + 'px',
+                                    width: Math.max(0, Math.min(vo.timeline || 3, (vo.sceneDuration / 1000) - vo.offset) * pxPerSec) + 'px'
+                                }" @click.stop="selectElement(vo, vo.pageIndex)">
+                                <Music :size="8" class="mr-1" /> {{ vo.name || 'Voiceover' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Music Track -->
+                    <div class="track-row h-[28px] flex items-center px-0 pl-0 relative">
+                        <div
+                            class="track-items-container flex-1 h-[22px] bg-white/5 rounded-md relative overflow-hidden">
+                            <!-- Global Waveform background -->
+                            <div v-if="audioWaveform.length > 0"
+                                class="absolute inset-0 flex items-center gap-[1px] px-2 opacity-10 pointer-events-none">
+                                <div v-for="(val, i) in audioWaveform" :key="i" class="w-1 bg-blue-500 rounded-full"
+                                    :style="{ height: Math.max(10, val * 80) + '%' }">
+                                </div>
+                            </div>
+                            <div v-for="audio in musicElements" :key="audio.id"
+                                class="audio-item absolute inset-y-0.5 h-[18px] bg-brand-primary/20 border border-brand-primary/40 rounded flex items-center px-1 text-[8px] text-brand-primary/90 whitespace-nowrap overflow-hidden z-20"
+                                :style="{
+                                    left: (audio.globalOffset / 1000 * pxPerSec) + 'px',
+                                    width: Math.max(0, Math.min(audio.timeline || 5, (audio.sceneDuration / 1000) - audio.offset) * pxPerSec) + 'px'
+                                }" @click.stop="selectElement(audio, audio.pageIndex)">
+                                <Music :size="8" class="mr-1" /> {{ audio.name || 'Audio' }}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Music Track -->
-            <div class="music-track h-12 flex items-center px-4 cursor-pointer overflow-hidden"
-                @click="handleTimelineClick">
-                <div class="track-label flex items-center gap-2 w-40 text-[10px] uppercase font-bold text-blue-400/50">
-                    <Music :size="12" />
-                    <span>Music</span>
-
-                    <div class="volume-control flex items-center gap-1 ml-auto mr-2" @click.stop>
-                        <VolumeSmall :size="10" class="text-white/40" />
-                        <el-slider v-model="globalVolume" :min="0" :max="100" :show-tooltip="false"
-                            class="volume-slider-mini w-12" />
-                    </div>
-                </div>
-                <div class="track-items flex-1 h-8 bg-white/3 rounded-md relative overflow-x-auto no-scrollbar"
-                    ref="musicContainer">
-                    <div class="relative h-full" :style="{ width: totalWidth + 'px' }">
-                        <!-- Global Waveform background -->
-                        <div v-if="audioWaveform.length > 0"
-                            class="absolute inset-0 flex items-center gap-[1px] px-2 opacity-20 pointer-events-none">
-                            <div v-for="(val, i) in audioWaveform" :key="i" class="w-1 bg-blue-500 rounded-full"
-                                :style="{ height: Math.max(10, val * 80) + '%' }">
-                            </div>
-                        </div>
-
-                        <div v-for="audio in musicElements" :key="audio.id"
-                            class="audio-item music absolute top-1 bottom-1 bg-blue-500/20 border border-blue-500/40 rounded flex items-center px-2 text-[9px] text-blue-200/80 whitespace-nowrap overflow-hidden"
-                            :style="{
-                                left: (audio.globalOffset / 1000 * pxPerSec) + 'px',
-                                width: ((audio.duration || 3) * pxPerSec) + 'px'
-                            }" @click.stop="selectElement(audio, audio.pageIndex)">
-                            <Music :size="10" class="mr-1" /> {{ audio.name || 'Audio' }}
-                        </div>
-                    </div>
+            <!-- Export Progress Overlay -->
+            <div v-if="exporting !== 0 && exporting !== 2"
+                class="export-progress-bar absolute top-0 left-0 right-0 h-1 z-[60] bg-white/5 overflow-hidden">
+                <div class="h-full bg-primary transition-all duration-300"
+                    :style="{ width: (((editor as any).progress?.capture || 0) + ((editor as any).progress?.compile || 0)) / 2 + '%' }">
                 </div>
             </div>
         </div>
@@ -204,6 +192,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { debounce } from 'lodash';
 import SceneCard from './components/SceneCard.vue';
 import TransitionTrigger from './components/TransitionTrigger.vue';
 import { useCanvasStore } from 'video-editor/store/canvas';
@@ -247,9 +236,37 @@ const isScrubbing = ref(false);
 const audioWaveform = ref<number[]>([]);
 const draggingIndex = ref<number | null>(null);
 const globalVolume = ref(100);
+const TRACK_PADDING = 0;
 const isRecording = ref(false);
 const mediaRecorder = ref<MediaRecorder | null>(null);
 const audioChunks = ref<Blob[]>([]);
+
+// Hover Indicator State
+const hoverX = ref(0);
+const hoverTime = ref(0);
+const showIndicator = ref(false);
+
+const handleMouseMove = (e: MouseEvent) => {
+    if (!timelineContainer.value) return;
+    const rect = timelineContainer.value.getBoundingClientRect();
+    const scrollLeft = timelineContainer.value.scrollLeft;
+
+    // Calculate hover position relative to scrollable content
+    const x = (e.clientX - rect.left) + scrollLeft;
+    hoverX.value = x;
+
+    // Calculate time based on pxPerSec
+    const timeInSeconds = x / pxPerSec.value;
+    hoverTime.value = Math.max(0, timeInSeconds);
+};
+
+const formatTimeValue = (seconds: number) => {
+    if (isNaN(seconds)) return '0:00.0';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const millis = Math.floor((seconds % 1) * 10);
+    return `${mins}:${secs.toString().padStart(2, '0')}.${millis}`;
+};
 
 // Subtitle Editing State
 const editingId = ref<string | null>(null);
@@ -264,9 +281,7 @@ const startEditing = (sub: any) => {
     setTimeout(() => {
         if (subtitleInputRef.value) {
             // If it's an array (v-for ref), take the first one or find the one matching
-            // Actually in Vue 3 v-for ref gives an array of elements
             const inputs = (subtitleInputRef.value as any);
-            // It will be a list, find the active one
             if (Array.isArray(inputs)) {
                 inputs.find(i => i.offsetParent !== null)?.focus();
             } else {
@@ -338,21 +353,19 @@ const startRecording = async () => {
             }
 
             // Add to current scene at current playhead position
-            const activeOffset = sceneOffsets.value[editor.page];
-            const localPlayheadMs = (timeline.value as any)?.seek || 0;
-
-            // Note: We'll add it to the active scene
+            const id = `voiceover-${Date.now()}`;
             const page = editor.pages[editor.page];
-            if (page?.audio) {
-                // Assign a unique ID and generic name
-                const id = `voiceover-${Date.now()}`;
-                page.audio.add({
-                    id,
-                    name: 'Voiceover',
-                    url: audioUrl,
+            if (page) {
+                // Audio add expects (url, name, visual?, id?)
+                await page.audio.add(audioUrl, 'Voiceover', false, id);
+
+                // Now update the offset to current playhead
+                const activeOffset = sceneOffsets.value[editor.page];
+                const localPlayheadMs = (timeline.value as any)?.seek || 0;
+
+                page.audio.update(id, {
                     offset: localPlayheadMs / 1000,
-                    volume: 1,
-                    isVoiceover: true // Helper flag
+                    isVoiceover: true
                 });
 
                 // Trigger waveform update
@@ -379,11 +392,9 @@ const stopRecording = () => {
 
 // Watch for volume changes and apply to editor
 watch(globalVolume, (val) => {
-    // Apply to all scenes or master volume if available
     editor.pages.forEach((page, index) => {
         const instance = editor.getCanvasInstance(index);
         if (instance?.audio) {
-            // Logic to set volume on all audio elements in that scene
             page.audio.elements.forEach(audio => {
                 page.audio.update(audio.id, { volume: val / 100 });
             });
@@ -394,7 +405,10 @@ watch(globalVolume, (val) => {
 // Computed
 const pages = computed(() => editor.pages);
 const activePage = computed(() => editor.page);
-const isPlaying = computed(() => (timeline.value as any)?.playing || false);
+const isPlaying = computed(() => {
+    const _ = editor.tick;
+    return (timeline.value as any)?.playing || false;
+});
 
 // Calculate scene offsets for unified timeline
 const sceneOffsets = computed(() => {
@@ -406,22 +420,16 @@ const sceneOffsets = computed(() => {
     });
 });
 
-// Calculate scene offsets for unified timeline
-const sceneOffsets = computed(() => {
-    let acc = 0;
-    return editor.pages.map((page) => {
-        const start = acc;
-        acc += ((page.timeline as any)?.duration || 5000);
-        return start;
-    });
-});
+
 
 const playheadPosition = computed(() => {
-    return currentTime.value * pxPerSec.value;
+    // currentTime is in milliseconds, convert to seconds
+    return (currentTime.value / 1000) * pxPerSec.value;
 });
 
 const totalWidth = computed(() => {
-    return totalDuration.value * pxPerSec.value + 200; // Extra space for add button
+    // totalDuration is in milliseconds, convert to seconds
+    return (totalDuration.value / 1000) * pxPerSec.value + 200; // Extra space for add button
 });
 
 const exporting = computed(() => editor.exporting);
@@ -452,7 +460,8 @@ const allAudioElements = computed(() => {
             audios.push({
                 ...el,
                 pageIndex: index,
-                globalOffset: offset + (el.offset * 1000)
+                globalOffset: offset + (el.offset * 1000),
+                sceneDuration: (page.timeline as any)?.duration || 5000
             });
         });
     });
@@ -468,10 +477,15 @@ const formatPercent = (val: number) => {
 
 // Actions
 const togglePlay = () => {
+    console.log("togglePlay", isPlaying.value, timeline.value);
+    if (!timeline.value) {
+        toast.error("Timeline not initialized");
+        return;
+    }
     if (isPlaying.value) {
-        (timeline.value as any)?.pause();
+        (timeline.value as any).pause();
     } else {
-        (timeline.value as any)?.play();
+        (timeline.value as any).play();
     }
 };
 
@@ -495,7 +509,6 @@ const selectScene = (index: number) => {
 };
 
 const selectElement = (element: any, pageIndex: number) => {
-    // If element is in a different page, switch first
     if (editor.page !== pageIndex) {
         editor.onChangeActivePage(pageIndex);
         setTimeout(() => {
@@ -507,7 +520,6 @@ const selectElement = (element: any, pageIndex: number) => {
 };
 
 const performSelectElement = (element: any) => {
-    // Select element in canvas
     if (element.isAudio || element.type === 'audio') {
         (canvasStore.selection as any)?.selectAudio(element);
     } else {
@@ -516,7 +528,6 @@ const performSelectElement = (element: any) => {
 };
 
 const addScene = () => {
-    // Insert after current page for better UX
     editor.addPage(undefined, editor.page + 1);
 };
 
@@ -524,10 +535,6 @@ const updateTransition = (index: number, key: string, value: any) => {
     if (key === 'transition') {
         editor.setPageTransition(index, value);
     } else if (key === 'transitionDuration') {
-        // We need to pass the current transition value because the store action expects both or we can update the store action
-        // Actually the store action I wrote allows implicit updates if I am careful, but I see I wrote:
-        // setPageTransition(index, transition, duration?)
-        // So safe way is:
         const page = editor.pages[index];
         if (page) {
             editor.setPageTransition(index, page.transition || 'none', value);
@@ -535,11 +542,12 @@ const updateTransition = (index: number, key: string, value: any) => {
     }
 };
 
-const formatTime = (seconds: number) => {
+const formatTime = (ms: number) => {
+    const seconds = ms / 1000;
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 100);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    const centisecs = Math.floor((seconds % 1) * 100);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${centisecs.toString().padStart(2, '0')}`;
 };
 
 // Seek & Scrub
@@ -570,15 +578,9 @@ const seekToEvent = (e: MouseEvent) => {
     if (!timelineContainer.value) return;
     const rect = timelineContainer.value.getBoundingClientRect();
     const scrollLeft = timelineContainer.value.scrollLeft;
-    // Calculate click position relative to the SCROLLABLE content container
-    // offsetX inside the container = (e.clientX - rect.left) + scrollLeft
-    // But we need to handle padding if any. 
-    // Simplified: left inside row = clientX - rect.left + scrollLeft - paddingLeft(16)
 
-    // Easier way: The playhead and scenes are inside .scenes-container.
-    // We should ideally calculate relative to .scenes-container if strictly matched, but getting click on wrapper.
-
-    const clickX = (e.clientX - rect.left) + scrollLeft - 16; // 16px padding
+    // Position is relative to the scrollable content
+    const clickX = (e.clientX - rect.left) + scrollLeft;
     const time = Math.max(0, clickX / pxPerSec.value);
 
     seekToGlobalTime(time);
@@ -586,14 +588,10 @@ const seekToEvent = (e: MouseEvent) => {
 
 const seekToGlobalTime = (seconds: number) => {
     const ms = seconds * 1000;
+    const offsets = sceneOffsets.value;
 
-    // Find which scene contains this time
     let targetPage = 0;
     let localTime = 0;
-
-    // Find the scene index based on accumulation
-    // We can reuse sceneOffsets logic
-    const offsets = sceneOffsets.value;
 
     for (let i = 0; i < pages.value.length; i++) {
         const start = offsets[i];
@@ -605,7 +603,6 @@ const seekToGlobalTime = (seconds: number) => {
             localTime = ms - start;
             break;
         } else if (i === pages.value.length - 1 && ms >= end) {
-            // Clamped to end of last scene
             targetPage = i;
             localTime = pageDuration;
         }
@@ -613,12 +610,11 @@ const seekToGlobalTime = (seconds: number) => {
 
     if (targetPage !== editor.page) {
         editor.onChangeActivePage(targetPage);
-        // Wait a tick for scene switch
         setTimeout(() => {
-            (timeline.value as any)?.set("seek", localTime);
+            (timeline.value as any)?.set("seek", localTime / 1000);
         }, 50);
     } else {
-        (timeline.value as any)?.set("seek", localTime);
+        (timeline.value as any)?.set("seek", localTime / 1000);
     }
 };
 
@@ -629,7 +625,7 @@ watch(playheadPosition, (newPos) => {
     const container = timelineContainer.value;
     const scrollLeft = container.scrollLeft;
     const viewportWidth = container.clientWidth;
-    const padding = 100; // Keep playhead 100px from edges
+    const padding = 100;
 
     if (newPos > scrollLeft + viewportWidth - padding) {
         container.scrollTo({
@@ -672,17 +668,16 @@ const onDrop = (e: DragEvent, targetIndex: number) => {
 };
 
 // Audio Waveform Logic
-const updateWaveform = async () => {
-    const totalDurationMs = totalDuration.value * 1000;
+const updateWaveform = debounce(async () => {
+    const totalDurationMs = totalDuration.value;
     if (totalDurationMs === 0 || editor.pages.length === 0) {
         audioWaveform.value = [];
         return;
     }
 
-    const totalSamples = 200; // Increased resolution
+    const totalSamples = 200;
     const mergedWaveform = new Array(totalSamples).fill(0);
 
-    // Process each page
     let currentSampleOffset = 0;
 
     for (const page of editor.pages) {
@@ -690,9 +685,9 @@ const updateWaveform = async () => {
         const pageSamples = Math.round((pageDurationMs / totalDurationMs) * totalSamples);
 
         if (pageSamples > 0 && page.audio?.elements?.length > 0) {
-            // Get the primary audio (highest volume or first)
-            const audio = page.audio.elements[0];
-            if (audio.buffer) {
+            // Priority: use the first non-muted audio with a buffer
+            const audio = page.audio.elements.find(el => el.buffer && !el.muted);
+            if (audio?.buffer) {
                 const sceneWaveform = await WaveformGenerator.generate(audio.buffer, pageSamples);
                 for (let i = 0; i < pageSamples; i++) {
                     if (currentSampleOffset + i < totalSamples) {
@@ -705,7 +700,7 @@ const updateWaveform = async () => {
     }
 
     audioWaveform.value = mergedWaveform;
-}
+}, 300);
 
 watch(() => canvasStore.canvas?.audio?.elements, updateWaveform, { deep: true });
 watch(() => editor.page, updateWaveform);
@@ -751,19 +746,39 @@ onUnmounted(() => {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.scenes-row {
-    flex: 1;
-    overflow-x: auto;
-    overflow-y: hidden;
+.timeline-main-area {
+    background-color: #0a0a0a;
 }
 
-.scenes-container {
-    min-height: 100%;
-    padding-right: 100px;
-    /* Space for add button */
-    position: relative;
-    /* Ensure scenes flow horizontally */
-    display: flex;
+.timeline-labels {
+    z-index: 30;
+
+    &>div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.3);
+        transition: all 0.2s ease;
+
+        &:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.02);
+        }
+    }
+}
+
+.timeline-tracks {
+    background-color: #111;
+}
+
+.track-row {
+    transition: background-color 0.2s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
 }
 
 .add-scene-btn {
@@ -783,12 +798,9 @@ onUnmounted(() => {
     border-style: dashed !important;
 }
 
-.audio-track {
-    flex-shrink: 0;
-}
-
 .custom-scrollbar::-webkit-scrollbar {
     height: 6px;
+    width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -815,39 +827,6 @@ onUnmounted(() => {
     }
 }
 
-.volume-slider {
-    :deep(.el-slider__runway) {
-        background-color: rgba(255, 255, 255, 0.05);
-        height: 2px;
-    }
-
-    :deep(.el-slider__bar) {
-        background-color: var(--brand-primary);
-        height: 2px;
-    }
-
-    :deep(.el-slider__button) {
-        width: 8px;
-        height: 8px;
-        border: none;
-        background-color: #fff;
-    }
-}
-
-.audio-section {
-    display: flex;
-    flex-direction: column;
-}
-
-.voiceover-track,
-.music-track {
-    transition: background-color 0.2s;
-
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-}
-
 .audio-item {
     z-index: 10;
     cursor: pointer;
@@ -859,15 +838,53 @@ onUnmounted(() => {
     }
 
     &.voiceover {
-        background: rgba(239, 68, 68, 0.2);
-        border-color: rgba(239, 68, 68, 0.4);
-        color: rgba(254, 202, 202, 0.8);
+        background: rgba(239, 68, 68, 0.25);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: rgba(254, 202, 202, 0.9);
     }
 
     &.music {
-        background: rgba(59, 130, 246, 0.2);
-        border-color: rgba(59, 130, 246, 0.4);
-        color: rgba(191, 219, 254, 0.8);
+        background: rgba(59, 130, 246, 0.25);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        color: rgba(191, 219, 254, 0.9);
+    }
+}
+
+.hover-indicator {
+    pointer-events: none;
+    z-index: 55;
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: rgba(255, 255, 255, 0.4);
+    }
+}
+
+.hover-bubble {
+    pointer-events: none;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transition-trigger-area {
+    pointer-events: none;
+}
+
+.add-scene-btn {
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 12px;
+    margin: 20px 0 20px 16px;
+
+    &:hover {
+        transform: scale(1.02);
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.4);
     }
 }
 
@@ -898,30 +915,6 @@ onUnmounted(() => {
     }
 }
 
-.export-progress-bar {
-    box-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
-}
-
-.record-btn {
-    &.recording {
-        color: white;
-        background: rgba(239, 68, 68, 0.4);
-        border-color: rgba(239, 68, 68, 0.6);
-
-        &.pulse {
-            animation: pulse-red 2s infinite;
-        }
-
-        span {
-            color: white;
-        }
-
-        .i-icon {
-            color: white;
-        }
-    }
-}
-
 @keyframes pulse-red-mini {
     0% {
         box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
@@ -929,20 +922,6 @@ onUnmounted(() => {
 
     70% {
         box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-    }
-}
-
-@keyframes pulse-red {
-    0% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-    }
-
-    70% {
-        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
     }
 
     100% {

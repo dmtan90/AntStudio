@@ -11,7 +11,7 @@
         </div>
 
         <h1 class="text-3xl font-black text-white uppercase tracking-tighter mb-2">Initialize AntFlow</h1>
-        <p class="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-10">Neural Hub Activation & Compliance</p>
+        <p class="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-10">VTuber Hub Activation & Compliance</p>
 
         <div v-if="licenseStore.isValid" class="success-state animate-in">
            <div class="p-6 bg-green-500/10 border border-green-500/20 rounded-3xl mb-8">
@@ -91,7 +91,7 @@ const handleActivate = async () => {
             toast.error("Activation failed. Port blocked or key invalid.");
         }
     } catch (e: any) {
-        toast.error(e.response?.data?.error || "Neural Handshake Failure");
+        toast.error(e.response?.data?.error || "VTuber Handshake Failure");
     } finally {
         activating.value = false;
     }

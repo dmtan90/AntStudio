@@ -1,6 +1,4 @@
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
-import { configService } from '../../utils/configService.js';
+import { geminiPool } from '../../utils/gemini.js';
 import { systemLogger } from '../../utils/systemLogger.js';
 
 export interface ChatMessage {
@@ -14,14 +12,7 @@ export interface ChatMessage {
  * Service for autonomous audience interaction and community management.
  */
 export class CommunityAgent {
-    private ai: any;
-
-    constructor() {
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || process.env.GEMINI_API_KEY || '';
-        this.ai = genkit({
-            plugins: [googleAI({ apiKey })]
-        });
-    }
+    constructor() {}
 
     /**
      * Processes an incoming chat message and generates an autonomous response.
@@ -30,20 +21,25 @@ export class CommunityAgent {
         systemLogger.info(`💬 [CommunityAgent] Processing message from ${message.user}: ${message.text}`, 'CommunityAgent');
 
         try {
-            const response = await this.ai.generate({
-                model: 'googleai/gemini-1.5-flash',
-                prompt: `
-                    USER: ${message.user}
-                    MESSAGE: ${message.text}
-                    
-                    You are a helpful, witty, and energetic stream moderator for AntStudio.
-                    Respond to this message. Keep it under 100 characters.
-                `
+            const modelName = 'gemini-2.5-flash';
+            const { client: ai } = await geminiPool.getOptimalClient(modelName);
+
+            const prompt = `
+                USER: ${message.user}
+                MESSAGE: ${message.text}
+                
+                You are a helpful, witty, and energetic stream moderator for AntStudio.
+                Respond to this message. Keep it under 100 characters.
+            `;
+
+            const result = await (ai as any).models.generateContent({
+                model: modelName,
+                contents: [{ parts: [{ text: prompt }] }]
             });
 
             return {
                 user: "AntBot",
-                text: response.text,
+                text: result.response.text(),
                 shouldSpeak: true
             };
         } catch (error: any) {
@@ -52,8 +48,34 @@ export class CommunityAgent {
         }
     }
 
-    public async analyzeSentiment(messages: string[]) {
-        return { score: 0.85, status: 'positive' };
+    /**
+     * Analyzes overall audience sentiment from a batch of messages.
+     */
+    public async analyzeAudienceSentiment(messages: string[]) {
+        if (messages.length === 0) return { score: 0.5, status: 'neutral' };
+
+        try {
+            const modelName = 'gemini-2.5-flash';
+            const { client: ai } = await geminiPool.getOptimalClient(modelName);
+
+            const prompt = `
+                Analyze the sentiment of the following stream chat messages:
+                ${messages.join('\n')}
+                
+                Return JSON ONLY: { "score": 0-1, "status": "positive" | "negative" | "neutral", "summary": "One sentence summary" }
+            `;
+
+            const result = await (ai as any).models.generateContent({
+                model: modelName,
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: 'application/json' }
+            });
+
+            return JSON.parse(result.response.text());
+        } catch (error: any) {
+            console.error('[CommunityAgent] Sentiment analysis failed:', error.message);
+            return { score: 0.5, status: 'neutral' };
+        }
     }
 }
 

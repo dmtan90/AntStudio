@@ -21,7 +21,7 @@ export class ClusterManager {
             // 1. Connect Primary (Master Writer)
             // Use mongoose.connect to initialize the default connection for models
             // Disable buffering to fail fast if connection is not ready
-            mongoose.set('bufferCommands', false);
+            mongoose.set('bufferCommands', true);
             await mongoose.connect(primaryUri);
             this.primaryConnection = mongoose.connection;
             console.log(`[ClusterManager] 🟢 Primary DB Connected (Default): ${this.getHost(primaryUri)}`);

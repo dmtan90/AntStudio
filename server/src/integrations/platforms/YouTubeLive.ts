@@ -168,6 +168,52 @@ class YouTubeLiveService {
         }
     }
 
+    // Upload video to YouTube
+    async uploadVideo(params: {
+        videoUrl: string;
+        title: string;
+        description: string;
+        tags: string[];
+        privacyStatus: string;
+    }): Promise<{ id: string }> {
+        try {
+            // For file-based uploads, we need to use resumable upload
+            // This is a simplified version - in production, implement resumable upload protocol
+            const response = await axios.post(
+                `${this.baseUrl}/videos`,
+                {
+                    snippet: {
+                        title: params.title,
+                        description: params.description,
+                        tags: params.tags,
+                        categoryId: '22', // People & Blogs
+                    },
+                    status: {
+                        privacyStatus: params.privacyStatus,
+                        selfDeclaredMadeForKids: false,
+                    },
+                },
+                {
+                    params: {
+                        part: 'snippet,status',
+                        key: this.apiKey,
+                    },
+                    headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            return {
+                id: response.data.id,
+            };
+        } catch (error: any) {
+            console.error('Failed to upload video to YouTube:', error.response?.data || error);
+            throw new Error(error.response?.data?.error?.message || 'Failed to upload video to YouTube');
+        }
+    }
+
     // Delete broadcast
     async deleteBroadcast(broadcastId: string): Promise<void> {
         try {

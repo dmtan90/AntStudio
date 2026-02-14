@@ -113,7 +113,7 @@ export const generateStoryboardIteratively = async (
           ]
         }`
 
-        const result = await generateJSON<{ segments: any[] }>(blockPrompt, 'gemini-1.5-flash')
+        const result = await generateJSON<{ segments: any[] }>(blockPrompt, 'gemini-2.5-flash')
 
         if (!result.segments || result.segments.length === 0) break
 

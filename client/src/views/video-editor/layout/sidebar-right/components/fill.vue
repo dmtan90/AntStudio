@@ -10,6 +10,7 @@ import { defaultFill, defaultGradient } from 'video-editor/fabric/constants';
 import { cn } from '@/utils/ui';
 import { useMeasure } from 'video-editor/hooks/use-measure';
 import { FabricUtils } from 'video-editor/fabric/utils';
+import { createInstance } from 'video-editor/lib/utils';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
@@ -40,11 +41,11 @@ const computeColor = computed(() => {
 // });
 
 const mode = computed({
-  get(){
+  get() {
     if (!selected.value?.fill || typeof selected.value.fill === "string") return "solid";
     return "gradient";
   },
-  set(value){
+  set(value) {
 
   }
 });
@@ -56,11 +57,11 @@ const mode = computed({
 // });
 
 const colors = computed({
-  get(){
+  get() {
     if (!selected.value || !selected.value.fill || typeof selected.value.fill === "string") return [];
     return ((selected.value.fill as any) as fabric.Gradient).colorStops!;
   },
-  set(value){
+  set(value) {
 
   }
 });
@@ -72,11 +73,11 @@ const colors = computed({
 // });
 
 const coords = computed({
-  get(){
+  get() {
     if (!selected.value || !selected.value.fill || typeof selected.value.fill === "string") return { x1: 0, y1: 0, x2: 0, y2: 0 };
     return (selected.value.fill as fabric.Gradient).coords!;
   },
-  set(value){
+  set(value) {
 
   }
 });
@@ -195,52 +196,54 @@ const modeOptions = [
 <template>
   <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
     <!-- Header -->
-    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group">
-      <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+    <div
+      class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group">
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+      </div>
       <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Fill</h2>
       <div class="flex items-center gap-2 relative z-10">
-        <button class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300" @click="onToggleFill">
-           <template v-if="disabled">
+        <button
+          class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300"
+          @click="onToggleFill">
+          <template v-if="disabled">
             <EyeOff :size="14" />
           </template>
           <template v-else>
             <Eye :size="14" />
           </template>
         </button>
-        <button class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300" @click="editor.setActiveSidebarRight(null)">
+        <button
+          class="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all duration-300"
+          @click="editor.setActiveSidebarRight(null)">
           <X :size="14" />
         </button>
       </div>
     </div>
 
     <!-- Content -->
-    <section :class="cn('flex-1 overflow-y-auto custom-scrollbar px-5 py-6', !disabled ? 'opacity-100 pointer-events-auto' : 'opacity-30 pointer-events-none grayscale transition-all duration-500')">
-        <!-- Mode Switcher -->
-        <div class="bg-white/5 p-1 rounded-2xl border border-white/10 flex mb-8">
-           <button 
-             v-for="opt in modeOptions" 
-             :key="opt.value"
-             @click="onChangeMode(opt.value)"
-             class="flex-1 py-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300"
-             :class="[mode === opt.value ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'text-white/40 hover:text-white hover:bg-white/10']"
-           >
-              {{ opt.label }}
-           </button>
-        </div>
+    <section
+      :class="cn('flex-1 overflow-y-auto custom-scrollbar px-5 py-6', !disabled ? 'opacity-100 pointer-events-auto' : 'opacity-30 pointer-events-none grayscale transition-all duration-500')">
+      <!-- Mode Switcher -->
+      <div class="bg-white/5 p-1 rounded-2xl border border-white/10 flex mb-8">
+        <button v-for="opt in modeOptions" :key="opt.value" @click="onChangeMode(opt.value)"
+          class="flex-1 py-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300"
+          :class="[mode === opt.value ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'text-white/40 hover:text-white hover:bg-white/10']">
+          {{ opt.label }}
+        </button>
+      </div>
 
       <div class="flex flex-col gap-10">
         <!-- Picker Section -->
         <div class="flex flex-col gap-6">
           <div v-if="mode === 'gradient'" ref="containerRef" class="mb-2">
-            <GradientSlider :width="(measure as any).width" :colors="colors" :coords="(coords as any)" :selected="index" @select="index = $event" @change="onChangeOffset" @rotate="onRotateGradient" />
+            <GradientSlider :width="(measure as any).width" :colors="colors" :coords="(coords as any)" :selected="index"
+              @select="index = $event" @change="onChangeOffset" @rotate="onRotateGradient" />
           </div>
-          
-          <ColorPickerWithPresets
-            v-model="color"
-            @change="(val) => onSelectColorFromSwatch(val)"
-          />
+
+          <ColorPickerWithPresets v-model="color" @change="(val) => onSelectColorFromSwatch(val)" />
         </div>
-        </div>
+
       </div>
     </section>
   </div>
@@ -248,53 +251,53 @@ const modeOptions = [
 
 <style scoped>
 .dark-picker-override :deep(.vc-chrome) {
-    background: transparent !important;
-    border-radius: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
 }
 
 .dark-picker-override :deep(.vc-chrome-body) {
-    background: rgba(255, 255, 255, 0.03) !important;
-    padding: 16px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  padding: 16px !important;
 }
 
 .dark-picker-override :deep(.vc-chrome-fields-wrap) {
-    padding-top: 16px !important;
+  padding-top: 16px !important;
 }
 
 .dark-picker-override :deep(.vc-chrome-fields .vc-input__input) {
-    background: rgba(0, 0, 0, 0.2) !important;
-    color: rgba(255, 255, 255, 0.8) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    box-shadow: none !important;
-    border-radius: 6px !important;
-    font-size: 11px !important;
-    height: 24px !important;
-    padding: 0 4px !important;
-    font-weight: 600 !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  height: 24px !important;
+  padding: 0 4px !important;
+  font-weight: 600 !important;
 }
 
 .dark-picker-override :deep(.vc-chrome-fields .vc-input__label) {
-    color: rgba(255, 255, 255, 0.3) !important;
-    text-transform: uppercase !important;
-    font-size: 9px !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.1em !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  text-transform: uppercase !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
 }
 
-.dark-picker-override :deep(.vc-chrome-alpha-wrap), 
+.dark-picker-override :deep(.vc-chrome-alpha-wrap),
 .dark-picker-override :deep(.vc-chrome-hue-wrap) {
-    height: 10px !important;
+  height: 10px !important;
 }
 
 .dark-picker-override :deep(.vc-chrome-color-wrap) {
-    width: 32px !important;
-    height: 32px !important;
-    border-radius: 50% !important;
-    overflow: hidden !important;
-    border: 2px solid rgba(255, 255, 255, 0.1) !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  border: 2px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .dark-picker-override :deep(.vc-chrome-toggle-btn) {
-    display: none !important;
+  display: none !important;
 }
 </style>

@@ -1,41 +1,39 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IComment extends Document {
-    projectId: mongoose.Types.ObjectId;
-    segmentId?: string;
-    timestamp?: number; // For timeline comments
-    author: mongoose.Types.ObjectId;
+  projectId: string;
+  segmentId?: string;
+  userId: string;
+  userName: string;
+  content: string;
+  timestamp: number; // Video timestamp in seconds
+  replies?: Array<{
+    userId: string;
     content: string;
-    resolved: boolean;
-    replies: {
-        author: mongoose.Types.ObjectId;
-        content: string;
-        createdAt: Date;
-    }[];
     createdAt: Date;
-    updatedAt: Date;
+  }>;
+  resolved?: boolean;
+  createdAt: Date;
 }
 
-const CommentSchema = new Schema<IComment>(
+const CommentSchema: Schema = new Schema({
+  projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
+  segmentId: { type: String },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  userName: { type: String, required: true },
+  content: { type: String, required: true },
+  timestamp: { type: Number, required: true }, // Video position
+  replies: [
     {
-        projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
-        segmentId: { type: String, index: true },
-        timestamp: { type: Number },
-        author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        content: { type: String, required: true },
-        resolved: { type: Boolean, default: false, index: true },
-        replies: [{
-            author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-            content: { type: String, required: true },
-            createdAt: { type: Date, default: Date.now }
-        }]
-    },
-    { timestamps: true }
-);
+      userId: { type: Schema.Types.ObjectId, ref: 'User' },
+      content: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
+  resolved: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now }
+});
 
-// Indexes for comment queries
-CommentSchema.index({ projectId: 1, resolved: 1 });
-CommentSchema.index({ author: 1, createdAt: -1 });
-CommentSchema.index({ projectId: 1, segmentId: 1 });
+CommentSchema.index({ projectId: 1, createdAt: -1 });
 
-export const Comment: Model<IComment> = mongoose.models.Comment || mongoose.model<IComment>('Comment', CommentSchema);
+export const Comment = mongoose.model<IComment>('Comment', CommentSchema);

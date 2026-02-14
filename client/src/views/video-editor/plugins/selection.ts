@@ -18,21 +18,24 @@ export class CanvasSelection {
   }
 
   private get canvas() {
-    return this._canvas.instance!;
+    return this._canvas.instance;
   }
 
   private _initEvents() {
-    this.canvas.on("object:modified", this._modifiedEvent.bind(this));
-    this.canvas.on("timeline:start", this._timelineRecorderStartEvent.bind(this));
-    this.canvas.on("recorder:start", this._timelineRecorderStartEvent.bind(this));
+    const canvas = this.canvas;
+    if (!canvas) return;
 
-    this.canvas.on("selection:created", this._selectionEvent.bind(this));
-    this.canvas.on("selection:updated", this._selectionEvent.bind(this));
-    this.canvas.on("selection:cleared", this._selectionEvent.bind(this));
+    canvas.on("object:modified", this._modifiedEvent.bind(this));
+    canvas.on("timeline:start", this._timelineRecorderStartEvent.bind(this));
+    canvas.on("recorder:start", this._timelineRecorderStartEvent.bind(this));
+
+    canvas.on("selection:created", this._selectionEvent.bind(this));
+    canvas.on("selection:updated", this._selectionEvent.bind(this));
+    canvas.on("selection:cleared", this._selectionEvent.bind(this));
     // this.canvas.on('before:selection:cleared', this._selectionEvent.bind(this));
 
-    this.canvas.on("clip:added", this._modifiedEvent.bind(this));
-    this.canvas.on("clip:removed", this._modifiedEvent.bind(this));
+    canvas.on("clip:added", this._modifiedEvent.bind(this));
+    canvas.on("clip:removed", this._modifiedEvent.bind(this));
   }
 
   private _modifiedEvent(event: fabric.IEvent) {
@@ -41,11 +44,13 @@ export class CanvasSelection {
   }
 
   private _timelineRecorderStartEvent() {
-    this.canvas.discardActiveObject();
+    this.canvas?.discardActiveObject();
   }
 
   private _selectionEvent() {
-    const selection = this.canvas.getActiveObject();
+    const canvas = this.canvas;
+    if (!canvas) return;
+    const selection = canvas.getActiveObject();
     // console.log("_selectionEvent", selection);
     if (FabricUtils.isActiveSelection(this.active)) {
       const objects = this.active.objects.map((object) => this.canvas.getItemByName(object.name)).filter(Boolean) as fabric.Object[];
@@ -73,54 +78,57 @@ export class CanvasSelection {
     } else {
       this.active = selection.toObject(propertiesToInclude);
     }
-    this.canvas.requestRenderAll();
-    
+    canvas?.requestRenderAll();
+
     const canvasStore = useCanvasStore();
     canvasStore.onChangeSelection();
   }
 
   selectObjectByName(name: string, multiple?: boolean) {
-    const object = this.canvas.getItemByName(name);
+    const canvas = this.canvas;
+    if (!canvas) return;
+    const object = canvas.getItemByName(name);
     if (!object) return;
-    const selected = this.canvas.getActiveObject();
+    const selected = canvas.getActiveObject();
     if (!selected || !multiple) {
-      this.canvas.setActiveObject(object);
+      canvas.setActiveObject(object);
     } else {
       if (FabricUtils.isActiveSelection(selected)) {
         if (object.group === selected) {
           if (selected._objects.length === 1) {
-            this.canvas.discardActiveObject();
+            canvas.discardActiveObject();
           } else {
             selected.removeWithUpdate(object);
-            this.canvas.fire("selection:updated");
+            canvas.fire("selection:updated");
           }
         } else {
           selected.addWithUpdate(object);
-          this.canvas.fire("selection:updated");
+          canvas.fire("selection:updated");
         }
       } else {
         if (selected.name !== object.name) {
-          const activeSelection = createInstance(fabric.ActiveSelection, [selected, object], { canvas: this.canvas });
-          this.canvas.setActiveObject(activeSelection);
+          const activeSelection = createInstance(fabric.ActiveSelection, [selected, object], { canvas: canvas });
+          canvas.setActiveObject(activeSelection);
         }
       }
     }
-    this.canvas.requestRenderAll();
+    canvas.requestRenderAll();
   }
 
   selectAudio(audio: EditorAudioElement | null) {
     if (!audio) {
       this.active = null;
     } else {
-      this.canvas.discardActiveObject().requestRenderAll();
+      this.canvas?.discardActiveObject().requestRenderAll();
       this.active = Object.assign({ type: "audio" }, audio) as unknown as fabric.Object;
     }
   }
 
   selectMetaGroup(group: string[]) {
-    if (!group.length) return;
-    const elements = group.map((item) => this.canvas.getItemByName(item)).filter(Boolean) as fabric.Object[];
-    const activeSelection = createInstance(fabric.ActiveSelection, elements, { canvas: this.canvas });
-    this.canvas.setActiveObject(activeSelection).requestRenderAll();
+    const canvas = this.canvas;
+    if (!canvas || !group.length) return;
+    const elements = group.map((item) => canvas.getItemByName(item)).filter(Boolean) as fabric.Object[];
+    const activeSelection = createInstance(fabric.ActiveSelection, elements, { canvas: canvas });
+    canvas.setActiveObject(activeSelection).requestRenderAll();
   }
 }

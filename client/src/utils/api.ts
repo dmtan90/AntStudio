@@ -10,10 +10,15 @@ api.interceptors.request.use(
     (config) => {
         let token = localStorage.getItem('auth-token')
 
-        // Feature: Automatically use token from URL if on Live Studio (Guest support)
-        if (!token && window.location.pathname === '/live/studio') {
+        // Feature: Automatically use token from URL if on any page (OAuth/Guest support)
+        if (!token) {
             const params = new URLSearchParams(window.location.search)
             token = params.get('token')
+            if (token) {
+                localStorage.setItem('auth-token', token)
+                // Note: We don't clean URL here as the store might be doing it, 
+                // but if we are outside of Vue/Pinia context (e.g. direct utility use), it's safer.
+            }
         }
 
         if (token) {
@@ -31,10 +36,15 @@ api.interceptors.response.use(
         if (response.data && typeof response.data === 'object' && 'success' in response.data) {
             if (response.data.success) {
                 // Only unwrap if 'data' property exists, otherwise keep the whole object (success, message etc)
-                if (response.data.data !== undefined) {
-                    response.data = response.data.data
-                }
-                return response
+                // if (response.data.data !== undefined) {
+                //     response.data = response.data.data
+                // }
+                // response = {
+                //     data: response.data.data,
+                //     pagination: response.data.pagination
+                // }
+                // console.log(response);
+                return response.data
             } else {
                 // If success is false, reject with the error message
                 return Promise.reject({
@@ -51,11 +61,16 @@ api.interceptors.response.use(
         if (error.response?.status === 401) {
             // Only clear auth if we're not already on the login page
             // Feature: Ignore 401 redirect if on Live Studio (Guest Access support)
-            const isStudioPage = window.location.pathname === '/live/studio'
-            if (window.location.pathname !== '/login' && !isStudioPage) {
-                localStorage.removeItem('auth-token')
-                window.location.href = '/login'
-            }
+            // const bypass = [
+            //     '/live/studio',
+            //     '/live/join',
+            //     '/remote-camera'
+            // ]
+            // const isBypassPage = bypass.some(p => window.location.pathname.startsWith(p))
+            // if (window.location.pathname !== '/login' && !isBypassPage) {
+            //     localStorage.removeItem('auth-token')
+            //     window.location.href = '/login'
+            // }
         }
         return Promise.reject(error)
     }
@@ -70,7 +85,7 @@ export function getFileUrl(path: string | undefined | null, options?: { cached?:
 
     let url = path
     // If it doesn't start with http or /, assume it's an S3 path
-    if (!path.startsWith('http') && !path.startsWith('/')) {
+    if (!path.startsWith('http') && !path.startsWith('/') && !path.startsWith('blob:') && !path.startsWith('data:')) {
         url = `/api/s3/${path}`
     }
 

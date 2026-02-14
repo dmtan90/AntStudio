@@ -161,7 +161,7 @@ Return your storyboard in the following JSON format:
 
     const result = await generateJSON<{ segments: any[] }>(
         prompt,
-        'gemini-1.5-flash'
+        'gemini-2.5-flash'
     )
 
     // Map segments with duration and metadata

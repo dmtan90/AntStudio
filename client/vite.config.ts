@@ -102,7 +102,6 @@ export default defineConfig({
     css: {
         preprocessorOptions: {
             scss: {
-                api: 'modern-compiler',
                 additionalData: `
                     @use "@/assets/scss/_variables.scss" as *;
                     @use "@/assets/scss/_mixins.scss" as *;
@@ -120,9 +119,35 @@ export default defineConfig({
             // "Cross-Origin-Embedder-Policy": "credentialless",
         },
         proxy: {
-            '/api': {
-                target: 'http://localhost:4000',
+            '/socket.io': {
+                target: 'http://127.0.0.1:4001',
+                ws: true,
                 changeOrigin: true,
+                secure: false,
+                configure: (proxy: any, _options: any) => {
+                    proxy.on('error', (err: any, _req: any, _res: any) => {
+                        console.log('[Proxy] Error:', err.message);
+                    });
+                    proxy.on('proxyReq', (proxyReq: any, req: any, _res: any) => {
+                        console.log('[Proxy] Request:', req.method, req.url);
+                        // console.log('[Proxy] Headers:', JSON.stringify(req.headers));
+                    });
+                    proxy.on('proxyReqWs', (proxyReq: any, req: any, socket: any, options: any, head: any) => {
+                        console.log('[Proxy] WS Request:', req.url);
+                        // console.log('[Proxy] WS Headers:', JSON.stringify(req.headers));
+                    });
+                    proxy.on('proxyRes', (proxyRes: any, req: any, _res: any) => {
+                        console.log('[Proxy] Response:', proxyRes.statusCode, req.url);
+                    });
+                     proxy.on('upgrade', (req: any, socket: any, head: any) => {
+                        console.log('[Proxy] Upgrade Event:', req.url);
+                    });
+                }
+            },
+            '/api': {
+                target: 'http://127.0.0.1:4000',
+                changeOrigin: true,
+                secure: false,
                 ws: true
             }
         }
@@ -132,6 +157,9 @@ export default defineConfig({
         sourcemap: true
     },
     optimizeDeps: {
-        exclude: ['mediabunny', '@ffmpeg/ffmpeg', '@ffmpeg/util', '@huggingface/transformers']
+        exclude: ['mediabunny', '@ffmpeg/ffmpeg', '@ffmpeg/util', '@huggingface/transformers', '@mediapipe/tasks-vision']
+    },
+    define: {
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     }
 })

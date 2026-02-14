@@ -172,6 +172,7 @@ export function useStudioSession(
         const streamId = amsAccount.streamKey;
 
         if (serverUrl && streamId) {
+			console.log("serverUrl", serverUrl);
             const wsProtocol = serverUrl.startsWith('https') ? 'wss:' : 'ws:';
             const wsHost = new URL(serverUrl).host;
             const websocketUrl = `${wsProtocol}//${wsHost}/${appName}/websocket`;
@@ -241,6 +242,7 @@ export function useStudioSession(
         };
 
         mediaRecorder.value.start(1000); // 1s chunks
+        startHighlightBuffering(canvasStream);
         console.log(`[Relay] MediaRecorder started for session: ${sessionId}`);
     };
 

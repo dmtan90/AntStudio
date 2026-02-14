@@ -6,11 +6,12 @@ export interface IAdminSettings extends Document {
         label: string
         isActive: boolean
         usageCount: number
+        quotas?: Map<string, { used: number; limit: number; resetAt?: Date }>
         lastUsed?: Date
     }>
     apiConfigs: {
         stripe: { secretKey: string; publicKey: string; webhookSecret: string }
-        paypal: { clientId: string; clientSecret: string; webhookSecret: string }
+        paypal: { clientId: string; clientSecret: string; webhookSecret: string; mode?: 'sandbox' | 'live' }
         aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string }
         smtp: {
             host: string
@@ -150,6 +151,15 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 label: { type: String, required: true },
                 isActive: { type: Boolean, default: true },
                 usageCount: { type: Number, default: 0 },
+                quotas: {
+                    type: Map,
+                    of: new Schema({
+                        used: { type: Number, default: 0 },
+                        limit: { type: Number, default: 0 },
+                        resetAt: Date
+                    }, { _id: false }),
+                    default: {}
+                },
                 lastUsed: Date
             }
         ],
@@ -162,7 +172,8 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
             paypal: {
                 clientId: { type: String, default: '' },
                 clientSecret: { type: String, default: '' },
-                webhookSecret: { type: String, default: '' }
+                webhookSecret: { type: String, default: '' },
+                mode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox' }
             },
             aws: {
                 accessKeyId: { type: String, default: '' },
@@ -372,14 +383,14 @@ export const getAdminSettings = async () => {
                     { id: 'suno', name: 'Suno', apiKey: '', supportedTypes: ['music'], isActive: true }
                 ],
                 defaults: {
-                    text: { providerId: 'google', modelId: 'gemini-1.5-flash', creditCost: 1 },
+                    text: { providerId: 'google', modelId: 'gemini-2.5-flash', creditCost: 1 },
                     image: { providerId: 'google', modelId: 'imagen-3.0', creditCost: 4 },
                     video: { providerId: 'google', modelId: 'veo-2.0', creditCost: 10 },
                     audio: { providerId: 'google', modelId: 'tts-1', creditCost: 1 },
                     music: { providerId: 'suno', modelId: 'v3.5', creditCost: 5 }
                 },
                 models: [
-                    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', providerId: 'google', type: 'text', creditCost: 1, isActive: true },
+                    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', providerId: 'google', type: 'text', creditCost: 1, isActive: true },
                     { id: 'imagen-3.0', name: 'Imagen 3', providerId: 'google', type: 'image', creditCost: 4, isActive: true },
                     { id: 'veo-2.0', name: 'Veo 2.0', providerId: 'google', type: 'video', creditCost: 10, isActive: true }
                 ],

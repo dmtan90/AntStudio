@@ -147,7 +147,7 @@
               <span class="label">PRJ:</span>
               <span class="value" @click="copyText(account.projectId)">{{ account.projectId || 'N/A' }}</span>
 
-              <div class="footer-actions ml-2" v-if="account.accountType === 'google'">
+              <div class="footer-actions ml-2" v-if="account.accountType === 'google' || account.accountType === 'standard'">
                 <copy v-if="account.projectId" theme="outline" size="12" class="footer-icon"
                   @click="copyText(account.projectId)" title="Copy ID" />
 
@@ -251,11 +251,11 @@ const createNewProject = async (account: any) => {
   isCreatingProject.value = account._id;
   try {
     const data = await adminStore.createProject(account._id);
-    if (data && data.data) {
-      account.projectId = data.data.projectId;
+    if (data) {
+      account.projectId = data.projectId;
     }
   } catch (e: any) {
-    toast.error(e.response?.data?.error || 'Project creation failed');
+    toast.error(e?.error || 'Project creation failed');
   } finally {
     isCreatingProject.value = null;
   }
@@ -324,7 +324,7 @@ const fetchAccounts = async (silent = false) => {
   if (!silent) loading.value = true;
   try {
     const data = await adminStore.fetchAIAccounts();
-    if (data && data.data) accounts.value = data.data;
+    if (data) accounts.value = data;
   } catch (e: any) {
     if (!silent) toast.error('Failed to load AI accounts');
   } finally {
@@ -336,8 +336,8 @@ const addAccount = async (isAntigravity = false) => {
   try {
     const redirectUri = `${window.location.origin}/platforms/callback/google?type=ai-account`;
     const data = await adminStore.getAuthUrl('google', redirectUri);
-    if (data && data.data && data.data.url) {
-      window.location.href = data.data.url;
+    if (data && data.url) {
+      window.location.href = data.url;
     }
   } catch (e) {
     toast.error('Could not initiate OAuth flow');

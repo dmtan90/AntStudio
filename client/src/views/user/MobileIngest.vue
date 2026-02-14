@@ -138,12 +138,27 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .mobile-ingest {
+  background-color: #000;
+  font-family: 'Outfit', sans-serif;
   touch-action: none;
 }
+
 .stat-pill {
   min-width: 60px;
+  background: rgba(0,0,0,0.5);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
 }
-.shutter-btn:active {
-  transform: scale(0.9);
+
+.control-btn {
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    &:active { transform: scale(0.9); }
+}
+
+.shutter-btn {
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    &:active { transform: scale(0.95); }
+    box-shadow: 0 0 20px rgba(255,255,255,0.1);
 }
 </style>

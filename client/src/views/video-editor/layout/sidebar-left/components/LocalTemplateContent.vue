@@ -14,7 +14,7 @@ import type { EditorTemplate } from 'video-editor/types/editor';
 
 const editor = useEditorStore();
 const mock = useMockStore();
-const { templates } = storeToRefs(mock); 
+const { templates } = storeToRefs(mock);
 
 watch(templates, (value) => {
   console.log("templates", value);
@@ -59,33 +59,33 @@ const handleLoadJSON = async (options: any) => {
   <div class="flex flex-col gap-4">
     <div class="flex items-center justify-between">
       <h4 class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Local Templates</h4>
-      <el-upload
-        :show-file-list="false"
-        :http-request="handleLoadJSON"
-        accept="application/json"
-      >
-        <button class="h-6 px-2.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-brand-primary hover:bg-brand-primary/20 transition-all">
+      <el-upload :show-file-list="false" :http-request="handleLoadJSON" accept="application/json">
+        <button
+          class="h-6 px-2.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-brand-primary hover:bg-brand-primary/20 transition-all">
           <Plus :size="10" :stroke-width="4" />
           <span>Load JSON</span>
         </button>
       </el-upload>
     </div>
-    
-    <div class="grid grid-cols-2 gap-4 items-center overflow-y-auto custom-scrollbar relative">
+
+    <div class="grid grid-cols-2 gap-4 items-center relative">
       <template v-if="templates.length">
-        <button v-for="template in templates" :key="template.id" 
-          class="w-full aspect-square rounded-xl overflow-hidden group border border-white/5 bg-white/5 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] shadow-sm hover:shadow-xl hover:shadow-purple-500/5" 
-          @click="loadTemplate(template, 'replace')"
-        >
-          <img :src="getFileUrl(template.pages[0].thumbnail)" :alt="template.name" class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
-          
-          <div class="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-            <span class="text-[9px] font-bold text-white uppercase tracking-wider line-clamp-1">{{ template.name }}</span>
+        <button v-for="template in templates" :key="template.id"
+          class="w-full aspect-square rounded-xl overflow-hidden group border border-white/5 bg-white/5 transition-all duration-300 hover:border-white/20 hover:scale-[1.02] shadow-sm hover:shadow-xl hover:shadow-purple-500/5"
+          @click="loadTemplate(template, 'replace')">
+          <img :src="getFileUrl(template.pages[0].thumbnail)" :alt="template.name"
+            class="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
+
+          <div
+            class="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span class="text-[9px] font-bold text-white uppercase tracking-wider line-clamp-1">{{ template.name
+              }}</span>
           </div>
         </button>
       </template>
       <template v-else>
-        <el-skeleton v-for="(_, index) in 4" :key="index" animated class="w-full aspect-square rounded-xl !bg-white/5" />
+        <el-skeleton v-for="(_, index) in 4" :key="index" animated
+          class="w-full aspect-square rounded-xl !bg-white/5" />
         <div class="absolute inset-0 flex items-center justify-center">
           <span class="text-[10px] font-bold text-white/20 uppercase tracking-widest">No local templates</span>
         </div>

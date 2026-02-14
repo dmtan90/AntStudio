@@ -110,7 +110,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { ref, onMounted, computed } from 'vue';
+
 import { useLicenseStore } from '@/stores/license';
 import { toast } from 'vue-sonner';
 

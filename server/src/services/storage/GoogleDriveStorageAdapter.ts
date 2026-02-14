@@ -105,7 +105,7 @@ export class GoogleDriveStorageAdapter implements IStorageAdapter {
 
         const files = response.data.files || [];
 
-        return files.map(file => ({
+        return files.map((file: drive_v3.Schema$File) => ({
             key: file.id!,
             url: file.webContentLink || `https://drive.google.com/uc?id=${file.id}`,
             size: file.size ? parseInt(file.size) : undefined,

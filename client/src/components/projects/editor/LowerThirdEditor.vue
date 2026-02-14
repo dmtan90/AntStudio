@@ -30,7 +30,7 @@
                     <div v-for="style in styles" :key="style.value"
                         class="relative cursor-pointer rounded-lg border-2 transition-all overflow-hidden"
                         :class="formData.style === style.value ? 'border-brand-primary bg-brand-primary/10' : 'border-white/10 hover:border-white/20'"
-                        @click="formData.style = style.value">
+                        @click="formData.style = style.value as 'default' | 'minimal' | 'bold' | 'gradient'">
                         <div class="p-4">
                             <div class="text-sm font-bold text-white mb-1">{{ style.label }}</div>
                             <div class="text-xs text-white/50">{{ style.description }}</div>
@@ -53,7 +53,7 @@
                     <button v-for="pos in positions" :key="pos.value"
                         class="flex-1 px-4 py-2 rounded-lg border transition-all text-sm font-medium"
                         :class="formData.position === pos.value ? 'border-brand-primary bg-brand-primary/10 text-brand-primary' : 'border-white/10 text-white/70 hover:border-white/20'"
-                        @click="formData.position = pos.value">
+                        @click="formData.position = pos.value as 'bottom-left' | 'bottom-center' | 'bottom-right'">
                         {{ pos.label }}
                     </button>
                 </div>
@@ -68,7 +68,7 @@
                     <button v-for="anim in animations" :key="anim.value"
                         class="flex-1 px-4 py-2 rounded-lg border transition-all text-sm font-medium"
                         :class="formData.animation === anim.value ? 'border-brand-primary bg-brand-primary/10 text-brand-primary' : 'border-white/10 text-white/70 hover:border-white/20'"
-                        @click="formData.animation = anim.value">
+                        @click="formData.animation = anim.value as 'fade' | 'slide' | 'none'">
                         {{ anim.label }}
                     </button>
                 </div>

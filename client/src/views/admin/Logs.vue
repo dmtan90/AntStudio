@@ -158,9 +158,9 @@ const fetchLogs = async (silent: any = false) => {
   if (!isSilent) loading.value = true;
   try {
     const data = await adminStore.fetchSystemLogs(filter);
-    if (data && data.data) {
-      logs.value = data.data.logs;
-      totalLogs.value = data.data.total;
+    if (data) {
+      logs.value = data.logs;
+      totalLogs.value = data.total;
     }
   } catch (e) {
     if (!isSilent) toast.error('Failed to load logs');
@@ -180,8 +180,8 @@ const debounceFetch = () => {
 const fetchSettings = async () => {
   try {
     const data = await adminStore.fetchLogSettings();
-    if (data && data.data) {
-      Object.assign(settings, data.data);
+    if (data) {
+      Object.assign(settings, data);
     }
   } catch (e) { }
 };

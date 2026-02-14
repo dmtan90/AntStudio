@@ -1,39 +1,44 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { configService } from '../../utils/configService.js';
+import { GoogleGenAI } from '@google/genai';
+import { geminiPool } from '../../utils/gemini.js';
 
 /**
  * Orchestrates Vision-based analysis for the AI Director.
  * Uses Gemini 1.5 Pro to "see" the stream content.
  */
 export class VisionOrchestrator {
-    private genAI: GoogleGenerativeAI;
-
-    constructor() {
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || '';
-        this.genAI = new GoogleGenerativeAI(apiKey);
-    }
+    constructor() {}
 
     /**
      * Analyzes a canvas snapshot for contextual awareness.
      */
     public async analyzeFrame(base64Image: string, prompt: string = "Describe what is happening in this live stream frame. Identify people, objects, and emotions.") {
         try {
-            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use flash for low latency
+            const modelName = "gemini-2.5-flash";
+            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
 
             // Remove data URI prefix if present
             const imageData = base64Image.split(',')[1] || base64Image;
 
-            const result = await model.generateContent([
-                prompt,
-                {
-                    inlineData: {
-                        data: imageData,
-                        mimeType: "image/png"
-                    }
-                }
-            ]);
+            const result = await (ai as any).models.generateContent({
+                model: modelName,
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                data: imageData,
+                                mimeType: "image/png"
+                            }
+                        }
+                    ]
+                }]
+            });
 
-            const response = await result.response;
+            const response = result.response;
+            
+            // Record usage
+            await geminiPool.recordUsage(key, modelName);
+            
             return response.text();
         } catch (error: any) {
             console.error('[VisionOrchestrator] Analysis failed:', error.message);

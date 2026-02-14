@@ -2,7 +2,6 @@ import { Router, Response } from 'express';
 import multer from 'multer';
 import { connectDB } from '../utils/db.js';
 import { Project } from '../models/Project.js';
-import { VideoAssemblyService } from '../services/videoAssemblyService.js';
 import { monitoringService } from '../services/monitoringService.js';
 import { systemLogger } from '../utils/systemLogger.js';
 import { WebhookService } from '../services/WebhookService.js';
@@ -29,7 +28,7 @@ const fileFilter = (req: AuthRequest, file: any, callback: any) => {
 };
 
 const router = Router();
-const upload = multer({ fileFilter, storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ fileFilter, storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
 // All project routes require authentication
 router.use(authMiddleware);
@@ -190,7 +189,7 @@ router.post('/preview', checkLicenseStatus, licenseGating('trial'), upload.array
           "closingMessage": ""
         }`;
 
-        const finalAnalysis = await generateJSON<any>(analysisPrompt, 'gemini-1.5-flash');
+        const finalAnalysis = await generateJSON<any>(analysisPrompt, 'gemini-2.5-flash');
 
         // 3. Generate storyboard
         const storyboard = await generateStoryboardIteratively(
@@ -233,7 +232,7 @@ router.post('/:id/analyze', checkLicenseStatus, rbacMiddleware(Permission.PROJEC
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const prompt = `Analyze the script and provide deep visual context for the project: ${project.title}. Script: ${project.description}`;
-        const analysis = await generateJSON<any>(prompt, 'gemini-1.5-flash');
+        const analysis = await generateJSON<any>(prompt, 'gemini-2.5-flash');
 
         project.scriptAnalysis = { ...analysis, analyzedAt: new Date() };
         project.status = 'analyzing';
@@ -279,7 +278,7 @@ router.post('/:id/generate-visual-plan', checkLicenseStatus, rbacMiddleware(Perm
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const stylePrompt = `Create a detailed visual art direction for ${project.title}. Style: ${project.videoStyle || 'Cinematic'}`;
-        const brief = await generateJSON<any>(stylePrompt, 'gemini-1.5-flash');
+        const brief = await generateJSON<any>(stylePrompt, 'gemini-2.5-flash');
 
         project.creativeBrief = { ...brief, generatedAt: new Date() };
         await project.save();
@@ -427,6 +426,16 @@ router.post('/:id/upload-final-video', rbacMiddleware(Permission.PROJECT_EDIT), 
 
         await project.save();
 
+        // Notify other clients that the montage is ready
+        const { socketService } = await import('../services/SocketService.js');
+        socketService.emitProjectUpdate(req.user!.userId, projectId, {
+            type: 'montage_ready',
+            result: {
+                finalVideoKey: finalKey,
+                duration: parseFloat(req.body.duration)
+            }
+        });
+
         res.json({
             success: true,
             data: {
@@ -437,6 +446,23 @@ router.post('/:id/upload-final-video', rbacMiddleware(Permission.PROJECT_EDIT), 
 
     } catch (error: any) {
         console.error('[UploadFinal] Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/projects/:id/syndicate-final - Syndicate final montage to social media
+router.post('/:id/syndicate-final', rbacMiddleware(Permission.PROJECT_EDIT), async (req: AuthRequest, res: Response) => {
+    try {
+        await connectDB();
+        const projectId = req.params.id;
+        const { caption, hashtags } = req.body;
+
+        const { socialSyndicationService } = await import('../services/SocialSyndicationService.js');
+        const result = await socialSyndicationService.syndicateFinalVideo(projectId, { caption, hashtags });
+
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('[SyndicateFinal] Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -596,8 +622,24 @@ router.post('/:id/assets/upload',
                         character.referenceImage = uploadResult.key;
                     }
                 }
-                await project.save();
+            } else {
+                // Generic Asset Upload (e.g. Recordings)
+                if (!project.visualAssets) project.visualAssets = [];
+                project.visualAssets.push({
+                    name: file.originalname,
+                    description: req.body.description || 'Uploaded asset',
+                    type: file.mimetype.startsWith('video/') ? 'video' : file.mimetype.startsWith('audio/') ? 'audio' : 'image',
+                    status: 'ready',
+                    s3Key: uploadResult.key,
+                    metadata: {
+                        originalName: file.originalname,
+                        size: file.size,
+                        mimeType: file.mimetype
+                    },
+                    createdAt: new Date()
+                });
             }
+            await project.save();
 
             res.json({ success: true, data: { s3Key: uploadResult.key, url: uploadResult.key } });
         } catch (error: any) {

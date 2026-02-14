@@ -42,14 +42,14 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/projects/editor/:id',
         name: 'project-editor',
-        component: () => import('@/views/video-editor/views/Editor.vue'),
+        component: () => import('@/views/project/Editor.vue'),
         meta: { requiresAuth: true, layout: 'none' },
         props: true
     },
     {
-        path: '/marketplace',
-        name: 'marketplace',
-        component: () => import('@/views/marketplace/TemplateBrowser.vue'),
+        path: '/templates',
+        name: 'templates',
+        component: () => import('@/views/user/Templates.vue'),
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
@@ -66,26 +66,26 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         path: '/affiliate',
-        name: 'affiliate-portal',
-        component: () => import('@/views/user/AffiliateDashboard.vue'),
+        name: 'affiliate',
+        component: () => import('@/views/user/Affiliate.vue'),
+        meta: { requiresAuth: true, layout: 'app' }
+    },
+    // {
+    //     path: '/ai-hub',
+    //     name: 'ai-hub',
+    //     component: () => import('@/views/user/Dashboard.vue'),
+    //     meta: { requiresAuth: true, layout: 'app' }
+    // },
+    {
+        path: '/vtubers',
+        name: 'vtubers',
+        component: () => import('@/views/user/VTubers.vue'),
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
-        path: '/ai-hub',
-        name: 'ai-hub',
-        component: () => import('@/views/user/Dashboard.vue'),
-        meta: { requiresAuth: true, layout: 'app' }
-    },
-    {
-        path: '/neural-archive',
-        name: 'neural-archive',
-        component: () => import('@/views/user/NeuralArchive.vue'),
-        meta: { requiresAuth: true, layout: 'app' }
-    },
-    {
-        path: '/developer-hub',
-        name: 'developer-hub',
-        component: () => import('@/views/user/DeveloperHub.vue'),
+        path: '/developer',
+        name: 'developer',
+        component: () => import('@/views/user/Developer.vue'),
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
@@ -95,7 +95,7 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
-        path: '/merchant/orders',
+        path: '/merchants',
         name: 'merchant-orders',
         component: () => import('@/views/user/MerchantOrders.vue'),
         meta: { requiresAuth: true, layout: 'app' }
@@ -116,6 +116,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '/live/studio',
         name: 'live-studio',
         component: () => import('@/views/user/LiveStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/gemini-live-chat',
+        name: 'gemini-live-chat',
+        component: () => import('@/views/user/GeminiLiveChat.vue'),
         meta: { requiresAuth: true, layout: 'none' }
     },
     {
@@ -245,6 +251,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
+        path: '/viral-hub',
+        name: 'viral-hub',
+        component: () => import('@/views/user/ViralHub.vue'),
+        meta: { requiresAuth: true, layout: 'app' }
+    },
+    {
         path: '/recordings',
         name: 'recordings',
         component: () => import('@/views/user/Recordings.vue'),
@@ -287,7 +299,7 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
     const userStore = useUserStore()
-    if (!userStore.isInitialized) {
+    if (!userStore.isInitialized && to.meta.requiresAuth) {
         await userStore.fetchProfile()
     }
     const isAuthenticated = userStore.isAuthenticated
@@ -295,7 +307,7 @@ router.beforeEach(async (to, from, next) => {
     const isSysAdmin = userStore.user?.role === 'sys-admin'
 
     if (to.meta.requiresAuth && !isAuthenticated) {
-        // console.log("token", to.query.token, "path", to.path);
+        console.log("token", to.query.token, "path", to.path);
         // Feature: Allow Guest Access to Studio with token
         if (to.path === '/live/studio' && to.query.token) {
             next()

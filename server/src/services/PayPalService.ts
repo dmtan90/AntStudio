@@ -56,8 +56,8 @@ class PayPalService {
                 custom_id: JSON.stringify({ userId, packageId, licenseKey })
             }],
             application_context: {
-                return_url: `${config.public.baseUrl}/license-portal?paypal_return=true`,
-                cancel_url: `${config.public.baseUrl}/license-portal?paypal_cancel=true`,
+                return_url: `${config.public.baseUrl}/api/payment/paypal/callback`,
+                cancel_url: `${config.public.baseUrl}/api/payment/paypal/cancel`,
                 brand_name: 'AntStudio Enterprise'
             }
         }, {

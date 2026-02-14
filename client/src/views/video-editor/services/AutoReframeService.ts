@@ -15,12 +15,12 @@ export class AutoReframeService {
         if (this.isInitialized) return;
 
         const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+            "/models/mediapipe"
         );
 
         this.detector = await ObjectDetector.createFromOptions(vision, {
             baseOptions: {
-                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.task`,
+                modelAssetPath: `/models/mediapipe/efficientdet_lite0.task`,
                 delegate: "GPU"
             },
             runningMode: "VIDEO",

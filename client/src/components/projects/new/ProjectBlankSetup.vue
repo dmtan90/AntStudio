@@ -20,7 +20,7 @@
             <div class="form-group">
                 <label>Aspect Ratio</label>
                 <div class="ratio-grid">
-                    <div v-for="ratio in ratios" :key="ratio.value" class="ratio-card"
+                    <div v-for="ratio in ratios" :key="ratio.value" class="ratio-card justify-center"
                         :class="{ active: form.aspectRatio === ratio.value }" @click="form.aspectRatio = ratio.value">
                         <div class="ratio-preview" :style="{ aspectRatio: ratio.cssRatio }"></div>
                         <span>{{ ratio.label }}</span>
@@ -75,7 +75,7 @@ const createProject = async () => {
         })
 
         toast.success('Project created successfully')
-        router.push(`/projects/${res.project._id}/editor`)
+        router.push({ name: 'project-editor', params: { id: res.project._id }, query: { mode: "studio" } })
     } catch (error: any) {
         toast.error(error.response?.data?.message || 'Failed to create project')
     } finally {

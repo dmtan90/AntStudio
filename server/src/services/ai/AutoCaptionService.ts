@@ -1,24 +1,20 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { configService } from '../../utils/configService.js';
+import { GoogleGenAI } from '@google/genai';
+import { geminiPool } from '../../utils/gemini.js';
 import fs from 'fs';
 
 /**
  * Service for generating AI-powered kinetic captions for short-form clips.
  */
 export class AutoCaptionService {
-    private genAI: GoogleGenerativeAI;
-
-    constructor() {
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || '';
-        this.genAI = new GoogleGenerativeAI(apiKey);
-    }
+    constructor() {}
 
     /**
      * Generates transcription and caption timing for a video buffer.
      */
     public async generateCaptions(videoBuffer: Buffer, mimeType: string = "video/mp4") {
         try {
-            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const modelName = "gemini-2.5-flash";
+            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
 
             // Convert buffer to base64
             const videoData = videoBuffer.toString('base64');
@@ -36,18 +32,26 @@ export class AutoCaptionService {
                 Ensure timestamps are relative to the start of the video (0.0).
             `;
 
-            const result = await model.generateContent([
-                prompt,
-                {
-                    inlineData: {
-                        data: videoData,
-                        mimeType: mimeType
-                    }
-                }
-            ]);
+            const result = await (ai as any).models.generateContent({
+                model: modelName,
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                data: videoData,
+                                mimeType: mimeType
+                            }
+                        }
+                    ]
+                }]
+            });
 
-            const response = await result.response;
+            const response = result.response;
             const content = response.text();
+            
+            // Record usage
+            await geminiPool.recordUsage(key, modelName);
 
             // Extract JSON from response
             const jsonStr = content.match(/\[.*\]/s)?.[0] || '[]';

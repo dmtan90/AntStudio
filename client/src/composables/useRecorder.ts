@@ -1,4 +1,5 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { DocumentProcessor } from '@/utils/recorder/DocumentProcessor'
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import { useTranslations } from '@/composables/useTranslations'
@@ -9,10 +10,14 @@ import { liveSpeechAPI } from '@/utils/ai/LiveSpeechAPI'
 import { WebRTCPublisher } from '@/utils/ai/WebRTCPublisher'
 import { useRecorderCanvas } from './useRecorderCanvas'
 import {
-    Camera, Monitor, Voice, Cpu, CloseOne, CheckOne, Loading, Download, Share, Magic, BroadcastRadio, Effects, MicrophoneOne, SettingConfig
+    Camera, Monitor, Voice, Cpu, 
+    CloseOne, CheckOne, Loading, Download, 
+    Share, Magic, BroadcastRadio, Effects, 
+    MicrophoneOne, SettingConfig, VolumeSmall,
+    VolumeNotice as VolumeOne
 } from '@icon-park/vue-next'
 
-export type RecordingMode = 'camera' | 'camera-screen' | 'screen' | 'audio' | 'podcast' | 'autopilot'
+export type RecordingMode = 'camera' | 'camera-screen' | 'screen' | 'audio' | 'podcast' | 'autopilot' | 'whiteboard'
 
 export const videoFilters = [
     { id: 'none', name: 'Original', css: '', thumb: 'https://images.unsplash.com/photo-1492691523567-69b92043628e?w=200' },
@@ -55,7 +60,7 @@ export function useRecorder() {
     const recordingTime = ref(0)
     const maxDuration = ref(600)
     const micEnabled = ref(true)
-    const activeSidebar = ref<'filters' | 'ai' | 'live' | 'audio' | 'autopilot' | 'podcast' | 'hardware' | 'production' | null>(null)
+    const activeSidebar = ref<'filters' | 'ai' | 'live' | 'audio' | 'autopilot' | 'podcast' | 'hardware' | 'production' | 'whiteboard' | null>(null)
     const appliedFilter = ref('none')
     const showFinishDialog = ref(false)
     const enableAslAssist = ref(false)
@@ -77,9 +82,20 @@ export function useRecorder() {
     const translatedCaption = ref('')
     const targetLanguage = ref('vi')
 
+    // Recording Quality
+    const recordingQuality = ref({
+        resolution: '1080p',
+        fps: 30
+    });
+
     // Streaming State
     const isStreaming = ref(false)
-    const streamConfig = ref({ serverUrl: '', streamKey: '', useAntMedia: true, port: '5443' })
+    const streamConfig = ref({
+        serverUrl: '',
+        streamKey: '',
+        bitrate: 4500,
+        useAntMedia: false 
+    });
     const streamStats = ref<any>({ bitrate: 0, fps: 0, rtt: 0 })
     const publisher = ref<WebRTCPublisher | null>(null)
 
@@ -104,6 +120,18 @@ export function useRecorder() {
     const selectedAvatar = ref('sarah')
     const selectedVoice = ref('en-US-Standard-C')
 
+    // VTuber State
+    const isVTuberActive = ref(false)
+    const vtuberStream = ref<MediaStream | null>(null)
+
+    // Whiteboard State
+    const whiteboardContent = ref<MediaStream | ImageBitmap | null>(null)
+    const whiteboardPages = ref<ImageBitmap[]>([])
+    const currentWhiteboardPage = ref(0)
+    const isWhiteboardLaunchpadActive = ref(true)
+    const isAIPresenting = ref(false)
+    const whiteboardScripts = ref<string[]>([])
+
     // Media State
     const currentStream = ref<MediaStream | null>(null)
     const secondaryStream = ref<MediaStream | null>(null)
@@ -119,6 +147,21 @@ export function useRecorder() {
     const selectedCameraId = ref<string | null>(null)
     const selectedMicId = ref<string | null>(null)
     const micVolume = ref(1.0)
+    
+    // WebAudio Nodes (initialized in setupAudioVisualizer)
+    let micGain: GainNode
+    let bgmGain: GainNode
+    let bgmAudioEl: HTMLAudioElement | null = null
+    let bgmSource: MediaElementAudioSourceNode | null = null
+    let masterDestination: MediaStreamAudioDestinationNode
+    const bgmVolume = ref(0.3)
+    const isDuckingEnabled = ref(true)
+    const bgmUrl = ref<string | null>(null)
+    const bgmLibrary = ref([
+        { id: 'lofi', name: 'Lofi Study', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+        { id: 'jazz', name: 'Smooth Jazz', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+        { id: 'ambient', name: 'Deep Space', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }
+    ])
 
     // Countdown & Shortcuts
     const isCountdownActive = ref(false)
@@ -160,8 +203,9 @@ export function useRecorder() {
     })
 
     const avatarPresets = [
-        { id: 'sarah', name: 'Sarah', image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
-        { id: 'james', name: 'James', image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James' }
+        { id: 'sarah', name: 'Sarah (AI)', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' },
+        { id: 'james', name: 'James (AI)', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400' },
+        { id: 'eva', name: 'Eva (Digital)', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }
     ]
 
     const tabs = computed(() => [
@@ -170,7 +214,8 @@ export function useRecorder() {
         { value: 'screen', label: 'Screen', icon: Monitor },
         { value: 'audio', label: 'Audio Only', icon: Voice },
         { value: 'podcast', label: 'Podcast', icon: Voice },
-        { value: 'autopilot', label: 'Autopilot', icon: Cpu }
+        { value: 'autopilot', label: 'Autopilot', icon: Cpu },
+        { value: 'audio', label: 'Audio', icon: VolumeOne }
     ])
 
     const camSettings = ref<any>({
@@ -207,7 +252,10 @@ export function useRecorder() {
             appliedFilter,
             enableBeauty,
             beautySettings,
-            isRecording
+            isRecording,
+            isVTuberActive,
+            vtuberStream,
+            whiteboardContent
         }
     );
 
@@ -260,6 +308,9 @@ export function useRecorder() {
         if (isRecording.value) { toast.error('Please stop recording first'); return }
         const oldMode = mode.value
         mode.value = newMode
+        if (newMode === 'whiteboard') {
+            isWhiteboardLaunchpadActive.value = true
+        }
         await initializeStream(oldMode)
     }
 
@@ -296,6 +347,8 @@ export function useRecorder() {
                 }
                 if (canReuseScreen && currentStream.value) stream = currentStream.value
                 else { stream = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: true }); stream.getVideoTracks()[0].onended = () => { isScreenShareEnded.value = true } }
+            } else if (mode.value === 'whiteboard') {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
             } else {
                 stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
             }
@@ -326,8 +379,9 @@ export function useRecorder() {
     const startRecording = () => {
         const s = processingCanvas.value?.captureStream(30)
         if (!s) return
-        if (audioContext && masterGain) {
-            const dest = audioContext.createMediaStreamDestination(); masterGain.connect(dest); const track = dest.stream.getAudioTracks()[0]; if (track) s.addTrack(track)
+        if (audioContext && masterDestination) {
+            const track = masterDestination.stream.getAudioTracks()[0];
+            if (track) s.addTrack(track)
         } else if (currentStream.value) { currentStream.value.getAudioTracks().forEach(t => s.addTrack(t)) }
 
         recordedChunks.value = []; mediaRecorder.value = new (window as any).MediaRecorder(s, { mimeType: 'video/webm;codecs=vp9,opus' })
@@ -351,8 +405,47 @@ export function useRecorder() {
 
     const setupAudioVisualizer = async (s: MediaStream) => {
         if (!audioContext) {
-            audioContext = new AudioContext(); masterGain = audioContext.createGain(); analyser = audioContext.createAnalyser(); compressor = audioContext.createDynamicsCompressor()
-            analyser.fftSize = 128; masterGain.connect(compressor); compressor.connect(analyser)
+            audioContext = new AudioContext()
+            masterGain = audioContext.createGain()
+            bgmGain = audioContext.createGain()
+            masterDestination = audioContext.createMediaStreamDestination()
+            analyser = audioContext.createAnalyser()
+            compressor = audioContext.createDynamicsCompressor()
+            
+            analyser.fftSize = 128
+            masterGain.connect(compressor)
+            bgmGain.connect(compressor)
+            compressor.connect(analyser)
+            compressor.connect(masterDestination)
+            
+            // Start Ducking/Volume Loop
+            const updateLevels = () => {
+                const dataArray = new Uint8Array(analyser.frequencyBinCount)
+                analyser.getByteFrequencyData(dataArray)
+                
+                // RMS Calculation for mic activity
+                let sum = 0
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i] * dataArray[i]
+                }
+                const rms = Math.sqrt(sum / dataArray.length)
+                
+                // Ducking Logic
+                if (isDuckingEnabled.value && bgmGain) {
+                    const threshold = 40 // Calibration point
+                    const duckAmount = 0.2
+                    const targetGain = rms > threshold ? (bgmVolume.value * duckAmount) : bgmVolume.value
+                    bgmGain.gain.setTargetAtTime(targetGain, audioContext.currentTime, 0.1)
+                } else if (bgmGain) {
+                    bgmGain.gain.setTargetAtTime(bgmVolume.value, audioContext.currentTime, 0.1)
+                }
+                
+                // Update UI visualization (if needed)
+                // audioLevels.value = Array.from(dataArray)
+                
+                requestAnimationFrame(updateLevels)
+            }
+            updateLevels()
         }
         if (audioContext.state === 'suspended') await audioContext.resume()
         if (micSource) try { micSource.disconnect() } catch (e) { }
@@ -368,16 +461,326 @@ export function useRecorder() {
         if (e.code === 'KeyS' && isTeleprompterActive.value) isTeleprompterScrolling.value = !isTeleprompterScrolling.value
     }
 
+    let teleprompterInterval: any = null;
+    watch(isTeleprompterScrolling, (val) => {
+        if (val) {
+            teleprompterInterval = setInterval(() => {
+                teleprompterScrollPos.value += (teleprompterSpeed.value * 0.5);
+            }, 30);
+        } else {
+            clearInterval(teleprompterInterval);
+        }
+    });
+
     onMounted(() => { window.addEventListener('keydown', handleKeyDown); enumerateDevices(); initializeStream() })
-    onUnmounted(() => { window.removeEventListener('keydown', handleKeyDown); if (currentStream.value) currentStream.value.getTracks().forEach(t => t.stop()); if (audioContext) audioContext.close(); stopCanvasRendering(); clearInterval(timer) })
+    onUnmounted(() => { 
+        window.removeEventListener('keydown', handleKeyDown); 
+        if (currentStream.value) currentStream.value.getTracks().forEach(t => t.stop()); 
+        if (audioContext) audioContext.close(); 
+        stopCanvasRendering(); 
+        clearInterval(timer);
+        clearInterval(teleprompterInterval);
+        if ((window as any)._recorderRecognition) (window as any)._recorderRecognition.stop();
+    })
 
     return {
         mode, isRecording, recordingTime, maxDuration, micEnabled, activeSidebar, appliedFilter, showFinishDialog, enableAslAssist, aslMode, enableBeauty, beautySettings, currentDb, isAiActive, processingCanvas, displayCanvas, sourceVideo, webcamVideo, activeCaptions, currentCaption, translatedCaption, targetLanguage, isStreaming, streamConfig, streamStats, publisher, fileInput, presentationInput, resourcePool, activeOverlays, autopilotData, currentSlideIndex, isAnalyzing, selectedAvatar, selectedVoice, currentStream, secondaryStream, audioLevels, isScreenShareEnded, avatarPresets, tabs, camSettings, overlayFile, podcastSettings,
         videoDevices, audioDevices, selectedCameraId, selectedMicId, micVolume, recordedVideoUrl, isCountdownActive, countdownValue, showMiniPreview,
         isTeleprompterActive, isTeleprompterScrolling, teleprompterScript, teleprompterSpeed, teleprompterFontSize, teleprompterScrollPos,
-        layoutPreset, isAnnotationActive, annotationTool, annotationColor, annotationSize,
+        layoutPreset, isAnnotationActive, annotationTool, annotationColor, annotationSize, recordingQuality,
+        isVTuberActive, vtuberStream, whiteboardContent, whiteboardPages, currentWhiteboardPage, isWhiteboardLaunchpadActive,
+        isAIPresenting, whiteboardScripts,
+        bgmVolume, isDuckingEnabled, bgmUrl, bgmLibrary,
+        toggleBGM: () => {
+            if (!bgmUrl.value) {
+                bgmUrl.value = bgmLibrary.value[0].url
+            }
+            
+            if (!bgmAudioEl) {
+                bgmAudioEl = new Audio()
+                bgmAudioEl.crossOrigin = "anonymous"
+                bgmAudioEl.loop = true
+            }
+
+            // Route audio element through WebAudio if not already done
+            if (!bgmSource && audioContext && bgmGain) {
+                 bgmSource = audioContext.createMediaElementSource(bgmAudioEl)
+                 bgmSource.connect(bgmGain)
+            }
+
+            if (bgmAudioEl.src !== bgmUrl.value) {
+                 bgmAudioEl.src = bgmUrl.value!
+            }
+
+            if (bgmAudioEl.paused) {
+                bgmAudioEl.play().catch(e => console.error("BGM Play failed", e))
+                toast.success("Background Music Playing")
+            } else {
+                bgmAudioEl.pause()
+                toast.info("Background Music Paused")
+            }
+        },
         toggleAI, switchMode, initializeStream, toggleRecording, stopRecording, startRecording, startCountdown,
+        nextWhiteboardPage: () => {
+            if (currentWhiteboardPage.value < whiteboardPages.value.length - 1) {
+                currentWhiteboardPage.value++
+                whiteboardContent.value = whiteboardPages.value[currentWhiteboardPage.value]
+            }
+        },
+        prevWhiteboardPage: () => {
+             if (currentWhiteboardPage.value > 0) {
+                 currentWhiteboardPage.value--
+                 whiteboardContent.value = whiteboardPages.value[currentWhiteboardPage.value]
+             }
+        },
         startDrawing, draw, stopDrawing, clearAnnotations,
-        handleFileUpload: (e: any) => { }, handlePresentationUpload: (e: any) => { }, startAutopilotSession: () => { }, downloadRecording: () => { }, saveToProject: () => { }, toggleAIFilter: () => { }, toggleCaptions: () => { }, toggleLiveStream: () => { }, toggleMic: () => { micEnabled.value = !micEnabled.value }, triggerFileUpload: () => fileInput.value?.click(), triggerPresentationUpload: () => presentationInput.value?.click(), triggerResourceUpload: () => { }, toggleOverlay: (id: string) => { }, formatTime: (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`, enumerateDevices, t, router, projectStore
+        handleFileUpload: (e: any) => {
+             const file = e.target.files?.[0];
+             if (!file) return;
+             const url = URL.createObjectURL(file);
+             const type = file.type.startsWith('video') ? 'video' : 'image';
+             
+             // Create element to get dimensions
+             let width = 400;
+             let height = 300;
+             let el: any;
+             
+             if (type === 'image') {
+                 el = new Image();
+                 el.src = url;
+                 el.onload = () => {
+                      // Adjust aspect
+                 }
+             } else {
+                 el = document.createElement('video');
+                 el.src = url;
+             }
+             
+             resourcePool.value.push({
+                 id: crypto.randomUUID(),
+                 name: file.name,
+                 url,
+                 type,
+                 x: 50, y: 50,
+                 width, height, aspect: width/height,
+                 element: el
+             });
+             toast.success(`Imported ${file.name}`);
+        },
+        generateWhiteboardAIScripts: async () => {
+             if (whiteboardPages.value.length === 0) return;
+             const aiStore = (await import('@/stores/ai')).useAIStore();
+             const toastId = toast.loading('AI is analyzing your slides...');
+             try {
+                 const scripts: string[] = [];
+                 for (let i = 0; i < whiteboardPages.value.length; i++) {
+                     const bitmap = whiteboardPages.value[i];
+                     const canvas = document.createElement('canvas');
+                     canvas.width = bitmap.width; canvas.height = bitmap.height;
+                     const ctx = canvas.getContext('2d')!;
+                     ctx.drawImage(bitmap, 0, 0);
+                     const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                     
+                     const prompt = `You are a professional presenter. Analyze this presentation slide and write a clear, engaging script (approx 2 sentences) for an AI avatar to speak. Return only the script text.`;
+                     const res = await (aiStore as any).analyzeVision(base64, prompt); 
+                     scripts.push(res.text || `This slide covers technical details of our presentation.`);
+                     toast.message(`Analyzed slide ${i+1}/${whiteboardPages.value.length}`, { id: toastId });
+                 }
+                 whiteboardScripts.value = scripts;
+                 toast.success('AI Scripts Generated!', { id: toastId });
+             } catch (err) {
+                 toast.error('AI Analysis failed', { id: toastId });
+             }
+        },
+        startAIAutopilot: () => {
+             if (whiteboardScripts.value.length === 0) {
+                 toast.error('Please generate scripts first');
+                 return;
+             }
+             // Prepare Autopilot Data
+             autopilotData.value = {
+                 slides: whiteboardPages.value.map((p, i) => ({
+                      id: i.toString(),
+                      image: p, // StudioWorker/Canvas already handles ImageBitmap
+                      note: whiteboardScripts.value[i] || ""
+                 }))
+             };
+             currentSlideIndex.value = 0;
+             mode.value = 'autopilot';
+             isAIPresenting.value = true;
+             toast.success('AI Whiteboard Autopilot Started');
+        },
+        handlePresentationUpload: async (e: any) => {
+            const file = e.target.files[0]
+            if (!file) return
+            const toastId = toast.loading(`Processing ${file.name}...`)
+            try {
+                const { pages, type: docType } = await DocumentProcessor.processFile(file)
+                whiteboardPages.value = pages
+                currentWhiteboardPage.value = 0
+                if (pages.length > 0) {
+                    whiteboardContent.value = pages[0]
+                    isWhiteboardLaunchpadActive.value = false
+                }
+                toast.success(`${file.name} imported`, { id: toastId })
+            } catch (err: any) {
+                console.error(err)
+                toast.error(err.message || 'Processing failed', { id: toastId })
+            }
+        },
+        startAutopilotSession: () => {
+             if (!autopilotData.value) {
+                 toast.error('No presentation loaded');
+                 return;
+             }
+             isAnalyzing.value = true;
+             setTimeout(() => {
+                 isAnalyzing.value = false;
+                 toast.success('Autopilot session started');
+                 mode.value = 'autopilot';
+             }, 1500);
+        },
+        downloadRecording: () => {
+             if (!recordedVideoUrl.value) return;
+             const a = document.createElement('a');
+             a.href = recordedVideoUrl.value;
+             a.download = `recording-${Date.now()}.webm`;
+             document.body.appendChild(a);
+             a.click();
+             document.body.removeChild(a);
+        },
+        saveToProject: async () => {
+             if (!recordedVideoUrl.value) return;
+             try {
+                 const blob = await fetch(recordedVideoUrl.value).then(r => r.blob());
+                 const formData = new FormData();
+                 formData.append('file', blob, `rec-${Date.now()}.webm`);
+                 formData.append('purpose', 'recording');
+                 // Uses mediaStore implicitly or we can emit an event. 
+                 // Since we can't easily import store here without modifying the top, 
+                 // we will rely on a dispatched action or just import it at top if possible.
+                 // Checking imports... yes we can import at top.
+                 const mediaStore = (await import('@/stores/media')).useMediaStore();
+                 await mediaStore.uploadMedia(formData);
+                 toast.success('Saved to project assets');
+                 showFinishDialog.value = false;
+             } catch (e) {
+                 console.error(e);
+                 toast.error('Failed to save');
+             }
+        },
+        toggleAIFilter: () => {
+             // Rotate filters or toggle specific AI look
+             const currentIdx = videoFilters.findIndex(f => f.id === appliedFilter.value);
+             const nextIdx = (currentIdx + 1) % videoFilters.length;
+             appliedFilter.value = videoFilters[nextIdx].id;
+             toast(`Filter: ${videoFilters[nextIdx].name}`);
+        },
+        toggleCaptions: () => {
+             activeCaptions.value = !activeCaptions.value;
+             toast(activeCaptions.value ? 'Captions Enabled' : 'Captions Disabled');
+             
+             if (activeCaptions.value) {
+                 // Start Speech Recognition
+                 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                     const recognition = new SpeechRecognition();
+                     recognition.continuous = true;
+                     recognition.interimResults = true;
+                     recognition.lang = targetLanguage.value === 'vi' ? 'vi-VN' : 'en-US';
+                     
+                     recognition.onresult = (event: any) => {
+                         let final = '';
+                         let interim = '';
+                         for (let i = event.resultIndex; i < event.results.length; ++i) {
+                             if (event.results[i].isFinal) {
+                                 final += event.results[i][0].transcript;
+                             } else {
+                                 interim += event.results[i][0].transcript;
+                             }
+                         }
+                         currentCaption.value = final || interim;
+                     };
+                     
+                     recognition.onend = () => {
+                         if (activeCaptions.value) recognition.start();
+                     };
+                     
+                     recognition.start();
+                     (window as any)._recorderRecognition = recognition; // Keep ref to stop later
+                 } else {
+                     toast.error('Speech Recognition not supported in this browser');
+                     activeCaptions.value = false;
+                 }
+             } else {
+                 // Stop Speech Recognition
+                 if ((window as any)._recorderRecognition) {
+                     (window as any)._recorderRecognition.stop();
+                     (window as any)._recorderRecognition = null;
+                 }
+                 currentCaption.value = '';
+             }
+        },
+        toggleLiveStream: async () => {
+             if (isStreaming.value) {
+                 // Stop
+                 if (publisher.value) {
+                     publisher.value.stop();
+                     publisher.value = null;
+                 }
+                 isStreaming.value = false;
+                 toast.success('Stream ended');
+             } else {
+                 if (!streamConfig.value.serverUrl || !streamConfig.value.streamKey) {
+                     toast.error('Please configure stream settings in Side Panel > Live');
+                     activeSidebar.value = 'live';
+                     return;
+                 }
+                 try {
+                     // Start
+                     publisher.value = new WebRTCPublisher({
+                         websocketUrl: streamConfig.value.serverUrl,
+                         streamId: streamConfig.value.streamKey
+                     });
+                     if (currentStream.value) {
+                         await publisher.value.start(currentStream.value);
+                         isStreaming.value = true;
+                         toast.success('You are LIVE!');
+                     }
+                 } catch (e) {
+                     toast.error('Connection failed');
+                 }
+             }
+        },
+        toggleMic: () => { micEnabled.value = !micEnabled.value },
+        triggerFileUpload: () => fileInput.value?.click(),
+        triggerPresentationUpload: () => presentationInput.value?.click(),
+        triggerResourceUpload: () => fileInput.value?.click(),
+        toggleOverlay: (id: string) => {
+             const idx = activeOverlays.value.indexOf(id);
+             if (idx === -1) activeOverlays.value.push(id);
+             else activeOverlays.value.splice(idx, 1);
+        },
+        handleVTuberStreamReady: (stream: MediaStream) => {
+            vtuberStream.value = stream;
+            isVTuberActive.value = true;
+            toast.success('VTuber Avatar Active');
+        },
+        handleWhiteboardScreenShare: async () => {
+            try {
+                const stream = await (navigator.mediaDevices as any).getDisplayMedia({ video: true });
+                whiteboardContent.value = stream;
+                isWhiteboardLaunchpadActive.value = false;
+                toast.success('Whiteboard Screen Share Started');
+            } catch (e) {
+                toast.error('Screen share cancelled');
+            }
+        },
+        handleWhiteboardFileImport: async (type: 'pdf' | 'ppt' | 'video') => {
+            toast(`Importing ${type.toUpperCase()}...`);
+            fileInput.value?.click();
+        },
+        formatTime: (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`, enumerateDevices, t, router, projectStore
     }
 }
+

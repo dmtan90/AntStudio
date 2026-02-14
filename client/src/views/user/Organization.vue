@@ -20,7 +20,7 @@
                 <el-card class="member-card cinematic-panel">
                     <template #header>
                         <div class="flex justify-between items-center">
-                            <span class="text-xs font-black uppercase tracking-widest opacity-60">Neural Members
+                            <span class="text-xs font-black uppercase tracking-widest opacity-60">VTuber Members
                                 Registry</span>
                             <el-button type="primary" plain bg round size="small"
                                 @click="showInviteDialog = true">Invite Specialist</el-button>

@@ -434,7 +434,7 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
     try {
         await connectDB();
         const { id } = req.params;
-        const { title, description, s3Key } = req.body; // s3Key if coming from warehouse
+        const { title, description, s3Key, s3Url } = req.body; // s3Key/s3Url if coming from warehouse
 
         const account = await UserPlatformAccount.findOne({
             _id: id,
@@ -450,31 +450,38 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
             // File upload
             videoStream = fs.createReadStream(req.file.path);
             cleanup = () => fs.unlinkSync(req.file!.path); // Delete temp file after
-        } else if (s3Key) {
-            const client = getS3Client();
-            const command = new GetObjectCommand({
-                Bucket: config.awsS3Bucket,
-                Key: decodeURIComponent(s3Key)
-            });
-
-            const response = await client.send(command).catch(err => {
-                console.error('S3 Client error:', err);
-                return null;
-            });
-
-            if (!response?.Body) {
-                throw new Error('Failed to get video stream from S3');
-            }
-
-            videoStream = response.Body;
+        } else if (s3Key || s3Url) {
             // Warehouse upload (stream from S3 or URL)
-            // const axios = (await import('axios')).default;
+            try {
+                if (s3Key) {
+                    const client = getS3Client();
+                    const command = new GetObjectCommand({
+                        Bucket: config.awsS3Bucket,
+                        Key: decodeURIComponent(s3Key)
+                    });
+                    const response = await client.send(command).catch(err => {
+                        console.error('S3 GetObject failed directly, will try signed URL fallback if possible');
+                        return null;
+                    });
+                    if (response?.Body) {
+                        videoStream = response.Body;
+                    }
+                }
 
-            // Ensure we have a URL, generating signed fallback if needed
-            const { getSignedS3Url } = await import('../utils/s3.js');
-            const videoUrl = s3Url || await getSignedS3Url(s3Key);
-            const videoRes = await axios.get(videoUrl, { responseType: 'stream' });
-            // videoStream = videoRes.data;
+                if (!videoStream) {
+                    const axios = (await import('axios')).default;
+                    const { getSignedS3Url } = await import('../utils/s3.js');
+                    const videoUrl = s3Url || (s3Key ? await getSignedS3Url(s3Key) : null);
+                    
+                    if (!videoUrl) throw new Error('No valid video URL or S3 key provided');
+                    
+                    const videoRes = await axios.get(videoUrl, { responseType: 'stream' });
+                    videoStream = videoRes.data;
+                }
+            } catch (err: any) {
+                console.error('Failed to resolve video stream from warehouse:', err);
+                return res.status(400).json({ success: false, error: 'Failed to retrieve video source' });
+            }
         } else {
             return res.status(400).json({ success: false, error: 'No video source provided' });
         }

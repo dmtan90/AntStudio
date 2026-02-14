@@ -1,26 +1,82 @@
 <template>
-    <div class="scene-card" :class="{ active: active, collapsed: !showTiming }" :style="{ width: cardWidth + 'px' }"
-        @click="$emit('select')">
+    <div class="scene-card group flex flex-col" :class="{ active: active, collapsed: !showTiming }"
+        :style="{ width: cardWidth + 'px' }" @click="$emit('select')">
 
-        <!-- Scene Thumbnail with Live Preview (Repeat Background) -->
-        <div class="scene-thumbnail" :style="thumbnailStyle">
-            <span class="scene-number">{{ index + 1 }}</span>
-        </div>
+        <!-- Visual Scene Card (Top) -->
+        <div class="scene-visual relative w-full h-16 shrink-0">
+            <!-- Scene Thumbnail as Full Background (Filmstrip) -->
+            <div class="scene-thumbnail-bg absolute inset-0 z-0" :style="thumbnailStyle"></div>
+            <div
+                class="scene-overlay absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-[1] pointer-events-none">
+            </div>
 
-        <!-- Elements Stacked Vertically (conditional) -->
-        <div v-if="showTiming" class="scene-elements">
+            <div class="scene-header-info absolute top-2 left-2 z-10 flex items-center gap-2">
+                <span class="scene-number-badge">{{ index + 1 }}</span>
+            </div>
+
             <!-- Scene Waveform Overlay (only if audio exists) -->
             <div v-if="hasAudio" class="scene-waveform-overlay">
                 <div v-for="(val, i) in sceneWaveform" :key="i" class="waveform-bar"
-                    :style="{ height: Math.max(2, val * 100) + '%', opacity: 0.3 + (val * 0.7) }">
+                     :style="{ height: Math.max(2, val * 100) + '%', opacity: 0.3 + (val * 0.7) }">
                 </div>
             </div>
 
+            <!-- Scene Actions -->
+            <div
+                class="scene-actions absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                <el-dropdown trigger="click" @command="handleCommand">
+                    <button class="action-btn p-1 bg-black/60 rounded-md hover:bg-black/80 border border-white/10"
+                        @click.stop>
+                        <MoreOne :size="12" class="text-white" />
+                    </button>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                            <el-dropdown-item command="duplicate">
+                                <Copy :size="14" class="mr-2" /> Duplicate Scene
+                            </el-dropdown-item>
+                            <el-dropdown-item command="delete" v-if="editor.pages.length > 1">
+                                <Delete :size="14" class="mr-2" /> Delete Scene
+                            </el-dropdown-item>
+                            <div class="border-t border-white/5 my-1"></div>
+                            <el-dropdown-item command="split" :disabled="!active">
+                                <SplitBranch :size="14" class="mr-2" /> Split at Playhead
+                            </el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
+            </div>
+
+            <!-- Scene Duration & Volume -->
+            <div
+                class="scene-footer absolute bottom-1 right-1 flex items-center gap-2 px-1.5 py-0.5 bg-black/40 backdrop-blur-sm rounded-md border border-white/5 z-20">
+                <el-popover v-if="hasAudio" placement="top" :width="40" trigger="click"
+                    popper-class="volume-popover-mini">
+                    <template #reference>
+                        <button class="volume-btn text-white/60 hover:text-white transition-colors" @click.stop>
+                            <VolumeMute v-if="sceneVolume === 0" :size="12" />
+                            <VolumeSmall v-else-if="sceneVolume < 50" :size="12" />
+                            <VolumeNotice v-else :size="12" />
+                        </button>
+                    </template>
+                    <div class="h-24 py-2 flex justify-center" @click.stop>
+                        <el-slider v-model="sceneVolume" vertical :min="0" :max="100" :show-tooltip="false"
+                            height="80px" />
+                    </div>
+                </el-popover>
+                <div class="scene-duration text-[10px] font-mono text-white/80 select-none">{{
+                    formatDuration(sceneDuration)
+                    }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Elements Stacked Vertically (conditional) -->
+        <div v-if="showTiming" class="scene-elements mt-1 w-full relative">
             <div v-for="(element, elementIndex) in sceneElements" :key="element.name" class="element-chip group/chip"
                 :class="[getElementClass(element), { 'opacity-50': element.meta?.hidden }]" draggable="true"
-                @dragstart="onChipDragStart($event, elementIndex)" @dragover.prevent
-                @drop="onChipDrop($event, elementIndex)" @click.stop="$emit('select-element', element)">
-                <component :is="getElementIcon(element.type)" :size="12" theme="outline" class="shrink-0" />
+                @dragstart="onChipDragStart($event, elementIndex as any)" @dragover.prevent
+                @drop="onChipDrop($event, elementIndex as number)" @click.stop="$emit('select-element', element)">
+                <component :is="getElementIcon(element.type)" :size="10" theme="outline" class="shrink-0" />
                 <span class="element-name">{{ element.name }}</span>
 
                 <!-- Visibility/Lock Toggles -->
@@ -37,50 +93,6 @@
                 </div>
 
                 <span class="element-duration ml-auto">{{ formatDuration(element.meta?.duration || 5000) }}</span>
-            </div>
-        </div>
-
-        <!-- Scene Actions -->
-        <div class="scene-actions absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-            <el-dropdown trigger="click" @command="handleCommand">
-                <button class="action-btn p-1 bg-black/60 rounded-md hover:bg-black/80 border border-white/10"
-                    @click.stop>
-                    <MoreOne :size="16" class="text-white" />
-                </button>
-                <template #dropdown>
-                    <el-dropdown-menu>
-                        <el-dropdown-item command="duplicate">
-                            <Copy :size="14" class="mr-2" /> Duplicate Scene
-                        </el-dropdown-item>
-                        <el-dropdown-item command="delete" v-if="editor.pages.length > 1">
-                            <Delete :size="14" class="mr-2" /> Delete Scene
-                        </el-dropdown-item>
-                        <div class="border-t border-white/5 my-1"></div>
-                        <el-dropdown-item command="split" :disabled="!active">
-                            <SplitBranch :size="14" class="mr-2" /> Split at Playhead
-                        </el-dropdown-item>
-                    </el-dropdown-menu>
-                </template>
-            </el-dropdown>
-        </div>
-
-        <!-- Scene Duration & Volume -->
-        <div
-            class="scene-footer absolute bottom-1 right-1 flex items-center gap-2 px-1.5 py-0.5 bg-black/40 backdrop-blur-sm rounded-md border border-white/5 z-20">
-            <el-popover v-if="hasAudio" placement="top" :width="40" trigger="click" popper-class="volume-popover-mini">
-                <template #reference>
-                    <button class="volume-btn text-white/60 hover:text-white transition-colors" @click.stop>
-                        <VolumeMute v-if="sceneVolume === 0" :size="12" />
-                        <VolumeSmall v-else-if="sceneVolume < 50" :size="12" />
-                        <VolumeNotice v-else :size="12" />
-                    </button>
-                </template>
-                <div class="h-24 py-2 flex justify-center" @click.stop>
-                    <el-slider v-model="sceneVolume" vertical :min="0" :max="100" :show-tooltip="false" height="80px" />
-                </div>
-            </el-popover>
-            <div class="scene-duration text-[10px] font-mono text-white/80 select-none">{{ formatDuration(sceneDuration)
-                }}
             </div>
         </div>
     </div>
@@ -124,7 +136,9 @@ const emit = defineEmits(['select', 'select-element']);
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
 const { timeline } = storeToRefs(canvasStore);
-const canvasPreviewUrl = ref('');
+const canvasPreviewUrl = computed(() => {
+    return editor.getCanvasPreviewUrl(props.index);
+});
 const sceneWaveform = ref<number[]>([]);
 const sceneVolume = ref(100);
 import { WaveformGenerator } from 'video-editor/utils/WaveformGenerator';
@@ -227,7 +241,7 @@ const toggleElementLock = (element: any) => {
 // Card width based on zoom and scene duration
 const cardWidth = computed(() => {
     const duration = (props.scene.timeline?.duration || 5000) / 1000; // seconds
-    return Math.max(120, duration * props.zoom); // Min 120px
+    return duration * props.zoom;
 });
 
 const sceneDuration = computed(() => props.scene.timeline?.duration || 5000);
@@ -245,7 +259,7 @@ const hasAudio = computed(() => {
 
 // Thumbnail style with repeat background
 const thumbnailStyle = computed(() => {
-    const bgUrl = canvasPreviewUrl.value || props.scene.template?.page?.thumbnail;
+    const bgUrl = canvasPreviewUrl.value || props.scene.thumbnail || props.scene.template?.page?.thumbnail;
 
     if (!bgUrl) {
         return {
@@ -253,46 +267,23 @@ const thumbnailStyle = computed(() => {
         };
     }
 
+    // Use contain to maintain aspect ratio properly
     return {
         backgroundImage: `url(${bgUrl})`,
-        backgroundSize: 'auto 100%',
-        backgroundRepeat: 'repeat-x',
-        backgroundPosition: 'left center'
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center center',
+        imageRendering: 'crisp-edges' as any
     };
 });
 
-// Generate canvas preview
-const generatePreview = async () => {
-    // Only generate preview for the active scene to save resources
-    if (!props.active) return;
+// Calculate aspect ratio for the card based on artboard dimensions
+const cardAspectRatio = computed(() => {
+    const width = editor.dimension?.width || 1920;
+    const height = editor.dimension?.height || 1080;
+    return width / height;
+});
 
-    try {
-        const page = editor.pages[props.index];
-        if (!page?.initialized || page.template?.status !== 'completed') {
-            return;
-        }
-
-        const canvas = editor.getCanvasInstance(props.index);
-        if (!canvas) return;
-
-        // Check if canvas is properly initialized
-        const fabricCanvas = canvas as any;
-        if (!fabricCanvas.lowerCanvasEl || !fabricCanvas.contextContainer) {
-            return;
-        }
-
-        // Render canvas to dataURL
-        const dataUrl = fabricCanvas.toDataURL({
-            format: 'webp',
-            quality: 0.5, // Lower quality for thumbnail
-            multiplier: 0.2 // Smaller size
-        });
-
-        canvasPreviewUrl.value = dataUrl;
-    } catch (error) {
-        console.error('Failed to generate canvas preview:', error);
-    }
-};
 
 const generateWaveform = async () => {
     if (!hasAudio.value) {
@@ -346,22 +337,14 @@ const formatDuration = (ms: number) => {
 
 // Watch for scene changes
 watch(() => props.scene, () => {
-    generatePreview();
     generateWaveform();
 }, { deep: true });
-watch(() => props.active, (isActive) => {
-    if (isActive) generatePreview();
-});
 
 onMounted(() => {
-    generatePreview();
     generateWaveform();
 });
 
 onUnmounted(() => {
-    if (canvasPreviewUrl.value) {
-        URL.revokeObjectURL(canvasPreviewUrl.value);
-    }
 });
 </script>
 
@@ -371,18 +354,31 @@ onUnmounted(() => {
     flex-direction: column;
     min-width: 120px;
     max-width: 300px;
-    height: 180px;
-    background: rgba(26, 26, 26, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 8px;
+    height: 64px;
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0; // Remove padding to fit thumbnail to border
     margin-right: 8px;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        pointer-events: none;
+        z-index: 5;
+    }
 
     &.collapsed {
-        height: 100px;
+        height: 64px;
     }
 
     &.active {
@@ -391,42 +387,40 @@ onUnmounted(() => {
     }
 
     &:hover {
-        border-color: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.5);
+        // Ensure no internal dimming happens on hover
+        background: rgba(30, 30, 30, 0.95);
     }
 }
 
-.scene-thumbnail {
-    position: relative;
+.scene-thumbnail-bg {
     width: 100%;
-    aspect-ratio: 16/9;
-    border-radius: 8px;
-    overflow: hidden;
-    background: rgba(0, 0, 0, 0.5);
-    margin-bottom: 8px;
-    flex-shrink: 0;
+    height: 100%;
+    background-color: #000;
+}
 
-    .scene-number {
-        position: absolute;
-        top: 4px;
-        left: 4px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: bold;
-        z-index: 1;
-    }
+.scene-number-badge {
+    background: var(--brand-primary);
+    color: black;
+    padding: 0.5px 4px;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: 800;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .scene-elements {
+    position: relative;
+    z-index: 10;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
+    padding: 24px 4px 4px 4px; // Leave space for header info
+    max-height: 120px; // Limit height to prevent excessive expansion
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: thin;
 
     &::-webkit-scrollbar {
         width: 4px;
@@ -440,20 +434,22 @@ onUnmounted(() => {
 
 .scene-actions {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 4px;
+    right: 4px;
     z-index: 20;
+    display: flex;
+    gap: 2px;
 
     .action-btn {
-        width: 28px;
-        height: 28px;
+        width: 18px;
+        height: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
         background: rgba(0, 0, 0, 0.6);
         backdrop-filter: blur(4px);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
+        border-radius: 4px;
         color: white;
         cursor: pointer;
         transition: all 0.2s;
@@ -487,10 +483,10 @@ onUnmounted(() => {
 .element-chip {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 11px;
+    gap: 3px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 9px;
     cursor: pointer;
     transition: all 0.15s;
     border: 1px solid transparent;
@@ -503,7 +499,7 @@ onUnmounted(() => {
     }
 
     .element-duration {
-        font-size: 9px;
+        font-size: 7px;
         opacity: 0.6;
         font-family: monospace;
     }

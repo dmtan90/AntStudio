@@ -12,6 +12,7 @@ export interface IStreamSession {
         key: string;
         platform: string;
         accountId?: string;
+        externalChatId?: string;
     }>;
     startTime?: Date;
     endTime?: Date;
@@ -29,7 +30,8 @@ const streamSessionSchema = new mongoose.Schema<IStreamSession>({
         url: String,
         key: String,
         platform: String,
-        accountId: String
+        accountId: String,
+        externalChatId: String
     }],
     startTime: { type: Date },
     endTime: { type: Date },

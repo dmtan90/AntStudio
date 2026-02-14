@@ -29,7 +29,9 @@ export const propertiesToInclude = [
   "volume",
   "muted",
   "keepRatio",
-  "thumbnail"
+  "keepRatio",
+  "thumbnail",
+  "originalSrc"
 ];
 
 export const textLayoutProperties = ["textTransform"];

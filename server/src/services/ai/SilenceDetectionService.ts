@@ -32,7 +32,7 @@ export class SilenceDetectionService {
                 let totalDuration = 0;
 
                 ffmpeg(tempPath)
-                    .ffprobe((err, data) => {
+                    .ffprobe((err: any, data: any) => {
                         if (!err && data.format.duration) {
                             totalDuration = data.format.duration;
                         }
@@ -41,10 +41,10 @@ export class SilenceDetectionService {
                 ffmpeg(tempPath)
                     .audioFilters(`silencedetect=n=${noise}dB:d=${duration}`)
                     .format('null')
-                    .on('start', (commandLine) => {
+                    .on('start', (commandLine: string) => {
                         console.log(`[SilenceDetection] Spawned FFmpeg with command: ${commandLine}`);
                     })
-                    .on('stderr', (stderrLine) => {
+                    .on('stderr', (stderrLine: string) => {
                         // silencedetect outputs to stderr
                         const startMatch = stderrLine.match(silenceStartRegex);
                         if (startMatch) {
@@ -60,7 +60,7 @@ export class SilenceDetectionService {
                             currentSilenceStart = null;
                         }
                     })
-                    .on('error', (err) => {
+                    .on('error', (err: Error) => {
                         console.error('[SilenceDetection] FFmpeg error:', err);
                         reject(err);
                     })

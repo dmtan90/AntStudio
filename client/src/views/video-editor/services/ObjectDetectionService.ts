@@ -22,12 +22,12 @@ export class ObjectDetectionService {
         if (this.objectDetector) return;
 
         const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
+            "/models/mediapipe"
         );
 
         this.objectDetector = await ObjectDetector.createFromOptions(vision, {
             baseOptions: {
-                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite",
+                modelAssetPath: "/models/mediapipe/efficientdet_lite0.tflite",
                 delegate: "GPU"
             },
             scoreThreshold: 0.5,

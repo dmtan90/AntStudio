@@ -42,7 +42,7 @@
               <img :src="product.image"
                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               <div v-if="product.isActive" class="absolute inset-0 bg-orange-500/20 flex items-center justify-center">
-                <check theme="outline" size="24" class="text-white drop-shadow-lg" />
+                <Check theme="outline" size="24" class="text-white drop-shadow-lg" />
               </div>
             </div>
 
@@ -60,7 +60,7 @@
                     STOCK</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                  <ranking theme="outline" size="12" class="text-white/20" />
+                  <Ranking theme="outline" size="12" class="text-white/20" />
                   <span class="text-[9px] font-black text-white/30 uppercase tracking-widest">{{ product.clicks || 0 }}
                     CLICKS</span>
                 </div>
@@ -98,7 +98,7 @@
 
             <div class="flex flex-col items-center gap-4">
               <div v-if="isFlashSaleActive" class="flex flex-col items-center gap-2">
-                <div class="text-3xl font-mono font-black text-orange-500 animate-pulse">09:42</div>
+                <div class="text-3xl font-mono font-black text-orange-500 animate-pulse">{{ flashTimeLeft }}</div>
                 <button @click="stopFlashSale"
                   class="px-8 py-3 bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">
                   Stop Sale
@@ -125,7 +125,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { Close, Shopping, Lightning, Flashlamp, ShoppingCart, Share, PreviewOpen, DeleteOne as Trash } from '@icon-park/vue-next';
+import { Close, Shopping, Lightning, Flashlamp, ShoppingCart, Share, PreviewOpen, DeleteOne as Trash, Check, Ranking } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
 import { useUIStore } from '@/stores/ui';
 import { toast } from 'vue-sonner';
@@ -146,6 +146,21 @@ const uiStore = useUIStore();
 const isLive = ref(false);
 const activeTab = ref('products');
 const flashTimer = ref<any>(null);
+const flashTimeLeft = ref('00:00');
+
+const updateFlashTimer = () => {
+  if (!studioStore.activeFlashSale) return;
+  const now = Date.now();
+  const expires = new Date(studioStore.activeFlashSale.expiresAt).getTime();
+  const diff = expires - now;
+  if (diff <= 0) {
+    flashTimeLeft.value = '00:00';
+    return;
+  }
+  const m = Math.floor(diff / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  flashTimeLeft.value = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
 
 const shopUrl = computed(() => `${uiStore.domain}/shop/`);
 const isFlashSaleActive = computed(() => !!studioStore.activeFlashSale);
@@ -153,6 +168,12 @@ const products = computed(() => studioStore.liveProducts);
 
 onMounted(() => {
   studioStore.fetchCommerceProducts();
+  flashTimer.value = setInterval(updateFlashTimer, 1000);
+  updateFlashTimer();
+});
+
+onUnmounted(() => {
+  if (flashTimer.value) clearInterval(flashTimer.value);
 });
 
 const toggleProduct = (product: any) => {

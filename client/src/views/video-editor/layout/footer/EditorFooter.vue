@@ -14,7 +14,7 @@ const useGoogleVidsTimeline = ref(true); // Set to true to use EditorFooter2
 
 const editor = useEditorStore();
 const isTablet = useIsTablet();
-const MAX_HEIGHT = 300;
+const MAX_HEIGHT = 500;
 
 const collapsed = computed(() => (isTablet ? 64 : 56));
 const expanded = ref(collapsed.value);
@@ -23,7 +23,7 @@ const { timelineOpen, canvas } = storeToRefs(editor);
 //   editor.timelineOpen ? `${expanded}px` : `${collapsed.value}px`
 // );
 watch(timelineOpen, (value) => {
-  expanded.value = value ? MAX_HEIGHT : collapsed.value
+  expanded.value = value ? 400 : collapsed.value // Use a reasonable default expanded height
 })
 
 const footerHeight = computed({

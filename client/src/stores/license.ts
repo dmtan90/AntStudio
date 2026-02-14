@@ -11,6 +11,8 @@ export const useLicenseStore = defineStore('license', () => {
         maxProjects: 10
     });
     const endDate = ref<Date | null>(null);
+    const licenses = ref<any[]>([]);
+    const loading = ref(false);
 
     const isValid = computed(() => status.value === 'valid');
     const isPro = computed(() => tier.value === 'pro' || tier.value === 'enterprise');
@@ -18,9 +20,9 @@ export const useLicenseStore = defineStore('license', () => {
 
     async function fetchLicenseStatus() {
         try {
-            const res = await api.get('/admin/settings');
-            if (res.data.success && res.data.data.license) {
-                const lic = res.data.data.license;
+            const res: any = await api.get('/admin/settings');
+            if (res.success && res.data.license) {
+                const lic = res.data.license;
                 key.value = lic.key;
                 status.value = lic.info?.status || 'none';
                 tier.value = lic.info?.type || 'free';
@@ -59,7 +61,7 @@ export const useLicenseStore = defineStore('license', () => {
             licenses.value = licenses.value.filter(l => l._id !== id)
             toast.success('License deleted successfully')
         } catch (error) {
-            handleError(error)
+            console.error(error)
             throw error
         }
     }
@@ -67,10 +69,10 @@ export const useLicenseStore = defineStore('license', () => {
     async function fetchAllLicenses() {
         loading.value = true
         try {
-            const response = await api.get('/license/all')
-            return response.data
+            const res: any = await api.get('/license/all')
+            return res.data
         } catch (error) {
-            handleError(error)
+            console.error(error)
             throw error
         } finally {
             loading.value = false
@@ -79,7 +81,7 @@ export const useLicenseStore = defineStore('license', () => {
 
     async function fetchMyLicenses() {
         try {
-            const res = await api.get('/license/my-licenses');
+            const res: any = await api.get('/license/my-licenses');
             return res.data;
         } catch (error: any) {
             console.error('Failed to fetch licenses', error);
@@ -88,7 +90,7 @@ export const useLicenseStore = defineStore('license', () => {
 
     async function fetchPackages() {
         try {
-            const res = await api.get('/license/packages');
+            const res: any = await api.get('/license/packages');
             return res.data;
         } catch (error: any) {
             console.error('Failed to fetch packages', error);
@@ -97,12 +99,37 @@ export const useLicenseStore = defineStore('license', () => {
 
     async function activateLicense(payload: { key: string }) {
         try {
-            const res = await api.post('/license/activate', payload);
+            const res: any = await api.post('/license/activate', payload);
             await fetchLicenseStatus(); // Upgrade state immediately
             return res.data;
         } catch (error: any) {
             throw error; // Let caller handle UI feedback if needed
         }
+    }
+
+    async function addLicense(payload: any) {
+        try {
+            const res: any = await api.post('/licenses', payload);
+            await fetchAllLicenses();
+            return res.data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async function updateLicense(id: string, payload: any) {
+        try {
+            const res: any = await api.put(`/licenses/${id}`, payload);
+            await fetchAllLicenses();
+            return res.data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async function fetchLicenses(type?: string) {
+        // Alias to fetchAllLicenses for now, filtering can be done client side or implemented later
+        return fetchAllLicenses();
     }
 
     return {
@@ -111,6 +138,8 @@ export const useLicenseStore = defineStore('license', () => {
         tier,
         limits,
         endDate,
+        licenses,
+        loading,
         isValid,
         isPro,
         isEnterprise,
@@ -119,6 +148,10 @@ export const useLicenseStore = defineStore('license', () => {
         fetchMyLicenses,
         fetchPackages,
         activateLicense,
-        fetchAllLicenses
+        fetchAllLicenses,
+        addLicense,
+        updateLicense,
+        deleteLicense,
+        fetchLicenses
     };
 });

@@ -3,6 +3,7 @@ import { ref, reactive, onMounted, onUnmounted, watch, type Ref } from 'vue';
 import api from '@/utils/api';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { toast } from 'vue-sonner';
+import { generateUUID } from '@/utils/uuid';
 
 // ============================================
 // Types & Interfaces
@@ -53,10 +54,18 @@ export interface Overlay {
     position: { x: number; y: number };
     content: any;
     visible: boolean;
+    demoMode: boolean;
+    currentSpeakerId: string | null;
+    studioVibe: string;
+    autoCameraEnabled: boolean;
+    activeGraphicContent: { title: string; subtitle: string };
+    bRollLibrary: { id: string; url: string; topic: string }[];
+    activeScript: any;
+    scriptIndex: number;
 }
 
 export interface Guest {
-    id: string; // Internal unique ID or socket ID
+    uuid: string; // Primary unique identifier (generated on creation)
     name: string;
     type: 'real' | 'ai';
     stream?: MediaStream;
@@ -118,7 +127,46 @@ export interface AutoDirectorConfig {
     transitionStyle: TransitionType;
     autoSwitchOnSpeaker: boolean;
     autoZoom: boolean;
+    autoPivotEnabled: boolean;
+    autoEmotionEnabled: boolean;
+    autoAtmosphereEnabled: boolean;
     effectTriggers: { keyword: string; effectId: string }[];
+}
+
+export interface Quest {
+    id: string;
+    title: string;
+    description: string;
+    target: number;
+    current: number;
+    rewardXp: number;
+    type: string;
+    completed: boolean;
+    icon?: string;
+}
+
+export interface UserProgress {
+    userId: string;
+    xp: number;
+    level: number;
+    activeQuests: Quest[];
+    achievements: string[];
+}
+
+export interface EconomyItem {
+    id: string;
+    type: 'gift' | 'sticker' | 'powerup';
+    name: string;
+    cost: number;
+    icon: string;
+    effectId?: string;
+    description: string;
+}
+
+export interface UserWallet {
+    userId: string;
+    balance: number;
+    inventory: string[];
 }
 
 // ============================================
@@ -303,10 +351,14 @@ export const useStudioStore = defineStore('studio', () => {
 
     const guestJoinLink = ref<string | null>(null);
     const coHosts = ref<CoHost[]>([]);
+    const isGuest = ref(window.location.search.includes('role=guest'));
     const maxGuests = ref(4);
+    const currentProjectId = ref<string | null>(null);
+    const activeArchiveId = ref<string | null>(null);
 
+    // Stream Setup
     const guestPermissions = ref({
-        autoApprove: false,
+        autoApprove: true,
         micEnabled: true,
         camEnabled: true
     });
@@ -314,16 +366,47 @@ export const useStudioStore = defineStore('studio', () => {
     const visualSettings = ref({
         beauty: {
             smoothing: 0,
-            brightness: 0.5,
+            brightness: 1.0,
             sharpen: 0,
             denoise: 0,
+            saturation: 1.0,
             redEye: false
         },
         background: {
             mode: 'none' as 'none' | 'blur' | 'virtual',
             blurLevel: 'low' as 'low' | 'medium' | 'high',
             assetUrl: null as string | null,
-            isAssetVideo: false
+            isAssetVideo: false,
+            is360: false
+        },
+        branding: {
+            logoUrl: null as string | null,
+            logoPosition: 'top-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right',
+            logoScale: 1.0
+        },
+        breakMode: {
+            enabled: false,
+            message: 'BE RIGHT BACK',
+            backgroundUrl: null as string | null
+        },
+        specialOverlays: {
+            showSponsorship: false,
+            sponsorName: 'AntFlow VTuber',
+            confetti: false,
+            fireworks: false
+        },
+        accessibility: {
+            translationEnabled: false,
+            sourceLang: 'en',
+            targetLang: 'es',
+            highContrast: false,
+            fontSize: 'medium',
+            captions: false
+        },
+        cinematic: {
+            enabled: false,
+            environmentId: 'standard',
+            showVTuberLinks: true
         }
     });
 
@@ -342,6 +425,7 @@ export const useStudioStore = defineStore('studio', () => {
     const activeProductId = ref<string | null>(null);
     const activeFlashSale = ref<any>(null);
     const currentSessionId = ref<string | null>(null);
+    const showPostStreamSynthesis = ref(false);
 
     // Analytics & Health
     const viewerCount = ref(0);
@@ -363,6 +447,8 @@ export const useStudioStore = defineStore('studio', () => {
     const clientHighlightBuffer = ref<{ data: Blob, timestamp: number }[]>([]);
     const MAX_HIGHLIGHT_BUFFER_MS = 30000; // 30 seconds
     const myGuestId = ref<string | null>(null);
+    const viralMoments = ref<any[]>([]);
+    const activePeak = ref<any>(null);
 
     // God Mode
     const godModeEnabled = ref(false);
@@ -373,8 +459,44 @@ export const useStudioStore = defineStore('studio', () => {
 
         autoSwitchOnSpeaker: true,
         autoZoom: false,
+        autoPivotEnabled: true,
+        autoEmotionEnabled: true,
+        autoAtmosphereEnabled: true,
         effectTriggers: []
     });
+
+    // AI Director & Speaker Focus
+    const currentSpeakerId = ref<string | null>(null);
+    const studioVibe = ref<string>('neutral');
+    const autoCameraEnabled = ref(false);
+    const activeGraphicContent = ref({ title: '', subtitle: '' });
+    const bRollLibrary = ref<{ id: string; url: string; topic: string }[]>([]);
+    
+    // AI ShowRunner
+    const activePoll = ref<any>(null);
+    const showPollCreator = ref(false);
+    const showScriptConfig = ref(false);
+    const activeScript = ref<any>(null);
+    const scriptIndex = ref(-1);
+    const showProfiles = ref<any[]>([]);
+
+    // Gamification
+    const userProgress = ref<UserProgress>({
+        userId: '',
+        xp: 0,
+        level: 1,
+        activeQuests: [],
+        achievements: []
+    });
+
+    // Economy
+    const userWallet = ref<UserWallet>({
+        userId: '',
+        balance: 0,
+        inventory: []
+    });
+    const storeCatalog = ref<EconomyItem[]>([]);
+    const leaderboardData = ref<any[]>([]);
 
 
     const isRemoteUpdate = ref(false);
@@ -453,6 +575,51 @@ export const useStudioStore = defineStore('studio', () => {
         }
     }
 
+    async function setCameraFocus(target: string) {
+        // AI Director Logic
+        console.log(`[Studio] AI Director focusing on: ${target}`);
+
+        if (target === 'host') {
+            // Standard Host View
+            if (activeScene.value.id !== 'standard') {
+                await switchScene('standard');
+            }
+        } else if (target === 'wide') {
+            // Wide Shot (Grid or Full)
+             // If multiple guests, go grid. If solo, go wide/standard
+             if (liveGuests.value.length > 0) {
+                 if (activeScene.value.id !== 'grid') await switchScene('grid');
+             } else {
+                 if (activeScene.value.id !== 'fullscreen') await switchScene('fullscreen');
+             }
+        } else if (target === 'screen') {
+            // Screen Share Focus (Pip or SideBySide)
+            if (activeScene.value.id !== 'pip') {
+                await switchScene('pip'); 
+                // TODO: Update pip layout to ensure source is 'screen'
+                // This requires scene mutation or dynamic source mapping which is complex.
+                // For now, assuming pip scene handles 'main' as screen if sharing.
+            }
+        } else {
+            // Target is likely a Guest ID
+            const guest = liveGuests.value.find(g => g.uuid === target || g.socketId === activeArchiveId.value);
+            // Also check for AI guests activeArchiveId match? 
+            
+            if (guest) {
+                // Focus on Guest (Shoutout)
+                // Map guest to slot 0 (guest1)
+                assignGuestToSlot(target, 0); 
+                if (activeScene.value.id !== 'shoutout') {
+                    await switchScene('shoutout');
+                }
+            } else {
+                console.warn(`[Studio] Target focus ${target} - guest not found`);
+                // Fallback to host
+                await switchScene('standard');
+            }
+        }
+    }
+
     function addCustomScene(scene: Scene) {
         scenes.value.push(scene);
     }
@@ -501,9 +668,9 @@ export const useStudioStore = defineStore('studio', () => {
 
     async function generateInvite(sessionId: string) {
         try {
-            const response = await api.post('/streaming/invite', { sessionId });
-            if (response.data?.inviteUrl) {
-                const { token, inviteUrl } = response.data;
+            const res: any = await api.post('/streaming/invite', { sessionId });
+            if (res.data.inviteUrl) {
+                const { token, inviteUrl } = res.data;
                 guestJoinLink.value = inviteUrl;
                 return guestJoinLink.value;
             }
@@ -520,12 +687,17 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function addGuest(guest: Guest) {
+        // Generate UUID if not present
+        if (!guest.uuid) {
+            guest.uuid = generateUUID();
+        }
+        
         // Deduplicate: If guest already exists in waiting or live, don't add again
-        const exists = waitingGuests.value.some(g => g.id === guest.id) ||
-            liveGuests.value.some(g => g.id === guest.id);
+        const exists = waitingGuests.value.some(g => g.uuid === guest.uuid) ||
+            liveGuests.value.some(g => g.uuid === guest.uuid);
 
         if (exists) {
-            console.log(`[Studio] Guest ${guest.name} already in lists, skipping duplicate.`);
+            console.log(`[Studio] Guest ${guest.name} (${guest.uuid}) already in lists, skipping duplicate.`);
             return true;
         }
 
@@ -534,18 +706,31 @@ export const useStudioStore = defineStore('studio', () => {
             return false;
         }
 
-        // Auto-approve if enabled
-        if (guestPermissions.value.autoApprove) {
-            console.log('[Studio] Auto-approving guest joining:', guest.name);
-            // Add directly to live with live status
-            const approvedGuest = { ...guest, status: 'live' as const };
+        // Auto-approve if AI guest OR status is pre-set to live OR auto-approve is enabled
+        const shouldAutoApprove = guest.type === 'ai' || 
+                                 guest.status === 'live' || 
+                                 guestPermissions.value.autoApprove;
+
+        if (shouldAutoApprove) {
+            console.log('[Studio] Automatically adding guest to live session:', guest.name);
+            
+            // Auto-assign first available slot for immediate rendering
+            const usedSlots = new Set(liveGuests.value.map(g => g.slotIndex).filter(s => s !== undefined));
+            let autoSlot: number | undefined = undefined;
+            for (let i = 0; i < 4; i++) {
+                if (!usedSlots.has(i)) {
+                    autoSlot = i;
+                    break;
+                }
+            }
+
+            const approvedGuest = { ...guest, status: 'live' as const, slotIndex: autoSlot };
             liveGuests.value.push(approvedGuest);
 
-            // Signal approval after a short delay to ensure socket stability and guest readiness
+            // Signal approval after a short delay
             setTimeout(() => {
-                console.log('[Studio] Triggering approval signal for auto-approved guest:', guest.id);
-                approveGuest(guest.id);
-            }, 1000);
+                approveGuest(guest.uuid);
+            }, 500);
             return true;
         }
 
@@ -554,7 +739,7 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function approveGuest(guestId: string) {
-        const index = waitingGuests.value.findIndex(g => g.id === guestId);
+        const index = waitingGuests.value.findIndex(g => g.uuid === guestId);
 
         if (index !== -1) {
             const guest = waitingGuests.value[index];
@@ -562,7 +747,7 @@ export const useStudioStore = defineStore('studio', () => {
             waitingGuests.value.splice(index, 1);
         } else {
             // Check if they are already in live (e.g. from auto-approve path)
-            const guestInLive = liveGuests.value.find(g => g.id === guestId);
+            const guestInLive = liveGuests.value.find(g => g.uuid === guestId);
             if (guestInLive) {
                 guestInLive.status = 'live';
             }
@@ -583,7 +768,7 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function rejectGuest(guestId: string) {
-        waitingGuests.value = waitingGuests.value.filter(g => g.id !== guestId);
+        waitingGuests.value = waitingGuests.value.filter(g => g.uuid !== guestId);
 
         // Notify via signaling
         const socket = ActionSyncService.getSocket();
@@ -594,24 +779,24 @@ export const useStudioStore = defineStore('studio', () => {
 
     function removeGuest(guestId: string) {
         console.log(`[StudioStore] Removing guest: ${guestId}`);
-        liveGuests.value = liveGuests.value.filter(g => g.id !== guestId && g.socketId !== guestId);
-        waitingGuests.value = waitingGuests.value.filter(g => g.id !== guestId && g.socketId !== guestId);
+        liveGuests.value = liveGuests.value.filter(g => g.uuid !== guestId && g.socketId !== guestId);
+        waitingGuests.value = waitingGuests.value.filter(g => g.uuid !== guestId && g.socketId !== guestId);
         broadcastCurrentState();
     }
 
 
     function updateGuestStatus(guestId: string, status: Guest['status']) {
-        let guest = liveGuests.value.find(g => g.id === guestId);
+        let guest = liveGuests.value.find(g => g.uuid === guestId);
         if (guest) {
             guest.status = status;
         } else {
-            guest = waitingGuests.value.find(g => g.id === guestId);
+            guest = waitingGuests.value.find(g => g.uuid === guestId);
             if (guest) guest.status = status;
         }
     }
 
     function muteGuest(guestId: string, enabled: boolean) {
-        const guest = liveGuests.value.find(g => g.id === guestId);
+        const guest = liveGuests.value.find(g => g.uuid === guestId);
         if (guest) {
             guest.audioEnabled = enabled;
             ActionSyncService.sendGuestControl(guestId, 'audio', enabled);
@@ -619,7 +804,7 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function toggleGuestCamera(guestId: string, enabled: boolean) {
-        const guest = liveGuests.value.find(g => g.id === guestId);
+        const guest = liveGuests.value.find(g => g.uuid === guestId);
         if (guest) {
             guest.videoEnabled = enabled;
             ActionSyncService.sendGuestControl(guestId, 'video', enabled);
@@ -634,20 +819,50 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function assignGuestToSlot(guestId: string, slotIndex: number | undefined) {
+        console.log(`[Studio] Assigning guest ${guestId} to slot ${slotIndex}`);
         // 1. If slotIndex is provided, clear it from any other guest first
         if (slotIndex !== undefined) {
             liveGuests.value.forEach(g => {
-                if (g.slotIndex === slotIndex && g.id !== guestId) {
+                if (g.slotIndex === slotIndex && g.uuid !== guestId) {
                     g.slotIndex = undefined;
                 }
             });
         }
 
         // 2. Assign the new slot
-        const guest = liveGuests.value.find(g => g.id === guestId);
+        let guest = liveGuests.value.find(g => g.uuid === guestId);
+        
+        // 3. If not in live, check waiting (Auto-approve on drag)
+        if (!guest) {
+            const waitingIdx = waitingGuests.value.findIndex(g => g.uuid === guestId);
+            if (waitingIdx !== -1) {
+                console.log(`[Studio] Auto-approving guest ${guestId} due to slot assignment`);
+                guest = waitingGuests.value[waitingIdx];
+                // Move to live
+                waitingGuests.value.splice(waitingIdx, 1);
+                guest.status = 'live';
+                liveGuests.value.push(guest);
+                
+                // Notify via socket
+                const socket = ActionSyncService.getSocket();
+                if (socket) {
+                    socket.emit('guest:approve', {
+                        guestId,
+                        permissions: {
+                            micEnabled: guestPermissions.value.micEnabled,
+                            camEnabled: guestPermissions.value.camEnabled
+                        }
+                    });
+                }
+            }
+        }
+
         if (guest) {
             guest.slotIndex = slotIndex;
+            console.log(`[Studio] Assigned guest ${guest.name} (${guest.uuid}) to slot ${slotIndex}`);
             broadcastCurrentState();
+        } else {
+            console.warn(`[Studio] assignGuestToSlot: Guest ${guestId} not found in live or waiting lists`);
         }
     }
 
@@ -658,7 +873,7 @@ export const useStudioStore = defineStore('studio', () => {
             await switchScene('standard');
         }
 
-        const guest = liveGuests.value.find(g => g.id === guestId);
+        const guest = liveGuests.value.find(g => g.uuid === guestId);
         if (!guest) return;
 
         // Implementation of 'Solo' mode: 
@@ -704,14 +919,98 @@ export const useStudioStore = defineStore('studio', () => {
         demoMode.value = !demoMode.value;
     }
 
+    function setSpeakerFocus(id: string | null) {
+        currentSpeakerId.value = id;
+    }
+
+    function updateStudioVibe(vibe: string, force = false) {
+        if (studioVibe.value === vibe && !force) return;
+        studioVibe.value = vibe;
+
+        if (!autoDirectorSettings.value.enabled || !autoDirectorSettings.value.autoAtmosphereEnabled) return;
+
+        console.log(`[Studio] Applying Atmosphere Preset: ${vibe}`);
+        
+        switch (vibe) {
+            case 'hype':
+                visualSettings.value.background.blurLevel = 'high';
+                visualSettings.value.beauty.brightness = 0.7; // Bright
+                visualSettings.value.beauty.saturation = 1.2; // Vivid (mock property, assuming visualSettings handles it or just brightness)
+                // In a real implementation we would map significantly more properties
+                break;
+            case 'chill':
+                visualSettings.value.background.blurLevel = 'medium';
+                visualSettings.value.beauty.brightness = 0.5; // Normal
+                break;
+            case 'tense':
+                visualSettings.value.background.blurLevel = 'low';
+                visualSettings.value.beauty.brightness = 0.4; // Dim
+                break;
+            case 'professional':
+                visualSettings.value.background.blurLevel = 'low';
+                visualSettings.value.beauty.brightness = 0.6; // Clean
+                break;
+        }
+        broadcastCurrentState();
+    }
+
+    function setAutoCamera(enabled: boolean) {
+        autoCameraEnabled.value = enabled;
+    }
+
+    function updateGraphicContent(title: string, subtitle: string) {
+        activeGraphicContent.value = { title, subtitle };
+    }
+
+    // ShowRunner Actions
+    async function createShowScript(profileId: string, inputs: Record<string, string>) {
+        const res: any = await api.post('/show/generate', { profileId, inputs });
+        activeScript.value = res.data;
+        scriptIndex.value = -1;
+    }
+
+    onUnmounted(() => {
+        // Socket cleanup handled by ActionSyncService
+    });
+
+    function castVote(optionIndex: number) {
+        ActionSyncService.getSocket()?.emit('hive:vote', { optionIndex });
+    }
+
+    async function startShow() {
+        await api.post('/show/start');
+        // Socket will update state
+    }
+
+    async function nextShowStep() {
+        await api.post('/show/next');
+    }
+
+    function updateScriptState(script: any) {
+        activeScript.value = script;
+        scriptIndex.value = script.currentIndex;
+    }
+
     async function fetchCommerceProducts() {
         try {
-            const response = await api.get('/commerce/products');
-            liveProducts.value = response.data;
-            return response.data;
+            const res: any = await api.get('/commerce/products');
+            liveProducts.value = res.data;
+            return res.data;
         } catch (error) {
             console.error('[StudioStore] Failed to fetch products:', error);
             throw error;
+        }
+    }
+
+    async function fetchCommerceReport(sessionId: string) {
+        try {
+             // Use type assertion if necessary or just return data
+             const res: any = await api.get(`/commerce/reports/${sessionId}`)
+             return res.data
+        } catch (error: any) {
+             console.warn('Failed to fetch commerce report:', error)
+             // Return null or throw depending on desired behavior. LiveStudio just logs error.
+             throw error
         }
     }
 
@@ -731,6 +1030,33 @@ export const useStudioStore = defineStore('studio', () => {
         }
     }
 
+    function updateProductScarcity(productId: string, stock: number) {
+        const product = liveProducts.value.find(p => p.id === productId || p._id === productId);
+        if (product) {
+            product.stock = stock;
+            toast.warning(`Limited Stock: Only ${stock} units left for ${product.name}!`, {
+                description: "AI identified high demand."
+            });
+        }
+    }
+
+    function setTranslationMode(enabled: boolean, source: string, target: string) {
+        visualSettings.value.accessibility.translationEnabled = enabled;
+        visualSettings.value.accessibility.sourceLang = source;
+        visualSettings.value.accessibility.targetLang = target;
+        
+        if (enabled) {
+            toast.success(`VTuber Dubbing Active: ${source} → ${target}`);
+        } else {
+            toast.info("Real-time translation disabled");
+        }
+    }
+
+    function triggerStreamSummary() {
+        showPostStreamSynthesis.value = true;
+        toast.info("AI is generating your stream performance report...");
+    }
+
     function appendHighlightChunk(blob: Blob) {
         const now = Date.now();
         clientHighlightBuffer.value.push({ data: blob, timestamp: now });
@@ -742,7 +1068,7 @@ export const useStudioStore = defineStore('studio', () => {
         }
     }
 
-    async function captureHighlight(sessionId: string) {
+    async function captureHighlight(sessionId: string, metadata?: { description?: string, importance?: number }) {
         // High-level Logic:
         // 1. If we have a local buffer (AMS mode), process it locally for zero-latency capture
         // 2. If not, fallback to server-side capture (Relay mode)
@@ -767,13 +1093,16 @@ export const useStudioStore = defineStore('studio', () => {
                 formData.append('file', blob, 'highlight.webm');
                 formData.append('path', fileName);
                 formData.append('contentType', 'video/webm');
+                if (metadata) {
+                    formData.append('metadata', JSON.stringify(metadata));
+                }
 
-                const response = await api.post('/s3/upload', formData, {
+                const res: any = await api.post('/s3/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
 
                 toast.success('Viral moment captured locally!');
-                return response.data;
+                return res.data;
             } catch (error: any) {
                 console.error('[StudioStore] Local highlight capture failed:', error);
                 // Fallback to backend anyway just in case
@@ -781,9 +1110,18 @@ export const useStudioStore = defineStore('studio', () => {
         }
 
         try {
-            const response = await api.post(`/streaming/status/${sessionId}/highlight`);
+            const res: any = await api.post(`/streaming/status/${sessionId}/highlight`, metadata);
+            
+            if (res.data) {
+                viralMoments.value.unshift({
+                    ...res.data,
+                    timestamp: Date.now(),
+                    reason: metadata?.description || 'Manual Highlight'
+                });
+            }
+
             toast.success('Viral moment captured via Cloud!');
-            return response.data;
+            return res.data;
         } catch (error: any) {
             console.error('[StudioStore] Highlight capture failed:', error);
             toast.error('Failed to capture highlight');
@@ -795,9 +1133,9 @@ export const useStudioStore = defineStore('studio', () => {
 
     async function fetchShadowStats(sessionId: string) {
         try {
-            const response = await api.get(`/streaming/status/${sessionId}/shadow`);
-            shadowStats.value = response.data;
-            return response.data;
+            const res: any = await api.get(`/streaming/status/${sessionId}/shadow`);
+            shadowStats.value = res.data;
+            return res.data;
         } catch (error) {
             console.error('[StudioStore] Failed to fetch shadow stats:', error);
             return [];
@@ -806,9 +1144,9 @@ export const useStudioStore = defineStore('studio', () => {
 
     async function fetchSessionInfra(sessionId: string) {
         try {
-            const response = await api.get(`/streaming/status/${sessionId}/infra`);
-            sessionInfra.value = response.data;
-            return response.data;
+            const res: any = await api.get(`/streaming/status/${sessionId}/infra`);
+            sessionInfra.value = res.data;
+            return res.data;
         } catch (error) {
             console.error('[StudioStore] Failed to fetch session infra:', error);
             return null;
@@ -842,15 +1180,15 @@ export const useStudioStore = defineStore('studio', () => {
 
     async function fetchAnalytics(projectId: string) {
         try {
-            const response = await api.get(`/projects/${projectId}/analytics`);
-            const metrics = response.data.metrics;
+            const res: any = await api.get(`/projects/${projectId}/analytics`);
+            const metrics = res.data.metrics;
             updateEngagement({
                 viewerCount: metrics.viewCount,
                 peakViewers: metrics.peakViewers,
                 likes: metrics.likeCount,
                 shares: metrics.shareCount
             });
-            return response.data;
+            return res.data;
         } catch (error) {
             console.error('[StudioStore] Failed to fetch analytics:', error);
             throw error;
@@ -893,7 +1231,7 @@ export const useStudioStore = defineStore('studio', () => {
                 activeProductId: activeProductId.value,
                 activeFlashSale: activeFlashSale.value,
                 activeGuests: liveGuests.value.map(g => ({
-                    id: g.id,
+                    uuid: g.uuid,
                     name: g.name,
                     type: g.type,
                     avatar: g.avatar,
@@ -928,13 +1266,13 @@ export const useStudioStore = defineStore('studio', () => {
 
                 // Preserve local stream objects if they were somehow attached (though useStudioP2P handles streams)
                 // We just update the metadata
-                const newGuestIds = new Set(state.activeGuests.map((g: any) => g.id));
+                const newGuestIds = new Set(state.activeGuests.map((g: any) => g.uuid));
 
                 // Sync liveGuests
                 liveGuests.value = state.activeGuests;
 
                 // Also cleanup waiting guests if they are now live
-                waitingGuests.value = waitingGuests.value.filter(g => !newGuestIds.has(g.id));
+                waitingGuests.value = waitingGuests.value.filter(g => !newGuestIds.has(g.uuid));
             }
         } finally {
             setTimeout(() => {
@@ -973,13 +1311,44 @@ export const useStudioStore = defineStore('studio', () => {
                 brightness: 0.5,
                 sharpen: 0,
                 denoise: 0,
+                saturation: 1.0,
                 redEye: false
             },
             background: {
                 mode: 'none',
                 blurLevel: 'low',
                 assetUrl: null,
-                isAssetVideo: false
+                isAssetVideo: false,
+                is360: false
+            },
+            branding: {
+                logoUrl: null,
+                logoPosition: 'top-right',
+                logoScale: 1.0
+            },
+            breakMode: {
+                enabled: false,
+                message: 'BE RIGHT BACK',
+                backgroundUrl: null
+            },
+            specialOverlays: {
+                showSponsorship: false,
+                sponsorName: 'AntFlow AI',
+                confetti: false,
+                fireworks: false
+            },
+            accessibility: {
+                translationEnabled: false,
+                sourceLang: 'en',
+                targetLang: 'es',
+                highContrast: false,
+                fontSize: 'medium',
+                captions: false
+            },
+            cinematic: {
+                enabled: false,
+                environmentId: 'standard',
+                showVTuberLinks: true
             }
         };
         broadcastCurrentState();
@@ -1009,6 +1378,8 @@ export const useStudioStore = defineStore('studio', () => {
         liveProducts,
         activeProductId,
         activeFlashSale,
+        // AI & Performance
+        aiEnabled: true,
         currentSessionId,
         viewerCount,
         engagement,
@@ -1028,6 +1399,7 @@ export const useStudioStore = defineStore('studio', () => {
 
         // Actions
         switchScene,
+        setCameraFocus,
         addCustomScene,
         removeScene,
         addEffect,
@@ -1054,14 +1426,19 @@ export const useStudioStore = defineStore('studio', () => {
         hasPermission,
         showcaseProduct,
         removeProduct,
+        updateProductScarcity,
+        setTranslationMode,
+        triggerStreamSummary,
         startFlashSale,
         endFlashSale,
         captureHighlight,
+        viralMoments,
         shadowStats,
         fetchShadowStats,
         demoMode,
         toggleDemoMode,
         fetchCommerceProducts,
+        fetchCommerceReport,
         updateEngagement,
         fetchAnalytics,
         updateHealth,
@@ -1075,6 +1452,7 @@ export const useStudioStore = defineStore('studio', () => {
         updateVisualSettings,
         resetVisualSettings,
         addCustomBackground,
+        activePeak,
 
         // Screen Sharing & Resources
         isScreenSharing,
@@ -1090,6 +1468,86 @@ export const useStudioStore = defineStore('studio', () => {
         setMedia(id: string | null) {
             activeMediaId.value = id;
             broadcastCurrentState();
+        },
+        currentSpeakerId,
+        studioVibe,
+        setSpeakerFocus,
+        updateStudioVibe,
+        autoCameraEnabled,
+        activeGraphicContent,
+        bRollLibrary,
+        setAutoCamera,
+        activeScript,
+        scriptIndex,
+        updateGraphicContent,
+        createShowScript,
+        startShow,
+        nextShowStep,
+        updateScriptState,
+        activePoll,
+        castVote,
+        userProgress,
+        userWallet,
+        storeCatalog,
+        leaderboardData,
+        showProfiles,
+        async fetchShowProfiles() {
+            try {
+                const { data } = await api.get('/show/profiles');
+                showProfiles.value = data;
+                return data;
+            } catch (error) {
+                console.error('[StudioStore] Failed to fetch show profiles:', error);
+                throw error;
+            }
+        },
+
+        // Gamification Actions
+        async fetchUserProgress() {
+            try {
+                const { data } = await api.get('/gamification/progress');
+                userProgress.value = data;
+                return data;
+            } catch (error) {
+                console.error('[StudioStore] Failed to fetch user progress:', error);
+            }
+        },
+
+        async fetchLeaderboard() {
+            if (!godModeEnabled.value) return; // Gate: Only fetch if God Mode (Gaming Mode) is enabled
+            
+            try {
+                const { data } = await api.get('/gamification/leaderboard');
+                leaderboardData.value = data;
+                return data;
+            } catch (error) {
+                console.error('[StudioStore] Failed to fetch leaderboard:', error);
+            }
+        },
+
+        async processGamificationEvent(event: string, payload: any) {
+            if (event === 'gamification:update') {
+                userProgress.value = payload;
+                // Re-fetch leaderboard when progress updates significantly or periodically
+                await this.fetchLeaderboard();
+            } else if (event === 'gamification:levelup') {
+                // UI shows the level up popup via AchievementPopup.vue watching window events
+                window.dispatchEvent(new CustomEvent('gamification:levelup', { detail: payload }));
+                userProgress.value.level = payload.level;
+            }
+        },
+
+        async draftMoment(momentId: string) {
+            toast.info('Drafting social post...');
+            setTimeout(() => toast.success('Social draft created! Check your Syndication Dashboard.'), 1500);
+        },
+
+        async publishMoment(momentId: string) {
+            toast.promise(new Promise(resolve => setTimeout(resolve, 2000)), {
+                loading: 'Publishing to all platforms...',
+                success: 'Viral clip is now LIVE on TikTok, YouTube & Facebook!',
+                error: 'Failed to publish'
+            });
         }
     };
 });

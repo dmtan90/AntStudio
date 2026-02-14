@@ -20,14 +20,14 @@
         <section v-if="remoteGuests.length > 0">
             <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">Active Guests</h4>
             <div class="guest-list grid grid-cols-2 gap-3">
-                <div v-for="g in remoteGuests" :key="g.id"
+                <div v-for="g in remoteGuests" :key="g.uuid"
                     class="guest-item glass-selectable flex flex-col justify-between items-center bg-white/5 rounded-xl border border-white/10 group/item relative overflow-hidden"
-                    draggable="true" @dragstart="onDragStart($event, g.id)">
+                    draggable="true" @dragstart="onDragStart($event, g.uuid)">
 
                     <!-- Improved Visual Preview Background -->
                     <div
                         class="absolute inset-0 opacity-40 pointer-events-none transition-opacity group-hover/item:opacity-60 bg-black/60">
-                        <GuestVideoPreview :guest-id="g.id" :video-elements="guestVideoElements" />
+                        <GuestVideoPreview :guest-id="g.uuid" :video-elements="guestVideoElements" />
                     </div>
                     <div
                         class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none">
@@ -47,25 +47,25 @@
 
                     <div class="flex items-center gap-1 relative z-10 bg-black/50 p-2">
                         <button class="icon-btn xs hover:text-blue-400" title="Solo / Swap with Host"
-                            @click="studioStore.swapWithHost(g.id)">
+                            @click="studioStore.swapWithHost(g.uuid)">
                             <full-selection theme="outline" size="12" />
                         </button>
 
                         <div class="w-px h-3 bg-white/10 mx-1"></div>
                         <button class="icon-btn xs"
                             :class="{ 'text-blue-500': g.audioEnabled, 'opacity-30': !g.audioEnabled }"
-                            @click="$emit('toggle-mute', g.id, !g.audioEnabled)">
+                            @click="$emit('toggle-mute', g.uuid, !g.audioEnabled)">
                             <microphone v-if="g.audioEnabled" theme="filled" size="12" />
                             <microphone-m v-else theme="outline" size="12" />
                         </button>
                         <button class="icon-btn xs"
                             :class="{ 'text-blue-500': g.videoEnabled, 'opacity-30': !g.videoEnabled }"
-                            @click="$emit('toggle-camera', g.id, !g.videoEnabled)">
+                            @click="$emit('toggle-camera', g.uuid, !g.videoEnabled)">
                             <camera v-if="g.videoEnabled" theme="filled" size="12" />
                             <camera-five v-else theme="outline" size="12" />
                         </button>
                         <button class="icon-btn xs delete text-red-500 hover:bg-red-500/20"
-                            @click="$emit('remove-guest', g.id)">
+                            @click="$emit('remove-guest', g.uuid)">
                             <close theme="outline" size="12" />
                         </button>
                     </div>
@@ -77,17 +77,31 @@
         <section>
             <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">Synthetic Persona Gallery</h4>
             <div class="grid grid-cols-1 gap-3">
-                <div v-for="g in guestPersonas" :key="g.id"
+                <div v-for="g in guestPersonas" :key="g.uuid"
                     class="p-3 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-blue-500/30 cursor-pointer"
                     @click="$emit('summon-guest', g)">
                     <div class="flex items-center gap-4">
                         <el-avatar :src="g.avatarUrl" :size="32" class="border border-white/10" />
                         <div>
                             <p class="text-[10px] font-bold">{{ g.name }}</p>
-                            <p class="text-[8px] opacity-40">{{ g.id.toUpperCase() }}</p>
+                            <p class="text-[8px] opacity-40 max-w-[70px]">
+                                <el-text truncated class="text-[8px]">
+                                    {{ (g.modelType || '3D').toUpperCase() }} • {{ g.uuid.slice(0, 8).toUpperCase() }}
+                                </el-text>
+                            </p>
                         </div>
                     </div>
-                    <el-switch v-slot="{ value }" :model-value="g.active" @change="$emit('toggle-guest', g)" />
+                    <div class="flex items-center gap-2">
+                        <!-- Role Toggle -->
+                        <button 
+                            @click.stop="$emit('toggle-role', g.uuid)"
+                            class="px-2 py-1 rounded-md text-[8px] font-black tracking-widest transition-all border border-white/5"
+                            :class="g.isMaster ? 'bg-amber-500 text-black border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'bg-white/5 text-white/40 hover:text-white'"
+                        >
+                            {{ g.isMaster ? 'MASTER' : 'AGENT' }}
+                        </button>
+                        <el-switch v-slot="{ value }" :model-value="g.active" @change="$emit('toggle-guest', g)" />
+                    </div>
                 </div>
             </div>
         </section>
@@ -114,11 +128,12 @@ const props = defineProps<{
 
 const emit = defineEmits([
     'invite-guest', 'add-mobile-cam', 'summon-guest',
-    'toggle-guest', 'toggle-mute', 'toggle-camera', 'remove-guest', 'assign-slot'
+    'toggle-guest', 'toggle-mute', 'toggle-camera', 'remove-guest', 'assign-slot', 'toggle-role'
 ]);
 
 const onDragStart = (event: DragEvent, guestId: string) => {
     if (event.dataTransfer) {
+        console.log('[GuestSettings] Drag Start:', guestId);
         event.dataTransfer.setData('application/antflow-guest', guestId);
         event.dataTransfer.effectAllowed = 'move';
 

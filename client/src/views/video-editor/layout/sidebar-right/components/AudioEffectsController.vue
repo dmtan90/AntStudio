@@ -14,8 +14,8 @@ const canvasStore = useCanvasStore();
 const aiStore = useAIStore();
 
 const activeAudio = computed(() => {
-    if (editor.selection.active?.type === 'audio') {
-        return canvasStore.canvas?.audio.get(editor.selection.active.id);
+    if ((canvasStore.selection as any)?.active?.type === 'audio') {
+        return canvasStore.canvas?.audio.get((canvasStore.selection as any).active.id);
     }
     return null;
 });

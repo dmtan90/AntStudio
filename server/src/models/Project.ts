@@ -162,9 +162,14 @@ export interface IDetailedCharacter {
 export interface IProject extends Document {
     userId: Types.ObjectId
     organizationId?: Types.ObjectId // Shared Team Context
+    collaborators?: Array<{
+        userId: Types.ObjectId;
+        role: 'viewer' | 'editor' | 'admin';
+        addedAt: Date;
+    }>
     title: string
     description: string
-    mode: 'topic' | 'upload' | 'avatar' | 'template'
+    mode: 'topic' | 'upload' | 'avatar' | 'template' | 'blank' | 'livestream'
     aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
     videoStyle: string
     targetDuration: number
@@ -249,6 +254,7 @@ export interface IProject extends Document {
         generatedAt: Date
     }
     visualAssets?: Array<{
+        _id?: string | any // Types.ObjectId
         name: string
         description: string
         type: 'image' | 'video' | 'audio'
@@ -287,6 +293,13 @@ const ProjectSchema = new Schema<IProject>(
             ref: 'Organization',
             index: true
         },
+        collaborators: [
+            {
+                userId: { type: Schema.Types.ObjectId, ref: 'User' },
+                role: { type: String, enum: ['viewer', 'editor', 'admin'], default: 'viewer' },
+                addedAt: { type: Date, default: Date.now }
+            }
+        ],
         title: {
             type: String,
             required: true,
@@ -298,7 +311,7 @@ const ProjectSchema = new Schema<IProject>(
         },
         mode: {
             type: String,
-            enum: ['topic', 'upload', 'avatar', 'template'],
+            enum: ['topic', 'upload', 'avatar', 'template', 'blank', 'livestream'],
             required: true
         },
         aspectRatio: {

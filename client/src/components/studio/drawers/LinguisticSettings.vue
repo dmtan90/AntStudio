@@ -39,9 +39,9 @@
                             Dubbing</span>
                         <span class="text-[8px] opacity-40 font-bold uppercase tracking-widest">Voice Clone Relay</span>
                     </div>
-                    <el-switch v-model="dubbingActive" active-color="#a855f7" />
+                    <el-switch v-model="dubbingEnabled" active-color="#a855f7" />
                 </div>
-                <div v-if="dubbingActive" class="mt-4 flex gap-1 items-center animate-pulse">
+                <div v-if="dubbingEnabled && isDubbing" class="mt-4 flex gap-1 items-center animate-pulse">
                     <div v-for="i in 3" :key="i" class="w-1 h-2 bg-purple-500/40 rounded-full"></div>
                     <span class="text-[8px] text-purple-400 font-black italic ml-1 uppercase">Cloning in Progress</span>
                 </div>
@@ -72,17 +72,19 @@ import { Translation } from '@icon-park/vue-next';
 
 const props = defineProps<{
     isTranslating: boolean;
+    enableAsl: boolean;
     sourceLang: string;
     targetLang: string;
     currentTranscript: string;
+    isDubbing?: boolean;
 }>();
 
-const emit = defineEmits(['update:isTranslating', 'update:sourceLang', 'update:targetLang']);
+const emit = defineEmits(['update:isTranslating', 'update:enableAsl', 'update:sourceLang', 'update:targetLang']);
 
 const localIsTranslating = ref(props.isTranslating);
 const localSourceLang = ref(props.sourceLang);
 const localTargetLang = ref(props.targetLang);
-const dubbingActive = ref(false);
+const dubbingEnabled = ref(false); // Local switch for the FEATURE, not the ACTIVITY state
 
 watch(() => props.isTranslating, (val) => localIsTranslating.value = val);
 watch(() => props.sourceLang, (val) => localSourceLang.value = val);

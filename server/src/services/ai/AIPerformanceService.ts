@@ -1,5 +1,8 @@
 import { Project } from '../../models/Project.js';
 import { systemLogger } from '../../utils/systemLogger.js';
+import { musicFXService } from './MusicFXService.js';
+import { styleABTestingEngine } from './StyleABTestingEngine.js';
+import { markerService } from './MarkerService.js';
 
 export interface PerformanceSnapshot {
     timestamp: Date;
@@ -34,6 +37,17 @@ export class AIPerformanceService {
         };
 
         this.streamSessions.get(projectId)!.push(snapshot);
+
+        // Auto-Soundscape: If chat velocity is high, increase intensity
+        if (snapshot.chatVelocity > 30) {
+            musicFXService.generateVibeLoop('hype', 0.8);
+        }
+
+        // Autonomous Optimization: Evaluate current style
+        styleABTestingEngine.evaluate(projectId, snapshot);
+
+        // Viral Marker Detection (Phase 90)
+        markerService.evaluateSnapshot(projectId, snapshot);
     }
 
     /**
@@ -55,6 +69,13 @@ export class AIPerformanceService {
             optimalPersona: topState.activePersona,
             insight: `Director suggests keeping the "${topState.activeStyle}" style as it correlates with your highest viewer retention peaks.`
         };
+    }
+
+    /**
+     * Retrieves recorded snapshots for a project.
+     */
+    public getSnapshots(projectId: string): PerformanceSnapshot[] {
+        return this.streamSessions.get(projectId) || [];
     }
 
     /**

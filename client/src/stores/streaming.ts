@@ -8,9 +8,9 @@ export const useStreamingStore = defineStore('streaming', () => {
     const loading = ref(false)
     const activeStream = ref(false)
 
-    async function prepareSession() {
+    async function prepareSession(projectId?: string) {
         try {
-            const res = await api.post('/streaming/session/prepare')
+            const res: any = await api.post('/streaming/session/prepare', { projectId })
             session.value = res.data
             return res.data
         } catch (error: any) {
@@ -22,7 +22,7 @@ export const useStreamingStore = defineStore('streaming', () => {
     async function startStream(payload: any) {
         loading.value = true
         try {
-            const res = await api.post('/streaming/start', payload)
+            const res: any = await api.post('/streaming/start', payload)
             activeStream.value = true
             toast.success('Stream started successfully')
             return res.data
@@ -44,12 +44,22 @@ export const useStreamingStore = defineStore('streaming', () => {
         }
     }
 
+    async function validateGuestToken(token: string) {
+        try {
+            const res = await api.get(`/streaming/guest/validate/${token}`)
+            return res.data
+        } catch (error: any) {
+            throw error
+        }
+    }
+
     return {
         session,
         loading,
         activeStream,
         prepareSession,
         startStream,
-        stopStream
+        stopStream,
+        validateGuestToken
     }
 })

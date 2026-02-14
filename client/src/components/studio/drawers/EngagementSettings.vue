@@ -71,6 +71,8 @@
                 </div>
             </div>
         </section>
+
+        <slot />
     </div>
 </template>
 

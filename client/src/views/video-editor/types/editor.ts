@@ -120,6 +120,7 @@ export interface EditorAudioElement {
   automation?: AutomationPoint[];
   effects?: AudioEffects;
   analyser?: AnalyserNode;
+  isVoiceover?: boolean;
   type: "audio"
 }
 

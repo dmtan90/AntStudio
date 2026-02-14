@@ -1,27 +1,95 @@
 import { GoogleTTSProvider } from '../../utils/ai/providers/GoogleTTSProvider.js';
+import { GeminiTTSProvider } from '../../utils/ai/providers/GeminiTTSProvider.js';
+import { ElevenLabsProvider } from '../../utils/ai/providers/ElevenLabsProvider.js';
 import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
+import { AdminSettings } from '../../models/AdminSettings.js';
 
 export class TTSService {
-    private provider: GoogleTTSProvider;
+    private googleProvider: GoogleTTSProvider;
+    private geminiProvider: GeminiTTSProvider | null = null;
+    private elevenLabsProvider: ElevenLabsProvider | null = null;
 
     constructor() {
-        this.provider = new GoogleTTSProvider();
+        this.googleProvider = new GoogleTTSProvider();
     }
 
     /**
-     * Generate speech from text using optimal AI account.
+     * Generate speech from text using specified provider
+     */
+    async generateSpeech(options: {
+        text: string;
+        provider: string;
+        voiceId: string;
+        language?: string;
+    }): Promise<{ media: { url: string; mimeType: string } }> {
+        const { text, provider, voiceId, language } = options;
+
+        switch (provider) {
+            case 'google': {
+                const account = await aiAccountManager.getOptimalAccount('audio');
+                if (account) {
+                    const token = await aiAccountManager.refreshAccessToken(account);
+                    this.googleProvider.updateClient({ 
+                        accessToken: token,
+                        projectId: account.projectId 
+                    });
+                }
+                return await this.googleProvider.generateAudio(text, voiceId, { languageCode: language });
+            }
+
+            case 'gemini': {
+                if (!this.geminiProvider) {
+                    const settings = await AdminSettings.findOne();
+                    const geminiConfig = settings?.aiSettings?.providers?.find((p: any) => p.id === 'google');
+                    const apiKey = geminiConfig?.apiKey || process.env.GOOGLE_API_KEY;
+                    
+                    if (!apiKey) {
+                        throw new Error('Gemini API key not configured');
+                    }
+                    
+                    this.geminiProvider = new GeminiTTSProvider({ apiKey });
+                }
+                return await this.geminiProvider.generateAudio(text, voiceId);
+            }
+
+            case 'elevenlabs': {
+                if (!this.elevenLabsProvider) {
+                    const settings = await AdminSettings.findOne();
+                    const elevenLabsConfig = settings?.aiSettings?.providers?.find((p: any) => p.id === 'elevenlabs');
+                    const apiKey = elevenLabsConfig?.apiKey || process.env.ELEVENLABS_API_KEY;
+                    
+                    if (!apiKey) {
+                        throw new Error('ElevenLabs API key not configured');
+                    }
+                    
+                    this.elevenLabsProvider = new ElevenLabsProvider(apiKey);
+                }
+                return await this.elevenLabsProvider.generateAudio(text, voiceId);
+            }
+
+            case 'openai': {
+                // OpenAI TTS implementation
+                throw new Error('OpenAI TTS not yet implemented');
+            }
+
+            default:
+                throw new Error(`Unsupported TTS provider: ${provider}`);
+        }
+    }
+
+    /**
+     * Legacy method for backward compatibility
      */
     async synthesizeSpeech(text: string, voiceId?: string): Promise<{ url: string }> {
-        const account = await aiAccountManager.getOptimalAccount('text'); // TTS usually uses text/general quota
-        if (account) {
-            const token = await aiAccountManager.refreshAccessToken(account);
-            this.provider.updateClient({ accessToken: token });
-        }
-
-        const result = await this.provider.generateAudio(text, voiceId);
+        const result = await this.generateSpeech({
+            text,
+            provider: 'google',
+            voiceId: voiceId || 'en-US-Standard-A',
+            language: 'en-US'
+        });
 
         return {
-            url: result.media.url // This is a data:audio/mpeg;base64,... URL
+            url: result.media.url
         };
     }
 }

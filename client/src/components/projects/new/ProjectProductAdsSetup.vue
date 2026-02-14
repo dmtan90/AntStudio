@@ -37,7 +37,7 @@
                             class="glow-input" />
                     </div>
 
-                    <div v-else class="upload-area" @click="$refs.fileInput.click()">
+                    <div v-else class="upload-area" @click="($refs.fileInput as HTMLInputElement).click()">
                         <div class="dropzone">
                             <plus theme="outline" size="32" />
                             <p v-if="!selectedFile">Drag images here or click to upload</p>

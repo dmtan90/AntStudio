@@ -102,7 +102,7 @@ router.post('/purchase/:id', authMiddleware, async (req: AuthRequest, res) => {
 
             // Also check if creator is an affiliate to track "Total Lifetime Earnings"
             const { Affiliate } = await import('../models/Affiliate.js');
-            const affiliate = await Affiliate.findOne({ userId: creator._id });
+            const affiliate = await Affiliate.findOne({ userId: creator._id.toString() });
             if (affiliate) {
                 affiliate.balance.totalEarned += creatorEarning;
                 affiliate.balance.unpaid += creatorEarning;

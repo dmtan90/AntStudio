@@ -50,6 +50,16 @@
                         </template>
 
                         <div class="space-y-6 py-2">
+                            <!-- Global AI Toggle -->
+                            <div class="flex items-center justify-between p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Enable AI Features</span>
+                                    <span class="text-[8px] text-white/40">Face Tracking, Reframing & Virtual Backgrounds</span>
+                                </div>
+                                <el-switch v-model="studioStore.aiEnabled" size="small" 
+                                    style="--el-switch-on-color: #3b82f6;" />
+                            </div>
+
                             <!-- Enhancement Presets -->
                             <div class="space-y-3">
                                 <label class="section-label">Enhancement Presets</label>

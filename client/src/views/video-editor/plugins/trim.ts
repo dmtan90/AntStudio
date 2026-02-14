@@ -36,7 +36,7 @@ export class CanvasTrimmer {
 
   private _timelineRecorderStartEvent() {
     this.active = null;
-    this.canvas.discardActiveObject();
+    this._canvas.instance?.discardActiveObject();
   }
 
   private _trimAudioStart(audio: EditorAudioElement) {

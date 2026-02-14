@@ -32,7 +32,7 @@ export class CanvasCropper {
 
   private _timelineRecorderStartEvent() {
     this.active = null;
-    this.canvas.discardActiveObject();
+    this._canvas.instance?.discardActiveObject();
   }
 
   private _mouseDoubleClickEvent<T extends Event>(event: fabric.IEvent<T>) {

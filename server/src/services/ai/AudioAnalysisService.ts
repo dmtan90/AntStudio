@@ -1,16 +1,11 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { configService } from '../../utils/configService.js';
+import { GoogleGenAI } from '@google/genai';
+import { geminiPool } from '../../utils/gemini.js';
 
 /**
  * Service for analyzing audio characteristics like rhythm, beats, and energy peaks.
  */
 export class AudioAnalysisService {
-    private genAI: GoogleGenerativeAI;
-
-    constructor() {
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || '';
-        this.genAI = new GoogleGenerativeAI(apiKey);
-    }
+    constructor() {}
 
     /**
      * Detects rhythmic beats or major energy peaks in an audio/video buffer.
@@ -18,10 +13,8 @@ export class AudioAnalysisService {
      */
     public async detectBeats(buffer: Buffer, mimeType: string = "audio/mpeg") {
         try {
-            const model = this.genAI.getGenerativeModel({
-                model: "gemini-1.5-flash",
-                generationConfig: { responseMimeType: "application/json" }
-            });
+            const modelName = "gemini-2.5-flash";
+            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
 
             const audioBase64 = buffer.toString('base64');
 
@@ -39,18 +32,29 @@ export class AudioAnalysisService {
                 Ensure the timestamps are precise and represent the pulse of the music.
             `;
 
-            const result = await model.generateContent([
-                prompt,
-                {
-                    inlineData: {
-                        data: audioBase64,
-                        mimeType: mimeType
-                    }
+            const result = await (ai as any).models.generateContent({
+                model: modelName,
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                data: audioBase64,
+                                mimeType: mimeType
+                            }
+                        }
+                    ]
+                }],
+                config: {
+                    responseMimeType: "application/json"
                 }
-            ]);
+            });
 
-            const response = await result.response;
+            const response = result.response;
             const text = response.text();
+            
+            // Record usage
+            await geminiPool.recordUsage(key, modelName);
 
             let beats = JSON.parse(text);
 

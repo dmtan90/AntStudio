@@ -80,17 +80,46 @@
                     </div>
 
                     <div class="social-share-mini">
-                        <h4 class="text-[10px] font-black text-white/30 uppercase mb-4 tracking-[0.2em]">Instant Share
+                        <h4 class="text-[10px] font-black text-white/30 uppercase mb-4 tracking-[0.2em]">Syndicate to Viral Hub
                         </h4>
-                        <div class="grid grid-cols-2 gap-3">
-                            <el-button
-                                class="mini-social youtube rounded-xl !bg-red-500/10 !border-red-500/20 hover:!bg-red-500/20">
-                                <VideoPlay :size="24" />
-                            </el-button>
-                            <el-button
-                                class="mini-social facebook rounded-xl !bg-brand-primary/10 !border-brand-primary/20 hover:!bg-brand-primary/20">
-                                <Share :size="24" />
-                            </el-button>
+                        
+                        <div v-if="loadingAccounts" class="py-4 text-center">
+                            <el-icon class="is-loading text-brand-primary"><Loading /></el-icon>
+                        </div>
+                        
+                        <div v-else-if="accounts.length === 0" class="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+                            <p class="text-[10px] text-white/40 font-bold uppercase mb-3">No connected accounts</p>
+                            <el-button size="small" @click="openIntegrations" class="cinematic-button !h-8 !rounded-lg !bg-white/10 !text-white !border-transparent">Connect</el-button>
+                        </div>
+
+                        <div v-else class="space-y-4">
+                            <div class="grid grid-cols-3 gap-2">
+                                <button 
+                                    v-for="acc in accounts" 
+                                    :key="acc._id"
+                                    class="p-2 rounded-xl border transition-all flex flex-col items-center gap-2 group"
+                                    :class="selectedAccountIds.includes(acc._id) ? 'bg-blue-500/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:bg-white/10'"
+                                    @click="toggleAccount(acc._id)"
+                                >
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" :class="getPlatformBg(acc.platform)">
+                                        <component :is="getPlatformIcon(acc.platform)" theme="filled" size="16" class="text-white" />
+                                    </div>
+                                    <span class="text-[8px] font-black uppercase tracking-tighter text-white/60 truncate w-full text-center">{{ acc.accountName || acc.platform }}</span>
+                                </button>
+                            </div>
+
+                            <div v-if="selectedAccountIds.length > 0" class="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                <el-input v-model="publishMetadata.title" placeholder="Syndication Title" size="small" class="cinematic-input-ghost" />
+                                <el-input v-model="publishMetadata.description" type="textarea" :rows="2" placeholder="Syndication Description" size="small" class="cinematic-input-ghost" />
+                                
+                                <el-button 
+                                    class="!w-full !h-10 !rounded-xl !bg-blue-600 !text-white !border-transparent shadow-lg hover:!scale-[1.02] active:!scale-95"
+                                    :loading="isPublishing"
+                                    @click="handlePublish"
+                                >
+                                    <span class="text-[10px] font-black uppercase tracking-widest">Syndicate Now</span>
+                                </el-button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -232,10 +261,12 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, computed } from 'vue'
 import { AntMediaService } from '@/utils/antMedia'
+import { Download, VideoPlay, Share, Loading, ArrowDown, Delete } from '@element-plus/icons-vue'
+import { Youtube, Tiktok, Facebook, ShareTwo } from '@icon-park/vue-next'
+import { usePlatformStore } from '@/stores/platform'
 import { useAdminStore } from '@/stores/admin'
 import { useProjectStore } from '@/stores/project'
 import { useUIStore } from '@/stores/ui'
-import { Download, VideoPlay, Share, Loading, ArrowDown, Delete } from '@element-plus/icons-vue'
 import { getFileUrl } from '@/utils/api'
 import GMedia from '@/components/ui/GMedia.vue'
 import { ElMessage as toast } from 'element-plus'
@@ -250,7 +281,17 @@ const emit = defineEmits(['update:modelValue'])
 const adminStore = useAdminStore()
 const projectStore = useProjectStore()
 const uiStore = useUIStore()
+const platformStore = usePlatformStore()
 const visible = ref(props.modelValue)
+
+const accounts = computed(() => platformStore.accounts)
+const loadingAccounts = ref(false)
+const selectedAccountIds = ref<string[]>([])
+const publishMetadata = ref({
+    title: props.project?.title || '',
+    description: props.project?.metadata?.description || ''
+})
+const isPublishing = ref(false)
 
 const streamId = ref(uiStore.appName.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substr(2, 9))
 const isStreaming = ref(false)
@@ -274,6 +315,11 @@ const format = computed(() => props.project?.finalVideo?.s3Key?.split('.').pop()
 
 watch(() => props.modelValue, (val) => {
     visible.value = val
+    if (val) {
+        fetchAccounts()
+        publishMetadata.value.title = props.project?.title || ''
+        publishMetadata.value.description = props.project?.metadata?.description || ''
+    }
 })
 
 watch(visible, (val) => {
@@ -286,6 +332,60 @@ const addEndpoint = () => {
 
 const removeEndpoint = (index: number) => {
     rtmpEndpoints.value.splice(index, 1)
+}
+
+const fetchAccounts = async () => {
+    loadingAccounts.value = true
+    try {
+        await platformStore.fetchAccounts()
+    } finally {
+        loadingAccounts.value = false
+    }
+}
+
+const toggleAccount = (id: string) => {
+    const index = selectedAccountIds.value.indexOf(id)
+    if (index === -1) {
+        selectedAccountIds.value.push(id)
+    } else {
+        selectedAccountIds.value.splice(index, 1)
+    }
+}
+
+const handlePublish = async () => {
+    if (selectedAccountIds.value.length === 0) return
+
+    isPublishing.value = true
+    try {
+        const payload = {
+            projectId: props.project._id,
+            s3Key: props.project.finalVideo?.s3Key,
+            platformAccountIds: selectedAccountIds.value,
+            metadata: publishMetadata.value
+        }
+        await platformStore.publishSyndication(payload)
+        visible.value = false
+    } finally {
+        isPublishing.value = false
+    }
+}
+
+const getPlatformIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+        case 'tiktok': return Tiktok
+        case 'youtube': return Youtube
+        case 'facebook': return Facebook
+        default: return ShareTwo
+    }
+}
+
+const getPlatformBg = (platform: string) => {
+    switch (platform.toLowerCase()) {
+        case 'tiktok': return 'bg-black'
+        case 'youtube': return 'bg-red-600'
+        case 'facebook': return 'bg-blue-600'
+        default: return 'bg-gray-700'
+    }
 }
 
 const downloadVideo = async () => {
@@ -393,6 +493,10 @@ const formatSize = (bytes: number) => {
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+const openIntegrations = () => {
+    window.open('/admin/settings?tab=integrations', '_blank')
 }
 
 onUnmounted(() => {

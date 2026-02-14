@@ -54,15 +54,15 @@ export class HighlightService {
         const fileName = `highlights/${sessionId}/${highlightId}.webm`;
 
         try {
-            const storage = StorageFactory.getActiveAdapter();
-            const result = await storage.uploadFile(combinedBuffer, fileName, 'video/webm');
+            const storage = await StorageFactory.getActiveAdapter();
+            const result = await storage.uploadFile(fileName, combinedBuffer, 'video/webm');
 
-            systemLogger.info(`[HighlightService] Captured highlight for ${sessionId}: ${result}`, 'HighlightService');
+            systemLogger.info(`[HighlightService] Captured highlight for ${sessionId}: ${result.url}`, 'HighlightService');
 
             return {
                 id: highlightId,
-                s3Key: key,
-                id: highlightId
+                s3Key: result.key,
+                s3Url: result.url
             };
         } catch (error: any) {
             systemLogger.error(`[HighlightService] Failed to upload highlight: ${error.message}`, 'HighlightService');

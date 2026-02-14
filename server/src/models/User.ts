@@ -61,6 +61,11 @@ export interface IUser extends Document {
         theme?: string
         customVoiceId?: string
     }
+    gamification: {
+        xp: number
+        level: number
+        totalXp: number
+    }
     createdAt: Date
     updatedAt: Date
     comparePassword(candidatePassword: string): Promise<boolean>
@@ -172,6 +177,11 @@ const UserSchema = new Schema<IUser>(
             email: { type: Boolean, default: true },
             push: { type: Boolean, default: false },
             inApp: { type: Boolean, default: true }
+        },
+        gamification: {
+            xp: { type: Number, default: 0 },
+            level: { type: Number, default: 1 },
+            totalXp: { type: Number, default: 0 }
         },
         resetPasswordToken: String,
         resetPasswordExpires: Date,

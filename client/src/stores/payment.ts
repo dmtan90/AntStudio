@@ -11,8 +11,8 @@ export const usePaymentStore = defineStore('payment', () => {
     async function fetchTransactions() {
         loading.value = true
         try {
-            const response = await api.get('/payment/transactions')
-            transactions.value = response.data.data?.transactions || []
+            const res: any = await api.get('/payment/transactions')
+            transactions.value = res.data?.transactions || []
             return transactions.value
         } catch (error: any) {
             console.error('Failed to fetch transactions', error)
@@ -24,8 +24,8 @@ export const usePaymentStore = defineStore('payment', () => {
     async function fetchAdminTransactions() {
         loading.value = true
         try {
-            const response = await api.get('/payment/admin/transactions')
-            transactions.value = response.data.data?.transactions || []
+            const res: any = await api.get('/payment/admin/transactions')
+            transactions.value = res.data?.transactions || []
             return transactions.value
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to fetch admin transactions')
@@ -37,8 +37,8 @@ export const usePaymentStore = defineStore('payment', () => {
     async function fetchAdminStats() {
         loading.value = true
         try {
-            const response = await api.get('/payment/admin/stats')
-            stats.value = response.data.data
+            const res: any = await api.get('/payment/admin/stats')
+            stats.value = res.data
             return stats.value
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to fetch admin stats')
@@ -49,7 +49,7 @@ export const usePaymentStore = defineStore('payment', () => {
 
     async function createCheckout(payload: { packageId: string }) {
         try {
-            const res = await api.post('/payment/create-checkout', payload);
+            const res: any = await api.post('/payment/create-checkout', payload);
             return res.data;
         } catch (error: any) {
             toast.error(error.message || 'Failed to create checkout');
@@ -59,7 +59,7 @@ export const usePaymentStore = defineStore('payment', () => {
 
     async function verifySession(payload: { sessionId: string, gateway: string }) {
         try {
-            const res = await api.post('/payment/verify-session', payload);
+            const res: any = await api.post('/payment/verify-session', payload);
             toast.success('Payment verified successfully');
             return res.data;
         } catch (error: any) {

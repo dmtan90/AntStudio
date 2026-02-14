@@ -18,10 +18,13 @@ export function useCollaboration(projectId: string) {
 
     const connect = () => {
         if (!authStore.token || !projectId) return;
-
-        socket.value = io(`${import.meta.env.VITE_API_URL}/collaboration`, {
+        const endpoint = window.location.origin;
+        console.log(`[useCollaboration] Connecting to ${endpoint} with path /socket.io`);
+        socket.value = io(endpoint, {
+			//allowEIO3: true, // Enables compatibility with Socket.IO v2 clients
+            path: '/socket.io/collaboration',
             auth: { token: authStore.token },
-            transports: ['websocket', 'polling']
+            transports: ['websocket']
         });
 
         socket.value.on('connect', () => {

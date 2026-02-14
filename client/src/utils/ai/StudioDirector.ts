@@ -1,4 +1,5 @@
 import { syntheticGuestManager } from './SyntheticGuestManager.js';
+import { conversationOrchestrator } from './ConversationOrchestrator.js';
 
 /**
  * Agentic service for autonomous live production management.
@@ -8,7 +9,8 @@ export class StudioDirector {
     private isActive = false;
     private lastSwitchTime = 0;
     private cooldownMs = 8000; // Faster response for God Mode
-    private guestReplyTimer: any = null;
+    private vibe: any = null;
+    private aiRequestQueue: { action: string, payload: any, priority?: number }[] = [];
 
     public async tick(context: {
         voiceLevel: number,
@@ -17,17 +19,26 @@ export class StudioDirector {
         chatVelocity: number,
         currentSceneId: string,
         guestLevels?: number[],
-        isTransitioning?: boolean
-    }): Promise<{ action: 'switch_scene' | 'show_overlay' | 'trigger_guest' | 'trigger_product' | 'capture_highlight' | 'none', payload?: any }> {
+        isTransitioning?: boolean,
+        vibe?: any
+    }): Promise<{ action: 'switch_scene' | 'show_overlay' | 'trigger_guest' | 'trigger_product' | 'capture_highlight' | 'trigger_celebration' | 'show_lower_third' | 'none', payload?: any }> {
         if (!this.isActive || context.isTransitioning) return { action: 'none' };
 
         const now = Date.now();
+        
+        // 0. Process AI-Initiated Requests (Priority)
+        if (this.aiRequestQueue.length > 0 && now - this.lastSwitchTime > 5000) {
+            const req = this.aiRequestQueue.shift();
+            console.log(`[StudioDirector] Fulfilling AI Request: ${req?.action}`);
+            this.lastSwitchTime = now;
+            return { action: req?.action as any, payload: req?.payload };
+        }
         const { voiceLevel, activeGuests, chatVelocity, currentSceneId, guestLevels = [] } = context;
 
         // 1. Viral Detection (Chat Spike)
-        if (chatVelocity > 20 && now - this.lastSwitchTime > 30000) {
+        if (chatVelocity > 25 && now - this.lastSwitchTime > 30000) {
             this.lastSwitchTime = now;
-            return { action: 'capture_highlight', payload: { type: 'hype_burst', score: chatVelocity } };
+            return { action: 'trigger_celebration', payload: { type: 'hype_burst', score: chatVelocity } };
         }
 
         // 2. High Engagement Visuals
@@ -39,6 +50,11 @@ export class StudioDirector {
         if (voiceLevel > 0.15 && chatVelocity > 5 && now - this.lastSwitchTime > 45000) {
             this.lastSwitchTime = now;
             return { action: 'trigger_product', payload: { reason: 'high_engagement_pitch' } };
+        }
+
+        // 4. Automatic Lower Thirds (Contextual Info)
+        if (activeGuests > 0 && now - this.lastSwitchTime > 20000 && Math.random() < 0.2) {
+            return { action: 'show_lower_third', payload: { type: 'guest_info' } };
         }
 
         // 3. Autonomous Scene Switching (Director Core)
@@ -74,24 +90,6 @@ export class StudioDirector {
             }
         }
 
-        // 4. Guest Coordination (Synthetic interactions / Auto-Chime)
-        if (!this.guestReplyTimer) {
-            const guests = syntheticGuestManager.getGuests();
-            if (guests.length > 0) {
-
-                // IF: Chat is exploding, trigger a reaction
-                if (chatVelocity > 15) {
-                    this.guestReplyTimer = setTimeout(() => { this.guestReplyTimer = null; }, 15000);
-                    return { action: 'trigger_guest', payload: { guestId: guests[0].persona.id, prompt: "React with excitement to the chat activity!" } };
-                }
-
-                // IF: Long silence, guest should chime in
-                if (voiceLevel < 0.05 && now - this.lastSwitchTime > 12000) {
-                    this.guestReplyTimer = setTimeout(() => { this.guestReplyTimer = null; }, 20000);
-                    return { action: 'trigger_guest', payload: { guestId: guests[0].persona.id, prompt: "The studio is a bit quiet, start a conversation or offer a thought." } };
-                }
-            }
-        }
 
         return { action: 'none' };
     }
@@ -105,8 +103,23 @@ export class StudioDirector {
         return this.isActive;
     }
 
-    public updateSettings(settings: { cooldown?: number }) {
+    public updateSettings(settings: { cooldown?: number, vibe?: any }) {
         if (settings.cooldown) this.cooldownMs = settings.cooldown;
+        if (settings.vibe) this.vibe = settings.vibe;
+    }
+
+    /**
+     * Allows AI Agents (Producer, Guests) to request a studio action.
+     * Actions are queued and processed by the director.
+     */
+    public requestAction(action: string, payload: any, priority: number = 1) {
+        if (action === 'none') return;
+        
+        console.log(`[StudioDirector] AI Requested action: ${action}`);
+        this.aiRequestQueue.push({ action, payload, priority });
+        
+        // Limit queue size
+        if (this.aiRequestQueue.length > 5) this.aiRequestQueue.shift();
     }
 }
 

@@ -11,7 +11,7 @@ import authRouter from './routes/auth.js';
 import s3Router from './routes/s3.js';
 import projectsRouter from './routes/projects.js';
 import adminRouter from './routes/admin.js';
-import aiConfigRoutes from './routes/aiConfig.js';
+import aiConfigRouter from './routes/aiConfig.js'; // Changed from aiConfigRoutes
 import mediaRouter from './routes/media.js';
 import aiRouter from './routes/ai.js';
 import promptsRouter from './routes/prompts.js';
@@ -24,17 +24,20 @@ import broadcasterRouter from './routes/broadcaster.js';
 import networkRouter from './routes/network.js';
 import organizationRoutes from './routes/organizations.js';
 import developerRoutes from './routes/developer.js';
-import neuralRoutes from './routes/neural.js';
+import vtuberRouter from './routes/vtuber.js';
+import liveRouter from './routes/live.js';
 
 import releaseRouter from './routes/release.js';
 import paymentRouter from './routes/payment.js';
 import socialRouter from './routes/social.js';
+import syndicationRouter from './routes/syndication.js';
 import configsRouter from './routes/configs.js';
 import videosRouter from './routes/videos.js';
 import analyticsRouter from './routes/analytics.js';
 import licenseRouter from './routes/license.js';
 import collaborationRouter from './routes/collaboration.js';
 import aiAccountsRouter from './routes/aiAccounts.js';
+import aiAuthRouter from './routes/aiAuth.js';
 import commerceRouter from './routes/commerce.js';
 import monitoringRouter from './routes/monitoring.js';
 import { monitoringService } from './services/monitoringService.js';
@@ -55,12 +58,16 @@ import commentsRouter from './routes/comments.js';
 import versionsRouter from './routes/versions.js';
 // import { recoveryService } from './services/RecoveryService.js';
 import { apiKeyMiddleware } from './middleware/apiKey.js';
+import showRouter from './routes/show.js';
+import economyRouter from './routes/economy.js';
+import gamificationRouter from './routes/gamification.js';
 import { createServer } from 'http';
-import { SocketServer } from './services/SocketServer.js';
+import { socketServer, SocketServer } from './services/SocketServer.js';
 import { collaborationService } from './services/CollaborationService.js';
 import { LicenseWorker } from './services/LicenseWorker.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { initializeLiveWebSocket } from './routes/live.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -103,8 +110,18 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // NoSQL Injection Protection
 app.use(mongoSanitize());
 
-app.use(express.static(path.join(__dirname, '../../public')));
-app.use(express.static(path.join(__dirname, '../../../client/dist')));
+// detect if we are running in a pkg binary
+const isPkg = typeof (process as any).pkg !== 'undefined';
+const clientDistPath = isPkg 
+    ? path.join(__dirname, './client') // internal to pkg binary
+    : path.join(__dirname, '../../../client/dist');
+
+const publicPath = isPkg 
+    ? path.join(__dirname, './public') 
+    : path.join(__dirname, '../../public');
+
+app.use(express.static(publicPath));
+app.use(express.static(clientDistPath));
 app.use(apiKeyAuthMiddleware);
 
 // Tenant Context Isolation
@@ -127,7 +144,7 @@ app.use('/api/s3', s3Router);
 app.use('/api/projects', projectsRouter);
 app.use('/api/prompts', promptsRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/ai-config', aiConfigRoutes);
+app.use('/api/ai-config', aiConfigRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/commerce', commerceRouter);
 
@@ -145,13 +162,14 @@ app.use('/api/streaming/mobile', mobileStreamingRouter);
 app.use('/api/broadcaster', broadcasterRouter);
 app.use('/api/network', networkRouter);
 app.use('/api/admin/ai/accounts', aiAccountsRouter);
+app.use('/api/admin/ai/auth', aiAuthRouter);
 app.use('/api/admin/monitoring', monitoringRouter);
 app.use('/api/resale/billing', resaleBillingRouter);
 app.use('/api/affiliate', affiliateRouter);
 app.use('/api/sub-tenant', subTenantRouter);
 app.use('/api/marketplace', marketplaceRouter);
 app.use('/api/developer', developerRoutes);
-app.use('/api/neural', neuralRoutes);
+app.use('/api/vtuber', vtuberRouter);
 app.use('/api/headless', headlessRouter);
 app.use('/api/mobile', mobileRouter);
 app.use('/api/analytics', analyticsRouter);
@@ -161,6 +179,11 @@ app.use('/api/releases', releaseRouter);
 app.use('/api/comments', commentsRouter);
 app.use('/api/collaboration', collaborationRouter);
 app.use('/api/versions', versionsRouter);
+app.use('/api/syndication', syndicationRouter);
+app.use('/api/live', liveRouter);
+app.use('/api/show', showRouter);
+app.use('/api/economy', economyRouter);
+app.use('/api/gamification', gamificationRouter);
 
 // Rate Limiting
 const globalLimiter = rateLimit({
@@ -199,7 +222,7 @@ app.get('*', (req, res) => {
     if (req.path.startsWith('/api/') || req.path.startsWith('/health')) {
         return res.status(404).json({ error: 'API endpoint not found' });
     }
-    res.sendFile(path.join(__dirname, '../../../client/dist/index.html'));
+    res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
 // Error handling middleware
@@ -245,19 +268,31 @@ const startServer = async () => {
         LicenseWorker.start();
 
         const httpServer = createServer(app);
-        const socketServer = new SocketServer(httpServer);
+        socketServer.initialize(httpServer);
+
+        // Initialize Live WebSocket for Gemini Live API
+        initializeLiveWebSocket(httpServer);
 
         // Connect SocketServer to SystemLogger for real-time streaming
-        systemLogger.setSocketServer(socketServer.getIO());
+        systemLogger.setSocketServer(socketServer.getIO()!);
 
         // Initialize collaboration service
-        collaborationService.initialize(socketServer['io']);
+        collaborationService.initialize(socketServer.getIO()!);
+
+        // Initialize commerce sync service
+        const { commerceSyncService } = await import('./services/CommerceSyncService.js');
+        commerceSyncService.setSocketServer(socketServer.getIO()!);
+
+        // Initialize autonomous style testing engine
+        const { styleABTestingEngine } = await import('./services/ai/StyleABTestingEngine.js');
+        styleABTestingEngine.setSocketServer(socketServer.getIO()!);
 
         httpServer.listen(PORT, () => {
             console.log(`🚀 AntStudio Engine is running on port ${PORT}`);
             // Start Industrial Watchdog (Phase 25)
             // recoveryService.startMonitoring();
             console.log(`📡 API available at http://localhost:${PORT}/api`);
+            console.log(`🎙️ Live Studio WebSocket available at ws://localhost:${PORT}/api/live`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);

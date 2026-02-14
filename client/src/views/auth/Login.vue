@@ -13,10 +13,14 @@
       <transition name="fade-up" appear>
         <GCard class="auth-card" :hoverable="false">
           <div class="logo">
-            <div v-if="uiStore.logo" class="flex justify-center mb-6">
-              <img :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="h-16 w-auto object-contain" />
+            <div class="flex justify-center mb-6">
+              <el-image :src="getFileUrl(uiStore.logo)" class="h-16 w-auto object-contain">
+                <template #error>
+                  <img src="/logo.png" :alt="uiStore.appName" class="h-16 w-auto object-contain" />
+                </template>
+              </el-image>
             </div>
-            <h1 v-else class="brand">{{ uiStore.appName }}</h1>
+            <h1 class="brand">{{ uiStore.appName }}</h1>
             <p>Everyone can be a director with AI</p>
           </div>
 

@@ -11,20 +11,20 @@ export const useConfigStore = defineStore('config', () => {
     async function fetchPlans() {
         loading.value = true
         try {
-            const response = await api.get('/configs/plans')
-            const resData = response.data
+            const res: any = await api.get('/configs/plans')
+            const resData = res.data
             console.log(resData);
 
-            if (resData.success && resData.data) {
-                plans.value = resData.data.plans || []
-                creditPackages.value = resData.data.creditPackages || []
-                aiSettings.value = resData.data.aiSettings || { defaults: {}, models: [] }
-            } else if (resData.plans) { // Fallback if structure is flat (unexpected but for safety)
-                plans.value = resData.plans
-                creditPackages.value = resData.creditPackages || []
-                aiSettings.value = resData.aiSettings || { defaults: {}, models: [] }
+            if (res.success && res.data) {
+                plans.value = res.data.plans || []
+                creditPackages.value = res.data.creditPackages || []
+                aiSettings.value = res.data.aiSettings || { defaults: {}, models: [] }
+            } else if (res.plans) { // Fallback if structure is flat (unexpected but for safety)
+                plans.value = res.plans
+                creditPackages.value = res.creditPackages || []
+                aiSettings.value = res.aiSettings || { defaults: {}, models: [] }
             }
-            return resData
+            return res.data
         } catch (error) {
             console.error('Fetch plans error:', error)
             throw error

@@ -63,6 +63,24 @@ The "God Mode" of the editor. It can automatically:
 3. (Optional) Toggle "Publish to Socials" to auto-post to connected YouTube/Facebook accounts.
 4. Download the final MP4 file.
 
+## 💳 Billing & Licensing
+
+### Subscription Management
+AntStudio supports flexible payment options via Stripe and PayPal.
+- **Upgrade**: Go to `Settings -> Billing` to select a Pro or Enterprise plan.
+- **Cancellations**: You can cancel anytime from the billing portal. Access remains until the end of the billing cycle.
+
+### License Activation
+For Enterprise or self-hosted users:
+1. Navigate to `Admin -> License`.
+2. Enter your provided License Key.
+3. Click **Verify**. The system will validate against our License Portal and unlock premium features.
+
+## 🎓 Interactive Tour
+New to AntStudio?
+- Click the **"Start Tour"** button in the help menu (top right) to launch the `AppTour`.
+- This interactive guide walks you through the core interface, from the Sidebar to the Timeline, explaining key features in real-time.
+
 ## 🏢 Enterprise Features (If applicable)
 
 - **Team Collaboration**: Invite members to your workspace.

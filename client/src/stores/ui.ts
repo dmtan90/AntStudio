@@ -1,3 +1,4 @@
+import api from '@/utils/api';
 import { defineStore } from 'pinia'
 
 export const useUIStore = defineStore('ui', {
@@ -30,10 +31,9 @@ export const useUIStore = defineStore('ui', {
         },
         async fetchAppConfig() {
             try {
-                const response = await fetch('/api/configs/public')
-                const data = await response.json()
-                if (data.success) {
-                    this.setAppConfig(data.data)
+                const res: any = await api.get('/configs/public')
+                if (res.success) {
+                    this.setAppConfig(res.data)
                 }
             } catch (error) {
                 console.error('Failed to fetch app config', error)
@@ -45,9 +45,8 @@ export const useUIStore = defineStore('ui', {
                 // We might need access to userStore here, but for now we'll return data and let component decide
                 // or we can just fetch and let component handle logic.
                 // Better: keep it simple fetch here.
-                const response = await fetch('/api/releases/latest')
-                const data = await response.json()
-                return data
+                const res: any = await api.get('/releases/latest')
+                return res.data
             } catch (error) {
                 // Silent fail for updates
                 return null

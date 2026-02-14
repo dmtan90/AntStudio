@@ -29,7 +29,7 @@ export class AIAudioAnalyzer {
 
         const loop = () => {
             if (!this.analyser || !this.dataArray) return;
-            this.analyser.getByteFrequencyData(this.dataArray);
+            this.analyser.getByteFrequencyData(this.dataArray as any);
 
             // Calculate RMS or peak level
             let sum = 0;

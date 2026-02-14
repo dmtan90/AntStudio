@@ -542,12 +542,75 @@ export class PlatformAuthService {
                     return [];
                 }
 
+            case SocialPlatform.TIKTOK:
+                // TikTok Comment API usually requires "comment.list" and "comment.reply" scopes
+                // For now, return empty as integration details for TikTok Comments vary by tier
+                return [];
+
             case SocialPlatform.ANT_MEDIA:
                 // AMS doesn't have a comment system for VoDs
                 return [];
 
             default:
                 return [];
+        }
+    }
+
+    /**
+     * Post a Comment or Reply to a Video
+     */
+    static async postComment(platform: SocialPlatform, credentials: any, videoId: string, text: string, parentId?: string): Promise<any> {
+        const { accessToken } = credentials;
+
+        switch (platform) {
+            case SocialPlatform.YOUTUBE:
+                try {
+                    if (parentId) {
+                        // Reply to a comment
+                        const res = await axios.post(`https://www.googleapis.com/youtube/v3/comments?part=snippet`, {
+                            snippet: {
+                                parentId: parentId,
+                                textOriginal: text
+                            }
+                        }, {
+                            headers: { Authorization: `Bearer ${accessToken}` }
+                        });
+                        return res.data;
+                    } else {
+                        // Top level comment
+                        const res = await axios.post(`https://www.googleapis.com/youtube/v3/commentThreads?part=snippet`, {
+                            snippet: {
+                                videoId: videoId,
+                                topLevelComment: {
+                                    snippet: {
+                                        textOriginal: text
+                                    }
+                                }
+                            }
+                        }, {
+                            headers: { Authorization: `Bearer ${accessToken}` }
+                        });
+                        return res.data;
+                    }
+                } catch (error: any) {
+                    throw new Error(`YouTube Comment failed: ${error.response?.data?.error?.message || error.message}`);
+                }
+
+            case SocialPlatform.FACEBOOK:
+                try {
+                    const targetId = parentId || videoId;
+                    const res = await axios.post(`https://graph.facebook.com/${targetId}/comments`, {
+                        message: text
+                    }, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    return res.data;
+                } catch (error: any) {
+                    throw new Error(`Facebook Comment failed: ${error.response?.data?.error?.message || error.message}`);
+                }
+
+            default:
+                throw new Error(`Commenting not supported on ${platform}`);
         }
     }
 
@@ -592,6 +655,66 @@ export class PlatformAuthService {
 
             default:
                 return {};
+        }
+    }
+
+    /**
+     * Get Stats for a specific Video
+     */
+    static async getVideoStats(platform: string, credentials: any, externalId: string): Promise<any> {
+        const { accessToken } = credentials;
+        if (!accessToken) return null;
+
+        try {
+            switch (platform) {
+                case SocialPlatform.YOUTUBE:
+                    const ytRes = await axios.get(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${externalId}`, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    const ytStats = ytRes.data.items?.[0]?.statistics;
+                    return {
+                        views: parseInt(ytStats?.viewCount || '0'),
+                        likes: parseInt(ytStats?.likeCount || '0'),
+                        comments: parseInt(ytStats?.commentCount || '0'),
+                        shares: 0 // YouTube doesn't expose share count easily via Data API
+                    };
+
+                case SocialPlatform.FACEBOOK:
+                    // FB Graph API for video stats
+                    const fbRes = await axios.get(`https://graph.facebook.com/v18.0/${externalId}?fields=views,likes.summary(true),comments.summary(true)`, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    return {
+                        views: fbRes.data.views || 0,
+                        likes: fbRes.data.likes?.summary?.total_count || 0,
+                        comments: fbRes.data.comments?.summary?.total_count || 0,
+                        shares: 0 // Shares usually need another endpoint or field
+                    };
+
+                case SocialPlatform.TIKTOK:
+                    const ttRes = await axios.post('https://open.tiktokapis.com/v2/video/query/?fields=stats', 
+                        { filters: { video_ids: [externalId] } },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    );
+                    const ttStats = ttRes.data.data?.videos?.[0]?.stats;
+                    return {
+                        views: ttStats?.video_views || 0,
+                        likes: ttStats?.like_count || 0,
+                        comments: ttStats?.comment_count || 0,
+                        shares: ttStats?.share_count || 0
+                    };
+
+                default:
+                    return null;
+            }
+        } catch (error: any) {
+            console.error(`[PlatformAuth] Failed to fetch video stats for ${platform}:`, error.response?.data || error.message);
+            return null;
         }
     }
 
@@ -712,15 +835,86 @@ export class PlatformAuthService {
                     }
                 );
                 return amsUploadRes.data;
+                return amsUploadRes.data;
+            
+            case SocialPlatform.FACEBOOK:
+                // Facebook Video Upload via Graph API
+                const { default: FBFormData } = await import('form-data');
+                const fbForm = new FBFormData();
+                
+                // 'source' is the key for the video file in FB Graph API
+                fbForm.append('source', videoStream, { 
+                    filename: filename || 'video.mp4', 
+                    contentType: contentType || 'video/mp4' 
+                });
+                if (metadata.title) fbForm.append('title', metadata.title);
+                if (metadata.description) fbForm.append('description', metadata.description);
+
+                const fbRes = await axios.post(`https://graph.facebook.com/v18.0/me/videos?access_token=${accessToken}`, fbForm, {
+                    headers: { ...fbForm.getHeaders() }
+                });
+                return fbRes.data;
+
             default:
-                throw new Error('Upload not supported via API');
+                throw new Error('Upload not supported via API for this platform');
+        }
+    }
+
+    /**
+     * Fetch Live Chat Messages from Platforms
+     */
+    static async getLiveChatMessages(platform: SocialPlatform, credentials: any, liveId: string): Promise<any[]> {
+        const { accessToken } = credentials;
+        if (!accessToken) return [];
+
+        try {
+            switch (platform) {
+                case SocialPlatform.YOUTUBE:
+                    // liveId here should be the liveChatId
+                    const ytRes = await axios.get(`https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveId}&part=snippet,authorDetails&maxResults=20`, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    return ytRes.data.items.map((item: any) => ({
+                        id: item.id,
+                        platform: 'youtube',
+                        author: item.authorDetails.displayName,
+                        avatar: item.authorDetails.profileImageUrl,
+                        text: item.snippet.displayMessage,
+                        timestamp: item.snippet.publishedAt
+                    }));
+
+                case SocialPlatform.FACEBOOK:
+                    // liveId here is the live_video_id
+                    const fbRes = await axios.get(`https://graph.facebook.com/${liveId}/comments?fields=id,from,message,created_time&limit=20`, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    return fbRes.data.data.map((item: any) => ({
+                        id: item.id,
+                        platform: 'facebook',
+                        author: item.from?.name || 'Facebook User',
+                        avatar: `https://graph.facebook.com/${item.from?.id}/picture`,
+                        text: item.message,
+                        timestamp: item.created_time
+                    }));
+
+                case SocialPlatform.TIKTOK:
+                    // TikTok currently requires specialized Live Webcast SDK for real-time chat.
+                    // Returning simulated data or empty list for now until specific API is verified.
+                    return [];
+
+                default:
+                    return [];
+            }
+        } catch (error: any) {
+            console.error(`[ChatSync] Failed to fetch ${platform} chat:`, error.response?.data || error.message);
+            return [];
         }
     }
 
     /**
      * Create or Fetch Live Stream Ingest Info
      */
-    static async getLiveStreamInfo(platform: SocialPlatform, credentials: any, metadata: { title: string, description: string }): Promise<{ rtmpUrl: string, streamKey: string }> {
+    static async getLiveStreamInfo(platform: SocialPlatform, credentials: any, metadata: { title: string, description: string }): Promise<{ rtmpUrl: string, streamKey: string, externalChatId?: string }> {
         const { accessToken, serverUrl, email, password, appName } = credentials;
 
         switch (platform) {
@@ -741,8 +935,13 @@ export class PlatformAuthService {
                                 scheduledStartTime: new Date().toISOString()
                             },
                             status: {
-                                privacyStatus: 'public', // Or private
+                                privacyStatus: 'public',
                                 selfDeclaredMadeForKids: false
+                            },
+                            contentDetails: {
+                                enableAutoStart: true,
+                                enableAutoStop: true,
+                                monitorStream: { enableMonitorStream: false }
                             }
                         }
                     });
@@ -771,7 +970,8 @@ export class PlatformAuthService {
 
                     return {
                         rtmpUrl: streamRes.data.cdn?.ingestionInfo?.ingestionAddress || 'rtmp://a.rtmp.youtube.com/live2',
-                        streamKey: streamRes.data.cdn?.ingestionInfo?.streamName || ''
+                        streamKey: streamRes.data.cdn?.ingestionInfo?.streamName || '',
+                        externalChatId: broadcastRes.data.snippet?.liveChatId || undefined
                     };
                 } catch (error: any) {
                     const errMsg = error.response?.data?.error?.message || error.message || '';
@@ -781,6 +981,22 @@ export class PlatformAuthService {
                     console.error('YouTube Live Setup Error:', error.response?.data || error.message);
                     throw error;
                 }
+
+            case SocialPlatform.FACEBOOK:
+                // Facebook Live Ingest
+                const fbRes = await axios.post(`https://graph.facebook.com/me/live_videos`, {
+                    title: metadata.title,
+                    description: metadata.description,
+                    status: 'LIVE_NOW'
+                }, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+
+                return {
+                    rtmpUrl: fbRes.data.secure_stream_url || fbRes.data.stream_url,
+                    streamKey: '', // Facebook usually embeds it in URL or secure_stream_url
+                    externalChatId: fbRes.data.id // For Facebook, the live_video_id is used for comments
+                };
 
             case SocialPlatform.ANT_MEDIA:
                 const amsBaseUrl = serverUrl.replace(/\/$/, '');

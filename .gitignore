@@ -5,6 +5,7 @@
 .nitro
 .cache
 _client
+__client
 _server
 _pages
 _video-editor

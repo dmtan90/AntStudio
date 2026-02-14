@@ -1,5 +1,5 @@
 <template>
-    <aside class="side-rail left-rail glass-dark">
+    <aside class="side-rail left-rail glass-dark studio-rail">
         <!-- <div class="rail-item" :class="{ active: activeTab === 'scenes' }"
             @click="$emit('update:activeTab', 'scenes')">
             <video-two theme="outline" size="20" />
@@ -29,7 +29,8 @@
             <span class="label">Assets</span>
         </div>
 
-        <div class="rail-item" :class="{ active: activeTab === 'guests' }" @click="$emit('update:activeTab', 'guests')">
+        <div class="rail-item" :class="{ active: activeTab === 'guests' }" @click="$emit('update:activeTab', 'guests')"
+            data-guide="guests">
             <peoples theme="outline" size="20" />
             <span class="label">AI Guests</span>
         </div>

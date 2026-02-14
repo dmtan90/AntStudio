@@ -1,5 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { configService } from './configService.js';
+import { GoogleGenAI } from '@google/genai';
+import { geminiPool } from './gemini.js';
 import { uploadToS3 } from './s3.js';
 import axios from 'axios';
 
@@ -9,11 +9,7 @@ import axios from 'axios';
  */
 export const enhanceAudioFile = async (buffer: Buffer, mimeType: string, userId: string): Promise<{ url: string, key: string }> => {
     try {
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || '';
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash"
-        });
+        const { client: ai, key } = await geminiPool.getOptimalClient("gemini-2.5-flash");
 
         const audioBase64 = buffer.toString('base64');
 

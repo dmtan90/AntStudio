@@ -260,27 +260,28 @@ onUnmounted(() => {
 
 <style scoped lang="scss">
 .remote-cam {
-    background: radial-gradient(circle at 50% 10%, #1a1a1a 0%, #000 100%);
+    background: #0a0a0a;
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15), transparent 500px),
+        radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.8), transparent 500px);
     overflow: hidden;
     user-select: none;
     touch-action: manipulation;
+    font-family: 'Outfit', sans-serif;
 }
 
 .loading-spinner {
     border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top: 3px solid transparent;
-    /* Set by prop */
+    border-top: 3px solid #3b82f6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+    to { transform: rotate(360deg); }
 }
 
 .shadow-3xl {
-    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.9);
 }
 </style>

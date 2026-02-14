@@ -45,7 +45,12 @@
         <!-- Credits Stats -->
         <GCard>
           <template #header>
-            <div class="card-title">{{ t('subscription.credits').toUpperCase() }} OVERVIEW</div>
+            <div class="flex items-center justify-between w-full">
+              <div class="card-title">{{ t('subscription.credits').toUpperCase() }} OVERVIEW</div>
+              <GButton size="small" variant="secondary" @click="showBuyCreditsDialog" class="!px-4 !h-8 !text-[10px] !font-black !tracking-widest">
+                TOP UP
+              </GButton>
+            </div>
           </template>
           <div class="credits-overview">
             <div class="credit-grid">
@@ -110,6 +115,9 @@
 
   <!-- Subscription Plans Dialog -->
   <SubscriptionPlansDialog v-model="subscriptionDialogVisible" @select="handlePlanSelection" />
+  
+  <!-- Buy Credits Dialog -->
+  <BuyCreditsDialog v-model="buyCreditsDialogVisible" />
 </template>
 
 <script setup lang="ts">
@@ -124,6 +132,7 @@ import { useUserStore } from '@/stores/user'
 import { storeToRefs } from 'pinia'
 import { useTranslations } from '@/composables/useTranslations'
 import SubscriptionPlansDialog from '@/components/subscription/SubscriptionPlansDialog.vue'
+import BuyCreditsDialog from '@/components/subscription/BuyCreditsDialog.vue'
 
 const { t } = useTranslations()
 const router = useRouter()
@@ -131,6 +140,7 @@ const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 const payments = ref<any[]>([])
 const subscriptionDialogVisible = ref(false)
+const buyCreditsDialogVisible = ref(false)
 
 const fetchData = async () => {
   try {
@@ -163,6 +173,10 @@ const showUpgradeDialog = () => {
   subscriptionDialogVisible.value = true
 }
 
+const showBuyCreditsDialog = () => {
+  buyCreditsDialogVisible.value = true
+}
+
 const handlePlanSelection = (data: any) => {
   // Satisfying TODO: Navigate to tactical billing gateway
   subscriptionDialogVisible.value = false
@@ -176,15 +190,16 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-@import "@/assets/scss/_variables.scss";
+@use "sass:color";
+@use "@/assets/scss/_variables.scss" as vars;
 // $primary-rgb: var(--primary-rgb);
 // $primary: var(--primary-rgb);
 
 .subscription-page {
   min-height: 100vh;
   padding: 60px 0 100px 0;
-  background: radial-gradient(circle at top right, rgba($primary-rgb, 0.05), transparent 40%),
-    radial-gradient(circle at bottom left, rgba($primary-rgb, 0.05), transparent 40%);
+  background: radial-gradient(circle at top right, rgba(vars.$primary-rgb, 0.05), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(vars.$primary-rgb, 0.05), transparent 40%);
 }
 
 .page-container {
@@ -213,8 +228,8 @@ onMounted(() => {
       left: 0;
       width: 80px;
       height: 4px;
-      background: $primary;
-      box-shadow: 0 0 20px $primary;
+      background: vars.$primary;
+      box-shadow: 0 0 20px vars.$primary;
       border-radius: 2px;
     }
   }
@@ -305,7 +320,7 @@ onMounted(() => {
       font-weight: 900;
       letter-spacing: 2px;
       font-size: 14px;
-      box-shadow: 0 8px 24px rgba($primary-rgb, 0.2);
+      box-shadow: 0 8px 24px rgba(vars.$primary-rgb, 0.2);
     }
 
     .cancel-btn {
@@ -412,8 +427,8 @@ onMounted(() => {
 
   .g-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, $primary, lighten($primary, 20%));
-    box-shadow: 0 0 10px rgba($primary-rgb, 0.5);
+    background: linear-gradient(90deg, vars.$primary, color.adjust(vars.$primary, $lightness: 20%));
+    box-shadow: 0 0 10px rgba(vars.$primary-rgb, 0.5);
     border-radius: 4px;
     transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }

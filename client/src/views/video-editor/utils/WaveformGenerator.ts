@@ -1,7 +1,7 @@
 
 import { createInstance } from "video-editor/lib/utils";
 // @ts-ignore
-import WaveformWorker from "@/workers/waveform.worker?worker";
+import WaveformWorker from "@/workers/Waveform.worker?worker";
 
 export class WaveformGenerator {
     private static worker: Worker | null = null;

@@ -35,7 +35,7 @@
 
       <div v-else-if="filteredProjects.length > 0" class="projects-grid">
         <GCard v-for="project in filteredProjects" :key="project._id" class="project-card"
-          @click="router.push(`/projects/${project._id}/editor`)" :bodyStyle="{ padding: '0px !important' }">
+          @click="handleProjectClick(project)" :bodyStyle="{ padding: '0px !important' }">
           <div class="project-thumbnail">
             <div class="status-badge" :class="project.status?.toLowerCase()">
               {{ t(`projects.status.${project.status?.toLowerCase()}`) }}
@@ -87,6 +87,7 @@
     </div>
 
     <ProjectCreationDialog v-model="showCreationDialog" />
+    <VideoPreviewModal v-model="showPreviewModal" :project="selectedProject" />
   </div>
 </template>
 
@@ -112,6 +113,7 @@ import GSegmented from '@/components/ui/GSegmented.vue'
 import GMedia from '@/components/ui/GMedia.vue'
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue'
 import { useProjectStore } from '@/stores/project'
+import VideoPreviewModal from '@/components/projects/VideoPreviewModal.vue'
 import { useUIStore } from '@/stores/ui'
 import { storeToRefs } from 'pinia'
 import { getFileUrl } from '@/utils/api'
@@ -125,6 +127,8 @@ const { projects, loadingList: loading } = storeToRefs(projectStore)
 const searchQuery = ref('')
 const currentStatus = ref('all')
 const showCreationDialog = ref(false)
+const showPreviewModal = ref(false)
+const selectedProject = ref<any>(null)
 
 const showTour = ref(false)
 const tourSteps = [
@@ -181,6 +185,15 @@ const handleProjectCreation = (type: string) => {
       break
     default:
       router.push('/projects/new')
+  }
+}
+
+const handleProjectClick = (project: any) => {
+  if (project.mode === 'livestream') {
+    selectedProject.value = project
+    showPreviewModal.value = true
+  } else {
+    router.push(`/projects/${project._id}/editor`)
   }
 }
 

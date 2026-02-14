@@ -1,5 +1,5 @@
 /**
- * Engine to synchronize digital persona mouth movements with neural audio.
+ * Engine to synchronize digital persona mouth movements with VTuber audio.
  * Maps audio phonemes to Face Mesh landmark transformations.
  */
 export class LipSyncProcessor {

@@ -66,7 +66,7 @@ const transitionDuration = computed({
 });
 
 const selectTransition = (id: string) => {
-    activeTransition.value = id;
+    activeTransition.value = id as any;
 };
 </script>
 

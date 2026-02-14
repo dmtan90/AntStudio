@@ -1,4 +1,4 @@
-import { privateLLMClient } from '../../utils/ai/PrivateLLMClient.js';
+import { geminiPool } from '../../utils/gemini.js';
 import { systemLogger } from '../../utils/systemLogger.js';
 
 export interface AgentDecision {
@@ -22,8 +22,11 @@ export class ConsensusService {
     /**
      * Reaches a consensus on a proposed orchestration change.
      */
-    public async reachConsensus(projectId: string, proposal: string): Promise<{ result: 'approved' | 'rejected', debrief: string }> {
+    public async reachConsensus(projectId: string, proposal: string): Promise<{ result: 'approved' | 'rejected', debrief: string, votes: AgentDecision[] }> {
         systemLogger.info(`⚖️ [Consensus] Evaluating proposal for ${projectId}: ${proposal}`, 'ConsensusService');
+
+        const modelName = 'gemini-2.5-flash';
+        const { client: ai } = await geminiPool.getOptimalClient(modelName);
 
         const votes: AgentDecision[] = await Promise.all(this.agentMatrix.map(async (agent) => {
             const prompt = `
@@ -31,16 +34,24 @@ export class ConsensusService {
                 YOUR ROLE: ${agent.name} (${agent.persona})
                 
                 Evaluate this proposal. Should we approve it? 
-                Return JSON: { vote: "approve" | "reject" | "abstain", reason: "Short explanation" }
+                Return JSON format ONLY: { "vote": "approve" | "reject" | "abstain", "reason": "Short explanation" }
             `;
 
-            // Use Private LLM for decentralized voting logic
-            const response = await privateLLMClient.chat(prompt, { system: `You are ${agent.name}. ${agent.persona}` });
             try {
-                const data = JSON.parse(response.match(/\{.*\}/s)?.[0] || '{"vote": "abstain", "reason": "Failed to parse"}');
+                const result = await (ai as any).models.generateContent({
+                    model: modelName,
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { 
+                        responseMimeType: 'application/json',
+                        systemInstruction: `You are ${agent.name}. ${agent.persona}`
+                    }
+                });
+
+                const data = JSON.parse(result.response.text());
                 return { agentId: agent.id, persona: agent.name, ...data, weight: agent.weight };
-            } catch {
-                return { agentId: agent.id, persona: agent.name, vote: 'abstain', reason: 'Error in reasoning', weight: agent.weight };
+            } catch (error: any) {
+                console.error(`[Consensus] Agent ${agent.name} failed:`, error.message);
+                return { agentId: agent.id, persona: agent.name, vote: 'abstain' as const, reason: 'Error in reasoning', weight: agent.weight };
             }
         }));
 
@@ -56,7 +67,7 @@ export class ConsensusService {
 
         systemLogger.info(`✅ [Consensus] Final Decision: ${result.toUpperCase()} (Score: ${score})`, 'ConsensusService');
 
-        return { result, debrief };
+        return { result, debrief, votes };
     }
 }
 

@@ -19,7 +19,7 @@
             <el-tab-pane label="License & Identity" name="license">
                 <div class="space-y-6">
                     <LicenseSettings :license="settings.license" />
-                    <WhitelabelSettings :whitelabel="settings.whitelabel" :get-file-url="getFileUrl" />
+                    <WhitelabelSettings :whitelabel="settings.whitelabel" />
                 </div>
             </el-tab-pane>
 
@@ -35,14 +35,18 @@
             </el-tab-pane>
 
             <!-- Artificial Intelligence -->
-            <el-tab-pane label="Neural Engine" name="ai">
+            <el-tab-pane label="VTuber Engine" name="ai">
                 <div class="space-y-8">
-                    <AIModelSettings :providers="settings.aiSettings.providers" :ai-o-auth="settings.apiConfigs.oauth"
+                    <AIModelSettings :providers="settings.aiSettings.providers"
+                        :gemini-api-keys="settings.geminiApiKeys"
+                        :ai-o-auth="settings.apiConfigs.oauth"
                         :google-cookies="settings.aiSettings.sessionSync?.googleCookies || ''"
                         :flow-cookies="settings.aiSettings.sessionSync?.flowCookies || ''"
                         :suggested-redirect-uri="suggestedRedirectUri" :known-providers="KNOWN_PROVIDERS"
                         @add-provider="addProvider" @remove-provider="removeProvider" @save-cookies="saveSessionCookies"
-                        @sync-google="syncGoogleAI" />
+                        @sync-google="syncGoogleAI"
+                        @remove-gemini-key="removeGeminiKey"
+                        @bulk-add-gemini-keys="bulkAddGeminiKeys" />
 
                     <TaskDefaultsSettings :ai-settings="settings.aiSettings"
                         :get-providers-for-type="getProvidersForType" :get-models-for-provider="getModelsForProvider" />
@@ -85,16 +89,16 @@ const suggestedRedirectUri = computed(() => {
 });
 
 const KNOWN_PROVIDERS = [
-    { id: 'gemini_chat', name: 'Gemini Chat (Native)', supportedTypes: ['text'] },
-    { id: 'aistudio', name: 'AIStudio (Native)', supportedTypes: ['text', 'image'] },
-    { id: 'google_gemini', name: 'Google Gemini (Vertex AI)', supportedTypes: ['text', 'image', 'video'] },
-    { id: 'geminigen_ai', name: 'GeminiGen AI', supportedTypes: ['image', 'video'] },
-    { id: 'labs_flow', name: 'Labs Flow (Native)', supportedTypes: ['image', 'video'] },
-    { id: '11labs_direct', name: '11Labs Direct', supportedTypes: ['image', 'video', 'audio'] },
-    { id: 'openai_gpt', name: 'OpenAI (GPT-4 / DALL-E)', supportedTypes: ['text', 'image'] },
-    { id: 'anthropic', name: 'Anthropic (Claude)', supportedTypes: ['text'] },
-    { id: 'stability_ai', name: 'Stability AI', supportedTypes: ['image', 'video'] },
-    { id: 'eleven_labs', name: 'Eleven Labs (Neural Voice)', supportedTypes: ['audio'] },
+    // { id: 'gemini_chat', name: 'Gemini Chat (Native)', supportedTypes: ['text'] },
+    { id: 'aistudio', name: 'Gemini', supportedTypes: ['text', 'image', 'video', 'audio'] },
+    { id: 'google_gemini', name: 'Google Clound (Vertex AI)', supportedTypes: ['text', 'image', 'video', 'audio'] },
+    // { id: 'geminigen_ai', name: 'GeminiGen AI', supportedTypes: ['image', 'video'] },
+    // { id: 'labs_flow', name: 'Labs Flow (Native)', supportedTypes: ['image', 'video'] },
+    // { id: '11labs_direct', name: '11Labs Direct', supportedTypes: ['image', 'video', 'audio'] },
+    // { id: 'openai_gpt', name: 'OpenAI (GPT-4 / DALL-E)', supportedTypes: ['text', 'image'] },
+    // { id: 'anthropic', name: 'Anthropic (Claude)', supportedTypes: ['text'] },
+    // { id: 'stability_ai', name: 'Stability AI', supportedTypes: ['image', 'video'] },
+    { id: 'eleven_labs', name: 'Eleven Labs', supportedTypes: ['audio'] },
     { id: 'suno', name: 'Suno', supportedTypes: ['music'] }
 ];
 
@@ -116,18 +120,12 @@ const saveSettings = async () => {
     saving.value = true;
     try {
         await adminStore.updateSettings(settings.value);
-        toast.success("All changes committed to neural core");
+        toast.success("All changes committed to VTuber core");
     } catch (e) {
         toast.error("Failed to save changes");
     } finally {
         saving.value = false;
     }
-};
-
-const getFileUrl = (path: string) => {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    return `${import.meta.env.VITE_API_BASE || ''}${path}`;
 };
 
 const addProvider = (known: any) => {
@@ -144,6 +142,39 @@ const addProvider = (known: any) => {
 
 const removeProvider = (idx: number) => {
     settings.value.aiSettings.providers.splice(idx, 1);
+};
+
+const removeGeminiKey = (idx: number) => {
+    if (!settings.value.geminiApiKeys) return;
+    settings.value.geminiApiKeys.splice(idx, 1);
+    toast.success("Key removed from pool");
+};
+
+const bulkAddGeminiKeys = (rawKeys: string) => {
+    if (!settings.value.geminiApiKeys) settings.value.geminiApiKeys = [];
+    
+    const keys = rawKeys.split(/[,|\s\n]+/).map(k => k.trim()).filter(k => k && k.length > 10);
+    let addedCount = 0;
+
+    keys.forEach(key => {
+        const exists = settings.value.geminiApiKeys.some((k: any) => k.key === key);
+        if (!exists) {
+            settings.value.geminiApiKeys.push({
+                key,
+                label: `Key ${settings.value.geminiApiKeys.length + 1}`,
+                isActive: true,
+                usageCount: 0,
+                quotas: new Map()
+            });
+            addedCount++;
+        }
+    });
+
+    if (addedCount > 0) {
+        toast.success(`Registered ${addedCount} new Gemini API keys to the AI pool`);
+    } else {
+        toast.info("No new unique keys found in input");
+    }
 };
 
 const saveSessionCookies = async (cookies: { googleCookies: string, flowCookies: string }) => {
@@ -207,7 +238,7 @@ const getModelsForProvider = (providerId: string) => {
 };
 
 const addPackage = () => {
-    settings.value.billing.creditPackages.push({ name: 'Pro Neural Pack', credits: 5000, price: 49.00, isActive: true });
+    settings.value.billing.creditPackages.push({ name: 'Pro AI Pack', credits: 5000, price: 49.00, isActive: true });
 };
 
 const removePackage = (idx: number) => {

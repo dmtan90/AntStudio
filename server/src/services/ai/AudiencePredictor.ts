@@ -1,26 +1,17 @@
 import { AIPerformanceService, PerformanceSnapshot } from './AIPerformanceService.js';
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
-import { configService } from '../../utils/configService.js';
+import { geminiPool } from '../../utils/gemini.js';
 
 /**
  * Service for predictive audience intelligence and engagement forecasting.
  */
 export class AudiencePredictor {
-    private ai: any;
-
-    constructor() {
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || process.env.GEMINI_API_KEY || '';
-        this.ai = genkit({
-            plugins: [googleAI({ apiKey })]
-        });
-    }
+    constructor() {}
 
     /**
      * Forecasts future engagement trends based on historical snapshots.
      */
     public async forecastEngagement(projectId: string, snapshots: PerformanceSnapshot[]) {
-        if (snapshots.length < 10) return { trend: 'insufficient_data', confidence: 0 };
+        if (snapshots.length < 5) return { trend: 'insufficient_data', confidence: 0 };
 
         try {
             const dataSummary = snapshots.slice(-10).map(s => ({
@@ -29,18 +20,25 @@ export class AudiencePredictor {
                 c: s.chatVelocity
             }));
 
-            const response = await this.ai.generate({
-                model: 'googleai/gemini-1.5-flash',
-                prompt: `
-                    ACT AS: Data Scientist & Audience Retention Specialist.
-                    DATA: ${JSON.stringify(dataSummary)}
-                    
-                    Analyze the trend. Will engagement drop, rise, or remain stable in the next 5 minutes?
-                    Return JSON: { trend: "rise" | "drop" | "stable", confidence: 0-1, reasoning: "short reason" }
-                `
+            const modelName = 'gemini-2.5-flash';
+            const { client: ai } = await geminiPool.getOptimalClient(modelName);
+
+            const prompt = `
+                ACT AS: Data Scientist & Audience Retention Specialist.
+                DATA: ${JSON.stringify(dataSummary)}
+                
+                Analyze the trend. Will engagement drop, rise, or remain stable in the next 5 minutes?
+                Return JSON format ONLY: { "trend": "rise" | "drop" | "stable", "confidence": 0-1, "reasoning": "short reason" }
+            `;
+
+            const result = await (ai as any).models.generateContent({
+                model: modelName,
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: 'application/json' }
             });
 
-            return JSON.parse(response.text.match(/\{.*\}/s)?.[0] || '{"trend": "stable", "confidence": 0.5}');
+            const text = result.response.text();
+            return JSON.parse(text);
 
         } catch (error: any) {
             console.error('[AudiencePredictor] Forecast failed:', error.message);

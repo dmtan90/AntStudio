@@ -121,6 +121,13 @@ export class AIServiceManager {
                 providerInstances['flow'] = new FlowProvider();
             }
 
+            // Puter Provider (Phase 30.3 - Priority Provider)
+            if (!providerInstances['puter']) {
+                const { PuterProvider } = await import('./providers/PuterProvider.js');
+                providerInstances['puter'] = new PuterProvider();
+                console.log('[AIServiceManager] Puter AI (Free Priority) Provider initialized.');
+            }
+
         } catch (error) {
             console.error('Failed to initialize AI Service Manager:', error)
         }
@@ -143,17 +150,15 @@ export class AIServiceManager {
         // Ensure settings are loaded
         if (!currentSettings) await this.initialize()
 
-        let providerId = requestedProviderId
-        let modelId = requestedModelId
+        let providerId = requestedProviderId;
+        let modelId = requestedModelId;
 
-        // If no provider specified, check defaults
-        if (!providerId && currentSettings?.defaults?.[type]) {
-            providerId = currentSettings.defaults[type].providerId
-            modelId = modelId || currentSettings.defaults[type].modelId
+        // PRIORITY: Prefer Puter if no provider specified and not explicitly overridden by DB defaults
+        if (!providerId) {
+            providerId = 'puter'
+            modelId = modelId || 'gpt-4o-mini'
+            console.log(`[AIServiceManager] No provider specified, defaulting to Puter priority.`);
         }
-
-        // Fallback to google if still nothing (shouldn't happen if defaults exist)
-        providerId = providerId || 'google'
 
         // Get Provider Instance
         const provider = await this.getProvider(providerId)
@@ -167,7 +172,7 @@ export class AIServiceManager {
      */
     public async generateText(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
         let { provider, providerId, modelId } = await this.resolveProvider('text', inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'gemini-1.5-flash' // Fallback
+        const finalModelName = modelId || inputModelName || 'gemini-2.5-flash' // Fallback
 
         // SOVEREIGN HYBRID ROUTING (Phase 9)
         // If it's a "brain/logic" task and local AI is ready, use PrivateLLM
@@ -207,7 +212,19 @@ export class AIServiceManager {
             }
         }
 
-        console.debug(`generateText [Provider: ${providerId}, Model: ${finalModelName}]`)
+        // PRIORITY FALLBACK TO PUTER (Phase 30.3)
+        if (providerId !== 'puter') {
+            const puter = providerInstances['puter'];
+            if (puter && await puter.isReady()) {
+                try {
+                    console.log(`[AIServiceManager] Calling Puter as Priority Provider for text...`);
+                    const result = await puter.generateText(prompt, finalModelName, options);
+                    return result.text;
+                } catch (e) {
+                    console.warn(`[AIServiceManager] Puter priority failed, falling back to ${providerId}...`);
+                }
+            }
+        }
 
         try {
             if (providerId === 'google' && provider.generate) {
@@ -281,6 +298,25 @@ export class AIServiceManager {
                     return { buffer: Buffer.from(base64Data, 'base64'), mimeType: 'image/png' };
                 } catch (apiError: any) {
                     console.error(`[AIServiceManager] Direct Image API failed, trying fallback chain...`);
+                }
+            }
+        }
+
+        // PRIORITY FALLBACK TO PUTER (Phase 30.3)
+        if (providerId !== 'puter') {
+            const puter = providerInstances['puter'];
+            if (puter && await puter.isReady()) {
+                try {
+                    console.log(`[AIServiceManager] Calling Puter as Priority Provider for image...`);
+                    const result = await puter.generateImage(prompt, finalModelName, options);
+                    const media = result.media;
+                    if (media && media.url) {
+                         const { getFileBuffer } = await import('../AIGenerator.js');
+                         const buffer = await getFileBuffer(media.url);
+                         return { buffer, mimeType: media.mimeType || 'image/png' };
+                    }
+                } catch (e) {
+                    console.warn(`[AIServiceManager] Puter priority failed for image, falling back to ${providerId}...`);
                 }
             }
         }
@@ -553,6 +589,20 @@ export class AIServiceManager {
                 });
                 const buffer = await client.generateAudio(prompt, finalModelName, options);
                 return { media: { url: `data:audio/mpeg;base64,${buffer.toString('base64')}`, mimeType: 'audio/mpeg' } };
+            }
+        }
+
+        // PRIORITY FALLBACK TO PUTER (Phase 30.3)
+        if (providerId !== 'puter') {
+            const puter = providerInstances['puter'];
+            if (puter && await puter.isReady()) {
+                try {
+                    console.log(`[AIServiceManager] Calling Puter as Priority Provider for audio...`);
+                    const result = await puter.generateAudio(prompt, finalModelName, options);
+                    return result;
+                } catch (e) {
+                    console.warn(`[AIServiceManager] Puter priority failed for audio, falling back to ${providerId}...`);
+                }
             }
         }
 

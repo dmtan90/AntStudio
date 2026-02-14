@@ -33,7 +33,7 @@ export class CanvasReplace {
 
   private _timelineRecorderStartEvent() {
     this.active = null;
-    this.canvas.discardActiveObject();
+    this._canvas.instance?.discardActiveObject();
   }
 
   async replaceImage(image: fabric.Image, source: string) {

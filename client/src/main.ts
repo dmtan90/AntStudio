@@ -38,6 +38,9 @@ app.use(router)
 // Element Plus
 app.use(ElementPlus)
 
+import i18n from './i18n'
+app.use(i18n)
+
 // Vue Flags
 app.use(VueFlags, { iconPath: '/flags/' })
 

@@ -1,12 +1,19 @@
 import { ModerationAudit } from '../models/ModerationAudit.js';
 import { Tenant } from '../models/Tenant.js';
 import { systemLogger } from '../utils/systemLogger.js';
+import { GoogleGenAI } from '@google/genai';
+import { geminiPool } from '../utils/gemini.js';
+import axios from 'axios';
 
 /**
  * Service to handle AI Safety and Enterprise Content Moderation.
  * Centralizes vetting for both Text (Prompts) and Visual (Generated Media) assets.
  */
 export const moderationService = {
+    async getPoolClient(modelId: string) {
+        return await geminiPool.getOptimalClient(modelId);
+    },
+
     /**
      * Vets a text prompt for safety violations.
      * Integrates logic for standard toxicity + enterprise blacklists.
@@ -15,16 +22,7 @@ export const moderationService = {
         try {
             console.log(`[Moderation] Vetting prompt for user ${userId}...`);
 
-            // 1. Check Standard Blacklist (Mocking Perspective API/Local Regex)
-            const toxicKeywords = ['hate speech', 'extremsim', 'violence', 'harassment'];
-            const foundToxic = toxicKeywords.find(k => prompt.toLowerCase().includes(k));
-
-            if (foundToxic) {
-                await this.logViolation(userId, tenantId, 'text', prompt, { toxicity: 0.9 }, 'blocked');
-                return { allowed: false, reason: `Standard safety block: Restricted content detected (${foundToxic})` };
-            }
-
-            // 2. Check Enterprise Custom Blacklist
+            // 1. Enterprise Custom Blacklist
             if (tenantId) {
                 const tenant = await Tenant.findById(tenantId);
                 const customBlacklist = (tenant as any)?.settings?.moderation?.blacklist || [];
@@ -36,11 +34,46 @@ export const moderationService = {
                 }
             }
 
+            // 2. AI Safety Check (Gemini)
+            const modelName = "gemini-2.5-flash";
+            const { client: ai, key } = await this.getPoolClient(modelName);
+            const promptContent = `
+                Evaluate the safety of the following text for a public platform. 
+                Text: "${prompt}"
+                Check for: Hate speech, Harassment, Explicit violence, Self-harm, Sexual content.
+                Return ONLY a JSON object: { "safe": boolean, "flag": string | null, "score": number (0-1) }
+            `;
+
+            const result = await (ai as any).models.generateContent({
+                model: modelName,
+                contents: [{ parts: [{ text: promptContent }] }]
+            });
+            
+            const response = result.response;
+            const text = response.text();
+            
+            // Record usage
+            await geminiPool.recordUsage(key, modelName);
+            
+            // Clean markdown json if present
+            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const analysis = JSON.parse(jsonStr);
+
+            if (!analysis.safe) {
+                await this.logViolation(userId, tenantId, 'text', prompt, { toxicity: analysis.score }, 'blocked');
+                return { allowed: false, reason: `Safety Violation: ${analysis.flag || 'Restricted Content'}` };
+            }
+
             return { allowed: true };
 
         } catch (error: any) {
             console.error('[Moderation] Prompt vetting failed:', error);
-            return { allowed: true }; // Fail open for now (Production should fail closed)
+            // Fallback to basic keyword check if AI fails
+            const toxicKeywords = ['hate speech', 'extremism', 'violence'];
+            if (toxicKeywords.some(k => prompt.toLowerCase().includes(k))) {
+                 return { allowed: false, reason: 'Safety block (Fallback)' };
+            }
+            return { allowed: true }; // Fail open for minor errors
         }
     },
 
@@ -51,12 +84,43 @@ export const moderationService = {
         try {
             console.log(`[Moderation] Scanning media content: ${mediaUrl}`);
 
-            // Mock Vision analysis (e.g. searching for NSFW markers in metadata or visual fingerprint)
-            const isSuspicious = mediaUrl.includes('edgy') || Math.random() > 0.95;
+            // Only analyze if it's an accessible HTTP/HTTPS image
+            if (!mediaUrl.startsWith('http') || mediaUrl.match(/\.(mp4|webm|mov)$/i)) {
+                 return { allowed: true, status: 'ready' };
+            }
 
-            if (isSuspicious) {
-                await this.logViolation(userId, tenantId, 'video', mediaUrl, { nsfw: 0.8 }, 'flagged');
-                return { allowed: true, status: 'flagged' }; // Flag for review but don't hard block yet
+            try {
+                // Fetch image buffer
+                const response = await axios.get(mediaUrl, { responseType: 'arraybuffer', timeout: 5000 });
+                const base64 = Buffer.from(response.data).toString('base64');
+                const mimeType = response.headers['content-type'] || 'image/jpeg';
+
+                const modelName = "gemini-2.5-flash";
+                const { client: ai, key } = await this.getPoolClient(modelName);
+                const result = await (ai as any).models.generateContent({
+                    model: modelName,
+                    contents: [{
+                        parts: [
+                            { text: "Analyze this image for safety. Check for: Nudity, Gore, Hate Symbols. Return JSON: { \"safe\": boolean, \"reason\": string }" },
+                            { inlineData: { data: base64, mimeType } }
+                        ]
+                    }]
+                });
+                
+                const aiRes = result.response;
+                const jsonStr = aiRes.text().replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                // Record usage
+                await geminiPool.recordUsage(key, modelName);
+                const analysis = JSON.parse(jsonStr);
+
+                if (!analysis.safe) {
+                    await this.logViolation(userId, tenantId, 'image', mediaUrl, { nsfw: 1.0 }, 'flagged');
+                    return { allowed: true, status: 'flagged' };
+                }
+
+            } catch (fetchErr) {
+                console.warn('[Moderation] Could not fetch/analyze media for vetting:', fetchErr);
             }
 
             return { allowed: true, status: 'ready' };

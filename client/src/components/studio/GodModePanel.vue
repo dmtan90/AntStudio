@@ -7,7 +7,7 @@
       </div>
       <div class="flex gap-1">
         <button class="icon-btn" @click="isMinimized = !isMinimized">
-          <component :is="isMinimized ? 'Expand' : 'Minus'" theme="outline" size="14" />
+          <component :is="isMinimized ? 'FullScreen' : 'Minus'" theme="outline" size="14" />
         </button>
       </div>
     </div>
@@ -58,6 +58,46 @@
             </div>
             <p class="text-[9px] text-white/30 mt-1">Trigger confetti/particles on chat spikes</p>
           </div>
+
+          <div class="toggle-group">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black text-white/60 uppercase">Auto-Cam</span>
+              <button @click="studioStore.autoDirectorSettings.autoSwitchOnSpeaker = !studioStore.autoDirectorSettings.autoSwitchOnSpeaker" 
+                class="studio-toggle" :class="{ active: studioStore.autoDirectorSettings.autoSwitchOnSpeaker }">
+                <div class="toggle-inner"></div>
+              </button>
+            </div>
+            <p class="text-[9px] text-white/30 mt-1">Switch camera focus to active speaker</p>
+          </div>
+
+          <div class="toggle-group">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black text-white/60 uppercase">Auto-Pilot</span>
+              <button @click="studioStore.autoDirectorSettings.autoPivotEnabled = !studioStore.autoDirectorSettings.autoPivotEnabled" 
+                class="studio-toggle" :class="{ active: studioStore.autoDirectorSettings.autoPivotEnabled }">
+                <div class="toggle-inner"></div>
+              </button>
+            </div>
+            <p class="text-[9px] text-white/30 mt-1">Let Gemini autonomously manage the show</p>
+          </div>
+        </div>
+
+        <!-- Board Consensus (Collective Intelligence) -->
+        <div class="mini-log mt-6">
+          <div class="flex justify-between items-center mb-2">
+            <div class="text-[9px] font-black text-white/20 uppercase tracking-widest">AI Board Consensus</div>
+            <div v-if="lastConsensus" class="flex gap-1">
+              <div v-for="vote in lastConsensus.votes" :key="vote.agentId" 
+                class="w-1.5 h-1.5 rounded-full"
+                :class="vote.vote === 'approve' ? 'bg-green-500' : 'bg-red-500'"
+                :title="`${vote.persona}: ${vote.reason}`">
+              </div>
+            </div>
+          </div>
+          <div v-if="lastConsensus" class="text-[8px] text-white/40 italic leading-tight p-2 bg-white/5 rounded-lg border border-white/5">
+            {{ lastConsensus.debrief.split('\n')[0] }}...
+          </div>
+          <div v-else class="text-[8px] text-white/20 italic">Awaiting board evaluation...</div>
         </div>
 
         <!-- Log/History (Mini) -->
@@ -66,7 +106,7 @@
           <div class="log-entries">
             <div v-for="(log, i) in decisionLogs" :key="i" class="log-entry">
               <span class="time">{{ log.time }}</span>
-              <span class="action">{{ log.action }}</span>
+              <span class="action" :class="{ 'text-red-400': log.isRejected }">{{ log.action }}</span>
             </div>
           </div>
         </div>
@@ -78,7 +118,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useStudioStore } from '@/stores/studio';
-import { Magic, Minus, Expand } from '@icon-park/vue-next';
+import { Magic, Minus, FullScreen } from '@icon-park/vue-next';
 import { studioDirector } from '@/utils/ai/StudioDirector';
 
 const studioStore = useStudioStore();
@@ -91,8 +131,8 @@ const voiceLevel = ref(0);
 // Dragging Logic
 const position = ref({ x: 20, y: 150 });
 const panelStyle = computed(() => ({
-  left: `${position.x}px`,
-  top: `${position.y}px`
+  left: `${position.value.x}px`,
+  top: `${position.value.y}px`
 }));
 
 const startDrag = (e: MouseEvent) => {
@@ -114,14 +154,28 @@ const startDrag = (e: MouseEvent) => {
 };
 
 // Log Logic
-const decisionLogs = ref<{ time: string, action: string }[]>([]);
-const addLog = (action: string) => {
+const decisionLogs = ref<{ time: string, action: string, isRejected?: boolean }[]>([]);
+const lastConsensus = ref<any>(null);
+
+const addLog = (action: string, isRejected = false) => {
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  decisionLogs.value.unshift({ time, action });
-  if (decisionLogs.value.length > 5) decisionLogs.value.pop();
+  decisionLogs.value.unshift({ time, action, isRejected });
+  if (decisionLogs.value.length > 8) decisionLogs.value.pop();
 };
 
 // Sync with Director
+onMounted(() => {
+  // Listen for producer actions (which now carry consensus data)
+  window.addEventListener('producer:action', (e: any) => {
+    const { type, payload } = e.detail;
+    if (payload.consensus) {
+      lastConsensus.value = payload.consensus;
+      addLog(`${type}: ${payload.title}`, payload.consensus.result === 'rejected');
+    } else if (payload.boardFeedback) {
+      addLog(`REJECTED: ${payload.title}`, true);
+    }
+  });
+});
 watch([sensitivity, cooldown], () => {
   studioDirector.updateSettings({ cooldown: cooldown.value });
 }, { immediate: true });

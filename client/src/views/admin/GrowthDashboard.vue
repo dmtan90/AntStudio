@@ -4,7 +4,7 @@
             <div>
                 <h1 class="text-3xl font-black text-white tracking-tight mb-2">Growth & Discovery</h1>
                 <p class="text-gray-400 uppercase text-[10px] font-bold tracking-widest">Orchestrating Platform
-                    Expansion & Neural SEO</p>
+                    Expansion & VTuber SEO</p>
             </div>
             <div class="flex items-center gap-4">
                 <span
@@ -114,14 +114,14 @@
                                 <loading-one class="animate-spin" />
                             </div>
                             <div class="flex-1">
-                                <p class="text-[10px] font-bold">Neural Auto-Indexing</p>
+                                <p class="text-[10px] font-bold">VTuber Auto-Indexing</p>
                                 <p class="text-[8px] uppercase">Calibrating... 64% processed</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-10 pt-8 border-t border-white/5">
-                        <h4 class="text-[8px] font-black uppercase opacity-30 mb-4 tracking-widest">Top Keywords (Neural
+                        <h4 class="text-[8px] font-black uppercase opacity-30 mb-4 tracking-widest">Top Keywords (VTuber
                             Clusters)</h4>
                         <div class="flex flex-wrap gap-2">
                             <span v-for="kw in keywords" :key="kw"
@@ -144,7 +144,7 @@ const activeTests = ref([
     { id: '2', name: 'Pricing Page Tactical Layout', status: 'Running', startDate: '2026-01-22', conversionA: 4.1, conversionB: 3.8 }
 ]);
 
-const keywords = ref(['AI Studio', 'Autonomous Streaming', 'VEO 3.1', 'Neural Production', 'Live AI Translation', 'Virtual Media Hub']);
+const keywords = ref(['AI Studio', 'Autonomous Streaming', 'VEO 3.1', 'VTuber Production', 'Live AI Translation', 'Virtual Media Hub']);
 </script>
 
 <style lang="scss" scoped>

@@ -85,7 +85,8 @@ const setAsBackground = (asset: any) => {
             mode: 'virtual',
             blurLevel: 'low',
             assetUrl: asset.url,
-            isAssetVideo: asset.type === 'video'
+            isAssetVideo: asset.type === 'video',
+            is360: false
         }
     });
     toast.success('Background updated');

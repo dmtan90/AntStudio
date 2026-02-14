@@ -35,7 +35,7 @@
 
                 <!-- Custom Upload -->
                 <div class="p-4 rounded-3xl bg-white/5 border border-white/5 border-dashed flex items-center justify-between group hover:border-blue-500/30 cursor-pointer"
-                    @click="$refs.bgUpload.click()">
+                    @click="($refs.bgUpload as HTMLInputElement).click()">
                     <div class="flex items-center gap-3">
                         <div
                             class="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">

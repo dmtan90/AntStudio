@@ -1,17 +1,11 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { configService } from '../../utils/configService.js';
+import { GoogleGenAI } from '@google/genai';
+import { geminiPool } from '../../utils/gemini.js';
 
 /**
  * Service for automatically identifying shot boundaries (scenes) in video clips using AI.
  */
 export class SceneDetectionService {
-    private genAI: GoogleGenerativeAI;
-
-    constructor() {
-        // Initialize with Google API Key from config
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || process.env.GOOGLE_API_KEY || '';
-        this.genAI = new GoogleGenerativeAI(apiKey);
-    }
+    constructor() {}
 
     /**
      * Analyzes a video buffer and detects logical scene changes.
@@ -21,11 +15,8 @@ export class SceneDetectionService {
      */
     public async detectScenes(videoBuffer: Buffer, mimeType: string = "video/mp4") {
         try {
-            // Using flash for speed and cost efficiency on long-form content
-            const model = this.genAI.getGenerativeModel({
-                model: "gemini-1.5-flash",
-                generationConfig: { responseMimeType: "application/json" }
-            });
+            const modelName = "gemini-2.5-flash";
+            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
 
             const videoBase64 = videoBuffer.toString('base64');
 
@@ -44,18 +35,29 @@ export class SceneDetectionService {
                 Ensure the timestamps are precise and represent the exact moment of the cut.
             `;
 
-            const result = await model.generateContent([
-                prompt,
-                {
-                    inlineData: {
-                        data: videoBase64,
-                        mimeType: mimeType
-                    }
+            const result = await (ai as any).models.generateContent({
+                model: modelName,
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                data: videoBase64,
+                                mimeType: mimeType
+                            }
+                        }
+                    ]
+                }],
+                config: {
+                    responseMimeType: "application/json"
                 }
-            ]);
+            });
 
-            const response = await result.response;
+            const response = result.response;
             const text = response.text();
+
+            // Record usage
+            await geminiPool.recordUsage(key, modelName);
 
             // Parse response
             let scenes = JSON.parse(text);

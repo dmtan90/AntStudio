@@ -10,6 +10,7 @@ import { Canvas } from "./canvas";
 import { Prompt } from "./prompt";
 import { Recorder } from "./recorder";
 import { fonts } from "video-editor/constants/fonts";
+import { fabric } from "fabric";
 
 import { convertBufferToWaveBlob } from "video-editor/lib/media";
 import { createInstance } from "video-editor/lib/utils";
@@ -80,6 +81,8 @@ export class Editor {
   public prompter: Prompt;
   public recorder: Recorder;
   public adapter: Adapter;
+  public isHeadless: boolean = false;
+  public targetRatio: string | null = null;
 
   public ffmpeg: FFmpeg;
   public exporting: ExportProgress;
@@ -87,6 +90,8 @@ export class Editor {
   public onModified?: () => void;
   public onSaveRequested?: () => void;
   public onStatusChange?: (status: EditorStatus) => void;
+  public onTick?: () => void;
+  public onThumbnailUpdated?: () => void;
 
   constructor() {
     this.page = 0;
@@ -169,16 +174,173 @@ export class Editor {
         fontloading: (family) => {
           // console.debug("Loading font " + family);
         },
-        active: () => {
+        active: async () => {
           // console.debug("Fonts loaded!");
           this.status = "complete";
+          
+          if (this.targetRatio) {
+            console.log(`[Editor] Matching target ratio: ${this.targetRatio}`);
+            this.matchTargetRatio(this.targetRatio);
+          }
+
           this.onStatusChange?.("complete");
+
+          if (this.isHeadless) {
+            console.log("[Editor] Headless mode detected, starting auto-render...");
+            await this.autoRenderAndExport();
+          }
         },
       });
     } catch (error) {
       this.status = "error";
       this.onStatusChange?.("error");
     }
+  }
+
+  async autoRenderAndExport() {
+    try {
+      this.onChangeExportStatus(ExportProgress.CaptureVideo);
+      const blob = await this.exportVideoBatch();
+      if (blob) {
+        // In headless mode, we can either download or upload to S3
+        // For now, let's trigger a download to verify
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ad_render_${this.targetRatio?.replace(':', 'x') || 'auto'}.mp4`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.onChangeExportStatus(ExportProgress.Completed);
+      }
+    } catch (error) {
+      console.error("[Editor] Headless render failed:", error);
+      this.onChangeExportStatus(ExportProgress.Error);
+    }
+  }
+
+  async exportVideoBatch(): Promise<Blob> {
+    // This is a simplified batch render for headless mode
+    // It captures all pages and compiles them
+    await this.recorder.start();
+    const frames = await this.recorder.capture(this.fps, {
+      progress: (p) => {
+        this._progressEvent({ progress: p.progress, frame: p.frame });
+      }
+    });
+
+    this.onChangeExportStatus(ExportProgress.CaptureAudio);
+    const audioBlob = await this.exportAudio();
+
+    this.onChangeExportStatus(ExportProgress.CompileVideo);
+    const videoBlob = await this.recorder.compile(frames, {
+      ffmpeg: this.ffmpeg,
+      fps: this.fps,
+      codec: this.codec,
+      audio: audioBlob,
+      progress: (p) => {
+        this._progressEvent({ progress: p.progress });
+      }
+    });
+
+    await this.recorder.stop();
+    return videoBlob;
+  }
+
+  matchTargetRatio(ratioStr: string) {
+    const [targetW, targetH] = ratioStr.split(':').map(Number);
+    const targetAspect = targetW / targetH;
+
+    // 1. Find the best matching page
+    let bestPage = 0;
+    let minDiff = Infinity;
+
+    this.pages.forEach((p, idx) => {
+      const pageAspect = p.workspace ? p.workspace.width / p.workspace.height : 1;
+      const diff = Math.abs(pageAspect - targetAspect);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestPage = idx;
+      }
+    });
+
+    console.log(`[Editor] Best match found at page ${bestPage} (diff: ${minDiff})`);
+    this.onChangeActivePage(bestPage);
+
+    // 2. Set dimensions for the output
+    const outputDims = { width: 1080, height: 1080 }; // Default square base
+    if (ratioStr === '9:16') { outputDims.width = 1080; outputDims.height = 1920; }
+    else if (ratioStr === '16:9') { outputDims.width = 1920; outputDims.height = 1080; }
+
+    // 3. Apply resize (without scaling elements yet)
+    this.resize(outputDims, false);
+
+    // 4. If mismatch is significant, apply Smart Fit (Blurred Background)
+    if (minDiff > 0.05) {
+      console.log("[Editor] Significant aspect mismatch. Applying Smart Fit...");
+      this.applySmartFit(outputDims);
+    } else {
+      // If exact or close, just auto-scale elements to fit
+      this.resize(outputDims, true);
+    }
+  }
+
+  async applySmartFit(dims: Dimension) {
+    const page = this.canvas;
+    if (!page.instance) return;
+
+    // 1. Snapshot the current content to use as background
+    const snapshotUrl = page.instance.toDataURL({ format: 'png', quality: 0.5 });
+    
+    // 2. Add blurred background layer
+    const bgImg = await new Promise<fabric.Image>((resolve) => {
+      fabric.Image.fromURL(snapshotUrl, (img) => {
+        const scale = Math.max(dims.width / img.width!, dims.height / img.height!);
+        img.set({
+          originX: 'center',
+          originY: 'center',
+          left: dims.width / 2,
+          top: dims.height / 2,
+          scaleX: scale,
+          scaleY: scale,
+          selectable: false,
+          evented: false,
+          name: 'smart-fit-background'
+        });
+        
+        // Apply blur filter
+        const blurEffect = new fabric.Image.filters.Blur({ blur: 0.5 });
+        img.filters!.push(blurEffect);
+        img.applyFilters();
+        resolve(img);
+      });
+    });
+
+    page.instance.insertAt(bgImg, 0, false);
+
+    // 3. Scale and Center the original content (Group all non-bg objects)
+    const objects = page.instance.getObjects().filter(o => o !== bgImg && o.name !== 'artboard');
+    const group = new fabric.Group(objects);
+    const contentScale = Math.min(dims.width / group.width!, dims.height / group.height!) * 0.9;
+    
+    group.set({
+      originX: 'center',
+      originY: 'center',
+      left: dims.width / 2,
+      top: dims.height / 2,
+      scaleX: contentScale,
+      scaleY: contentScale
+    });
+
+    // Ungroup to keep original element structure
+    const items = group.getObjects();
+    group._restoreObjectsState();
+    page.instance.remove(group);
+    items.forEach(obj => {
+      page.instance.add(obj);
+      obj.setCoords();
+    });
+
+    page.instance.requestRenderAll();
   }
 
   getExportDuration() {
@@ -367,28 +529,56 @@ export class Editor {
     };
   }
 
-  async exportTemplate(): Promise<EditorTemplatePage[]> {
+  async exportTemplate(sanitize: boolean = true): Promise<EditorTemplatePage[]> {
     // console.log("exportTemplate");
     const templates: EditorTemplatePage[] = [];
-    for (const page of this.pages) {
-      const thumbnail: string = await this.recorder.screenshot(page.instance);
-      const scene = JSON.stringify(page.instance.toDatalessJSON(propertiesToInclude));
-      const audios: Omit<EditorAudioElement, "buffer" | "source">[] = page.audio.elements.map(({ buffer, source, ...audio }) => audio);
-      const data = { fill: page.workspace.fill, height: page.workspace.height, width: page.workspace.width, audios: audios, scene: scene };
-      templates.push({ thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration, transition: page.transition, transitionDirection: page.transitionDirection, transitionDuration: page.transitionDuration, transitionEasing: page.transitionEasing });
+    for (let i = 0; i < this.pages.length; i++) {
+      const t = await this.exportPageTemplate(i, sanitize);
+      if (t) templates.push(t);
     }
     return templates;
   }
 
-  async exportPageTemplate(index: number): Promise<EditorTemplatePage> {
+  async exportPageTemplate(index: number, sanitize: boolean = true): Promise<EditorTemplatePage> {
     // console.log("exportTemplate");
     let template: EditorTemplatePage = null;
     const page = this.pages[index];
     if (page) {
-      const thumbnail: string = await this.recorder.screenshot(page.instance);
-      const scene = JSON.stringify(page.instance.toDatalessJSON(propertiesToInclude));
+      let sceneJSON: any;
+      let thumbnail: string;
+
+      if (page.instance) {
+        // MOUNTED: Capture from live canvas
+        thumbnail = await this.recorder.screenshot(page.instance);
+
+        // Re-check instance existence after async operation (race condition fix)
+        if (page.instance) {
+          sceneJSON = page.instance.toDatalessJSON(propertiesToInclude);
+        } else {
+          // If unmounted during screenshot, fallback to saved state
+          sceneJSON = page._jsonState;
+        }
+      } else {
+        // UNMOUNTED: Use persisted state
+        thumbnail = page.thumbnail || "";
+        sceneJSON = page._jsonState;
+      }
+
+      // SANITIZE: Swap originalSrc back to src
+      if (sanitize && sceneJSON && sceneJSON.objects) {
+        // Clone to avoid mutating the live state if it came from _jsonState reference
+        sceneJSON = JSON.parse(JSON.stringify(sceneJSON));
+        sceneJSON.objects.forEach((obj: any) => {
+          if (obj.originalSrc) {
+            obj.src = obj.originalSrc;
+            delete obj.originalSrc;
+          }
+        });
+      }
+
+      const scene = JSON.stringify(sceneJSON);
       const audios: Omit<EditorAudioElement, "buffer" | "source">[] = page.audio.elements.map(({ buffer, source, ...audio }) => audio);
-      const data = { fill: page.workspace.fill, height: page.workspace.height, width: page.workspace.width, audios: audios, scene: scene };
+      const data = { fill: page.workspace?.fill || "#000000", height: page.workspace?.height || 1080, width: page.workspace?.width || 1080, audios: audios, scene: scene };
       template = { thumbnail: thumbnail, data: data, id: page.id, name: page.name, duration: page.timeline.duration, transition: page.transition, transitionDirection: page.transitionDirection, transitionDuration: page.transitionDuration, transitionEasing: page.transitionEasing };
     }
     return template;

@@ -1,18 +1,28 @@
 import config from './config.js';
 import { AdminSettings } from '../models/AdminSettings.js';
+import connectDB from './db.js';
+
+const getDomain = async () => {
+    await connectDB();
+    const adminSettings = await AdminSettings.findOne();
+    const settings = adminSettings?.whitelabel;
+    const domain = adminSettings?.apiConfigs?.publicDomain;
+    return domain || process.env.PUBLIC_BASE_URL || 'https://localhost:3000';
+}
 
 /**
  * Get Facebook OAuth authorization URL for login
  */
 export const getFacebookLoginUrl = async (state?: string): Promise<string> => {
     const settings = await AdminSettings.findOne();
-    const appId = settings?.apiConfigs?.social?.facebook?.appId || config.facebookAppId;
+    const appId = settings?.apiConfigs?.oauth?.facebook?.appId || config.facebookAppId;
+    const domain = await getDomain();
 
     if (!appId) {
         throw new Error('Facebook App ID not configured');
     }
 
-    const redirectUri = `${config.public.baseUrl}/api/auth/facebook/callback`;
+    const redirectUri = `${domain}/api/auth/facebook/callback`;
     const scope = 'email,public_profile';
 
     const params = new URLSearchParams({
@@ -36,14 +46,15 @@ export const getFacebookUserInfo = async (code: string): Promise<{
     picture?: string;
 }> => {
     const settings = await AdminSettings.findOne();
-    const appId = settings?.apiConfigs?.social?.facebook?.appId || config.facebookAppId;
-    const appSecret = settings?.apiConfigs?.social?.facebook?.appSecret || config.facebookAppSecret;
+    const appId = settings?.apiConfigs?.oauth?.facebook?.appId || config.facebookAppId;
+    const appSecret = settings?.apiConfigs?.oauth?.facebook?.appSecret || config.facebookAppSecret;
+    const domain = await getDomain();
 
     if (!appId || !appSecret) {
         throw new Error('Facebook OAuth credentials not configured');
     }
 
-    const redirectUri = `${config.public.baseUrl}/api/auth/facebook/callback`;
+    const redirectUri = `${domain}/api/auth/facebook/callback`;
 
     // Exchange code for access token
     const tokenUrl = `https://graph.facebook.com/v18.0/oauth/access_token?` +

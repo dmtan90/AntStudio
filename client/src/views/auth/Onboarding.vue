@@ -98,7 +98,7 @@
                                 class="p-6 bg-white/5 rounded-3xl text-center border border-white/5 hover:border-blue-500/30 transition-all cursor-pointer group">
                                 <brain theme="outline" class="mb-3 mx-auto text-white/20 group-hover:text-blue-400"
                                     size="24" />
-                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Neural
+                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">VTuber
                                     Units</p>
                             </div>
                         </div>
@@ -164,7 +164,7 @@ const activateLicense = async () => {
     loading.value = true;
     try {
         await licenseStore.activateLicense({ key: licenseKey.value });
-        toast.success('Neural handshake established. Tier confirmed.');
+        toast.success('VTuber handshake established. Tier confirmed.');
         step.value = 3;
     } catch (e: any) {
         toast.error(e.response?.data?.error || 'License activation failed');

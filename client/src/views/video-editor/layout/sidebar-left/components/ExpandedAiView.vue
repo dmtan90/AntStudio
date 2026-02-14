@@ -5,7 +5,7 @@ import { useCanvasStore } from 'video-editor/store/canvas';
 import { toast } from 'vue-sonner';
 import { Loading } from '@element-plus/icons-vue';
 import { getFileUrl } from '@/utils/api';
-import { generateImage, generateVoice, generateVideo, generateCaptions, detectScenes, detectBeats, detectSilence } from 'video-editor/api/ai';
+import { generateImage, generateVoice, generateVideo, generateCaptions, detectScenes, detectBeats, detectSilence, extractTextFromImage, generateImageCaption, detectObjects, detectFaces, detectLandmarks } from 'video-editor/api/ai';
 import { useUserMediaStore } from 'video-editor/hooks/use-user-media';
 import { Magic, MovieBoard, CheckOne, MusicOne, Pic, Transform, DistributeVertically, Focus } from '@icon-park/vue-next';
 import { rmbgAI } from 'video-editor/models/rmbgAI';
@@ -19,6 +19,7 @@ import { Scan, FaceRecognition, TextRecognition, Platte, Analysis } from '@icon-
 const props = defineProps<{ match: string }>();
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
+import { useMediaStore } from '@/stores/media';
 
 const isGenerating = ref(false);
 
@@ -43,6 +44,7 @@ const videoDuration = ref(5);
 
 // Caption State
 const captionLanguage = ref('en');
+const generatedCaption = ref(''); 
 
 // Scene Detection State
 const selectedVideoId = ref('');
@@ -81,13 +83,13 @@ const isCustomProcessing = ref(false);
 
 // Object Detection State
 const selectedObjectVideoId = ref('');
-const detectedObjects = ref<DetectedObject[]>([]);
+const detectedObjects = ref<any[]>([]); // Changed to any[] to match new API
 const isDetectingObjects = ref(false);
 const objectAnalysisProgress = ref(0);
 
 // Face Detection State
 const selectedFaceVideoId = ref('');
-const detectedFaces = ref<DetectedFace[]>([]);
+const detectedFaces = ref<any[]>([]); // Changed to any[] to match new API
 const isDetectingFaces = ref(false);
 const faceAnalysisProgress = ref(0);
 
@@ -96,6 +98,9 @@ const selectedTextVideoId = ref('');
 const detectedTexts = ref<DetectedText[]>([]);
 const isDetectingText = ref(false);
 const textAnalysisProgress = ref(0);
+const extractedText = ref(''); // Added missing ref
+
+const detectedLandmarks = ref<any>(null); // Added missing ref
 
 // Color Analysis State
 const selectedColorVideoId = ref('');
@@ -118,14 +123,15 @@ const handleGenerate = async (type: string) => {
     switch (type) {
       case 'voice': {
         const res = await generateVoice({ text: voiceText.value, voice: selectedVoice.value });
-        if (res.success && res.data.media) {
+        if (res && (res as any).media) {
+          const media = (res as any).media;
           toast.success("Voice generated successfully!");
-          userMediaStore.addLocalItem('audio', res.data.media);
+          userMediaStore.addLocalItem('audio', media);
 
           // Automatically add to active canvas for better UX
-          const audioUrl = getFileUrl(res.data.media.key);
+          const audioUrl = getFileUrl(media.key);
           const name = `AI Voice: ${voiceText.value.substring(0, 15)}...`;
-          canvasStore.canvas?.audio.add(res.data.media.key, name, false, res.data.media.id);
+          canvasStore.canvas?.audio.add(media.key, name, false, media.id);
         }
         break;
       }
@@ -135,9 +141,10 @@ const handleGenerate = async (type: string) => {
           style: imageStyle.value,
           aspectRatio: imageAspectRatio.value
         });
-        if (res.success && res.data.media) {
+        if (res && (res as any).media) {
+          const media = (res as any).media;
           toast.success("Image generated successfully!");
-          userMediaStore.addLocalItem('image', res.data.media);
+          userMediaStore.addLocalItem('image', media);
         }
         break;
       }
@@ -147,7 +154,7 @@ const handleGenerate = async (type: string) => {
           prompt: videoPrompt.value,
           duration: videoDuration.value
         });
-        if (res.success) {
+        if (res && (res as any).jobId) {
           toast.success("Video generation started! It will appear in your videos shortly.");
           // Trigger a background poll or just refresh after a delay
           setTimeout(() => { userMediaStore.refreshVideos() }, 5000);
@@ -157,7 +164,7 @@ const handleGenerate = async (type: string) => {
       }
       case 'caption': {
         const res = await generateCaptions({ language: captionLanguage.value });
-        if (res.success && res.data.segments) {
+        if (res && res.segments) {
           toast.success("Captions generated!");
 
           // Scene-aware placement logic
@@ -165,7 +172,7 @@ const handleGenerate = async (type: string) => {
           const pages = editor.pages;
 
           // Re-implementing more robustly:
-          res.data.segments.forEach((seg: any) => {
+          res.segments.forEach((seg: any) => {
             let runningEnd = 0;
             let found = false;
             for (let i = 0; i < pages.length; i++) {
@@ -200,9 +207,9 @@ const handleGenerate = async (type: string) => {
 
         isAnalyzing.value = true;
         const res = await detectScenes({ mediaId: selectedVideoId.value });
-        if (res.success && res.data.scenes) {
-          detectedScenes.value = res.data.scenes;
-          toast.success(`Detected ${res.data.scenes.length} shots!`);
+        if (res && (res as any).scenes) {
+          detectedScenes.value = (res as any).scenes;
+          toast.success(`Detected ${(res as any).scenes.length} shots!`);
         }
         break;
       }
@@ -214,9 +221,9 @@ const handleGenerate = async (type: string) => {
 
         isAnalyzingBeats.value = true;
         const res = await detectBeats({ mediaId: selectedAudioId.value });
-        if (res.success && res.data.beats) {
-          detectedBeats.value = res.data.beats;
-          toast.success(`Detected ${res.data.beats.length} rhythmic peaks!`);
+        if (res && (res as any).beats) {
+          detectedBeats.value = (res as any).beats;
+          toast.success(`Detected ${(res as any).beats.length} rhythmic peaks!`);
         }
         break;
       }
@@ -232,9 +239,9 @@ const handleGenerate = async (type: string) => {
           noiseThreshold: noiseThreshold.value,
           minSilenceLen: minSilenceLen.value
         });
-        if (res.success && res.data.regions) {
-          detectedRegions.value = res.data.regions;
-          toast.success(`Identified ${res.data.regions.length} non-silent segments!`);
+        if (res && (res as any).regions) {
+          detectedRegions.value = (res as any).regions;
+          toast.success(`Identified ${(res as any).regions.length} non-silent segments!`);
         }
         break;
       }
@@ -245,7 +252,7 @@ const handleGenerate = async (type: string) => {
         }
         isProcessingImage.value = true;
         const userMediaStore = useUserMediaStore();
-        const image = userMediaStore.images.items.find(i => i.id === selectedImageId.value);
+        const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
         if (!image) return;
 
         const url = await getFileUrl(image.key);
@@ -254,7 +261,7 @@ const handleGenerate = async (type: string) => {
           await rmbgAI.initializeModel();
         }
 
-        const blob = await rmbgAI.removeBackground(url, image.id);
+        const blob = await rmbgAI.removeBackground(url, image._id);
         if (blob) {
           enhancementResult.value = URL.createObjectURL(blob);
           toast.success("Background removed!");
@@ -271,7 +278,7 @@ const handleGenerate = async (type: string) => {
         enhancementResult.value = null;
 
         const userMediaStore = useUserMediaStore();
-        const video = userMediaStore.videos.items.find(v => v.id === selectedBgVideoId.value);
+        const video = userMediaStore.videos.items.find(v => v._id === selectedBgVideoId.value);
         if (!video) return;
 
         const url = await getFileUrl(video.key);
@@ -289,20 +296,19 @@ const handleGenerate = async (type: string) => {
             formData.append('purpose', 'ai-video');
 
             toast.info("Uploading processed video...");
-            const uploadRes = await api.post('/media/upload', formData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const mediaStore = useMediaStore();
+            const uploadRes = await mediaStore.uploadMedia(formData);
 
-            if (uploadRes.data.success) {
-              const newMedia = uploadRes.data.data.media;
+            if (uploadRes.success) {
+              const newMedia = uploadRes.data.media;
               userMediaStore.addLocalItem('video', newMedia);
               enhancementResult.value = getFileUrl(newMedia.key);
               toast.success("Video background removed and saved to library!");
             }
           }
-        } catch (err: any) {
-          console.error("Video BG Removal failed:", err);
-          toast.error("Failed to remove video background: " + err.message);
+        } catch (e) {
+          console.error(e);
+          toast.error("Process failed");
         } finally {
           isCustomProcessing.value = false;
         }
@@ -312,7 +318,7 @@ const handleGenerate = async (type: string) => {
         if (!selectedImageId.value) return;
         isProcessingImage.value = true;
         const userMediaStore = useUserMediaStore();
-        const image = userMediaStore.images.items.find(i => i.id === selectedImageId.value);
+        const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
         if (!image) return;
 
         const url = await getFileUrl(image.key);
@@ -327,7 +333,7 @@ const handleGenerate = async (type: string) => {
         if (!selectedImageId.value) return;
         isProcessingImage.value = true;
         const userMediaStore = useUserMediaStore();
-        const image = userMediaStore.images.items.find(i => i.id === selectedImageId.value);
+        const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
         if (!image) return;
 
         const url = await getFileUrl(image.key);
@@ -342,7 +348,7 @@ const handleGenerate = async (type: string) => {
         if (!selectedImageId.value) return;
         isProcessingImage.value = true;
         const userMediaStore = useUserMediaStore();
-        const image = userMediaStore.images.items.find(i => i.id === selectedImageId.value);
+        const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
         if (!image) return;
 
         const url = await getFileUrl(image.key);
@@ -351,6 +357,55 @@ const handleGenerate = async (type: string) => {
           enhancementResult.value = `data:image/svg+xml;base64,${btoa(svg)}`;
           toast.success("Image vectorized!");
         }
+        break;
+      }
+      case 'text-extraction': {
+        if (!selectedImageId.value) { return; }
+        const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
+        if (!image) return;
+
+        isProcessingImage.value = true;
+        
+        try {
+           const res = await extractTextFromImage({ mediaId: image._id });
+           if ((res as any).text) {
+              extractedText.value = (res as any).text;
+              toast.success("Text extracted!");
+           }
+        } catch(e) { console.error(e); }
+        finally { isProcessingImage.value = false; }
+        break;
+      }
+      case 'caption-generation': {
+        if (!selectedImageId.value) { return; }
+        const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
+        if (!image) return;
+
+        isProcessingImage.value = true;
+        try {
+            const res = await generateImageCaption({ mediaId: image._id });
+            if ((res as any).caption) {
+                generatedCaption.value = (res as any).caption;
+                toast.success("Caption generated!");
+            }
+        } catch(e) { console.error(e); }
+        finally { isProcessingImage.value = false; }
+        break;
+      }
+      case 'landmarks-detection': {
+        if (!selectedImageId.value) return;
+        const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
+        if (!image) return;
+
+        isProcessingImage.value = true;
+        try {
+            const res = await detectLandmarks({ mediaId: image._id });
+            if ((res as any).landmarks) {
+                detectedLandmarks.value = (res as any).landmarks;
+                toast.success("Landmarks detected!");
+            }
+        } catch(e) { console.error(e); }
+        finally { isProcessingImage.value = false; }
         break;
       }
       case 'auto-reframe': {
@@ -362,7 +417,7 @@ const handleGenerate = async (type: string) => {
         reframeProgress.value = 0;
 
         const userMediaStore = useUserMediaStore();
-        const video = userMediaStore.videos.items.find(v => v.id === selectedReframeVideoId.value);
+        const video = userMediaStore.videos.items.find(v => v._id === selectedReframeVideoId.value);
         if (!video) return;
 
         const url = await getFileUrl(video.key);
@@ -385,55 +440,91 @@ const handleGenerate = async (type: string) => {
         break;
       }
       case 'object-detection': {
-        if (!selectedObjectVideoId.value) {
-          toast.error("Please select a video");
+        if (!selectedObjectVideoId.value && !selectedImageId.value) {
+          toast.error("Please select a video or image");
           return;
         }
-        isDetectingObjects.value = true;
-        objectAnalysisProgress.value = 0;
 
-        const userMediaStore = useUserMediaStore();
-        const video = userMediaStore.videos.items.find(v => v.id === selectedObjectVideoId.value);
-        if (!video) return;
-        const url = await getFileUrl(video.key);
+        if(selectedObjectVideoId.value){
+          isDetectingObjects.value = true;
+          objectAnalysisProgress.value = 0;
 
-        try {
-          const results = await objectDetectionService.analyzeVideo(url, (p) => {
-            objectAnalysisProgress.value = p;
-          });
-          detectedObjects.value = results;
-          toast.success(`Detected ${results.length} objects!`);
-        } catch (err: any) {
-          toast.error("Object detection failed: " + err.message);
-        } finally {
-          isDetectingObjects.value = false;
+          const userMediaStore = useUserMediaStore();
+          const video = userMediaStore.videos.items.find(v => v._id === selectedObjectVideoId.value);
+          if (!video) return;
+          const url = await getFileUrl(video.key);
+
+          try {
+            const results = await objectDetectionService.analyzeVideo(url, (p) => {
+              objectAnalysisProgress.value = p;
+            });
+            detectedObjects.value = results;
+            toast.success(`Detected ${results.length} objects!`);
+          } catch (err: any) {
+            toast.error("Object detection failed: " + err.message);
+          } finally {
+            isDetectingObjects.value = false;
+          }
         }
+        else if(selectedImageId.value){
+          const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
+          if (!image) return;
+
+          isProcessingImage.value = true;
+          try {
+              const res = await detectObjects({ mediaId: image._id });
+              if ((res as any).objects) {
+                  detectedObjects.value = (res as any).objects;
+                  toast.success(`Found ${(res as any).objects.length} objects!`);
+              }
+          } catch(e) { console.error(e); }
+          finally { isProcessingImage.value = false; }
+        }
+        
         break;
       }
       case 'face-detection': {
-        if (!selectedFaceVideoId.value) {
-          toast.error("Please select a video");
+        if (!selectedFaceVideoId.value && !selectedImageId.value) {
+          toast.error("Please select a video or image");
           return;
         }
-        isDetectingFaces.value = true;
-        faceAnalysisProgress.value = 0;
 
-        const userMediaStore = useUserMediaStore();
-        const video = userMediaStore.videos.items.find(v => v.id === selectedFaceVideoId.value);
-        if (!video) return;
-        const url = await getFileUrl(video.key);
+        if(selectedFaceVideoId.value){
+          isDetectingFaces.value = true;
+          faceAnalysisProgress.value = 0;
 
-        try {
-          const results = await faceDetectionService.analyzeVideo(url, (p) => {
-            faceAnalysisProgress.value = p;
-          });
-          detectedFaces.value = results;
-          toast.success(`Detected ${results.length} faces!`);
-        } catch (err: any) {
-          toast.error("Face detection failed: " + err.message);
-        } finally {
-          isDetectingFaces.value = false;
+          const userMediaStore = useUserMediaStore();
+          const video = userMediaStore.videos.items.find(v => v._id === selectedFaceVideoId.value);
+          if (!video) return;
+          const url = await getFileUrl(video.key);
+
+          try {
+            const results = await faceDetectionService.analyzeVideo(url, (p) => {
+              faceAnalysisProgress.value = p;
+            });
+            detectedFaces.value = results;
+            toast.success(`Detected ${results.length} faces!`);
+          } catch (err: any) {
+            toast.error("Face detection failed: " + err.message);
+          } finally {
+            isDetectingFaces.value = false;
+          }
         }
+        else if(selectedImageId.value){
+          const image = userMediaStore.images.items.find(i => i._id === selectedImageId.value);
+          if (!image) return;
+
+          isProcessingImage.value = true;
+          try {
+              const res = await detectFaces({ mediaId: image._id });
+              if ((res as any).faces) {
+                  detectedFaces.value = (res as any).faces;
+                  toast.success(`Found ${(res as any).faces.length} faces!`);
+              }
+          } catch(e) { console.error(e); }
+          finally { isProcessingImage.value = false; }
+        }
+        
         break;
       }
       case 'text-recognition': {
@@ -445,7 +536,7 @@ const handleGenerate = async (type: string) => {
         textAnalysisProgress.value = 0;
 
         const userMediaStore = useUserMediaStore();
-        const video = userMediaStore.videos.items.find(v => v.id === selectedTextVideoId.value);
+        const video = userMediaStore.videos.items.find(v => v._id === selectedTextVideoId.value);
         if (!video) return;
         const url = await getFileUrl(video.key);
 
@@ -471,7 +562,7 @@ const handleGenerate = async (type: string) => {
         colorAnalysisProgress.value = 0;
 
         const userMediaStore = useUserMediaStore();
-        const video = userMediaStore.videos.items.find(v => v.id === selectedColorVideoId.value);
+        const video = userMediaStore.videos.items.find(v => v._id === selectedColorVideoId.value);
         if (!video) return;
         const url = await getFileUrl(video.key);
 
@@ -497,7 +588,7 @@ const handleGenerate = async (type: string) => {
         motionAnalysisProgress.value = 0;
 
         const userMediaStore = useUserMediaStore();
-        const video = userMediaStore.videos.items.find(v => v.id === selectedMotionVideoId.value);
+        const video = userMediaStore.videos.items.find(v => v._id === selectedMotionVideoId.value);
         if (!video) return;
         const url = await getFileUrl(video.key);
 
@@ -529,7 +620,7 @@ const applyScenesToTimeline = () => {
   if (detectedScenes.value.length === 0) return;
 
   const userMediaStore = useUserMediaStore();
-  const video = userMediaStore.videos.items.find(v => v.id === selectedVideoId.value);
+  const video = userMediaStore.videos.items.find(v => v._id === selectedVideoId.value);
   if (!video) return;
 
   detectedScenes.value.forEach((scene, index) => {
@@ -588,7 +679,7 @@ const applyTrimToTimeline = () => {
   if (detectedRegions.value.length === 0) return;
 
   const userMediaStore = useUserMediaStore();
-  const video = userMediaStore.videos.items.find(v => v.id === selectedTrimVideoId.value);
+  const video = userMediaStore.videos.items.find(v => v._id === selectedTrimVideoId.value);
   if (!video) return;
 
   detectedRegions.value.forEach((region, index) => {
@@ -754,7 +845,7 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Source Video</label>
         <el-select v-model="selectedVideoId" class="cinematic-select" placeholder="Choose a video from library">
-          <el-option v-for="v in useUserMediaStore().videos" :key="v.id" :label="v.fileName" :value="v.id" />
+          <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName" :value="v._id" />
         </el-select>
 
         <el-button v-if="detectedScenes.length === 0"
@@ -809,7 +900,7 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Background Music</label>
         <el-select v-model="selectedAudioId" class="cinematic-select" placeholder="Choose audio from library">
-          <el-option v-for="a in useUserMediaStore().audios.items" :key="a.id" :label="a.fileName" :value="a.id" />
+          <el-option v-for="a in useUserMediaStore().audios.items" :key="a._id" :label="a.fileName" :value="a._id" />
         </el-select>
 
         <el-button v-if="detectedBeats.length === 0"
@@ -855,7 +946,7 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Source Video</label>
         <el-select v-model="selectedTrimVideoId" class="cinematic-select" placeholder="Choose a video from library">
-          <el-option v-for="v in useUserMediaStore().videos" :key="v.id" :label="v.fileName" :value="v.id" />
+          <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName" :value="v._id" />
         </el-select>
 
         <div class="grid grid-cols-2 gap-4 mt-2">
@@ -940,8 +1031,8 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Video</label>
         <el-select v-model="selectedObjectVideoId" class="cinematic-select" placeholder="Choose video">
-          <el-option v-for="v in useUserMediaStore().videos.items" :key="v.id" :label="v.fileName"
-            :value="v._id || v.id" />
+          <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName"
+            :value="v._id" />
         </el-select>
 
         <template v-if="isDetectingObjects">
@@ -1009,8 +1100,8 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Video</label>
         <el-select v-model="selectedFaceVideoId" class="cinematic-select" placeholder="Choose video">
-          <el-option v-for="v in useUserMediaStore().videos.items" :key="v.id" :label="v.fileName"
-            :value="v._id || v.id" />
+          <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName"
+            :value="v._id" />
         </el-select>
 
         <template v-if="isDetectingFaces">
@@ -1069,7 +1160,7 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Image</label>
         <el-select v-model="selectedImageId" class="cinematic-select" placeholder="Choose image">
-          <el-option v-for="i in useUserMediaStore().images.items" :key="i.id" :label="i.fileName" :value="i.id" />
+          <el-option v-for="i in useUserMediaStore().images.items" :key="i._id" :label="i.fileName" :value="i._id" />
         </el-select>
 
         <div v-if="match === 'upscale'" class="flex flex-col gap-2 mt-2">
@@ -1118,7 +1209,7 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Image</label>
         <el-select v-model="selectedImageId" class="cinematic-select" placeholder="Choose image">
-          <el-option v-for="i in useUserMediaStore().images.items" :key="i.id" :label="i.fileName" :value="i.id" />
+          <el-option v-for="i in useUserMediaStore().images.items" :key="i._id" :label="i.fileName" :value="i._id" />
         </el-select>
 
         <el-button v-if="!enhancementResult" class="cinematic-button is-primary !h-11 !rounded-xl !border-none mt-4"
@@ -1159,7 +1250,7 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Video</label>
         <el-select v-model="selectedReframeVideoId" class="cinematic-select" placeholder="Choose video">
-          <el-option v-for="v in useUserMediaStore().videos.items" :key="v.id" :label="v.fileName" :value="v.id" />
+          <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName" :value="v._id" />
         </el-select>
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-2">Target Ratio</label>
@@ -1200,8 +1291,8 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Video</label>
         <el-select v-model="selectedTextVideoId" class="cinematic-select" placeholder="Choose video">
-          <el-option v-for="v in useUserMediaStore().videos.items" :key="v.id" :label="v.fileName"
-            :value="v._id || v.id" />
+          <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName"
+            :value="v._id" />
         </el-select>
 
         <template v-if="isDetectingText">
@@ -1258,8 +1349,8 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Video</label>
         <el-select v-model="selectedColorVideoId" class="cinematic-select" placeholder="Choose video">
-          <el-option v-for="v in useUserMediaStore().videos.items" :key="v.id" :label="v.fileName"
-            :value="v._id || v.id" />
+          <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName"
+            :value="v._id" />
         </el-select>
 
         <el-button v-if="detectedColors.length === 0"
@@ -1306,8 +1397,8 @@ const visualizeText = () => {
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Video</label>
         <el-select v-model="selectedMotionVideoId" class="cinematic-select" placeholder="Choose video">
-          <el-option v-for="v in useUserMediaStore().videos.items" :key="v.id" :label="v.fileName"
-            :value="v._id || v.id" />
+          <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName"
+            :value="v._id" />
         </el-select>
 
         <el-button v-if="detectedMotion.length === 0"

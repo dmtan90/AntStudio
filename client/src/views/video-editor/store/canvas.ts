@@ -160,17 +160,8 @@ export const useCanvasStore = defineStore('canvas', {
     },
 
     initializeCanvas(canvas: Canvas, element: HTMLCanvasElement) {
-      // console.log("initializeCanvas");
-      // const canvas = this.editor?.pages[index];
-      const workspace = document.getElementById('workspace') as HTMLDivElement;
-      if (!canvas || !workspace) return;
-
-      if (!element) {
-        canvas.destroy();
-      } else {
-        canvas.initialize(element, workspace);
-      }
-      this.updateRefs();
+      // Deprecated: Initialization is now handled by EditorCanvas.vue singleton logic
+      console.warn("initializeCanvas is deprecated. Use EditorCanvas shared instance.");
     },
 
     // initializeThumbnail(element, index){

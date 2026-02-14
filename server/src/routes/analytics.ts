@@ -14,11 +14,27 @@ router.get('/overview', async (req: AuthRequest, res) => {
         await connectDB();
         const userId = req.user!.userId;
 
-        // In a real app, these would come from an Analytics model or aggregation
-        const totalProjects = await Project.countDocuments({ userId });
-        const publishedProjects = await Project.countDocuments({ userId, status: 'completed' });
+        // Real Project Stats
+        const attempts = await Project.find({ userId });
+        const totalProjects = attempts.length;
+        const publishedProjects = attempts.filter(p => p.status === 'completed').length;
 
-        // Mock data for demo
+        // Fetch Real Viral Clips from Projects
+        const recentClips = attempts.flatMap(p => 
+            (p.visualAssets || [])
+                .filter(a => a.metadata?.isViralClip)
+                .map((a: any) => ({
+                    id: a._id,
+                    reason: a.description || 'AI Highlight',
+                    time: new Date(a.createdAt || Date.now()).toLocaleTimeString(),
+                    duration: '0:30', // Placeholder if not stored, but ideally comes from metadata
+                    score: a.metadata?.viralScore || 85,
+                    thumb: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300', // Placeholder thumb until we have real storage URL
+                    url: a.url
+                }))
+        ).slice(0, 5); // Top 5
+
+        // Mock data for demo ( Views/Likes still mocked as we don't have an event stream yet)
         const stats = {
             totalViews: Math.floor(Math.random() * 50000) + 1000,
             totalLikes: Math.floor(Math.random() * 2000) + 50,
@@ -28,11 +44,13 @@ router.get('/overview', async (req: AuthRequest, res) => {
                 published: publishedProjects,
                 drafts: totalProjects - publishedProjects
             },
+            // Mix of mock activity and real clips
             recentActivity: [
+                ...recentClips.map(c => ({ type: 'clip', project: c.reason, time: 'Just now' })),
                 { type: 'view', project: 'Project A', time: '2 mins ago' },
-                { type: 'like', project: 'Project B', time: '15 mins ago' },
-                { type: 'comment', project: 'Project A', time: '1 hour ago' }
-            ]
+                { type: 'like', project: 'Project B', time: '15 mins ago' }
+            ],
+            recentClips: recentClips
         };
 
         res.json({ success: true, data: stats });

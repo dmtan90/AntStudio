@@ -9,6 +9,18 @@ export const useUserStore = defineStore('user', () => {
     const user = ref<any>(null)
     const creditLogs = ref<any[]>([])
     const token = ref<string | null>(localStorage.getItem('auth-token'))
+
+    // URL Token Absorption (OAuth Support)
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (urlToken && !token.value) {
+        token.value = urlToken;
+        localStorage.setItem('auth-token', urlToken);
+        // Clean up URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete('token');
+        window.history.replaceState({}, '', url.toString());
+    }
     const isAuthenticated = computed(() => !!user.value)
     const isInitialized = ref(false)
     const loadingHistory = ref(false)
@@ -50,8 +62,8 @@ export const useUserStore = defineStore('user', () => {
         }
 
         try {
-            const response = await api.get('/auth/me')
-            setUser(response.data.user)
+            const res: any = await api.get('/auth/me')
+            setUser(res.data.user)
         } catch (error) {
             console.error('Failed to fetch profile:', error)
             // Error handling for fetchProfile is usually silent unless forced
@@ -62,11 +74,11 @@ export const useUserStore = defineStore('user', () => {
 
     async function login(credentials: any) {
         try {
-            const response = await api.post('/auth/login', credentials)
-            const { token: newToken, user: userData } = response.data
+            const res: any = await api.post('/auth/login', credentials)
+            const { token: newToken, user: userData } = res.data
             setToken(newToken)
             setUser(userData)
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -75,13 +87,13 @@ export const useUserStore = defineStore('user', () => {
 
     async function register(payload: any) {
         try {
-            const response = await api.post('/auth/register', payload)
-            if (response.data.token) {
-                token.value = response.data.token
-                user.value = response.data.user
-                setToken(response.data.token)
+            const res: any = await api.post('/auth/register', payload)
+            if (res.data.token) {
+                token.value = res.data.token
+                user.value = res.data.user
+                setToken(res.data.token)
             }
-            return response.data
+            return res.data
         } catch (error) {
             throw error
         }
@@ -89,14 +101,14 @@ export const useUserStore = defineStore('user', () => {
 
     async function registerOwner(payload: any) {
         try {
-            const response = await api.post('/auth/register-owner', payload)
+            const res: any = await api.post('/auth/register-owner', payload)
             // Owner registration might not auto-login or might return token
-            if (response.data.token) {
-                token.value = response.data.token
-                user.value = response.data.user
-                setToken(response.data.token)
+            if (res.data.token) {
+                token.value = res.data.token
+                user.value = res.data.user
+                setToken(res.data.token)
             }
-            return response.data
+            return res.data
         } catch (error) {
             throw error
         }
@@ -104,10 +116,10 @@ export const useUserStore = defineStore('user', () => {
 
     async function updateProfile(profileData: any) {
         try {
-            const response = await api.put('/auth/profile', profileData)
-            setUser(response.data.user)
+            const res: any = await api.put('/auth/profile', profileData)
+            setUser(res.data.user)
             toast.success(t('common.updateSuccess'))
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -126,8 +138,8 @@ export const useUserStore = defineStore('user', () => {
 
     async function fetchPaymentHistory() {
         try {
-            const response = await api.get('/payment/transactions')
-            return response.data.transactions || []
+            const res: any = await api.get('/payment/transactions')
+            return res.data.transactions || []
         } catch (error) {
             handleError(error)
             return []
@@ -136,8 +148,8 @@ export const useUserStore = defineStore('user', () => {
 
     async function fetchPlans() {
         try {
-            const response = await api.get('/admin/settings/plans')
-            return response.data.plans
+            const res: any = await api.get('/admin/settings/plans')
+            return res.data.plans
         } catch (error) {
             handleError(error)
             throw error
@@ -146,11 +158,11 @@ export const useUserStore = defineStore('user', () => {
 
     async function createCheckoutSession(payload: any) {
         try {
-            const response = await api.post('/payment/create-checkout', payload)
-            if (response.data?.data?.url) {
-                window.location.href = response.data.data.url
+            const res: any = await api.post('/payment/create-checkout', payload)
+            if (res.data?.url) {
+                window.location.href = res.data.url
             }
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -159,8 +171,8 @@ export const useUserStore = defineStore('user', () => {
 
     async function createPayPalOrder(payload: { planName?: string, packageId?: string, billingPeriod?: string }) {
         try {
-            const response = await api.post('/payment/paypal/create-order', payload)
-            return response.data
+            const res: any = await api.post('/payment/paypal/create-order', payload)
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -168,13 +180,13 @@ export const useUserStore = defineStore('user', () => {
     }
 
     async function purchaseCredits(packageId: string) {
-        return createCheckoutSession({ packageId })
+        return createCheckoutSession({ packageId, type: 'credit' })
     }
 
     async function fetchOAuthConfig() {
         try {
-            const response = await api.get('/auth/oauth-config')
-            return response.data
+            const res: any = await api.get('/auth/oauth-config')
+            return res.data
         } catch (error) {
             console.error('Failed to fetch OAuth config:', error)
             return { google: false, facebook: false }
@@ -189,8 +201,8 @@ export const useUserStore = defineStore('user', () => {
     async function fetchCreditHistory() {
         loadingHistory.value = true
         try {
-            const response = await api.get('/auth/credits/history')
-            creditLogs.value = response.data || []
+            const res: any = await api.get('/auth/credits/history')
+            creditLogs.value = res.data || []
             return creditLogs.value
         } catch (error) {
             handleError(error)
@@ -202,9 +214,9 @@ export const useUserStore = defineStore('user', () => {
 
     async function forgotPassword(email: string) {
         try {
-            const response = await api.post('/auth/forgot-password', { email })
-            toast.success(response.data?.data?.message || response.data?.message)
-            return response.data
+            const res: any = await api.post('/auth/forgot-password', { email })
+            toast.success(res.data?.message)
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -213,9 +225,9 @@ export const useUserStore = defineStore('user', () => {
 
     async function resetPassword(data: any) {
         try {
-            const response = await api.post('/auth/reset-password', data)
-            toast.success(response.data?.data?.message || response.data?.message)
-            return response.data
+            const res: any = await api.post('/auth/reset-password', data)
+            toast.success(res.data?.message)
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -224,10 +236,10 @@ export const useUserStore = defineStore('user', () => {
 
     async function uploadAvatar(formData: FormData) {
         try {
-            const response = await api.post('/media/upload', formData, {
+            const res: any = await api.post('/media/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
-            return response.data
+            return res.data
         } catch (error) {
             handleError(error, 'profile.uploadFailed')
             throw error
@@ -236,8 +248,8 @@ export const useUserStore = defineStore('user', () => {
 
     async function connectSocial(provider: 'youtube' | 'facebook') {
         try {
-            const response = await api.get(`/social/connect?provider=${provider}`)
-            return response.data
+            const res: any = await api.get(`/social/connect?provider=${provider}`)
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -246,8 +258,8 @@ export const useUserStore = defineStore('user', () => {
 
     async function disconnectSocial(provider: 'youtube' | 'facebook') {
         try {
-            const response = await api.post(`/social/disconnect`, { provider })
-            return response.data
+            const res: any = await api.post(`/social/disconnect`, { provider })
+            return res.data
         } catch (error) {
             handleError(error)
             throw error
@@ -283,6 +295,7 @@ export const useUserStore = defineStore('user', () => {
         fetchOAuthConfig,
         uploadAvatar,
         connectSocial,
-        disconnectSocial
+        disconnectSocial,
+        registerOwner
     }
 })

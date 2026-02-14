@@ -12,6 +12,11 @@ export class StyleABTestingEngine {
         experimentStartTime: Date;
         retentionThreshold: number;
     }> = new Map();
+    private io: any = null;
+
+    public setSocketServer(io: any) {
+        this.io = io;
+    }
 
     /**
      * Starts an optimization cycle for a stream.
@@ -42,7 +47,9 @@ export class StyleABTestingEngine {
                 systemLogger.info(`⚖️ [A/B Testing] Performance dip detected (Chat: ${currentSnapshot.chatVelocity}). Switching style: ${experiment.currentStyle} -> ${nextStyle}`, 'StyleABTestingEngine');
 
                 // Trigger AI Director to switch
-                // await studioDirector.applyConfiguration(projectId, { style: nextStyle });
+                if (this.io) {
+                    this.io.to(projectId).emit('style:switch', { style: nextStyle });
+                }
 
                 experiment.currentStyle = nextStyle;
             }

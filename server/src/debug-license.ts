@@ -3,7 +3,7 @@
  */
 
 import mongoose from 'mongoose';
-import { License } from '../models/License.js';
+import { License, ILicense } from './models/License.js';
 
 async function checkLicense() {
     try {
@@ -22,7 +22,7 @@ async function checkLicense() {
         if (licenses.length === 0) {
             console.log('[Debug] ⚠️ No licenses found in database. This will cause licenseGating to fail with 402.');
         } else {
-            const activeLicense = licenses.find(l => l.status === 'valid');
+            const activeLicense = licenses.find((l: ILicense) => l.status === 'valid');
             if (activeLicense) {
                 console.log(`[Debug] ✅ Active License: Tier=${activeLicense.tier}, Status=${activeLicense.status}, EndDate=${activeLicense.endDate}`);
             } else {

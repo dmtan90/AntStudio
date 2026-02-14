@@ -31,7 +31,7 @@ router.get('/', async (req: AuthRequest, res) => {
 const getRedirectUri = async (req: any) => {
     // Check for manual override in settings first
     const settings = await AdminSettings.findOne();
-    const override = settings?.apiConfigs?.aiOAuth?.google?.redirectUriOverride;
+    const override = settings?.apiConfigs?.oauth?.google?.redirectUriOverride;
 
     if (override && override.startsWith('http')) {
         return override;
@@ -104,8 +104,10 @@ router.get('/callback', async (req: any, res) => {
         const account = await aiAccountManager.exchangeCodeForTokens(code as string, redirectUri, { isAntigravity });
 
         // Trigger background discovery of Project ID
-        aiAccountManager.discoverProjectId(account).catch(err => {
+        aiAccountManager.discoverProjectId(account).catch(async err => {
             console.error(`[AIAccount API] Deferred discovery failed for ${account.email}:`, err.message);
+            account.errorMessage = err.message;
+            await account.save();
         });
 
         // Redirect back to frontend admin panel

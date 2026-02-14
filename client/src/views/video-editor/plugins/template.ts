@@ -95,7 +95,9 @@ export class CanvasTemplate {
         // Resolve all S3 assets before enlivenment
         for (const object of serialized.objects) {
           if ((object.type === 'image' || object.type === 'video' || object.type === 'gif') && object.src) {
+            const originalUrl = object.src;
             object.src = await getFileUrl(object.src, { cached: true });
+            object.originalSrc = originalUrl; // Restore originalSrc for runtime usage
 
             // Safeguard: If it's an external URL, don't force CORS unless it's a blob or internal
             const isInternal = object.src.startsWith('/') || object.src.startsWith(window.location.origin) || object.src.startsWith('blob:');
@@ -124,6 +126,8 @@ export class CanvasTemplate {
             // }
 
             FabricUtils.applyModificationsAfterLoad(objects, this.editor.adapter, this.editor.mode).then(() => {
+              if (!this.canvas) return; // Prevent adding to unmounted canvas
+
               this.canvas.add(...objects);
               // this.workspace.changeFill(this.page!.data.fill || defaultBackgroundColor);
               // this.workspace.resizeArtboard({ height: this.page!.data.height || 1080, width: this.page!.data.width || 1080 });
@@ -161,17 +165,23 @@ export class CanvasTemplate {
         reject();
       } else {
         this.audio.elements = [];
-        this._canvas.elements = [];
-
-        // this._canvas.id = this.page.id;
-        this._canvas.name = this.page.name;
-
-        this.cropper.active = null;
-        this.selection.active = null;
-
-        Promise.all([this.audio.initialize(this.page!.data.audios), this._scene()])
-          .then(() => resolve())
-          .catch(() => reject());
+        // Audio doesn't depend on Fabric canvas, so we can always initialize it
+        // Check if we have a mounted instance to render to
+        if (this.canvas) {
+          Promise.all([this.audio.initialize(this.page!.data.audios), this._scene()])
+            .then(() => resolve())
+            .catch(() => reject());
+        } else {
+          // Lazy Load: Just store the state and audios
+          this._canvas._jsonState = JSON.parse(this.page.data.scene || '{}');
+          // Initialize audio (logic in audio.ts typically just sets this.audio.elements)
+          this.audio.initialize(this.page!.data.audios)
+            .then(() => {
+              this.status = "completed"; // Mark as completed so we don't try to reload
+              resolve();
+            })
+            .catch(reject);
+        }
       }
     });
   }

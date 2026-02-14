@@ -373,19 +373,19 @@ export abstract class FabricUtils {
       queryClient.ensureQueryData({ queryKey: [generateCTA.name], queryFn: () => generateCTA(product, objective) }),
     ]);
 
-    if (ctas.status === "fulfilled") {
+    if (ctas.status === "fulfilled" && Array.isArray(ctas.value) && ctas.value.length > 0) {
       const elements = objects.filter((object) => object.meta?.label === "cta-text" && this.isTextboxElement(object)) as fabric.Textbox[];
-      elements.map((element, index) => element.set({ text: ctas.value[index % ctas.value.length] }));
+      elements.map((element, index) => element.set({ text: (ctas.value as string[])[index % (ctas.value as string[]).length] }));
     }
 
-    if (headlines.status === "fulfilled") {
+    if (headlines.status === "fulfilled" && Array.isArray(headlines.value) && headlines.value.length > 0) {
       const elements = objects.filter((object) => object.meta?.label === "headline-text" && this.isTextboxElement(object)) as fabric.Textbox[];
-      elements.map((element, index) => element.set({ text: headlines.value[index % headlines.value.length] }));
+      elements.map((element, index) => element.set({ text: (headlines.value as string[])[index % (headlines.value as string[]).length] }));
     }
 
-    if (descriptions.status === "fulfilled") {
+    if (descriptions.status === "fulfilled" && Array.isArray(descriptions.value) && descriptions.value.length > 0) {
       const elements = objects.filter((object) => object.meta?.label === "description-text" && this.isTextboxElement(object)) as fabric.Textbox[];
-      elements.map((element, index) => element.set({ text: descriptions.value[index % descriptions.value.length] }));
+      elements.map((element, index) => element.set({ text: (descriptions.value as string[])[index % (descriptions.value as string[]).length] }));
     }
   }
 

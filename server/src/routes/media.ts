@@ -885,4 +885,115 @@ router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Res
 //     }
 // });
 
+// ============================================================================
+// YOUTUBE MUSIC APIs
+// ============================================================================
+
+import { YouTubeMusicService } from '../services/media/YouTubeMusicService.js';
+import { LyricsService, LyricsLine } from '../services/media/LyricsService.js';
+import { AudioExtractionService } from '../services/media/AudioExtractionService.js';
+
+/**
+ * Search YouTube music
+ * POST /api/media/youtube/search
+ */
+router.post('/youtube/search', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { query, preferCovers, language, maxResults } = req.body;
+        const userId = req.user?.userId;
+
+        if (!query) {
+            return res.status(400).json({ error: 'Search query is required' });
+        }
+
+        if (!userId) {
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+
+        const results = await YouTubeMusicService.searchMusic(userId, query, {
+            preferCovers: preferCovers !== false, // Default to true
+            language: language || 'vietnamese',
+            maxResults: maxResults || 10
+        });
+
+        res.json(results);
+    } catch (error: any) {
+        console.error('YouTube search error:', error);
+        res.status(500).json({ error: error.message || 'Failed to search YouTube music' });
+    }
+});
+
+/**
+ * Get video metadata and lyrics
+ * POST /api/media/youtube/metadata
+ */
+router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { videoId, fetchLyrics, songTitle } = req.body;
+        const userId = req.user?.userId;
+
+        if (!videoId) {
+            return res.status(400).json({ error: 'Video ID is required' });
+        }
+
+        if (!userId) {
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+
+        // Get video metadata
+        const metadata = await YouTubeMusicService.getVideoMetadata(userId, videoId);
+
+        // Fetch lyrics if requested
+        let lyrics = '';
+        let lyricsLines: LyricsLine[] = [];
+
+        if (fetchLyrics && songTitle) {
+            try {
+                lyrics = await LyricsService.searchLyrics(songTitle);
+                if (lyrics) {
+                    lyricsLines = await LyricsService.syncLyrics(lyrics, metadata.duration);
+                }
+            } catch (error) {
+                console.warn('Lyrics fetch failed:', error);
+                // Continue without lyrics
+            }
+        }
+
+        res.json({
+            ...metadata,
+            videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+            lyrics,
+            lyricsLines
+        });
+    } catch (error: any) {
+        console.error('Metadata fetch error:', error);
+        res.status(500).json({ error: error.message || 'Failed to fetch video metadata' });
+    }
+});
+
+/**
+ * Extract audio from YouTube
+ * POST /api/media/youtube/extract-audio
+ */
+router.post('/youtube/extract-audio', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { videoId } = req.body;
+        const userId = req.user?.userId;
+
+        if (!videoId) {
+            return res.status(400).json({ error: 'Video ID is required' });
+        }
+
+        if (!userId) {
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+
+        const result = await AudioExtractionService.extractAudio(videoId, userId);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Audio extraction error:', error);
+        res.status(500).json({ error: error.message || 'Failed to extract audio' });
+    }
+});
+
 export default router;

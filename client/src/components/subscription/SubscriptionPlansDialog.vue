@@ -182,13 +182,18 @@ const initiatePayPalCheckout = async () => {
       planName: selectedPlan.value.name,
       billingPeriod: billingPeriod.value
     })
-    // In real PayPal flow, redirect to their checkout or open popup
-    if (response.data.orderId) {
-      toast.success("PayPal Order Created: " + response.data.orderId)
-      // Window.open(response.links[1].href, '_blank')
+    
+    // Redirect to PayPal approval URL
+    if (response.data?.url) {
+      toast.success("Redirecting to PayPal...")
+      // Redirect to PayPal checkout page
+      window.location.href = response.data.url
+    } else {
+      toast.error("Failed to create PayPal order")
     }
   } catch (error: any) {
-    toast.error("PayPal integration failed")
+    console.error('PayPal checkout error:', error)
+    toast.error(error.response?.data?.error || "PayPal integration failed")
   }
 }
 

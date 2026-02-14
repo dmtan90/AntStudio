@@ -8,8 +8,17 @@ import { checkUserLimit } from '../middleware/license.js';
 import { emailService } from '../services/email.js';
 import { redisService } from '../services/RedisService.js';
 import crypto from 'crypto';
+import { AdminSettings } from '../models/AdminSettings.js';
 
 const router = Router();
+
+const getDomain = async () => {
+    await connectDB();
+    const adminSettings = await AdminSettings.findOne();
+    const settings = adminSettings?.whitelabel;
+    const domain = adminSettings?.apiConfigs?.publicDomain;
+    return domain || process.env.PUBLIC_BASE_URL || 'https://localhost:3000';
+}
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -365,24 +374,25 @@ router.post('/change-password', authMiddleware, async (req: AuthRequest, res) =>
 
 // GET /api/auth/google - Initiate Google OAuth login
 router.get('/google', async (req, res) => {
+    const domain = await getDomain();
     try {
         const { getGoogleLoginUrl } = await import('../utils/googleAuth.js');
         const url = await getGoogleLoginUrl();
         res.redirect(url);
     } catch (error: any) {
         console.error('Google OAuth initiation error:', error);
-        res.redirect(`${process.env.PUBLIC_BASE_URL || 'http://localhost:5173'}/login?error=oauth_failed`);
+        res.redirect(`${domain}/login?error=oauth_failed`);
     }
 });
 
 // GET /api/auth/google/callback - Handle Google OAuth callback
 router.get('/google/callback', async (req, res) => {
+    const domain = await getDomain();
     try {
-        await connectDB();
         const { code } = req.query;
 
         if (!code) {
-            return res.redirect(`${process.env.PUBLIC_BASE_URL || 'http://localhost:5173'}/login?error=oauth_failed`);
+            return res.redirect(`${domain}/login?error=oauth_failed`);
         }
 
         const { getGoogleUserInfo } = await import('../utils/googleAuth.js');
@@ -428,33 +438,35 @@ router.get('/google/callback', async (req, res) => {
             sameSite: 'lax'
         });
 
-        res.redirect(`${process.env.PUBLIC_BASE_URL || 'http://localhost:5173'}/dashboard`);
+        res.redirect(`${domain}/dashboard?token=${token}`);
     } catch (error: any) {
         console.error('Google OAuth callback error:', error);
-        res.redirect(`${process.env.PUBLIC_BASE_URL || 'http://localhost:5173'}/login?error=oauth_failed`);
+        res.redirect(`${domain}/login?error=oauth_failed`);
     }
 });
 
 // GET /api/auth/facebook - Initiate Facebook OAuth login
 router.get('/facebook', async (req, res) => {
+    const domain = await getDomain();
     try {
         const { getFacebookLoginUrl } = await import('../utils/facebookAuth.js');
         const url = await getFacebookLoginUrl();
         res.redirect(url);
     } catch (error: any) {
         console.error('Facebook OAuth initiation error:', error);
-        res.redirect(`${process.env.PUBLIC_BASE_URL || 'http://localhost:5173'}/login?error=oauth_failed`);
+        res.redirect(`${domain}/login?error=oauth_failed`);
     }
 });
 
 // GET /api/auth/facebook/callback - Handle Facebook OAuth callback
 router.get('/facebook/callback', async (req, res) => {
+    const domain = await getDomain();
     try {
         await connectDB();
         const { code } = req.query;
 
         if (!code) {
-            return res.redirect(`${process.env.PUBLIC_BASE_URL || 'http://localhost:5173'}/login?error=oauth_failed`);
+            return res.redirect(`${domain}/login?error=oauth_failed`);
         }
 
         const { getFacebookUserInfo } = await import('../utils/facebookAuth.js');
@@ -500,10 +512,10 @@ router.get('/facebook/callback', async (req, res) => {
             sameSite: 'lax'
         });
 
-        res.redirect(`${process.env.PUBLIC_BASE_URL || 'http://localhost:5173'}/dashboard`);
+        res.redirect(`${domain}/dashboard?token=${token}`);
     } catch (error: any) {
         console.error('Facebook OAuth callback error:', error);
-        res.redirect(`${process.env.PUBLIC_BASE_URL || 'http://localhost:5173'}/login?error=oauth_failed`);
+        res.redirect(`${domain}/login?error=oauth_failed`);
     }
 });
 
@@ -517,8 +529,8 @@ router.get('/oauth-config', async (req, res) => {
         res.json({
             success: true,
             data: {
-                google: settings?.oauthProviders?.google?.enabled || false,
-                facebook: settings?.oauthProviders?.facebook?.enabled || false
+                google: settings?.apiConfigs?.oauth?.google?.enabled || false,
+                facebook: settings?.apiConfigs?.oauth?.facebook?.enabled || false
             }
         });
     } catch (error: any) {

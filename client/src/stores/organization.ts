@@ -40,7 +40,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 
     async function acceptInviteByToken(token: string) {
         try {
-            const res = await api.post('/organizations/accept-invite', { token });
+            const res: any = await api.post('/organizations/accept-invite', { token });
             // toast success handled by caller or here
             return res.data;
         } catch (error: any) {
@@ -99,6 +99,7 @@ export const useOrganizationStore = defineStore('organization', () => {
         fetchInvitations,
         sendInvite,
         acceptInvite,
-        registerOwner
+        registerOwner,
+        acceptInviteByToken
     }
 })

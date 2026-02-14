@@ -1,9 +1,43 @@
 <template>
-    <div class="preview-container relative flex-1 overflow-hidden flex items-center justify-center">
+    <div class="preview-container recorder-preview relative flex-1 overflow-hidden flex items-center justify-center">
         <!-- Canvas Elements passed as refs from parent -->
         <!-- Since we want to keep logic in parent/composable, we'll use refs here -->
-        <canvas ref="processingCanvas" v-show="mode !== 'audio'" class="preview-video"
+        <canvas ref="processingCanvas" v-show="mode !== 'audio' && mode !== 'autopilot'" class="preview-video"
             :class="{ 'asl-frame': enableAslAssist }"></canvas>
+
+        <!-- Whiteboard Mode Content -->
+        <div v-if="mode === 'whiteboard'" class="absolute inset-0 z-10">
+            <!-- Launchpad (Initial View) -->
+            <WhiteboardLaunchpad 
+                v-if="isWhiteboardLaunchpadActive" 
+                @share-screen="emit('whiteboard-screen-share')"
+                @import-file="v => emit('whiteboard-file-import', v)"
+            />
+
+            <!-- VTuber Host Overlay -->
+            <div v-if="isVTuberActive" class="absolute bottom-8 right-8 w-64 aspect-square z-20 overflow-hidden rounded-full border-4 border-orange-500/30 shadow-2xl">
+                 <VirtualGuest 
+                    v-if="currentVTuberPersona"
+                    :persona="currentVTuberPersona"
+                    :is-host-speaking="true" 
+                    :speaking-vol="currentDb"
+                    class="w-full h-full object-cover transform scale-125"
+                    @stream-ready="emit('vtuber-stream-ready', $event)"
+                 />
+            </div>
+        </div>
+
+        <!-- Autopilot Avatar Render -->
+        <div v-if="mode === 'autopilot' && currentPersona" class="absolute inset-0 flex items-center justify-center bg-black/80 rounded-[2rem] overflow-hidden pointer-events-none">
+             <VirtualGuest 
+                :persona="currentPersona"
+                :is-host-speaking="false" 
+                :speaking-vol="0"
+                class="w-full h-full object-cover transform scale-110"
+             />
+             <!-- Overlay Script if needed, but sidepanel handles it -->
+        </div> 
+
 
         <!-- ASL Assist Overlay -->
         <div v-if="enableAslAssist && mode !== 'audio'"
@@ -74,6 +108,7 @@ import { ref, onMounted } from 'vue'
 import { Cpu } from '@icon-park/vue-next'
 import type { RecordingMode } from '@/composables/useRecorder'
 
+
 const props = defineProps<{
     mode: RecordingMode
     isRecording: boolean
@@ -88,13 +123,74 @@ const props = defineProps<{
     translatedCaption: string
     audioLevels: string[]
     currentDb: number
+    selectedAvatar?: string
+    autopilotData?: any
+    isVTuberActive: boolean
+    isWhiteboardLaunchpadActive: boolean
 }>()
 
 const emit = defineEmits<{
     (e: 'update:processingCanvas', canvas: HTMLCanvasElement | null): void
+    (e: 'vtuber-stream-ready', stream: MediaStream): void
+    (e: 'whiteboard-screen-share'): void
+    (e: 'whiteboard-file-import', type: 'pdf' | 'ppt' | 'video'): void
 }>()
 
+import VirtualGuest from '@/components/studio/virtual/VirtualGuest.vue'
+import WhiteboardLaunchpad from './whiteboard/WhiteboardLaunchpad.vue'
+import { computed } from 'vue'
+
 const processingCanvas = ref<HTMLCanvasElement | null>(null)
+
+// Avatar Persona Construction
+const currentPersona = computed(() => {
+    // We import presets from useRecorder or define them here to match
+    // Ideally we pass the full preset object prop, but we only got ID.
+    // Let's quickly reconstruct/lookup.
+    const presets = [
+        { id: 'sarah', name: 'Sarah (AI)', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' },
+        { id: 'james', name: 'James (AI)', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400' },
+        { id: 'eva', name: 'Eva (Digital)', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }
+    ];
+    const found = presets.find(p => p.id === props.selectedAvatar);
+    if (!found) return null;
+    
+    return {
+        id: found.id,
+        avatarId: found.id,
+        name: found.name,
+        voiceId: 'en-US-Standard-C',
+        description: 'AI Presenter',
+        traits: ['professional', 'clear'],
+        role: 'guest',
+        visualIdentity: {
+             modelType: 'static',
+             imageUrl: found.image
+        }
+    } as any;
+});
+
+// VTuber Persona Construction (Reuse selectedAvatar for now)
+const currentVTuberPersona = computed(() => {
+    const presets = [
+        { id: 'sarah', name: 'Sarah (AI)', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' },
+        { id: 'james', name: 'James (AI)', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400' },
+        { id: 'eva', name: 'Eva (Digital)', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }
+    ];
+    const found = presets.find(p => p.id === props.selectedAvatar);
+    if (!found) return null;
+    
+    return {
+        id: found.id,
+        avatarId: found.id,
+        name: found.name,
+        voiceId: 'en-US-Standard-C',
+        visual: {
+             modelType: 'static',
+             modelUrl: found.image
+        }
+    } as any;
+});
 
 const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')

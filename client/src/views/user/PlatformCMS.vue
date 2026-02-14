@@ -757,85 +757,186 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.cms-page {
+   background-color: #0a0a0a;
+   color: #fff;
+   font-family: 'Outfit', sans-serif;
+   background-image: 
+      radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.05), transparent 400px),
+      radial-gradient(circle at 90% 90%, rgba(168, 85, 247, 0.05), transparent 400px);
+}
+
 .glass-btn {
-   background: rgba(255, 255, 255, 0.05);
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   color: white;
-   height: 36px;
-   border-radius: 8px;
+   background: rgba(255, 255, 255, 0.03);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   color: rgba(255, 255, 255, 0.8);
+   height: 40px;
+   border-radius: 10px;
    display: flex;
    align-items: center;
    justify-content: center;
-   padding: 0 12px;
-   transition: all 0.2s;
-}
-
-.icon-btn {
-   width: 36px;
-   padding: 0;
+   padding: 0 16px;
+   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+   font-weight: 600;
+   font-size: 13px;
+   backdrop-filter: blur(10px);
 }
 
 .glass-btn:hover {
-   background: rgba(255, 255, 255, 0.1);
+   background: rgba(255, 255, 255, 0.08);
+   border-color: rgba(255, 255, 255, 0.15);
+   color: #fff;
+   transform: translateY(-1px);
+}
+
+.icon-btn {
+   width: 40px;
+   padding: 0;
 }
 
 .glass-card {
-   background: rgba(255, 255, 255, 0.02);
+   background: rgba(20, 20, 25, 0.6);
    border: 1px solid rgba(255, 255, 255, 0.05);
-   border-radius: 12px;
+   border-radius: 16px;
    overflow: hidden;
+   backdrop-filter: blur(20px);
+   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+   transition: all 0.3s ease;
+}
+
+.video-card:hover {
+   transform: translateY(-4px);
+   border-color: rgba(255, 255, 255, 0.15);
+   box-shadow: 0 20px 40px rgba(0,0,0,0.4);
 }
 
 .glass-panel {
-   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
-   backdrop-filter: blur(20px);
-   border: 1px solid rgba(255, 255, 255, 0.1);
+   background: rgba(25, 25, 30, 0.4);
+   backdrop-filter: blur(24px);
+   border: 1px solid rgba(255, 255, 255, 0.05);
    border-radius: 20px;
 }
 
 .primary-btn {
    background: #3b82f6;
    color: white;
-   font-weight: 600;
-   padding: 0.5rem 1rem;
-   border-radius: 0.5rem;
-   transition: all 0.2s;
+   font-weight: 700;
+   padding: 0 20px;
+   height: 40px;
+   border-radius: 10px;
+   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
    display: flex;
    align-items: center;
    border: none;
    cursor: pointer;
+   font-size: 13px;
+   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .primary-btn:hover:not(:disabled) {
    background: #2563eb;
+   transform: translateY(-1px);
+   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 .primary-btn:disabled {
    opacity: 0.5;
    cursor: not-allowed;
+   box-shadow: none;
 }
 
 .secondary-btn {
-   background: rgba(255, 255, 255, 0.1);
+   background: rgba(255, 255, 255, 0.05);
    color: white;
    font-weight: 600;
-   padding: 0.5rem 1rem;
-   border-radius: 0.5rem;
+   padding: 0 20px;
+   height: 40px;
+   border-radius: 10px;
    transition: all 0.2s;
-   border: 1px solid rgba(255, 255, 255, 0.1);
+   border: 1px solid rgba(255, 255, 255, 0.08);
    cursor: pointer;
+   font-size: 13px;
 }
 
 .secondary-btn:hover {
-   background: rgba(255, 255, 255, 0.2);
+   background: rgba(255, 255, 255, 0.1);
+   border-color: rgba(255, 255, 255, 0.15);
 }
 
 .glass-input :deep(.el-input__wrapper),
-.glass-input :deep(.el-textarea__inner) {
+.glass-input :deep(.el-textarea__inner),
+.glass-select :deep(.el-input__wrapper) {
    background: rgba(0, 0, 0, 0.3) !important;
    box-shadow: none !important;
    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   border-radius: 10px !important;
    color: white !important;
+   transition: all 0.2s;
+}
+
+.glass-input :deep(.el-input__wrapper:hover),
+.glass-select :deep(.el-input__wrapper:hover) {
+   border-color: rgba(255, 255, 255, 0.2) !important;
+   background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.glass-input :deep(.el-input__wrapper.is-focus),
+.glass-select :deep(.el-input__wrapper.is-focus) {
+   border-color: #3b82f6 !important;
+   background: rgba(0, 0, 0, 0.5) !important;
+   box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.stat-box {
+   background: rgba(0, 0, 0, 0.3);
+   border: 1px solid rgba(255, 255, 255, 0.05);
+   transition: all 0.2s;
+}
+
+.stat-box:hover {
+   border-color: rgba(255, 255, 255, 0.1);
+   background: rgba(0, 0, 0, 0.4);
+}
+
+:deep(.glass-dialog) {
+    background: rgba(15, 15, 20, 0.85) !important;
+    backdrop-filter: blur(32px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6) !important;
+
+    .el-dialog__header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        margin-right: 0;
+        padding: 24px;
+        .el-dialog__title { 
+            color: #fff; 
+            font-weight: 800; 
+            letter-spacing: -0.01em;
+        }
+    }
+    
+    .el-dialog__body {
+        padding: 24px;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .el-dialog__footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 20px 24px;
+    }
+
+    .el-tabs__nav-wrap::after {
+        background-color: rgba(255,255,255,0.1);
+    }
+    .el-tabs__item {
+        color: rgba(255,255,255,0.5);
+        &.is-active { color: #3b82f6; }
+    }
+    .el-form-item__label {
+       color: rgba(255,255,255,0.7);
+       font-weight: 600;
+    }
 }
 
 .pulse-on-hover:hover {
@@ -843,16 +944,8 @@ onMounted(async () => {
 }
 
 @keyframes pulse {
-   0% {
-      box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-   }
-
-   70% {
-      box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
-   }
-
-   100% {
-      box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-   }
+   0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+   70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+   100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
 }
 </style>

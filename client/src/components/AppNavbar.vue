@@ -3,8 +3,15 @@
     <div class="navbar-container">
       <div class="navbar-left">
         <router-link to="/" class="brand flex items-center">
-          <img v-if="uiStore.logo" :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="h-8 w-auto object-contain mr-2" />
-          <span v-else>{{ uiStore.appName }}</span>
+          <!-- <img v-if="uiStore.logo" :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="h-8 w-auto object-contain mr-2" /> -->
+          <el-image :src="getFileUrl(uiStore.logo)" :alt="uiStore.appName" class="h-8 w-auto object-contain mr-2">
+            <template #error>
+              <el-icon>
+                <img src="/logo.png" alt="" />
+              </el-icon>
+            </template>
+          </el-image>
+          <span>{{ uiStore.appName }}</span>
         </router-link>
         <div v-if="user" class="nav-links">
           <template v-if="isHomePage">

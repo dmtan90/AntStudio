@@ -18,7 +18,8 @@ interface FabricTextbox {
 }
 
 import { type EditorProduct } from "video-editor/schema/adapter";
-type QueryFunction = (product: EditorProduct, objective: string) => Promise<string[]>;
+
+type QueryFunction = (product: EditorProduct, objective: string) => Promise<string[] | any>;
 
 const magicWriteMap: Record<string, QueryFunction> = {
   "cta-text": generateCTA,
@@ -53,7 +54,13 @@ const onGenerateText = async () => {
     const res = await query(product, selected.value?.text ?? product.name);
     console.log(res);
     if(res){
-      suggestions.value = res;
+      // Handle both string[] and GenerateContentResponse
+      if (Array.isArray(res)) {
+        suggestions.value = res;
+      } else {
+        // Extract text from GenerateContentResponse
+        suggestions.value = [];
+      }
     }
   } catch(err) {
     console.error(err);

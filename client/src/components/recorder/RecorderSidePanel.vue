@@ -18,16 +18,37 @@
                     :applied-filter="appliedFilter" :mode="mode" :cam-settings="camSettings"
                     @update:applied-filter="v => $emit('update:appliedFilter', v)" />
 
+                <!-- Whiteboard Sidebar -->
+                <WhiteboardTab v-if="activeSidebar === 'whiteboard' || mode === 'whiteboard'" 
+                    :is-launchpad-active="isWhiteboardLaunchpadActive"
+                    :content-type="whiteboardContentType"
+                    :current-page="currentWhiteboardPage"
+                    :total-pages="whiteboardPagesCount"
+                    :cam-settings="camSettings"
+                    :whiteboard-scripts="whiteboardScripts"
+                    @reset-whiteboard="$emit('reset-whiteboard')"
+                    @prev-page="$emit('prev-whiteboard-page')"
+                    @next-page="$emit('next-whiteboard-page')"
+                    @trigger-import="v => $emit('whiteboard-file-import', v)"
+                    @trigger-share="$emit('whiteboard-screen-share')"
+                    @update:cam-settings="v => $emit('update:cam-settings', v)"
+                    @generate-scripts="$emit('generate-whiteboard-scripts')"
+                    @start-autopilot="$emit('start-whiteboard-autopilot')" />
+
                 <!-- AI Sidebar -->
                 <AITab v-if="activeSidebar === 'ai' && mode !== 'podcast'" :enable-beauty="enableBeauty"
                     :beauty-settings="beautySettings" :enable-asl-assist="enableAslAssist" :asl-mode="aslMode"
                     :active-captions="activeCaptions" :target-language="targetLanguage" :cam-settings="camSettings"
-                    :resource-pool="resourcePool" @toggle-ai-filter="(id, val) => $emit('toggle-ai-filter', id, val)"
+                    :resource-pool="resourcePool" :isVTuberActive="isVTuberActive" :avatar-presets="avatarPresets" 
+                    :selected-avatar="selectedAvatar"
+                    @toggle-ai-filter="(id, val) => $emit('toggle-ai-filter', id, val)"
                     @update:enable-asl-assist="v => $emit('update:enable-asl-assist', v)"
                     @update:asl-mode="v => $emit('update:asl-mode', v)"
                     @toggle-captions="v => $emit('toggle-captions', v)"
                     @update:targetLanguage="v => $emit('update:targetLanguage', v)"
                     @update:camSettings="v => $emit('update:cam-settings', v)"
+                    @update:isVTuberActive="val => $emit('update:isVTuberActive', val)"
+                    @update:selectedAvatar="val => $emit('update:selected-avatar', val)"
                     @trigger-resource-upload="$emit('trigger-resource-upload')" />
 
                 <!-- Podcast Sidebar -->
@@ -54,6 +75,19 @@
                     @update:selected-avatar="v => $emit('update:selected-avatar', v)"
                     @update:selected-voice="v => $emit('update:selected-voice', v)"
                     @start-autopilot="$emit('start-autopilot')" />
+
+                <!-- Audio Sidebar -->
+                <AudioTab v-if="activeSidebar === 'audio'"
+                    :mic-volume="micVolume"
+                    :bgm-volume="bgmVolume"
+                    :is-ducking-enabled="isDuckingEnabled"
+                    :bgm-url="bgmUrl"
+                    :bgm-library="bgmLibrary"
+                    @update:mic-volume="v => $emit('update:mic-volume', v)"
+                    @update:bgm-volume="v => $emit('update:bgm-volume', v)"
+                    @update:is-ducking-enabled="v => $emit('update:is-ducking-enabled', v)"
+                    @update:bgm-url="v => $emit('update:bgm-url', v)"
+                    @toggle-bgm="$emit('toggle-bgm')" />
 
                 <!-- Hardware Sidebar -->
                 <HardwareTab v-if="activeSidebar === 'hardware'" :video-devices="videoDevices"
@@ -86,7 +120,9 @@
                     @update:annotation-tool="v => $emit('update:annotation-tool', v)"
                     @update:annotation-color="v => $emit('update:annotation-color', v)"
                     @update:annotation-size="v => $emit('update:annotation-size', v)"
-                    @clear-annotations="$emit('clear-annotations')" />
+                    @clear-annotations="$emit('clear-annotations')" 
+                    :recording-quality="recordingQuality"
+                    @update:recording-quality="v => $emit('update:recording-quality', v)" />
             </div>
         </div>
     </transition>
@@ -103,6 +139,8 @@ import PodcastTab from './sidepanel/PodcastTab.vue'
 import ResourcesTab from './sidepanel/ResourcesTab.vue'
 import LiveTab from './sidepanel/LiveTab.vue'
 import AutopilotTab from './sidepanel/AutopilotTab.vue'
+import WhiteboardTab from './sidepanel/WhiteboardTab.vue'
+import AudioTab from './sidepanel/AudioTab.vue'
 import HardwareTab from './sidepanel/HardwareTab.vue'
 import ProductionTab from './sidepanel/ProductionTab.vue'
 
@@ -144,6 +182,17 @@ defineProps<{
     annotationTool: 'pen' | 'highlighter'
     annotationColor: string
     annotationSize: number
+    recordingQuality: { resolution: string; fps: number }
+    isVTuberActive: boolean
+    isWhiteboardLaunchpadActive: boolean
+    whiteboardContentType: 'stream' | 'pdf' | 'ppt' | 'video' | null
+    currentWhiteboardPage: number
+    whiteboardPagesCount: number
+    whiteboardScripts: string[]
+    bgmVolume: number
+    isDuckingEnabled: boolean
+    bgmUrl: string | null
+    bgmLibrary: any[]
 }>()
 
 defineEmits<{
@@ -180,6 +229,19 @@ defineEmits<{
     (e: 'update:annotation-color', val: string): void
     (e: 'update:annotation-size', val: number): void
     (e: 'clear-annotations'): void
+    (e: 'update:recording-quality', val: any): void
+    (e: 'update:isVTuberActive', val: boolean): void
+    (e: 'reset-whiteboard'): void
+    (e: 'prev-whiteboard-page'): void
+    (e: 'next-whiteboard-page'): void
+    (e: 'whiteboard-file-import', type: string): void
+    (e: 'whiteboard-screen-share'): void
+    (e: 'generate-whiteboard-scripts'): void
+    (e: 'start-whiteboard-autopilot'): void
+    (e: 'update:bgm-volume', val: number): void
+    (e: 'update:is-ducking-enabled', val: boolean): void
+    (e: 'update:bgm-url', val: string | null): void
+    (e: 'toggle-bgm'): void
 }>()
 </script>
 

@@ -3,7 +3,7 @@
         <div v-if="verifying" class="verifying-state">
             <peoples theme="outline" size="48" class="animate-pulse mb-6 opacity-30" />
             <h2 class="text-2xl font-black uppercase">Decrypting Invite...</h2>
-            <p class="opacity-40 mt-2">Validating neural handshake with tactical headquarters.</p>
+            <p class="opacity-40 mt-2">Validating VTuber handshake with tactical headquarters.</p>
         </div>
 
         <div v-else-if="invitation" class="invitation-card glass-card p-10 space-y-6">
