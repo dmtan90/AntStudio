@@ -83,7 +83,7 @@ export function useStudioSession(
                 }
 
                 const quality = options.qualityPresets[options.streamQuality.value];
-                const resData = await streamingStore.startStream({
+                const res = await streamingStore.startStream({
                     platformAccountIds: options.selectedPlatforms.value,
                     sessionId: currentSessionId.value,
                     source: 'webrtc',
@@ -96,7 +96,7 @@ export function useStudioSession(
                     }
                 });
 
-                if (resData) {
+                if (res) {
                     // startStream returns res.data which corresponds to 'data' in axios response? 
                     // Let's check streaming.ts: returns res.data.
                     // And res.data usually has { success: true, data: { ... } } or just the data content?
@@ -108,7 +108,7 @@ export function useStudioSession(
                     // streaming.ts says `return res.data`.
                     // So resData IS the body.
 
-                    const { sessionId, mode, amsAccount } = resData.data || resData; // Handle potential wrapping
+                    const { sessionId, mode, amsAccount } = res.data || res; // Handle potential wrapping
 
                     currentSessionId.value = sessionId;
                     studioStore.currentSessionId = sessionId;

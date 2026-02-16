@@ -55,7 +55,7 @@ export class AntigravityClient {
     /**
      * Common generateContent wrapper (Agentic Architecture)
      */
-    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.0-flash', options: any = {}): Promise<{ text: string }> {
+    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.5-flash', options: any = {}): Promise<{ text: string }> {
         const token = await aiAccountManager.refreshAccessToken(this.account);
         const headers = this.getHeaders(token);
         const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;
@@ -71,6 +71,9 @@ export class AntigravityClient {
                     role: 'user',
                     parts: parts
                 }],
+                systemInstruction: options.systemPrompt ? {
+                    parts: [{ text: options.systemPrompt }]
+                } : undefined,
                 generationConfig: {
                     temperature: 1,
                     topP: 0.85,
@@ -79,9 +82,6 @@ export class AntigravityClient {
                 }
             },
             model: modelId,
-            systemInstruction: options.systemPrompt ? {
-                parts: [{ text: options.systemPrompt }]
-            } : undefined,
             userAgent: 'antigravity/1.13.3 windows/amd64',
             requestType: 'agent'
         };

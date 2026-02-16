@@ -22,6 +22,8 @@ import { autoDirectorService } from './ai/AutoDirectorService.js';
 export class SocketServer {
     private io: Server | null = null;
     private userSockets: Map<string, Set<string>> = new Map(); // userId -> Set of socket IDs
+    private disconnectGracePeriods: Map<string, NodeJS.Timeout> = new Map();
+
 
     constructor() {
         // Singleton pattern: initialization happens via .initialize(server)
@@ -95,6 +97,13 @@ export class SocketServer {
                         }
                         this.userSockets.get(userId)!.add(socket.id);
 
+                        // Phase 90: Clear any pending disconnect grace period
+                        if (this.disconnectGracePeriods.has(userId)) {
+                            console.log(`♻️ [SocketServer] Host ${user.name} resumed before grace period expiry.`);
+                            clearTimeout(this.disconnectGracePeriods.get(userId)!);
+                            this.disconnectGracePeriods.delete(userId);
+                        }
+
                         return next();
                     }
                 }
@@ -104,15 +113,24 @@ export class SocketServer {
                 if (guestInfo) {
                     const { sessionId } = guestInfo;
                     const displayName = socket.handshake.auth.displayName || 'Guest';
+                    const persistentGuestId = socket.handshake.auth.persistentGuestId;
 
                     socket.data.user = {
-                        id: `guest_${socket.id}`,
+                        id: persistentGuestId ? `guest_${persistentGuestId}` : `guest_${socket.id}`,
                         name: displayName,
                         role: 'guest',
                         isAnonymous: true
                     };
                     socket.data.roomId = sessionId;
                     socket.join(sessionId);
+                    socket.join(`user:${socket.data.user.id}`);
+
+                    // Phase 90: Clear any pending disconnect grace period
+                    if (this.disconnectGracePeriods.has(socket.data.user.id)) {
+                        console.log(`♻️ [SocketServer] Guest ${displayName} resumed before grace period expiry.`);
+                        clearTimeout(this.disconnectGracePeriods.get(socket.data.user.id)!);
+                        this.disconnectGracePeriods.delete(socket.data.user.id);
+                    }
 
                     console.log(`📡 [SocketServer] Anonymous Guest "${displayName}" joined Room: ${sessionId}`);
                     return next();
@@ -144,7 +162,21 @@ export class SocketServer {
             const user = socket.data.user;
 
             if (roomId && user) {
-                console.log(`👤 User ${user.name} joined Room: ${roomId}`);
+                console.log(`👤 User ${user.name} joined Room: ${roomId} with ID: ${user.id}`);
+                
+                // Phase 90: Clear any pending disconnect grace period (redundant but safe)
+                if (this.disconnectGracePeriods.has(user.id)) {
+                    clearTimeout(this.disconnectGracePeriods.get(user.id)!);
+                    this.disconnectGracePeriods.delete(user.id);
+                }
+
+                // Notify client of their stabilized identity
+                socket.emit('session:connected', { 
+                    userId: user.id,
+                    role: user.role,
+                    name: user.name
+                });
+
                 this.broadcastRoomUsers(roomId);
             }
 
@@ -227,10 +259,10 @@ export class SocketServer {
             socket.on('guest:join', (payload: { displayName: string, streamId?: string }) => {
                 if (roomId && user?.role === 'guest') {
                     socket.to(roomId).emit('guest:request', {
-                        id: socket.id,
+                        id: user.id, // Phase 90: Use stabilized user.id
                         userId: user.id,
                         name: payload.displayName,
-                        streamId: payload.streamId || `guest_${socket.id}`,
+                        streamId: payload.streamId || `guest_${user.id}`,
                         joinedAt: new Date()
                     });
                 }
@@ -238,7 +270,7 @@ export class SocketServer {
 
             socket.on('guest:approve', (payload: { guestId: string, permissions: any }) => {
                 if (roomId && user?.role === 'host' && this.io) {
-                    this.io.to(payload.guestId).emit('guest:approved', {
+                    this.io.to(`user:${payload.guestId}`).emit('guest:approved', {
                         roomId,
                         hostId: socket.id,
                         permissions: payload.permissions
@@ -248,13 +280,13 @@ export class SocketServer {
 
             socket.on('guest:reject', (payload: { guestId: string }) => {
                 if (roomId && user?.role === 'host' && this.io) {
-                    this.io.to(payload.guestId).emit('guest:rejected');
+                    this.io.to(`user:${payload.guestId}`).emit('guest:rejected');
                 }
             });
 
             socket.on('guest:control', (payload: { guestId: string, action: string, value: any }) => {
                 if (roomId && user?.role === 'host' && this.io) {
-                    this.io.to(payload.guestId).emit('guest:control', {
+                    this.io.to(`user:${payload.guestId}`).emit('guest:control', {
                         action: payload.action,
                         value: payload.value
                     });
@@ -262,9 +294,12 @@ export class SocketServer {
             });
 
             socket.on('guest:signal', (payload: { to: string, signal: any }) => {
-                if (this.io) {
-                    this.io.to(payload.to).emit('guest:signal', {
-                        from: socket.id,
+                if (this.io && user) {
+                    // Phase 90: Use stabilized user.id instead of socket.id
+                    // Note: 'to' can be either a socket.id or a user.id room
+                    const target = payload.to.startsWith('guest_') || payload.to.length > 20 ? `user:${payload.to}` : payload.to;
+                    this.io.to(target).emit('guest:signal', {
+                        from: user.id,
                         signal: payload.signal
                     });
                 }
@@ -309,9 +344,9 @@ export class SocketServer {
             });
 
             // Lifecycle
-            socket.on('disconnect', () => {
+            socket.on('disconnect', (reason) => {
                 if (user?.id) {
-                    console.log(`❌ [SocketServer] User disconnected: ${user.name} (${socket.id})`);
+                    console.log(`❌ [SocketServer] User disconnected: ${user.name} (${socket.id}). Reason: ${reason}`);
                     
                     // Tracking cleanup
                     const userSocketSet = this.userSockets.get(user.id);
@@ -321,8 +356,24 @@ export class SocketServer {
                     }
 
                     if (roomId) {
-                        this.io?.to(roomId).emit('guest:leave', { guestId: socket.id });
-                        setTimeout(() => this.broadcastRoomUsers(roomId), 1000);
+                        // Phase 90: Implement 60s grace period for reconnection
+                        // Only start grace period if NO other sockets for this user are connected
+                        const isFullyDisconnected = !this.userSockets.has(user.id);
+                        
+                        if (isFullyDisconnected) {
+                            console.log(`⏳ [SocketServer] Starting 60s grace period for user ${user.name} (${user.id})`);
+                            const timer = setTimeout(() => {
+                                console.log(`💀 [SocketServer] Grace period expired for user ${user.name}. Cleaning up...`);
+                                this.io?.to(roomId).emit('guest:leave', { guestId: user.id });
+                                this.broadcastRoomUsers(roomId);
+                                this.disconnectGracePeriods.delete(user.id);
+                            }, 60000); // 60 seconds
+                            
+                            this.disconnectGracePeriods.set(user.id, timer);
+                        } else {
+                            console.log(`ℹ️ [SocketServer] User ${user.name} still has other active sockets. Skipping grace period.`);
+                            this.broadcastRoomUsers(roomId);
+                        }
                     }
                 }
             });

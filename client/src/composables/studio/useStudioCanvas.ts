@@ -133,9 +133,11 @@ export function useStudioCanvas(
             const track = stream.getVideoTracks()[0];
             if (!track) return;
 
-            // Clone the track to avoid locking the original for main-thread AI capture
-            const clonedTrack = track.clone();
-            const processor = new MediaStreamTrackProcessor({ track: clonedTrack });
+            // Phase 89: Stop cloning tracks. Cloning creates a new track instance
+            // that doesn't share the 'enabled' state of the original.
+            // Using the original track allows MediaStreamTrackProcessor to see
+            // track.enabled = false (black frames) when toggled in LiveStudio.vue.
+            const processor = new MediaStreamTrackProcessor({ track });
             const readable = processor.readable;
 
             worker.postMessage({ type: 'add-stream', payload: { id, stream: readable } }, [readable]);
@@ -295,6 +297,14 @@ export function useStudioCanvas(
 
     // Initialize AI Engine
     onMounted(async () => {
+        // Phase 89: Listen for metadata on these elements so we bridge as soon as stream exists
+        if (options.screenVideo?.value) {
+            options.screenVideo.value.onloadedmetadata = () => checkNewStreams();
+        }
+        if (options.activeMediaVideo?.value) {
+            options.activeMediaVideo.value.onloadedmetadata = () => checkNewStreams();
+        }
+
         try {
             await liveAIEngine.initialize();
             console.log('[Studio Canvas] AI Engine initialized');

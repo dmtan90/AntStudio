@@ -26,14 +26,23 @@ export class YouTubeMusicService {
     } = {}): Promise<YouTubeMusicSearchResult[]> {
         try {
             // Get user's YouTube account
-            const account = await UserPlatformAccount.findOne({
+            let account = await UserPlatformAccount.findOne({
                 userId,
                 platform: 'youtube',
                 status: 'connected'
             });
 
             if (!account) {
-                throw new Error('No connected YouTube account found. Please connect your YouTube account first.');
+                account = await UserPlatformAccount.findOne({
+                    userId,
+                    platform: 'youtube'
+                });
+                if (account) {
+                    throw new Error('Your youtube connection has expired. Please reconnect your youtube account first.');
+                }
+                else {
+                    throw new Error('No connected YouTube account found. Please connect your YouTube account first.');
+                }
             }
 
             // Ensure valid token
@@ -95,7 +104,59 @@ export class YouTubeMusicService {
             }));
         } catch (error: any) {
             console.error('YouTube music search error:', error);
-            throw new Error(`Failed to search YouTube music: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Get trending music videos
+     * @param userId - User ID
+     * @param options - Trending options
+     */
+    static async getTrendingMusic(userId: string, options: {
+        regionCode?: string;
+        maxResults?: number;
+    } = {}): Promise<YouTubeMusicSearchResult[]> {
+        try {
+            const account = await UserPlatformAccount.findOne({
+                userId,
+                platform: 'youtube',
+                status: 'connected'
+            });
+
+            if (!account) {
+                throw new Error('No connected YouTube account found');
+            }
+
+            const credentials = await PlatformAuthService.getValidCredentials(account);
+
+            const response = await axios.get('https://www.googleapis.com/youtube/v3/videos', {
+                params: {
+                    part: 'snippet,contentDetails,statistics',
+                    chart: 'mostPopular',
+                    regionCode: options.regionCode || 'VN',
+                    videoCategoryId: '10', // Music
+                    maxResults: options.maxResults || 20
+                },
+                headers: {
+                    'Authorization': `Bearer ${credentials.accessToken}`
+                }
+            });
+
+            const items = response.data.items || [];
+
+            return items.map((item: any) => ({
+                videoId: item.id,
+                title: item.snippet.title,
+                channelTitle: item.snippet.channelTitle,
+                thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
+                publishedAt: item.snippet.publishedAt,
+                url: `https://www.youtube.com/watch?v=${item.id}`,
+                duration: this.parseDuration(item.contentDetails.duration)
+            }));
+        } catch (error: any) {
+            console.error('YouTube trending music error:', error);
+            throw error;
         }
     }
 

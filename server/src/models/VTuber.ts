@@ -42,6 +42,7 @@ export interface IVTuber extends Document {
             voiceId: string;
             voiceName?: string;
             language?: string; // 'en-US', 'vi-VN'
+            gender?: string;   // 'male', 'female', 'neutral'
             settings?: any;
         };
     };
@@ -161,6 +162,7 @@ const VTuberSchema = new Schema<IVTuber>({
             voiceId: String,
             voiceName: String,
             language: { type: String, default: 'en-US' },
+            gender: String,
             settings: Schema.Types.Mixed
         }
     },

@@ -84,13 +84,13 @@ const processQueue = async () => {
     localImages.value[pendingIdx].status = 'generating'
     
     try {
-        const responseData = await projectStore.generateAsset(props.projectId, {
+        const res = await projectStore.generateAsset(props.projectId, {
             assetName: asset.name,
             description: asset.description || `Visual asset for ${asset.name}`,
             type: 'image'
         })
         
-        const data = responseData.data || responseData;
+        const data = res.data || res;
 
         localImages.value[pendingIdx].status = 'ready'
         localImages.value[pendingIdx].s3Key = data.s3Key

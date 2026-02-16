@@ -322,6 +322,26 @@ const SCENE_PRESETS: Scene[] = [
                 }
             ]
         }
+    },
+    {
+        id: 'screen_focus',
+        type: 'standard',
+        name: 'Screen Focus',
+        icon: 'Monitor',
+        description: 'Screen sharing centered with host PiP',
+        hotkey: '0',
+        layout: {
+            regions: [
+                { id: 'screen', x: 0, y: 0, width: 100, height: 100, source: 'screen', zIndex: 1 },
+                {
+                    id: 'host-pip',
+                    x: 75, y: 75, width: 22, height: 22,
+                    source: 'host', zIndex: 2, shape: 'rect', borderRadius: 12,
+                    border: { width: 2, color: '#3b82f6' },
+                    shadow: { blur: 10, color: 'rgba(0,0,0,0.5)', x: 0, y: 2 }
+                }
+            ]
+        }
     }
 ];
 
@@ -800,16 +820,20 @@ export const useStudioStore = defineStore('studio', () => {
         if (guest) {
             guest.audioEnabled = enabled;
             ActionSyncService.sendGuestControl(guestId, 'audio', enabled);
+            broadcastCurrentState();
         }
     }
+
 
     function toggleGuestCamera(guestId: string, enabled: boolean) {
         const guest = liveGuests.value.find(g => g.uuid === guestId);
         if (guest) {
             guest.videoEnabled = enabled;
             ActionSyncService.sendGuestControl(guestId, 'video', enabled);
+            broadcastCurrentState();
         }
     }
+
 
     function kickGuest(guestId: string) {
         // First tell the guest they are kicked

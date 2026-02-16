@@ -5,49 +5,105 @@
     width="900px"
     class="music-dialog"
   >
-    <!-- Search Bar -->
-    <div class="mb-6">
-      <el-input 
-        v-model="searchQuery"
-        placeholder="Search for songs (e.g., 'Hoa nở không màu cover')"
-        size="large"
-        @keyup.enter="searchMusic"
-      >
-        <template #append>
-          <el-button @click="searchMusic" :loading="searching">
-            Search
-          </el-button>
-        </template>
-      </el-input>
-      
-      <div class="flex gap-2 mt-3">
-        <el-checkbox v-model="preferCovers">Prefer Cover Songs</el-checkbox>
-        <el-select v-model="language" placeholder="Language" class="w-40">
-          <el-option label="Vietnamese" value="vietnamese" />
-          <el-option label="English" value="english" />
-          <el-option label="Korean" value="korean" />
-          <el-option label="Japanese" value="japanese" />
-        </el-select>
-      </div>
-    </div>
-
-    <!-- Search Results -->
-    <div v-if="searchResults.length > 0" class="results-grid">
-      <div 
-        v-for="video in searchResults" 
-        :key="video.videoId"
-        class="video-card"
-        :class="{ 'selected': selectedVideo?.videoId === video.videoId }"
-        @click="selectVideo(video)"
-      >
-        <img :src="video.thumbnail" class="thumbnail" />
-        <div class="video-info">
-          <h4 class="video-title">{{ video.title }}</h4>
-          <p class="video-channel">{{ video.channelTitle }}</p>
-          <p v-if="video.duration" class="video-duration">{{ formatDuration(video.duration) }}</p>
+    <div class="music-content">
+      <!-- Unified Header: Search + Region -->
+      <div class="flex flex-col md:flex-row gap-4 mb-6 mt-2">
+        <div class="flex-1">
+          <el-input 
+            v-model="searchQuery"
+            placeholder="Search for songs or artists..."
+            size="large"
+            clearable
+            @keyup.enter="handleSearch"
+            @clear="handleSearchClear"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+            <!-- <template #append>
+              <el-button @click="handleSearch" :loading="searching">
+                SEARCH
+              </el-button>
+            </template> -->
+          </el-input>
         </div>
-        <div v-if="selectedVideo?.videoId === video.videoId" class="selected-badge">
-          <Check theme="filled" />
+
+        <div v-if="!searchQuery" class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/40">Trending:</span>
+          <el-select v-model="trendingRegion" size="small" @change="fetchTrending" class="w-32">
+            <el-option label="Vietnam" value="VN" />
+            <el-option label="United States" value="US" />
+            <el-option label="Japan" value="JP" />
+            <el-option label="South Korea" value="KR" />
+          </el-select>
+          <el-button size="small" link @click="fetchTrending" :loading="trendingLoading" class="p-0">
+            <refresh theme="outline" size="14" />
+          </el-button>
+        </div>
+      </div>
+
+      <!-- Search Filters (Collapsible or subtle) -->
+      <div v-if="searchQuery" class="flex flex-wrap gap-4 mb-6 px-1">
+        <el-checkbox v-model="preferCovers" class="!mr-0">Prefer Cover Songs</el-checkbox>
+        
+        <div class="flex items-center gap-2 ml-auto">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-white/30">Target:</span>
+          <el-select v-model="language" placeholder="Search Language" class="w-32" size="small">
+            <el-option label="Vietnamese" value="vietnamese" />
+            <el-option label="English" value="english" />
+            <el-option label="Korean" value="korean" />
+            <el-option label="Japanese" value="japanese" />
+          </el-select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-white/30">Lyrics:</span>
+          <el-select v-model="lyricsLanguage" placeholder="Lyrics Language" class="w-32" size="small">
+            <el-option label="Vietnamese" value="vi" />
+            <el-option label="English" value="en" />
+            <el-option label="Japanese" value="ja" />
+            <el-option label="Korean" value="ko" />
+          </el-select>
+        </div>
+      </div>
+
+      <!-- Results Grid (Shared) -->
+      <div class="results-container min-h-[400px]" v-loading="searching || trendingLoading">
+        <div v-if="displayResults.length > 0" class="results-grid">
+          <div 
+            v-for="video in displayResults" 
+            :key="video.videoId"
+            class="video-card"
+            :class="{ 'selected': selectedVideo?.videoId === video.videoId }"
+            @click="selectVideo(video)"
+          >
+            <div class="relative group/thumb">
+              <img :src="video.thumbnail" class="thumbnail" />
+              <div class="absolute inset-0 bg-blue-500/20 opacity-0 group-hover/thumb:opacity-100 transition-opacity pointer-events-none"></div>
+              <div v-if="video.duration" class="absolute bottom-2 right-2 bg-black/80 px-1.5 py-0.5 rounded text-[10px] font-mono">
+                {{ formatDuration(video.duration) }}
+              </div>
+            </div>
+            
+            <div class="video-info">
+              <h4 class="video-title">{{ video.title }}</h4>
+              <p class="video-channel">{{ video.channelTitle }}</p>
+            </div>
+            
+            <div v-if="selectedVideo?.videoId === video.videoId" class="selected-badge">
+              <Check theme="filled" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else-if="!searching && !trendingLoading" class="py-20 flex flex-col items-center justify-center text-white/20 border-2 border-dashed border-white/5 rounded-3xl">
+          <div class="relative mb-4">
+            <music-list theme="outline" size="48" class="opacity-20" />
+            <div class="absolute -top-2 -right-2 w-4 h-4 bg-red-500/20 rounded-full animate-ping"></div>
+          </div>
+          <span class="text-[10px] font-mono uppercase tracking-[0.3em]">No Music Found</span>
+          <p class="text-[9px] mt-2 opacity-30">Try a different search term or check trending</p>
         </div>
       </div>
     </div>
@@ -66,7 +122,7 @@
           :loading="fetching"
           type="primary"
         >
-          Fetch Lyrics
+          {{ fetching ? 'Fetching...' : 'Fetch & Apply' }}
         </el-button>
       </div>
     </div>
@@ -106,7 +162,7 @@
       </div>
     </div>
 
-    <template #footer>
+    <!-- <template #footer>
       <el-button @click="visible = false">Cancel</el-button>
       <el-button 
         type="primary" 
@@ -115,31 +171,78 @@
       >
         Apply Music {{ lyricsLines.length > 0 ? '& Lyrics' : '' }}
       </el-button>
-    </template>
+    </template> -->
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Check } from '@icon-park/vue-next';
+import { ref, computed, watch } from 'vue';
+import { Check, Search, Refresh, MusicList } from '@icon-park/vue-next';
 import { useMediaStore } from '@/stores/media';
 import { toast } from 'vue-sonner';
+import { getFileUrl } from '@/utils/api';
 
 const visible = defineModel<boolean>();
 const emit = defineEmits(['select']);
 
 const mediaStore = useMediaStore();
 const searchQuery = ref('');
-const preferCovers = ref(true);
 const language = ref('vietnamese');
+const lyricsLanguage = ref('vi');  // Default to Vietnamese for lyrics
+const preferCovers = ref(false);
 const searching = ref(false);
 const fetching = ref(false);
+
+const trendingRegion = ref('VN');
+const trendingResults = ref<any[]>([]);
+const trendingLoading = ref(false);
 
 const searchResults = ref<any[]>([]);
 const selectedVideo = ref<any>(null);
 const lyricsLines = ref<any[]>([]);
 const lyricsStyle = ref('bounce');
 const lyricsPosition = ref('bottom');
+
+const displayResults = computed(() => {
+  return searchQuery.value ? searchResults.value : trendingResults.value;
+});
+
+const fetchTrending = async () => {
+  trendingLoading.value = true;
+  try {
+    const data = await mediaStore.fetchTrendingMusic({
+      region: trendingRegion.value,
+      maxResults: 20
+    });
+    trendingResults.value = data;
+  } catch (error: any) {
+    console.error('Fetch trending failed:', error);
+  } finally {
+    trendingLoading.value = false;
+  }
+};
+
+// Initial fetch
+fetchTrending();
+
+const handleSearch = () => {
+  if (searchQuery.value) {
+    searchMusic();
+  }
+};
+
+const handleSearchClear = () => {
+  searchResults.value = [];
+  if (trendingResults.value.length === 0) {
+    fetchTrending();
+  }
+};
+
+watch(searchQuery, (newVal) => {
+  if (!newVal) {
+    handleSearchClear();
+  }
+});
 
 const searchMusic = async () => {
   if (!searchQuery.value) {
@@ -180,18 +283,26 @@ const fetchMetadataAndLyrics = async () => {
     const data = await mediaStore.fetchYouTubeMetadata({
       videoId: selectedVideo.value.videoId,
       fetchLyrics: true,
-      songTitle: selectedVideo.value.title
+      songTitle: selectedVideo.value.title,
+      lyricsLanguage: lyricsLanguage.value  // Pass user-selected language
     });
     
     lyricsLines.value = data.lyricsLines || [];
+
+    // cache music to local
+    const music = await getFileUrl(`/api/media/youtube/stream/${selectedVideo.value.videoId}`, {cached: true, refresh: false});
     
     if (lyricsLines.value.length > 0) {
-      toast.success('Lyrics fetched successfully!');
+      toast.success('Lyrics fetched! Applying music...');
+      // Auto-confirm selection
+      confirmSelection();
     } else {
-      toast.warning('No lyrics found for this song');
+      toast.warning('No lyrics found for this song, but applying music anyway.');
+      confirmSelection();
     }
   } catch (error: any) {
     console.error('Fetch failed:', error);
+    toast.error('Failed to fetch details. Please try again.');
   } finally {
     fetching.value = false;
   }
@@ -205,7 +316,7 @@ const confirmSelection = () => {
     videoId: selectedVideo.value.videoId,
     title: selectedVideo.value.title,
     thumbnail: selectedVideo.value.thumbnail,
-    lyrics: lyricsLines.value,
+    lyricsLines: lyricsLines.value,
     style: lyricsStyle.value,
     position: lyricsPosition.value
   });

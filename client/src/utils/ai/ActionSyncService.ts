@@ -23,10 +23,11 @@ export class ActionSyncService {
         const endpoint = window.location.origin || (window.location.protocol + '//' + window.location.host);
         console.log(`[ActionSync] Connecting to ${endpoint} with path /api/socket.io`);
 
+        const persistentGuestId = this.getOrCreatePersistentId();
         this.socket = io(endpoint, {
 			//allowEIO3: true, // Enables compatibility with Socket.IO v2 clients
             path: '/socket.io',
-            auth: { token, roomId, ...extraAuth },
+            auth: { token, roomId, persistentGuestId, ...extraAuth },
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
             timeout: 20000,
@@ -34,9 +35,13 @@ export class ActionSyncService {
         });
 
         this.socket.on('connect', async () => {
-            console.log(`✅ [ActionSync] Connected to room: ${roomId} (ID: ${this.socket?.id})`);
+            console.log(`✅ [ActionSync] Connected to signaling transport (Transport: ${this.socket?.id})`);
+        });
+
+        this.socket.on('session:connected', async (data: { userId: string, role: string, name: string }) => {
+            console.log(`🆔 [ActionSync] Identity stabilized: ${data.name} (${data.userId}) as ${data.role}`);
             const studio = (await import('@/stores/studio')).useStudioStore();
-            studio.myGuestId = this.socket?.id || null;
+            studio.myGuestId = data.userId;
         });
 
         this.socket.on('connect_error', (err) => {
@@ -361,5 +366,17 @@ export class ActionSyncService {
      */
     public static getSocket(): Socket | null {
         return this.socket;
+    }
+
+    /**
+     * Phase 90: Generates or retrieves a persistent ID for reconnection stability.
+     */
+    private static getOrCreatePersistentId(): string {
+        let id = localStorage.getItem('antflow_persistent_id');
+        if (!id) {
+            id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+            localStorage.setItem('antflow_persistent_id', id);
+        }
+        return id;
     }
 }

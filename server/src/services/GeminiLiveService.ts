@@ -43,6 +43,8 @@ interface SessionData {
     projectId?: string;
     audioQueue: any[];
     swarmListener?: (msg: any) => void;
+    isDisconnected?: boolean;
+    disconnectTimer?: NodeJS.Timeout;
 }
 
 const SUPPORTED_LIVE_VOICES = ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'];
@@ -688,6 +690,29 @@ const AVATAR_TOOLS: FunctionDeclaration[] = [
         }
     },
     {
+        name: 'perform_song',
+        description: 'Autonomously find and perform a song. This will trigger a search, fetch lyrics, and start the music.',
+        parameters: {
+            type: 'object',
+            properties: {
+                songName: { type: 'string', description: 'The name of the song to search for' },
+                artist: { type: 'string', description: 'The artist name (optional but recommended)' },
+                lyricsLanguage: { type: 'string', description: 'The language for lyrics (e.g., "vi", "en", "ja", "ko")', enum: ['vi', 'en', 'ja', 'ko'] },
+                style: { type: 'string', enum: ['bounce', 'slide', 'fade', 'scale'], description: 'The visual style for lyrics' },
+                position: { type: 'string', enum: ['top', 'center', 'bottom'], description: 'The vertical position for lyrics' }
+            },
+            required: ['songName']
+        }
+    },
+    {
+        name: 'stop_performance',
+        description: 'Stop the current music performance or singing.',
+        parameters: {
+            type: 'object',
+            properties: {}
+        }
+    },
+    {
         name: 'assign_floor',
         description: 'Assign the "Floor" (speaking turn) to a specific agent in a debate or talk show.',
         parameters: {
@@ -715,6 +740,7 @@ const AVATAR_TOOLS: FunctionDeclaration[] = [
 
 export class GeminiLiveService extends EventEmitter {
     private activeSessions: Map<string, SessionData> = new Map();
+    private notFoundSession: Array<string> = [];
 
     constructor() {
         super();
@@ -744,7 +770,7 @@ export class GeminiLiveService extends EventEmitter {
     async createSession(config: LiveSessionConfig): Promise<string> {
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         // gemini-live-2.5-flash-preview
-        const model = 'gemini-2.5-flash-native-audio-preview-12-2025';
+        const model = 'gemini-2.5-flash';
         // Normalize voice for Gemini Live (Phase 35)
         let normalizedVoice = config.voiceName || 'Puck';
         const geminiVoices = await this.getAvailableVoices();
@@ -754,9 +780,14 @@ export class GeminiLiveService extends EventEmitter {
         }
 
         const sessionConfig = {
-            responseModalities: [Modality.AUDIO],
+            responseModalities: [Modality.AUDIO], // Native speech
             systemInstruction: config.systemInstruction || `You are an AI Co-host and Director for a live stream. 
             You are part of a COLLECTIVE INTELLIGENCE system. Your high-impact directorial decisions are evaluated by an AI BOARD OF DIRECTORS (Creative, Tech, and Commercial agents).
+            
+            [PROTOCOL]:
+            - Speak naturally to the audience.
+            - Focus on the conversation and generating entertaining content.
+            - Your internal state (emotion, gesture, action) will be inferred from your speech.
             
             Your mission is to provide a premium, dynamic, and professional viewing experience:
             1. Proactive Community Management: Use community_shoutout to highlight viewers and foster loyalty.
@@ -796,8 +827,9 @@ export class GeminiLiveService extends EventEmitter {
             
             [PERFORMANCE & EXPRESSIVITY]:
             - You can participate in quests/games started by the RPG Master.
-            - Expressivity: Use 'set_avatar_pose' and 'set_eye_focus' to adds physical depth to your arguments or performances.
-            - Showmanship: Use 'trigger_performance' for specific acts like 'sing', 'dance', or delivering a 'debate_point' with maximum impact.
+            - Singing: When asked to sing or play music, ACKNOWLEDGE the request and say which song you'll perform BEFORE using 'perform_song'. If the song name is missing, ASK the host for a recommendation.
+            - Performance Setup: If a song is requested in Vietnamese, set lyricsLanguage to "vi". Choose a style and position that fits the mood.
+            - Control: Use 'stop_performance' ONLY if specifically asked to stop or if the context significantly changes.
             `;
         }
 
@@ -926,7 +958,10 @@ export class GeminiLiveService extends EventEmitter {
     sendAudio(sessionId: string, audioChunk: AudioChunk): void {
         const sessionData = this.activeSessions.get(sessionId);
         if (!sessionData) {
-            console.warn(`[GeminiLive] Session ${sessionId} not found`);
+            if(!this.notFoundSession.includes(sessionId)){
+                this.notFoundSession.push(sessionId);
+                console.warn(`[GeminiLive] Session ${sessionId} not found`);
+            }
             return;
         }
 
@@ -977,8 +1012,16 @@ export class GeminiLiveService extends EventEmitter {
         }
 
         try {
-            sessionData.session.sendToolResponse({
-                functionResponses
+            // Ensure payload is correctly formatted for Google GenAI Bidi session
+            sessionData.session.sendRealtimeInput({
+                toolResponse: {
+                    functionResponses: functionResponses.map(resp => ({
+                        name: resp.name,
+                        id: resp.id,
+                        // Fix: resp.response is already the result object from the client composite
+                        response: resp.response || { success: true }
+                    }))
+                }
             });
         } catch (error: any) {
             console.error(`[GeminiLive] Failed to send tool response for session ${sessionId}:`, error);
@@ -996,7 +1039,15 @@ export class GeminiLiveService extends EventEmitter {
         }
 
         try {
-            sessionData.session.send({ text });
+            sessionData.session.sendRealtimeInput({
+                clientContent: {
+                    turns: [{
+                        role: 'user',
+                        parts: [{ text }]
+                    }],
+                    turnComplete: true
+                }
+            });
         } catch (error: any) {
             console.error(`[GeminiLive] Failed to send text for session ${sessionId}:`, error);
             this.emit('session:error', { sessionId, error: error.message });
@@ -1033,13 +1084,55 @@ export class GeminiLiveService extends EventEmitter {
     }
 
     /**
-     * Close a session
+     * Disconnect a session gracefully (waiting for reconnection)
+     */
+    disconnectSession(sessionId: string, gracePeriodMs: number = 60000): void {
+        const sessionData = this.activeSessions.get(sessionId);
+        if (!sessionData) return;
+
+        console.log(`[GeminiLive] Session ${sessionId} marked as disconnected. Grace period: ${gracePeriodMs}ms`);
+        sessionData.isDisconnected = true;
+        
+        if (sessionData.disconnectTimer) clearTimeout(sessionData.disconnectTimer);
+        
+        sessionData.disconnectTimer = setTimeout(() => {
+            console.log(`[GeminiLive] Grace period expired for session ${sessionId}. Closing...`);
+            this.closeSession(sessionId);
+        }, gracePeriodMs);
+    }
+
+    /**
+     * Resume a disconnected session
+     */
+    resumeSession(sessionId: string): boolean {
+        const sessionData = this.activeSessions.get(sessionId);
+        if (!sessionData) {
+            console.warn(`[GeminiLive] Cannot resume: Session ${sessionId} not found`);
+            return false;
+        }
+
+        if (sessionData.disconnectTimer) {
+            clearTimeout(sessionData.disconnectTimer);
+            sessionData.disconnectTimer = undefined;
+        }
+        
+        sessionData.isDisconnected = false;
+        console.log(`[GeminiLive] Session ${sessionId} resumed`);
+        return true;
+    }
+
+    /**
+     * Close a session immediately
      */
     closeSession(sessionId: string): void {
         const sessionData = this.activeSessions.get(sessionId);
         if (!sessionData) {
             console.warn(`[GeminiLive] Session ${sessionId} not found`);
             return;
+        }
+
+        if (sessionData.disconnectTimer) {
+            clearTimeout(sessionData.disconnectTimer);
         }
 
         try {
@@ -1052,215 +1145,177 @@ export class GeminiLiveService extends EventEmitter {
     /**
      * Handle incoming messages from Gemini Live API
      */
-    private async handleIncomingMessage(sessionId: string, message: any): Promise<void> {
-        const sessionData = this.activeSessions.get(sessionId);
-        if (!sessionData) return;
+    private    async handleIncomingMessage(sessionId: string, message: any): Promise<void> {
+        try {
+            const sessionData = this.activeSessions.get(sessionId);
+            if (!sessionData) return;
 
-        // Handle interruption
-        if (message.serverContent?.interrupted) {
-            console.log(`[GeminiLive] Session ${sessionId} interrupted`);
-            sessionData.audioQueue = []; // Clear audio queue
-            this.emit('session:interrupted', { sessionId });
-            return;
-        }
+            // Handle interruption
+            if (message.serverContent?.interrupted) {
+                console.log(`[GeminiLive] Session ${sessionId} interrupted`);
+                sessionData.audioQueue = []; // Clear audio queue
+                this.emit('session:interrupted', { sessionId });
+                return;
+            }
 
-        // Handle user turn (transcription)
-        if (message.serverContent?.userTurn?.parts) {
-            for (const part of message.serverContent.userTurn.parts) {
-                if (part.text) {
-                    await this.saveMessage(sessionId, 'user', part.text);
-                    this.emit('user:transcript', { sessionId, text: part.text });
+            // Handle user turn (transcription)
+            if (message.serverContent?.userTurn?.parts) {
+                for (const part of message.serverContent.userTurn.parts) {
+                    if (part.text) {
+                        await this.saveMessage(sessionId, 'user', part.text);
+                        this.emit('user:transcript', { sessionId, text: part.text });
+                    }
                 }
             }
-        }
 
-        // Handle model turn with audio
-        if (message.serverContent?.modelTurn?.parts) {
-            for (const part of message.serverContent.modelTurn.parts) {
-                if (part.inlineData?.data) {
-                    // Emit audio chunk to be sent to client
-                    this.emit('audio:chunk', {
-                        sessionId,
-                        audioData: part.inlineData.data,
-                        mimeType: part.inlineData.mimeType || 'audio/pcm;rate=24000'
-                    });
-                }
+            // Handle model turn with audio
+            if (message.serverContent?.modelTurn?.parts) {
+                for (const part of message.serverContent.modelTurn.parts) {
+                    if (part.inlineData?.data) {
+                        // Emit audio chunk to be sent to client
+                        this.emit('audio:chunk', {
+                            sessionId,
+                            audioData: part.inlineData.data,
+                            mimeType: part.inlineData.mimeType || 'audio/pcm;rate=24000'
+                        });
+                    }
 
-                // Handle text transcription if available
-                if (part.text) {
-                    await this.saveMessage(sessionId, 'model', part.text);
-                    this.emit('text:response', {
-                        sessionId,
-                        text: part.text
-                    });
+                    // Handle text transcription if available
+                    if (part.text) {
+                        await this.saveMessage(sessionId, 'model', part.text);
+                        this.emit('text:response', {
+                            sessionId,
+                            text: part.text
+                        });
+                    }
                 }
             }
-        }
 
-        // Handle tool calls (function calling)
-        if (message.serverContent?.toolCall) {
-            const toolCall = message.serverContent.toolCall;
-            await this.saveMessage(sessionId, 'model', '', toolCall.functionCalls);
+            // Handle tool calls (function calling)
+            if (message.serverContent?.toolCall) {
+                const toolCall = message.serverContent.toolCall;
+                await this.saveMessage(sessionId, 'model', '', toolCall.functionCalls);
 
-            // Intercept internal tools (Memory/Archive)
-            for (const call of toolCall.functionCalls || []) {
-                if (call.name === 'archive_moment') {
-                    console.log(`[GeminiLive] Intercepted archive_moment:`, call.args);
-                    if (sessionData.userId && sessionData.archiveId) {
-                        await VTuberService.archiveEvent(
-                            sessionData.userId, 
-                            sessionData.archiveId, 
-                            sessionId, 
-                            call.args.description
-                        );
-                        // Send automatic tool response to Gemini
-                        this.sendToolResponse(sessionId, [{
-                            functionResponse: {
-                                name: call.name,
-                                id: call.id,
-                                response: { success: true, message: 'Moment archived to long-term memory' }
-                            }
-                        }]);
+                const responses: any[] = [];
+                const callsToEmit: any[] = [];
+
+                for (const call of toolCall.functionCalls || []) {
+                    let handledLocally = false;
+                    let localResult: any = { success: true };
+
+                    if (call.name === 'archive_moment') {
+                        console.log(`[GeminiLive] Intercepted archive_moment:`, call.args);
+                        if (sessionData.userId && sessionData.archiveId) {
+                            await VTuberService.archiveEvent(
+                                sessionData.userId, 
+                                sessionData.archiveId, 
+                                sessionId, 
+                                call.args.description
+                            );
+                            localResult = { success: true, message: 'Moment archived to long-term memory' };
+                            handledLocally = true;
+                        }
+                    } else if (call.name === 'update_fan_bond') {
+                        console.log(`[GeminiLive] Intercepted update_fan_bond:`, call.args);
+                        if (sessionData.userId && sessionData.archiveId) {
+                            await VTuberService.updateSocialRelationship(
+                                sessionData.userId,
+                                sessionData.archiveId,
+                                call.args.viewerName,
+                                call.args.delta,
+                                call.args.reason
+                            );
+                            localResult = { success: true, message: `Social bond with ${call.args.viewerName} updated` };
+                            handledLocally = true;
+                        }
+                    } else if (call.name === 'send_agent_message') {
+                        console.log(`[GeminiLive] Intercepted send_agent_message:`, call.args);
+                        if (sessionData.projectId && sessionData.archiveId) {
+                            aiAgentBus.sendMessage(sessionData.projectId, {
+                                fromAgent: sessionData.archiveId,
+                                toAgent: call.args.targetAgent,
+                                type: 'direct',
+                                payload: { message: call.args.message }
+                            });
+                            localResult = { success: true, message: `Message sent to ${call.args.targetAgent}` };
+                            handledLocally = true;
+                        }
+                    } else if (call.name === 'broadcast_to_swarm') {
+                        console.log(`[GeminiLive] Intercepted broadcast_to_swarm:`, call.args);
+                        if (sessionData.projectId && sessionData.archiveId) {
+                            aiAgentBus.sendMessage(sessionData.projectId, {
+                                fromAgent: sessionData.archiveId,
+                                type: 'broadcast',
+                                payload: { message: call.args.message }
+                            });
+                            localResult = { success: true, message: 'Broadcast sent to all agents' };
+                            handledLocally = true;
+                        }
+                    } else if (call.name === 'start_quest') {
+                        console.log(`[GeminiLive] Intercepted start_quest:`, call.args);
+                        const session = questService.createSession(call.args.type, call.args.title);
+                        questService.joinSession(session.id, sessionData.archiveId, 'Host', 'host');
+                        this.emit('quest:created', { sessionId, quest: session });
+                        localResult = { success: true, questId: session.id, message: 'Quest started successfully' };
+                        handledLocally = true;
+                    } else if (call.name === 'update_quest') {
+                        const activeQuest = questService.getActiveSession();
+                        if (activeQuest) {
+                             this.emit('quest:updated', { sessionId, ...call.args });
+                             localResult = { success: true };
+                             handledLocally = true;
+                        }
+                    } else if (call.name === 'assign_floor') {
+                        this.emit('quest:floor_assigned', { sessionId, targetAgentId: call.args.targetAgentId });
+                        localResult = { success: true, message: `Floor assigned to ${call.args.targetAgentId}` };
+                        handledLocally = true;
+                    } else if (call.name === 'evaluate_performance') {
+                        const activeQuest = questService.getActiveSession();
+                        if (activeQuest) {
+                            questService.updateScore(activeQuest.id, call.args.targetAgentId, call.args.score);
+                            this.emit('quest:evaluated', { 
+                                sessionId, 
+                                targetAgentId: call.args.targetAgentId, 
+                                score: call.args.score,
+                                comment: call.args.comment 
+                            });
+                            localResult = { success: true, message: 'Score recorded' };
+                        } else {
+                            localResult = { success: false, message: 'No active quest' };
+                        }
+                        handledLocally = true;
                     }
-                } else if (call.name === 'update_fan_bond') {
-                    console.log(`[GeminiLive] Intercepted update_fan_bond:`, call.args);
-                    if (sessionData.userId && sessionData.archiveId) {
-                        await VTuberService.updateSocialRelationship(
-                            sessionData.userId,
-                            sessionData.archiveId,
-                            call.args.viewerName,
-                            call.args.delta,
-                            call.args.reason
-                        );
-                        // Send automatic tool response to Gemini
-                        this.sendToolResponse(sessionId, [{
-                            functionResponse: {
-                                name: call.name,
-                                id: call.id,
-                                response: { success: true, message: `Social bond with ${call.args.viewerName} updated` }
-                            }
-                        }]);
-                    }
-                } else if (call.name === 'send_agent_message') {
-                    console.log(`[GeminiLive] Intercepted send_agent_message:`, call.args);
-                    if (sessionData.projectId && sessionData.archiveId) {
-                        aiAgentBus.sendMessage(sessionData.projectId, {
-                            fromAgent: sessionData.archiveId,
-                            toAgent: call.args.targetAgent,
-                            type: 'direct',
-                            payload: { message: call.args.message }
-                        });
-                        this.sendToolResponse(sessionId, [{
-                            functionResponse: {
-                                name: call.name,
-                                id: call.id,
-                                response: { success: true, message: `Message sent to ${call.args.targetAgent}` }
-                            }
-                        }]);
-                    }
-                } else if (call.name === 'broadcast_to_swarm') {
-                    console.log(`[GeminiLive] Intercepted broadcast_to_swarm:`, call.args);
-                    if (sessionData.projectId && sessionData.archiveId) {
-                        aiAgentBus.sendMessage(sessionData.projectId, {
-                            fromAgent: sessionData.archiveId,
-                            type: 'broadcast',
-                            payload: { message: call.args.message }
-                        });
-                        this.sendToolResponse(sessionId, [{
-                            functionResponse: {
-                                name: call.name,
-                                id: call.id,
-                                response: { success: true, message: 'Broadcast sent to all agents' }
-                            }
-                        }]);
-                    }
-                } else if (call.name === 'start_quest') {
-                     console.log(`[GeminiLive] Intercepted start_quest:`, call.args);
-                     const session = questService.createSession(call.args.type, call.args.title);
-                     // Add current agent as Host
-                     questService.joinSession(session.id, sessionData.archiveId, 'Host', 'host');
-                     
-                     this.emit('quest:created', { sessionId, quest: session });
-                     
-                     this.sendToolResponse(sessionId, [{
-                        functionResponse: {
+
+                    if (handledLocally) {
+                        responses.push({
                             name: call.name,
                             id: call.id,
-                            response: { success: true, questId: session.id, message: 'Quest started successfully' }
-                        }
-                     }]);
-                } else if (call.name === 'update_quest') {
-                    const activeQuest = questService.getActiveSession();
-                    if (activeQuest) {
-                         // Update state/progress
-                         // Note: questService might need a specific update method for general props
-                         // For now just ack
-                         this.emit('quest:updated', { sessionId, ...call.args });
-                         
-                         this.sendToolResponse(sessionId, [{
-                            functionResponse: {
-                                name: call.name,
-                                id: call.id,
-                                response: { success: true }
-                            }
-                         }]);
-                    }
-                } else if (call.name === 'assign_floor') {
-                    // Update floor state
-                    this.emit('quest:floor_assigned', { sessionId, targetAgentId: call.args.targetAgentId });
-                    this.sendToolResponse(sessionId, [{
-                        functionResponse: {
-                            name: call.name,
-                            id: call.id,
-                            response: { success: true, message: `Floor assigned to ${call.args.targetAgentId}` }
-                        }
-                     }]);
-                } else if (call.name === 'evaluate_performance') {
-                    const activeQuest = questService.getActiveSession();
-                    if (activeQuest) {
-                        questService.updateScore(activeQuest.id, call.args.targetAgentId, call.args.score);
-                        
-                        this.emit('quest:evaluated', { 
-                            sessionId, 
-                            targetAgentId: call.args.targetAgentId, 
-                            score: call.args.score,
-                            comment: call.args.comment 
+                            response: localResult
                         });
-                        
-                        this.sendToolResponse(sessionId, [{
-                            functionResponse: {
-                                name: call.name,
-                                id: call.id,
-                                response: { success: true, message: 'Score recorded' }
-                            }
-                         }]);
                     } else {
-                        this.sendToolResponse(sessionId, [{
-                            functionResponse: {
-                                name: call.name,
-                                id: call.id,
-                                response: { success: false, message: 'No active quest' }
-                            }
-                         }]);
+                        // This call will be handled by the client
+                        callsToEmit.push(call);
                     }
-                } else {
-                    // Standard avatar control tool
-                    console.log(`[GeminiLive] Handled standard tool call:`, call.name);
-                    this.emit('tool:call', { sessionId, toolCall: call });
-                    
-                    this.sendToolResponse(sessionId, [{
-                        functionResponse: {
-                            name: call.name,
-                            id: call.id,
-                            response: { success: true, status: 'Handled' }
+                }
+
+                // Send local responses back to Gemini
+                if (responses.length > 0) {
+                    this.sendToolResponse(sessionId, responses);
+                }
+
+                // Emit remainig calls to the client. 
+                // The client MUST call sendToolResponse for these to avoid blocking Gemini.
+                if (callsToEmit.length > 0) {
+                    this.emit('tool:call', {
+                        sessionId,
+                        toolCall: {
+                            functionCalls: callsToEmit
                         }
-                    }]);
+                    });
                 }
             }
-            this.emit('tool:call', {
-                sessionId,
-                toolCall: toolCall
-            });
+        } catch (error) {
+            console.error(`[GeminiLive] Error handling incoming message for session ${sessionId}:`, error);
         }
     }
 

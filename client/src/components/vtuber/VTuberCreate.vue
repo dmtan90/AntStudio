@@ -1,6 +1,6 @@
 <template>
     <el-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)"
-        title="CREATE NEW VTUBER" width="1050px" custom-class="glass-dialog manifest-wizard-v2">
+        title="CREATE NEW VTUBER" width="1050px" custom-class="glass-dialog manifest-wizard-v2" @close="onClose">
         
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 p-1 pt-0">
             <!-- Left: Preview & Utilities (5 Cols) -->
@@ -22,6 +22,11 @@
                             :intensity="newVTuber.animationConfig"
                             :emotion="testEmotion"
                             :cinematicMode="cinematicMode"
+                            :lyrics="newVTuber.backgroundMusic?.lyricsLines || []"
+                            :currentTime="audioCurrentTime"
+                            :lyricsEnabled="lyricsEnabled"
+                            :lyricsStyle="newVTuber.backgroundMusic?.style || 'neon'"
+                            :lyricsPosition="newVTuber.backgroundMusic?.position || 'bottom'"
                             :interactive="true"
                         />
                     </div>
@@ -241,23 +246,37 @@
 
                             <!-- Section 3.5: Background Music -->
                             <div class="space-y-4 pt-4 border-t border-white/5">
-                                <label class="section-label">🎵 Background Music</label>
-                                <el-button 
-                                    @click="showMusicDialog = true"
-                                    class="w-full soul-glass-btn h-[42px] relative overflow-hidden text-left px-4"
-                                >
-                                    <div class="flex items-center gap-2">
-                                        <music-one theme="outline" class="text-purple-400" />
-                                        <span class="text-[10px] font-black uppercase tracking-widest truncate">
-                                            {{ newVTuber.backgroundMusic?.title || 'Select Music' }}
-                                        </span>
-                                    </div>
-                                    <div v-if="newVTuber.backgroundMusic" class="absolute right-3 top-1/2 -translate-y-1/2">
-                                        <div class="w-2 h-2 rounded-full bg-purple-500 shadow-sm animate-pulse"></div>
-                                    </div>
-                                </el-button>
+                                <div class="flex items-center justify-between">
+                                    <label class="section-label">🎵 Background Music</label>
+                                    <el-switch v-model="lyricsEnabled" size="small" inactive-text="Lyrics" />
+                                </div>
+                                
+                                <div class="flex gap-2">
+                                    <el-button 
+                                        @click="showMusicDialog = true"
+                                        class="flex-1 soul-glass-btn h-[42px] relative overflow-hidden text-left px-4"
+                                    >
+                                        <div class="flex items-center gap-2">
+                                            <music-one theme="outline" class="text-purple-400" />
+                                            <span class="text-[10px] font-black uppercase tracking-widest truncate">
+                                                {{ newVTuber.backgroundMusic?.title || 'Select Music' }}
+                                            </span>
+                                        </div>
+                                        <div v-if="newVTuber.backgroundMusic" class="absolute right-3 top-1/2 -translate-y-1/2">
+                                            <div class="w-2 h-2 rounded-full bg-purple-500 shadow-sm animate-pulse"></div>
+                                        </div>
+                                    </el-button>
+
+                                    <el-button v-if="newVTuber.backgroundMusic" 
+                                               @click="toggleMusicPreview()" 
+                                               class="soul-vtuber-test-btn h-[42px] w-[42px] !rounded-xl !p-0">
+                                        <pause-one v-if="isPlayingMusic" theme="outline" size="18" />
+                                        <play v-else theme="outline" size="18" />
+                                    </el-button>
+                                </div>
+
                                 <div v-if="newVTuber.backgroundMusic" class="text-[8px] font-bold opacity-40 uppercase px-1">
-                                    {{ newVTuber.backgroundMusic.lyrics?.length || 0 }} lyrics lines • {{ newVTuber.backgroundMusic.style }} animation
+                                    {{ newVTuber.backgroundMusic.lyricsLines?.length || 0 }} lyrics lines • sync active
                                 </div>
                             </div>
                         </div>
@@ -274,63 +293,14 @@
             </div>
         </template>
 
-        <!-- Voice Library Dialog (Overlay) -->
-        <el-dialog v-model="voiceLibraryVisible" title="VTUBER VOICE LIBRARY" width="850px" append-to-body custom-class="glass-dialog voice-picker-dialog">
-            <div class="space-y-6 p-2">
-                <!-- Filters Header -->
-                <div class="flex flex-col gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <div class="flex items-center gap-4">
-                        <div class="flex-1 flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-xl border border-white/5">
-                            <search theme="outline" class="opacity-40" />
-                            <el-input v-model="voiceSearchQuery" placeholder="Filter voice signatures..." class="voice-search-input-inner" />
-                        </div>
-                        
-                        <div v-if="newVTuber.voiceConfig.provider === 'google'" class="flex items-center gap-2">
-                             <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">Language</span>
-                             <el-select v-model="newVTuber.voiceConfig.language" size="small" class="glass-select-mini w-40" filterable>
-                                  <el-option v-for="lang in SUPPORTED_LANGUAGES" :key="lang.value" :label="lang.label" :value="lang.value" />
-                             </el-select>
-                        </div>
-                    </div>
+        <VoiceLibraryDialog 
+            v-model="voiceLibraryVisible"
+            v-model:provider="newVTuber.voiceConfig.provider"
+            v-model:voiceId="newVTuber.voiceConfig.voiceId"
+            v-model:language="newVTuber.voiceConfig.language"
+            @select="v => newVTuber.voiceConfig.sampleUrl = v.audioSampleUrl"
+        />
 
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                             <div class="flex items-center gap-2">
-                                <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">Gender</span>
-                                <div class="flex gap-1">
-                                    <div v-for="g in ['all', 'female', 'male', 'neutral']" :key="g"
-                                         @click="voiceGenderFilter = g"
-                                         class="trait-tag !py-1 !px-3 !text-[8px]" :class="{'active': voiceGenderFilter === g}">
-                                        {{ g.toUpperCase() }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-if="newVTuber.voiceConfig.provider === 'google'" class="flex items-center gap-2">
-                             <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">Language</span>
-                             <el-select v-model="newVTuber.voiceConfig.language" size="small" class="glass-select-mini w-40" filterable>
-                                  <el-option v-for="lang in SUPPORTED_LANGUAGES" :key="lang.value" :label="lang.value" :value="lang.value" />
-                             </el-select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="voice-grid custom-scrollbar">
-                    <StudioVoiceCard 
-                        v-for="v in availableVoices" 
-                        :key="v.id"
-                        :name="v.name"
-                        :gender="v.gender"
-                        :active="newVTuber.voiceConfig.voiceId === v.id"
-                        :playing="previewConfig.isPlaying && previewConfig.audio?.id === v.id"
-                        @click="newVTuber.voiceConfig.voiceId = v.id; voiceLibraryVisible = false"
-                        @preview="handleVoicePreview(v.id)"
-                    />
-                </div>
-            </div>
-        </el-dialog>
-        
         <MusicSelectionDialog 
             v-model="showMusicDialog"
             @select="handleMusicSelect"
@@ -348,6 +318,7 @@ import Live2DViewer from './Live2DViewer.vue';
 // import StaticPhotoViewer from './StaticPhotoViewer.vue'; // Wrapped by VTuberViewer
 import VTuberViewer from './VTuberViewer.vue';
 import MusicSelectionDialog from './MusicSelectionDialog.vue';
+import VoiceLibraryDialog from './VoiceLibraryDialog.vue';
 import { useAudioVisualizer } from '@/composables/useAudioVisualizer';
 import { useVTuberTracking } from '@/composables/useVTuberTracking';
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
@@ -379,49 +350,8 @@ const live2dInput = ref<HTMLInputElement | null>(null);
 const modelInput = ref<HTMLInputElement | null>(null);
 const staticInput = ref<HTMLInputElement | null>(null);
 const backgroundInput = ref<HTMLInputElement | null>(null);
-const voicesList = ref<any[]>([]);
-const voiceSearchQuery = ref('');
-const voiceGenderFilter = ref('all');
-
-const backgroundPresets = ref([
-    { name: 'Studio', url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=400' },
-    { name: 'Cyberpunk', url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=400' },
-    { name: 'Nature', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=400' },
-    { name: 'Abstract', url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=400' },
-    { name: 'Solid Black', url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=400' }
-]);
-
-const cacheVoice = {
-    provider: '',
-    language: '',
-    voice: '',
-    text: '',
-    url: ''
-}
-
-
-// Audio Analysis & Capture (Now using Composable)
-// Note: We still need audioCtx for captureVideo, preventing full decoupling yet for video generation 
-// but we can simplify the preview visualization.
-const { speakingVol, pitchFactor, emphasis, stopAnalysis, attachToAudioElement } = useAudioVisualizer();
-const { solveLandmarks } = useVTuberTracking();
-const testEmotion = ref('neutral');
-const cinematicMode = ref(false);
-let cleanupAudioListeners: (() => void) | null = null;
-let audioCtx: AudioContext | null = null; // Keep for video capture
-let audioDestination: MediaStreamAudioDestinationNode | null = null;
-
-// Audio Analysis handled by composable
-
-// Audio Preview State
-const previewConfig = ref({
-    text: 'Hello, I am ready to assist you.',
-    loading: false,
-    isPlaying: false,
-    audio: null as HTMLAudioElement | null
-});
-
 const voiceLibraryVisible = ref(false);
+
 
 const newVTuber = ref({
     name: '',
@@ -450,7 +380,8 @@ const newVTuber = ref({
     voiceConfig: {
         provider: 'gemini',
         language: 'en-US',
-        voiceId: ''
+        voiceId: '',
+        sampleUrl: ''
     },
     directorConfig: {
         autoFX: true,
@@ -466,6 +397,14 @@ const showMusicDialog = ref(false);
 const handleMusicSelect = (music: any) => {
     newVTuber.value.backgroundMusic = music;
     toast.success(`Music "${music.title}" synchronized with vtuber entity`);
+    
+    // Reset music player if music changed
+    if (musicPlayer) {
+        musicPlayer.pause();
+        musicPlayer = null;
+        isPlayingMusic.value = false;
+        if (musicTimeInterval) clearInterval(musicTimeInterval);
+    }
 };
 
 const presetTraits = ['FRIENDLY', 'PROFESSIONAL', 'CREATIVE', 'ENERGETIC', 'CALM', 'MYSTERIOUS'];
@@ -475,65 +414,128 @@ const presetTraits = ['FRIENDLY', 'PROFESSIONAL', 'CREATIVE', 'ENERGETIC', 'CALM
 //     return GOOGLE_VOICES[lang] || [];
 // });
 
-watch(() => newVTuber.value?.voiceConfig?.provider, (newVal) => {
-    fetchVoices();
-    newVTuber.value.voiceConfig.voiceId = '';
-});
+const backgroundPresets = ref([
+    { name: 'Studio', url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=400' },
+    { name: 'Cyberpunk', url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=400' },
+    { name: 'Nature', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=400' },
+    { name: 'Abstract', url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=400' },
+    { name: 'Solid Black', url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=400' }
+]);
 
-onMounted(() => {
-    fetchVoices();
-});
+const cacheVoice = {
+    provider: '',
+    language: '',
+    voice: '',
+    text: '',
+    url: ''
+}
 
-const fetchVoices = async () => {
-    try {
-        const provider = newVTuber.value.voiceConfig.provider || 'gemini';
-        const data = await vtuberStore.fetchVoices(provider);
-        if (data && Array.isArray(data)) {
-            voicesList.value = data; 
+// Audio Analysis & Capture (Now using Composable)
+// Note: We still need audioCtx for captureVideo, preventing full decoupling yet for video generation 
+// but we can simplify the preview visualization.
+const { speakingVol, pitchFactor, emphasis, stopAnalysis, attachToAudioElement } = useAudioVisualizer();
+const { solveLandmarks } = useVTuberTracking();
+const testEmotion = ref('neutral');
+const cinematicMode = ref(false);
+let cleanupAudioListeners: (() => void) | null = null;
+let audioCtx: AudioContext | null = null; // Keep for video capture
+let audioDestination: MediaStreamAudioDestinationNode | null = null;
+
+const audioCurrentTime = ref(0);
+const lyricsOffset = ref(0);  // Lyrics timing offset in seconds
+const isPlayingMusic = ref(false);
+const lyricsEnabled = ref(true);
+let musicPlayer: HTMLAudioElement | null = null;
+let musicTimeInterval: any = null;
+
+const toggleMusicPreview = async () => {
+    console.log("toggleMusicPreview");
+    if (isPlayingMusic.value) {
+        musicPlayer?.pause();
+        isPlayingMusic.value = false;
+        if (musicTimeInterval) clearInterval(musicTimeInterval);
+    } else if (newVTuber.value.backgroundMusic?.audioUrl || newVTuber.value.backgroundMusic?.videoId) {
+        if (!musicPlayer) {
+            musicPlayer = new Audio();
+            musicPlayer.crossOrigin = 'anonymous';
+            attachToAudioElement(musicPlayer);
+            musicPlayer.onended = () => {
+                isPlayingMusic.value = false;
+                if (musicTimeInterval) clearInterval(musicTimeInterval);
+            };
         }
-    } catch (e) {
-        console.warn('Failed to fetch dynamic voices, using constants.');
+        const musicUrl = await getFileUrl(`/api/media/youtube/stream/${newVTuber.value.backgroundMusic.videoId}`, {cached: true, refresh: false});
+        musicPlayer.src = musicUrl;
+        musicPlayer.play();
+        isPlayingMusic.value = true;
+        audioCurrentTime.value = 0;
+        
+        musicTimeInterval = setInterval(() => {
+            if (musicPlayer) audioCurrentTime.value = musicPlayer.currentTime;
+        }, 100);
     }
 };
 
-const availableVoices = computed(() => {
-    const provider = newVTuber.value?.voiceConfig?.provider;
-    const lang = newVTuber.value?.voiceConfig?.language;
-    
-    let filtered = voicesList.value;
-
-    // Filter by Provider specific rules
-    if (provider !== 'gemini' && lang) {
-        filtered = filtered.filter((v: any) => {
-            if (v.languageCodes) return v.languageCodes.includes(lang);
-            return v.language === lang || v.language?.startsWith(lang.split('-')[0]);
-        });
-    }
-
-    // Filter by Gender
-    if (voiceGenderFilter.value !== 'all') {
-        filtered = filtered.filter((v: any) => {
-            const g = (v.gender || v.ssmlGender || '').toLowerCase();
-            return g.includes(voiceGenderFilter.value.toLowerCase());
-        });
-    }
-
-    // Filter by Search Query
-    if (voiceSearchQuery.value) {
-        const q = voiceSearchQuery.value.toLowerCase();
-        filtered = filtered.filter((v: any) => 
-            (v.name || '').toLowerCase().includes(q) || 
-            (v.id || '').toLowerCase().includes(q)
-        );
-    }
-
-    return filtered.map((v: any) => ({ 
-        id: v.id || v.name, 
-        name: v.name || `${v.id} (${v.gender || v.ssmlGender})`,
-        gender: v.gender || v.ssmlGender || 'Neutral',
-        audioSampleUrl: v.audioSampleUrl,
-    }));
+// Audio Preview State
+const previewConfig = ref({
+    text: 'Hello, I am ready to assist you.',
+    loading: false,
+    isPlaying: false,
+    audio: null as HTMLAudioElement | null
 });
+
+watch(() => newVTuber.value?.voiceConfig?.provider, (newVal) => {
+    newVTuber.value.voiceConfig.voiceId = '';
+});
+
+const handleVoicePreview = async (vid?: string) => {
+    const voiceId = vid || newVTuber.value?.voiceConfig?.voiceId;
+    if (!voiceId) return;
+
+    if (previewConfig.value.isPlaying && previewConfig.value.audio?.id === voiceId) {
+        previewConfig.value.audio.pause();
+        previewConfig.value.isPlaying = false;
+        return;
+    }
+
+    try {
+        previewConfig.value.loading = true;
+        
+        // 1. Check for stored sample URL
+        let audioUrl = newVTuber.value?.voiceConfig?.sampleUrl;
+        
+        if (audioUrl) {
+           console.log('[VTuberCreate] Using stored sample:', audioUrl);
+        } else {
+            const provider = newVTuber.value.voiceConfig.provider;
+            const data = await vtuberStore.generateVoicePreview({
+                text: "Testing VTuber synchronization. Voice profile established.",
+                provider,
+                voiceId,
+                language: newVTuber.value.voiceConfig.language || 'en-US'
+            });
+            audioUrl = data?.audioUrl;
+        }
+        
+        if (audioUrl) {
+            if (!previewConfig.value.audio) {
+                previewConfig.value.audio = new Audio();
+                attachToAudioElement(previewConfig.value.audio);
+                previewConfig.value.audio.onended = () => {
+                   previewConfig.value.isPlaying = false;
+                };
+            }
+            previewConfig.value.audio.src = getFileUrl(audioUrl);
+            previewConfig.value.audio.id = voiceId; // Store for comparison
+            previewConfig.value.audio.play();
+            previewConfig.value.isPlaying = true;
+        }
+    } catch (e) {
+        toast.error('Voice preview failed');
+    } finally {
+        previewConfig.value.loading = false;
+    }
+};
 
 const trackingData = ref<any>(null);
 const enableTracking = ref(false);
@@ -683,124 +685,6 @@ const handleRemoveBackground = async () => {
     }
 };
 
-const handleVoicePreview = async (voiceId?: string) => {
-    const currentVoiceId = voiceId || newVTuber.value.voiceConfig.voiceId;
-    if (!currentVoiceId) {
-        toast.warning('Select a voice context first.');
-        return;
-    }
-
-    if (previewConfig.value.isPlaying && previewConfig.value.audio) {
-        previewConfig.value.audio.pause();
-        previewConfig.value.isPlaying = false;
-        return;
-    }
-
-    previewConfig.value.loading = true;
-    try {
-        let audioUrl = '';
-        const currentText = previewConfig.value.text;
-        
-        // Helper to attempt playback with fallback
-        const tryPlayAudio = (url: string, isSample: boolean) => {
-            return new Promise<void>((resolve, reject) => {
-                const audio = new Audio();
-                audio.crossOrigin = 'anonymous';
-                audio.src = getFileUrl(url);
-                
-                if (cleanupAudioListeners) cleanupAudioListeners();
-                cleanupAudioListeners = attachToAudioElement(audio);
-
-                // Fallback if sample fails (404)
-                audio.onerror = async () => {
-                    console.warn('[VTuberManifest] Audio playback failed:', url);
-                    if (isSample) {
-                        console.log('[VTuberManifest] Falling back to API generation...');
-                        try {
-                            const data = await vtuberStore.generateVoicePreview({
-                                text: currentText,
-                                provider: newVTuber.value.voiceConfig.provider,
-                                voiceId: currentVoiceId,
-                                language: newVTuber.value.voiceConfig.language
-                            });
-                            if (data && data.audioUrl) {
-                                const fallbackUrl = getFileUrl(data.audioUrl);
-                                // Update Cache with the WORKING generated url
-                                cacheVoice.voice = currentVoiceId;
-                                cacheVoice.text = currentText;
-                                cacheVoice.url = fallbackUrl;
-                                await tryPlayAudio(fallbackUrl, false); // Retry with generated
-                                resolve();
-                            } else {
-                                reject(new Error('Fallback generation failed'));
-                            }
-                        } catch (e) {
-                            reject(e);
-                        }
-                    } else {
-                        reject(new Error('Audio playback failed'));
-                    }
-                };
-
-                audio.onended = () => {
-                    previewConfig.value.isPlaying = false;
-                };
-
-                audio.oncanplaythrough = () => {
-                     // Only start if still loading (avoid double play on rapid clicks)
-                     if (previewConfig.value.loading) {
-                        previewConfig.value.audio = audio;
-                        audio.play();
-                        previewConfig.value.isPlaying = true;
-                        previewConfig.value.loading = false; // Done
-                        resolve();
-                     }
-                };
-            });
-        };
-
-        // 1. Check for Pre-existing Sample URL (Google/Gemini Optimization)
-        const selectedVoice = availableVoices.value.find((v: any) => v.id === currentVoiceId) as any;
-        if (selectedVoice && selectedVoice.audioSampleUrl) {
-           console.log('[VTuberCreate] Using cached sample:', selectedVoice.audioSampleUrl);
-           audioUrl = selectedVoice.audioSampleUrl;
-           await tryPlayAudio(audioUrl, true); // True = isSample (allow fallback)
-           return;
-        } 
-        
-        // 2. Check Client Cache check
-        if (cacheVoice.voice === currentVoiceId && cacheVoice.text === currentText && cacheVoice.url) {
-             console.log('[VTuberCreate] Using client cache:', cacheVoice.url);
-             await tryPlayAudio(cacheVoice.url, false);
-             return;
-        }
-        
-        // 3. Generate New
-        const data = await vtuberStore.generateVoicePreview({
-            text: currentText,
-            provider: newVTuber.value.voiceConfig.provider,
-            voiceId: currentVoiceId,
-            language: newVTuber.value.voiceConfig.language
-        });
-        
-        if (data && data.audioUrl) {
-            audioUrl = getFileUrl(data.audioUrl);
-            cacheVoice.voice = currentVoiceId;
-            cacheVoice.text = currentText;
-            cacheVoice.url = audioUrl;
-            await tryPlayAudio(audioUrl, false);
-        } else {
-            toast.error('Failed to generate voice preview.');
-            previewConfig.value.loading = false;
-        }
-    } catch (e) {
-        console.error(e);
-        toast.error('Voice service unavailable.');
-    } finally {
-        previewConfig.value.loading = false;
-    }
-};
-
 // Viewer Reference (Unified Wrapper)
 const vtuberViewer = ref<any>(null);
 
@@ -848,13 +732,9 @@ const generatePreview = async () => {
             stopAnalysis();
             
             // Generate TTS if not already done or if we need a fresh one
-            let audioUrl = '';
-            const selectedVoice = availableVoices.value.find((v: any) => v.id === newVTuber.value.voiceConfig.voiceId) as any;
+            let audioUrl = newVTuber.value?.voiceConfig?.sampleUrl || '';
             
-            if (selectedVoice && selectedVoice.audioSampleUrl) {
-                console.log('[VTuberManifest] Using cached sample for VIDEO:', selectedVoice.audioSampleUrl);
-                audioUrl = selectedVoice.audioSampleUrl;
-            } else {
+            if (!audioUrl) {
                  const voiceData = await vtuberStore.generateVoicePreview({
                     text: "Hello, this is my new voice preview.",
                     provider: newVTuber.value.voiceConfig.provider || 'gemini',
@@ -1034,13 +914,55 @@ const handleCreateVTuber = async () => {
                     artist: '',
                     url: ''
                 },
-                voiceConfig: { provider: 'gemini', language: 'en-US', voiceId: '' }
+                voiceConfig: { provider: 'gemini', language: 'en-US', voiceId: '', sampleUrl: '' }
             };
         }
     } catch (e) {
         console.error('Manifestation failure:', e);
     } finally {
         loading.value = false;
+    }
+};
+
+const onClose = () => {
+    // Reset
+    newVTuber.value = {
+        name: '', 
+        description: '', 
+        traits: [],
+        visual: { 
+            modelType: 'vrm', 
+            modelUrl: '',
+            backgroundUrl: '', 
+            previewVideoUrl: '', 
+            thumbnailUrl: '',
+            modelConfig: { zoom: 1.0, offset: { x: 0, y: 0 }, rotation: 0, scale: 1.0, idleMotion: '', talkMotion: '' } 
+        },
+        animationConfig: {
+            gestureIntensity: 0.5,
+            headTiltRange: 0.5,
+            nodIntensity: 0.5
+        },
+        directorConfig: {
+            autoFX: true,
+            autoCamera: true,
+            autonomyLevel: 0.5
+        },
+        backgroundMusic: {
+            id: '',
+            title: '',
+            artist: '',
+            url: ''
+        },
+        voiceConfig: { provider: 'gemini', language: 'en-US', voiceId: '', sampleUrl: '' }
+    };
+
+    // Reset music player if music changed
+    if (musicPlayer) {
+        musicPlayer.pause();
+        musicPlayer = null;
+        isPlayingMusic.value = false;
+        if (musicTimeInterval) clearInterval(musicTimeInterval);
     }
 };
 </script>

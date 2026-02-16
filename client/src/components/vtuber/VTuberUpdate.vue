@@ -1,8 +1,8 @@
 <template>
     <el-dialog :model-value="modelValue" v-if="localVTuber" @update:model-value="$emit('update:modelValue', $event)"
-        :title="`UPDATE VTUBER: ${localVTuber.identity.name}`" width="1050px" custom-class="glass-dialog tuning-wizard-v2">
+        :title="`UPDATE VTUBER: ${localVTuber?.identity?.name}`" width="1050px" custom-class="glass-dialog tuning-wizard-v2" @close="onClose">
         
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 p-1 pt-0">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 p-1 pt-0" v-if="localVTuber">
             <!-- Left: Preview & Utilities (5 Cols) -->
             <div class="lg:col-span-5 space-y-4">
                 <div class="p-2 bg-gradient-to-b from-white/10 to-transparent border border-white/5 rounded-[40px] text-center relative overflow-hidden h-[580px] group shadow-2xl">
@@ -28,10 +28,11 @@
                             :activeCameraPath="localVTuber.performanceConfig?.activeCameraPath"
                             :cameraIntensity="localVTuber.performanceConfig?.cameraIntensity"
                             :autoDirectorEnabled="localVTuber.performanceConfig?.autoDirectorEnabled"
-                            :lyrics="localVTuber.performanceConfig?.lyrics"
+                            :lyrics="localVTuber.performanceConfig?.lyrics || []"
                             :currentTime="audioCurrentTime"
                             :lyricsEnabled="localVTuber.performanceConfig?.lyricsEnabled"
-                            :lyricsStyle="localVTuber.performanceConfig?.lyricsStyle"
+                            :lyricsStyle="localVTuber.performanceConfig?.lyricsStyle || 'neon'"
+                            :lyricsPosition="localVTuber.performanceConfig?.lyricsPosition || 'bottom'"
                             :pitchFactor="pitchFactor"
                             :emphasis="emphasis"
                             :intensity="localVTuber.animationConfig"
@@ -139,7 +140,7 @@
                                 </el-button>
 
                                 <el-button v-if="localVTuber.meta.voiceConfig.voiceId" 
-                                           @click="previewVoice()" 
+                                           @click="handleVoicePreview()" 
                                            :loading="previewingVoice"
                                            class="soul-vtuber-test-btn h-[42px] w-[42px] !rounded-xl !p-0">
                                     <pause-one v-if="playingVoice" theme="outline" size="18" />
@@ -383,19 +384,26 @@
                                             </div>
                                         </div>
 
-                                        <div class="pt-2">
-                                            <el-button @click="musicSelectionVisible = true" size="small" class="soul-glass-btn w-full !text-[8px] !h-10">
+                                        <div class="pt-2 flex gap-2">
+                                            <el-button @click="musicSelectionVisible = true" size="small" class="flex-1 soul-glass-btn !text-[8px] !h-10">
                                                 <music theme="outline" class="mr-2" /> 
                                                 {{ localVTuber.performanceConfig.backgroundMusic ? 'CHANGE STAGE MUSIC' : 'SELECT STAGE MUSIC' }}
                                             </el-button>
-                                            <div v-if="localVTuber.performanceConfig.backgroundMusic" class="mt-2 p-2 bg-white/5 rounded-lg flex items-center gap-3">
-                                                <div class="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center">
-                                                    <music-list theme="outline" size="14" class="text-blue-400" />
-                                                </div>
-                                                <div class="flex flex-col overflow-hidden">
-                                                    <span class="text-[8px] font-black truncate">{{ localVTuber.performanceConfig.backgroundMusic.title }}</span>
-                                                    <span class="text-[7px] opacity-40 truncate">{{ localVTuber.performanceConfig.backgroundMusic.artist }}</span>
-                                                </div>
+
+                                            <el-button v-if="localVTuber.performanceConfig.backgroundMusic" 
+                                                       @click="toggleMusicPreview()" 
+                                                       class="soul-vtuber-test-btn h-10 w-10 !rounded-xl !p-0">
+                                                <pause-one v-if="isPlayingMusic" theme="outline" size="18" />
+                                                <play v-else theme="outline" size="18" />
+                                            </el-button>
+                                        </div>
+                                        <div v-if="localVTuber.performanceConfig.backgroundMusic" class="mt-2 p-2 bg-white/5 rounded-lg flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center">
+                                                <music-list theme="outline" size="14" class="text-blue-400" />
+                                            </div>
+                                            <div class="flex flex-col overflow-hidden">
+                                                <span class="text-[8px] font-black truncate">{{ localVTuber.performanceConfig.backgroundMusic.title }}</span>
+                                                <span class="text-[7px] opacity-40 truncate">{{ localVTuber.performanceConfig.backgroundMusic.artist }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -434,43 +442,21 @@
             </div>
         </template>
 
-        <!-- Voice Library Dialog (Overlay) -->
-        <el-dialog v-model="voiceLibraryVisible" title="VTUBER VOICE LIBRARY" width="850px" append-to-body custom-class="glass-dialog voice-picker-dialog">
-            <div class="space-y-6 p-2">
-                <div class="flex flex-col gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <div class="flex items-center gap-4">
-                        <div class="flex-1 flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-xl border border-white/5">
-                            <search theme="outline" class="opacity-40" />
-                            <el-input v-model="voiceSearchQuery" placeholder="Filter voice signatures..." class="voice-search-input-inner" />
-                        </div>
-                        
-                        <div class="flex items-center gap-2 px-1">
-                            <span class="text-[8px] font-black opacity-30 uppercase tracking-widest mr-2">Provider</span>
-                            <el-radio-group v-model="localVTuber.meta.voiceConfig.provider" size="small" class="soul-radio-group">
-                                <el-radio-button label="gemini">GEMINI</el-radio-button>
-                                <el-radio-button label="google">GOOGLE</el-radio-button>
-                            </el-radio-group>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="voice-grid custom-scrollbar">
-                    <StudioVoiceCard 
-                        v-for="v in filteredAvailableVoices" 
-                        :key="v.id"
-                        :name="v.name"
-                        :gender="v.gender"
-                        :active="localVTuber.meta.voiceConfig.voiceId === v.id"
-                        :playing="playingVoice && currentVoiceId === v.id"
-                        @click="localVTuber.meta.voiceConfig.voiceId = v.id; voiceLibraryVisible = false"
-                        @preview="previewVoice(v.id)"
-                    />
-                </div>
-            </div>
-        </el-dialog>
+        <VoiceLibraryDialog 
+            v-if="localVTuber"
+            v-model="voiceLibraryVisible"
+            v-model:provider="localVTuber.meta.voiceConfig.provider"
+            v-model:voiceId="localVTuber.meta.voiceConfig.voiceId"
+            v-model:language="localVTuber.meta.voiceConfig.language"
+            @select="v => { 
+                localVTuber.meta.voiceConfig.sampleUrl = v.audioSampleUrl;
+                localVTuber.meta.voiceConfig.gender = v.gender;
+            }"
+        />
         
         <!-- Music Selection Dialog (YouTube Integration) -->
         <MusicSelectionDialog 
+            v-if="localVTuber"
             v-model="musicSelectionVisible"
             @select="handleMusicSelection"
         />
@@ -491,6 +477,7 @@ import { useVTuberTracking } from '@/composables/useVTuberTracking';
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
 import { VRMPropManager } from '@/utils/vrm/VRMPropManager';
 import MusicSelectionDialog from './MusicSelectionDialog.vue';
+import VoiceLibraryDialog from './VoiceLibraryDialog.vue';
 import { UploadOne, Camera, Magic, Loading, Play, PauseOne, CheckOne, MusicOne, Plus, Down, Search, Close, Music, MusicList } from '@icon-park/vue-next';
 import { getFileUrl } from '@/utils/api';
 import StudioSection from '../studio/shared/StudioSection.vue';
@@ -511,15 +498,13 @@ const updating = ref(false);
 const uploading = ref(false);
 const generatingPreview = ref(false);
 const localVTuber = ref<any>(null);
-const voicesList = ref<any[]>([]);
-const voiceSearchQuery = ref('');
-const voiceGenderFilter = ref('all');
 const testEmotion = ref('neutral');
 const cinematicMode = ref(false);
 const advancedSettingsVisible = ref(false);
 const voiceLibraryVisible = ref(false);
 const musicSelectionVisible = ref(false);
 const backgroundInput = ref<HTMLInputElement | null>(null);
+
 
 const { speakingVol, pitchFactor, emphasis, attachToAudioElement } = useAudioVisualizer();
 const { solveLandmarks } = useVTuberTracking();
@@ -528,6 +513,8 @@ const propPresets = new VRMPropManager().getPresets();
 const trackingData = ref<any>(null);
 const enableTracking = ref(false);
 const audioCurrentTime = ref(0);
+const musicPlayer = ref<HTMLAudioElement | null>(null);
+const previewAudioUrl = ref<string | null>(null);
 let trackingInterval: any = null;
 let timeUpdateInterval: any = null;
 const videoInput = document.createElement('video');
@@ -592,11 +579,38 @@ const backgroundPresets = [
 const playingVoice = ref(false);
 const previewingVoice = ref(false);
 const currentVoiceId = ref('');
-const audioPlayer = ref<HTMLAudioElement | null>(null);
-const previewAudioUrl = ref<string | null>(null);
-
 // Viewers References
 const vtuberViewer = ref<any>(null);
+
+const isPlayingMusic = ref(false);
+let musicTimeInterval: any = null;
+
+const toggleMusicPreview = async () => {
+    if (isPlayingMusic.value) {
+        if (musicPlayer.value) musicPlayer.value.pause();
+        isPlayingMusic.value = false;
+        stopPlaybackTracking();
+    } else if (localVTuber.value.performanceConfig?.backgroundMusic?.audioUrl || localVTuber.value.performanceConfig?.backgroundMusic?.videoId) {
+        if (!musicPlayer.value) {
+            musicPlayer.value = new Audio();
+            musicPlayer.value.crossOrigin = 'anonymous';
+            attachToAudioElement(musicPlayer.value);
+            musicPlayer.value.onended = () => {
+                isPlayingMusic.value = false;
+                stopPlaybackTracking();
+            };
+        }
+        // const url = localVTuber.value.performanceConfig.backgroundMusic.audioUrl 
+        //     ? getFileUrl(localVTuber.value.performanceConfig.backgroundMusic.audioUrl)
+        //     : `/api/media/youtube/stream/${localVTuber.value.performanceConfig.backgroundMusic.videoId}`;
+        const musicUrl = await getFileUrl(`/api/media/youtube/stream/${localVTuber.value.performanceConfig.backgroundMusic.videoId}`, {cached: true, refresh: false});    
+        musicPlayer.value.src = musicUrl;
+        musicPlayer.value.play();
+        isPlayingMusic.value = true;
+        
+        startPlaybackTracking();
+    }
+};
 
 const hasVisualContent = computed(() => {
     if (!localVTuber.value) return false;
@@ -604,23 +618,63 @@ const hasVisualContent = computed(() => {
     return !!v.modelUrl;
 });
 
-const filteredAvailableVoices = computed(() => {
-    let filtered = voicesList.value || [];
-    if (voiceSearchQuery.value) {
-        const q = voiceSearchQuery.value.toLowerCase();
-        filtered = filtered.filter((v: any) => 
-            (v.name && v.name.toLowerCase().includes(q)) || 
-            (v.id && v.id.toLowerCase().includes(q))
-        );
-    }
-    
-    return filtered.map((v: any) => ({
-        id: v.id || v.name,
-        name: v.name || v.id,
-        gender: v.gender || 'Neutral',
-        audioSampleUrl: v.audioSampleUrl
-    }));
+watch(() => localVTuber.value?.meta?.voiceConfig?.provider, (newVal) => {
+    localVTuber.value.meta.voiceConfig.voiceId = '';
 });
+
+const handleVoicePreview = async (vid?: string) => {
+    const voiceId = vid || localVTuber.value?.meta?.voiceConfig?.voiceId;
+    if (!voiceId) return;
+
+    if (playingVoice.value && currentVoiceId.value === voiceId) {
+        if (musicPlayer.value) {
+            musicPlayer.value.pause();
+            playingVoice.value = false;
+        }
+        return;
+    }
+
+    try {
+        previewingVoice.value = true;
+        currentVoiceId.value = voiceId;
+
+        // 1. Check for stored sample URL
+        let audioUrl = localVTuber.value?.meta?.voiceConfig?.sampleUrl;
+        
+        if (audioUrl) {
+           console.log('[VTuberUpdate] Using stored sample:', audioUrl);
+        } else {
+            const provider = localVTuber.value.meta.voiceConfig.provider;
+            const data = await vtuberStore.generateVoicePreview({
+                text: "Testing VTuber synchronization. Voice profile established.",
+                provider,
+                voiceId,
+                language: localVTuber.value.meta.voiceConfig.language || 'en-US'
+            });
+            audioUrl = data?.audioUrl;
+        }
+        
+        if (audioUrl) {
+            if (!musicPlayer.value) {
+                musicPlayer.value = new Audio();
+                attachToAudioElement(musicPlayer.value);
+                musicPlayer.value.onended = () => {
+                    playingVoice.value = false;
+                    stopPlaybackTracking();
+                };
+            }
+            musicPlayer.value.src = getFileUrl(audioUrl);
+            musicPlayer.value.play();
+            playingVoice.value = true;
+            audioCurrentTime.value = 0;
+            startPlaybackTracking();
+        }
+    } catch (e) {
+        toast.error('Voice preview failed');
+    } finally {
+        previewingVoice.value = false;
+    }
+};
 
 // Watch for model changes to auto-regenerate preview
 watch(() => localVTuber.value?.visual?.modelUrl, (newUrl, oldUrl) => {
@@ -640,8 +694,8 @@ const handleDirectorUpdate = (decisions: any) => {
 const startPlaybackTracking = () => {
     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
     timeUpdateInterval = setInterval(() => {
-        if (audioPlayer.value) {
-            audioCurrentTime.value = audioPlayer.value.currentTime;
+        if (musicPlayer.value) {
+            audioCurrentTime.value = musicPlayer.value.currentTime;
         }
     }, 100);
 };
@@ -667,9 +721,10 @@ const handleMusicSelect = async (music: any) => {
         previewAudioUrl.value = music.audioUrl;
         playingVoice.value = true;
         
-        if (audioPlayer.value) {
-            audioPlayer.value.src = music.audioUrl;
-            audioPlayer.value.play();
+        if (musicPlayer.value) {
+            musicPlayer.value.src = music.audioUrl;
+            musicPlayer.value.play();
+            isPlayingMusic.value = true;
             startPlaybackTracking();
         }
     }
@@ -732,21 +787,9 @@ watch(() => props.vtuber, (newVal) => {
             if (localVTuber.value.performanceConfig.lyricsStyle === undefined) localVTuber.value.performanceConfig.lyricsStyle = 'neon';
         }
         
-        fetchVoices();
+        // fetchVoices();
     }
 }, { immediate: true });
-
-const fetchVoices = async () => {
-    try {
-        const provider = localVTuber.value?.meta?.voiceConfig?.provider || 'gemini';
-        const data = await vtuberStore.fetchVoices(provider);
-        if (data && Array.isArray(data)) voicesList.value = data;
-    } catch (e) {
-        console.warn('Voices fetch failed');
-    }
-};
-
-watch(() => localVTuber.value?.meta?.voiceConfig?.provider, fetchVoices);
 
 const handleGenericUpload = async (file: File) => {
     uploading.value = true;
@@ -845,69 +888,6 @@ const addRelationship = () => {
     localVTuber.value.social.relationships.push({ targetName: '', type: 'stranger', level: 0 });
 };
 
-const previewVoice = async (voiceId?: string) => {
-    const vid = voiceId || localVTuber.value.meta.voiceConfig.voiceId;
-    if (!vid) return;
-
-    if (playingVoice.value && currentVoiceId.value === vid) {
-        if (audioPlayer.value) {
-            audioPlayer.value.pause();
-            playingVoice.value = false;
-        }
-        return;
-    }
-
-    currentVoiceId.value = vid;
-    previewingVoice.value = true;
-    try {
-        // 1. Check for Pre-existing Sample URL (Google/Gemini Optimization)
-        const selectedVoice = voicesList.value.find((v: any) => v.id === vid) as any;
-        if (selectedVoice && selectedVoice.audioSampleUrl) {
-           console.log('[VTuberUpdate] Using cached sample:', selectedVoice.audioSampleUrl);
-           let audioUrl = selectedVoice.audioSampleUrl;
-           if (!audioPlayer.value) {
-                audioPlayer.value = new Audio();
-                attachToAudioElement(audioPlayer.value);
-                audioPlayer.value.onended = () => {
-                    playingVoice.value = false;
-                    stopPlaybackTracking();
-                };
-            }
-            audioPlayer.value.src = getFileUrl(audioUrl);
-            audioPlayer.value.play();
-            playingVoice.value = true;
-            startPlaybackTracking();
-            return;
-        }
-
-        const provider = localVTuber.value.meta.voiceConfig.provider;
-        const data = await vtuberStore.generateVoicePreview({
-            text: "Testing VTuber synchronization. Voice profile established.",
-            provider,
-            voiceId: vid
-        });
-        
-        if (data?.audioUrl) {
-            if (!audioPlayer.value) {
-                audioPlayer.value = new Audio();
-                attachToAudioElement(audioPlayer.value);
-                audioPlayer.value.onended = () => {
-                    playingVoice.value = false;
-                    stopPlaybackTracking();
-                };
-            }
-            audioPlayer.value.src = getFileUrl(data.previewUrl);
-            audioPlayer.value.play();
-            playingVoice.value = true;
-            startPlaybackTracking();
-        }
-    } catch (e) {
-        toast.error('Voice preview failed');
-    } finally {
-        previewingVoice.value = false;
-    }
-};
-
 const generatePreview = async () => {
     if (generatingPreview.value) return;
     generatingPreview.value = true;
@@ -945,14 +925,10 @@ const generatePreview = async () => {
             console.log('[VTuberUpdate] Starting video capture...');
             stopAnalysis();
             
-            let audioUrl = '';
-            // Try to find a sample for the current voice
+            let audioUrl = localVTuber.value?.meta?.voiceConfig?.sampleUrl || '';
             const vId = localVTuber.value?.meta?.voiceConfig?.voiceId;
-            const selectedVoice = voicesList.value.find((v: any) => v.id === vId) as any;
             
-            if (selectedVoice && selectedVoice.audioSampleUrl) {
-                audioUrl = selectedVoice.audioSampleUrl;
-            } else if (vId) {
+            if (!audioUrl && vId) {
                  const voiceData = await vtuberStore.generateVoicePreview({
                     text: "Hello, this is my updated voice preview.",
                     provider: localVTuber.value.meta.voiceConfig.provider || 'gemini',
@@ -1071,14 +1047,58 @@ const handleMusicSelection = (musicData: any) => {
     };
     
     // Store lyrics data if available
-    if (musicData.lyrics && musicData.lyrics.length > 0) {
-        localVTuber.value.performanceConfig.lyrics = musicData.lyrics;
-        localVTuber.value.performanceConfig.lyricsStyle = musicData.style || 'bounce';
+    if (musicData.lyricsLines && musicData.lyricsLines.length > 0) {
+        localVTuber.value.performanceConfig.lyrics = musicData.lyricsLines;
+        localVTuber.value.performanceConfig.lyricsStyle = musicData.style || 'neon';
         localVTuber.value.performanceConfig.lyricsPosition = musicData.position || 'bottom';
         localVTuber.value.performanceConfig.lyricsEnabled = true;
+    } else {
+        localVTuber.value.performanceConfig.lyrics = [];
     }
     
     toast.success('Background music configured!');
+};
+
+const onClose = () => {
+    // Reset
+    localVTuber.value = {
+        name: '', 
+        description: '', 
+        traits: [],
+        visual: { 
+            modelType: 'vrm', 
+            modelUrl: '',
+            backgroundUrl: '', 
+            previewVideoUrl: '', 
+            thumbnailUrl: '',
+            modelConfig: { zoom: 1.0, offset: { x: 0, y: 0 }, rotation: 0, scale: 1.0, idleMotion: '', talkMotion: '' } 
+        },
+        animationConfig: {
+            gestureIntensity: 0.5,
+            headTiltRange: 0.5,
+            nodIntensity: 0.5
+        },
+        directorConfig: {
+            autoFX: true,
+            autoCamera: true,
+            autonomyLevel: 0.5
+        },
+        backgroundMusic: {
+            id: '',
+            title: '',
+            artist: '',
+            url: ''
+        },
+        voiceConfig: { provider: 'gemini', language: 'en-US', voiceId: '' }
+    };
+
+    // Reset music player if music changed
+    if (musicPlayer.value) {
+        musicPlayer.value.pause();
+        musicPlayer.value = null;
+        isPlayingMusic.value = false;
+        if (musicTimeInterval) clearInterval(musicTimeInterval);
+    }
 };
 </script>
 

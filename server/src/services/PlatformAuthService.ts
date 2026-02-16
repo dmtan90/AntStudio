@@ -138,7 +138,21 @@ export class PlatformAuthService {
             });
             return response.data;
         } catch (error: any) {
-            console.error(`Failed to refresh token for ${platform}:`, error.response?.data || error.message);
+            const errorData = error.response?.data;
+            console.error(`Failed to refresh token for ${platform}:`, errorData || error.message);
+            
+            // Detect revoked/expired refresh tokens
+            const isInvalidGrant = errorData?.error === 'invalid_grant' 
+                || errorData?.error_description?.includes('revoked')
+                || errorData?.error_description?.includes('expired');
+            
+            if (isInvalidGrant) {
+                const err = new Error(`Token expired or revoked for ${platform}. Please reconnect your account.`) as any;
+                err.requiresReauth = true;
+                err.platform = platform;
+                throw err;
+            }
+            
             throw new Error('Failed to refresh access token');
         }
     }
@@ -202,10 +216,38 @@ export class PlatformAuthService {
 
                 console.log(`[Token Refresh] Token saved to database for ${account.platform}`);
                 return account.credentials;
-            } catch (error) {
+            } catch (error: any) {
                 console.error(`[Token Refresh] Failed to refresh token for ${account.platform}:`, error);
-                // If refresh fails (revoked), we might want to mark account as error?
-                // For now, throw so the user knows.
+                
+                // If token is revoked/expired, mark account as needing re-authentication
+                if (error.requiresReauth) {
+                    console.warn(`[Token Refresh] Token revoked for ${account.platform}. Marking account as expired.`);
+                    
+                    // Clear the stale refresh token and mark status
+                    account.credentials.refreshToken = null;
+                    account.status = 'expired';
+                    
+                    if (typeof account.save === 'function') {
+                        await account.save();
+                    } else if (account._id) {
+                        await UserPlatformAccount.findByIdAndUpdate(account._id, {
+                            $set: { 
+                                'credentials.refreshToken': null,
+                                status: 'expired'
+                            }
+                        });
+                    }
+                    
+                    // Throw a user-friendly error with reauth flag
+                    const reauthError = new Error(
+                        `Your ${account.platform} connection has expired. Please reconnect your account in Platform Settings.`
+                    ) as any;
+                    reauthError.requiresReauth = true;
+                    reauthError.platform = account.platform;
+                    reauthError.accountId = account._id;
+                    throw reauthError;
+                }
+                
                 throw error;
             }
         }

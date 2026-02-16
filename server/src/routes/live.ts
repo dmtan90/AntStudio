@@ -6,6 +6,7 @@ import { VTuber } from '../models/VTuber.js';
 import { GeminiLiveSession } from '../models/GeminiLiveSession.js';
 import { verifyToken } from '../utils/jwt.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { aiGuestService } from '../services/ai/AIGuestService.js';
 
 const router = Router();
 
@@ -24,12 +25,16 @@ export function initializeLiveWebSocket(server: Server) {
     wss.on('connection', async (ws: WebSocket, req) => {
         console.log('[LiveWS] New WebSocket connection');
 
-        // Extract archiveId from query params
+        // Extract params from query
         const url = new URL(req.url!, `http://${req.headers.host}`);
         const archiveId = url.searchParams.get('archiveId');
-        const projectId = url.searchParams.get('projectId');
         const token = url.searchParams.get('token');
+        const projectId = url.searchParams.get('projectId');
         const isMaster = url.searchParams.get('isMaster') === 'true';
+        const resumeSessionId = url.searchParams.get('resumeSessionId');
+        let sessionId: string | null = resumeSessionId;
+        let isResumed = false;
+
 
         if (!archiveId) {
             ws.send(JSON.stringify({ type: 'error', message: 'Missing archiveId' }));
@@ -52,8 +57,6 @@ export function initializeLiveWebSocket(server: Server) {
             console.warn('[LiveWS] Connection without token, using system user');
         }
 
-        let sessionId: string | null = null;
-
         try {
             // Load VTuber configuration
             console.log('[LiveWS] Loading VTuber configuration for archiveId:', archiveId);
@@ -69,32 +72,41 @@ export function initializeLiveWebSocket(server: Server) {
                 return;
             }
 
-            // Verify it uses Gemini TTS (Optional: Gemini Live can handle voice automatically)
-            const voiceProvider = archive.meta?.voiceConfig?.provider;
-            if (voiceProvider !== 'gemini') {
-                console.warn(`[LiveWS] ${archiveId} uses ${voiceProvider} provider, attempting to use with Gemini Live anyway`);
+            const voiceName = archive.meta?.voiceConfig?.voiceId || 'Puck';
+
+            // Try to resume existing session
+            if (sessionId) {
+                isResumed = geminiLiveService.resumeSession(sessionId);
+                if (isResumed) {
+                    console.log(`[LiveWS] Resumed existing session ${sessionId} for archive ${archiveId}`);
+                } else {
+                    console.warn(`[LiveWS] Failed to resume session ${sessionId}, creating new one.`);
+                    sessionId = null;
+                }
             }
 
-            const voiceName = archive.meta?.voiceConfig?.voiceId || 'Puck';
-            const systemInstruction = archive.identity?.description || 'You are a helpful AI assistant.';
+            if (!sessionId) {
+                const systemInstruction = archive.identity?.description || 'You are a helpful AI assistant.';
 
-            // Create Gemini Live API session
-            sessionId = await geminiLiveService.createSession({
-                userId,
-                archiveId,
-                projectId: projectId || undefined,
-                voiceName,
-                systemInstruction,
-                isMaster,
-            });
+                // Create Gemini Live API session
+                sessionId = await geminiLiveService.createSession({
+                    userId,
+                    archiveId,
+                    projectId: projectId || undefined,
+                    voiceName,
+                    systemInstruction,
+                    isMaster,
+                });
 
-            console.log(`[LiveWS] Created session ${sessionId} for archive ${archiveId}`);
+                console.log(`[LiveWS] Created new session ${sessionId} for archive ${archiveId}`);
+            }
 
             // Send connection success
             ws.send(JSON.stringify({ 
                 type: 'connected', 
                 sessionId,
                 voiceName,
+                isResumed,
                 archiveName: archive.identity?.name
             }));
 
@@ -110,13 +122,35 @@ export function initializeLiveWebSocket(server: Server) {
                 }
             };
 
-            const handleTextResponse = (data: any) => {
+            const handleTextResponse = async (data: any) => {
                 console.log('[LiveWS] Text response received:', data.text);
                 if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({
+                    // Phase 6: AI-powered Normalization
+                    // The user explicitly requested we normalize plain text into JSON via Gemini
+                    let responseData: any = {
                         type: 'text',
-                        text: data.text
-                    }));
+                        text: data.text,
+                        isConsolidated: false
+                    };
+
+                    try {
+                        const normalized = await aiGuestService.normalizeLiveResponse(data.text);
+                        console.log('[LiveWS] Normalized response:', JSON.stringify(normalized));
+                        responseData = {
+                            ...responseData,
+                            ...normalized,
+                            isConsolidated: true
+                        };
+                    } catch (e) {
+                        console.error('[LiveWS] Normalization failed:', e);
+                    }
+
+                    ws.send(JSON.stringify(responseData));
+
+                    // ws.send(JSON.stringify({
+                    //     type: 'text',
+                    //     text: data.text
+                    // }));
                 }
             };
 
@@ -223,7 +257,13 @@ export function initializeLiveWebSocket(server: Server) {
                     } else if (data.type === 'talk') {
                         // Unified 'Talk' handler for Standard mode VTubers over WebSocket
                         const { prompt, context } = data;
-                        console.log(`[LiveWS] Talk request received for archive ${archiveId}:`, prompt.substring(0, 50));
+                        console.log(`[LiveWS] Talk request received for archive ${archiveId}: ${sessionId ? '(Routing to Live API)' : '(Routing to GuestService)'}`, prompt.substring(0, 50));
+
+                        if (sessionId) {
+                            // Forward to Gemini Live API
+                            geminiLiveService.sendText(sessionId, prompt);
+                            return;
+                        }
 
                         // Use AIGuestService to generate dialogue (Integrated TTS)
                         // Using dynamic import to avoid circular dependency or early loading issues
@@ -236,6 +276,8 @@ export function initializeLiveWebSocket(server: Server) {
                             text: result.text,
                             emotion: result.emotion,
                             gesture: result.gesture,
+                            action: result.action,
+                            actionPayload: result.actionPayload,
                             isConsolidated: true // Mark as coming from the unified WebSocket talk path
                         }));
 
@@ -265,9 +307,9 @@ export function initializeLiveWebSocket(server: Server) {
 
             // Handle client disconnect
             ws.on('close', () => {
-                console.log(`[LiveWS] Client disconnected, closing session ${sessionId}`);
+                console.log(`[LiveWS] Client disconnected, marking session ${sessionId} for graceful cleanup.`);
                 if (sessionId) {
-                    geminiLiveService.closeSession(sessionId);
+                    geminiLiveService.disconnectSession(sessionId);
                 }
 
                 // Remove event listeners

@@ -87,16 +87,14 @@ const fetchData = async () => {
     try {
         await marketplaceStore.fetchCommerceStats();
         const data = await marketplaceStore.fetchOrders();
-        if (data.success) {
-            orders.value = data.data.map((o: any) => ({
-                id: o._id.substring(o._id.length - 6), // Short ID
-                customer: o.customerName,
-                product: o.productName,
-                amount: `${o.currency} ${o.amount}`,
-                source: o.source,
-                status: o.status.charAt(0).toUpperCase() + o.status.slice(1)
-            }));
-        }
+        orders.value = data.map((o: any) => ({
+			id: o._id.substring(o._id.length - 6), // Short ID
+			customer: o.customerName,
+			product: o.productName,
+			amount: `${o.currency} ${o.amount}`,
+			source: o.source,
+			status: o.status.charAt(0).toUpperCase() + o.status.slice(1)
+		}));
     } catch (e) {
         console.error("Failed to load orders", e);
     } finally {

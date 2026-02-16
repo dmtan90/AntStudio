@@ -5,13 +5,7 @@
         <!-- Environment Overlay (Post-processing feel) -->
         <div class="absolute inset-0 pointer-events-none" :style="environmentStyle"></div>
 
-        <!-- Dynamic Lyrics Overlay -->
-        <StageLyricsOverlay 
-            v-if="lyricsEnabled && lyrics && lyrics.length > 0"
-            :lyrics="lyrics"
-            :currentTime="currentTime || 0"
-            :style="lyricsStyle || 'neon'"
-        />
+        <!-- Dynamic Lyrics Overlay removed (Moved to Global Stage) -->
     </div>
 </template>
 
@@ -23,7 +17,6 @@ import { Live2DModel, ZipLoader } from 'pixi-live2d-display-advanced';
 import JSZip from 'jszip';
 import { getFileUrl } from '@/utils/api';
 import { STUDIO_ENVIRONMENTS, StudioEnvironment } from '@/constants/StudioEnvironments';
-import StageLyricsOverlay from '@/components/vtuber/StageLyricsOverlay.vue';
 
 // Configure ZipLoader
 if (typeof window !== 'undefined') {
@@ -49,10 +42,6 @@ const props = defineProps<{
     guests: any[]; // Array of Guest objects with persona and audio information
     environmentId: string;
     debug?: boolean;
-    lyrics?: any[];
-    currentTime?: number;
-    lyricsEnabled?: boolean;
-    lyricsStyle?: 'neon' | 'minimal' | 'kinetic';
 }>();
 
 const container = ref<HTMLElement | null>(null);
@@ -208,12 +197,18 @@ const syncGuests = async () => {
         const guest = props.guests[i];
         if (!models.has(guest.id)) {
             await loadGuestModel(guest, i);
-        } else {
-            // Update positioning if slot changed
+        } 
+        
+        const model = models.get(guest.id);
+        if (model) {
+            // Respect videoEnabled
+            model.visible = guest.videoEnabled !== false;
+            // Update positioning
             updateGuestPosition(guest.id, i);
         }
     }
 };
+
 
 const loadGuestModel = async (guest: any, index: number) => {
     if (!app || !guest.persona?.visualIdentity?.live2dModelUrl) return;
@@ -403,16 +398,13 @@ const updateLoop = (delta: number) => {
     // Update Lip Sync & Spatial Gaze from props
     props.guests.forEach(guest => {
         const model = models.get(guest.id);
-        if (model) {
-            if (guest.audioLevel !== undefined) {
+        if (model && model.visible) {
+            if (guest.audioLevel !== undefined && guest.audioEnabled !== false) {
                 updateModelLipSync(model, guest.audioLevel);
             }
             
             // Don't make the speaker look at themselves too much, or keep them slightly front
             if (guest.id === studioStore.currentSpeakerId) {
-                // Speaker looks more front
-                const mockModel = { ...model }; // just for the logic flow
-                // Actually we can just apply a reduced target
                 updateModelSpatialGaze(model, delta * 0.5); 
             } else {
                 updateModelSpatialGaze(model, delta);

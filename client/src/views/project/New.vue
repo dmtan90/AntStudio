@@ -314,22 +314,20 @@ const startAnalysis = async () => {
       formData.append('files', file)
     })
 
-    const responseData = await projectStore.getPreview(formData)
+    const res = await projectStore.getPreview(formData)
 
-    if (responseData.success) {
-      if (responseData.data && responseData.data.creativeBrief) {
-        responseData.data.expandAnalysis = true;
-        responseData.data.expandBrief = true;
-        responseData.data.expandStoryboard = true;
-      }
-      messages.value.push({
-        author: 'ai',
-        type: 'result',
-        result: responseData.data
-      })
-      hasResults.value = true
-      scrollToBottom()
-    }
+    if (res && res.creativeBrief) {
+		res.expandAnalysis = true;
+		res.expandBrief = true;
+		res.expandStoryboard = true;
+	  }
+	  messages.value.push({
+		author: 'ai',
+		type: 'result',
+		result: res
+	  })
+	  hasResults.value = true
+	  scrollToBottom()
   } catch (error: any) {
     if (error.name === 'AbortError') return
     toast.error(error.response?.data?.message || 'AI Analysis failed')

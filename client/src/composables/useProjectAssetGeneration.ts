@@ -44,7 +44,7 @@ export function useProjectAssetGeneration(projectId: string) {
         const id = `char-${index}`
         generatingStates.value[id] = true
         try {
-            const responseData = await projectStore.generateAsset(projectId, {
+            const res = await projectStore.generateAsset(projectId, {
                 assetName: `Element_${char.name}.img`,
                 description: char.description,
                 type: 'image',
@@ -52,7 +52,7 @@ export function useProjectAssetGeneration(projectId: string) {
                 generationType: 'character'
             })
 
-            const data = responseData.data || responseData
+            const data = res.data || res
             const jobId = data.jobId || data.video?.veoJobId
 
             if (data.s3Key) {
@@ -90,7 +90,7 @@ export function useProjectAssetGeneration(projectId: string) {
         const id = `seg-${seg.order}`
         generatingStates.value[id] = true
         try {
-            const responseData = await projectStore.generateAsset(projectId, {
+            const res = await projectStore.generateAsset(projectId, {
                 assetName: `Scene_${seg.order}.img`,
                 description: seg.description,
                 type: 'image',
@@ -99,7 +99,7 @@ export function useProjectAssetGeneration(projectId: string) {
                 generationType: 'scene'
             })
 
-            const data = responseData.data || responseData
+            const data = res.data || res
             const jobId = data.jobId || data.video?.veoJobId
 
             if (data.s3Key) {
@@ -137,12 +137,12 @@ export function useProjectAssetGeneration(projectId: string) {
         const id = `video-${seg.order}`
         generatingStates.value[id] = true
         try {
-            const responseData = await projectStore.generateAsset(projectId, {
+            const res = await projectStore.generateAsset(projectId, {
                 segmentId: seg._id,
                 type: 'video'
             })
 
-            const data = responseData.data || responseData
+            const data = res.data || res
             const jobId = data.jobId || data.video?.veoJobId
 
             if (data.s3Key) {

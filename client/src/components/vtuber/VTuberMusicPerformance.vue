@@ -140,6 +140,11 @@ onMounted(() => {
     // Auto-play when ready
     audioPlayer.value.addEventListener('canplay', () => {
       loading.value = false;
+      if (!isPlaying.value) {
+        audioPlayer.value.play()
+          .then(() => { isPlaying.value = true; })
+          .catch(e => console.error("Auto-play blocked:", e));
+      }
     });
   }
 });

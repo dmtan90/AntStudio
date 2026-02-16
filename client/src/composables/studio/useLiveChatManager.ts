@@ -95,6 +95,50 @@ export function useLiveChatManager() {
                 }
             });
 
+            // Register text response handler (Phase 8: Server-Side Normalization)
+            // Convert metadata back to tool calls for unified handling
+            geminiLive.setTextResponseCallback((text: string, metadata?: any) => {
+                console.log(`[LiveChatManager] Metadata received for ${persona.name}:`, metadata);
+                if (!metadata || !toolCallCallback) return;
+                
+                const virtualToolCalls: any[] = [];
+
+                if (metadata.emotion) {
+                    virtualToolCalls.push({
+                        id: `auto_emotion_${Date.now()}`,
+                        name: 'change_expression',
+                        args: { expression: metadata.emotion }
+                    });
+                }
+
+                if (metadata.gesture && metadata.gesture !== 'normal') {
+                    virtualToolCalls.push({
+                         id: `auto_gesture_${Date.now()}`,
+                         name: 'play_animation',
+                         args: { animation: metadata.gesture }
+                    });
+                }
+
+                if (metadata.action === 'perform_song') {
+                    virtualToolCalls.push({
+                         id: `auto_action_${Date.now()}`,
+                         name: 'perform_song',
+                         args: metadata.actionPayload
+                    });
+                } else if (metadata.action === 'stop_performance') {
+                    virtualToolCalls.push({
+                         id: `auto_action_${Date.now()}`,
+                         name: 'stop_performance',
+                         args: {}
+                    });
+                }
+
+                if (virtualToolCalls.length > 0) {
+                    console.log(`[LiveChatManager] Converted metadata to ${virtualToolCalls.length} tool calls`);
+                    toolCallCallback(personaId, { functionCalls: virtualToolCalls });
+                }
+            });
+
 
             // Store connection
             connections[personaId] = {

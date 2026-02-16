@@ -108,6 +108,15 @@
                      :floor-agent="floorAgentName"
                      :sync-strength="calculatedSyncStrength"
                    />
+
+                    <!-- Global Lyrics Overlay (Phase 85) -->
+                    <StageLyricsOverlay 
+                        v-if="performanceLyricsVisible && performanceLyrics?.length > 0"
+                        :lyrics="performanceLyrics"
+                        :current-time="performanceLyricsCurrentTime"
+                        :style="performanceLyricsStyle"
+                        :position="performanceLyricsPosition"
+                    />
                </div>
             </template>
             <template #controls>
@@ -123,9 +132,10 @@
          <StudioInteractions :messages="messages" @spawn-like="spawnLike" @send-chat="sendChat" :guest-personas="guestPersonas"
             :remote-guests="remoteGuests" :invite-guest="inviteGuest" :summon-guest="summonGuest"
             :toggle-guest="toggleGuest" :add-mobile-cam="generateMobileLink" :toggle-mute="studioStore.muteGuest"
-            :toggle-camera="studioStore.toggleGuestCamera" :remove-guest="studioStore.kickGuest"
+            :toggle-camera="studioStore.toggleGuestCamera" :remove-guest="handleKickGuest"
             :assign-slot="studioStore.assignGuestToSlot" :is-guest="isGuest" :guest-video-elements="guestVideoElements"
             :viewers="viewers" :health="studioStore.health" :engagement="studioStore.engagement" />
+
 
          <DirectorNotes />
       </main>
@@ -276,24 +286,20 @@
         @select="handleMusicSelected"
       />
 
-      <!-- VTuber Performance Modal (Phase 85) -->
-      <el-dialog
-        v-model="performanceModalVisible"
-        title="🎤 VTuber Music Performance"
-        width="90%"
-        :fullscreen="true"
-        custom-class="performance-dialog"
-      >
-        <VTuberMusicPerformance
-          v-if="performingVTuber"
-          :vtuber="performingVTuber"
+      <!-- VTuber Performance Overlay (Embedded) -->
+      <transition name="fade">
+        <PerformanceOverlay
+          v-if="performanceModalVisible"
           :audio-url="performanceAudioUrl"
           :lyrics="performanceLyrics"
           :lyrics-style="performanceLyricsStyle"
           :lyrics-position="performanceLyricsPosition"
-          @ended="performanceModalVisible = false"
+          @ended="handlePerformanceEnded"
+          @close="handlePerformanceEnded"
+          @audio-level="handlePerformanceAudioLevel"
+          @lyrics-state="handlePerformanceLyricsState"
         />
-      </el-dialog>
+      </transition>
 
       <!-- Swarm Monitor (Phase 28) -->
       <SwarmMonitor 
@@ -388,9 +394,12 @@ import GiftsOverlay from '@/components/studio/overlays/GiftsOverlay.vue';
 import EffectsDrawer from '@/components/studio/drawers/EffectsDrawer.vue';
 import MusicSelectionDialog from '@/components/vtuber/MusicSelectionDialog.vue';
 import VTuberMusicPerformance from '@/components/vtuber/VTuberMusicPerformance.vue';
+import PerformanceOverlay from '@/components/studio/overlays/PerformanceOverlay.vue';
+import StageLyricsOverlay from '@/components/vtuber/StageLyricsOverlay.vue';
 import { useI18n } from 'vue-i18n';
 
 import { useVTuberStore } from '@/stores/vtuber';
+import { useMediaStore } from '@/stores/media';
 
 const router = useRouter();
 const route = useRoute();
@@ -403,6 +412,7 @@ const streamingStore = useStreamingStore();
 const { assemble: runAssembler, isAssembling, progress: assembleProgress } = useVideoAssembler();
 const platformStore = usePlatformStore();
 const vtuberStore = useVTuberStore();
+const mediaStore = useMediaStore();
 const directorNotes = ref('');
 const studioRecorder = useStudioRecorder();
 const showRecordingDialog = ref(false);
@@ -605,7 +615,59 @@ const performanceAudioUrl = ref('');
 const performanceLyrics = ref<any[]>([]);
 const performanceLyricsStyle = ref<'neon' | 'minimal' | 'kinetic' | 'bounce' | 'slide' | 'fade' | 'scale'>('bounce');
 const performanceLyricsPosition = ref<'top' | 'center' | 'bottom'>('bottom');
+const performanceLyricsCurrentTime = ref(0);
+const performanceLyricsVisible = ref(true);
+
 const masterAgentId = ref<string | null>(null);
+
+// Unmute Gemini when performance ends
+const handlePerformanceEnded = () => {
+    performanceModalVisible.value = false;
+    mediaStore.stopPerformance();
+    
+    if (performingVTuber.value) {
+         // Stop gesture/emotion if needed
+         if (activeAgent.value && activeAgent.value.sessionId) {
+              activeAgent.value.isMuted.value = false;
+         }
+         // Reset lip-sync override
+         const guestRef = virtualGuestRefs[performingVTuber.value.uuid];
+         if (guestRef) {
+             guestRef.setAudioLevelOverride(null);
+         }
+         performingVTuber.value = null;
+    }
+};
+
+// Bridge Music Audio Level to VTuber LipSync
+const handlePerformanceAudioLevel = (level: number) => {
+    if (performingVTuber.value && performanceModalVisible.value) {
+        const guestRef = virtualGuestRefs[performingVTuber.value.uuid];
+        if (guestRef) {
+            // VirtualGuest must expose setAudioLevelOverride or we inject it via props
+            // Checking VirtualGuest.vue... Likely need to add exposure or use existing mechanism
+            if (typeof guestRef.setAudioLevelOverride === 'function') {
+                guestRef.setAudioLevelOverride(level);
+            }
+        }
+    }
+};
+
+// Handle lyrics state from PerformanceOverlay
+const handlePerformanceLyricsState = (state: { currentTime: number; showLyrics: boolean }) => {
+    performanceLyricsCurrentTime.value = state.currentTime;
+    performanceLyricsVisible.value = state.showLyrics;
+    
+    // Synchronize with store for VirtualGuest components
+    mediaStore.updatePerformanceTime(state.currentTime);
+    mediaStore.toggleLyricsVisibility(state.showLyrics);
+};
+
+watch(performanceModalVisible, (visible) => {
+    if (!visible && activeAgent.value) {
+        activeAgent.value.isMuted.value = false;
+    }
+});
 
 watch(() => studioStore.activeMediaId, (id) => {
    if (!id) {
@@ -629,6 +691,7 @@ watch(() => studioStore.activeMediaId, (id) => {
    }
 });
 
+const preScreenShareSceneId = ref<string | null>(null);
 const toggleScreenShare = async () => {
    if (studioStore.isScreenSharing) {
       if (screenStream.value) {
@@ -637,6 +700,12 @@ const toggleScreenShare = async () => {
       }
       studioStore.isScreenSharing = false;
       toast.info('Screen share stopped');
+
+      // Revert to previous scene if it exists
+      if (preScreenShareSceneId.value) {
+         studioStore.switchScene(preScreenShareSceneId.value);
+         preScreenShareSceneId.value = null;
+      }
    } else {
       try {
          const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -644,13 +713,21 @@ const toggleScreenShare = async () => {
             audio: { echoCancellation: true, noiseSuppression: true } as any
          });
 
+         preScreenShareSceneId.value = studioStore.activeScene.id;
          screenStream.value = stream;
          studioStore.isScreenSharing = true;
          toast.success('Sharing screen');
 
+         // Switch to screen focus scene
+         studioStore.switchScene('screen_focus');
+
          stream.getVideoTracks()[0].onended = () => {
             studioStore.isScreenSharing = false;
             screenStream.value = null;
+            if (preScreenShareSceneId.value) {
+               studioStore.switchScene(preScreenShareSceneId.value);
+               preScreenShareSceneId.value = null;
+            }
          };
 
          if (!screenVideo.value) {
@@ -813,21 +890,23 @@ const handleToggleLiveVoice = async (persona: any) => {
                 if (!showSwarmMonitor.value) showSwarmMonitor.value = true;
             });
 
-            // Native TTS API
-            agent.setTextResponseCallback(async (text: string) => {
-                try {
-                    const data = await vtuberStore.generateVoicePreview({ 
-                        text,
-                        provider: 'google',
-                        voiceId: 'en-US-Standard-A',
-                        language: 'en-US'
-                    });
-                    if (data && data.audioUrl) {
-                        const audio = new Audio(getFileUrl(data.audioUrl));
-                        audio.play();
-                    }
-                } catch (e) {
-                    console.error("[TTS] Native TTS failed", e);
+            // Native Text & Metadata Handler (Phase 8)
+            // Backend sends Consolidated JSON (Text + Metadata)
+            // WebRTC handles Audio separately. We just need to sync behavior.
+            agent.setTextResponseCallback(async (text: string, metadata?: any) => {
+				console.log("LiveStudio - WS text response", text, metadata);
+                
+                const guestRef = virtualGuestRefs[persona.id];
+                if (guestRef) {
+                    if (metadata?.emotion) guestRef.setLiveVoiceEmotion(metadata.emotion);
+                    if (metadata?.gesture) guestRef.setLiveVoiceGesture(metadata.gesture);
+                }
+
+                if (metadata?.action === 'perform_song') {
+                    handlePerformSongTool(persona, metadata.actionPayload);
+                } else if (metadata?.action === 'stop_performance') {
+                    performanceModalVisible.value = false;
+                    if (activeAgent.value) activeAgent.value.isMuted.value = false;
                 }
             });
 
@@ -1070,9 +1149,82 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
             toast.dismiss(loadingToast);
             toast.error("Failed to generate background");
         }
+    } else if (fn === 'perform_song') {
+        handlePerformSongTool(persona, args);
+    } else if (fn === 'stop_performance') {
+        performanceModalVisible.value = false;
+        
+        // Unmute the performer
+        if (performingVTuber.value) {
+            const guest = guestPersonas.value.find(p => p.uuid === performingVTuber.value.uuid);
+             // Also need to unmute the actual connection
+            if (activeAgent.value && activeAgent.value.sessionId) {
+                 activeAgent.value.isMuted.value = false;
+            }
+        }
+        toast.info(`${persona.name} stopped the performance.`);
     }
 
     return result;
+};
+
+const handlePerformSongTool = async (persona: any, args: any) => {
+	console.log("handlePerformSongTool");
+    const loadingToast = toast.loading(`${persona.name} is preparing to sing: ${args.songName}...`);
+    try {
+        // 1. Search for the song
+        const genderSuffix = persona.meta?.voiceConfig?.gender ? ` ${persona.meta.voiceConfig.gender} version` : '';
+        const searchResults = await mediaStore.searchYouTubeMusic({
+            query: `${args.songName} ${args.artist || ''}${genderSuffix}`,
+            preferCovers: false,
+            language: args.lyricsLanguage === 'vi' ? 'vietnamese' : 'english', // fallback logic
+            maxResults: 5
+        });
+
+        if (!searchResults || searchResults.length === 0) {
+            throw new Error("No song found");
+        }
+
+        const topMatch = searchResults[0];
+
+        // 2. Fetch metadata and lyrics
+        const metadata = await mediaStore.fetchYouTubeMetadata({
+            videoId: topMatch.videoId,
+            fetchLyrics: true,
+            songTitle: topMatch.title,
+            lyricsLanguage: args.lyricsLanguage || 'en'
+        });
+
+        // 3. Mute Gemini and Trigger Modal
+        if (activeAgent.value) {
+            activeAgent.value.isMuted.value = true;
+        }
+
+        performingVTuber.value = persona;
+        performanceAudioUrl.value = await getFileUrl(`/api/media/youtube/stream/${topMatch.videoId}`, { cached: true });
+        performanceLyrics.value = metadata.lyricsLines || [];
+        performanceLyricsStyle.value = args.style || 'bounce';
+        performanceLyricsPosition.value = args.position || 'bottom';
+        performanceModalVisible.value = true;
+
+        // Initialize store state
+        mediaStore.startPerformance(
+            persona.uuid, 
+            metadata.lyricsLines || [], 
+            args.style || 'bounce', 
+            args.position || 'bottom'
+        );
+
+        toast.dismiss(loadingToast);
+        toast.success(`${persona.name} is now singing: ${topMatch.title}`);
+        return { success: true, song: topMatch.title };
+    } catch (e) {
+        console.error("[PerformSong] Tool failed", e);
+        toast.dismiss(loadingToast);
+        toast.error(`Failed to start singing for ${args.songName}`);
+        if (activeAgent.value) activeAgent.value.isMuted.value = false;
+        return { success: false, error: (e as Error).message };
+    }
 };
 
 const handleToggleRole = (personaId: string) => {
@@ -1707,10 +1859,21 @@ const toggleGuest = (guest: any) => {
       syntheticGuestManager.summonGuest(guest);
       toast.success(`${guest.name} joining session...`);
    } else {
-      syntheticGuestManager.removeGuest(guest.id);
+      syntheticGuestManager.removeGuest(guest.uuid);
       toast.info(`${guest.name} left session.`);
    }
 }
+
+const handleKickGuest = (guestId: string) => {
+    // Check if it's an AI guest or real guest
+    const isAI = activeGuests.value.some((p: any) => p.persona.uuid === guestId);
+    if (isAI) {
+        syntheticGuestManager.removeGuest(guestId);
+    } else {
+        studioStore.kickGuest(guestId);
+    }
+};
+
 const isHostSpeaking = computed(() => hostLevel.value > 0.05);
 
 // Automated Studio Direction: Speaker-based Scene Switching
@@ -1742,27 +1905,34 @@ watch(isHostSpeaking, (speaking) => {
 });
 
 const handleVirtualGuestStream = (id: string, stream: MediaStream) => {
+    // First, register the guest in studioStore NOW that the model is loaded & stream captured.
+    // This prevents black screen in guest slots during model loading.
+    const persona = guestPersonas.value.find(g => g.uuid === id);
+    studioStore.addGuest({
+        uuid: id,
+        name: persona?.name || 'AI Guest',
+        type: 'ai',
+        status: 'live',
+        audioEnabled: true,
+        videoEnabled: true,
+        avatar: persona?.visual?.thumbnailUrl
+    });
+
+    // Then add the synthetic stream for P2P/canvas rendering
     addSyntheticGuest(id, stream);
     
     // Auto-assign to a slot if available
-    // Auto-assign to a slot if available
-    const guestObj = {
-        uuid: id,
-        name: guestPersonas.value.find(g => g.uuid === id)?.name || 'AI Guest',
-        type: 'ai',
-        streamId: stream.id
-    };
-    
-    // Check if already in a slot
     const existingSlot = Object.values(studioStore.guestSlotMap).find((g: any) => g?.uuid === id);
     if (!existingSlot) {
-        // Find first empty slot
         const emptySlotIndex = Object.values(studioStore.guestSlotMap).findIndex(g => !g);
         if (emptySlotIndex !== -1) {
             studioStore.assignGuestToSlot(id, emptySlotIndex);
-            toast.success(`${guestObj.name} assigned to Slot ${emptySlotIndex + 1}`);
+            toast.success(`${persona?.name || 'AI Guest'} is live in Slot ${emptySlotIndex + 1}`);
         }
     }
+
+    // Auto-switch layout for better visibility
+    studioStore.setCameraFocus('wide');
 };
 
 const handleProductionSequence = (name: string) => {
@@ -2433,10 +2603,15 @@ watch(() => hostStream.value, async (stream) => {
 
 // Handle tool calls from Gemini Live VTubers
 const handleStudioToolCall = (personaId: string, toolCall: any) => {
+    console.log(`[Debug] handleStudioToolCall triggered for ${personaId}`, toolCall);
     const persona = guestPersonas.value.find(p => p.uuid === personaId);
-    if (!persona) return;
+    if (!persona) {
+        console.warn(`[Debug] Persona not found for ${personaId}`);
+        return;
+    }
     
     (toolCall.functionCalls || []).forEach((call: any) => {
+        console.log(`[Debug] Executing tool: ${call.name}`, call.args);
         executeAgentTool(null, persona, call.id, call.name, call.args);
     });
 };

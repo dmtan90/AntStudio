@@ -11,13 +11,7 @@
         <!-- 3D Canvas -->
         <canvas ref="canvas" class="w-full h-full block"></canvas>
 
-        <!-- Dynamic Lyrics Overlay -->
-        <StageLyricsOverlay 
-            v-if="lyricsEnabled && lyrics && lyrics.length > 0"
-            :lyrics="lyrics"
-            :currentTime="currentTime || 0"
-            :style="lyricsStyle || 'neon'"
-        />
+        <!-- Dynamic Lyrics Overlay removed (Moved to Global Stage) -->
     </div>
 </template>
 
@@ -28,11 +22,12 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { VRM, VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { getFileUrl } from '@/utils/api';
+import { isSingingAtTime } from '@/utils/lyricUtils';
+import { getCachedFile, cacheFile } from '@/utils/ModelCache';
 import { VRMPropManager } from '@/utils/vrm/VRMPropManager';
 import { VRMLightingManager } from '@/utils/vrm/VRMLightingManager';
 import { VRMCameraManager } from '@/utils/vrm/VRMCameraManager';
 import { VRMDirector } from '@/utils/vrm/VRMDirector';
-import StageLyricsOverlay from './StageLyricsOverlay.vue';
 
 const props = defineProps<{
     modelUrl: string;
@@ -50,10 +45,6 @@ const props = defineProps<{
     activeCameraPath?: string | null;
     cameraIntensity?: number;
     autoDirectorEnabled?: boolean;
-    lyrics?: any[];
-    currentTime?: number;
-    lyricsEnabled?: boolean;
-    lyricsStyle?: 'neon' | 'minimal' | 'kinetic';
     config?: {
         zoom?: number;
         offset?: { x: number, y: number, z?: number };
@@ -169,6 +160,9 @@ const animate = () => {
             controls.enabled = true;
         }
 
+        // Centralized Smart Sync Logic
+        let isSinging = isSingingAtTime(props.lyrics, props.currentTime);
+        const rawVol = props.speakingVol || 0;
         // Update AI Director
         if (props.autoDirectorEnabled) {
             const decisions = director.update(props.speakingVol || 0, 0, deltaTime); // pitch not yet used
@@ -491,22 +485,74 @@ const resetView = () => {
     saveCameraState();
 };
 
+const destroyCurrentModel = () => {
+    if (!currentVrm) return;
+    
+    console.log('[VRMViewer] Destroying current model...');
+    
+    // 1. Detach props before disposing the VRM
+    try { propManager.detachProp(); } catch(e) { /* ignore */ }
+    
+    // 2. Remove aura/particles tied to model position
+    if (auraSystem) {
+        scene.remove(auraSystem);
+        auraSystem.geometry.dispose();
+        if (auraMaterial) auraMaterial.dispose();
+        auraSystem = null;
+        auraMaterial = null;
+    }
+    if (particleSystem) {
+        scene.remove(particleSystem);
+        particleSystem.geometry.dispose();
+        if (particleMaterial) particleMaterial.dispose();
+        particleSystem = null;
+        particleMaterial = null;
+    }
+    
+    // 3. Remove scene and deep dispose all GPU resources
+    scene.remove(currentVrm.scene);
+    VRMUtils.deepDispose(currentVrm.scene);
+    currentVrm = null;
+    
+    console.log('[VRMViewer] Model destroyed successfully.');
+};
+
 const loadModel = async () => {
     if (!props.modelUrl) return;
     loading.value = true;
     
-    if (currentVrm) {
-        scene.remove(currentVrm.scene);
-        VRMUtils.deepDispose(currentVrm.scene);
-        currentVrm = null;
-    }
+    // Fully destroy old model before loading new one
+    destroyCurrentModel();
 
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));
 
     try {
         const url = getFileUrl(props.modelUrl);
-        const gltf = await loader.loadAsync(url);
+        
+        // Try IndexedDB cache first to avoid re-downloading
+        let loadUrl = url;
+        const cached = await getCachedFile(url);
+        if (cached) {
+            loadUrl = URL.createObjectURL(cached);
+            console.log('[VRMViewer] Loading from cache');
+        } else {
+            console.log('[VRMViewer] Cache miss, downloading...');
+        }
+        
+        const gltf = await loader.loadAsync(loadUrl);
+        
+        // Cache the file for next time (if we downloaded it)
+        if (!cached) {
+            try {
+                const resp = await fetch(url);
+                const blob = await resp.blob();
+                cacheFile(url, blob); // fire-and-forget
+            } catch (e) { /* cache write is best-effort */ }
+        } else {
+            URL.revokeObjectURL(loadUrl);
+        }
+        
         const vrm = gltf.userData.vrm as VRM;
         
         currentVrm = vrm;
@@ -568,50 +614,114 @@ const loadModel = async () => {
 const applyIdleAnimation = (deltaTime: number) => {
     if (!currentVrm || !currentVrm.humanoid) return;
     
-    // Debug: Log once every 5 seconds
-    if (Math.floor(clock.elapsedTime) % 5 === 0 && Math.floor(clock.elapsedTime * 10) % 10 === 0) {
-        console.log('[VRMViewer] Applying Idle Animation (Relaxed Pose)');
+    const t = clock.elapsedTime;
+    const vol = props.speakingVol || 0;
+    const isSpeaking = vol > 0.01;
+    
+    // ========================================
+    // Layer 1: Breathing (Spine/Chest, slow)
+    // ========================================
+    const spine = currentVrm.humanoid.getNormalizedBoneNode('spine');
+    if (spine) {
+        // Gentle breathing on X-axis, ~4s cycle
+        spine.rotation.x = Math.sin(t * 1.5) * 0.015;
     }
     
-    const t = clock.elapsedTime;
-    const s = Math.sin(t);
-    
-    // 1. Chest Breathing
     const chest = currentVrm.humanoid.getNormalizedBoneNode('chest');
     if (chest) {
-        chest.rotation.x = s * 0.03; 
+        // Chest breathe slightly offset from spine for organic feel
+        chest.rotation.x = Math.sin(t * 1.5 + 0.5) * 0.02;
     }
 
-    // 2. Relaxed A-Pose (Arms Down)
-    // Using positive Z for Left and negative Z for Right (reversed from before)
+    // ========================================
+    // Layer 2: Head & Neck Sway (multi-freq)
+    // ========================================
+    const head = currentVrm.humanoid.getNormalizedBoneNode('head');
+    const neck = currentVrm.humanoid.getNormalizedBoneNode('neck');
+    
+    if (neck) {
+        // Slow lateral sway (~6s cycle)
+        neck.rotation.z = Math.sin(t * 1.0) * 0.02;
+        // Slight forward/back (~8s cycle)
+        neck.rotation.x = Math.sin(t * 0.8 + 1.0) * 0.01;
+    }
+    
+    if (head) {
+        // Head has its own sway, slightly faster and layered on top of neck
+        head.rotation.z = Math.sin(t * 1.3 + 2.0) * 0.025;
+        head.rotation.y = Math.sin(t * 0.7) * 0.03; // Slow look left/right
+        
+        // Speech-driven head nod: small downward nod when speaking
+        if (isSpeaking) {
+            head.rotation.x = Math.sin(t * 4.0) * 0.03 * Math.min(1, vol * 3);
+        } else {
+            head.rotation.x = Math.sin(t * 0.9 + 0.5) * 0.01;
+        }
+    }
+
+    // ========================================
+    // Layer 3: Relaxed A-Pose (Arms Down)
+    // ========================================
     const lArm = currentVrm.humanoid.getNormalizedBoneNode('leftUpperArm');
     if (lArm) {
-        lArm.rotation.z = 1.2; // Move from T-pose to A-pose
+        lArm.rotation.z = 1.2 + Math.sin(t * 0.6) * 0.02;
         lArm.rotation.y = 0.1;
     }
     
     const rArm = currentVrm.humanoid.getNormalizedBoneNode('rightUpperArm');
     if (rArm) {
-        rArm.rotation.z = -1.2; 
+        rArm.rotation.z = -1.2 + Math.sin(t * 0.6 + 1.0) * 0.02;
         rArm.rotation.y = -0.1;
+    }
+
+    // ========================================
+    // Layer 4: Hips micro-sway (weight shift)
+    // ========================================
+    const hips = currentVrm.humanoid.getNormalizedBoneNode('hips');
+    if (hips) {
+        hips.rotation.z = Math.sin(t * 0.4) * 0.008;
+        hips.rotation.y = Math.sin(t * 0.3 + 1.5) * 0.01;
+    }
+
+    // ========================================
+    // Layer 5: Auto-blink cycle
+    // ========================================
+    if (currentVrm.expressionManager) {
+        // Blink every 3-6 seconds with a quick close-open
+        const blinkCycle = (t % 4.5);
+        let blinkWeight = 0;
+        if (blinkCycle > 4.0 && blinkCycle < 4.3) {
+            // Quick blink: ramp up and down over 0.3s 
+            const blinkT = (blinkCycle - 4.0) / 0.3;
+            blinkWeight = blinkT < 0.5 ? blinkT * 2 : (1 - blinkT) * 2;
+        }
+        currentVrm.expressionManager.setValue('blink', blinkWeight);
     }
 };
 
-// Functions moved up to resolve hoisting issues
-// Functions moved up to resolve hoisting issues
 const applyLipSync = () => {
     if (!currentVrm || !props.speakingVol) return;
     
-    // VRM Expression Manager
     const expressionManager = currentVrm.expressionManager;
     if (!expressionManager) return;
+    // Centralized Smart Sync Logic
+    const isSinging = isSingingAtTime(props.lyrics, props.currentTime);
 
-    const vol = props.speakingVol;
-    // Boost volume for visibility
-    const weight = Math.min(1.0, vol * 5);
+    const vol = isSinging ? props.speakingVol : 0;
     
-    // Map to 'A' (Mouth Open)
-    expressionManager.setValue('aa', weight);
+    // Boost sensitivity: vol is typically 0-0.3, we need 0-1 range
+    const mouthOpen = Math.min(1.0, vol * 8);
+    
+    // Primary mouth open (aa = jaw drop)
+    expressionManager.setValue('aa', mouthOpen);
+    
+    // Secondary shapes for more natural lip movement  
+    // "oh" shape at lower volumes for resting-open feel
+    expressionManager.setValue('oh', Math.min(0.4, vol * 3));
+    // "ee" flicker for consonant-like variation
+    const flickerT = Date.now() * 0.01;
+    const consonantFlicker = mouthOpen > 0.2 ? Math.sin(flickerT) * 0.15 * mouthOpen : 0;
+    expressionManager.setValue('ee', Math.max(0, consonantFlicker));
 };
 
 const applyTracking = (data: any) => {
@@ -665,20 +775,8 @@ const applyTracking = (data: any) => {
     }
 };
 
-// Lifecycle
-onMounted(() => {
-    init();
-});
-
-onBeforeUnmount(() => {
-    cancelAnimationFrame(animationId);
-    if (currentVrm) {
-        VRMUtils.deepDispose(currentVrm.scene);
-    }
-    if (renderer) {
-        renderer.dispose();
-    }
-});
+// NOTE: Lifecycle hooks consolidated below (single onBeforeUnmount at line ~760+)
+// onMounted is already called at line 273.
 
 // Watchers
 watch(() => props.modelUrl, loadModel);
@@ -764,6 +862,9 @@ onBeforeUnmount(() => {
     if (animationId) {
         cancelAnimationFrame(animationId);
     }
+
+    // Destroy VRM model (props, effects, GPU resources)
+    destroyCurrentModel();
 
     if (controls) {
         controls.dispose();

@@ -13,13 +13,7 @@
             <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Neural Link Establishing</span>
         </div>
     </div>
-    <!-- Dynamic Lyrics Overlay -->
-    <StageLyricsOverlay 
-        v-if="lyricsEnabled && lyrics && lyrics.length > 0"
-        :lyrics="lyrics"
-        :currentTime="currentTime || 0"
-        :style="lyricsStyle || 'neon'"
-    />
+    <!-- Dynamic Lyrics Overlay removed (Moved to Global Stage) -->
 </template>
 
 <script setup lang="ts">
@@ -28,8 +22,8 @@ import * as PIXI from 'pixi.js';
 import { Live2DModel, ZipLoader } from 'pixi-live2d-display-advanced';
 import JSZip from 'jszip';
 import { getFileUrl } from '@/utils/api';
-import StageLyricsOverlay from './StageLyricsOverlay.vue';
-
+import { getCachedFile, cacheFile } from '@/utils/ModelCache';
+import { isSingingAtTime } from '@/utils/lyricUtils';
 // Define options for the component
 // inheritAttrs: false is used because the component now uses a fragment root (due to Loading/Overlays),
 // so Vue cannot automatically inherit attributes. This prevents "Extraneous non-props attributes" warnings.
@@ -111,10 +105,6 @@ const props = defineProps<{
     emotion?: string;
     cinematicMode?: boolean;
     interactive?: boolean;
-    lyrics?: any[];
-    currentTime?: number;
-    lyricsStyle?: 'neon' | 'minimal' | 'kinetic';
-    lyricsEnabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -167,6 +157,10 @@ const initValue = async () => {
     const maxInitRetries = 3;
 
     while (initRetries < maxInitRetries) {
+        // Centralized Smart Sync Logic
+        const isSinging = isSingingAtTime(props.lyrics, props.currentTime);
+
+        const vol = isSinging ? props.speakingVol : 0;
         try {
             // Cleanup previous PIXI app and its canvas
             if (app && app.view) {
@@ -347,8 +341,21 @@ const loadModel = async () => {
         const isRar = props.modelUrl.toLowerCase().endsWith('.rar');
 
         if (isZip || isRar) {
+            // Try cached clean zip first
+            const cachedBlob = await getCachedFile(url);
+            if (cachedBlob) {
+                console.log('[Live2DViewer] Loading from cache');
+                const zipUrl = 'zip://' + URL.createObjectURL(cachedBlob);
+                createdBlobUrls.push(zipUrl);
+                const newModel = await Live2DModel.from(zipUrl, {autoHitTest: true, autoFocus: false});
+                if (currentLoadId !== latestLoadId) {
+                    newModel.destroy();
+                    return;
+                }
+                model = newModel;
+            } else {
             const rawFilesMap = new Map<string, Uint8Array>();
-            const normalize = (p: string) => p.replace(/\\/g, '/').replace(/^\.\//, '').replace(/^\//, '');
+            const normalize = (p: string) => p.replace(/\\/g, '/').replace(/^\.\//,  '').replace(/^\//, '');
 
             // 1. Extract all binary data into a map
             if (isZip) {
@@ -395,19 +402,22 @@ const loadModel = async () => {
             }
 
             // 4. Create a Blob URL and load using the zip:// protocol
-            // Prepending zip:// forces ZipLoader even if the URL is a blob.
             const zipBlob = await cleanZip.generateAsync({ type: 'blob' });
+            
+            // Cache the cleaned zip for next time (fire-and-forget)
+            cacheFile(url, zipBlob);
+            
             const zipUrl = 'zip://' + URL.createObjectURL(zipBlob);
             createdBlobUrls.push(zipUrl);
             
             console.log(`[Live2DViewer] Loading via native ZipLoader proxy: ${zipUrl}`);
-            // [Live2DModel(uninitialized)] options.autoInteract is deprecated since v0.5.0, use autoHitTest and autoFocus instead.
             const newModel = await Live2DModel.from(zipUrl, {autoHitTest: true, autoFocus: false});
             if (currentLoadId !== latestLoadId) {
                 newModel.destroy();
                 return;
             }
             model = newModel;
+            } // end else (cache miss)
         } else {
             // Load from direct URL
             // [Live2DModel(uninitialized)] options.autoInteract is deprecated since v0.5.0, use autoHitTest and autoFocus instead.
@@ -635,12 +645,18 @@ const loadModel = async () => {
         const tickerCallback = () => {
             if (!model || !internalModel || !coreModel) return;
             pulseCount++;
-
             const vol = props.speakingVol || 0;
+            const isSpeakingRaw = vol > 0.01;
+            
+            // Centralized Smart Sync Logic
+            const isSinging = isSingingAtTime(props.lyrics, props.currentTime);
+
+            const isSpeaking = isSpeakingRaw && isSinging;
+            const syncVol = isSinging ? vol : 0;
+            
             const pitch = props.pitchFactor || 0;
             const emp = props.emphasis || 0;
             const multipliers = props.intensity || { gestureIntensity: 1, headTiltRange: 1, nodIntensity: 1 };
-            const isSpeaking = vol > 0.01;
             
             // 0. CINEMATIC CAMERA
             if (props.cinematicMode && model) {
@@ -723,12 +739,12 @@ const loadModel = async () => {
             // 3. LIP SYNC
             if (isSpeaking) {
                 // Use a clean, linear mapping without random noise to ensure tight synchronization
-        // Use a clean, linear mapping without random noise to ensure tight synchronization
+                // Use a clean, linear mapping without random noise to ensure tight synchronization
                 // Multiplier 4.0 works well with RMS input (which is typically lower than peak)
-                const mouthValue = Math.min(1.0, vol * 4.0);
+                const mouthValue = Math.min(1.0, syncVol * 4.0);
                 
                 // Bob head up/down with audio volume
-                if (paramAngleY >= 0) coreModel.setParameterValueById(paramAngleY, headY + vol * 12 * multipliers.nodIntensity);
+                if (paramAngleY >= 0) coreModel.setParameterValueById(paramAngleY, headY + syncVol * 12 * multipliers.nodIntensity);
                 
                 for (const id of existingMouthParams) {
                     if (internalModel.setParamValue) {

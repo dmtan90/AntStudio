@@ -47,8 +47,13 @@ export class AutoCaptionService {
                 }]
             });
 
-            const response = result.response;
-            const content = response.text();
+            const response = result.response || result;
+            let content = '';
+            if (typeof response.text === 'function') {
+                content = response.text();
+            } else if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
+                content = response.candidates[0].content.parts[0].text;
+            }
             
             // Record usage
             await geminiPool.recordUsage(key, modelName);

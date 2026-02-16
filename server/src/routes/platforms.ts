@@ -125,7 +125,7 @@ router.post('/callback/:platform', async (req: AuthRequest, res) => {
 
     } catch (error: any) {
         console.error('[OAuth Callback] Error:', error);
-        res.status(500).json({ success: false, error: error.message });
+        res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
 
@@ -323,7 +323,7 @@ router.get('/:id/videos', async (req: AuthRequest, res) => {
         }
     } catch (error: any) {
         console.error('Proxy Error:', error);
-        res.status(500).json({ success: false, error: error.message });
+        res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
 
@@ -356,7 +356,7 @@ router.get('/:id/videos/:videoId/comments', async (req: AuthRequest, res) => {
             }
         }
     } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
 
@@ -388,7 +388,7 @@ router.get('/:id/stats', async (req: AuthRequest, res) => {
             }
         }
     } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
 
@@ -421,7 +421,7 @@ router.delete('/:id/videos/:videoId', async (req: AuthRequest, res) => {
             }
         }
     } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
 
@@ -527,7 +527,7 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
         }
     } catch (error: any) {
         console.error('Upload Error:', error);
-        res.status(500).json({ success: false, error: error.message });
+        res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
 
@@ -579,7 +579,7 @@ router.get('/:id/live-info', async (req: AuthRequest, res) => {
         }
     } catch (error: any) {
         console.error('Live Info Error:', error);
-        res.status(500).json({ success: false, error: error.message });
+        res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
 

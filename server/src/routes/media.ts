@@ -919,7 +919,32 @@ router.post('/youtube/search', authMiddleware, async (req: AuthRequest, res) => 
         res.json(results);
     } catch (error: any) {
         console.error('YouTube search error:', error);
-        res.status(500).json({ error: error.message || 'Failed to search YouTube music' });
+        res.status(error.requiresReauth ? 401 : 500).json({ error: error.message || 'Failed to search YouTube music', requiresReauth: error.requiresReauth || false, platform: error.platform });
+    }
+});
+
+/**
+ * Get trending YouTube music
+ * GET /api/media/youtube/trending
+ */
+router.get('/youtube/trending', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const { region, maxResults } = req.query;
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
+
+        const results = await YouTubeMusicService.getTrendingMusic(userId, {
+            regionCode: region as string || 'VN',
+            maxResults: parseInt(maxResults as string) || 20
+        });
+
+        res.json(results);
+    } catch (error: any) {
+        console.error('YouTube trending error:', error);
+        res.status(error.requiresReauth ? 401 : 500).json({ error: error.message || 'Failed to fetch trending music', requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
 
@@ -929,7 +954,7 @@ router.post('/youtube/search', authMiddleware, async (req: AuthRequest, res) => 
  */
 router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) => {
     try {
-        const { videoId, fetchLyrics, songTitle } = req.body;
+        const { videoId, fetchLyrics, songTitle, lyricsLanguage } = req.body;
         const userId = req.user?.userId;
 
         if (!videoId) {
@@ -947,9 +972,22 @@ router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) =
         let lyrics = '';
         let lyricsLines: LyricsLine[] = [];
 
-        if (fetchLyrics && songTitle) {
+        if (fetchLyrics) {
             try {
-                lyrics = await LyricsService.searchLyrics(songTitle);
+                // 1. Try fetching official lyrics from YouTube first (most accurate)
+                const preferredLang = lyricsLanguage || 'vi,en';  // Default to vi,en if not specified
+                const officialLyrics = await AudioExtractionService.getLyrics(videoId, preferredLang);
+                
+                if (officialLyrics) {
+                    lyrics = officialLyrics;
+                    console.log(`[MediaRoute] Found official lyrics for ${videoId}`);
+                } else if (songTitle) {
+                    // 2. Fallback to AI generation if no official lyrics found
+                    console.log(`[MediaRoute] No official lyrics, attempting AI generation for ${songTitle}`);
+                    const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                    lyrics = await LyricsService.searchLyrics(songTitle, metadata.channelTitle, youtubeUrl);
+                }
+
                 if (lyrics) {
                     lyricsLines = await LyricsService.syncLyrics(lyrics, metadata.duration);
                 }
@@ -958,6 +996,8 @@ router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) =
                 // Continue without lyrics
             }
         }
+
+        console.log(`[MediaRoute] Returning metadata for ${videoId}: found ${lyricsLines.length} lyrics lines`);
 
         res.json({
             ...metadata,
@@ -993,6 +1033,23 @@ router.post('/youtube/extract-audio', authMiddleware, async (req: AuthRequest, r
     } catch (error: any) {
         console.error('Audio extraction error:', error);
         res.status(500).json({ error: error.message || 'Failed to extract audio' });
+    }
+});
+
+/**
+ * Stream audio from YouTube
+ * GET /api/media/youtube/stream/:videoId
+ */
+router.get('/youtube/stream/:videoId', async (req, res) => {
+    try {
+        const { videoId } = req.params;
+        if (!videoId) {
+            return res.status(400).send('Video ID is required');
+        }
+        await AudioExtractionService.streamAudio(videoId, res);
+    } catch (error: any) {
+        console.error('Audio streaming error:', error);
+        res.status(500).send('Streaming failed');
     }
 });
 

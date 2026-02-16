@@ -508,23 +508,12 @@ export class SyntheticGuestManager {
 
         this.activeGuests.set(persona.uuid, { persona, isSpeaking: false, isThinking: false });
         
-        // Sync with StudioStore for layout rendering
-        if (this.studioStore) {
-            this.studioStore.addGuest({
-                uuid: persona.uuid,
-                name: persona.name || persona.identity?.name || 'AI Guest',
-                type: 'ai',
-                status: 'live',
-                audioEnabled: true,
-                videoEnabled: true,
-                avatar: persona.visual?.thumbnailUrl
-            });
-            
-            // Auto-switch layout for better visibility
-            this.studioStore.setCameraFocus('wide');
-        }
+        // NOTE: We intentionally do NOT call studioStore.addGuest() here.
+        // The guest will be added to layout slots only when VirtualGuest emits
+        // @stream-ready (model loaded + canvas captured), preventing black screen
+        // in guest slots during model loading. See handleVirtualGuestStream in LiveStudio.vue.
 
-        toast.success(`AI Orchestrator: Summoned ${persona.name || persona.identity?.name} to the Studio.`);
+        toast.success(`AI Orchestrator: Summoning ${persona.name || persona.identity?.name}...`);
         console.log('[VTuberManager] Summoning guest visual state:', persona.visual);
 
         // Notify rendering worker to add 3D model ONLY if it is a 3D type (VRM)
@@ -594,7 +583,10 @@ export class SyntheticGuestManager {
             if (connection && connection.isConnected) {
                 console.log(`[SyntheticGuest] Using WebSocket transport for ${guestId}`);
                 
-                const originalCallback = (connection.geminiLive as any).textResponseCallback;
+                // Get the original callback securely (Phase 8: Frontend Fix)
+                const originalCallback = (connection.geminiLive as any).getTextResponseCallback 
+                    ? (connection.geminiLive as any).getTextResponseCallback() 
+                    : null;
                 
                 return new Promise((resolve) => {
                     connection.geminiLive.setTextResponseCallback((text: string, metadata?: any) => {

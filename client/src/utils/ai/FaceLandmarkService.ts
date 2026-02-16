@@ -65,10 +65,23 @@ export class FaceLandmarkService {
     }
 
     public async detect(image: ImageBitmap | HTMLImageElement | HTMLCanvasElement, cacheKey?: string): Promise<FaceLandmarkerResult | null> {
-        // Check cache first
+        // 1. Check in-memory cache
         if (cacheKey && this.detectionCache.has(cacheKey)) {
             console.log('[FaceLandmarkService] Returning cached result for:', cacheKey);
             return this.detectionCache.get(cacheKey)!;
+        }
+
+        // 2. Check IndexedDB persistent cache
+        if (cacheKey) {
+            try {
+                const { getCachedLandmarks } = await import('@/utils/ModelCache');
+                const persistedResult = await getCachedLandmarks(cacheKey);
+                if (persistedResult) {
+                    console.log('[FaceLandmarkService] Returning IndexedDB cached result for:', cacheKey);
+                    this.detectionCache.set(cacheKey, persistedResult);
+                    return persistedResult;
+                }
+            } catch (e) { /* IndexedDB not available, continue with detection */ }
         }
 
         await this.initialize();
@@ -76,10 +89,22 @@ export class FaceLandmarkService {
 
         return new Promise(async (resolve, reject) => {
             const id = Math.random().toString(36).substr(2, 9);
-            this.pendingRequests.set(id, { resolve, reject });
+            this.pendingRequests.set(id, { 
+                resolve: (result: FaceLandmarkerResult | null) => {
+                    // Write to both caches after successful detection
+                    if (cacheKey && result && result.faceLandmarks && result.faceLandmarks.length > 0) {
+                        this.detectionCache.set(cacheKey, result);
+                        // Persist to IndexedDB (fire-and-forget)
+                        import('@/utils/ModelCache').then(({ cacheLandmarks }) => {
+                            cacheLandmarks(cacheKey, result);
+                        }).catch(() => {});
+                    }
+                    resolve(result);
+                }, 
+                reject 
+            });
 
             try {
-                // Ensure we have an ImageBitmap for the worker
                 let bitmap: ImageBitmap;
                 if (image instanceof ImageBitmap) {
                     bitmap = image;

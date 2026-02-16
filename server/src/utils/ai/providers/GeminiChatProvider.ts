@@ -24,7 +24,8 @@ export class GeminiChatProvider {
                 client = new CloudCodeClient(account);
             }
 
-            const result = await client.generateContent(prompt, modelId);
+            // console.log("[GeminiChatProvider] generate text", prompt, modelId, options);
+            const result = await client.generateContent(prompt, modelId, options);
 
             // Record usage
             await aiAccountManager.recordUsage(account, modelId);
@@ -37,6 +38,7 @@ export class GeminiChatProvider {
     }
 
     async generateJson(prompt: string | any[], modelId: string, options: any = {}) {
+        // console.log("generateJson", prompt, modelId, options);
         let fullPrompt: any[] = [];
         if (Array.isArray(prompt)) {
             fullPrompt = [...prompt, { text: "\n\nRespond ONLY with valid JSON. No markdown." }];

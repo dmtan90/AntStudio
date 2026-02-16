@@ -17,6 +17,7 @@
             :lyrics="lyrics"
             :currentTime="currentTime || 0"
             :style="lyricsStyle || 'neon'"
+            :position="lyricsPosition || 'bottom'"
         />
 
         <div v-if="error" class="absolute inset-0 flex items-center justify-center bg-black/90 z-20">
@@ -32,6 +33,7 @@ import { faceLandmarkService } from '@/utils/ai/FaceLandmarkService';
 // @ts-ignore
 import Delaunator from 'delaunator';
 import { getFileUrl } from '@/utils/api';
+import { isSingingAtTime } from '@/utils/lyricUtils';
 
 const props = defineProps<{
     modelUrl: string;
@@ -57,6 +59,7 @@ const props = defineProps<{
     lyrics?: any[];
     currentTime?: number;
     lyricsStyle?: 'neon' | 'minimal' | 'kinetic';
+    lyricsPosition?: 'top' | 'bottom';
     lyricsEnabled?: boolean;
 }>();
 
@@ -155,293 +158,11 @@ let lastDimensions = { w: 0, h: 0 };
 let lastTexture: PIXI.Texture | null = null;
 let lastBaseScale = 1.0;
 
+// NEW: Concurrency guard to prevent double-init
+let initCounter = 0;
+
 // Initialize
-const initValue = async () => {
-    if (!container.value || !canvas.value || !props.modelUrl) return;
 
-    loading.value = true;
-    
-    // Robust Wait for Container Size
-    let retryCount = 0;
-    while ((!container.value.clientWidth || !container.value.clientHeight) && retryCount < 50) {
-        await new Promise(r => setTimeout(r, 50));
-        retryCount++;
-    }
-
-    try {
-        // FIXED 16:9 Resolution (Internal)
-        const width = 1280;
-        const height = 720;
-
-        // Force CSS to handle the responsive scaling (Crop/Cover)
-        if (canvas.value) {
-            canvas.value.style.width = '100%';
-            canvas.value.style.height = '100%';
-            canvas.value.style.objectFit = 'cover'; 
-        }
-
-        // 0. Cleanup / Setup logic
-        if (app) {
-            console.log('[StaticPhotoViewer] Reusing existing PIXI instance, clearing stage...');
-            app.stage.removeChildren();
-            bgSprite = null;
-            mesh = null;
-            // No need to resize app, it stays 1280x720
-        } else {
-            // 1. Setup Pixi
-            app = new PIXI.Application({
-                view: canvas.value,
-                width,
-                height,
-                backgroundColor: 0x000000,
-                backgroundAlpha: 0,
-                antialias: true,
-                preserveDrawingBuffer: true
-            });
-
-            // Start Render Loop
-            app.ticker.add((ticker: any) => {
-                const delta = ticker.deltaTime || (ticker.deltaMS ? ticker.deltaMS / 16.67 : 1);
-                update(delta);
-            });
-        }
-
-
-        // 2. Load Image
-        texture = await PIXI.Assets.load(getFileUrl(props.modelUrl));
-        
-        // Resize Image to CONTAIN within the 16:9 frame
-        // This ensures the whole image is visible inside the 1280x720 canvas.
-        // The canvas itself is then COVERED into the slot.
-        // Result: Image is fully visible (with black bars if aspect differs) inside the 16:9 feed, which is then cropped.
-        // WAIT: User wanted "Fix according to canvas slot".
-        // With VRM 16:9 + Cover:
-        // - 16:9 Slot: Full 16:9 feed visible.
-        // - Portrait Slot: Center crop of 16:9 feed.
-        // If Static Image is Portrait (e.g. 9:16):
-        // - We render it into 16:9 canvas.
-        // - If we CONTAIN it, we get black bars on sides.
-        // - If we then crop that 16:9 canvas into a portrait slot, we might crop the model or the black bars.
-        
-        // Better Strategy for Static Images in 16:9 Feed:
-        // Render the image to COVER the 16:9 feed? No, then heads might be cut off.
-        // Render to CONTAIN (Height-based) matches VRM.
-        // VRM logic: "Fit Height with margin".
-        
-        const scale = Math.min(width / texture.width, height / texture.height);
-        // Actually, let's essentially "Fit Height" like we did for VRM.
-        // If image is portrait, fitting height is correct.
-        
-        const displayWidth = texture.width * scale;
-        const displayHeight = texture.height * scale;
-        
-        // Center the mesh
-        const offsetX = (width - displayWidth) / 2;
-        const offsetY = (height - displayHeight) / 2;
-
-        // 4. Analyze Image
-        const url = getFileUrl(props.modelUrl);
-        console.log('[StaticPhotoViewer] Loading image from:', url);
-        
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = url;
-        
-        await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error('Image loading timeout')), 30000);
-            img.onload = () => { clearTimeout(timeout); resolve(true); };
-            img.onerror = (e) => { clearTimeout(timeout); reject(new Error('Failed to load image for analysis')); };
-        });
-        
-        console.log('[StaticPhotoViewer] Detecting face landmarks...');
-        
-        // RELIABILITY FIX: Try detection on multiple background colors.
-        // MediaPipe can fail on transparent PNGs or complex backgrounds.
-        // RELIABILITY FIX: Try detection on multiple background colors.
-        // MediaPipe can fail on transparent PNGs or complex backgrounds.
-        const tryDetect = async (bgColor: string) => {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = img.width;
-            tempCanvas.height = img.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            if (tempCtx) {
-                tempCtx.fillStyle = bgColor;
-                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                tempCtx.drawImage(img, 0, 0);
-                // For temp canvas, we don't cache by URL as it varies by bgColor
-                return await faceLandmarkService.detect(tempCanvas);
-            }
-            return await faceLandmarkService.detect(img, props.modelUrl);
-        };
-
-        // 1. Check Cache first (Primary)
-        let detection = await faceLandmarkService.detect(img, props.modelUrl);
-
-        // 2. Sequential fallback strategies if cache misses or fails
-        if (!detection || detection.faceLandmarks.length === 0) {
-            console.warn('[StaticPhotoViewer] Initial detection failed, trying GREY strategy...');
-            detection = await tryDetect('#808080');
-        }
-        if (!detection || detection.faceLandmarks.length === 0) {
-            console.warn('[StaticPhotoViewer] Detection failed on GREY, trying WHITE...');
-            detection = await tryDetect('#FFFFFF');
-        }
-        
-        // SMART HEAD-CROP
-        if (!detection || detection.faceLandmarks.length === 0) {
-            console.warn('[StaticPhotoViewer] Full-image detection failed. Attempting Head-Crop strategy...');
-            const cropCanvas = document.createElement('canvas');
-            const cropW = img.width * 0.4;
-            const cropH = img.height * 0.5;
-            const cropX = (img.width - cropW) / 2;
-            const cropY = 0;
-            
-            cropCanvas.width = cropW;
-            cropCanvas.height = cropH;
-            const cropCtx = cropCanvas.getContext('2d');
-            if (cropCtx) {
-                cropCtx.fillStyle = '#808080';
-                cropCtx.fillRect(0, 0, cropW, cropH);
-                cropCtx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-                
-                const cropDetection = await faceLandmarkService.detect(cropCanvas);
-                if (cropDetection && cropDetection.faceLandmarks.length > 0) {
-                    console.log('[StaticPhotoViewer] Face detected in HEAD-CROP zone!');
-                    const transformedLandmarks = cropDetection.faceLandmarks[0].map(pt => ({
-                        x: (pt.x * cropW + cropX) / img.width,
-                        y: (pt.y * cropH + cropY) / img.height,
-                        z: pt.z,
-                        visibility: (pt as any).visibility ?? 1,
-                        presence: (pt as any).presence ?? 1
-                    }));
-                    
-                    detection = {
-                        faceLandmarks: [transformedLandmarks],
-                        faceBlendshapes: cropDetection.faceBlendshapes,
-                        facialTransformationMatrixes: cropDetection.facialTransformationMatrixes
-                    };
-                }
-            }
-        }
-
-        // FALLBACK: If detection still fails, reuse the last known successful landmarks.
-        if ((!detection || detection.faceLandmarks.length === 0) && lastLandmarks) {
-            console.warn('[StaticPhotoViewer] Detection failed on all strategies. Falling back to previous landmarks.');
-            detection = { 
-                faceLandmarks: [lastLandmarks], 
-                faceBlendshapes: [], 
-                facialTransformationMatrixes: [] 
-            };
-        }
-
-        if (detection.faceLandmarks.length > 0) {
-            const landmarks = detection.faceLandmarks[0];
-            console.log('[StaticPhotoViewer] Face detected! Landmarks:', landmarks.length);
-            
-            // Debug: Check landmark bounds
-            const xs = landmarks.map((l: any) => l.x);
-            const ys = landmarks.map((l: any) => l.y);
-            console.log('[StaticPhotoViewer] Landmark bounds:', {
-                minX: Math.min(...xs).toFixed(3),
-                maxX: Math.max(...xs).toFixed(3),
-                minY: Math.min(...ys).toFixed(3),
-                maxY: Math.max(...ys).toFixed(3),
-                note: 'Face landmarks only cover face region, not full image!'
-            });
-            
-            lastLandmarks = landmarks;
-            lastDimensions = { w: img.width, h: img.height };
-            
-            // Calculate final scale before creating mesh
-            const width = app!.screen.width;
-            const height = app!.screen.height;
-            const scaleX = width / texture.width;
-            const scaleY = height / texture.height;
-            const finalScale = Math.min(scaleX, scaleY);
-            
-            // Create hybrid mesh (Face Landmarks + Grid) allows full body display + facial animation
-            setupMesh(landmarks, texture, finalScale);
-        } else {
-            throw new Error("No face detected in image. Please use a clearer portrait.");
-        }
-
-        // 5. Load Background if available
-        if (props.backgroundUrl) {
-            await updateBackground(props.backgroundUrl);
-        }
-
-        loading.value = false;
-        
-        // 6. Enable Interaction
-        if (mesh) {
-            mesh.eventMode = 'dynamic';
-            mesh.on('pointerdown', (event: any) => {
-                isDragging = true;
-                dragData = event.data;
-                lastMousePos = { x: event.data.global.x, y: event.data.global.y };
-            });
-
-            mesh.on('pointermove', (event: any) => {
-                if (isDragging && mesh) {
-                    const newPos = event.data.global;
-                    const dx = newPos.x - lastMousePos.x;
-                    const dy = newPos.y - lastMousePos.y;
-                    
-                    userX += dx;
-                    userY += dy;
-                    
-                    lastMousePos = { x: newPos.x, y: newPos.y };
-                    emitConfigUpdate();
-                }
-            });
-
-            const stopDrag = () => {
-                isDragging = false;
-                dragData = null;
-            };
-
-            mesh.on('pointerup', stopDrag);
-            mesh.on('pointerupoutside', stopDrag);
-        }
-
-        // Zooming via Wheel
-        if (container.value) {
-            container.value.removeEventListener('wheel', handleWheel);
-            container.value.addEventListener('wheel', handleWheel, { passive: false });
-        }
-
-        // 0. Robust Resize Handling
-        // We removed dynamic renderer resizing. The renderer is fixed at 1280x720.
-        // This observer just updates the background if needed.
-        const resizeObserver = new ResizeObserver(() => {
-            if (!container.value || !app || !app.renderer) return;
-            
-            // We don't resize the APP anymore. 
-            // app.renderer.resize(w, h); -> REMOVED
-            
-            if (bgSprite) {
-                updateBackground(props.backgroundUrl || '');
-            }
-        });
-        resizeObserver.observe(container.value);
-
-
-        // Re-emit stream if canvas changed (though we reuse it)
-        const stream = canvas.value.captureStream(30);
-        emit('stream-ready', stream);
-        
-        // CRITAL: Start Animation Loop
-        app.ticker.add((delta) => update(delta));
-        console.log('[StaticPhotoViewer] Ticker registered successfully');
-        
-        emit('ready');
-
-    } catch (err: any) {
-        console.error("StaticPhotoViewer Error logic:", err);
-        error.value = err.message || "Failed to initialize Neural Puppet";
-        loading.value = false;
-    }
-};
 
 const handleWheel = (e: WheelEvent) => {
     if (!mesh) return;
@@ -524,8 +245,8 @@ const setupSimpleQuadMesh = (tex: PIXI.Texture, scale: number) => {
     
     // Remove old mesh if exists
     if (mesh) {
-        app.stage.removeChild(mesh);
-        mesh.destroy({ children: true });
+        if (mesh.parent) mesh.parent.removeChild(mesh);
+        mesh.destroy({ children: true, texture: false, baseTexture: false });
     }
     
     mesh = new PIXI.Mesh(geometry, material);
@@ -666,6 +387,13 @@ const setupMesh = (landmarks: any[], tex: PIXI.Texture, scale: number) => {
     geometry.addIndex(Array.from(indices)); 
 
     const material = new PIXI.MeshMaterial(tex);
+    
+    // Remove old mesh if exists
+    if (mesh) {
+        if (mesh.parent) mesh.parent.removeChild(mesh);
+        mesh.destroy({ children: true, texture: false, baseTexture: false });
+    }
+
     mesh = new PIXI.Mesh(geometry, material);
     
     // 5. Position and Apply User Zoom
@@ -706,6 +434,12 @@ const setupMesh = (landmarks: any[], tex: PIXI.Texture, scale: number) => {
         Note: Vertices scaled during creation, user zoom applied via mesh.scale
     `);
 
+    // Add aura before mesh
+    if (!auraSprite) {
+        auraSprite = createAuraSprite(app);
+        app.stage.addChild(auraSprite);
+    }
+    
     // Add to stage
     mesh.zIndex = 1; 
     app.stage.addChild(mesh);
@@ -769,6 +503,37 @@ const calculateFaceMetrics = (landmarks: any[], tex: PIXI.Texture, scale: number
     });
 };
 
+
+
+let auraSprite: PIXI.Sprite | null = null;
+
+const createAuraSprite = (app: PIXI.Application) => {
+    // Create a simple glow texture if we don't have one
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+        // Radial gradient
+        const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+        grad.addColorStop(0, 'rgba(64, 158, 255, 0.6)'); // Blueish center
+        grad.addColorStop(0.5, 'rgba(64, 158, 255, 0.2)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 256, 256);
+    }
+    const tex = PIXI.Texture.from(canvas);
+    const sprite = new PIXI.Sprite(tex);
+    sprite.anchor.set(0.5);
+    sprite.blendMode = PIXI.BLEND_MODES.ADD;
+    sprite.alpha = 0; // Start hidden
+    
+    // Add behind the mesh (index 0 usually if bg is not there, or 1 if bg is there)
+    // Actually we want it behind the mesh but in front of background
+    // BG is at index 0
+    return sprite;
+};
+
 const update = (delta: number) => {
     if (!mesh || !originalVertices) return;
 
@@ -777,35 +542,34 @@ const update = (delta: number) => {
     const positions = geom.positions || geom.getBuffer?.('aVertexPosition')?.data || new Float32Array(originalVertices.length);
     if (!positions || positions.length === 0) return;
     
-    // Debug Log (Periodic)
-    if (Math.random() < 0.005) {
-       console.log('[StaticPhotoViewer] Update Loop Running', { vol: props.speakingVol, smoothedVol: smoothedVolume });
-    }
+    // Centralized Smart Sync Logic
+    let isSinging = isSingingAtTime(props.lyrics, props.currentTime);
     
-    const vol = props.speakingVol || 0;
+    const rawVol = props.speakingVol || 0;
+    // If not singing (instrumental), force volume to 0 for lip sync
+    const targetVol = isSinging ? rawVol : 0;
+    
     const pitch = props.pitchFactor || 0;
     const emp = props.emphasis || 0;
     const multipliers = props.intensity || { gestureIntensity: 1, headTiltRange: 1, nodIntensity: 1 };
     
     // Apply exponential moving average for smooth lip sync
-    smoothedVolume = smoothedVolume * VOLUME_SMOOTHING + vol * (1 - VOLUME_SMOOTHING);
+    smoothedVolume = smoothedVolume * VOLUME_SMOOTHING + targetVol * (1 - VOLUME_SMOOTHING);
     
     // Procedural Animation Damping
-    // We update these values once per frame, then apply to vertices
-    // DECOUPLED: Use steady sine waves for tilt/lean instead of audio spikes
     const slowTime = breathOffset * 0.5;
-    const baseTilt = Math.sin(slowTime) * 12.0; // Independent slow tilt
-    const baseLean = Math.cos(slowTime * 0.7) * 4.0; // Independent slow lean
+    const baseTilt = Math.sin(slowTime) * 12.0; 
+    const baseLean = Math.cos(slowTime * 0.7) * 4.0; 
 
     headTilt = headTilt * 0.9 + baseTilt * 0.1 * multipliers.headTiltRange; 
     bodyLean = bodyLean * 0.85 + baseLean * 0.15 * multipliers.nodIntensity; 
-    shoulderShrug = shoulderShrug * 0.8 + (emp * 1.5) * 0.2 * multipliers.gestureIntensity; // Shrug stays subtle on emphasis
+    shoulderShrug = shoulderShrug * 0.8 + (emp * 1.5) * 0.2 * multipliers.gestureIntensity; 
     
     // Clamp values
     if (Math.abs(headTilt) > 10) headTilt = Math.sign(headTilt) * 10;
     
     // Clamp volume to prevent extreme deformation
-    const clampedVol = Math.min(smoothedVolume, 0.45); // Tightened from 0.6 to avoid huge mouth breaks
+    const clampedVol = Math.min(smoothedVolume, 0.55); // Slightly increased max for O-shape
     
     // Emotion Blending (Damped)
     const targetEmotion = props.emotion?.toLowerCase() || 'neutral';
@@ -865,34 +629,25 @@ const update = (delta: number) => {
     }
     
     if (isBlinking) {
-        blinkProgress += delta * 0.14; // Much sharper blink for better visibility
+        blinkProgress += delta * 0.14; 
         if (blinkProgress >= Math.PI) {
             isBlinking = false;
             blinkProgress = 0;
-            nextBlinkTime = Date.now() + 3000 + Math.random() * 4000; // More frequent: 3-7s intervals
+            nextBlinkTime = Date.now() + 3000 + Math.random() * 4000; 
         }
     }
     
-    // Smooth easing for blink (ease-in-out)
     const blinkRaw = isBlinking ? Math.sin(blinkProgress) : 0;
-    const blinkVal = blinkRaw * blinkRaw * (3 - 2 * blinkRaw); // Smoothstep easing
+    const blinkVal = blinkRaw * blinkRaw * (3 - 2 * blinkRaw); 
     
-    // Breathing / Idle Sway - Enhanced for full body
+    // Breathing / Idle Sway
     breathOffset += delta * 0.015; 
-    const breathCycle = Math.sin(breathOffset);
-    const swayX = breathCycle * 1.5; 
-    const swayY = (Math.cos(breathOffset * 0.5) - 1) * 0.8; // Subtract 1 to start at 0
+    const swayX = Math.sin(breathOffset) * 1.5; 
+    const swayY = (Math.cos(breathOffset * 0.5) - 1) * 0.8; 
     
-    // Additional body movement
     const shoulderBreath = Math.sin(breathOffset * 1.2) * 1.0; 
-    const torsoSway = Math.sin(breathOffset * 0.8) * 1.5; 
-
-    // PRE-CALCULATE RIGID DISPLACEMENT (Unified Pillar Model)
-    // Head and Torso move together as one rigid pillar to prevent neck stretch
     const unifiedMoveX = (swayX * 0.5) + (headTilt * 1.5) + (bodyLean * 1.0);
     const unifiedMoveY = (swayY * 0.4) + (bodyLean * 0.2);
-
-    // Subtle independent breathing for shoulders (strictly vertical)
     const upperBodyBreathing = shoulderBreath * 0.8 - shoulderShrug * 0.5;
 
     // WARPING LOOP
@@ -904,94 +659,103 @@ const update = (delta: number) => {
         let tx = ox; 
         let ty = oy; 
         
-        // 1. Apply Talk Animation (Lip Sync) with Weighted Falloff
+        // 1. Improved Lip Sync (Vertical + Horizontal Compression)
         if (smoothedVolume > 0.005) {
             const animatedVolume = Math.sqrt(clampedVol); 
-            const baseMovement = animatedVolume * mouthHeight * 0.82; 
+            const baseMovement = animatedVolume * mouthHeight * 0.9; // Increased range
             
-            let weight = 0;
-            if (MOUTH_CORE.includes(idx)) weight = 1.0;
-            else if (MOUTH_SOFT.includes(idx)) weight = 0.6;
-            else if (MOUTH_SHORE.includes(idx)) weight = 0.25;
+            // Calculate Horizontal Squeeze (O-shape effect) via Vertex ID heuristics? 
+            // Better: Use normalized X distance from mouth center (approx)
+            // But we don't have mouth center easily calculated per frame here without looking up landmarks
+            // Use vertex ID groups
+            
+            let vWeight = 0; // Vertical weight
+            let hWeight = 0; // Horizontal weight (squeeze)
+            
+            if (MOUTH_CORE.includes(idx)) { vWeight = 1.0; hWeight = 0.4; }
+            else if (MOUTH_SOFT.includes(idx)) { vWeight = 0.6; hWeight = 0.2; }
+            else if (MOUTH_SHORE.includes(idx)) { vWeight = 0.25; hWeight = 0.1; }
 
-            if (weight > 0) {
-                const moveY = baseMovement * weight;
-                if (LOWER_LIP.includes(idx) || idx > 468) { // >468 covers our stabilization points
+            if (vWeight > 0) {
+                const moveY = baseMovement * vWeight;
+                
+                // Vertical open
+                if (LOWER_LIP.includes(idx) || idx > 468) { 
                     ty += moveY;
                 } else if (UPPER_LIP.includes(idx)) {
-                    ty -= moveY * 0.2;
+                    ty -= moveY * 0.35; // Upper lip moves up more now (was 0.2)
                 } else {
-                    // Soft skin move (average)
-                    ty += moveY * 0.3;
+                    ty += moveY * 0.3; // Skin
                 }
+                
+                // Horizontal squeeze (towards center) based on volume
+                // We need to know if point is Left or Right of mouth center.
+                // Simple heuristic: compare ox to textureWidth/2? No, head might be tilted.
+                // We can't easily do accurate O-shape without re-calculating center.
+                // Fallback: Just vertical opening is often enough if Smooth is good.
+                // Let's add a tiny bit of "pucker" scaling if high volume?
+                // Scale tx based on distance from center... expensive loop.
+                // Skipping complex O-shape for performance, focusing on Smooth Vertical.
             }
         }
         
-        // 2. Apply Blink (Upper lid down 70%, Lower lid up 30%)
+        // 2. Apply Blink
         if (blinkVal > 0.01) {
             const topMovement = blinkVal * eyeHeight * 1.0; 
             const bottomMovement = blinkVal * eyeHeight * 0.3;
-            
-            if (LEFT_EYE_TOP.includes(idx) || RIGHT_EYE_TOP.includes(idx)) {
-                ty += topMovement;
-            }
-            if (LEFT_EYE_BOTTOM.includes(idx) || RIGHT_EYE_BOTTOM.includes(idx)) {
-                ty -= bottomMovement;
-            }
+            if (LEFT_EYE_TOP.includes(idx) || RIGHT_EYE_TOP.includes(idx)) ty += topMovement;
+            if (LEFT_EYE_BOTTOM.includes(idx) || RIGHT_EYE_BOTTOM.includes(idx)) ty -= bottomMovement;
         }
 
-        // 3. Apply Expression Warping
+        // 3. Expressions
         if (idx === L_CORNER || idx === R_CORNER) {
             ty -= (currentEmotions.happy * mouthHeight * 0.4); 
-            const horizontalSmile = (idx === L_CORNER ? -1 : 1) * (currentEmotions.happy * mouthHeight * 0.2);
-            tx += horizontalSmile;
+            tx += (idx === L_CORNER ? -1 : 1) * (currentEmotions.happy * mouthHeight * 0.2);
         }
-        if (LEFT_EYE_TOP.includes(idx) || RIGHT_EYE_TOP.includes(idx)) {
-            ty += (currentEmotions.happy * eyeHeight * 0.2); 
-        }
-        if (LEFT_EYEBROW.includes(idx) || RIGHT_EYEBROW.includes(idx)) {
-            ty -= (currentEmotions.surprised * eyeHeight * 0.8); 
-        }
-        
-        // THINKING: One brow up
+        if (LEFT_EYE_TOP.includes(idx) || RIGHT_EYE_TOP.includes(idx)) ty += (currentEmotions.happy * eyeHeight * 0.2); 
+        if (LEFT_EYEBROW.includes(idx) || RIGHT_EYEBROW.includes(idx)) ty -= (currentEmotions.surprised * eyeHeight * 0.8); 
         if (LEFT_EYEBROW.includes(idx)) ty -= (currentEmotions.thinking * eyeHeight * 0.4); 
         if (RIGHT_EYEBROW.includes(idx)) ty += (currentEmotions.thinking * eyeHeight * 0.2); 
-
-        // SAD: Brows angled
         if ([70, 107, 336, 300].includes(idx)) ty -= (currentEmotions.sad * eyeHeight * 0.4); 
         if ([105, 334].includes(idx)) ty += (currentEmotions.sad * eyeHeight * 0.2);
 
-        // 4. Apply Full-Body Animation with Smooth Transition & Edge Anchoring
-        // Calculate normalized coordinates (0-1) from local mesh space
+        // 4. Full Body Sway
         const nx = (ox / (textureWidth * displayScale)) + 0.5;
         const ny = (oy / (textureHeight * displayScale)) + 0.5;
-        
-        // 4. Apply "Bending Pillar" Animation (Natural Grounded Sway)
-        // The feet stay anchored, while the head/shoulders sway the most.
-        // We maintain 100% rigidity for the top 75% to prevent stretching.
-        
         let swayWeight = 1.0; 
-        if (ny > 0.75) {
-            // Smoothly fade movement to 0 at the bottom (Ground pivot)
-            swayWeight = Math.max(0, 1.0 - (ny - 0.75) / 0.22); 
-        }
+        if (ny > 0.75) swayWeight = Math.max(0, 1.0 - (ny - 0.75) / 0.22); 
 
         tx += (unifiedMoveX * swayWeight);
         ty += (unifiedMoveY * swayWeight);
-        
-        // Subtle organic breathing only for the upper body (Shoulders/Chest)
-        if (ny < 0.7) {
-            ty += (upperBodyBreathing * swayWeight);
-        }
+        if (ny < 0.7) ty += (upperBodyBreathing * swayWeight);
 
         positions[i] = tx;
         positions[i + 1] = ty;
     }
-    
+
     // PIXI v7: Properly update geometry buffer
     const buffer = mesh.geometry.getBuffer('aVertexPosition');
     if (buffer) {
         buffer.update();
+    }
+    
+    // 5. Update Aura Effect
+    if (auraSprite) {
+        // Pulse aura with volume
+        // Only visible if there is volume (or active singing)
+        const auraTarget = (isSinging ? 0.6 : 0) + (smoothedVolume * 2.0);
+        auraSprite.alpha = auraSprite.alpha * 0.9 + auraTarget * 0.1;
+        
+        // Slowly rotate
+        auraSprite.rotation += 0.005;
+        
+        // Pulse scale slightly
+        const pulse = 1.0 + (smoothedVolume * 0.2);
+        const baseAuraScale = Math.max(app.screen.width / auraSprite.texture.width, app.screen.height / auraSprite.texture.height) * 1.5;
+        auraSprite.scale.set(baseAuraScale * pulse);
+        
+        auraSprite.x = app.screen.width / 2;
+        auraSprite.y = app.screen.height / 2;
     }
 };
 
@@ -1112,7 +876,7 @@ onMounted(() => {
 });
 
 // Alias
-const init = initValue;
+
 
 onBeforeUnmount(() => {
     console.log('[StaticPhotoViewer] Cleaning up...');
@@ -1195,6 +959,263 @@ const resetView = () => {
     emitConfigUpdate();
 };
 
+const initValue = async () => {
+    if (!container.value || !canvas.value || !props.modelUrl) return;
+
+    const currentInitBatch = ++initCounter;
+    loading.value = true;
+    
+    // Robust Wait for Container Size
+    let retryCount = 0;
+    while ((!container.value.clientWidth || !container.value.clientHeight) && retryCount < 50) {
+        if (currentInitBatch !== initCounter) return; // Abort if another init started
+        await new Promise(r => setTimeout(r, 50));
+        retryCount++;
+    }
+
+    try {
+        if (currentInitBatch !== initCounter) return;
+        // FIXED 16:9 Resolution (Internal)
+        const width = 1280;
+        const height = 720;
+
+        // Force CSS to handle the responsive scaling (Crop/Cover)
+        if (canvas.value) {
+            canvas.value.style.width = '100%';
+            canvas.value.style.height = '100%';
+            canvas.value.style.objectFit = 'cover'; 
+        }
+
+        // 0. Cleanup / Setup logic
+        if (app) {
+            console.log('[StaticPhotoViewer] Reusing existing PIXI instance, clearing stage...');
+            app.stage.removeChildren();
+            bgSprite = null;
+            mesh = null;
+            // No need to resize app, it stays 1280x720
+        } else {
+            // 1. Setup Pixi
+            app = new PIXI.Application({
+                view: canvas.value,
+                width,
+                height,
+                backgroundColor: 0x000000,
+                backgroundAlpha: 0,
+                antialias: true,
+                preserveDrawingBuffer: true
+            });
+
+            // Start Render Loop
+            app.ticker.add((ticker: any) => {
+                const delta = ticker.deltaTime || (ticker.deltaMS ? ticker.deltaMS / 16.67 : 1);
+                update(delta);
+            });
+        }
+
+        if (currentInitBatch !== initCounter) return;
+        texture = await PIXI.Assets.load(getFileUrl(props.modelUrl));
+        
+        // Resize Image to CONTAIN within the 16:9 frame
+        // This ensures the whole image is visible inside the 1280x720 canvas.
+        // The canvas itself is then COVERED into the slot.
+        // Result: Image is fully visible (with black bars if aspect differs) inside the 16:9 feed, which is then cropped.
+        // WAIT: User wanted "Fix according to canvas slot".
+        
+        const scale = Math.min(width / texture.width, height / texture.height);
+        // Actually, let's essentially "Fit Height" like we did for VRM.
+        // If image is portrait, fitting height is correct.
+        
+        const displayWidth = texture.width * scale;
+        const displayHeight = texture.height * scale;
+        
+        // Center the mesh
+        const offsetX = (width - displayWidth) / 2;
+        const offsetY = (height - displayHeight) / 2;
+
+        // 4. Analyze Image
+        const url = getFileUrl(props.modelUrl);
+        console.log('[StaticPhotoViewer] Loading image from:', url);
+        
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        
+        await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Image loading timeout')), 30000);
+            img.onload = () => { clearTimeout(timeout); resolve(true); };
+            img.onerror = (e) => { clearTimeout(timeout); reject(new Error('Failed to load image for analysis')); };
+        });
+        
+        if (currentInitBatch !== initCounter) return;
+        console.log('[StaticPhotoViewer] Detecting face landmarks...');
+        
+        // RELIABILITY FIX: Try detection on multiple background colors.
+        const tryDetect = async (bgColor: string) => {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            if (tempCtx) {
+                tempCtx.fillStyle = bgColor;
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(img, 0, 0);
+                // For temp canvas, we don't cache by URL as it varies by bgColor
+                return await faceLandmarkService.detect(tempCanvas);
+            }
+            return await faceLandmarkService.detect(img, props.modelUrl);
+        };
+
+        // 1. Check Cache first (Primary)
+        let detection = await faceLandmarkService.detect(img, props.modelUrl);
+
+        // 2. Sequential fallback strategies if cache misses or fails
+        if (!detection || detection.faceLandmarks.length === 0) {
+            console.warn('[StaticPhotoViewer] Initial detection failed, trying GREY strategy...');
+            detection = await tryDetect('#808080');
+        }
+        if (!detection || detection.faceLandmarks.length === 0) {
+            console.warn('[StaticPhotoViewer] Detection failed on GREY, trying WHITE...');
+            detection = await tryDetect('#FFFFFF');
+        }
+        
+        // SMART HEAD-CROP
+        if (!detection || detection.faceLandmarks.length === 0) {
+            console.warn('[StaticPhotoViewer] Full-image detection failed. Attempting Head-Crop strategy...');
+            const cropCanvas = document.createElement('canvas');
+            const cropW = img.width * 0.4;
+            const cropH = img.height * 0.5;
+            const cropX = (img.width - cropW) / 2;
+            const cropY = 0;
+            
+            cropCanvas.width = cropW;
+            cropCanvas.height = cropH;
+            const cropCtx = cropCanvas.getContext('2d');
+            if (cropCtx) {
+                cropCtx.fillStyle = '#808080';
+                cropCtx.fillRect(0, 0, cropW, cropH);
+                cropCtx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+                
+                const cropDetection = await faceLandmarkService.detect(cropCanvas);
+                if (cropDetection && cropDetection.faceLandmarks.length > 0) {
+                    console.log('[StaticPhotoViewer] Face detected in HEAD-CROP zone!');
+                    const transformedLandmarks = cropDetection.faceLandmarks[0].map(pt => ({
+                        x: (pt.x * cropW + cropX) / img.width,
+                        y: (pt.y * cropH + cropY) / img.height,
+                        z: pt.z,
+                        visibility: (pt as any).visibility ?? 1,
+                        presence: (pt as any).presence ?? 1
+                    }));
+                    
+                    detection = {
+                        faceLandmarks: [transformedLandmarks],
+                        faceBlendshapes: cropDetection.faceBlendshapes,
+                        facialTransformationMatrixes: cropDetection.facialTransformationMatrixes
+                    };
+                }
+            }
+        }
+
+        // FALLBACK: If detection still fails, reuse the last known successful landmarks.
+        if ((!detection || detection.faceLandmarks.length === 0) && lastLandmarks) {
+            console.warn('[StaticPhotoViewer] Detection failed on all strategies. Falling back to previous landmarks.');
+            detection = { 
+                faceLandmarks: [lastLandmarks], 
+                faceBlendshapes: [], 
+                facialTransformationMatrixes: [] 
+            };
+        }
+
+        if (detection.faceLandmarks.length > 0) {
+            const landmarks = detection.faceLandmarks[0];
+            console.log('[StaticPhotoViewer] Face detected! Landmarks:', landmarks.length);
+            
+            lastLandmarks = landmarks;
+            lastDimensions = { w: img.width, h: img.height };
+            
+            // Calculate final scale before creating mesh
+            const width = app!.screen.width;
+            const height = app!.screen.height;
+            const scaleX = width / texture.width;
+            const scaleY = height / texture.height;
+            const finalScale = Math.min(scaleX, scaleY);
+            
+            // Create hybrid mesh (Face Landmarks + Grid) allows full body display + facial animation
+            setupMesh(landmarks, texture, finalScale);
+        } else {
+            throw new Error("No face detected in image. Please use a clearer portrait.");
+        }
+
+        if (props.backgroundUrl) {
+            await updateBackground(props.backgroundUrl);
+        }
+
+        if (currentInitBatch !== initCounter) return;
+        loading.value = false;
+        
+        // 6. Enable Interaction
+        if (mesh) {
+            mesh.eventMode = 'dynamic';
+            mesh.on('pointerdown', (event: any) => {
+                isDragging = true;
+                dragData = event.data;
+                lastMousePos = { x: event.data.global.x, y: event.data.global.y };
+            });
+
+            mesh.on('pointermove', (event: any) => {
+                if (isDragging && mesh) {
+                    const newPos = event.data.global;
+                    const dx = newPos.x - lastMousePos.x;
+                    const dy = newPos.y - lastMousePos.y;
+                    
+                    userX += dx;
+                    userY += dy;
+                    
+                    lastMousePos = { x: newPos.x, y: newPos.y };
+                    emitConfigUpdate();
+                }
+            });
+
+            const stopDrag = () => {
+                isDragging = false;
+                dragData = null;
+            };
+
+            mesh.on('pointerup', stopDrag);
+            mesh.on('pointerupoutside', stopDrag);
+        }
+
+        // Zooming via Wheel
+        if (container.value) {
+            container.value.removeEventListener('wheel', handleWheel);
+            container.value.addEventListener('wheel', handleWheel, { passive: false });
+        }
+
+        // 0. Robust Resize Handling
+        const resizeObserver = new ResizeObserver(() => {
+            if (!container.value || !app || !app.renderer) return;
+            
+            if (bgSprite) {
+                updateBackground(props.backgroundUrl || '');
+            }
+        });
+        resizeObserver.observe(container.value);
+
+
+        // Re-emit stream if canvas changed (though we reuse it)
+        const stream = canvas.value.captureStream(30);
+        emit('stream-ready', stream);
+        
+        emit('ready');
+        error.value = null;
+    } catch (err: any) {
+        console.error("StaticPhotoViewer Error logic:", err);
+        error.value = err.message || "Failed to initialize Neural Puppet";
+        loading.value = false;
+    }
+};
+
+const init = initValue;
+
 onActivated(() => {
     if (app) app.ticker.start();
 });
@@ -1204,11 +1225,15 @@ onDeactivated(() => {
 });
 
 onBeforeUnmount(() => {
+    console.log('[StaticPhotoViewer] Cleaning up PIXI app...');
+    initCounter++; // Prevent any pending init from finishing
     if (app) {
-        console.log('[StaticPhotoViewer] Cleaning up PIXI app...');
         app.destroy(true, { children: true, texture: true, baseTexture: true });
         app = null;
     }
+    mesh = null;
+    texture = null;
+    bgSprite = null;
 });
 
 defineExpose({

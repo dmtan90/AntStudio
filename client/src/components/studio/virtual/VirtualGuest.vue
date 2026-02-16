@@ -78,6 +78,7 @@ import { AIGuestPersona, syntheticGuestManager } from '@/utils/ai/SyntheticGuest
 import VRMViewer from '@/components/vtuber/VRMViewer.vue';
 import Live2DViewer from '@/components/vtuber/Live2DViewer.vue';
 import StaticPhotoViewer from '@/components/vtuber/StaticPhotoViewer.vue';
+import { useMediaStore } from '@/stores/media';
 
 const props = defineProps<{
     persona: AIGuestPersona;
@@ -90,11 +91,42 @@ const emit = defineEmits<{
     'stream-ready': [stream: MediaStream];
 }>();
 
+const mediaStore = useMediaStore();
+
+// Check if this VTuber is currently performing
+const isPerforming = computed(() => {
+    const performingId = mediaStore.performingVTuberId;
+    const currentId = props.persona.uuid;
+    const match = performingId === currentId;
+    if (performingId) {
+        console.log(`[VirtualGuest] ${props.persona.name} performance check: store=${performingId}, me=${currentId}, match=${match}`);
+    }
+    return match;
+});
+
+// Performance lyrics props (from media store)
+const performanceLyrics = computed(() => {
+    const lyrics = isPerforming.value ? mediaStore.performanceLyrics : [];
+    if (isPerforming.value && lyrics.length === 0) {
+        console.warn(`[VirtualGuest] ${props.persona.name} is performing but has NO lyrics in store!`);
+    }
+    return lyrics;
+});
+const performanceLyricsCurrentTime = computed(() => isPerforming.value ? mediaStore.performanceLyricsCurrentTime : 0);
+const performanceLyricsVisible = computed(() => {
+    const visible = isPerforming.value ? mediaStore.performanceLyricsVisible : false;
+    // if (isPerforming.value) console.log(`[VirtualGuest] ${props.persona.name} lyrics visible:`, visible);
+    return visible;
+});
+const performanceLyricsStyle = computed(() => mediaStore.performanceLyricsStyle);
+const performanceLyricsPosition = computed(() => mediaStore.performanceLyricsPosition);
+
 const vrmViewer = ref<InstanceType<typeof VRMViewer> | null>(null);
 const viewerLive2D = ref<InstanceType<typeof Live2DViewer> | null>(null);
 const viewerStatic = ref<InstanceType<typeof StaticPhotoViewer> | null>(null);
 const viewerContainer = ref<HTMLElement | null>(null);
 const audioLevel = ref(0);
+const audioLevelOverride = ref<number | null>(null); // For performance mode
 const isTalking = ref(false);
 const isThinking = ref(false);
 const currentEmotion = ref('');
@@ -117,6 +149,17 @@ const setLiveVoiceState = (active: boolean) => {
 
 const setLiveVoiceAudioLevel = (level: number) => {
     if (isLiveVoiceActive.value) {
+        // Use override if set (performance mode), otherwise use provided level
+        const effectiveLevel = audioLevelOverride.value !== null ? audioLevelOverride.value : level;
+        audioLevel.value = effectiveLevel;
+        isTalking.value = effectiveLevel > 0.01;
+    }
+};
+
+const setAudioLevelOverride = (level: number | null) => {
+    audioLevelOverride.value = level;
+    // Immediately apply if set
+    if (level !== null) {
         audioLevel.value = level;
         isTalking.value = level > 0.01;
     }
@@ -248,6 +291,7 @@ watch(() => props.persona.visual?.modelUrl, () => {
 defineExpose({
     setLiveVoiceState,
     setLiveVoiceAudioLevel,
+    setAudioLevelOverride,
     setLiveVoiceEmotion,
     setLiveVoiceGesture,
     setLiveVoicePose,
