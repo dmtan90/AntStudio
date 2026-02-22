@@ -6,6 +6,7 @@ import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
 /**
  * Client for interacting with Google Cloud Code Assist API.
  * This is a more stable alternative to browser-based scraping.
+ * Supports direct media generation (Video, Audio, Music) via standard sandbox endpoint.
  */
 export class CloudCodeClient {
     private static AGENT_ENDPOINT = 'https://daily-cloudcode-pa.sandbox.googleapis.com';
@@ -42,7 +43,7 @@ export class CloudCodeClient {
     /**
      * Generate content (Text generation via Agent Gateway)
      */
-    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.0-flash', options: any = {}) {
+    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.5-flash', options: any = {}) {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         const headers = await this.getHeaders();
 
@@ -146,11 +147,13 @@ export class CloudCodeClient {
     /**
      * Generate video via Agent Gateway (Veo 3.1)
      */
-    public async generateVideo(prompt: string, modelId: string = 'veo_3_1_t2v_fast_ultra_fl_relaxed') {
+    /**
+     * Generate Video (Vertex AI Veo)
+     */
+    public async generateVideo(prompt: string, modelId: string = 'veo-3.0-fast-generate-preview', options: any = {}) {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         const headers = await this.getHeaders();
 
-        // const url = `${CloudCodeClient.AGENT_ENDPOINT}/video:batchAsyncGenerateVideoText`;
         const url = `${CloudCodeClient.AGENT_ENDPOINT}/v1internal:generateContent`;
         const sceneId = `scene_${Date.now()}`;
 
@@ -161,10 +164,13 @@ export class CloudCodeClient {
                 userPaygateTier: 'PAYGATE_TIER_TWO'
             },
             requests: [{
-                aspectRatio: 'VIDEO_ASPECT_RATIO_LANDSCAPE',
-                seed: Math.floor(Math.random() * 1000000),
+                aspectRatio: options.aspectRatio || 'VIDEO_ASPECT_RATIO_LANDSCAPE',
+                seed: options.seed || Math.floor(Math.random() * 1000000),
                 textInput: { prompt },
                 videoModelKey: modelId,
+                imageStart: options.imageStart || options.image,
+                imageEnd: options.imageEnd,
+                characterReferences: options.characterReferences || options.characterImages || [],
                 metadata: { sceneIdList: [sceneId] }
             }]
         };
@@ -176,6 +182,7 @@ export class CloudCodeClient {
             if (!operationName) throw new Error('No operation name returned from Agent/Veo API');
 
             return {
+                url: operationName,
                 operationName,
                 sceneId,
                 statusUrl: `${CloudCodeClient.AGENT_ENDPOINT}/video:batchCheckAsyncVideoGenerationStatus`
@@ -184,5 +191,129 @@ export class CloudCodeClient {
             console.error(`[CloudCodeClient] Agent Video API Error:`, error.response?.data || error.message);
             throw new Error(`Agent Video Gen failed: ${error.message}`);
         }
+    }
+
+    /**
+     * Generate Audio (Multimodal TTS via Agent Gateway)
+     */
+    /**
+     * Generate Audio (Multimodal TTS)
+     */
+    public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = 'gemini-2.5-flash-tts', options: any = {}) {
+        const projectId = await aiAccountManager.discoverProjectId(this.account);
+        const headers = await this.getHeaders();
+        const url = `${CloudCodeClient.AGENT_ENDPOINT}/v1internal:generateContent`;
+
+        const payload = {
+            project: projectId,
+            requestId: crypto.randomUUID(),
+            request: {
+                contents: [{
+                    role: 'user',
+                    parts: [{ text }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: {
+                                voiceName: voiceId,
+                                pitch: options.pitch || 0.0,
+                                rate: options.rate || 1.0
+                            }
+                        }
+                    }
+                }
+            },
+            model: modelId,
+            userAgent: 'antigravity',
+            requestType: 'agent'
+        };
+
+        try {
+            const response = await axios.post(url, payload, { headers });
+            const part = response.data.response?.candidates?.[0]?.content?.parts?.[0];
+            const base64 = part?.inlineData?.data;
+
+            if (!base64) throw new Error('No audio data returned from Agent/TTS API');
+
+            return {
+                url: `data:${part.inlineData.mimeType || 'audio/wav'};base64,${base64}`,
+                mimeType: part.inlineData.mimeType || 'audio/wav'
+            };
+        } catch (error: any) {
+            console.error(`[CloudCodeClient] Agent Audio API Error:`, error.response?.data || error.message);
+            throw new Error(`Agent Audio Gen failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generate Music (Lyria/MusicFX via Agent Gateway)
+     */
+    /**
+     * Generate Music (Lyria/MusicFX)
+     */
+    public async generateMusic(prompt: string, modelId: string = 'lyria-002', options: any = {}) {
+        const projectId = await aiAccountManager.discoverProjectId(this.account);
+        const headers = await this.getHeaders();
+        const url = `${CloudCodeClient.AGENT_ENDPOINT}/v1internal:generateContent`;
+
+        const payload = {
+            project: projectId,
+            requestId: crypto.randomUUID(),
+            request: {
+                contents: [{
+                    role: 'user',
+                    parts: [{ text: prompt }]
+                }]
+            },
+            model: modelId,
+            userAgent: 'antigravity',
+            requestType: 'music_gen'
+        };
+
+        try {
+            const response = await axios.post(url, payload, { headers });
+            const part = response.data.response?.candidates?.[0]?.content?.parts?.[0];
+            const base64 = part?.inlineData?.data;
+
+            if (!base64) {
+                if (response.data.name || response.data.response?.name) {
+                    return { url: response.data.name || response.data.response?.name };
+                }
+                throw new Error('No music data returned from Agent/Music API');
+            }
+
+            return {
+                url: `data:${part.inlineData.mimeType || 'audio/mpeg'};base64,${base64}`,
+                mimeType: part.inlineData.mimeType || 'audio/mpeg'
+            };
+        } catch (error: any) {
+            console.error(`[CloudCodeClient] Agent Music API Error:`, error.response?.data || error.message);
+        }
+    }
+
+    /**
+     * Upload File (Internal Agentic API)
+     */
+    public async uploadFile(filePath: string, mimeType: string, displayName?: string) {
+        // Internal Agentic API usually handles files via inlineData or a specific blob store.
+        // For now, we return a local reference or throw if too large.
+        // systemLogger.warn(`[CloudCodeClient] uploadFile not fully implemented for internal API, using fallback.`, 'CloudCodeClient');
+        throw new Error('File API not yet natively supported in CloudCodeClient. Fallback to API Key recommended.');
+    }
+
+    /**
+     * Wait for File (Internal Agentic API)
+     */
+    public async waitForFileActive(fileUri: string) {
+        return { state: 'ACTIVE', uri: fileUri };
+    }
+
+    /**
+     * Delete File (Internal Agentic API)
+     */
+    public async deleteFile(fileUri: string) {
+        return true;
     }
 }

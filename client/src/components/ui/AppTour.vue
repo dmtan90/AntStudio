@@ -1,5 +1,5 @@
 <template>
-  <el-tour v-model="visible" :mask="true" :type="tourType">
+  <el-tour v-model="visible" :mask="true" type="default">
     <el-tour-step v-for="(step, index) in steps" :key="index" :target="step.target" :title="step.title"
       :description="step.description" :placement="step.placement || 'bottom'" />
   </el-tour>
@@ -24,7 +24,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue', 'finish'])
 
 const visible = ref(props.modelValue)
-const tourType = ref(props.type || 'primary')
+// const tourType = ref(props.type || 'primary') // Removing purple default
 
 watch(() => props.modelValue, (val) => {
   visible.value = val
@@ -38,37 +38,40 @@ watch(visible, (val) => {
 
 <style lang="scss">
 .el-tour {
-  --el-tour-bg-color: rgba(10, 10, 10, 0.85);
-  --el-tour-border-radius: 24px;
+  --el-tour-bg-color: rgba(10, 10, 10, 0.9);
+  --el-tour-border-radius: 28px;
   --el-text-color-primary: #fff;
   --el-text-color-regular: rgba(255, 255, 255, 0.7);
+  position: absolute;
   
-  backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(10, 10, 10, 0.9) !important;
+  backdrop-filter: blur(50px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 
-    0 0 0 1px rgba(255, 255, 255, 0.02),
-    0 24px 60px -12px rgba(0, 0, 0, 0.9),
-    0 0 100px -20px rgba(0, 120, 255, 0.15);
-  z-index: 9999 !important;
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 40px 100px -20px rgba(0, 0, 0, 0.95),
+    0 0 120px -30px rgba(59, 130, 246, 0.2);
+  z-index: 10001 !important;
 
   .el-tour-step__header {
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .el-tour-step__title {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Outfit', 'Inter', sans-serif;
     color: #fff;
     font-weight: 800;
-    font-size: 18px;
-    letter-spacing: -0.02em;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    font-size: 20px;
+    letter-spacing: -0.03em;
   }
 
   .el-tour-step__description {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', sans-serif;
     color: rgba(255, 255, 255, 0.6);
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.7;
     font-weight: 500;
   }
 

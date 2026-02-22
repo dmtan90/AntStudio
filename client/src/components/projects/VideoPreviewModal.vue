@@ -151,6 +151,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { getFileUrl } from '@/utils/api'
 import { Download, Send, Youtube, Facebook, Tiktok, PlayOne, CheckOne, Timer, Magic } from '@icon-park/vue-next'
 import GButton from '@/components/ui/GButton.vue'
 import GInput from '@/components/ui/GInput.vue'
@@ -189,20 +190,17 @@ const loadingHooks = ref(false)
 const selectedHookIdx = ref<number | null>(null)
 const hookId = ref<string | undefined>(undefined)
 
-watch(() => props.project, (val) => {
+watch(() => props.project, async (val) => {
   if (val) {
     // Find the video asset
     // Priority: finalVideo > visualAssets (first video)
-    if (val.finalVideo?.s3Url) {
-       videoUrl.value = val.finalVideo.s3Url;
-       s3Key.value = val.finalVideo.s3Key;
+    if (val.publish?.s3Key) {
+       videoUrl.value = await getFileUrl(val.publish.s3Key);
+       s3Key.value = val.publish.s3Key;
     } else if (val.visualAssets?.length > 0) {
        const asset = val.visualAssets.find((a: any) => a.type === 'video');
        if (asset) {
-           // If we have a direct URL (from S3 signed url generation middleware or similar), use it.
-           // Else if we only have s3Key, we might need to SIGN it.
-           // Assuming 'url' property is pre-signed or proxied.
-           videoUrl.value = asset.url || '';
+           videoUrl.value = await getFileUrl(asset.s3Key);
            s3Key.value = asset.s3Key;
        }
     }
@@ -236,10 +234,11 @@ const toggleAccount = (id: string) => {
   else selectedAccountIds.value.splice(index, 1)
 }
 
-const handleDownload = () => {
-    if (!videoUrl.value) return;
+const handleDownload = async () => {
+    const url = await getFileUrl(s3Key.value, { cached: true })
+    if (!url) return
     const a = document.createElement('a')
-    a.href = videoUrl.value
+    a.href = url
     a.download = `${props.project.title || 'video'}.mp4`
     document.body.appendChild(a)
     a.click()

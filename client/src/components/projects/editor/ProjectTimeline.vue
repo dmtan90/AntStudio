@@ -4,40 +4,84 @@
     <div class="player-section flex-1 relative flex items-center justify-center min-h-0 bg-[#000]">
       <div class="player-container relative w-full h-full flex items-center justify-center p-8">
         <div
-          class="video-preview-wrapper relative aspect-video h-full max-w-full rounded-lg overflow-hidden border border-white/10 group shadow-2xl">
+          :class="['video-preview-wrapper relative h-full max-w-full rounded-lg overflow-hidden border border-white/10 group shadow-2xl', previewAspectClass]">
           <canvas ref="canvasRef" class="w-full h-full object-contain bg-black"></canvas>
 
           <!-- Overlay Controls -->
           <div
-            class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <el-button circle class="!w-16 !h-16 !bg-[#ffffff] !text-black !border-none" @click="togglePlay">
-              <PlayIcon v-if="!isPlaying" theme="filled" size="32" />
-              <PauseIcon v-else theme="filled" size="32" />
+            class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+            <el-button circle class="!w-16 !h-16 !bg-blue-600 !text-white !border-none shadow-[0_0_30px_rgba(59,130,246,0.4)]" @click="togglePlay">
+              <Play v-if="!isPlaying" theme="filled" size="32" />
+              <Pause v-else theme="filled" size="32" />
             </el-button>
           </div>
         </div>
 
         <!-- Floating Tooltips/Adustments -->
-        <div class="absolute top-10 right-10 flex flex-col gap-4 z-50">
+        <div v-if="selectedAssetId" class="absolute top-10 right-10 flex flex-col gap-4 z-50">
+          <el-popover placement="left" :width="280" trigger="click" popper-class="cinematic-popper">
+            <template #reference>
+              <button class="tool-btn bg-blue-600/10 border-blue-500/20 text-blue-400 shadow-[0_4px_15px_rgba(59,130,246,0.1)]">
+                <magic theme="outline" size="18" /> <span>GENERATE</span>
+              </button>
+            </template>
+            <div class="p-4 space-y-4">
+              <div class="flex flex-col gap-3">
+                <div class="text-[11px] uppercase font-bold text-white/40 mb-1">Manual Generation</div>
+                
+                <el-button class="!w-full !justify-start !bg-blue-600/10 !text-blue-400 !border-blue-500/20 !text-[11px] !font-bold hover:!bg-blue-600 hover:!text-white transition-all shadow-lg"
+                  @click="handleGenerateAllVoiceovers">
+                  <voice theme="outline" size="14" class="mr-2" /> CREATE ALL VOICEOVERS
+                </el-button>
+
+                <el-button class="!w-full !justify-start !bg-yellow-500/10 !text-yellow-500 !border-yellow-500/20 !text-[11px] !font-bold"
+                  @click="handleGenerateAllCaptions">
+                  <text-message theme="outline" size="14" class="mr-2" /> CREATE ALL SUBTITLES
+                </el-button>
+
+                <el-button class="!w-full !justify-start !bg-blue-500/10 !text-blue-400 !border-blue-500/20 !text-[11px] !font-bold"
+                  @click="handleGenerateMusic">
+                  <music-one theme="outline" size="14" class="mr-2" /> REGEN BACKGROUND MUSIC
+                </el-button>
+              </div>
+            </div>
+          </el-popover>
+
           <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
             <template #reference>
               <button class="tool-btn"><volume-notice theme="outline" size="18" /> <span>{{
                 t('projects.editor.timeline.volume') }}</span></button>
             </template>
             <div class="p-4 space-y-4">
-              <div class="flex flex-col gap-2">
-                <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{
-                  t('projects.editor.timeline.volume') }}</div>
-                <div class="flex items-center gap-3">
-                  <el-slider v-model="currentVolume" :min="0" :max="1" :step="0.01" class="flex-1"
-                    @change="updateVolume" />
-                  <span class="text-[10px] w-8 text-right">{{ Math.round(currentVolume * 100) }}%</span>
+              <div class="flex flex-col gap-4">
+                <!-- Music Volume (Always visible) -->
+                <div class="flex flex-col gap-2">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Music Volume</div>
+                  <div class="flex items-center gap-3">
+                    <el-slider v-model="musicVolume" :min="0" :max="1" :step="0.01" class="flex-1"
+                      @change="updateMusicVolume" />
+                    <span class="text-[10px] w-8 text-right">{{ Math.round(musicVolume * 100) }}%</span>
+                  </div>
                 </div>
-              </div>
-              <div class="flex flex-col gap-2">
-                <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{
-                  t('projects.editor.timeline.fadeOut') }}</div>
-                <el-slider v-model="fadeOut" :min="0" :max="5" :step="0.1" @change="updateFade" />
+
+                <!-- Segment Volume (Only if segment selected and is not BGM) -->
+                <div v-if="selectedAssetId && !selectedAssetId.startsWith('bgm')" class="flex flex-col gap-4 pt-4 border-t border-white/5">
+                   <div class="text-[10px] uppercase font-bold text-blue-400 px-1">Selected: #{{ selectedAssetId }}</div>
+                   <div class="flex flex-col gap-2">
+                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Video Volume</div>
+                    <div class="flex items-center gap-3">
+                      <el-slider v-model="currentVolume" :min="0" :max="1" :step="0.01" class="flex-1"
+                        @change="updateVolume" />
+                      <span class="text-[10px] w-8 text-right">{{ Math.round(currentVolume * 100) }}%</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex flex-col gap-2 pt-4 border-t border-white/5">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{
+                    t('projects.editor.timeline.fadeOut') }}</div>
+                  <el-slider v-model="fadeOut" :min="0" :max="5" :step="0.1" @change="updateFade" />
+                </div>
               </div>
             </div>
           </el-popover>
@@ -84,7 +128,7 @@
           <div class="flex flex-col gap-2">
             <button v-for="trans in availableTransitions" :key="trans.value"
               class="w-full text-left px-4 py-3 rounded-lg text-sm hover:bg-white/10 transition-colors flex justify-between items-center bg-[#1a1a1a] border border-white/5"
-              :class="{ '!border-brand-primary !bg-brand-primary/10 text-brand-primary': activeTransitionSegment?.transition === trans.value }"
+              :class="{ '!border-blue-500 !bg-blue-500/10 text-blue-400': activeTransitionSegment?.transition === trans.value }"
               @click="applyTransition(trans.value)">
               <span class="capitalize">{{ trans.label }}</span>
               <check v-if="activeTransitionSegment?.transition === trans.value" theme="outline" size="16" />
@@ -97,14 +141,14 @@
       <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-30">
         <div
           class="flex items-center gap-6 px-6 py-3 rounded-full bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
-          <button class="ctrl-btn-small hover:text-brand-primary" @click="handleSeek(-5)">
+          <button class="ctrl-btn-small hover:text-blue-400" @click="handleSeek(-5)">
             <back theme="outline" size="20" />
           </button>
-          <button class="ctrl-btn-large bg-brand-primary text-black" @click="togglePlay">
-            <PlayIcon v-if="!isPlaying" theme="filled" size="24" />
-            <PauseIcon v-else theme="filled" size="24" />
+          <button class="ctrl-btn-large bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]" @click="togglePlay">
+            <Play v-if="!isPlaying" theme="filled" size="24" />
+            <Pause v-else theme="filled" size="24" />
           </button>
-          <button class="ctrl-btn-small hover:text-brand-primary" @click="handleSeek(5)">
+          <button class="ctrl-btn-small hover:text-blue-400" @click="handleSeek(5)">
             <next theme="outline" size="20" />
           </button>
 
@@ -136,15 +180,25 @@
 
           <div class="h-4 w-px bg-white/10 mx-2"></div>
 
-          <button class="ctrl-btn-small hover:text-brand-primary" @click="toggleTimeline">
+          <button class="ctrl-btn-small hover:text-blue-400" @click="toggleTimeline">
             <Timeline theme="outline" size="20" />
           </button>
 
           <div class="h-4 w-px bg-white/10 mx-2"></div>
 
-          <button class="ctrl-btn-small hover:text-brand-primary" @click="handleAssemble">
+          <button class="ctrl-btn-small hover:text-blue-400" @click="handleAssemble">
             <Export theme="outline" size="20" />
           </button>
+
+          <div v-if="project.publish?.s3Key" class="flex items-center gap-4">
+            <div class="w-px h-6 bg-white/10" />
+            <div
+              class="px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 flex items-center gap-2 cursor-pointer hover:bg-green-500/20 transition-all shadow-[0_4px_15px_rgba(34,197,94,0.1)] active:scale-95 translate-x-1"
+              @click="showPublishDialog = true">
+              <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span class="text-[10px] font-black text-green-400 uppercase tracking-[0.15em]">Live</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -157,7 +211,7 @@
 
     <!-- Resize Handle -->
     <div
-      class="resize-handle h-1 bg-white/5 hover:bg-brand-primary active:bg-brand-primary cursor-row-resize z-[60] transition-colors"
+      class="resize-handle h-1 bg-white/5 hover:bg-blue-500 active:bg-blue-500 cursor-row-resize z-[60] transition-colors"
       @mousedown.preventDefault="startResize"></div>
 
     <!-- Bottom: Timeline Section -->
@@ -210,10 +264,10 @@
           <div class="tracks-area pt-4">
             <!-- Playhead Line -->
             <div ref="playheadRef"
-              class="playhead-line absolute top-0 bottom-0 w-0.5 bg-brand-primary z-50 cursor-ew-resize hover:shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.8)] transition-shadow"
+              class="playhead-line absolute top-0 bottom-0 w-0.5 bg-blue-500 z-50 cursor-ew-resize hover:shadow-[0_0_10px_rgba(59,130,246,0.8)] transition-shadow"
               @mousedown.stop="startDrag">
               <div
-                class="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-brand-primary rotate-45 -mt-2 shadow-[0_0_10px_rgba(var(--brand-primary-rgb),0.5)] flex items-center justify-center group">
+                class="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-blue-500 rotate-45 -mt-2 shadow-[0_0_10px_rgba(59,130,246,0.5)] flex items-center justify-center group">
                 <div class="w-1.5 h-1.5 bg-white rounded-full opacity-50 group-hover:opacity-100 transition-opacity">
                 </div>
               </div>
@@ -226,11 +280,11 @@
 
             <!-- Video Track Area -->
             <div class="track-row mb-1 flex items-center relative">
-              <div v-for="(seg, idx) in timelineSegments" :key="seg._id"
+              <div v-for="(seg, idx) in timelineSegments" :key="seg.uuid || seg.order"
                 class="timeline-clip relative rounded-lg border border-white/10 bg-[#1a1a1a] transition-all cursor-move group"
-                :class="selectedSegmentId === seg._id ? 'border-brand-primary shadow-[0_0_15px_rgba(var(--brand-primary-rgb),0.3)]' : 'hover:border-white/30'"
+                :class="selectedAssetId === `vid:${seg.uuid || seg.order}` ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'hover:border-white/30'"
                 :style="{ width: (seg.duration / (seg.speed || 1)) * pxPerSec + 'px', height: '64px' }"
-                @click="selectSegment(seg)">
+                @click.stop="selectAsset(`vid:${seg.uuid || seg.order}`, seg)">
                 <!-- Transition Button -->
                 <div v-if="(idx as number) < timelineSegments.length - 1"
                   class="absolute -right-4 top-1/2 -translate-y-1/2 z-[60] opacity-0 group-hover:opacity-100 transition-opacity hover:!opacity-100 w-8 h-8 flex items-center justify-center">
@@ -248,13 +302,13 @@
                     <pic theme="outline" size="24" class="text-white/10" />
                   </div>
                   <!-- Trim Handles -->
-                  <div v-if="selectedSegmentId === seg._id"
-                    class="absolute inset-y-0 left-0 w-2 cursor-ew-resize bg-brand-primary opacity-100 transition-opacity z-20 flex items-center justify-center group"
+                  <div v-if="selectedAssetId === `vid:${seg.uuid || seg.order}`"
+                    class="absolute inset-y-0 left-0 w-2 cursor-ew-resize bg-blue-500 opacity-100 transition-opacity z-20 flex items-center justify-center group"
                     @mousedown.stop="startTrim($event, 'start', seg)">
                     <div class="w-1 h-4 bg-black rounded-full"></div>
                   </div>
-                  <div v-if="selectedSegmentId === seg._id"
-                    class="absolute inset-y-0 right-0 w-2 cursor-ew-resize bg-brand-primary opacity-100 transition-opacity z-20 flex items-center justify-center group"
+                  <div v-if="selectedAssetId === `vid:${seg.uuid || seg.order}`"
+                    class="absolute inset-y-0 right-0 w-2 cursor-ew-resize bg-blue-500 opacity-100 transition-opacity z-20 flex items-center justify-center group"
                     @mousedown.stop="startTrim($event, 'end', seg)">
                     <div class="w-1 h-4 bg-black rounded-full"></div>
                   </div>
@@ -262,7 +316,7 @@
 
                 <div
                   class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-3 flex flex-col justify-end pointer-events-none">
-                  <span class="text-[10px] font-bold truncate">{{ seg.title || seg._id }}</span>
+                  <span class="text-[10px] font-bold truncate">{{ seg.title || seg.order }}</span>
                   <span class="text-[9px] text-white/40">{{ (seg.duration / (seg.speed || 1)).toFixed(1) }}s • {{
                     seg.speed
                     || 1 }}x</span>
@@ -272,41 +326,31 @@
 
             <!-- AI Voice Track Area -->
             <div class="track-row h-14 mb-2 flex items-center relative">
-              <div v-for="seg in timelineSegments" :key="seg._id + '_voice'"
-                class="timeline-clip-audio relative h-10 rounded-md border border-brand-primary/20 bg-brand-primary/5 flex items-center px-4 overflow-hidden"
-                :style="{ width: (seg.duration / (seg.speed || 1)) * pxPerSec + 'px' }">
+              <div v-for="seg in timelineSegments" :key="(seg.uuid || seg.order) + '_voice'"
+                class="timeline-clip-audio relative h-10 rounded-md border border-blue-500/20 bg-blue-500/5 flex items-center px-4 cursor-pointer transition-all overflow-hidden"
+                :class="selectedAssetId === `voice:${seg.uuid || seg.order}` ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500' : 'hover:border-blue-500/40'"
+                :style="{ width: (seg.duration / (seg.speed || 1)) * pxPerSec + 'px' }"
+                @click.stop="selectAsset(`voice:${seg.uuid || seg.order}`, seg)">
                 <!-- Waveform Visualization -->
                 <WaveformDisplay v-if="seg.voiceUrl" :audio-url="seg.voiceUrl"
                   :width="Math.floor((seg.duration / (seg.speed || 1)) * pxPerSec)" :height="40"
-                  color="rgba(99, 102, 241, 0.6)" :bar-width="2" :bar-gap="1" class="absolute inset-0" />
-                <span class="absolute left-2 text-[9px] text-brand-primary font-bold uppercase z-10">AI Voice</span>
+                  color="rgba(59, 130, 246, 0.6)" :bar-width="2" :bar-gap="1" class="absolute inset-0" />
+                <span class="absolute left-2 text-[9px] text-blue-400 font-bold uppercase z-10">AI Voice</span>
 
-                <!-- Voice Clip Status / Actions -->
-                <div v-if="!seg.generatedAudio || seg.generatedAudio.status !== 'completed'"
-                  class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity">
-                  <el-button size="small" class="!bg-brand-primary !text-black !border-none !text-[9px] !font-bold"
-                    :loading="seg.generatedAudio?.status === 'generating'" @click.stop="handleGenerateVoiceover(seg)">
-                    {{ seg.generatedAudio?.status === 'generating' ? t('projects.editor.timeline.generating') :
-                      t('projects.editor.timeline.generate') }}
-                  </el-button>
-                </div>
-                <div v-else-if="seg.generatedAudio?.status === 'completed'" class="absolute bottom-1 right-1 pb-1 pr-1">
-                  <div
-                    class="flex items-center gap-1 bg-brand-primary/20 backdrop-blur-md border border-brand-primary/30 rounded px-1.5 py-0.5">
-                    <check theme="outline" size="10" class="text-brand-primary" />
-                    <span class="text-[8px] font-bold text-brand-primary uppercase">{{
-                      t('projects.editor.timeline.ready')
-                    }}</span>
-                  </div>
+                <!-- Voice Clip Status Icon -->
+                <div v-if="seg.generatedAudio?.status === 'completed'" class="absolute bottom-1 right-1">
+                  <check theme="outline" size="10" class="text-blue-400" />
                 </div>
               </div>
             </div>
 
             <!-- Subtitle/Caption Track Area -->
             <div class="track-row h-14 mb-2 flex items-center relative">
-              <div v-for="seg in timelineSegments" :key="seg._id + '_caption'"
-                class="timeline-clip-caption relative h-10 rounded-md border border-yellow-500/20 bg-yellow-500/5 flex items-center px-4 overflow-hidden"
-                :style="{ width: (seg.duration / (seg.speed || 1)) * pxPerSec + 'px' }">
+              <div v-for="seg in timelineSegments" :key="(seg.uuid || seg.order) + '_caption'"
+                class="timeline-clip-caption relative h-10 rounded-md border border-yellow-500/20 bg-yellow-500/5 flex items-center px-4 cursor-pointer transition-all overflow-hidden"
+                :class="selectedAssetId === `cap:${seg.uuid || seg.order}` ? 'border-yellow-500 bg-yellow-500/10 ring-1 ring-yellow-500' : 'hover:border-yellow-500/40'"
+                :style="{ width: (seg.duration / (seg.speed || 1)) * pxPerSec + 'px' }"
+                @click.stop="selectAsset(`cap:${seg.uuid || seg.order}`, seg)">
                 <template v-if="seg.captions && seg.captions.length > 0">
                   <div class="flex w-full h-full items-center relative overflow-hidden">
                     <div v-for="(cap, cIdx) in seg.captions" :key="cIdx"
@@ -320,26 +364,17 @@
                   </div>
                 </template>
                 <template v-else>
-                  <div
-                    class="w-full h-full flex items-center justify-center opacity-30 group-hover:opacity-100 transition-opacity relative group">
-                    <div v-if="!seg.isGeneratingCaptions"
-                      class="text-[10px] text-yellow-500 font-bold uppercase tracking-widest group-hover:hidden">{{
+                  <div class="w-full h-full flex items-center justify-center opacity-30">
+                    <div class="text-[10px] text-yellow-500 font-bold uppercase tracking-widest">{{
                         t('projects.editor.timeline.noCaptions') }}</div>
-
-                    <el-button v-if="!seg.captions || seg.captions.length === 0" size="small"
-                      class="hidden group-hover:flex !bg-yellow-500/10 !text-yellow-500 !border-yellow-500/30 !text-[9px] !font-bold"
-                      :loading="seg.isGeneratingCaptions" @click.stop="handleGenerateCaptions(seg)">
-                      {{ seg.isGeneratingCaptions ? t('projects.editor.timeline.generating') :
-                        t('projects.editor.timeline.generate') }}
-                    </el-button>
                   </div>
                 </template>
               </div>
             </div>
 
             <!-- Lower-Third Track -->
-            <div class="track-row h-12 flex items-center relative border-t border-white/5">
-              <template v-for="seg in timelineSegments" :key="seg._id + '_lowerthird'">
+            <!-- <div class="track-row h-12 flex items-center relative border-t border-white/5">
+              <template v-for="seg in timelineSegments" :key="seg.order + '_lowerthird'">
                 <div class="track-content flex-1 relative h-full flex items-center gap-1 group"
                   :style="{ width: (seg.duration / (seg.speed || 1)) * pxPerSec + 'px' }">
                   <template v-if="seg.lowerThirds && seg.lowerThirds.length > 0">
@@ -370,21 +405,39 @@
                 </template>
               </div>
             </template>
-            </div>
+            </div> -->
 
             <!-- Music Track Area -->
             <div class="track-row h-14 flex items-center relative">
-              <div v-if="project.finalVideo?.backgroundMusic"
-                class="timeline-clip-music relative h-10 rounded-md border border-blue-500/20 bg-blue-500/5 flex items-center px-4"
-                :style="{ width: totalDuration * pxPerSec + 'px' }">
+              <!-- Has Music: Show waveform -->
+              <div v-if="project.musics?.[0]"
+                class="timeline-clip-music relative h-10 rounded-md border border-blue-500/20 bg-blue-500/5 flex items-center px-4 cursor-pointer transition-all"
+                :class="selectedAssetId?.startsWith('bgm:') ? 'border-blue-400 bg-blue-500/10 ring-1 ring-blue-400' : 'hover:border-blue-400/40'"
+                :style="{ width: totalDuration * pxPerSec + 'px' }"
+                @click.stop="selectAsset(`bgm:${project.musics[0].id || 'default'}`, { _id: 'bgm', order: 'bgm' })">
                 <!-- Waveform Visualization -->
-                <WaveformDisplay :audio-url="project.finalVideo?.backgroundMusic || project.backgroundMusic?.s3Key"
+                <WaveformDisplay :audio-url="project.musics?.[0]?.s3Key"
                   :width="Math.floor(totalDuration * pxPerSec)" :height="40" color="rgba(59, 130, 246, 0.5)"
                   :bar-width="2" :bar-gap="1" class="absolute inset-0" />
                 <span class="absolute left-2 text-[9px] text-blue-400 font-bold uppercase z-10">{{
                   t('projects.editor.timeline.backgroundMusic') }}</span>
               </div>
+              <!-- No Music: Show generate prompt -->
+              <div v-else
+                class="relative h-10 rounded-md border border-dashed border-blue-500/20 bg-blue-500/5 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:border-blue-500/40 hover:bg-blue-500/10 group"
+                :style="{ width: Math.max(totalDuration * pxPerSec, 200) + 'px' }"
+                @click.stop="handleGenerateMusic">
+                <div v-if="isGeneratingMusic" class="flex items-center gap-2 text-blue-400">
+                  <div class="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                  <span class="text-[9px] font-bold uppercase tracking-widest">Generating AI Music...</span>
+                </div>
+                <div v-else class="flex items-center gap-2 text-blue-500/50 group-hover:text-blue-400 transition-colors">
+                  <music-one theme="outline" size="12" />
+                  <span class="text-[9px] font-bold uppercase tracking-widest">Generate AI Background Music</span>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -399,7 +452,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, markRaw, shallowRef } from 'vue'
 import {
-  VideoTwo, Pic, Voice, MusicOne, ZoomIn, ZoomOut, Magic, Check, Timeline, TextMessage
+  VideoTwo, Pic, Voice, MusicOne, ZoomIn,
+  ZoomOut, Magic, Check, Timeline, TextMessage,
+  MusicOne as Music, Refresh, Back, Next, Export,
+  Speed, VolumeNotice, Play, Pause
 } from '@icon-park/vue-next'
 import { cn } from '@/utils/ui'
 import { useProjectStore } from '@/stores/project'
@@ -435,6 +491,16 @@ const totalTimeRef = ref<HTMLElement | null>(null)
 const playheadRef = ref<HTMLElement | null>(null)
 
 const segments = computed(() => props.project?.pages || props.project?.storyboard?.segments || [])
+
+// Compute aspect ratio CSS class from project setting
+const previewAspectClass = computed(() => {
+  switch (props.project?.aspectRatio) {
+    case '9:16': return 'aspect-[9/16]'
+    case '1:1':  return 'aspect-square'
+    case '4:3':  return 'aspect-[4/3]'
+    default:     return 'aspect-video' // 16:9
+  }
+})
 
 const visibleMarkers = computed(() => {
   const duration = totalDuration.value || 60
@@ -476,7 +542,7 @@ watch(segments, (newSegs) => {
     const durationInSeconds = isTemplatePage ? rawDuration / 1000 : rawDuration;
 
     return {
-      _id: s._id || s.id,
+      _id: s._id || s.order || 0,
       url: s.preview || s.generatedVideo?.s3Key || s.s3Key || '',
       duration: durationInSeconds,
       sourceDuration: s.generatedVideo?.duration || durationInSeconds, // Update this if needed
@@ -495,9 +561,9 @@ watch(segments, (newSegs) => {
 
 const player = useTimelinePlayer({
   segments: () => timelineSegments.value,
-  backgroundMusic: () => props.project.backgroundMusic?.s3Key ? {
-    url: props.project.backgroundMusic.s3Key,
-    volume: props.project.backgroundMusic.volume || 0.5
+  backgroundMusic: () => props.project.musics?.[0]?.s3Key ? {
+    url: props.project.musics[0].s3Key,
+    volume: props.project.musics[0].volume || 0.5
   } : undefined,
   onTimeUpdate: (time) => {
     if (currentTimeRef.value) currentTimeRef.value.textContent = formatTime(time)
@@ -512,10 +578,21 @@ onUnmounted(() => {
   window.removeEventListener('mouseup', stopDrag)
 })
 
-const selectedSegmentId = ref<string | null>(null)
-const selectedSegment = computed(() =>
-  segments.value.find((s: any) => (s._id || s.id) === selectedSegmentId.value)
-)
+const selectedAssetId = ref<string | null>(null)
+const selectedSegmentId = computed(() => {
+  if (!selectedAssetId.value) return null
+  const parts = selectedAssetId.value.split(':')
+  return parts.length > 1 ? parts[1] : parts[0]
+})
+const selectedSegment = computed(() => {
+  const id = selectedSegmentId.value
+  if (!id) return null
+  return segments.value.find((s: any) => (s.uuid === id || s.order.toString() === id || s._id === id))
+})
+const selectedTrack = computed(() => {
+  if (!selectedAssetId.value) return null
+  return selectedAssetId.value.split(':')[0]
+})
 
 const togglePlay = () => {
   if (isPlaying.value) player.pause()
@@ -526,8 +603,14 @@ const handleSeek = (seconds: number) => {
   player.seek(currentTime.value + seconds)
 }
 
-const selectSegment = (seg: any) => {
-  selectedSegmentId.value = seg._id
+const musicVolume = ref(props.project.musics?.[0]?.volume || 0.5)
+
+const selectAsset = (assetId: string, seg: any) => {
+  selectedAssetId.value = assetId
+  if (assetId.startsWith('bgm:')) {
+    // bgm selection, no segment specifics
+    return
+  }
   currentVolume.value = seg.volume || 1
   currentSpeed.value = seg.speed || 1
   currentDuration.value = seg.duration || 5
@@ -535,10 +618,22 @@ const selectSegment = (seg: any) => {
 
   let elapsed = 0
   for (const s of timelineSegments.value) {
-    if (s._id === seg._id) break
+    if (s.order === seg.order) break
     elapsed += (s.duration / (s.speed || 1))
   }
   player.seek(elapsed)
+}
+
+const updateMusicVolume = async () => {
+  if (!props.project.musics?.[0]) return
+  try {
+    props.project.musics[0].volume = musicVolume.value
+    player.setMusicVolume(musicVolume.value)
+    await saveProjectUpdate()
+    toast.success("Music volume updated")
+  } catch (e) {
+    toast.error("Failed to update music volume")
+  }
 }
 
 const saveProjectUpdate = async () => {
@@ -603,7 +698,7 @@ const updateFade = () => {
 }
 
 const handleGenerateVoiceover = async (seg: any) => {
-  const sourceSeg = segments.value.find((s: any) => (s._id || s.id) === seg._id)
+  const sourceSeg = segments.value.find((s: any) => (s.order || s.order) === seg.order)
   if (!sourceSeg) return;
 
   if (sourceSeg.data) {
@@ -616,7 +711,7 @@ const handleGenerateVoiceover = async (seg: any) => {
     return
   }
   try {
-    const promise = projectStore.generateVoiceover(props.project._id, sourceSeg._id, {
+    const promise = projectStore.generateVoiceover(props.project._id, sourceSeg.order, {
       voiceId: 'en-US-Neural2-J'
     })
     toast.promise(promise, {
@@ -633,7 +728,7 @@ const handleGenerateVoiceover = async (seg: any) => {
 const handleGenerateCaptions = async (seg: any) => {
   if (seg.isGeneratingCaptions) return
 
-  const sourceSeg = segments.value.find((s: any) => (s._id || s.id) === seg._id)
+  const sourceSeg = segments.value.find((s: any) => (s.order || s.order) === seg.order)
   if (!sourceSeg) return
 
   if (sourceSeg.data) {
@@ -643,13 +738,48 @@ const handleGenerateCaptions = async (seg: any) => {
 
   try {
     seg.isGeneratingCaptions = true
-    await projectStore.generateCaptions(props.project._id, sourceSeg._id)
+    await projectStore.generateCaptions(props.project._id, sourceSeg.order)
     toast.success(t('projects.editor.timeline.captionsGenerated'))
   } catch (error) {
     console.error('Caption generation error:', error)
     toast.error(t('common.failed'))
   } finally {
     seg.isGeneratingCaptions = false
+  }
+}
+
+const handleGenerateAllVoiceovers = async () => {
+  toast.info("Generating all voiceovers...")
+  for (const seg of timelineSegments.value) {
+    if (!seg.voiceUrl) {
+      await handleGenerateVoiceover(seg)
+    }
+  }
+}
+
+const handleGenerateAllCaptions = async () => {
+  toast.info("Generating all captions...")
+  for (const seg of timelineSegments.value) {
+    if (!seg.captions || seg.captions.length === 0) {
+      await handleGenerateCaptions(seg)
+    }
+  }
+}
+
+const isGeneratingMusic = ref(false)
+const handleGenerateMusic = async () => {
+  if (isGeneratingMusic.value) return
+  isGeneratingMusic.value = true
+  try {
+    const mood = props.project?.scriptAnalysis?.analysis?.overview?.mood || props.project?.scriptAnalysis?.audio?.music || 'cinematic'
+    const prompt = `Background music for: ${props.project?.title || 'a video'}. Mood: ${mood}`
+    await projectStore.generateMusic(props.project._id, { prompt })
+    toast.success(t('projects.editor.timeline.backgroundMusic') + ' generated!')
+  } catch (error) {
+    console.error('Music generation error:', error)
+    toast.error(t('common.failed'))
+  } finally {
+    isGeneratingMusic.value = false
   }
 }
 
@@ -674,8 +804,8 @@ const handleSaveLowerThird = async (lowerThirdData: any) => {
   if (!currentLowerThirdSegment.value) return
 
   try {
-    const segmentId = currentLowerThirdSegment.value._id
-    const segment = segments.value.find((s: any) => s._id === segmentId)
+    const segmentId = currentLowerThirdSegment.value.order
+    const segment = segments.value.find((s: any) => s.order === segmentId)
 
     if (!segment) return
 
@@ -739,6 +869,9 @@ const onTimelineClick = (e: MouseEvent, time?: number) => {
     const rect = timelineViewportRef.value.getBoundingClientRect()
     const offsetX = e.clientX - rect.left + timelineViewportRef.value.scrollLeft
     player.seek(offsetX / pxPerSec.value)
+    
+    // Deselect if clicking on background
+    selectedAssetId.value = null
   }
 }
 
@@ -776,7 +909,7 @@ const availableTransitions = computed(() => [
 
 const openTransitionMenu = (seg: any) => {
   // Find source segment
-  const source = segments.value.find((s: any) => (s._id || s.id) === seg._id)
+  const source = segments.value.find((s: any) => (s.order || s.order) === seg.order)
   activeTransitionSegment.value = source
   transitionMenuVisible.value = true
 }
@@ -1024,7 +1157,9 @@ const onDrag = (e: MouseEvent) => {
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: #00f2ff;
+    border-color: #3b82f6;
+    color: #3b82f6;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
   }
 }
 
@@ -1096,13 +1231,15 @@ const onDrag = (e: MouseEvent) => {
 }
 
 :deep(.zoom-slider .el-slider__bar) {
-  background-color: #00f2ff;
+  background: linear-gradient(90deg, #3b82f6, #6366f1) !important;
   height: 4px;
 }
 
 :deep(.zoom-slider .el-slider__button) {
-  width: 10px;
-  height: 10px;
-  border: 2px solid #00f2ff;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #3b82f6 !important;
+  background: #fff !important;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 </style>

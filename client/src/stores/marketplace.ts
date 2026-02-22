@@ -11,7 +11,69 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         pendingOrders: 0,
         currency: 'USD'
     })
+    const products = ref<any[]>([])
     const loading = ref(false)
+ 
+    async function fetchProducts() {
+        loading.value = true
+        try {
+            const res: any = await api.get('/commerce/products')
+            products.value = res.data
+            return res.data
+        } catch (error: any) {
+            console.error('Failed to fetch products', error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function createProduct(data: any) {
+        loading.value = true
+        try {
+            const res: any = await api.post('/commerce/products', data)
+            products.value.unshift(res.data)
+            toast.success('Product created successfully')
+            return res.data
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Failed to create product')
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function updateProduct(id: string, data: any) {
+        loading.value = true
+        try {
+            const res: any = await api.put(`/commerce/products/${id}`, data)
+            const index = products.value.findIndex(p => p._id === id || p.id === id)
+            if (index !== -1) {
+                products.value[index] = res.data
+            }
+            toast.success('Product updated successfully')
+            return res.data
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Failed to update product')
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function deleteProduct(id: string) {
+        loading.value = true
+        try {
+            await api.delete(`/commerce/products/${id}`)
+            products.value = products.value.filter(p => p._id !== id && p.id !== id)
+            toast.success('Product deleted successfully')
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Failed to delete product')
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
 
     async function fetchAssets(params: any = {}) {
         loading.value = true
@@ -31,7 +93,8 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         loading.value = true
         try {
             const res: any = await api.get('/marketplace/templates', { params })
-            templates.value = res.data
+            console.log(res.data);
+            templates.value = res.data?.templates ?? [];
             return res.data
         } catch (error: any) {
             console.error('Failed to fetch templates', error)
@@ -132,11 +195,29 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         }
     }
 
+    async function fetchAnalyticsReport(params: { productId?: string; startDate?: string; endDate?: string } = {}) {
+        loading.value = true
+        try {
+            const res: any = await api.get('/commerce/analytics/report', { params })
+            return res.data
+        } catch (error: any) {
+            console.error('Failed to fetch analytics report', error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
     return {
         assets,
         templates,
+        products,
         commerceStats,
         loading,
+        fetchProducts,
+        createProduct,
+        updateProduct,
+        deleteProduct,
         fetchAssets,
         fetchTemplates,
         useTemplate,
@@ -144,6 +225,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         importTemplate,
         importPptx,
         fetchOrders,
-        fetchCommerceStats
+        fetchCommerceStats,
+        fetchAnalyticsReport
     }
 })

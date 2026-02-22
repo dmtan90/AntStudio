@@ -30,35 +30,39 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 12;
         const projectId = req.query.projectId as string;
+        const search = req.query.search as string;
 
         const filter: any = {
             userId: req.user!.userId,
-            'finalVideo.s3Key': { $exists: true }
+            'publish.s3Key': { $exists: true }
         };
 
         if (projectId) {
             filter._id = projectId;
         }
 
+        if (search) {
+            filter.title = { $regex: new RegExp(search, 'i') };
+        }
+
         const total = await Project.countDocuments(filter);
         const projects = await Project.find(filter)
-            .sort({ 'finalVideo.generatedAt': -1 })
+            .sort({ 'publish.generatedAt': -1 })
             .skip((page - 1) * limit)
             .limit(limit)
-            .select('title finalVideo createdAt')
+            .select('title publish createdAt')
             .lean();
 
         const videos = projects.map(project => ({
             _id: project._id,
             projectTitle: project.title,
-            s3Key: project.finalVideo?.s3Key,
-            s3Url: project.finalVideo?.s3Url || '',
-            reviewKey: project.finalVideo?.reviewKey,
-            reviewUrl: project.finalVideo?.reviewUrl,
-            duration: project.finalVideo?.duration,
-            resolution: project.finalVideo?.resolution,
-            fileSize: project.finalVideo?.fileSize,
-            generatedAt: project.finalVideo?.generatedAt,
+            s3Key: project.publish?.s3Key,
+            reviewKey: project.publish?.previewKey,
+            thumbnailKey: project.publish?.thumbnailKey,
+            duration: project.publish?.duration,
+            resolution: project.publish?.resolution,
+            fileSize: project.publish?.fileSize,
+            generatedAt: project.publish?.generatedAt,
             createdAt: project.createdAt
         }));
 

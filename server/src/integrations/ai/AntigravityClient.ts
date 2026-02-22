@@ -2,6 +2,7 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { IAIAccount } from '../../models/AIAccount.js';
 import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
+import { GeminiClient } from './GeminiClient.js';
 
 /**
  * AntigravityClient: High-performance client using embedded credentials
@@ -24,6 +25,8 @@ export class AntigravityClient {
         'https://www.googleapis.com/auth/cclog',
         'https://www.googleapis.com/auth/experimentsandconfigs'
     ];
+
+    private static readonly IDENTITY_PROFILE = 'You are Antigravity, a powerful agentic AI coding assistant designed by the Google Deepmind team working on Advanced Agentic Coding.\nYou are pair programming with a USER to solve their coding task. The task may require creating a new codebase, modifying or debugging an existing codebase, or simply answering a question.';
 
     private account: IAIAccount;
 
@@ -64,6 +67,18 @@ export class AntigravityClient {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         console.log(`[AntigravityClient] generateContent project: ${projectId}, model: ${modelId}`);
 
+        const identityMarker = 'You are Antigravity';
+        let hasIdentity = false;
+        let systemPromptText = options.systemPrompt || '';
+
+        if (systemPromptText && systemPromptText.includes(identityMarker)) {
+            hasIdentity = true;
+        }
+
+        if (!hasIdentity) {
+            systemPromptText = `${AntigravityClient.IDENTITY_PROFILE}\n\n${systemPromptText}`;
+        }
+
         const payload: any = {
             requestId: this.generateRequestId(),
             request: {
@@ -71,9 +86,6 @@ export class AntigravityClient {
                     role: 'user',
                     parts: parts
                 }],
-                systemInstruction: options.systemPrompt ? {
-                    parts: [{ text: options.systemPrompt }]
-                } : undefined,
                 generationConfig: {
                     temperature: 1,
                     topP: 0.85,
@@ -85,6 +97,13 @@ export class AntigravityClient {
             userAgent: 'antigravity/1.13.3 windows/amd64',
             requestType: 'agent'
         };
+
+        if (systemPromptText.trim()) {
+            payload.request.systemInstruction = {
+                parts: [{ text: systemPromptText.trim() }]
+            };
+        }
+
 
         payload.project = projectId;
 
@@ -216,66 +235,152 @@ export class AntigravityClient {
     /**
      * Generate Video (Vertex AI Veo via Agent Gateway)
      */
-    public async generateVideo(prompt: string, modelId: string = 'veo-2.0-generate-001'): Promise<{ url: string }> {
+    public async generateVideo(prompt: string, modelId: string = 'veo-3.0-fast-generate-preview', options: any = {}) {
         const token = await aiAccountManager.refreshAccessToken(this.account);
         const headers = this.getHeaders(token);
         const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;
+        const projectId = await aiAccountManager.discoverProjectId(this.account);
+        const sceneId = `scene_${Date.now()}`;
 
-        const payload: any = {
+        const payload = {
+            clientContext: {
+                projectId: projectId,
+                tool: 'PINHOLE',
+                userPaygateTier: 'PAYGATE_TIER_TWO'
+            },
+            requests: [{
+                aspectRatio: options.aspectRatio || 'VIDEO_ASPECT_RATIO_LANDSCAPE',
+                seed: options.seed || Math.floor(Math.random() * 1000000),
+                textInput: { prompt },
+                videoModelKey: modelId,
+                imageStart: options.imageStart || options.image,
+                imageEnd: options.imageEnd,
+                characterReferences: options.characterReferences || options.characterImages || [],
+                metadata: { sceneIdList: [sceneId] }
+            }],
+            project: projectId
+        };
+
+        try {
+            console.log(`[AntigravityClient] Requesting video generation for project: ${projectId}`);
+            const response = await axios.post(url, payload, { headers });
+            const operationName = response.data.operations?.[0]?.operation?.name;
+
+            if (!operationName) {
+                console.error('[AntigravityClient] No operation returned:', JSON.stringify(response.data));
+                throw new Error('No operation name returned from Antigravity/Veo API');
+            }
+
+            return {
+                url: operationName,
+                operationName,
+                sceneId,
+                statusUrl: `${AntigravityClient.AGENT_ENDPOINT}/video:batchCheckAsyncVideoGenerationStatus`
+            };
+        } catch (error: any) {
+            console.error(`[AntigravityClient] Video API Error:`, error.response?.data || error.message);
+            throw new Error(`Antigravity Video Gen failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generate Audio (Multimodal TTS via Agent Gateway)
+     */
+    public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = 'gemini-2.5-flash-tts', options: any = {}) {
+        const token = await aiAccountManager.refreshAccessToken(this.account);
+        const headers = this.getHeaders(token);
+        const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;
+        const projectId = await aiAccountManager.discoverProjectId(this.account);
+
+        const payload = {
+            project: projectId,
+            requestId: this.generateRequestId(),
+            request: {
+                contents: [{
+                    role: 'user',
+                    parts: [{ text }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: {
+                                voiceName: voiceId,
+                                pitch: options.pitch || 0.0,
+                                rate: options.rate || 1.0
+                            }
+                        }
+                    }
+                }
+            },
+            model: modelId,
+            userAgent: 'antigravity/1.13.3 windows/amd64',
+            requestType: 'agent'
+        };
+
+        try {
+            const response = await axios.post(url, payload, { headers });
+            const part = response.data.response?.candidates?.[0]?.content?.parts?.[0];
+            const base64 = part?.inlineData?.data;
+
+            if (!base64) {
+                console.error('[AntigravityClient] No audio data in response:', JSON.stringify(response.data));
+                throw new Error('No audio data returned from Antigravity/TTS API');
+            }
+
+            return {
+                url: `data:${part.inlineData.mimeType || 'audio/wav'};base64,${base64}`,
+                mimeType: part.inlineData.mimeType || 'audio/wav'
+            };
+        } catch (error: any) {
+            console.error(`[AntigravityClient] Audio API Error:`, error.response?.data || error.message);
+            throw new Error(`Antigravity Audio Gen failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generate Music (Lyria/MusicFX via Agent Gateway)
+     */
+    public async generateMusic(prompt: string, modelId: string = 'lyria-002', options: any = {}) {
+        const token = await aiAccountManager.refreshAccessToken(this.account);
+        const headers = this.getHeaders(token);
+        const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;
+        const projectId = await aiAccountManager.discoverProjectId(this.account);
+
+        const payload = {
+            project: projectId,
             requestId: this.generateRequestId(),
             request: {
                 contents: [{
                     role: 'user',
                     parts: [{ text: prompt }]
-                }],
-                generationConfig: {
-                    candidateCount: 1,
-                }
+                }]
             },
             model: modelId,
             userAgent: 'antigravity/1.13.3 windows/amd64',
-            requestType: 'video_gen'
+            requestType: 'music_gen'
         };
-
-        const projectId = await aiAccountManager.discoverProjectId(this.account);
-        payload.project = projectId;
 
         try {
             const response = await axios.post(url, payload, { headers });
+            const part = response.data.response?.candidates?.[0]?.content?.parts?.[0];
+            const base64 = part?.inlineData?.data;
 
-            const candidates = response.data.response?.candidates || [];
-            if (candidates.length === 0 && !response.data.name && !response.data.response?.name) {
-                throw new Error('No candidates or operation returned from Antigravity Video API');
-            }
-
-            let base64Data: string | undefined;
-            let mimeType: string = 'video/mp4';
-
-            // IMPORTANT: Iterate through parts of the first candidate (matches log structure)
-            const parts = candidates[0]?.content?.parts || [];
-            for (const part of parts) {
-                if (part.inlineData?.data) {
-                    base64Data = part.inlineData.data;
-                    mimeType = part.inlineData.mimeType || mimeType;
-                    break;
+            if (!base64) {
+                // Some models return an operation name instead of inline data
+                if (response.data.name || response.data.response?.name) {
+                    return { url: response.data.name || response.data.response?.name };
                 }
+                throw new Error('No music data returned from Antigravity/Music API');
             }
 
-            if (base64Data) {
-                return { url: `data:${mimeType};base64,${base64Data}` };
-            }
-
-            // If it's a long-running operation
-            if (response.data.name || response.data.response?.name) {
-                return { url: response.data.name || response.data.response?.name };
-            }
-
-            throw new Error('No video data or operation found in Antigravity response');
+            return {
+                url: `data:${part.inlineData.mimeType || 'audio/mpeg'};base64,${base64}`,
+                mimeType: part.inlineData.mimeType || 'audio/mpeg'
+            };
         } catch (error: any) {
-            if (axios.isAxiosError(error)) {
-                console.error(`[AntigravityClient] Video API Error:`, error.response?.data || error.message);
-            }
-            throw new Error(`Antigravity Video Gen failed: ${error.message}`);
+            console.error(`[AntigravityClient] Music API Error:`, error.response?.data || error.message);
+            throw new Error(`Antigravity Music Gen failed: ${error.message}`);
         }
     }
 
@@ -289,13 +394,36 @@ export class AntigravityClient {
 
         try {
             console.log(`[AntigravityClient] Fetching available models for ${this.account.email}...`);
-            const response = await axios.post(url, {}, { headers });
+            const projectId = await aiAccountManager.discoverProjectId(this.account);
+            
+            const payload: any = {};
+            if (projectId) {
+                payload.project = projectId;
+            }
 
-            // The response usually contains a 'models' array or similar
-            const models = response.data.models || response.data.availableModels || [];
-            console.log(`[AntigravityClient] Discovered ${models.length} models:`, JSON.stringify(models).substring(0, 200) + '...');
+            const response = await axios.post(url, payload, { headers });
 
-            return models;
+            const result = [];
+            // Parse relevant models from the object map
+            const dataModels = response.data.models || {};
+            for (const [name, info] of Object.entries(dataModels)) {
+                if ((info as any).quotaInfo) {
+                    const fraction = (info as any).quotaInfo.remainingFraction ?? 0;
+                    result.push({
+                        id: name,
+                        remainingFraction: fraction
+                    });
+                } else {
+                    result.push({
+                         id: name,
+                         remainingFraction: 1
+                    });
+                }
+            }
+
+            console.log(`[AntigravityClient] Discovered ${result.length} models:`, JSON.stringify(result).substring(0, 200) + '...');
+
+            return result;
         } catch (error: any) {
             if (axios.isAxiosError(error)) {
                 console.error(`[AntigravityClient] Fetch Models API Error:`, error.response?.data || error.message);

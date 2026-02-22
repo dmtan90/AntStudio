@@ -1,6 +1,7 @@
 import { ref, onUnmounted, getCurrentInstance } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useUIStore } from '@/stores/ui';
+import { toast } from 'vue-sonner'
 
 
 interface GeminiLiveConfig {
@@ -45,6 +46,10 @@ export function useGeminiLive() {
     let outputAnalyser: AnalyserNode | null = null; 
     let animationFrameId: number | null = null;
 
+    // Audio Output Stream (Phase 89)
+    let audioDestination: MediaStreamAudioDestinationNode | null = null;
+    let mixedAudioStream = ref<MediaStream | null>(null);
+
     // Video capture
     let videoStream: MediaStream | null = null;
     let videoTimer: any = null;
@@ -64,6 +69,7 @@ export function useGeminiLive() {
     let audioChunkCallback: ((chunk: string) => void) | null = null;
     let swarmMessageCallback: ((message: any) => void) | null = null;
     let questCallback: ((event: any) => void) | null = null;
+    let interruptedCallback: (() => void) | null = null;
 
     // Phase 87: Reconnection State
     const manualDisconnect = ref(false);
@@ -119,8 +125,13 @@ export function useGeminiLive() {
                     handleMessage(message);
 
                     if (message.type === 'connected') {
+
                         clearTimeout(timeoutId);
                         console.log('[GeminiLive] Connection handshake complete:', message.sessionId);
+                        
+                        // Initialize audio output immediately for mixer (Before triggering connected state)
+                        initAudioOutput();
+
                         ws.value = socket;
                         isConnected.value = true;
                         sessionId.value = message.sessionId;
@@ -131,11 +142,13 @@ export function useGeminiLive() {
                         // Store for future reconnection
                         localStorage.setItem(`gemini_live_session_${config.archiveId}`, message.sessionId);
 
+
                         if (message.isResumed) {
-                            ElMessage.success(`Reconnected to ${message.archiveName}`);
+                            toast.success(`Reconnected to ${message.archiveName}`);
                         } else {
-                            ElMessage.success(`Connected to ${message.archiveName}`);
+                            toast.success(`Connected to ${message.archiveName}`);
                         }
+                        
                         resolve();
                     }
                 } catch (error) {
@@ -151,34 +164,42 @@ export function useGeminiLive() {
 
             socket.onclose = (event) => {
                 clearTimeout(timeoutId);
-                console.log('[GeminiLive] WebSocket socket closed:', event.code, event.reason);
+                const reasonMsg = event.reason ? ` Reason: ${event.reason}` : '';
+                console.log(`[GeminiLive] WebSocket socket closed: ${event.code}${reasonMsg}`);
                 
                 isConnected.value = false;
                 ws.value = null;
 
-                // Stop inputs if we lost connection
+                // Stop inputs and clear audio queue if we lost connection
                 stopAudioAnalysis();
+                stopPlayback();
                 
                 // Phase 87: Automatic Reconnection with Exponential Backoff
                 if (event.code !== 1000 && !manualDisconnect.value && reconnectAttempts.value < MAX_RECONNECT_ATTEMPTS) {
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000);
                     reconnectAttempts.value++;
+                    
                     console.warn(`[GeminiLive] Abnormal closure. Attempting reconnect ${reconnectAttempts.value}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms...`);
                     
+                    // User feedback for first few attempts
+                    if (reconnectAttempts.value <= 3) {
+                        toast.warning(`VTuber connection lost. Reconnecting... (Attempt ${reconnectAttempts.value})`, { duration: 2000 });
+                    }
+
                     setTimeout(() => {
                         if (lastConfig.value && !manualDisconnect.value) {
-                            connect(lastConfig.value).catch(e => console.error('[GeminiLive] Reconnect attempt failed:', e));
+                            connect(lastConfig.value).catch(e => console.log('[GeminiLive] Reconnect backoff silent fail:', e));
                         }
                     }, delay);
                 } else if (event.code !== 1000) {
                      console.error('[GeminiLive] Connection lost permanently or max attempts reached.');
+                     toast.error('VTuber connection lost permanently.', { duration: 2000 });
                      stopMicrophone(); // Fully stop if we can't reconnect
-                     stopPlayback();
                      stopCamera();
                 }
 
                 if (!sessionId.value) {
-                    reject(new Error(`WebSocket closed before handshake: ${event.code} ${event.reason}`));
+                    reject(new Error(`WebSocket closed before handshake: ${event.code}${reasonMsg}`));
                 }
             };
         });
@@ -219,6 +240,22 @@ export function useGeminiLive() {
     }
 
     /**
+     * Set interrupted callback
+     */
+    function setInterruptedCallback(callback: () => void): void {
+        interruptedCallback = callback;
+    }
+
+    /**
+     * Set audio level callback
+     */
+    function setAudioCallback(callback: (level: number) => void): void {
+        watch(audioLevel, (val) => {
+            callback(val);
+        });
+    }
+
+    /**
      * Handle incoming WebSocket messages
      */
     function handleMessage(message: any): void {
@@ -247,6 +284,9 @@ export function useGeminiLive() {
                 case 'interrupted':
                     console.log('[GeminiLive] Interrupted');
                     stopPlayback();
+                    if (interruptedCallback) {
+                        interruptedCallback();
+                    }
                     break;
 
                 case 'error':
@@ -296,6 +336,9 @@ export function useGeminiLive() {
                     noiseSuppression: true
                 } 
             });
+
+            // Ensure AudioContext is ready
+            initAudioOutput();
 
             // Set up audio analyser for lip-sync
             if (!audioContext) {
@@ -537,6 +580,25 @@ export function useGeminiLive() {
     }
 
     /**
+     * Initialize Audio Context and Output Destination
+     */
+    function initAudioOutput(): void {
+        if (!audioContext) {
+            audioContext = new AudioContext({ sampleRate: 24000 });
+        }
+        
+        if (!audioDestination) {
+            audioDestination = audioContext.createMediaStreamDestination();
+            mixedAudioStream.value = audioDestination.stream;
+            
+            // Connect output analyser if it exists
+            if (outputAnalyser) {
+                outputAnalyser.connect(audioDestination);
+            }
+        }
+    }
+
+    /**
      * Play audio chunk from Gemini
      */
     async function playAudioChunk(base64Data: string, mimeType: string): Promise<void> {
@@ -606,7 +668,16 @@ export function useGeminiLive() {
             if (!outputAnalyser && audioContext) {
                 outputAnalyser = audioContext.createAnalyser();
                 outputAnalyser.fftSize = 256;
+                
+                // Route to both speakers (monitoring) and mixer (broadcast)
+                if (!audioDestination) {
+                    audioDestination = audioContext.createMediaStreamDestination();
+                    mixedAudioStream.value = audioDestination.stream;
+                }
+                
                 outputAnalyser.connect(audioContext.destination);
+                outputAnalyser.connect(audioDestination);
+                
                 if (!animationFrameId) startAudioAnalysis();
             }
 
@@ -727,6 +798,9 @@ export function useGeminiLive() {
         setTextResponseCallback,
         getTextResponseCallback: () => textResponseCallback,
         setQuestCallback,
-        sendToolResponse
+        setInterruptedCallback,
+        setAudioCallback,
+        sendToolResponse,
+        getAudioStream: () => mixedAudioStream
     };
 }

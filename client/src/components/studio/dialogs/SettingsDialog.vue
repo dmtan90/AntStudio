@@ -221,10 +221,10 @@ const qualityPresets = {
 };
 
 const stockAssets = [
-    { name: 'Office', url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200', thumbnail: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=100', isVideo: false },
-    { name: 'Studio', url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=1200', thumbnail: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=100', isVideo: false },
-    { name: 'Cyberpunk', url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1200', thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=100', isVideo: false },
-    { name: 'Clouds', url: 'https://assets.mixkit.co/videos/preview/mixkit-clouds-moving-fast-in-the-sky-114-large.mp4', thumbnail: 'https://images.unsplash.com/photo-1534088568595-a066f710b721?auto=format&fit=crop&q=80&w=100', isVideo: true },
+    { name: 'Office', url: '/bg/modern-office.jpg', thumbnail: '/bg/modern-office.jpg', isVideo: false },
+    { name: 'Studio', url: '/bg/pro-studio.jpg', thumbnail: '/bg/pro-studio.jpg', isVideo: false },
+    { name: 'Cyberpunk', url: '/bg/cyberpunk_penthouse.jpg', thumbnail: '/bg/cyberpunk_penthouse.jpg', isVideo: false },
+    { name: 'Clouds', url: '/bg/cloud.jpg', thumbnail: '/bg/cloud.jpg', isVideo: false },
 ];
 
 const triggerUpload = () => fileInput.value?.click();

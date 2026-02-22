@@ -48,14 +48,9 @@ export class CommerceSyncService {
                 amount: data.amount,
                 currency: data.currency,
                 source: 'live',
-                status: 'pending'
+                status: 'pending',
+                sessionId: data.sessionId
             });
-
-            // Store session metadata separately if needed
-            if (order) {
-                order.sessionId = data.sessionId;
-                order.platform = data.platform;
-            }
 
             // Broadcast to the specific studio room for real-time UI updates
             if (this.socketServer && order) {
@@ -81,7 +76,7 @@ export class CommerceSyncService {
      */
     public async getSessionCommercialReport(sessionId: string) {
         try {
-            const orders = await Order.find({ 'metadata.sessionId': sessionId });
+            const orders = await Order.find({ sessionId: sessionId });
             
             const totalRevenue = orders.reduce((sum, order) => sum + order.amount, 0);
             const orderCount = orders.length;

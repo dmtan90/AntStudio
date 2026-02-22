@@ -37,7 +37,7 @@ export class HighlightService {
     /**
      * Capture the last X seconds and save as a highlight
      */
-    public async captureHighlight(sessionId: string, durationMs: number = 15000): Promise<{ s3Url?: string, s3Key: string, id: string } | null> {
+    public async captureHighlight(sessionId: string, durationMs: number = 15000): Promise<{ s3Key: string, id: string } | null> {
         const buffer = this.buffers.get(sessionId);
         if (!buffer || buffer.chunks.length === 0) {
             systemLogger.warn(`[HighlightService] No buffer found for session ${sessionId}`, 'HighlightService');
@@ -57,12 +57,11 @@ export class HighlightService {
             const storage = await StorageFactory.getActiveAdapter();
             const result = await storage.uploadFile(fileName, combinedBuffer, 'video/webm');
 
-            systemLogger.info(`[HighlightService] Captured highlight for ${sessionId}: ${result.url}`, 'HighlightService');
+            systemLogger.info(`[HighlightService] Captured highlight for ${sessionId}: ${result.key}`, 'HighlightService');
 
             return {
                 id: highlightId,
-                s3Key: result.key,
-                s3Url: result.url
+                s3Key: result.key
             };
         } catch (error: any) {
             systemLogger.error(`[HighlightService] Failed to upload highlight: ${error.message}`, 'HighlightService');

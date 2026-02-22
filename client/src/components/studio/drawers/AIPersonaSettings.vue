@@ -29,7 +29,9 @@
                         >
                             {{ g.isMaster ? 'MASTER' : 'AGENT' }}
                         </button>
-                        <el-switch v-model="g.active" @change="$emit('toggle-guest', g)" @click.stop />
+                        <div @click.stop>
+                            <el-switch v-model="g.active" @change="$emit('toggle-guest', g)" @click.stop />
+                        </div>
                     </div>
                 </div>
 
@@ -252,10 +254,10 @@ const emit = defineEmits([
 const customPrompts = reactive<Record<string, string>>({});
 
 const backgroundPresets = [
-    { name: 'Studio', url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=200' },
-    { name: 'Cyberpunk', url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200' },
-    { name: 'Nature', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=200' },
-    { name: 'Abstract', url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=200' }
+    { name: 'Studio', url: '/bg/pro-studio.jpg' },
+    { name: 'Cyberpunk', url: '/bg/cyberpunk_penthouse.jpg' },
+    { name: 'Nature', url: '/bg/zen_garden.jpg' },
+    { name: 'Abstract', url: '/bg/neon.jpg' }
 ];
 
 const sendCustomPrompt = (id: string) => {

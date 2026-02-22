@@ -8,6 +8,9 @@ import {
     createDenoiseShader,
     createVirtualBackgroundShader,
     createBlurCompositeShader,
+    createChromaKeyShader,
+    createColorGradingShader,
+    createAlphaBlendShader,
     createFullScreenQuad,
     createUnitQuad,
     renderWithShader,
@@ -174,6 +177,9 @@ let sharpenShader: ShaderProgram | null = null;
 let brightnessShader: ShaderProgram | null = null;
 let denoiseShader: ShaderProgram | null = null;
 let virtualBgShader: ShaderProgram | null = null;
+let chromaKeyShader: ShaderProgram | null = null;
+let colorGradingShader: ShaderProgram | null = null;
+let alphaBlendShader: ShaderProgram | null = null;
 let compositeProgram: WebGLProgram | null = null;
 
 // Geometry
@@ -184,7 +190,15 @@ let unitQuad: { positionBuffer: WebGLBuffer; texCoordBuffer: WebGLBuffer } | nul
 let activeScene: any = null;
 let visualSettings: any = {
     beauty: { smoothing: 0, brightness: 1.0, sharpen: 0, denoise: 0 },
-    background: { mode: 'none', blurLevel: 'low', assetUrl: null }
+    background: { mode: 'none', blurLevel: 'low', assetUrl: null },
+    chromaKey: { enabled: false, similarity: 0.4, smoothness: 0.1, keyColor: '#00ff00' },
+    lensProfile: 'none',
+    branding: { logoUrl: '', logoPosition: 'top-right', logoScale: 1.0, name: '', title: '', color: '#3b82f6' },
+    breakMode: { enabled: false, message: 'We\'ll be right back!' },
+    specialOverlays: { showSponsorship: false },
+    showLowerThird: false,
+    showTicker: false,
+    tickerText: 'Breaking News • Latest Updates • '
 };
 let faceTracking = {
     currentX: 0.5,
@@ -202,7 +216,12 @@ const frameMap = new Map<string, VideoFrame>();
 const streamReaders = new Map<string, ReadableStreamDefaultReader<VideoFrame>>();
 const videoMetadata = new Map<string, { width: number, height: number }>();
 const textureDirtyMap = new Map<string, boolean>();
-const slotMap = new Map<string, string>(); // Maps 'guest1' -> 'personaId'
+interface GuestData {
+    id: string;
+    name: string;
+    title: string;
+}
+const slotMap = new Map<string, GuestData>(); // Maps 'guest1' -> { id, name, title }
 
 // Intermediate textures for multi-pass rendering
 let texPing: WebGLTexture | null = null;
@@ -215,9 +234,31 @@ let overlayTexture: WebGLTexture | null = null;
 let brandLogoTexture: WebGLTexture | null = null;
 let framedHostTexture: WebGLTexture | null = null; // New: Stores the cropped/mirrored host frame
 let framebuffer: WebGLFramebuffer | null = null;
+let lyricsCanvas: OffscreenCanvas | null = null;
+let lyricsCtx: any = null;
+let lyricsTexture: WebGLTexture | null = null;
+let lutTexture: WebGLTexture | null = null;
+let lutEnabled = false;
+let performanceLyrics: any[] = [];
+let performanceLyricsCurrentTime: number = 0;
+let performingVTuberId: string | null = null;
+let performanceLyricsVisible: boolean = false;
+let performanceLyricsStyle: string = 'neon';
+let cinematicMode: boolean = false;
+
+// Graphics Overlays (Canvas 2D)
+let graphicsCanvas: OffscreenCanvas | null = null;
+let graphicsCtx: any = null;
+let graphicsTexture: WebGLTexture | null = null;
+let tickerOffset: number = 0;
+let logoImage: ImageBitmap | null = null;
 
 let sceneDirty = true;
 let lastTime = 0;
+let subtitleCanvas: OffscreenCanvas | null = null;
+let subtitleCtx: any = null;
+let subtitleTexture: WebGLTexture | null = null;
+let currentSubtitle: string = '';
 
 // Composite Shader (for final scene composition)
 const compositeVS = `
@@ -264,6 +305,15 @@ let uFlipVerticalLoc: WebGLUniformLocation | null = null;
 let uFlipYLoc: WebGLUniformLocation | null = null;
 let uImageLoc: WebGLUniformLocation | null = null;
 
+const getFileUrl = (path: string) => {
+    let url = path
+    // If it doesn't start with http or /, assume it's an S3 path
+    if (!path.startsWith('http') && !path.startsWith('/') && !path.startsWith('blob:') && !path.startsWith('data:')) {
+        url = `/api/s3/${path}`
+    }
+    return url;
+}
+
 self.onmessage = async (e: MessageEvent) => {
     const { type, payload } = e.data;
 
@@ -274,7 +324,25 @@ self.onmessage = async (e: MessageEvent) => {
             break;
         case 'update-settings':
             if (payload) {
+                const oldLogoUrl = visualSettings.branding?.logoUrl;
                 visualSettings = payload;
+                
+                // key fix: check if logo url changed or if logoImage is missing but url exists
+                if (payload.branding?.logoUrl && (payload.branding.logoUrl !== oldLogoUrl || !logoImage)) {
+                     console.log('[Worker] Loading logo from settings update:', getFileUrl(payload.branding.logoUrl));
+                     fetch(getFileUrl(payload.branding.logoUrl), {
+                        headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                    })
+                    .then(res => res.blob())
+                    .then(blob => createImageBitmap(blob))
+                    .then(bitmap => {
+                        logoImage = bitmap;
+                        sceneDirty = true;
+                        console.log('[Worker] Logo image loaded from settings');
+                    })
+                    .catch(err => console.error('[Worker] Failed to load logo from settings:', err));
+                }
+
                 if (payload.authToken) {
                     authToken = payload.authToken;
                     console.log('[Worker] Auth Token updated');
@@ -326,8 +394,22 @@ self.onmessage = async (e: MessageEvent) => {
             }
             break;
         case 'update-brand-logo':
-            if (payload.logoData) {
-                updateBrandLogoTexture(payload.logoData);
+            if (payload.logoUrl) {
+                // Load logo image
+                console.log("Logo URL: ", getFileUrl(payload.logoUrl));
+                fetch(getFileUrl(payload.logoUrl), {
+                    headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                })
+                .then(res => res.blob())
+                .then(blob => createImageBitmap(blob))
+                .then(bitmap => {
+                    logoImage = bitmap;
+                    sceneDirty = true;
+                    console.log('[Worker] Logo image loaded');
+                })
+                .catch(err => console.error('[Worker] Failed to load logo:', err));
+            } else {
+                logoImage = null;
                 sceneDirty = true;
             }
             break;
@@ -335,7 +417,13 @@ self.onmessage = async (e: MessageEvent) => {
             slotMap.clear();
             if (payload.slots) {
                 Object.entries(payload.slots).forEach(([slot, guest]: [string, any]) => {
-                    if (guest && guest.uuid) slotMap.set(slot, guest.uuid);
+                    if (guest && guest.uuid) {
+                        slotMap.set(slot, {
+                            id: guest.uuid,
+                            name: guest.name,
+                            title: guest.title || 'Guest'
+                        });
+                    }
                 });
             }
             sceneDirty = true;
@@ -378,6 +466,52 @@ self.onmessage = async (e: MessageEvent) => {
                 }
             }
             break;
+        case 'update-lyrics':
+            performanceLyrics = payload.lyrics || [];
+            performanceLyricsCurrentTime = payload.currentTime || 0;
+            performingVTuberId = payload.performingVTuberId || null;
+            performanceLyricsVisible = payload.visible !== undefined ? payload.visible : false;
+            performanceLyricsStyle = payload.style || 'neon';
+            sceneDirty = true;
+            break;
+        case 'update-chroma':
+            if (payload) {
+                console.log(`[Worker] Updating chroma: enabled=${payload.enabled}, key=${payload.keyColor}, sim=${payload.similarity}`);
+                visualSettings.chromaKey = { ...visualSettings.chromaKey, ...payload };
+                sceneDirty = true;
+            }
+            break;
+        case 'update-lut':
+            lutEnabled = payload.enabled;
+            // Generate LUT internally if a profile name is provided
+            if (payload.profile) {
+                if (!gl) return;
+                const lutData = generateLUTData(payload.profile);
+                
+                if (!lutTexture) {
+                    lutTexture = gl.createTexture();
+                    gl.bindTexture(gl.TEXTURE_2D, lutTexture);
+                    // Use LINEAR for smooth color grading
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                }
+                gl.bindTexture(gl.TEXTURE_2D, lutTexture);
+                // 512x512 texture, RGBA
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 512, 512, 0, gl.RGBA, gl.UNSIGNED_BYTE, lutData);
+                console.log(`[Worker] LUT regenerated for profile: ${payload.profile}`);
+            }
+            sceneDirty = true;
+            break;
+        case 'set-cinematic-mode':
+            cinematicMode = payload.enabled;
+            sceneDirty = true;
+            break;
+        case 'set-subtitles':
+            currentSubtitle = payload.text;
+            sceneDirty = true;
+            break;
     }
 };
 
@@ -403,6 +537,9 @@ function initGL() {
         denoiseShader = createDenoiseShader(gl);
         virtualBgShader = createVirtualBackgroundShader(gl);
         blurCompositeShader = createBlurCompositeShader(gl);
+        chromaKeyShader = createChromaKeyShader(gl);
+        colorGradingShader = createColorGradingShader(gl);
+        alphaBlendShader = createAlphaBlendShader(gl);
 
         // Create composite shader
         const vs = WebGLUtils.createShader(gl, gl.VERTEX_SHADER, compositeVS);
@@ -657,26 +794,53 @@ function renderLoop(time: number = 0) {
         }
     });
 
-    // 2. Render main scene composition
-    if (activeScene && activeScene.layout && activeScene.layout.regions) {
-        activeScene.layout.regions.forEach((region: any) => {
-            drawRegion(region);
-        });
-    }
+     // 2. Render main scene composition
+     if (cinematicMode) {
+         renderCinematicSource();
+     } else if (activeScene && activeScene.layout && activeScene.layout.regions) {
+         activeScene.layout.regions.forEach((region: any) => {
+             drawRegion(region);
+         });
+     }
+ 
+     // 2.5 Render Lyrics (Phase 93 integration)
+     if (performanceLyricsVisible && performanceLyrics.length > 0) {
+         renderLyrics();
+     }
 
-    // 3. Render final overlay if exists
+     if (currentSubtitle) {
+         renderSubtitles(0, 0, 1, 1);
+     }
+
+     // 3. Render final overlay if exists
     if (overlayTexture) {
         renderOverlay();
     }
  
      // 4. Render Brand Logo (Phase 18)
-     if (brandLogoTexture && visualSettings.branding?.logoUrl) {
+     if (logoImage && visualSettings.branding?.logoUrl) {
          renderBrandLogo();
      }
  
      // 5. Render Break Overlay (Phase 18)
      if (visualSettings.breakMode?.enabled) {
          renderBreakOverlay(time);
+     }
+     
+     // 6. Render Lower-Third Graphics
+     if (visualSettings.showLowerThird && !cinematicMode) {
+         renderLowerThird(visualSettings.branding || {});
+     }
+     
+     // 7. Render Ticker Scroll
+     if (visualSettings.showTicker && !cinematicMode) {
+         renderTicker(visualSettings.tickerText || 'Breaking News • Latest Updates • ');
+         sceneDirty = true; // Keep animating
+     }
+     
+     // 8. Render Sponsorship Badge
+     if (visualSettings.specialOverlays?.showSponsorship && !cinematicMode) {
+         renderSponsorshipBadge();
      }
  
      sceneDirty = false;
@@ -692,7 +856,8 @@ function drawRegion(region: any) {
     else if (region.source === 'media') id = 'media';
     else if (region.source.startsWith('guest')) {
         const slotKey = region.source;
-        id = slotMap.get(slotKey) || slotKey;
+        const guestData = slotMap.get(slotKey);
+        id = guestData ? guestData.id : slotKey;
     }
 
     const sourceTexture = id ? textureMap.get(id) : null;
@@ -798,7 +963,7 @@ function applyVisualEffects(inputTexture: WebGLTexture, sourceWidth: number, sou
     let currentInputHeight = sourceHeight;
 
     if (visualSettings.background.mode !== 'none' && Math.floor(performance.now()) % 200 === 0) {
-        console.log(`[Worker] Applying effects: mode=${visualSettings.background.mode}, hasMask=${!!maskTexture}`);
+        // console.log(`[Worker] Applying effects: mode=${visualSettings.background.mode}, hasMask=${!!maskTexture}`);
     }
     let currentOutput = texPing;
 
@@ -826,6 +991,60 @@ function applyVisualEffects(inputTexture: WebGLTexture, sourceWidth: number, sou
 
         gl.bindTexture(gl.TEXTURE_2D, null);
         swap();
+    }
+
+    // Pass 1.5: Chroma Key (Green Screen)
+    if (visualSettings.chromaKey?.enabled && chromaKeyShader) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, currentOutput, 0);
+        gl.viewport(0, 0, width, height);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, currentInput);
+
+        const hexToRgb = (hex: string) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? [
+                parseInt(result[1], 16) / 255,
+                parseInt(result[2], 16) / 255,
+                parseInt(result[3], 16) / 255
+            ] : [0, 1, 0];
+        };
+        const keyColor = hexToRgb(visualSettings.chromaKey.keyColor || '#00ff00');
+
+        renderWithShader(gl, chromaKeyShader, fullScreenQuad, {
+            u_texture: { textureUnit: 0 },
+            u_keyColor: keyColor,
+            u_similarity: visualSettings.chromaKey.similarity,
+            u_smoothness: visualSettings.chromaKey.smoothness,
+            u_spill: 0.1
+        });
+
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        swap();
+        
+        // If virtual background is enabled, composite immediately
+        if (visualSettings.background.mode === 'virtual' && backgroundTexture && alphaBlendShader) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, currentOutput, 0);
+            gl.viewport(0, 0, width, height);
+            
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, currentInput); // Foreground (with alpha from chroma key)
+            
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, backgroundTexture); // Background
+
+            renderWithShader(gl, alphaBlendShader, fullScreenQuad, {
+                u_foreground: { textureUnit: 0 },
+                u_background: { textureUnit: 1 }
+            });
+            
+            gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null);
+            
+            swap();
+        }
     }
 
     // Pass 2: Smoothing
@@ -885,69 +1104,68 @@ function applyVisualEffects(inputTexture: WebGLTexture, sourceWidth: number, sou
     }
 
     // Pass 5: Background Effects
+    // CASE B: AI Mask Composition (Blur)
     if (visualSettings.background.mode === 'blur') {
         if (!maskTexture || !blurHorizontalShader || !blurVerticalShader || !blurCompositeShader) {
-            console.warn('[Worker] Blur missing dependencies:', { maskTexture: !!maskTexture, h: !!blurHorizontalShader, v: !!blurVerticalShader, c: !!blurCompositeShader });
-            return currentInput;
+            // console.warn('[Worker] Blur missing dependencies');
+            // return currentInput;
+        } else {
+            const blurStrength = visualSettings.background.blurLevel === 'low' ? 0.5 :
+                visualSettings.background.blurLevel === 'medium' ? 0.7 : 1.0;
+
+            const sharpInput = currentInput;
+
+            // Blur steps use dedicated blur buffers to avoid collision
+            // Step 1: Horizontal Blur (currentInput -> blurBuffer1)
+            gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, blurBuffer1, 0);
+            gl.viewport(0, 0, width, height);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, currentInput);
+            renderWithShader(gl, blurHorizontalShader, fullScreenQuad, {
+                u_texture: { textureUnit: 0 },
+                u_resolution: [currentInputWidth, currentInputHeight],
+                u_blurStrength: blurStrength,
+                u_horizontal: true
+            });
+
+            // Step 2: Vertical Blur (blurBuffer1 -> blurBuffer2)
+            gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, blurBuffer2, 0);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, blurBuffer1!);
+            renderWithShader(gl, blurVerticalShader, fullScreenQuad, {
+                u_texture: { textureUnit: 0 },
+                u_resolution: [width, height],
+                u_blurStrength: blurStrength,
+                u_horizontal: false
+            });
+
+            // Step 3: Composite (sharpInput + blurBuffer2 -> currentOutput)
+            gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, currentOutput, 0);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, sharpInput);
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, blurBuffer2!);
+            gl.activeTexture(gl.TEXTURE2);
+            gl.bindTexture(gl.TEXTURE_2D, maskTexture);
+            renderWithShader(gl, blurCompositeShader, fullScreenQuad, {
+                u_texture: { textureUnit: 0 },
+                u_blurred: { textureUnit: 1 },
+                u_mask: { textureUnit: 2 },
+                u_feather: 0.15,
+                u_flipX: mirrored,
+                u_maskScale: hostTexScale,
+                u_maskOffset: hostTexOffset
+            });
+
+            gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null);
+            
+            swap();
         }
-
-        const blurStrength = visualSettings.background.blurLevel === 'low' ? 0.5 :
-            visualSettings.background.blurLevel === 'medium' ? 0.7 : 1.0;
-
-        const sharpInput = currentInput;
-
-        // Blur steps use dedicated blur buffers to avoid collision
-        // Step 1: Horizontal Blur (currentInput -> blurBuffer1)
-        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, blurBuffer1, 0);
-        gl.viewport(0, 0, width, height);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, currentInput);
-        renderWithShader(gl, blurHorizontalShader, fullScreenQuad, {
-            u_texture: { textureUnit: 0 },
-            u_resolution: [currentInputWidth, currentInputHeight],
-            u_blurStrength: blurStrength,
-            u_horizontal: true
-        });
-
-        // Step 2: Vertical Blur (blurBuffer1 -> blurBuffer2)
-        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, blurBuffer2, 0);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, blurBuffer1!);
-        renderWithShader(gl, blurVerticalShader, fullScreenQuad, {
-            u_texture: { textureUnit: 0 },
-            u_resolution: [width, height],
-            u_blurStrength: blurStrength,
-            u_horizontal: false
-        });
-
-        // Step 3: Composite (sharpInput + blurBuffer2 -> currentOutput)
-        // NOTE: mirrored=true forces the mask lookup to flip X.
-        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, currentOutput, 0);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, sharpInput);
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, blurBuffer2!);
-        gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, maskTexture);
-        renderWithShader(gl, blurCompositeShader, fullScreenQuad, {
-            u_texture: { textureUnit: 0 },
-            u_blurred: { textureUnit: 1 },
-            u_mask: { textureUnit: 2 },
-            u_feather: 0.15,
-            u_flipX: mirrored,
-            u_maskScale: hostTexScale,
-            u_maskOffset: hostTexOffset
-        });
-
-        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, null);
-        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, null);
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null);
-        
-        swap();
-        
     } else if (visualSettings.background.mode === 'virtual' && maskTexture && backgroundTexture && virtualBgShader) {
         
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
@@ -972,6 +1190,30 @@ function applyVisualEffects(inputTexture: WebGLTexture, sourceWidth: number, sou
         gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, null);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null);
 
+        swap();
+    }
+
+    // Pass 6: Color Grading (LUT)
+    if (lutEnabled && lutTexture && colorGradingShader) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, currentOutput, 0);
+        gl.viewport(0, 0, width, height);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, currentInput);
+        
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, lutTexture);
+
+        renderWithShader(gl, colorGradingShader, fullScreenQuad, {
+            u_texture: { textureUnit: 0 },
+            u_lut: { textureUnit: 1 },
+            u_intensity: 1.0
+        });
+
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, null);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, null);
+        
         swap();
     }
 
@@ -1051,6 +1293,262 @@ function renderToCanvas(
     if (uFlipYLoc) gl.uniform1i(uFlipYLoc, 1); // Final pass ALWAYS flips position Y for screen space
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Phase 93: Render lyrics on top of the region if this guest is performing
+    if (performingVTuberId && performanceLyricsVisible && performanceLyrics.length > 0) {
+        let isTarget = false;
+        if (region.source === 'host' && performingVTuberId === 'host') isTarget = true;
+        else if (region.source.startsWith('guest')) {
+            const guestData = slotMap.get(region.source);
+            if (guestData && guestData.id === performingVTuberId) isTarget = true;
+        }
+
+        if (isTarget) {
+            renderLyricsInRegion(x, y, w, h);
+        }
+    }
+}
+
+function wrapText(ctx: any, text: string, maxWidth: number) {
+    if (!text) return [];
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const width = ctx.measureText(currentLine + " " + word).width;
+        if (width < maxWidth) {
+            currentLine += " " + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    lines.push(currentLine);
+    return lines;
+}
+
+function renderLyricsInRegion(x: number, y: number, w: number, h: number) {
+    if (!gl || !canvas || !compositeProgram || !unitQuad) return;
+
+    const currentLine = performanceLyrics.find(l => performanceLyricsCurrentTime >= l.startTime && performanceLyricsCurrentTime <= l.endTime);
+    if (!currentLine) return;
+
+    // 1. Prepare 2D Canvas for text rendering
+    if (!lyricsCanvas) {
+        lyricsCanvas = new OffscreenCanvas(512, 256); // Taller for multi-line
+        lyricsCtx = lyricsCanvas.getContext('2d');
+    }
+    const ctx = lyricsCtx!;
+    ctx.clearRect(0, 0, lyricsCanvas.width, lyricsCanvas.height);
+
+    // Initial Font Size & Config based on style
+    let fontSize = 42;
+    let fontWeight = 'bold';
+    let letterSpacing = 0;
+    
+    if (performanceLyricsStyle === 'minimal') {
+        fontSize = 28;
+        fontWeight = '600';
+        letterSpacing = 2; // Simulated
+    } else if (performanceLyricsStyle === 'kinetic') {
+        fontSize = 48;
+    }
+
+    const maxTextW = lyricsCanvas.width * 0.9;
+    ctx.font = `${fontWeight} ${fontSize}px "Inter", sans-serif`;
+    
+    // Wrap text
+    let lines = wrapText(ctx, currentLine.text, maxTextW);
+    
+    // Dynamic Scaling
+    if (lines.length > 3 || (lines[0] && ctx.measureText(lines[0]).width > maxTextW)) {
+        fontSize = Math.max(16, fontSize * 0.7);
+        ctx.font = `${fontWeight} ${fontSize}px "Inter", sans-serif`;
+        lines = wrapText(ctx, currentLine.text, maxTextW);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const textX = lyricsCanvas.width / 2;
+    const lineHeight = fontSize * 1.2;
+    const totalHeight = lines.length * lineHeight;
+    const startY = (lyricsCanvas.height - totalHeight) / 2 + lineHeight / 2;
+
+    ctx.save();
+    
+    // Style Specific Pre-render (Backdrops/Transforms)
+    if (performanceLyricsStyle === 'minimal') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.beginPath();
+        ctx.roundRect(maxTextW * 0.05, startY - lineHeight * 0.6, maxTextW, totalHeight + lineHeight * 0.2, 8);
+        ctx.fill();
+    } else if (performanceLyricsStyle === 'kinetic') {
+        // Perspective tilt simulation via horizontal skew/scaling
+        ctx.transform(1, 0, 0.1, 0.95, 0, 0); 
+    }
+
+    lines.forEach((line, i) => {
+        const textY = startY + i * lineHeight;
+        
+        if (performanceLyricsStyle === 'neon') {
+            // Multiple Glow layers
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = 'rgba(0, 242, 255, 0.8)';
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#00f2ff';
+            ctx.strokeText(line, textX, textY);
+            
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.strokeText(line, textX, textY);
+        } else if (performanceLyricsStyle === 'minimal') {
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        } else if (performanceLyricsStyle === 'kinetic') {
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+            ctx.strokeText(line, textX, textY);
+        } else {
+            // Default/Bounce
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#000000';
+            ctx.strokeText(line, textX, textY);
+        }
+
+        // Main Fill
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(line, textX, textY);
+    });
+    
+    ctx.restore();
+
+    // 2. Update WebGL Texture
+    if (!lyricsTexture) {
+        lyricsTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, lyricsTexture!);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, lyricsTexture!);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lyricsCanvas);
+
+    // 3. Draw to WebGL
+    gl.useProgram(compositeProgram);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // Maintain 2:1 aspect ratio of the texture (OffscreenCanvas 512x256)
+    // Normalized width lyricsW is 90% of the region width
+    const lyricsW = w * 0.9;
+    // Calculate normalized height to keep 2:1 pixel aspect ratio
+    // Formula: (lyricsW * canvas.width) / (lyricsH * canvas.height) = 2
+    const lyricsH = (lyricsW * canvas.width) / (2 * canvas.height);
+    
+    // Centering lyricsX in the region
+    const lyricsX = x + (w - lyricsW) / 2;
+    
+    // Position: Float it higher up (standard VNode placement)
+    // Avoid name tags by placing it roughly at 70% of the region height from top
+    const lyricsY = y + (h * 0.75) - lyricsH; 
+
+    gl.uniform2f(uTranslationLoc!, lyricsX, lyricsY);
+    gl.uniform2f(uScaleLoc!, lyricsW, lyricsH);
+    gl.uniform2f(uTexScaleLoc!, 1, 1);
+    gl.uniform2f(uTexOffsetLoc!, 0, 0);
+    gl.uniform1i(uFlipHorizontalLoc!, 0);
+    gl.uniform1i(uFlipVerticalLoc!, 0);
+    gl.uniform1i(uFlipYLoc!, 1);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, lyricsTexture);
+    gl.uniform1i(uImageLoc!, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.disable(gl.BLEND);
+}
+
+function renderSubtitles(x: number, y: number, w: number, h: number) {
+    if (!currentSubtitle || !gl) return;
+
+    // 1. Prepare Canvas
+    if (!subtitleCanvas) {
+        subtitleCanvas = new OffscreenCanvas(1024, 256);
+        subtitleCtx = subtitleCanvas.getContext('2d');
+    }
+
+    const ctx = subtitleCtx;
+    ctx.clearRect(0, 0, subtitleCanvas.width, subtitleCanvas.height);
+    
+    // Set text style
+    ctx.font = '900 48px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const textX = subtitleCanvas.width / 2;
+    const textY = subtitleCanvas.height / 2;
+
+    // Draw Shadow/Stroke for readability
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#000000';
+    ctx.strokeText(currentSubtitle, textX, textY);
+
+    // Main Fill
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(currentSubtitle, textX, textY);
+
+    // 2. Update WebGL Texture
+    if (!subtitleTexture) {
+        subtitleTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, subtitleTexture!);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, subtitleTexture!);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, subtitleCanvas);
+
+    // 3. Draw to WebGL
+    gl.useProgram(compositeProgram);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // Position: Bottom center
+    const subW = w * 0.8;
+    const subH = (subW * subtitleCanvas.height) / subtitleCanvas.width;
+    const subX = x + (w - subW) / 2;
+    const subY = y + (h * 0.9) - subH;
+
+    gl.uniform2f(uTranslationLoc!, subX, subY);
+    gl.uniform2f(uScaleLoc!, subW, subH);
+    gl.uniform2f(uTexScaleLoc!, 1, 1);
+    gl.uniform2f(uTexOffsetLoc!, 0, 0);
+    gl.uniform1i(uFlipHorizontalLoc!, 0);
+    gl.uniform1i(uFlipVerticalLoc!, 0);
+    gl.uniform1i(uFlipYLoc!, 1);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, subtitleTexture);
+    gl.uniform1i(uImageLoc!, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.disable(gl.BLEND);
+}
+
+function regionHeightRatio(h: number) {
+    // Helper to estimate visual height scale
+    return h;
 }
 
 function renderOverlay() {
@@ -1107,30 +1605,520 @@ function updateBrandLogoTexture(logoData: ImageBitmap | ImageData) {
     sceneDirty = true;
 }
 
+// function renderBrandLogo() {
+//     if (!gl || !brandLogoTexture || !unitQuad || !compositeProgram || !canvas) return;
+
+//     gl.useProgram(compositeProgram);
+//     gl.enable(gl.BLEND);
+//     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+//     const branding = visualSettings.branding;
+//     const scale = branding.logoScale || 1.0;
+//     const padding = 0.05; // 5% padding
+//     const logoW = 0.15 * scale;
+//     const logoH = logoW * (canvas.width / canvas.height);
+
+//     let x = padding;
+//     let y = padding;
+
+//     if (branding.logoPosition === 'top-right') {
+//         x = 1.0 - logoW - padding;
+//     } else if (branding.logoPosition === 'bottom-left') {
+//         y = 1.0 - logoH - padding;
+//     } else if (branding.logoPosition === 'bottom-right') {
+//         x = 1.0 - logoW - padding;
+//         y = 1.0 - logoH - padding;
+//     }
+
+//     const positionLoc = gl.getAttribLocation(compositeProgram, 'a_position');
+//     const texCoordLoc = gl.getAttribLocation(compositeProgram, 'a_texCoord');
+
+//     gl.bindBuffer(gl.ARRAY_BUFFER, unitQuad.positionBuffer);
+//     gl.enableVertexAttribArray(positionLoc);
+//     gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+//     gl.bindBuffer(gl.ARRAY_BUFFER, unitQuad.texCoordBuffer);
+//     gl.enableVertexAttribArray(texCoordLoc);
+//     gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
+
+//     gl.activeTexture(gl.TEXTURE0);
+//     gl.bindTexture(gl.TEXTURE_2D, brandLogoTexture);
+//     if (uImageLoc) gl.uniform1i(uImageLoc, 0);
+
+//     gl.uniform2f(uTranslationLoc!, x, y);
+//     gl.uniform2f(uScaleLoc!, logoW, logoH);
+//     gl.uniform2f(uTexScaleLoc!, 1.0, 1.0);
+//     gl.uniform2f(uTexOffsetLoc!, 0.0, 0.0);
+//     gl.uniform1i(uFlipHorizontalLoc!, 0);
+//     gl.uniform1i(uFlipVerticalLoc!, 0);
+
+//     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+//     gl.disable(gl.BLEND);
+// }
+
+// ===== GRAPHICS OVERLAY RENDERING =====
+
+/**
+ * Render Brand Logo Overlay
+ */
 function renderBrandLogo() {
-    if (!gl || !brandLogoTexture || !unitQuad || !compositeProgram || !canvas) return;
+    if (!gl || !canvas || !visualSettings.branding?.logoUrl || !logoImage) return;
+    
+    const { logoPosition, logoScale } = visualSettings.branding;
+    const logoSize = 80 * logoScale;
+    const margin = 20;
+    
+    // Calculate position based on logoPosition
+    let x = 0, y = 0;
+    switch (logoPosition) {
+        case 'top-left':
+            x = margin;
+            y = margin;
+            break;
+        case 'top-right':
+            x = canvas.width - logoSize - margin;
+            y = margin;
+            break;
+        case 'bottom-left':
+            x = margin;
+            y = canvas.height - logoSize - margin;
+            break;
+        case 'bottom-right':
+            x = canvas.width - logoSize - margin;
+            y = canvas.height - logoSize - margin;
+            break;
+    }
+    
+    // Render logo using Canvas 2D
+    if (!graphicsCanvas) {
+        graphicsCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        graphicsCtx = graphicsCanvas.getContext('2d');
+    }
+    
+    const ctx = graphicsCtx!;
+    ctx.clearRect(0, 0, graphicsCanvas.width, graphicsCanvas.height);
+    
+    if (logoImage) {
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.drawImage(logoImage, x, y, logoSize, logoSize);
+        ctx.restore();
+        
+        // Upload to WebGL texture
+        if (!graphicsTexture) {
+            graphicsTexture = gl.createTexture();
+        }
+        gl.bindTexture(gl.TEXTURE_2D, graphicsTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, graphicsCanvas);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        
+        // Render texture to screen
+        renderGraphicsOverlay(graphicsTexture);
+    }
+}
+
+/**
+ * Render Break Mode Overlay
+ */
+function renderBreakOverlay(time: number) {
+    if (!gl || !canvas) return;
+    
+    if (!graphicsCanvas) {
+        graphicsCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        graphicsCtx = graphicsCanvas.getContext('2d');
+    }
+    
+    const ctx = graphicsCtx!;
+    ctx.clearRect(0, 0, graphicsCanvas.width, graphicsCanvas.height);
+    
+    // Semi-transparent dark overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillRect(0, 0, graphicsCanvas.width, graphicsCanvas.height);
+    
+    // Message text
+    const message = visualSettings.breakMode?.message || 'We\'ll be right back!';
+    ctx.font = 'bold 48px "Inter", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Animated glow effect
+    const pulse = (Math.sin(time / 500) + 1) * 0.5;
+    ctx.shadowBlur = 20 + pulse * 10;
+    ctx.shadowColor = 'rgba(59, 130, 246, 0.8)';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(message, graphicsCanvas.width / 2, graphicsCanvas.height / 2);
+    
+    // Upload to WebGL texture
+    if (!graphicsTexture) {
+        graphicsTexture = gl.createTexture();
+    }
+    gl.bindTexture(gl.TEXTURE_2D, graphicsTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, graphicsCanvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    
+    // Render texture to screen
+    renderGraphicsOverlay(graphicsTexture);
+}
+
+/**
+ * Render Lower-Third Graphics
+ */
+function renderLowerThird(branding: any) {
+    if (!gl || !canvas || !activeScene) return;
+    
+    if (!graphicsCanvas) {
+        graphicsCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        graphicsCtx = graphicsCanvas.getContext('2d');
+    }
+    
+    const ctx = graphicsCtx!;
+    ctx.clearRect(0, 0, graphicsCanvas.width, graphicsCanvas.height);
+    
+    // Iterate over regions to render identity for Host and Guests
+    // Note: branding arg contains Host info
+    
+    const regions = activeScene.layout?.regions || [];
+    
+    regions.forEach((region: any) => {
+        let identity = null;
+        let isHost = false;
+        
+        if (region.source === 'host') {
+            identity = { ...branding };
+            if (!identity.name) identity.name = 'Host';
+            isHost = true;
+            console.log('[Worker] Host Region:', region, 'Identity:', identity);
+        } else if (region.source.startsWith('guest')) {
+            const guestData = slotMap.get(region.source);
+            if (guestData) {
+                identity = {
+                    name: guestData.name,
+                    title: guestData.title,
+                    color: branding.color
+                };
+            }
+            console.log('[Worker] Guest Region:', region, 'Data:', guestData, 'Identity:', identity);
+        }
+        
+        if (identity && identity.name) {
+             // Calculate region bounds in pixels
+             const rx = (region.x / 100) * canvas.width;
+             const ry = (region.y / 100) * canvas.height;
+             const rw = (region.width / 100) * canvas.width;
+             const rh = (region.height / 100) * canvas.height;
+
+             // Draw lower-third locally within this region
+             // Bottom-Left of the region
+             
+             const barHeight = 60; // Smaller bar for local context
+             const lx = rx + 20;
+             const ly = ry + rh - barHeight - 20;
+             const lw = Math.min(rw - 40, 400); // Max width of 400px or region width
+             
+             // Background gradient
+             const gradient = ctx.createLinearGradient(lx, ly, lx + lw, ly);
+             gradient.addColorStop(0, identity.color || '#3b82f6');
+             gradient.addColorStop(0.6, 'rgba(0, 0, 0, 0.8)');
+             gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+             
+             ctx.fillStyle = gradient;
+             
+             // Draw with rounded corners (simple rect for now)
+             ctx.fillRect(lx, ly, lw, barHeight);
+             
+             // Name
+             ctx.font = 'bold 24px "Inter", sans-serif';
+             ctx.fillStyle = '#ffffff';
+             ctx.textAlign = 'left';
+             ctx.textBaseline = 'top';
+             ctx.fillText(identity.name, lx + 20, ly + 15);
+             
+             // Title
+             if (identity.title) {
+                ctx.font = '14px "Inter", sans-serif';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fillText(identity.title, lx + 20, ly + 45);
+             }
+        }
+    });
+    
+    // Upload to WebGL texture
+    if (!graphicsTexture) {
+        graphicsTexture = gl.createTexture();
+    }
+    gl.bindTexture(gl.TEXTURE_2D, graphicsTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, graphicsCanvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    
+    // Render texture to screen
+    renderGraphicsOverlay(graphicsTexture);
+}
+
+/**
+ * Render Dynamic Ticker Scroll
+ */
+function renderTicker(tickerText: string) {
+    if (!gl || !canvas) return;
+    
+    if (!graphicsCanvas) {
+        graphicsCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        graphicsCtx = graphicsCanvas.getContext('2d');
+    }
+    
+    const ctx = graphicsCtx!;
+    ctx.clearRect(0, 0, graphicsCanvas.width, graphicsCanvas.height);
+    
+    const barHeight = 50;
+    const y = canvas.height - barHeight;
+    
+    // Background bar
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(0, y, canvas.width, barHeight);
+    
+    // Scrolling text
+    ctx.font = 'bold 24px "Inter", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    
+    const text = tickerText || 'Breaking News • Latest Updates • ';
+    const textWidth = ctx.measureText(text).width;
+    
+    // Animate ticker
+    tickerOffset -= 2;
+    if (tickerOffset < -textWidth) {
+        tickerOffset += textWidth; // Smooth loop reset
+    }
+    
+    // Draw text multiple times to fill screen
+    const repeatCount = Math.ceil(canvas.width / textWidth) + 2;
+    for (let i = 0; i < repeatCount; i++) {
+        ctx.fillText(text, tickerOffset + (textWidth * i), y + barHeight / 2);
+    }
+    
+    // Upload to WebGL texture
+    if (!graphicsTexture) {
+        graphicsTexture = gl.createTexture();
+    }
+    gl.bindTexture(gl.TEXTURE_2D, graphicsTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, graphicsCanvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    
+    // Render texture to screen
+    renderGraphicsOverlay(graphicsTexture);
+}
+
+/**
+ * Render Sponsorship Badge
+ */
+function renderSponsorshipBadge() {
+    if (!gl || !canvas) return;
+    
+    if (!graphicsCanvas) {
+        graphicsCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        graphicsCtx = graphicsCanvas.getContext('2d');
+    }
+    
+    const ctx = graphicsCtx!;
+    ctx.clearRect(0, 0, graphicsCanvas.width, graphicsCanvas.height);
+    
+    const badgeSize = 150;
+    const x = canvas.width - badgeSize - 20;
+    const y = 20;
+    
+    // Badge background
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + badgeSize, y);
+    ctx.lineTo(x + badgeSize - 20, y + badgeSize / 2);
+    ctx.lineTo(x + badgeSize, y + badgeSize);
+    ctx.lineTo(x, y + badgeSize);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Text
+    const sponsorName = visualSettings.specialOverlays?.sponsorName || 'SPONSORED';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px "Inter", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(sponsorName, x + badgeSize / 2, y + badgeSize / 2);
+    ctx.restore();
+    
+    // Upload to WebGL texture
+    if (!graphicsTexture) {
+        graphicsTexture = gl.createTexture();
+    }
+    gl.bindTexture(gl.TEXTURE_2D, graphicsTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, graphicsCanvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    
+    // Render texture to screen
+    renderGraphicsOverlay(graphicsTexture);
+}
+
+/**
+ * Helper: Render graphics overlay texture to screen with alpha blending
+ */
+function renderGraphicsOverlay(texture: WebGLTexture) {
+    if (!gl || !fullScreenQuad || !canvas || !compositeProgram) return;
+    
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    
+    gl.useProgram(compositeProgram);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    
+    const positionLoc = gl.getAttribLocation(compositeProgram, 'a_position');
+    const texCoordLoc = gl.getAttribLocation(compositeProgram, 'a_texCoord');
+    
+    if (fullScreenQuad) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, fullScreenQuad.positionBuffer);
+        gl.enableVertexAttribArray(positionLoc);
+        gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, fullScreenQuad.texCoordBuffer);
+        gl.enableVertexAttribArray(texCoordLoc);
+        gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
+    }
+    
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    
+    const uImageLoc = gl.getUniformLocation(compositeProgram, 'u_image');
+    const uTranslationLoc = gl.getUniformLocation(compositeProgram, 'u_translation');
+    const uScaleLoc = gl.getUniformLocation(compositeProgram, 'u_scale');
+    const uTexScaleLoc = gl.getUniformLocation(compositeProgram, 'u_texScale');
+    const uTexOffsetLoc = gl.getUniformLocation(compositeProgram, 'u_texOffset');
+    const uFlipHorizontalLoc = gl.getUniformLocation(compositeProgram, 'u_flipHorizontal');
+    const uFlipVerticalLoc = gl.getUniformLocation(compositeProgram, 'u_flipVertical');
+    const uFlipYLoc = gl.getUniformLocation(compositeProgram, 'u_flipY');
+    
+    if (uImageLoc) gl.uniform1i(uImageLoc, 0);
+    if (uTranslationLoc) gl.uniform2f(uTranslationLoc, 0.0, 0.0);
+    if (uScaleLoc) gl.uniform2f(uScaleLoc, 1.0, 1.0);
+    if (uTexScaleLoc) gl.uniform2f(uTexScaleLoc, 1.0, 1.0);
+    if (uTexOffsetLoc) gl.uniform2f(uTexOffsetLoc, 0.0, 0.0);
+    if (uFlipHorizontalLoc) gl.uniform1i(uFlipHorizontalLoc, 0);
+    if (uFlipVerticalLoc) gl.uniform1i(uFlipVerticalLoc, 0);
+    if (uFlipYLoc) gl.uniform1i(uFlipYLoc, 1);
+    
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    gl.disable(gl.BLEND);
+}
+
+// LUT Generation Logic
+function generateLUTData(profile: string): Uint8Array {
+    const width = 512;
+    const height = 512;
+    // RGBA = 4 channels
+    const data = new Uint8Array(width * height * 4);
+    
+    // Default filter for unknown profiles
+    let filter = (r: number, g: number, b: number) => [r, g, b];
+    
+    // Choose filter
+    if (profile === 'noir') {
+        filter = (r, g, b) => {
+            const avg = (r + g + b) / 3;
+            const v = (avg - 128) * 1.5 + 128;
+            return [v, v, v];
+        };
+    } else if (profile === 'vintage') {
+        filter = (r, g, b) => {
+            const tr = (r * 0.393) + (g * 0.769) + (b * 0.189);
+            const tg = (r * 0.349) + (g * 0.686) + (b * 0.168);
+            const tb = (r * 0.272) + (g * 0.534) + (b * 0.131);
+            return [tr, tg, tb];
+        };
+    } else if (profile === 'cool') {
+        filter = (r, g, b) => [r, g, b * 1.5];
+    } else if (profile === 'warm') {
+        filter = (r, g, b) => [r * 1.2, g * 1.1, b * 0.9];
+    } else if (profile === 'cinematic' || profile === 'cinema') {
+        filter = (r, g, b) => { 
+            const gray = (r + g + b) / 3;
+            let nr = r, ng = g, nb = b;
+            if (gray < 128) {
+                 nb += (128 - gray) * 0.5;
+                 ng += (128 - gray) * 0.1;
+                 nr -= (128 - gray) * 0.2;
+            } else {
+                 nr += (gray - 128) * 0.5;
+                 ng += (gray - 128) * 0.1;
+                 nb -= (gray - 128) * 0.2;
+            }
+             nr = (nr - 128) * 1.1 + 128;
+             ng = (ng - 128) * 1.1 + 128;
+             nb = (nb - 128) * 1.1 + 128;
+             return [nr, ng, nb];
+        };
+    }
+
+    // Standard Bottom-Up Layout (matches standard BMP & WebGL texture space)
+    // y=0 is Bottom Row.
+    // Tile 0 (Blue=0) should be at Bottom-Left.
+    
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            
+            // 1. Identify Tile (8x8 grid)
+            const tileX = Math.floor(x / 64);
+            const tileY = Math.floor(y / 64);
+            
+            // 2. Identify coordinates inside tile (0-63)
+            const redRaw = x % 64;
+            const greenRaw = y % 64;
+            
+            // 3. Identify Blue value based on tile index
+            // tileY * 8 + tileX
+            const blueRaw = tileY * 8 + tileX;
+            
+            // 4. Normalize (0-255)
+            const r = Math.floor(redRaw * (255 / 63));
+            const g = Math.floor(greenRaw * (255 / 63));
+            const b = Math.floor(blueRaw * (255 / 63));
+
+            // 5. Apply Filter
+            const [fr, fg, fb] = filter(r, g, b);
+
+            // 6. Write Pixel (RGBA)
+            const index = (y * width + x) * 4;
+            data[index] = Math.max(0, Math.min(255, Math.floor(fr)));
+            data[index + 1] = Math.max(0, Math.min(255, Math.floor(fg)));
+            data[index + 2] = Math.max(0, Math.min(255, Math.floor(fb)));
+            data[index + 3] = 255; // Alpha
+        }
+    }
+    return data;
+}
+
+function renderCinematicSource() {
+    if (!gl || !unitQuad || !compositeProgram) return;
+
+    const sourceTexture = textureMap.get('cinematic');
+    if (!sourceTexture || !canvas) return;
 
     gl.useProgram(compositeProgram);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-
-    const branding = visualSettings.branding;
-    const scale = branding.logoScale || 1.0;
-    const padding = 0.05; // 5% padding
-    const logoW = 0.15 * scale;
-    const logoH = logoW * (canvas.width / canvas.height);
-
-    let x = padding;
-    let y = padding;
-
-    if (branding.logoPosition === 'top-right') {
-        x = 1.0 - logoW - padding;
-    } else if (branding.logoPosition === 'bottom-left') {
-        y = 1.0 - logoH - padding;
-    } else if (branding.logoPosition === 'bottom-right') {
-        x = 1.0 - logoW - padding;
-        y = 1.0 - logoH - padding;
-    }
+    gl.viewport(0, 0, canvas.width, canvas.height);
 
     const positionLoc = gl.getAttribLocation(compositeProgram, 'a_position');
     const texCoordLoc = gl.getAttribLocation(compositeProgram, 'a_texCoord');
@@ -1143,30 +2131,23 @@ function renderBrandLogo() {
     gl.enableVertexAttribArray(texCoordLoc);
     gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, brandLogoTexture);
-    if (uImageLoc) gl.uniform1i(uImageLoc, 0);
-
-    gl.uniform2f(uTranslationLoc!, x, y);
-    gl.uniform2f(uScaleLoc!, logoW, logoH);
-    gl.uniform2f(uTexScaleLoc!, 1.0, 1.0);
-    gl.uniform2f(uTexOffsetLoc!, 0.0, 0.0);
+    gl.uniform2f(uTranslationLoc!, 0, 0);
+    gl.uniform2f(uScaleLoc!, 1, 1);
+    gl.uniform2f(uTexScaleLoc!, 1, 1);
+    gl.uniform2f(uTexOffsetLoc!, 0, 0);
     gl.uniform1i(uFlipHorizontalLoc!, 0);
     gl.uniform1i(uFlipVerticalLoc!, 0);
+    gl.uniform1i(uFlipYLoc!, 1);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, sourceTexture);
+    gl.uniform1i(uImageLoc!, 0);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.disable(gl.BLEND);
 }
 
-function renderBreakOverlay(time: number) {
-    if (!gl || !fullScreenQuad || !canvas) return;
-
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0, 0, 0, 0.7); 
-    
-    gl.disable(gl.BLEND);
+function renderLyrics() {
+    // For full-screen cinematic mode, we pass 0,0,1,1
+    renderLyricsInRegion(0, 0, 1, 1);
 }
 

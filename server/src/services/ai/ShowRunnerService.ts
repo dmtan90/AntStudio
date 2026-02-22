@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { GeminiChatProvider } from '../../utils/ai/providers/GeminiChatProvider.js';
+import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { socketServer } from '../SocketServer.js';
 import { SHOW_PROFILES, ShowProfileType, ShowProfile } from '../../constants/ShowProfiles.js';
 import { EmotionAnalysisService } from './EmotionAnalysisService.js';
@@ -28,13 +28,13 @@ export interface LiveScript {
 }
 
 class ShowRunnerService extends EventEmitter {
-    private gemini: GeminiChatProvider;
+    private gemini: GeminiClient;
     private activeScript: LiveScript | null = null;
     private timer: NodeJS.Timeout | null = null;
 
     constructor() {
         super();
-        this.gemini = new GeminiChatProvider();
+        this.gemini = new GeminiClient({});
     }
 
     public getProfiles(): ShowProfile[] {
@@ -127,8 +127,16 @@ class ShowRunnerService extends EventEmitter {
         const userPrompt = "Generate the full run-of-show script now.";
 
         try {
-            const steps = await this.gemini.generateJson(userPrompt, 'gemini-2.5-flash', { systemPrompt });
-            
+            const result = await this.gemini.generateContent([{ text: userPrompt }], 'gemini-2.5-flash', { 
+                systemInstruction: systemPrompt,
+                responseMimeType: 'application/json' 
+            });
+            let steps = [];
+            try {
+                steps = JSON.parse(result.text || '[]');
+            } catch (e) {
+                console.warn('[ShowRunner] Failed to parse script JSON:', e);
+            }
 
             // Validate and sanitized steps while enriching with emotions and visual FX
             const sanitizedSteps: ScriptStep[] = await Promise.all((Array.isArray(steps) ? steps : []).map(async (s: any, i: number) => {

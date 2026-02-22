@@ -423,6 +423,7 @@ export class SyntheticGuestManager {
         return {
             // Primary identifier
             uuid: uuid,
+            id: uuid, // Added for UI compatibility (AIPersonaSettings.vue)
             
             // New VTuber Schema
             entityId: entityId,

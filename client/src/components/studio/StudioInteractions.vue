@@ -77,7 +77,7 @@
                         <span class="text-[8px] opacity-40">{{ new Date(moment.timestamp).toLocaleTimeString() }}</span>
                     </div>
                     <div class="aspect-video bg-black/40 rounded-lg mb-2 flex items-center justify-center group-hover:bg-black/60 transition-colors cursor-pointer relative overflow-hidden">
-                        <video v-if="moment.s3Url" :src="moment.s3Url" class="w-full h-full object-cover opacity-60 group-hover:opacity-100" muted />
+                        <video v-if="moment.s3Key" :src="getFileUrl(moment.s3Key)" class="w-full h-full object-cover opacity-60 group-hover:opacity-100" muted />
                         <play theme="filled" class="absolute opacity-50 group-hover:opacity-100" />
                     </div>
                     <div class="flex gap-2">
@@ -107,7 +107,7 @@
                 </div>
                 <div class="flex flex-col items-end">
                     <span class="opacity-30 text-[9px] uppercase font-black tracking-widest mb-1 text-right">Peak</span>
-                    <span class="text-xs font-mono opacity-60">{{ (viewers || 0) + 124 }}</span>
+                    <span class="text-xs font-mono opacity-60">{{ engagement?.peakViewers || viewers || 0 }}</span>
                 </div>
             </div>
 
@@ -119,23 +119,26 @@
                             <div class="w-1.5 h-1.5 rounded-full"
                                 :class="health?.status === 'good' ? 'bg-green-400' : 'bg-yellow-400'"></div>
                             <span class="text-[9px] font-black uppercase"
-                                :class="health?.status === 'good' ? 'text-green-400' : 'text-yellow-400'">{{
-                                    health?.status || 'OPTIMIZING' }}</span>
+                                :class="health?.status === 'good' ? 'text-green-400' : (health?.status === 'poor' ? 'text-red-400' : 'text-yellow-400')">{{
+                                    health?.status || '...' }}</span>
                         </div>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-[9px] font-black opacity-30 uppercase">Bitrate</span>
-                        <span class="text-xs font-mono">{{ Math.round(health?.bitrate || 0) }} kbps</span>
+                        <div class="flex items-center gap-2">
+                           <span v-if="effectiveQuality" class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded uppercase font-black">{{ effectiveQuality }}</span>
+                           <span class="text-xs font-mono">{{ Math.round(health?.bitrate || 0) }} kbps</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="p-4 rounded-2xl bg-white/5 border border-white/5">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[9px] font-black opacity-30 uppercase">Latency (RTT)</span>
-                        <span class="text-xs font-mono">{{ Math.round(health?.rtt || 24) }}ms</span>
+                        <span class="text-xs font-mono">{{ health?.rtt ? Math.round(health.rtt) + 'ms' : '--' }}</span>
                     </div>
                     <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                        <div class="h-full bg-blue-500/40" :style="{ width: '15%' }"></div>
+                        <div class="h-full bg-blue-500/40" :style="{ width: Math.min((health?.rtt || 0) / 5, 100) + '%' }"></div>
                     </div>
                 </div>
             </div>
@@ -212,12 +215,14 @@ import { useVTuberStore } from '@/stores/vtuber';
 import { storeToRefs } from 'pinia';
 import { useStudioStore } from '@/stores/studio';
 import { toast } from 'vue-sonner';
+import { getFileUrl } from '@/utils/api';
 
 const studioStore = useStudioStore();
 
 const projectStore = useProjectStore();
 const vtuberStore = useVTuberStore();
 const { currentVTuber } = storeToRefs(vtuberStore);
+const { health, engagement, viewerCount: viewers } = storeToRefs(studioStore);
 
 const props = defineProps<{
     messages: any[];
@@ -233,10 +238,15 @@ const props = defineProps<{
     addMobileCam: (guestId: string) => void;
     isGuest: boolean;
     guestVideoElements: Map<string, HTMLVideoElement>;
-    viewers?: number;
-    health?: any;
-    engagement?: any;
+    // viewers?: number;
+    // health?: any;
+    // engagement?: any;
+    effectiveQuality?: string;
 }>();
+
+watch([health, engagement, viewers], (values) => {
+    console.log('Interactions:', values);
+});
 
 const parseEmojis = (text: string) => {
     // Regex for basic emojis

@@ -26,7 +26,11 @@
                     <div class="flex items-center gap-3">
                         <div
                             class="w-10 h-10 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center">
-                            <pic theme="outline" size="16" class="opacity-20" />
+                            <el-image :src="getFileUrl(bg.url)" :size="20">
+                                <template #error>
+                                    <pic theme="outline" size="16" class="opacity-20" />
+                                </template>
+                            </el-image>
                         </div>
                         <span class="text-[10px] font-bold">{{ bg.name }}</span>
                     </div>
@@ -77,6 +81,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { Pic, Upload } from '@icon-park/vue-next';
+import { getFileUrl } from '@/utils/api';
 
 const props = defineProps<{
     activeFilter: string;

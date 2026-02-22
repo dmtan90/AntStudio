@@ -185,6 +185,18 @@ router.get('/templates', authMiddleware, async (req: AuthRequest, res) => {
                             let pages = [];
                             try {
                                 pages = typeof t.pages === 'string' ? JSON.parse(t.pages) : t.pages;
+                                
+                                // Calculate orientation for each page
+                                if (pages && pages.length > 0) {
+                                    pages.forEach((p: any) => {
+                                        if (p.data && p.data.width && p.data.height) {
+                                            const { width, height } = p.data;
+                                            if (width < height) p.data.orientation = 'portrait';
+                                            else if (width === height) p.data.orientation = 'square';
+                                            else if (width > height) p.data.orientation = 'landscape';
+                                        }
+                                    });
+                                }
                             } catch (e) {
                                 console.warn(`Failed to parse pages for template ${t.id}`, e);
                             }
@@ -216,7 +228,7 @@ router.get('/templates', authMiddleware, async (req: AuthRequest, res) => {
             }
         }
 
-        const { category, search, sort, pricing, page = 1, limit = 20, tab = 'public', platform } = req.query;
+        const { category, search, sort, pricing, page = 1, limit = 20, tab = 'public', platform, ratio } = req.query;
 
         const filter: any = {};
 
@@ -239,6 +251,7 @@ router.get('/templates', authMiddleware, async (req: AuthRequest, res) => {
         }
 
         if (pricing) filter['pricing.type'] = pricing;
+        if (ratio) filter['pages.data.orientation'] = ratio;
 
         if (search) {
             // Using a simple regex search if text index isn't available or for partial matches
@@ -299,9 +312,22 @@ router.get('/templates/:id', async (req, res) => {
 // POST /api/marketplace/templates - Create template
 router.post('/templates', authMiddleware, async (req: AuthRequest, res) => {
     try {
-        await connectDB();
+        const templateData = req.body;
+        
+        // Ensure orientation is calculated for each page
+        if (templateData.pages && Array.isArray(templateData.pages)) {
+            templateData.pages.forEach((p: any) => {
+                if (p.data && p.data.width && p.data.height) {
+                    const { width, height } = p.data;
+                    if (width < height) p.data.orientation = 'portrait';
+                    else if (width === height) p.data.orientation = 'square';
+                    else if (width > height) p.data.orientation = 'landscape';
+                }
+            });
+        }
+
         const template = await Template.create({
-            ...req.body,
+            ...templateData,
             author: req.user!.userId,
             authorName: req.user!.email
         } as any);
@@ -326,6 +352,18 @@ router.post('/import', authMiddleware, async (req: AuthRequest, res) => {
             templateData = await canvaImporter.importDesign(url);
         } else {
             return res.status(400).json({ success: false, error: 'Unsupported URL platform. Use CapCut or Canva links.' });
+        }
+
+        // Calculate orientation for pages
+        if (templateData.pages && Array.isArray(templateData.pages)) {
+            templateData.pages.forEach((p: any) => {
+                if (p.data && p.data.width && p.data.height) {
+                    const { width, height } = p.data;
+                    if (width < height) p.data.orientation = 'portrait';
+                    else if (width === height) p.data.orientation = 'square';
+                    else if (width > height) p.data.orientation = 'landscape';
+                }
+            });
         }
 
         const template = await Template.create({
@@ -355,6 +393,18 @@ router.post('/import/pptx', authMiddleware, upload.single('file'), async (req: A
 
         const templateData = await pptxImporter.importPptx(file, userId);
 
+        // Calculate orientation
+        if (templateData.pages && Array.isArray(templateData.pages)) {
+            templateData.pages.forEach((p: any) => {
+                if (p.data && p.data.width && p.data.height) {
+                    const { width, height } = p.data;
+                    if (width < height) p.data.orientation = 'portrait';
+                    else if (width === height) p.data.orientation = 'square';
+                    else if (width > height) p.data.orientation = 'landscape';
+                }
+            });
+        }
+
         const template = await Template.create({
             ...templateData,
             author: userId,
@@ -383,6 +433,18 @@ router.post('/import/canva', authMiddleware, async (req: AuthRequest, res) => {
         }
 
         const templateData = await canvaImporter.importDesign(url);
+
+        // Calculate orientation
+        if (templateData.pages && Array.isArray(templateData.pages)) {
+            templateData.pages.forEach((p: any) => {
+                if (p.data && p.data.width && p.data.height) {
+                    const { width, height } = p.data;
+                    if (width < height) p.data.orientation = 'portrait';
+                    else if (width === height) p.data.orientation = 'square';
+                    else if (width > height) p.data.orientation = 'landscape';
+                }
+            });
+        }
 
         const template = await Template.create({
             ...templateData,

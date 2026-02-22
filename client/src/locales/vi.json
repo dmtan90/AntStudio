@@ -162,16 +162,24 @@
                 "segments": "phân đoạn",
                 "confirmCreate": "Bắt đầu",
                 "startOver": "Bắt đầu lại",
-                "thinking": "{appName} đang xử lý ý tưởng của bạn...",
+                "thinking": "Tôi đang xử lý ý tưởng của bạn...",
                 "analyzing": "Đang phân tích yêu cầu...",
                 "sec": "giây",
                 "landscape": "Ngang",
                 "portrait": "Dọc",
                 "square": "Vuông",
                 "classic": "Cổ điển",
-                "reGenerate": "Tạo lại"
+                "reGenerate": "Tạo lại",
+                "approve_script": "Tôi duyệt kịch bản này. Hãy bắt đầu phân tích tài nguyên.",
+                "approve_analysis": "Tôi duyệt phần phân tích tài nguyên. Hãy bắt đầu tạo storyboard."
             },
             "results": {
+                "script": {
+                    "summaryBar": "Kịch bản",
+                    "title": "Kịch bản đã tạo",
+                    "hint": "Xem lại kịch bản trên. Bạn có thể duyệt nó để tiếp tục phân tích điện ảnh.",
+                    "approveBtn": "Duyệt & Phân tích"
+                },
                 "analysis": {
                     "summaryBar": "Phân tích Tài nguyên",
                     "isReady": "đã sẵn sàng",
@@ -180,11 +188,13 @@
                     "scriptAnalysisTitle": "Phân tích Kịch bản",
                     "generalOverview": "Thông tin Tổng quan",
                     "genre": "Thể loại",
+                    "mood": "Tâm trạng",
                     "duration": "Thời lượng dự kiến",
                     "setting": "Bối cảnh",
                     "themes": "Chủ đề chính",
                     "characterSystem": "Hệ thống Nhân vật",
                     "narrativeStructure": "Cấu trúc Truyện",
+                    "scenes": "Phân cảnh",
                     "segmentsCount": "Phân cảnh sản xuất",
                     "act1": "Phần I",
                     "act2": "Phần II",
@@ -195,7 +205,8 @@
                     "cameraAngles": "Góc quay",
                     "audioElements": "Yếu tố Âm thanh",
                     "sfx": "Hiệu ứng âm thanh",
-                    "music": "Nhạc nền"
+                    "music": "Nhạc nền",
+                    "approveAndCreateStoryboard": "Phê duyệt & Tạo Storyboard"
                 },
                 "brief": {
                     "summaryBar": "Creative Brief",
@@ -211,7 +222,9 @@
                 },
                 "storyboard": {
                     "summaryBar": "Storyboard",
-                    "isUpdated": "đã cập nhật"
+                    "isUpdated": "đã cập nhật",
+                    "hint": "Xem lại các phân đoạn storyboard trên. Nếu bạn hài lòng, hãy duyệt để tạo dự án và vào trình chỉnh sửa.",
+                    "approveBtn": "Duyệt & Tạo dự án"
                 },
                 "closing": {
                     "intro": "Để tạo ra video chất lượng cao, tôi cần thêm một chút chi tiết. Bạn nghĩ sao về những điều này?",
@@ -267,7 +280,17 @@
                 "productionSegments": "Phân đoạn sản xuất",
                 "regenerateAi": "Tạo lại AI",
                 "regenerateAllFrames": "Tạo lại tất cả Frame",
-                "regenerateAllVideos": "Tạo lại tất cả Video",
+                "styleRules": "Quy tắc phong cách",
+                "audio": "Âm thanh",
+                "audioTitle": "Sản xuất & Chấm điểm âm thanh",
+                "musicSection": "Nhạc nền",
+                "voiceoverSection": "Lồng tiếng & Yếu tố giọng nói",
+                "subtitlesSection": "Phụ đề & Văn bản",
+                "generateMusic": "Tạo nhạc nền",
+                "regenerateMusic": "Tạo lại nhạc nền",
+                "generateVoiceovers": "Tạo tất cả lồng tiếng",
+                "voiceoverReady": "Lồng tiếng đã sẵn sàng!",
+                "musicReady": "Nhạc nền đã sẵn sàng!",
                 "batchStart": "Bắt đầu tạo hàng loạt cho",
                 "batchComplete": "Hoàn tất hàng loạt:",
                 "charsUpdated": "nhân vật đã cập nhật",
@@ -431,10 +454,13 @@
                 "title": "Timeline",
                 "tracks": "Track",
                 "videoTrack": "Video",
+                "subtitleTrack": "Track phụ đề",
                 "voiceTrack": "Giọng nói AI",
                 "musicTrack": "Nhạc nền",
                 "backgroundMusic": "Nhạc nền",
                 "dialogueSegment": "Lời thoại",
+                "noCaptions": "Không có phụ đề",
+                "noLowerThirds": "Không có Lower Thirds",
                 "volume": "Âm lượng",
                 "fadeOut": "Giảm dần (Fade Out)",
                 "speed": "Tốc độ",

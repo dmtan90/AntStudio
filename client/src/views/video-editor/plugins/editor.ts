@@ -5,6 +5,7 @@ import { toBlobURL } from "@ffmpeg/util";
 import WebFont from "webfontloader";
 import { checkForAudioInVideo } from "video-editor/lib/media";
 import { cloneDeep } from 'lodash'
+import { MP4Clip } from '@webav/av-cliper';
 
 import { Canvas } from "./canvas";
 import { Prompt } from "./prompt";
@@ -20,6 +21,7 @@ import { type EditorAudioElement, EditorTemplate, EditorTemplatePage } from "vid
 import { Adapter } from "./adapter";
 import { useEditorStore } from "video-editor/store/editor"
 import { cat } from "@huggingface/transformers";
+import { useProjectStore } from "@/stores/project";
 
 export type ExportMode = "video" | "both";
 export type EditorMode = "creator" | "adapter";
@@ -28,6 +30,7 @@ export type EditorStatus = "uninitialized" | "pending" | "complete" | "error";
 export interface EditorProgress {
   capture: number;
   compile: number;
+  upload: number;
 }
 
 export enum ExportProgress {
@@ -37,6 +40,7 @@ export enum ExportProgress {
   CaptureAudio = 3,
   CaptureVideo = 4,
   CompileVideo = 5,
+  UploadVideo = 6,
 }
 
 export interface Dimension {
@@ -92,6 +96,7 @@ export class Editor {
   public onStatusChange?: (status: EditorStatus) => void;
   public onTick?: () => void;
   public onThumbnailUpdated?: () => void;
+  private _isRenderingHeadless = false;
 
   constructor() {
     this.page = 0;
@@ -119,7 +124,7 @@ export class Editor {
 
     this.exporting = ExportProgress.None;
     this.ffmpeg = markRaw(createInstance(FFmpeg));
-    this.progress = { capture: 0, compile: 0 };
+    this.progress = { capture: 0, compile: 0, upload: 0 };
 
     this.file = "";
     this.fps = 30;
@@ -152,30 +157,37 @@ export class Editor {
     }
   }
 
-  async initialize(mode?: EditorMode) {
-    console.log("initialize", mode);
+  async initialize(mode: EditorMode = "creator") {
+    console.log("[Editor] initialize", mode, this.status);
+    
+    if (this.status === "pending") return;
+    if (this.status === "complete") {
+      if (mode) this.mode = mode;
+      if (this.isHeadless) {
+        this.autoRenderAndExport();
+      }
+      return;
+    }
+
     if (mode) this.mode = mode;
     this.status = "pending";
     this.onStatusChange?.("pending");
+
     try {
       await this.ffmpeg.load({
         coreURL: await toBlobURL("https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js", "text/javascript"),
         wasmURL: await toBlobURL("https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm", "application/wasm"),
       });
       this.ffmpeg.on("progress", this._progressEvent.bind(this));
-      // this.status = "complete";
-      //load custom font before starting
-      let fontFamilies = [];
+      
+      let fontFamilies: string[] = [];
       fonts.forEach(font => {
         fontFamilies.push(font.family);
       });
+
       WebFont.load({
         google: { families: fontFamilies },
-        fontloading: (family) => {
-          // console.debug("Loading font " + family);
-        },
         active: async () => {
-          // console.debug("Fonts loaded!");
           this.status = "complete";
           
           if (this.targetRatio) {
@@ -186,65 +198,82 @@ export class Editor {
           this.onStatusChange?.("complete");
 
           if (this.isHeadless) {
-            console.log("[Editor] Headless mode detected, starting auto-render...");
+            console.log("[Editor] Headless mode: Starting auto-render...");
             await this.autoRenderAndExport();
           }
         },
       });
     } catch (error) {
+      console.error("[Editor] Initialization failed:", error);
       this.status = "error";
       this.onStatusChange?.("error");
     }
   }
 
-  async autoRenderAndExport() {
+  async autoRenderAndExport(): Promise<Blob | null> {
+    if (this.status === "pending") {
+      console.log("[Editor] autoRenderAndExport: Waiting for initialization...");
+      await new Promise<void>((resolve) => {
+        const check = () => {
+          if (this.status === "complete") resolve();
+          else if (this.status === "error") resolve();
+          else setTimeout(check, 200);
+        };
+        check();
+      });
+    }
+
+    if (this._isRenderingHeadless) {
+      console.log("[Editor] Render already in progress, skipping.");
+      return null;
+    }
+
+    this._isRenderingHeadless = true;
     try {
-      this.onChangeExportStatus(ExportProgress.CaptureVideo);
-      const blob = await this.exportVideoBatch();
-      if (blob) {
-        // In headless mode, we can either download or upload to S3
-        // For now, let's trigger a download to verify
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ad_render_${this.targetRatio?.replace(':', 'x') || 'auto'}.mp4`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.onChangeExportStatus(ExportProgress.Completed);
-      }
+      this.onChangeExportStatus(ExportProgress.None);
+      this.width = this.canvas?.artboard.width || 1920;
+      this.height = this.canvas?.artboard.height || 1080;
+      this.fps = this.canvas?.artboard.fps || 30;
+      this.codec = this.canvas?.artboard.codec || "H264";
+      this.format = this.canvas?.artboard.format || "mp4";
+      const blob = await this.exportVideo();
+      return blob;
     } catch (error) {
       console.error("[Editor] Headless render failed:", error);
       this.onChangeExportStatus(ExportProgress.Error);
+    } finally {
+      this._isRenderingHeadless = false;
     }
+    return null;
   }
 
-  async exportVideoBatch(): Promise<Blob> {
-    // This is a simplified batch render for headless mode
-    // It captures all pages and compiles them
-    await this.recorder.start();
-    const frames = await this.recorder.capture(this.fps, {
-      progress: (p) => {
-        this._progressEvent({ progress: p.progress, frame: p.frame });
-      }
-    });
+  // async exportVideoBatch(): Promise<Blob> {
+  //   // This is a simplified batch render for headless mode
+  //   // It captures all pages and compiles them
+  //   await this.recorder.start();
+  //   const frames = await this.recorder.capture(this.fps, {
+  //     progress: (p) => {
+  //       this._progressEvent({ progress: p.progress, frame: p.frame });
+  //     }
+  //   });
 
-    this.onChangeExportStatus(ExportProgress.CaptureAudio);
-    const audioBlob = await this.exportAudio();
+  //   this.onChangeExportStatus(ExportProgress.CaptureAudio);
+  //   const audioBlob = await this.exportAudio();
 
-    this.onChangeExportStatus(ExportProgress.CompileVideo);
-    const videoBlob = await this.recorder.compile(frames, {
-      ffmpeg: this.ffmpeg,
-      fps: this.fps,
-      codec: this.codec,
-      audio: audioBlob,
-      progress: (p) => {
-        this._progressEvent({ progress: p.progress });
-      }
-    });
+  //   this.onChangeExportStatus(ExportProgress.CompileVideo);
+  //   const videoBlob = await this.recorder.compile(frames, {
+  //     ffmpeg: this.ffmpeg,
+  //     fps: this.fps,
+  //     codec: this.codec,
+  //     audio: audioBlob,
+  //     progress: (p) => {
+  //       this._progressEvent({ progress: p.progress });
+  //     }
+  //   });
 
-    await this.recorder.stop();
-    return videoBlob;
-  }
+  //   await this.recorder.stop();
+  //   return videoBlob;
+  // }
 
   matchTargetRatio(ratioStr: string) {
     const [targetW, targetH] = ratioStr.split(':').map(Number);
@@ -347,8 +376,7 @@ export class Editor {
     let offsetMs = 0;
     for (let i = 0; i < this.pages.length; i++) {
       const canvas = this.pages[i];
-      const timeline = canvas.timeline;
-      offsetMs += timeline.duration;
+      offsetMs += canvas.duration;
     }
     return offsetMs;
   }
@@ -360,19 +388,16 @@ export class Editor {
     let offsetMs = 0;
     for (let i = 0; i < this.pages.length; i++) {
       const canvas = this.pages[i];
-      const timeline = canvas.timeline;
+      const duration = canvas.duration;
 
       const audios = canvas.audio.elements.filter((audio) => !audio.muted && !!audio.volume);
-      const videos = canvas.instance._objects.filter(FabricUtils.isVideoElement) as any[];
-      // const visuals = canvas.instance._objects.filter(FabricUtils.isAudioElement) as fabric.Audio[];
-      // if(visuals && visuals.length > 0){
-      //   visuals.forEach(visual => {
-      //     audios.push(visual);
-      //   });
-      //   for(let i = 0; i < visuals.length; i++){
-      //     let audio = 
-      //   }
-      // }
+      
+      let videos = [];
+      if (canvas.instance) {
+        videos = canvas.instance._objects.filter(FabricUtils.isVideoElement);
+      } else if (canvas._jsonState && canvas._jsonState.objects) {
+        videos = canvas._jsonState.objects.filter((obj: any) => obj.type === 'video' && obj.hasAudio);
+      }
 
       audios.forEach(audio => {
         if (audio) {
@@ -380,7 +405,7 @@ export class Editor {
         }
       })
 
-      const tracks: EditorAudioElement[] = await canvas.audio.extract(videos, { ffmpeg: this.ffmpeg, signal: this.controller.signal });
+      const tracks: EditorAudioElement[] = await canvas.audio.extract(videos as any, { ffmpeg: this.ffmpeg, signal: this.controller.signal });
       tracks.forEach(track => {
         if (track) {
           track.offset += offsetMs / 1000;
@@ -390,7 +415,7 @@ export class Editor {
       if (audios.length > 0 || tracks.length > 0) {
         combined = combined.concat(audios, tracks);
       }
-      offsetMs += timeline.duration;
+      offsetMs += duration;
     }
 
     // console.log("exportAudio", combined);
@@ -415,8 +440,59 @@ export class Editor {
     return blob;
   }
 
-  async exportVideo(): Promise<Blob> {
-    return null;
+  async exportVideo(headless: boolean = false, upload: boolean = true): Promise<Blob> {
+    this.isHeadless = headless;
+    this.blob = undefined;
+    this.frame = undefined;
+    this.onResetProgress();
+    // const editor = useEditorStore();
+    // console.log(editor.dimension);
+
+    try {
+      // const canvas = new OffscreenCanvas(this.width, this.height);
+      // this.recorder.initialize(canvas);
+      this.onChangeExportStatus(ExportProgress.CaptureAudio);
+      const audio: Blob = await this.exportAudio();
+      this.controller = createInstance(AbortController);
+      await this.recorder.start();
+      this.onChangeExportStatus(ExportProgress.CaptureVideo);
+      const frames: Uint8Array[] = await this.recorder.capture(+this.fps, { signal: this.controller.signal, progress: this._progressEvent.bind(this) });
+      this.recorder.stop();
+      this.onChangeExportStatus(ExportProgress.CompileVideo);
+      let nowMs = (new Date()).getTime();
+      let blob: Blob = await this.recorder.mediaBunnyCompile(frames, { width: this.width, height: this.height, scale: this.scale, fps: this.fps, format: this.format, duration: this.getExportDuration(), signal: this.controller.signal, progress: this._progressEvent.bind(this), audio });
+      console.log("Media Bunny cost:", (new Date()).getTime() - nowMs);
+      // nowMs = (new Date()).getTime();
+      // blob: Blob = await this.recorder.compile(frames, { ffmpeg: this.ffmpeg, codec: this.codec, fps: this.fps, signal: this.controller.signal, audio, progress: this._progressEvent.bind(this) });
+      // console.log("FFMPEG cost:", (new Date()).getTime() - nowMs);
+      this.blob = blob;
+
+      //upload video to S3
+      if(this.id && upload){
+        const projectStore = useProjectStore();
+        // Use FormData for direct multipart upload
+        const formData = new FormData();
+        formData.append('video', blob, `${this.name || 'Untitled'}.${this.format}`);
+        // Upload directly to project endpoint via store
+        await projectStore.publishProject(this.id, formData, (percent) => {
+            this.progress.upload = percent;
+            // toast.info(`Uploading: ${percent}%`);
+        });
+        toast.success('Video exported and saved successfully!');
+
+        // Refresh project data
+        await projectStore.fetchProject(this.id);
+      }
+      this.onChangeExportStatus(ExportProgress.Completed);
+      
+      return blob;
+    } catch (error) {
+      this.onChangeExportStatus(ExportProgress.Error);
+      this.recorder.stop();
+      throw error;
+    } finally {
+      this.recorder.stop();
+    }
   }
 
   async exportProjectToStream(fileHandle: FileSystemFileHandle, progress?: (p: number, status: string) => void): Promise<void> {
@@ -584,40 +660,50 @@ export class Editor {
     return template;
   }
 
-  loadTemplate(template: EditorTemplate, mode: "replace" | "reset") {
+  async loadTemplate(template: EditorTemplate, mode: "replace" | "reset") {
     console.log("loadTemplate", template, mode);
     try {
+      const pageSize = template?.pages?.length ?? 0;
       switch (mode) {
         case "reset":
-          this.id = template.id;
-          this.name = template.name;
-          for (let index = 0; index < template.pages.length; index++) {
+          // this.id = template.id;
+          // this.name = template.name;
+          for (let index = 0; index < pageSize; index++) {
             const page = template.pages[index];
-            const initialized = !!this.pages[index];
-            if (!initialized) this.pages[index] = createInstance(Canvas, this);
-            this.pages[index].transition = page.transition;
-            this.pages[index].transitionDirection = page.transitionDirection;
-            this.pages[index].transitionDuration = page.transitionDuration;
-            this.pages[index].transitionEasing = page.transitionEasing;
-            this.pages[index].template.set(page);
-            if (initialized && this.pages[index].initialized) this.pages[index].template.load();
+            let canvas = this.pages[index];
+            const initialized = !!canvas;
+            if (!initialized){
+              canvas = createInstance(Canvas, this);
+              // this.pages[index] = canvas;
+            }
+            
+            canvas.transition = page.transition;
+            canvas.transitionDirection = page.transitionDirection;
+            canvas.transitionDuration = page.transitionDuration;
+            canvas.transitionEasing = page.transitionEasing;
+            canvas.template.set(page);
+            if (initialized && canvas.initialized) await canvas.template.load();
           }
-          if (this.pages.length <= template.pages.length || template.pages.length == 0) return;
-          for (let index = template.pages.length; index < this.pages.length; index++) this.pages[index].destroy();
-          this.pages.splice(template.pages.length);
+          if (this.pages.length <= pageSize || pageSize == 0) return;
+          for (let index = pageSize; index < this.pages.length; index++) this.pages[index].destroy();
+          this.pages.splice(pageSize);
           break;
         case "replace":
-          for (let index = 0; index < template.pages.length; index++) {
+          for (let index = 0; index < pageSize; index++) {
             const offset = index + this.page;
             const page = template.pages[index];
-            const initialized = !!this.pages[offset];
-            if (!initialized) this.pages[offset] = createInstance(Canvas, this);
-            this.pages[offset].transition = page.transition;
-            this.pages[offset].transitionDirection = page.transitionDirection;
-            this.pages[offset].transitionDuration = page.transitionDuration;
-            this.pages[offset].transitionEasing = page.transitionEasing;
-            this.pages[offset].template.set(page);
-            if (initialized && this.pages[offset].initialized) this.pages[offset].template.load();
+            let canvas = this.pages[offset];
+            const initialized = !!canvas;
+            if (!initialized){
+              canvas = createInstance(Canvas, this);
+              // this.pages[offset] = canvas;
+            }
+            canvas.transition = page.transition;
+            canvas.transitionDirection = page.transitionDirection;
+            canvas.transitionDuration = page.transitionDuration;
+            canvas.transitionEasing = page.transitionEasing;
+            canvas.template.set(page);
+            if (initialized && canvas.initialized) await canvas.template.load();
           }
           break;
       }
@@ -629,7 +715,7 @@ export class Editor {
   }
 
   onResetProgress() {
-    this.progress = { capture: 0, compile: 0 };
+    this.progress = { capture: 0, compile: 0, upload: 0 };
   }
 
   onChangeExportStatus(status: ExportProgress) {

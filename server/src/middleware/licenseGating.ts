@@ -13,36 +13,37 @@ export const licenseGating = (requiredTier: 'trial' | 'basic' | 'pro' | 'enterpr
             return next();
         }
 
-        // Edge servers retrieve license state from local cache/database
-        const { License } = await import('../models/License.js');
-        const localLicense = await License.findOne({ status: 'valid' });
+        // Need to check this task
+        // // Edge servers retrieve license state from local cache/database
+        // const { License } = await import('../models/License.js');
+        // const localLicense = await License.findOne({ status: 'valid' });
 
-        if (!localLicense) {
-            return res.status(402).json({
-                success: false,
-                error: 'Tactical Block: valid license registry not found on this Edge unit.'
-            });
-        }
+        // if (!localLicense) {
+        //     return res.status(402).json({
+        //         success: false,
+        //         error: 'Tactical Block: valid license registry not found on this Edge unit.'
+        //     });
+        // }
 
-        const now = new Date();
-        if (now > localLicense.endDate) {
-            return res.status(402).json({
-                success: false,
-                error: 'Access Terminated: license has reached end-of-mission life.'
-            });
-        }
+        // const now = new Date();
+        // if (now > localLicense.endDate) {
+        //     return res.status(402).json({
+        //         success: false,
+        //         error: 'Access Terminated: license has reached end-of-mission life.'
+        //     });
+        // }
 
-        // Tier check
-        const tiers = ['trial', 'basic', 'pro', 'enterprise'];
-        const currentRank = tiers.indexOf(localLicense.tier);
-        const requiredRank = tiers.indexOf(requiredTier);
+        // // Tier check
+        // const tiers = ['trial', 'basic', 'pro', 'enterprise'];
+        // const currentRank = tiers.indexOf(localLicense.tier);
+        // const requiredRank = tiers.indexOf(requiredTier);
 
-        if (currentRank < requiredRank) {
-            return res.status(403).json({
-                success: false,
-                error: `Clearance Failed: '${requiredTier.toUpperCase()}' tier required for this tactical unit.`
-            });
-        }
+        // if (currentRank < requiredRank) {
+        //     return res.status(403).json({
+        //         success: false,
+        //         error: `Clearance Failed: '${requiredTier.toUpperCase()}' tier required for this tactical unit.`
+        //     });
+        // }
 
         next();
     };

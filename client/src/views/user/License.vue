@@ -1,190 +1,251 @@
 <template>
-  <div class="license-page">
-    <div class="page-container">
-      <div class="page-header">
+  <div class="license-page min-h-screen bg-[#0a0a0c] text-white font-outfit">
+    <!-- Header Section -->
+    <header class="relative py-16 px-8 overflow-hidden border-b border-white/5">
+      <div class="absolute inset-0 bg-gradient-to-br from-yellow-900/20 via-orange-900/10 to-transparent pointer-events-none"></div>
+      
+      <!-- Ambient Glows -->
+      <div class="absolute -top-24 -right-24 w-96 h-96 bg-yellow-500/10 rounded-full blur-[100px] animate-pulse"></div>
+      <div class="absolute top-1/2 -left-24 w-64 h-64 bg-orange-500/10 rounded-full blur-[80px] animate-pulse" style="animation-delay: 1s"></div>
+
+      <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
         <div>
-          <h1 class="glow-title">{{ t('license.title') }}</h1>
-          <p class="subtitle">{{ t('license.description') }}</p>
+          <h1 class="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
+            License <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500">
+              Management
+            </span>
+          </h1>
+          <p class="text-xl text-gray-400 max-w-xl leading-relaxed font-medium">
+             Issue, track, and manage software licenses for your applications.
+          </p>
         </div>
-        <GButton type="primary" size="lg" @click="showLicenseIssueDialog = true">
-          {{ t('license.add') }}
-        </GButton>
-      </div>
-
-      <div class="filters-bar">
-        <GInput v-model="searchQuery" :placeholder="t('license.search')" class="search-input">
-          <template #prefix>
-            <search theme="outline" size="18" />
-          </template>
-        </GInput>
-
-        <div class="filter-tabs">
-          <GSegmented v-model="currentLicenseType" :options="licenseTypeFilters" class="type-segmented" />
-        </div>
-      </div>
-
-      <div v-if="loading" class="license-grid">
-        <GCard v-for="i in 8" :key="i" class="license-card skeleton"></GCard>
-      </div>
-
-      <div v-else-if="filteredLicenses.length > 0" class="flex flex-row">
-        <GTable :data="filteredLicenses" stripe highlight-current-row>
-          <el-table-column type="index" width="50px" />
-          <el-table-column prop="owner" label="Owner" />
-          <el-table-column prop="tier" label="Type">
-            <template #default="{ row }">
-              <el-tag>{{ row.tier }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="maxUsersPerInstance" label="Max Users" />
-          <el-table-column prop="maxProjectsPerInstance" label="Max Projects" />
-          <!-- <el-table-column prop="durationDays" label="Duration Days" /> -->
-          <el-table-column prop="createdAt" label="Created At">
-            <template #default="{ row }">
-              {{ formatDate(row.createdAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="updatedAt" label="Updated At">
-            <template #default="{ row }">
-              {{ formatDate(row.updatedAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Actions">
-            <template #default="{ row }">
-              <el-button type="primary" plain bg circle :icon="PlayOne" @click="handlePreviewLicense(row)" />
-              <el-button type="danger" plain bg circle :icon="Delete" @click="deleteLicense(row)" />
-            </template>
-          </el-table-column>
-        </GTable>
-        <!-- <GCard
-          v-for="license in filteredLicenses"
-          :key="license._id"
-          class="license-card"
-          :bodyStyle="{ padding: '0px !important' }"
+        <button 
+           @click="showLicenseIssueDialog = true" 
+           class="group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden"
         >
-          <div class="license-preview" @click="previewLicense(license)">
-            <img 
-              v-if="isImage(license.contentType)" 
-              :src="getFileUrl(license.key)"
-              :alt="license.fileName"
-              class="preview-image"
-              loading="lazy"
-            />
-            <div v-else-if="isVideo(license.contentType)" class="file-icon video-icon">
-              <play-one theme="filled" size="32" fill="#fff" />
-            </div>
-            <div v-else class="file-icon">
-              {{ getFileIcon(license.contentType) }}
-            </div>
-          </div>
-          <div class="license-info">
-            <h4>{{ license.fileName }}</h4>
-            <div class="license-meta">
-              <span>{{ formatFileSize(license.size) }}</span>
-              <span>{{ formatDate(license.createdAt) }}</span>
-            </div>
-          </div>
-          <div class="license-actions">
-            <button class="action-btn" @click="downloadLicense(license)">
-              <download theme="outline" size="16" />
-              {{ t('license.download') }}
+           <div class="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+           <plus theme="outline" size="20" />
+           Issue License
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-12 px-8">
+      <!-- Filters -->
+      <div class="flex flex-col md:flex-row items-center gap-6 mb-12">
+         <div class="relative group flex-1 w-full md:w-auto md:max-w-md">
+             <search class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-yellow-400 transition-colors" size="18" />
+             <input 
+                v-model="searchQuery" 
+                placeholder="Search licenses..." 
+                class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-medium text-white focus:outline-none focus:border-yellow-500/50 focus:bg-white/10 transition-all"
+             />
+         </div>
+
+         <div class="flex p-1.5 bg-white/5 rounded-2xl border border-white/5 overflow-x-auto">
+            <button v-for="type in licenseTypeFilters" :key="type.value"
+               @click="currentLicenseType = type.value"
+               class="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap"
+               :class="currentLicenseType === type.value ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-gray-500 hover:text-white'"
+            >
+               {{ type.label }}
             </button>
-            <button class="action-btn danger" @click="deleteLicense(license)">
-              <delete theme="outline" size="16" />
-              {{ t('license.delete') }}
-            </button>
-          </div>
-        </GCard> -->
+         </div>
       </div>
 
-      <div v-else class="empty-state">
-        <GCard class="empty-card">
-          <div class="empty-icon">📁</div>
-          <h3>{{ t('license.noLicenses') }}</h3>
-          <p>{{ t('license.noLicensesDesc') }}</p>
-          <GButton type="primary" size="lg" @click="showLicenseIssueDialog = true">
-            {{ t('license.issue') }}
-          </GButton>
-        </GCard>
+      <!-- Loading State -->
+      <div v-if="loading" class="space-y-4">
+         <div v-for="i in 5" :key="i" class="h-20 bg-white/5 rounded-2xl animate-pulse"></div>
       </div>
-    </div>
 
-    <!-- License Issue Dialog -->
-    <GDialog v-model="showLicenseIssueDialog" :title="t('license.issue')" width="500px">
-      <div class="license-form g-form flex flex-col gap-2" v-loading="isUploading">
-        <label>{{ t('license.owner') }}</label>
-        <GInput v-model="licenseForm.owner" :placeholder="t('license.owner')" />
-        <label>{{ t('license.type') }}</label>
-        <GSelect v-model="licenseForm.tier" :placeholder="t('license.type')">
-          <el-option v-for="item in licenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </GSelect>
-        <label>{{ t('license.maxUsers') }}</label>
-        <GInputNumber v-model="licenseForm.maxUsersPerInstance" :min="1"
-          :placeholder="t('license.maxUsersPerInstance')" />
-        <label>{{ t('license.maxProjects') }}</label>
-        <GInputNumber v-model="licenseForm.maxProjectsPerInstance" :min="1"
-          :placeholder="t('license.maxProjectsPerInstance')" />
-        <label>{{ t('license.durationDays') }}</label>
-        <GInputNumber v-model="licenseForm.durationDays" :min="1" :placeholder="t('license.durationDays')" />
-        <el-divider />
-        <GButton type="primary" @click="handleAddLicense">{{ t('license.issue') }}</GButton>
+      <!-- Table Section -->
+      <div v-else-if="filteredLicenses.length > 0" class="bg-white/5 rounded-3xl overflow-hidden border border-white/5 backdrop-blur-sm">
+         <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+               <thead>
+                  <tr class="border-b border-white/5">
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">License Key / Owner</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Type</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">Limits</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Created</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">Actions</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr v-for="license in filteredLicenses" :key="license._id" class="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group">
+                     <td class="px-6 py-5">
+                        <div class="font-bold text-white mb-1">{{ license.owner }}</div>
+                        <div class="text-[10px] font-mono text-gray-500 truncate max-w-[200px]">{{ license.key }}</div>
+                     </td>
+                     <td class="px-6 py-5">
+                        <span class="inline-flex px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border"
+                           :class="{
+                              'bg-purple-500/10 border-purple-500/30 text-purple-400': license.tier === 'enterprise',
+                              'bg-blue-500/10 border-blue-500/30 text-blue-400': license.tier === 'pro',
+                              'bg-gray-500/10 border-gray-500/30 text-gray-400': license.tier === 'trial' || license.tier === 'basic'
+                           }"
+                        >
+                           {{ license.tier }}
+                        </span>
+                     </td>
+                     <td class="px-6 py-5 text-center">
+                        <div class="flex items-center justify-center gap-4 text-xs font-medium text-gray-400">
+                           <span title="Max Users"><user theme="outline" size="14" class="inline mr-1" /> {{ license.maxUsersPerInstance }}</span>
+                           <span title="Max Projects"><folder-close theme="outline" size="14" class="inline mr-1" /> {{ license.maxProjectsPerInstance }}</span>
+                        </div>
+                     </td>
+                     <td class="px-6 py-5 text-xs font-medium text-gray-400">
+                        {{ formatDate(license.createdAt) }}
+                     </td>
+                     <td class="px-6 py-5 text-right">
+                        <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <button 
+                              @click="handlePreviewLicense(license)"
+                              class="w-8 h-8 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center transition-colors"
+                              title="Edit / Preview"
+                           >
+                              <edit theme="outline" size="16" />
+                           </button>
+                           <button 
+                              @click="deleteLicense(license)"
+                              class="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors"
+                              title="Delete"
+                           >
+                              <delete theme="outline" size="16" />
+                           </button>
+                        </div>
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </div>
       </div>
-    </GDialog>
 
-    <!-- License Preview Dialog -->
-    <GDialog v-model="showPreviewDialog" :title="previewLicense?.key" width="500px" custom-class="preview-dialog">
-      <div class="preview-content flex flex-col gap-2">
-        <label>{{ t('license.owner') }}</label>
-        <GInput v-model="previewLicense.owner" :placeholder="t('license.owner')" />
-        <label>{{ t('license.type') }}</label>
-        <GSelect v-model="previewLicense.tier" :placeholder="t('license.type')">
-          <el-option v-for="item in licenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </GSelect>
-        <label>{{ t('license.maxUsers') }}</label>
-        <GInputNumber v-model="previewLicense.maxUsersPerInstance" :min="1"
-          :placeholder="t('license.maxUsersPerInstance')" />
-        <label>{{ t('license.maxProjects') }}</label>
-        <GInputNumber v-model="previewLicense.maxProjectsPerInstance" :min="1"
-          :placeholder="t('license.maxProjectsPerInstance')" />
-        <label>{{ t('license.startDate') }}</label>
-        <el-date-picker class="w-full" v-model="previewLicense.startDate" :placeholder="t('license.startDate')" />
-        <label>{{ t('license.endDate') }}</label>
-        <el-date-picker class="w-full" v-model="previewLicense.endDate" :placeholder="t('license.endDate')" />
-        <el-divider />
-        <GButton type="primary" @click="handleUpdateLicense">{{ t('license.update') }}</GButton>
+      <!-- Empty State -->
+      <div v-else class="text-center py-32 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
+         <div class="text-6xl mb-4 grayscale opacity-20">📜</div>
+         <h3 class="text-xl font-bold text-white mb-2">No licenses found</h3>
+         <button 
+            @click="showLicenseIssueDialog = true"
+            class="mt-4 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors"
+         >
+            Issue First License
+         </button>
       </div>
-    </GDialog>
+    </main>
+
+    <!-- Issue Dialog -->
+    <el-dialog v-model="showLicenseIssueDialog" width="500px" class="glass-dialog" :show-close="false" destroy-on-close align-center>
+        <template #header>
+            <div class="text-lg font-black text-white uppercase tracking-wide">Issue New License</div>
+        </template>
+        <div class="space-y-4" v-loading="isUploading">
+            <div>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Owner Name</label>
+               <el-input v-model="licenseForm.owner" placeholder="e.g. Acme Corp" class="glass-input" />
+            </div>
+            <div>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">License Tier</label>
+               <el-select v-model="licenseForm.tier" class="glass-select w-full" popper-class="glass-dropdown">
+                  <el-option v-for="item in licenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+               </el-select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+               <div>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Max Users</label>
+                  <el-input-number v-model="licenseForm.maxUsersPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
+               </div>
+               <div>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Max Projects</label>
+                  <el-input-number v-model="licenseForm.maxProjectsPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
+               </div>
+            </div>
+            <div>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Duration (Days)</label>
+               <el-input-number v-model="licenseForm.durationDays" :min="1" class="glass-input w-full" controls-position="right" />
+            </div>
+        </div>
+        <template #footer>
+           <div class="flex gap-4">
+              <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="showLicenseIssueDialog = false">Cancel</button>
+              <button class="flex-1 py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-yellow-500/20" @click="handleAddLicense">Issue</button>
+           </div>
+        </template>
+    </el-dialog>
+
+    <!-- Preview/Edit Dialog -->
+    <el-dialog v-model="showPreviewDialog" width="500px" class="glass-dialog" :show-close="false" destroy-on-close align-center>
+        <template #header>
+            <div class="text-lg font-black text-white uppercase tracking-wide">Edit License</div>
+        </template>
+        <div class="space-y-4" v-loading="isUploading">
+            <div class="p-4 bg-white/5 rounded-xl border border-white/5 mb-6">
+               <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">License Key</div>
+               <div class="font-mono text-xs text-yellow-400 break-all select-all">{{ previewLicense.key }}</div>
+            </div>
+
+            <div>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Owner Name</label>
+               <el-input v-model="previewLicense.owner" class="glass-input" />
+            </div>
+            <div>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">License Tier</label>
+               <el-select v-model="previewLicense.tier" class="glass-select w-full" popper-class="glass-dropdown">
+                  <el-option v-for="item in licenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+               </el-select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+               <div>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Max Users</label>
+                  <el-input-number v-model="previewLicense.maxUsersPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
+               </div>
+               <div>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Max Projects</label>
+                  <el-input-number v-model="previewLicense.maxProjectsPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
+               </div>
+            </div>
+             <div class="grid grid-cols-2 gap-4">
+               <div>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Start Date</label>
+                  <el-date-picker v-model="previewLicense.startDate" type="date" class="glass-date w-full" />
+               </div>
+               <div>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">End Date</label>
+                  <el-date-picker v-model="previewLicense.endDate" type="date" class="glass-date w-full" />
+               </div>
+            </div>
+        </div>
+        <template #footer>
+           <div class="flex gap-4">
+              <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="showPreviewDialog = false">Cancel</button>
+              <button class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-blue-600/20" @click="handleUpdateLicense">Update</button>
+           </div>
+        </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import {
-  Search,
-  Delete,
-  PlayOne
-} from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
-import { toast } from 'vue-sonner'
-import { ref, computed, watch, onMounted } from 'vue'
-import GButton from '@/components/ui/GButton.vue'
-import GInput from '@/components/ui/GInput.vue'
-import GCard from '@/components/ui/GCard.vue'
-import GSegmented from '@/components/ui/GSegmented.vue'
-import GDialog from '@/components/ui/GDialog.vue'
-// import GLabel from '@/components/ui/GLabel.vue'
-import { useLicenseStore } from '@/stores/license'
-import { storeToRefs } from 'pinia'
-import GInputNumber from '@/components/ui/GInputNumber.vue'
-import GTable from '@/components/ui/GTable.vue'
+  Search, Delete, PlayOne, Plus, User, FolderClose, Edit
+} from '@icon-park/vue-next';
+import { useTranslations } from '@/composables/useTranslations';
+import { toast } from 'vue-sonner';
+import { ref, computed, watch, onMounted } from 'vue';
+import { useLicenseStore } from '@/stores/license';
+import { storeToRefs } from 'pinia';
 
-const { t } = useTranslations()
-const licenseStore = useLicenseStore()
+const { t } = useTranslations();
+const licenseStore = useLicenseStore();
+const { licenses, loading } = storeToRefs(licenseStore);
 
-const { licenses, loading } = storeToRefs(licenseStore)
-const searchQuery = ref('')
-const currentLicenseType = ref('all')
-const showLicenseIssueDialog = ref(false)
-const showPreviewDialog = ref(false)
+const searchQuery = ref('');
+const currentLicenseType = ref('all');
+const showLicenseIssueDialog = ref(false);
+const showPreviewDialog = ref(false);
+const isUploading = ref(false);
+
 const previewLicense = ref<any>({
   owner: '',
   tier: 'trial',
@@ -193,435 +254,115 @@ const previewLicense = ref<any>({
   durationDays: 30,
   startDate: new Date(),
   endDate: new Date()
-})
-// const fileInput = ref<HTMLInputElement>()
-const isUploading = ref(false)
+});
+
 const licenseForm = ref({
   owner: '',
   tier: 'trial',
   maxUsersPerInstance: 5,
   maxProjectsPerInstance: 10,
   durationDays: 30
-})
+});
 
 const licenseTypeFilters = computed(() => [
   { value: 'all', label: t('license.filterAll') },
   { value: 'valid', label: t('license.filterValid') },
   { value: 'expired', label: t('license.filterExpired') },
   { value: 'blocked', label: t('license.filterBlocked') }
-])
+]);
 
 const licenseTypeOptions = computed(() => [
   { value: 'trial', label: t('license.typeTrial') },
   { value: 'basic', label: t('license.typeBasic') },
   { value: 'pro', label: t('license.typePro') },
   { value: 'enterprise', label: t('license.typeEnterprise') }
-])
+]);
 
 const filteredLicenses = computed(() => {
-  let filtered = licenses.value || []
-
+  let filtered = licenses.value || [];
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(r => r.fileName.toLowerCase().includes(query))
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(r => r.owner?.toLowerCase().includes(query) || r.key?.toLowerCase().includes(query));
   }
-
-  return filtered
-})
-
-// Helper to get S3 file URL
-// const getFileUrl = (key: string) => {
-//   if (!key) return ''
-//   if (key.startsWith('http')) return key
-//   return `/api/s3/${key}`
-// }
-
-// const isImage = (contentType: string) => {
-//   return contentType?.startsWith('image/')
-// }
-
-// const isVideo = (contentType: string) => {
-//   return contentType?.startsWith('video/')
-// }
+  return filtered;
+});
 
 const fetchLicenses = () => {
-  licenseStore.fetchLicenses(currentLicenseType.value !== 'all' ? currentLicenseType.value : undefined)
-}
+  licenseStore.fetchLicenses(currentLicenseType.value !== 'all' ? currentLicenseType.value : undefined);
+};
 
 const handleAddLicense = async () => {
-  if (!licenseForm.value?.owner) {
-    toast.error(t('license.ownerRequired'))
-    return
-  }
-  if (!licenseForm.value?.tier) {
-    toast.error(t('license.typeRequired'))
-    return
-  }
-  if (!licenseForm.value?.maxUsersPerInstance) {
-    toast.error(t('license.maxUsersRequired'))
-    return
-  }
-  if (!licenseForm.value?.maxProjectsPerInstance) {
-    toast.error(t('license.maxProjectsRequired'))
-    return
-  }
-  if (!licenseForm.value?.durationDays) {
-    toast.error(t('license.durationDaysRequired'))
-    return
-  }
+  if (!licenseForm.value?.owner) return toast.error(t('license.ownerRequired'));
   try {
-    isUploading.value = true
-    await licenseStore.addLicense(licenseForm.value)
-    //reset form
-    licenseForm.value = {
-      owner: '',
-      tier: 'trial',
-      maxUsersPerInstance: 5,
-      maxProjectsPerInstance: 10,
-      durationDays: 30
-    }
-    showLicenseIssueDialog.value = false
+    isUploading.value = true;
+    await licenseStore.addLicense(licenseForm.value);
+    licenseForm.value = { owner: '', tier: 'trial', maxUsersPerInstance: 5, maxProjectsPerInstance: 10, durationDays: 30 };
+    showLicenseIssueDialog.value = false;
   } catch (error) {
-    console.error(error)
-    toast.error(t('common.failed'))
+    toast.error(t('common.failed'));
   } finally {
-    isUploading.value = false
+    isUploading.value = false;
   }
-}
+};
 
 const handleUpdateLicense = async () => {
-  if (!previewLicense.value?.owner) {
-    toast.error(t('license.ownerRequired'))
-    return
-  }
-  if (!previewLicense.value?.tier) {
-    toast.error(t('license.typeRequired'))
-    return
-  }
-  if (!previewLicense.value?.maxUsersPerInstance) {
-    toast.error(t('license.maxUsersRequired'))
-    return
-  }
-  if (!previewLicense.value?.maxProjectsPerInstance) {
-    toast.error(t('license.maxProjectsRequired'))
-    return
-  }
-  if (!previewLicense.value?.durationDays) {
-    toast.error(t('license.durationDaysRequired'))
-    return
-  }
+  if (!previewLicense.value?.owner) return toast.error(t('license.ownerRequired'));
   try {
-    isUploading.value = true
-    await licenseStore.updateLicense(previewLicense.value._id, previewLicense.value)
-    //reset form
-    previewLicense.value = {
-      owner: '',
-      tier: 'trial',
-      maxUsersPerInstance: 5,
-      maxProjectsPerInstance: 10,
-      durationDays: 30,
-      startDate: new Date(),
-      endDate: new Date()
-    }
-    showPreviewDialog.value = false
+    isUploading.value = true;
+    await licenseStore.updateLicense(previewLicense.value._id, previewLicense.value);
+    showPreviewDialog.value = false;
   } catch (error) {
-    console.error(error)
-    toast.error(t('common.failed'))
+    toast.error(t('common.failed'));
   } finally {
-    isUploading.value = false
+    isUploading.value = false;
   }
-}
-
-// const handleFileSelect = async (event: Event) => {
-//   const files = (event.target as HTMLInputElement).files
-//   if (!files?.length) return
-
-//   isUploading.value = true
-//   try {
-//     for (const file of Array.from(files)) {
-//       const formData = new FormData()
-//       formData.append('file', file)
-//       formData.append('purpose', 'media')
-//       await licenseStore.uploadLicense(formData)
-//     }
-//     toast.success('Upload complete')
-//     showLicenseIssueDialog.value = false
-//   } catch (error: any) {
-//     console.error('Upload failed:', error)
-//   } finally {
-//     isUploading.value = false
-//     if (fileInput.value) fileInput.value.value = ''
-//   }
-// }
+};
 
 const handlePreviewLicense = (license: any) => {
-  previewLicense.value = license
-  showPreviewDialog.value = true
-}
-
-// const downloadLicense = (license: any) => {
-//   window.open(getFileUrl(license.key), '_blank')
-// }
+  previewLicense.value = JSON.parse(JSON.stringify(license)); // Deep copy
+  showPreviewDialog.value = true;
+};
 
 const deleteLicense = async (license: any) => {
-  if (!confirm(t('license.confirmDelete'))) return
-
+  if (!confirm(t('license.confirmDelete'))) return;
   try {
-    await licenseStore.deleteLicense(license._id)
-    toast.success('File deleted successfully')
+    await licenseStore.deleteLicense(license._id);
+    toast.success('Deleted successfully');
   } catch (error: any) {
-    toast.error(error.response?.data?.message || 'Failed to delete file')
+    toast.error('Failed to delete');
   }
-}
+};
 
-// const getFileIcon = (contentType: string) => {
-//   if (contentType?.includes('pdf')) return '📄'
-//   if (contentType?.includes('word')) return '📝'
-//   if (contentType?.includes('presentation')) return '📊'
-//   if (contentType?.includes('spreadsheet') || contentType?.includes('excel')) return '📈'
-//   return '📁'
-// }
+const formatDate = (date: string) => new Date(date).toLocaleDateString();
 
-// const formatFileSize = (bytes: number) => {
-//   if (!bytes) return '0 B'
-//   const mb = bytes / (1024 * 1024)
-//   if (mb < 1) return `${(bytes / 1024).toFixed(1)} KB`
-//   return `${mb.toFixed(1)} MB`
-// }
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString()
-}
-
-watch(currentLicenseType, () => {
-  fetchLicenses()
-})
-
-onMounted(() => {
-  fetchLicenses()
-})
+watch(currentLicenseType, () => fetchLicenses());
+onMounted(() => fetchLicenses());
 </script>
 
 <style lang="scss" scoped>
-.license-page {
-  min-height: 100vh;
-  padding-bottom: 80px;
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
 }
 
-.page-container {
-  max-width: 1400px;
-  margin: 0 auto;
+/* Glass Overrides */
+:global(.glass-dialog) {
+    background: rgba(20, 20, 25, 0.95) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 24px !important;
+    .el-dialog__header { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 20px 24px; }
+    .el-dialog__body { padding: 24px; }
+    .el-dialog__footer { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.05); }
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 32px;
+:global(.glass-input .el-input__wrapper),
+:global(.glass-select .el-input__wrapper),
+:global(.glass-date .el-input__wrapper) {
+   background: rgba(255, 255, 255, 0.05) !important;
+   box-shadow: none !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   border-radius: 12px;
+   padding: 4px 12px;
 }
-
-.filters-bar {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 32px;
-  align-items: center;
-
-  .search-input {
-    max-width: 300px;
-  }
-}
-
-.type-segmented {
-  max-width: 500px;
-}
-
-.license-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.license-card {
-  position: relative;
-
-  :deep(.g-card__body) {
-    padding: 0;
-  }
-
-  &.skeleton {
-    height: 280px;
-    animation: pulse 1.5s infinite;
-  }
-}
-
-.license-preview {
-  height: 160px;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  overflow: hidden;
-  position: relative;
-
-  .preview-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  &:hover .preview-image {
-    transform: scale(1.05);
-  }
-
-  .file-icon {
-    font-size: 48px;
-  }
-
-  .video-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-  }
-}
-
-.license-info {
-  padding: 16px 24px;
-
-  h4 {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 8px 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: #fff;
-  }
-
-  .license-meta {
-    display: flex;
-    gap: 16px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.4);
-  }
-}
-
-.license-actions {
-  display: flex;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.action-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:first-child {
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-  }
-
-  &.danger {
-    color: #ff5252;
-
-    &:hover {
-      background: rgba(255, 82, 82, 0.1);
-    }
-  }
-}
-
-.empty-state {
-  text-align: center;
-  max-width: 600px;
-  margin: 100px auto;
-
-  .empty-icon {
-    font-size: 64px;
-    margin-bottom: 24px;
-  }
-
-  h3 {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 12px;
-  }
-
-  p {
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 32px;
-  }
-}
-
-.license-form {
-  padding: 10px;
-}
-
-.upload-placeholder {
-  border: 2px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 60px 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: rgba(255, 255, 255, 0.02);
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  p {
-    margin-top: 16px;
-    color: rgba(255, 255, 255, 0.6);
-  }
-}
-
-.preview-content {
-  display: flex;
-  //   align-items: center;
-  justify-content: center;
-  //   background: #000;
-  width: 100%;
-  //   height: 60vh;
-
-  img,
-  video {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-}
-
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
+:global(.glass-input .el-input__inner) { color: white !important; font-weight: 600; }
 </style>

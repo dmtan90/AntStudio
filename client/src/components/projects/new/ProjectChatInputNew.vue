@@ -51,7 +51,7 @@
             </template>
             <div class="tuning-panel">
               <label>Target Duration</label>
-              <GSlider v-model="form.targetDuration" :min="15" :max="7200" />
+              <GSlider v-model="form.targetDuration" :min="15" :max="7200" :step="5" />
               <div class="slider-val">{{ formatDuration(form.targetDuration) }}</div>
             </div>
           </GPopover>
@@ -204,85 +204,96 @@ const handleKeydown = (e: KeyboardEvent) => {
 <style lang="scss" scoped>
 .flow-interface-v2 {
   position: absolute;
-  bottom: 10px;
+  bottom: 24px;
   left: 0;
   right: 0;
   display: flex;
   justify-content: center;
-  padding: 0 20px;
+  padding: 0 24px;
   z-index: 100;
+  animation: slideInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .input-container-glass {
   width: 100%;
-  max-width: 800px;
-  @include glass-card;
-  border-radius: 28px;
-  padding: 12px;
+  max-width: 860px;
+  background: rgba(14, 14, 14, 0.6);
+  backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 32px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 12px;
+  box-shadow: 
+    0 30px 60px rgba(0, 0, 0, 0.8),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   position: relative;
+  transition: all 0.3s ease;
+
+  &:focus-within {
+    background: rgba(14, 14, 14, 0.8);
+    box-shadow: 
+      0 40px 80px rgba(0, 0, 0, 0.9),
+      inset 0 0 0 1px rgba(59, 130, 246, 0.2);
+  }
 }
 
 .input-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 4px 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
   .toolbar-left,
   .toolbar-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }
 
   .tool-badge {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 100px;
-    font-size: 12px;
-    font-weight: 500;
-    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.2);
-      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #fff;
     }
   }
 }
 
 .prompt-body {
-  padding: 4px 8px;
+  padding: 12px 12px 4px;
 
   textarea {
     width: 100%;
     background: transparent;
     border: none;
     color: #fff;
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.6;
     resize: none;
     outline: none;
-    min-height: 32px;
-    /* Equivalent to roughly 2-3 rows */
-    max-height: 150px;
+    min-height: 40px;
+    max-height: 200px;
+    font-family: inherit;
 
-    /* Equivalent to roughly 6-7 rows */
     &::placeholder {
       color: rgba(255, 255, 255, 0.2);
+      font-weight: 400;
     }
   }
 }
@@ -291,19 +302,23 @@ const handleKeydown = (e: KeyboardEvent) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px;
+  padding: 8px 12px;
 
   .footer-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
 
     .attach-trigger {
-      color: $text-muted;
+      color: rgba(255, 255, 255, 0.4);
       cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
 
       &:hover {
         color: #fff;
+        transform: scale(1.1);
       }
     }
   }
@@ -314,36 +329,38 @@ const handleKeydown = (e: KeyboardEvent) => {
     gap: 16px;
 
     .send-circle {
-      width: 40px;
-      height: 40px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      width: 44px;
+      height: 44px;
+      background: #fff;
+      border: none;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: #000;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 
       &:hover:not(:disabled) {
-        background: #fff;
-        color: #000;
-        transform: scale(1.05);
+        transform: scale(1.1) rotate(-10deg);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
       }
 
       &:disabled {
-        opacity: 0.2;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.1);
         cursor: not-allowed;
+        box-shadow: none;
       }
 
       &.cancel-mode {
-        background: rgba(255, 77, 79, 0.1);
-        border-color: rgba(255, 77, 79, 0.3);
-        color: #ff4d4f;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #ef4444;
 
         &:hover {
-          background: #ff4d4f;
+          background: #ef4444;
           color: #fff;
         }
       }
@@ -352,20 +369,24 @@ const handleKeydown = (e: KeyboardEvent) => {
 }
 
 .tuning-panel {
-  padding: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 
   label {
-    font-size: 12px;
-    color: $text-muted;
-    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
     display: block;
   }
 
   .slider-val {
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 900;
     color: #fff;
     text-align: right;
     margin-top: 4px;
@@ -375,18 +396,18 @@ const handleKeydown = (e: KeyboardEvent) => {
 .quick-suggestions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-  padding: 0 16px 12px;
+  gap: 10px;
+  padding: 4px 12px 12px;
   justify-content: flex-start;
 
   .sug-chip {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 100px;
-    padding: 6px 14px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
+    padding: 8px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
     transition: all 0.2s;
 
@@ -394,47 +415,49 @@ const handleKeydown = (e: KeyboardEvent) => {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.2);
       color: #fff;
+      transform: translateY(-1px);
     }
   }
 }
 
 .mention-list-glass {
   position: absolute;
-  top: 45px;
-  left: 16px;
-  width: 200px;
-  @include glass-card;
-  background: rgba(10, 10, 10, 0.98);
-  border-radius: 12px;
+  bottom: calc(100% + 12px);
+  left: 0;
+  width: 240px;
+  background: rgba(14, 14, 14, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
   padding: 8px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   gap: 4px;
   z-index: 1000;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
   .mention-header {
-    font-size: 10px;
+    font-size: 11px;
+    font-weight: 800;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.3);
-    padding: 4px 12px;
-    letter-spacing: 1px;
+    padding: 8px 12px;
+    letter-spacing: 0.1em;
   }
 
   .mention-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 6px;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
     transition: all 0.2s;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
       color: #fff;
     }
   }
@@ -442,66 +465,57 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 .selected-files-list {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
   max-width: 400px;
+  padding: 4px 0;
 
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  &::-webkit-scrollbar { display: none; }
 }
 
 .mini-file-tag {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
   color: #fff;
+  white-space: nowrap;
 
   i {
     cursor: pointer;
-
-    &:hover {
-      color: #ff4d4f;
-    }
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    &:hover { opacity: 1; color: #ef4444; }
   }
-}
-
-.animate-up {
-  animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes slideInUp {
-  from {
-    transform: translateY(30px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .reset-btn-tool {
-  background: rgba(255, 50, 50, 0.1);
-  border: 1px solid rgba(255, 0, 0, 0.2);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 100px;
-  padding: 4px 10px;
+  padding: 6px 14px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #ff6b6b;
-  font-size: 11px;
+  gap: 8px;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: rgba(255, 50, 50, 0.2);
-    border-color: rgba(255, 0, 0, 0.4);
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
     transform: translateY(-1px);
   }
 }

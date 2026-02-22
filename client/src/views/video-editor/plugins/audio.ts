@@ -24,7 +24,7 @@ export class CanvasAudio {
     this.elements = [];
     this._reverbIR = this._createReverbIR(2.5, 2.0);
     // Context will be created on-demand
-    this._initEvents();
+    this.initEvents();
   }
 
   private _ensureContext(): AudioContext {
@@ -54,7 +54,8 @@ export class CanvasAudio {
     this.stop();
   }
 
-  private _initEvents() {
+  initEvents() {
+    if (!this._canvas.instance) return;
     this.canvas.on("timeline:start", this._timelineStartEvent.bind(this));
     this.canvas.on("timeline:stop", this._timelineStopEvent.bind(this));
   }
@@ -489,34 +490,38 @@ export class CanvasAudio {
     const result: EditorAudioElement[] = [];
 
     for (const video of videos) {
-      if (!FabricUtils.isVideoElement(video) || !video.hasAudio) continue;
+      if (!FabricUtils.isVideoElement(video) || !(video as any).hasAudio) continue;
       signal?.throwIfAborted();
 
-      const input = video.name!;
-      const output = video.name! + ".wav";
+      const src = (video as any).getSrc ? (video as any).getSrc() : (video as any).src;
+      if (!src) continue;
 
-      const file: Uint8Array = await fetchFile(video.getSrc());
+      const input = (video as any).name || FabricUtils.elementID("video");
+      const output = input + ".wav";
+
+      const file: Uint8Array = await fetchFile(src);
       await ffmpeg.writeFile(input, file);
       await ffmpeg.exec(["-i", input, "-q:a", "0", "-map", "a", output], undefined, { signal });
 
       // @ts-expect-error
       const data: Uint8Array = await ffmpeg.readFile(output);
-      const buffer: AudioBuffer = await this.context.decodeAudioData(data.buffer as ArrayBuffer);
+      const buffer: AudioBuffer = await this._ensureContext().decodeAudioData(data.buffer as ArrayBuffer);
 
       const id = FabricUtils.elementID("audio");
       const duration = buffer.duration;
 
-      const muted = video._muted();
-      const volume = video._volume();
+      const muted = (video as any)._muted ? (video as any)._muted() : (video as any).muted;
+      const volume = (video as any)._volume ? (video as any)._volume() : (video as any).volume;
 
-      const trim = video.trimStart / 1000;
-      const offset = video.meta!.offset / 1000;
-      const timeline = video.meta!.duration / 1000 - video.trimStart / 1000 - video.trimEnd / 1000;
+      const trim = ((video as any).trimStart || 0) / 1000;
+      const offset = ((video as any).meta?.offset || 0) / 1000;
+      const timeline = ((video as any).meta?.duration || (duration * 1000)) / 1000 - trim - (((video as any).trimEnd || 0) / 1000);
 
-      const source = this.context.createBufferSource();
+      const context = this._ensureContext();
+      const source = context.createBufferSource();
       source.buffer = buffer;
-      source.connect(this.context.destination);
-      result.push({ id, buffer, duration, muted, volume, source, offset, timeline, trim, name: output, playing: false, url: "", fadeIn: 0, fadeOut: 0, trimStart: video.trimStart / 1000, trimEnd: video.trimEnd / 1000, visible: true, visualEnabled: false, visualType: 'bars', visualProps: {}, type: 'audio' });
+      source.connect(context.destination);
+      result.push({ id, buffer, duration, muted, volume, source, offset, timeline, trim, name: output, playing: false, url: "", fadeIn: 0, fadeOut: 0, trimStart: trim, trimEnd: ((video as any).trimEnd || 0) / 1000, visible: true, visualEnabled: false, visualType: 'bars', visualProps: {}, type: 'audio' });
     }
 
     return result;

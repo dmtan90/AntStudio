@@ -49,6 +49,8 @@ export function useProjectAssetGeneration(projectId: string) {
                 description: char.description,
                 type: 'image',
                 characterNames: [char.name],
+                charIndex: index,
+                charId: char.char_id,
                 generationType: 'character'
             })
 
@@ -94,7 +96,7 @@ export function useProjectAssetGeneration(projectId: string) {
                 assetName: `Scene_${seg.order}.img`,
                 description: seg.description,
                 type: 'image',
-                segmentId: seg._id,
+                segmentOrder: seg.order,
                 characterNames: seg.characters,
                 generationType: 'scene'
             })
@@ -126,7 +128,8 @@ export function useProjectAssetGeneration(projectId: string) {
 
         toast.info(`${t('projects.editor.storyboard.batchStart')} ${segments.length} ${t('projects.editor.storyboard.title')}...`)
         let successCount = 0
-        for (const seg of segments) {
+        for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i]
             const success = await handleGenerateFrame(seg)
             if (success) successCount++
         }
@@ -138,8 +141,9 @@ export function useProjectAssetGeneration(projectId: string) {
         generatingStates.value[id] = true
         try {
             const res = await projectStore.generateAsset(projectId, {
-                segmentId: seg._id,
-                type: 'video'
+                segmentOrder: seg.order,
+                type: 'video',
+                options: { aspectRatio: projectStore.currentProject?.aspectRatio }
             })
 
             const data = res.data || res
@@ -177,6 +181,129 @@ export function useProjectAssetGeneration(projectId: string) {
             toast.error(error.response?.data?.message || t('common.failed'))
         }
     }
+    
+    const handleGenerateVoiceover = async (seg: any) => {
+        const id = `audio-${seg.order}`
+        let ttsText = seg.voiceover?.trim()
+        
+        // Fallback: If no explicit voiceover, form a narration from title and description
+        if (!ttsText) {
+            console.warn(`No explicit voiceover for segment ${seg.order}, using fallback narration.`)
+            ttsText = `${seg.title}. ${seg.description || ''}`
+        }
+
+        generatingStates.value[id] = true
+        try {
+            const res = await projectStore.generateVoiceover(projectId, seg.order, {
+                text: ttsText,
+                language: projectStore.currentProject?.scriptAnalysis?.language || 'English'
+            })
+            seg.generatedAudio = res?.generatedAudio
+            toast.success(t('projects.editor.storyboard.voiceoverReady') || 'Voiceover ready!')
+            await projectStore.fetchProject(projectId);
+            return true
+        } catch (error: any) {
+            console.error(`Failed to generate voiceover for ${seg.title}:`, error)
+            toast.error(error.response?.data?.error || t('common.failed'))
+            return false
+        } finally {
+            generatingStates.value[id] = false
+        }
+    }
+
+    const handleGenerateAllVoiceovers = async (project: any) => {
+        const segments = project?.storyboard?.segments || []
+        // We now allow all segments; if voiceover is empty, it uses fallback
+        if (segments.length === 0) {
+            toast.warning('No segments to generate voiceover for.')
+            return
+        }
+        toast.info(`Generating voiceovers for ${segments.length} segments...`)
+        let successCount = 0
+        for (const seg of segments) {
+            const ok = await handleGenerateVoiceover(seg)
+            if (ok) successCount++
+        }
+        toast.success(`Voiceovers complete: ${successCount}/${segments.length}`)
+    }
+
+    const handleGenerateMusic = async () => {
+        const id = 'bgm'
+        generatingStates.value[id] = true
+        try {
+            // Priority: scriptAnalysis.audio.music -> scriptAnalysis.mood -> default
+            let musicPrompt = projectStore.currentProject?.scriptAnalysis?.audio?.music
+            const mood = projectStore.currentProject?.scriptAnalysis?.mood || 'cinematic'
+            
+            if (!musicPrompt) {
+                musicPrompt = `Cinematic background music with a ${mood} atmosphere, perfectly suited for a video project.`
+            }
+
+            toast.info(`Generating music: ${mood}...`)
+            await projectStore.generateMusic(projectId, {
+                prompt: musicPrompt,
+                mood: mood
+            })
+            await projectStore.fetchProject(projectId)
+            toast.success(t('projects.editor.storyboard.musicReady') || 'Background music ready!')
+            return true
+        } catch (error: any) {
+            console.error('Failed to generate music:', error)
+            toast.error(error.message || t('common.failed'))
+            return false
+        } finally {
+            generatingStates.value[id] = false
+        }
+    }
+
+    const handleGenerateAllSequential = async (project: any) => {
+        if (!project || projectStore.isProcessing) return
+        
+        try {
+            // PHASE 1: Characters
+            const chars = project?.scriptAnalysis?.characters || []
+            if (chars.length > 0) {
+                toast.info(`${t('projects.editor.storyboard.batchStart')} ${chars.length} characters...`)
+                for (let i = 0; i < chars.length; i++) {
+                    if (!chars[i].referenceImage) {
+                        await handleRegenerateCharacter(chars[i], i)
+                    }
+                }
+            }
+
+            // PHASE 2: Frames
+            const segments = project?.storyboard?.segments || []
+            if (segments.length > 0) {
+                toast.info(`${t('projects.editor.storyboard.batchStart')} ${segments.length} frames...`)
+                for (const seg of segments) {
+                    if (!seg.sceneImage) {
+                        await handleGenerateFrame(seg)
+                    }
+                }
+            }
+
+            // PHASE 3: Videos (Batch)
+            toast.info(t('projects.editor.storyboard.videoBatchStart'))
+            await projectStore.generateStoryboardAssetsBatch(projectId)
+
+            // PHASE 4: Audio (VO)
+            toast.info('Generating Voiceovers for all segments...')
+            for (const seg of segments) {
+                if (seg.voiceover && seg.voiceover.trim().length > 0) {
+                    await projectStore.generateVoiceover(projectId, seg._id, {
+                        text: seg.voiceover,
+                        language: project.language || 'English'
+                    })
+                }
+            }
+
+            await projectStore.fetchProject(projectId)
+            toast.success('all sequential generation tasks started / completed.')
+        } catch (error: any) {
+            console.error('Sequential generation failed:', error)
+            toast.error(error.message || t('common.failed'))
+        }
+    }
 
     const handleUploadCharacterImage = async (char: any, index: number) => {
         const input = document.createElement('input')
@@ -187,11 +314,11 @@ export function useProjectAssetGeneration(projectId: string) {
             const file = (e.target as HTMLInputElement).files?.[0]
             if (!file) return
 
-            const id = `char-${index}`
+            const id = char.char_id;//`char-${index}`
             generatingStates.value[id] = true
 
             try {
-                const responseData = await projectStore.uploadAsset(projectId, file, 'character', index.toString())
+                const responseData = await projectStore.uploadAsset(projectId, file, 'character', id.toString())
                 toast.success(t('projects.editor.uploadSuccess'))
                 if (responseData.s3Key) {
                     projectStore.syncAssetToElements(`Element_${char.name}.img`, responseData.s3Key)
@@ -216,20 +343,20 @@ export function useProjectAssetGeneration(projectId: string) {
             const file = (e.target as HTMLInputElement).files?.[0]
             if (!file) return
 
-            const id = `seg-${seg.order}`
+            const id = seg.order;//`seg-${seg.order}`
             generatingStates.value[id] = true
 
             try {
-                const responseData = await projectStore.uploadAsset(projectId, file, 'segment', seg.order.toString())
+                const responseData = await projectStore.uploadAsset(projectId, file, 'segment', id.toString())
                 toast.success(t('projects.editor.uploadSuccess'))
                 if (responseData.s3Key) {
                     if (file.type.startsWith('image/')) {
                         seg.sceneImage = responseData.s3Key
-                        projectStore.syncAssetToElements(`Scene_${seg.order}.img`, responseData.s3Key)
+                        projectStore.syncAssetToElements(`Scene_${id}.img`, responseData.s3Key)
                     } else if (file.type.startsWith('video/')) {
                         if (!seg.generatedVideo) seg.generatedVideo = {}
                         seg.generatedVideo.s3Key = responseData.s3Key
-                        projectStore.syncAssetToElements(`video_${seg.order}.mp4`, responseData.s3Key)
+                        projectStore.syncAssetToElements(`video_${id}.mp4`, responseData.s3Key)
                     }
                 }
             } catch (error) {
@@ -250,6 +377,10 @@ export function useProjectAssetGeneration(projectId: string) {
         handleGenerateAllFrames,
         handleGenerateVideo,
         handleGenerateAllVideos,
+        handleGenerateMusic,
+        handleGenerateVoiceover,
+        handleGenerateAllVoiceovers,
+        handleGenerateAllSequential,
         handleUploadCharacterImage,
         handleUploadImageVideo
     }

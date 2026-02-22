@@ -2,7 +2,7 @@
     <div v-if="podcastSettings" class="podcast-sidebar space-y-8">
         <!-- Podcast Studio Controls -->
         <div class="panel-section">
-            <span class="text-[10px] font-bold text-orange-400 uppercase mb-4 block">Podcast Studio</span>
+            <span class="text-[10px] font-bold text-blue-400 uppercase mb-4 block">Podcast Studio</span>
 
             <div class="control-item mb-4">
                 <span class="text-[9px] text-white/40 font-bold uppercase block mb-2">Background</span>
@@ -24,7 +24,7 @@
                 <div class="flex gap-2">
                     <button v-for="type in ['bars', 'waveform', 'circles']" :key="type"
                         class="flex-1 py-2 bg-white/5 border rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
-                        :class="podcastSettings.visualType === type ? 'bg-orange-500 text-white border-orange-400 shadow-[0_4px_12px_rgba(249,115,22,0.3)]' : 'border-white/5 text-white/40 hover:bg-white/10'"
+                        :class="podcastSettings.visualType === type ? 'bg-blue-600 text-white border-blue-400 shadow-[0_8px_20px_rgba(59,130,246,0.3)]' : 'border-white/5 text-white/40 hover:bg-white/10'"
                         @click="$emit('update:podcast-settings', { ...podcastSettings, visualType: type })">
                         {{ type }}
                     </button>
@@ -34,7 +34,7 @@
 
         <!-- Advanced Audio Suite -->
         <div class="panel-section border-t border-white/5 pt-6">
-            <span class="text-[10px] font-bold text-orange-400 uppercase mb-4 block">Advanced Audio Suite</span>
+            <span class="text-[10px] font-bold text-blue-400 uppercase mb-4 block">Advanced Audio Suite</span>
 
             <div class="space-y-6">
                 <div class="control-item">
@@ -50,7 +50,7 @@
                 <div class="control-item">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-[9px] text-white/40 font-bold uppercase">Master Mix</span>
-                        <span class="text-[9px] text-orange-400 font-mono">{{ (podcastSettings.bgmVolume * 100).toFixed(0) }}% BGM</span>
+                        <span class="text-[9px] text-blue-400 font-mono">{{ (podcastSettings.bgmVolume * 100).toFixed(0) }}% BGM</span>
                     </div>
                     <el-slider :model-value="podcastSettings.bgmVolume" @update:model-value="v => $emit('update:podcast-settings', { ...podcastSettings, bgmVolume: v })"
                         :min="0" :max="1" :step="0.01" :show-tooltip="false" size="small" />
@@ -60,14 +60,14 @@
 
         <!-- Virtual Camera Suite -->
         <div class="panel-section border-t border-white/5 pt-6">
-            <span class="text-[10px] font-bold text-orange-400 uppercase mb-4 block">Visual Guest Feed</span>
+            <span class="text-[10px] font-bold text-blue-400 uppercase mb-4 block">Visual Guest Feed</span>
             <div class="bg-white/[0.03] p-4 rounded-2xl border border-white/5 backdrop-blur-md space-y-4">
                 <div class="flex items-center justify-between">
                     <span class="text-[9px] text-white/40 uppercase">Background</span>
                     <div class="flex gap-2">
                         <button v-for="t in ['none', 'blur', 'image', 'video']" :key="t"
                             class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[8px] font-bold uppercase transition-all"
-                            :class="podcastSettings.backgroundType === t ? 'bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)]' : 'text-white/40'"
+                            :class="podcastSettings.backgroundType === t ? 'bg-blue-600 text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)]' : 'text-white/40'"
                             @click="$emit('update:podcast-settings', { ...podcastSettings, backgroundType: t })">
                             {{ t[0] }}
                         </button>
@@ -80,7 +80,7 @@
                     <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
                         <div v-for="res in filteredResources" :key="res.id"
                             class="w-12 h-12 rounded-lg bg-black/40 border-2 cursor-pointer overflow-hidden transition-all"
-                            :class="podcastSettings.backgroundResource === res.id ? 'border-orange-500 shadow-[0_4px_12px_rgba(249,115,22,0.3)]' : 'border-transparent'"
+                            :class="podcastSettings.backgroundResource === res.id ? 'border-blue-500 shadow-[0_4px_12px_rgba(59,130,246,0.3)]' : 'border-transparent'"
                             @click="$emit('update:podcast-settings', { ...podcastSettings, backgroundResource: res.id })">
                             <img v-if="res.type === 'image'" :src="res.url" class="w-full h-full object-cover" />
                             <div v-else class="w-full h-full flex items-center justify-center">

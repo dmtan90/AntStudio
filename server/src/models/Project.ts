@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model, Types } from 'mongoose'
 
 interface ISegment {
     _id: Types.ObjectId
+    uuid?: string
     order: number
     title: string
     description: string
@@ -12,6 +13,8 @@ interface ISegment {
     style: string
     characters: string[]
     location: string
+    visualKeywords: string[]
+    audioKeywords: string[]
     locationDetails?: {
         type: string
         objects: string
@@ -38,6 +41,7 @@ interface ISegment {
         language: string
         tts_config?: {
             voice_id: string
+            provider?: string
             rate: number
             pitch: number
         }
@@ -51,7 +55,6 @@ interface ISegment {
     volume?: number // 0 to 1
     generatedVideo?: {
         s3Key: string
-        s3Url?: string
         status: 'pending' | 'generating' | 'completed' | 'failed'
         veoJobId?: string
         generatedAt?: Date
@@ -59,7 +62,6 @@ interface ISegment {
     }
     generatedAudio?: {
         s3Key: string
-        s3Url?: string
         status: 'pending' | 'generating' | 'completed' | 'failed'
         generatedAt?: Date
     }
@@ -79,6 +81,8 @@ const SegmentSchema = new Schema<ISegment>({
     style: { type: String, required: true },
     characters: [{ type: String }],
     location: { type: String, required: true },
+    visualKeywords: [{ type: String }],
+    audioKeywords: [{ type: String }],
     locationDetails: { type: Schema.Types.Mixed, default: {} },
     cameraDetails: { type: Schema.Types.Mixed, default: {} },
     audioDetails: { type: Schema.Types.Mixed, default: {} },
@@ -90,6 +94,7 @@ const SegmentSchema = new Schema<ISegment>({
             language: String,
             tts_config: {
                 voice_id: String,
+                provider: String,
                 rate: Number,
                 pitch: Number
             },
@@ -104,7 +109,6 @@ const SegmentSchema = new Schema<ISegment>({
     volume: { type: Number, default: 1 },
     generatedVideo: {
         s3Key: String,
-        s3Url: String,
         status: {
             type: String,
             enum: ['pending', 'generating', 'completed', 'failed'],
@@ -116,7 +120,6 @@ const SegmentSchema = new Schema<ISegment>({
     },
     generatedAudio: {
         s3Key: String,
-        s3Url: String,
         status: {
             type: String,
             enum: ['pending', 'generating', 'completed', 'failed'],
@@ -137,6 +140,7 @@ export interface IDetailedCharacter {
     body_build?: string
     face_shape?: string
     hair?: string
+    eyes?: string
     skin_or_fur_color?: string
     signature_feature?: string
     outfit_top?: string
@@ -152,6 +156,7 @@ export interface IDetailedCharacter {
     }
     tts_config?: {
         voice_id?: string
+        provider?: string
         base_speaking_rate?: number
         base_pitch?: number
         style_category?: string
@@ -178,49 +183,32 @@ export interface IProject extends Document {
         scriptFile?: {
             originalName: string
             s3Key: string
-            s3Url?: string
             fileType: 'txt' | 'pdf' | 'docx' | 'pptx'
             uploadedAt: Date
         }
     }
-    scriptAnalysis?: {
-        summary: string
-        genre: string
-        mood: string
-        characters: IDetailedCharacter[]
-        locations: Array<{
-            name: string
-            description: string
-            referenceImage?: string
-        }>
-        themes: string[]
-        language?: string
-        analyzedAt: Date
-    }
-    storyboard?: {
-        segments: ISegment[]
-        totalDuration: number
-        createdAt: Date
-        updatedAt: Date
-    }
-    finalVideo?: {
+    scriptAnalysis?: any
+    storyboard?: any
+    scripts?: any
+    musics: Array<{
+        id?: string
         s3Key: string
-        s3Url?: string
+        volume: number
+    }>
+    subtitles: Array<{
+        id?: string
+        enabled: boolean
+        language: string
+        s3Key?: string
+    }>
+    publish?: {
+        s3Key: string
         reviewKey?: string
-        reviewUrl?: string
+        thumbnailKey?: string
+        previewKey?: string
         duration: number
         resolution: string
         fileSize: number
-        backgroundMusic?: {
-            s3Key: string
-            s3Url?: string
-            volume: number
-        }
-        subtitles?: {
-            enabled: boolean
-            s3Key?: string
-            s3Url?: string
-        }
         generatedAt: Date
     }
     publishing?: {
@@ -243,29 +231,22 @@ export interface IProject extends Document {
         content?: string
         type?: 'text' | 'thinking' | 'result' | 'visual-guide' | 'visual-path' | 'visual-assets'
         result?: any
-        files?: Array<{ name: string, url?: string }>
+        files?: Array<{ name: string, s3Key?: string }>
         timestamp?: Date
     }>
-    creativeBrief?: {
-        visualStyle: string
-        artDirection: string
-        colorPalette: string[]
-        lightingValues: string
-        generatedAt: Date
-    }
+    creativeBrief?: any
     visualAssets?: Array<{
         _id?: string | any // Types.ObjectId
         name: string
         description: string
         type: 'image' | 'video' | 'audio'
         status: 'pending' | 'ready' | 'error'
-        url?: string
         s3Key?: string
         metadata?: any
         createdAt: Date
     }>
     advancedEditorState?: any
-    scriptContent?: string
+    scriptContent?: string // Legacy or raw input
     metadata?: any
     analytics?: {
         viewCount: number
@@ -332,7 +313,6 @@ const ProjectSchema = new Schema<IProject>(
             scriptFile: {
                 originalName: String,
                 s3Key: String,
-                s3Url: String,
                 fileType: {
                     type: String,
                     enum: ['txt', 'pdf', 'docx', 'pptx']
@@ -340,75 +320,28 @@ const ProjectSchema = new Schema<IProject>(
                 uploadedAt: Date
             }
         },
-        scriptAnalysis: {
-            summary: String,
-            genre: String,
-            mood: String,
-            characters: [
-                {
-                    char_id: String,
-                    name: String,
-                    description: String,
-                    species: String,
-                    gender: String,
-                    age: String,
-                    voice_personality: String,
-                    body_build: String,
-                    face_shape: String,
-                    hair: String,
-                    skin_or_fur_color: String,
-                    signature_feature: String,
-                    outfit_top: String,
-                    outfit_bottom: String,
-                    helmet_or_hat: String,
-                    shoes_or_footwear: String,
-                    props: String,
-                    body_metrics: String,
-                    color_spec: { type: Schema.Types.Mixed, default: {} },
-                    tts_config: {
-                        voice_id: String,
-                        base_speaking_rate: Number,
-                        base_pitch: Number,
-                        style_category: String
-                    },
-                    referenceImage: String
-                }
-            ],
-            locations: [
-                {
-                    name: String,
-                    description: String,
-                    referenceImage: String
-                }
-            ],
-            themes: [String],
-            language: String,
-            analyzedAt: Date
-        },
-        storyboard: {
-            segments: [SegmentSchema],
-            totalDuration: Number,
-            createdAt: Date,
-            updatedAt: Date
-        },
-        finalVideo: {
+        scriptAnalysis: { type: Schema.Types.Mixed, default: {} },
+        storyboard: { type: Schema.Types.Mixed, default: {} },
+        scripts: { type: Schema.Types.Mixed, default: {} },
+        musics: [{
+            id: String,
             s3Key: String,
-            s3Url: String,
+            volume: { type: Number, default: 0.5 }
+        }],
+        subtitles: [{
+            id: String,
+            enabled: { type: Boolean, default: false },
+            language: String,
+            s3Key: String
+        }],
+        publish: {
+            s3Key: String,
             reviewKey: String,
-            reviewUrl: String,
+            thumbnailKey: String,
+            previewKey: String,
             duration: Number,
             resolution: String,
             fileSize: Number,
-            backgroundMusic: {
-                s3Key: String,
-                s3Url: String,
-                volume: { type: Number, default: 0.5 }
-            },
-            subtitles: {
-                enabled: { type: Boolean, default: false },
-                s3Key: String,
-                s3Url: String
-            },
             generatedAt: Date
         },
         publishing: {
@@ -439,26 +372,19 @@ const ProjectSchema = new Schema<IProject>(
                 files: [
                     {
                         name: String,
-                        url: String
+                        s3Key: String
                     }
                 ],
                 timestamp: { type: Date, default: Date.now }
             }
         ],
-        creativeBrief: {
-            visualStyle: String,
-            artDirection: String,
-            colorPalette: [String],
-            lightingValues: String,
-            generatedAt: Date
-        },
+        creativeBrief: { type: Schema.Types.Mixed, default: {} },
         visualAssets: [
             {
                 name: String,
                 description: String,
                 type: { type: String, enum: ['image', 'video', 'audio'], default: 'image' },
                 status: { type: String, enum: ['pending', 'ready', 'error'], default: 'pending' },
-                url: String,
                 s3Key: String,
                 metadata: Schema.Types.Mixed,
                 createdAt: { type: Date, default: Date.now }

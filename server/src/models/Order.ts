@@ -10,6 +10,7 @@ export interface IOrder extends Document {
   currency: string;
   source: 'live' | 'video' | 'store';
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  sessionId?: string;
   createdAt: Date;
 }
 
@@ -23,6 +24,7 @@ const OrderSchema: Schema = new Schema({
   currency: { type: String, default: 'USD' },
   source: { type: String, enum: ['live', 'video', 'store'], default: 'store' },
   status: { type: String, enum: ['pending', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+  sessionId: { type: String, index: true },
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -1,3 +1,4 @@
+import fs from 'fs'
 import { aiManager } from './ai/AIServiceManager.js'
 import config from './config.js'
 import { configService } from './configService.js'
@@ -24,8 +25,29 @@ export const generateJSON = async <T = any>(prompt: string, modelName?: string):
     let cleanedText = text.trim()
     const startIdx = Math.min(cleanedText.indexOf('{') === -1 ? Infinity : cleanedText.indexOf('{'), cleanedText.indexOf('[') === -1 ? Infinity : cleanedText.indexOf('['))
     const endIdx = Math.max(cleanedText.lastIndexOf('}'), cleanedText.lastIndexOf(']'))
-    if (startIdx !== Infinity && endIdx !== -1) cleanedText = cleanedText.substring(startIdx, endIdx + 1)
-    return JSON.parse(cleanedText)
+    
+    if (startIdx !== Infinity && endIdx !== -1) {
+        cleanedText = cleanedText.substring(startIdx, endIdx + 1)
+    }
+
+    try {
+        return JSON.parse(cleanedText)
+    } catch (error: any) {
+        console.error(`[AIGenerator] JSON Parsing Failed. Error: ${error.message}`)
+        console.error(`[AIGenerator] Malformed text preview (first 500 chars): ${cleanedText.substring(0, 500)}`)
+        console.error(`[AIGenerator] Malformed text preview (last 500 chars): ${cleanedText.substring(cleanedText.length - 500)}`)
+        
+        // Log to a temporary file for deep inspection if it's large
+        const debugPath = `json_error_${Date.now()}.txt`
+        try {
+            fs.writeFileSync(debugPath, cleanedText)
+            console.error(`[AIGenerator] Full malformed JSON saved to: ${debugPath}`)
+        } catch (e: any) {
+            console.error(`[AIGenerator] Failed to save debug file: ${e.message}`)
+        }
+        
+        throw new Error(`AI generated invalid JSON: ${error.message}`)
+    }
 }
 
 // ============================================================================
@@ -39,29 +61,30 @@ export const generateImage = async (
     options: {
         aspectRatio?: '1:1' | '16:9' | '9:16'
         characterContext?: any[]
+        projectAnalysis?: any
         generationType?: 'character' | 'scene'
         loras?: Array<{ id: string; weight: number }>
+        referenceImages?: string[]
         s3Key?: string
+        videoStyle?: string
     } = {}
-): Promise<{ s3Key: string, s3Url?: string }> => {
+): Promise<{ s3Key: string }> => {
     let optimizedPrompt: string = prompt;
 
-    // Enhance character context with Archive Memory if available
-    if (options.characterContext && options.characterContext.length > 0) {
-        const char = options.characterContext[0];
-        // We could fetch archive here, but for now we assume it's passed in options
-    }
+    const translator = async (p: string) => await generateText(p, 'gemini-2.5-flash');
 
+    const style = options.videoStyle || 'Cinematic, Photo-realistic';
     if (options.generationType === 'character' && options.characterContext && options.characterContext.length > 0) {
-        optimizedPrompt = await buildCharacterSheetPrompt(options.characterContext[0]);
+        optimizedPrompt = await buildCharacterSheetPrompt(options.characterContext[0], style, options.projectAnalysis, 'vi', translator);
     } else {
-        optimizedPrompt = await buildScenePrompt(prompt, options.characterContext || []);
+        optimizedPrompt = await buildScenePrompt(prompt, options.characterContext || [], style, options.projectAnalysis, 'vi', translator);
     }
 
     try {
         const result: any = await aiManager.generateImage(optimizedPrompt, undefined, undefined, {
             aspectRatio: options.aspectRatio,
-            loras: options.loras // Pass tactical stylistic weights
+            loras: options.loras, // Pass tactical stylistic weights
+            referenceImages: options.referenceImages
         });
 
         const buffer = result.buffer || await getFileBuffer(result.media?.url || result);
@@ -85,6 +108,8 @@ export interface Veo3GenerateOptions {
     aspectRatio?: '16:9' | '9:16' | '1:1'
     loras?: Array<{ id: string; weight: number }>
     characterImages?: string[]
+    imageStart?: string
+    imageEnd?: string
     metadata?: any
 }
 
@@ -94,16 +119,19 @@ export const generateVideo = async (options: Veo3GenerateOptions): Promise<{ job
     const model = videoDefault?.modelId || 'veo-2.0';
     const provider = videoDefault?.providerId || 'google';
 
-    const jobId = `gen-native-${Date.now()}`;
+    const jobId = options.metadata?.jobId || `gen-native-${Date.now()}`;
 
-    // Background execution with LoRA support
+    // Background execution with LoRA and consistency support
     (async () => {
         try {
+            console.log(`[AIGenerator] Starting video generation job: ${jobId}`);
             const result: any = await aiManager.generateVideo(options.prompt, model, provider, {
                 ...options
             });
-            // Handle result and upload to S3...
-        } catch (e) { }
+            console.log(`[AIGenerator] Job ${jobId} finished. Output: ${result.url || 'Success'}`);
+        } catch (e: any) {
+            console.error(`[AIGenerator] Job ${jobId} failed: ${e.message}`);
+        }
     })();
 
     return { jobId };

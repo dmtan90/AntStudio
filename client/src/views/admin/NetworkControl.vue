@@ -1,101 +1,153 @@
 <template>
-    <div class="network-control p-6">
-        <div class="page-header mb-8 flex justify-between items-end">
+    <div class="network-control min-h-screen p-8 relative overflow-hidden">
+        <!-- Ambient Glows -->
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
+        <div class="absolute bottom-1/3 right-1/4 w-80 h-80 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
+
+        <!-- Page Header -->
+        <div class="page-header mb-10 flex justify-between items-end relative z-10">
             <div>
-                <h1 class="text-3xl font-black italic tracking-tighter uppercase">Network Command</h1>
-                <p class="subtitle opacity-40">Omni-channel orchestration across the autonomous empire.</p>
-            </div>
-            <div class="network-stats flex gap-8">
-                <div class="stat text-right">
-                    <p class="text-[10px] font-black opacity-30 uppercase">Total Nodes</p>
-                    <p class="text-2xl font-black text-blue-500">{{ snapshots.length }}</p>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-1 h-8 rounded-full bg-gradient-to-b from-blue-400 to-indigo-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
+                    <h1 class="text-3xl font-black tracking-tight text-white">Network Command</h1>
                 </div>
-                <div class="stat text-right">
-                    <p class="text-[10px] font-black opacity-30 uppercase">Live Viewers</p>
-                    <p class="text-2xl font-black text-purple-500">{{ totalViewers }}</p>
+                <p class="text-sm text-white/30 ml-4 pl-3">Omni-channel orchestration across the autonomous empire.</p>
+            </div>
+            <!-- Stats -->
+            <div class="flex gap-6">
+                <div class="glass-stat text-right">
+                    <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1">Total Nodes</p>
+                    <p class="text-2xl font-black text-blue-400 tabular-nums">{{ snapshots.length }}</p>
+                </div>
+                <div class="w-px h-10 bg-white/5 self-center" />
+                <div class="glass-stat text-right">
+                    <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1">Live Viewers</p>
+                    <p class="text-2xl font-black text-indigo-400 tabular-nums">{{ formatNumber(totalViewers) }}</p>
                 </div>
             </div>
         </div>
 
         <!-- Global Controls -->
-        <div class="cinematic-card p-6 mb-8 border-purple-500/20 bg-purple-500/5">
+        <div class="glass-card p-5 mb-8 border-blue-500/15 bg-blue-500/5 relative z-10">
             <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="flex items-center gap-2">
-                        <earth theme="outline" size="20" fill="#a855f7" />
-                        Global Hype Synchronization
-                    </h3>
-                    <p class="text-[10px] opacity-40">Trigger network-wide effects across all active studios.</p>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <earth theme="outline" size="20" class="text-blue-400" />
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Global Hype Synchronization</h3>
+                        <p class="text-[11px] text-white/30">Trigger network-wide effects across all active studios.</p>
+                    </div>
                 </div>
-                <div class="flex gap-4">
-                    <el-button @click="triggerGlobalEvent('celebration')" round size="small" type="primary"
-                        class="!bg-purple-600 !border-purple-600">🎉 Global Celebration</el-button>
-                    <el-button @click="triggerGlobalEvent('breaking_news')" round size="small" plain>🗞️ Breaking
-                        News</el-button>
+                <div class="flex gap-3">
+                    <el-button @click="triggerGlobalEvent('celebration')" round size="small"
+                        class="!bg-blue-600 !border-blue-600 !text-white !font-bold !text-[11px] shadow-[0_4px_15px_rgba(59,130,246,0.25)] hover:brightness-110 transition-all">
+                        🎉 Global Celebration
+                    </el-button>
+                    <el-button @click="triggerGlobalEvent('breaking_news')" round size="small"
+                        class="!bg-white/5 !border-white/10 !text-white/70 !font-bold !text-[11px] hover:!bg-white/10 transition-all">
+                        🗞️ Breaking News
+                    </el-button>
                 </div>
             </div>
         </div>
 
         <!-- Multi-Stream Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <div v-for="node in snapshots" :key="node.projectId" class="cinematic-card overflow-hidden group">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10">
+            <div v-for="node in snapshots" :key="node.projectId"
+                class="glass-card overflow-hidden group hover:border-blue-500/20 hover:shadow-[0_8px_30px_rgba(59,130,246,0.08)] transition-all duration-300">
+
                 <!-- Node Header -->
-                <div class="p-4 border-b border-white/5 flex justify-between items-center">
+                <div class="px-5 py-4 border-b border-white/5 flex justify-between items-center">
                     <div class="flex items-center gap-3">
-                        <div
-                            :class="['w-2 h-2 rounded-full shadow-lg', node.status === 'online' ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500 shadow-red-500/50']">
-                        </div>
-                        <span class="text-xs font-black uppercase tracking-widest">{{ node.title }}</span>
+                        <div :class="['w-2 h-2 rounded-full', node.status === 'online'
+                            ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse'
+                            : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]']" />
+                        <span class="text-xs font-bold text-white/80 uppercase tracking-wider">{{ node.title }}</span>
+                        <span :class="['text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full',
+                            node.status === 'online'
+                                ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                                : 'bg-red-500/10 text-red-400 border border-red-500/20']">
+                            {{ node.status }}
+                        </span>
                     </div>
                     <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <el-button link size="small">
+                        <el-button link size="small" class="!text-white/40 hover:!text-white">
                             <More theme="outline" size="16" />
                         </el-button>
                     </div>
                 </div>
 
-                <!-- Visualization Placeholder -->
-                <div class="aspect-video bg-black/40 relative flex items-center justify-center border-b border-white/5">
+                <!-- Visualization -->
+                <div class="aspect-video bg-black/50 relative flex items-center justify-center border-b border-white/5 overflow-hidden">
+                    <!-- Online State -->
                     <div v-if="node.status === 'online'"
-                        class="w-full h-full flex flex-col items-center justify-center gap-2">
-                        <Terminal theme="outline" size="30" class="opacity-10" />
-                        <span class="text-[9px] font-black opacity-20 uppercase tracking-[4px]">Active VTuber
-                            Pipeline</span>
+                        class="w-full h-full flex flex-col items-center justify-center gap-3">
+                        <!-- Animated ring -->
+                        <div class="relative">
+                            <div class="w-16 h-16 rounded-full border-2 border-blue-500/20 flex items-center justify-center">
+                                <div class="w-12 h-12 rounded-full border border-blue-500/10 flex items-center justify-center">
+                                    <Terminal theme="outline" size="22" class="text-blue-500/30" />
+                                </div>
+                            </div>
+                            <div class="absolute inset-0 rounded-full border border-blue-400/20 animate-ping" />
+                        </div>
+                        <span class="text-[9px] font-bold text-white/20 uppercase tracking-[4px]">Active VTuber Pipeline</span>
                     </div>
-                    <div v-else class="text-[10px] font-black opacity-10 uppercase tracking-widest italic">Node
-                        Synchronizing...</div>
+                    <!-- Offline State -->
+                    <div v-else class="flex flex-col items-center gap-2">
+                        <Terminal theme="outline" size="24" class="text-white/10" />
+                        <span class="text-[10px] font-bold text-white/10 uppercase tracking-widest italic">Synchronizing...</span>
+                    </div>
 
                     <!-- Overlay Stats -->
-                    <div class="absolute bottom-2 left-2 flex gap-4">
-                        <div class="px-2 py-0.5 rounded bg-black/80 flex items-center gap-1 border border-white/10">
-                            <Peoples theme="outline" size="10" />
-                            <span class="text-[9px] font-bold">{{ formatNumber(node.viewerCount) }}</span>
+                    <div class="absolute bottom-3 left-3 flex gap-2">
+                        <div class="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md flex items-center gap-1.5 border border-white/10">
+                            <Peoples theme="outline" size="11" class="text-white/40" />
+                            <span class="text-[10px] font-bold text-white/60">{{ formatNumber(node.viewerCount) }}</span>
                         </div>
                     </div>
+
+                    <!-- Gradient overlay at bottom -->
+                    <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                 </div>
 
                 <!-- Node Metrics -->
-                <div class="p-4 bg-white/2 space-y-4">
+                <div class="p-5 space-y-4">
+                    <!-- Autonomy Bar -->
                     <div>
-                        <div class="flex justify-between mb-1">
-                            <span class="text-[9px] font-black opacity-30 uppercase">Autonomy Depth</span>
-                            <span class="text-[9px] font-black italic">{{ node.autonomyLevel }}%</span>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Autonomy Depth</span>
+                            <span class="text-[10px] font-bold text-blue-400">{{ node.autonomyLevel }}%</span>
                         </div>
-                        <el-progress :percentage="node.autonomyLevel" :show-text="false" :stroke-width="2"
-                            color="#3b82f6" />
+                        <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]"
+                                :style="{ width: node.autonomyLevel + '%' }" />
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="p-2 rounded-lg bg-white/5 border border-white/5 text-center">
-                            <p class="text-[8px] font-black opacity-30 uppercase mb-0.5">Uptime</p>
-                            <p class="text-xs font-black">{{ formatUptime(node.uptime) }}</p>
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 rounded-xl bg-white/3 border border-white/5 text-center hover:bg-white/5 transition-colors">
+                            <p class="text-[9px] font-bold text-white/25 uppercase tracking-widest mb-1">Uptime</p>
+                            <p class="text-sm font-black text-white/80">{{ formatUptime(node.uptime) }}</p>
                         </div>
-                        <div class="p-2 rounded-lg bg-white/5 border border-white/5 text-center">
-                            <p class="text-[8px] font-black opacity-30 uppercase mb-0.5">Stability</p>
-                            <p class="text-xs font-black text-green-400">NOMINAL</p>
+                        <div class="p-3 rounded-xl bg-white/3 border border-white/5 text-center hover:bg-white/5 transition-colors">
+                            <p class="text-[9px] font-bold text-white/25 uppercase tracking-widest mb-1">Stability</p>
+                            <p class="text-sm font-black text-green-400">NOMINAL</p>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="snapshots.length === 0"
+                class="col-span-full glass-card p-16 flex flex-col items-center justify-center gap-4 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-2">
+                    <Terminal theme="outline" size="28" class="text-blue-400/50" />
+                </div>
+                <p class="text-sm font-bold text-white/20 uppercase tracking-widest">No Nodes Online</p>
+                <p class="text-[12px] text-white/10">Network nodes will appear here when active.</p>
             </div>
         </div>
     </div>
@@ -103,7 +155,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Earth, Peoples, More, Terminal, ChartPie } from '@icon-park/vue-next';
+import { Earth, Peoples, More, Terminal } from '@icon-park/vue-next';
 
 import { toast } from 'vue-sonner';
 import { useAdminStore } from '@/stores/admin';
@@ -151,11 +203,20 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .network-control {
-    .cinematic-card {
-        background: rgba(15, 15, 15, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        backdrop-filter: blur(20px);
-    }
+    background: #0a0a0c;
+    color: #e5e5e5;
+    font-family: 'Inter', sans-serif;
+}
+
+.glass-card {
+    background: rgba(15, 15, 18, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    backdrop-filter: blur(30px) saturate(180%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-stat {
+    padding: 4px 0;
 }
 </style>

@@ -148,9 +148,9 @@ const currentPersona = computed(() => {
     // Ideally we pass the full preset object prop, but we only got ID.
     // Let's quickly reconstruct/lookup.
     const presets = [
-        { id: 'sarah', name: 'Sarah (AI)', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' },
-        { id: 'james', name: 'James (AI)', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400' },
-        { id: 'eva', name: 'Eva (Digital)', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }
+        { id: 'sarah', name: 'Sarah (AI)', image: '/avatars/sarah.jpg' },
+        { id: 'james', name: 'James (AI)', image: '/avatars/james.jpg' },
+        { id: 'eva', name: 'Eva (Digital)', image: '/avatars/eva.jpg' }
     ];
     const found = presets.find(p => p.id === props.selectedAvatar);
     if (!found) return null;
@@ -173,9 +173,9 @@ const currentPersona = computed(() => {
 // VTuber Persona Construction (Reuse selectedAvatar for now)
 const currentVTuberPersona = computed(() => {
     const presets = [
-        { id: 'sarah', name: 'Sarah (AI)', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' },
-        { id: 'james', name: 'James (AI)', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400' },
-        { id: 'eva', name: 'Eva (Digital)', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }
+        { id: 'sarah', name: 'Sarah (AI)', image: '/avatars/sarah.jpg' },
+        { id: 'james', name: 'James (AI)', image: '/avatars/james.jpg' },
+        { id: 'eva', name: 'Eva (Digital)', image: '/avatars/eva.jpg' }
     ];
     const found = presets.find(p => p.id === props.selectedAvatar);
     if (!found) return null;

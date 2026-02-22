@@ -119,7 +119,7 @@ export const useAdminStore = defineStore('admin', () => {
             const res : any = await api.post('/ai-config/generate-template', {
                 docUrl: docUrl,
                 taskType: taskType
-            })
+            }, { timeout: 100000 })
             // console.log("response", response.data);
             return res.data
         } catch (error) {

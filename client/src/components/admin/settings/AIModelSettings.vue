@@ -189,7 +189,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { SettingTwo, Delete, User, Refresh } from '@icon-park/vue-next';
+import { SettingTwo, Delete, User, Refresh, Key } from '@icon-park/vue-next';
 
 const props = defineProps<{
     providers: any[];

@@ -434,7 +434,7 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
     try {
         await connectDB();
         const { id } = req.params;
-        const { title, description, s3Key, s3Url } = req.body; // s3Key/s3Url if coming from warehouse
+        const { title, description, s3Key } = req.body; // s3Key if coming from warehouse
 
         const account = await UserPlatformAccount.findOne({
             _id: id,
@@ -450,8 +450,8 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
             // File upload
             videoStream = fs.createReadStream(req.file.path);
             cleanup = () => fs.unlinkSync(req.file!.path); // Delete temp file after
-        } else if (s3Key || s3Url) {
-            // Warehouse upload (stream from S3 or URL)
+        } else if (s3Key) {
+            // Warehouse upload (stream from S3)
             try {
                 if (s3Key) {
                     const client = getS3Client();
@@ -471,7 +471,7 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
                 if (!videoStream) {
                     const axios = (await import('axios')).default;
                     const { getSignedS3Url } = await import('../utils/s3.js');
-                    const videoUrl = s3Url || (s3Key ? await getSignedS3Url(s3Key) : null);
+                    const videoUrl = s3Key ? await getSignedS3Url(s3Key) : null;
                     
                     if (!videoUrl) throw new Error('No valid video URL or S3 key provided');
                     
@@ -527,6 +527,48 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
         }
     } catch (error: any) {
         console.error('Upload Error:', error);
+        res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
+    }
+});
+
+/**
+ * PATCH /api/platforms/:id/live-info
+ * Update Live Stream Metadata (Title, Description)
+ */
+router.patch('/:id/live-info', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const account = await UserPlatformAccount.findOne({
+            _id: req.params.id,
+            userId: req.user?.userId
+        });
+
+        if (!account) return res.status(404).json({ success: false, error: 'Account not found' });
+
+        const { title, description } = req.body;
+
+        try {
+            const credentials = await PlatformAuthService.getValidCredentials(account);
+            await PlatformAuthService.updateLiveStreamMetadata(account.platform, credentials, {
+                title,
+                description
+            });
+
+            res.json({ success: true, message: 'Live stream metadata updated' });
+        } catch (error: any) {
+            if (error.response?.status === 401) {
+                const credentials = await PlatformAuthService.getValidCredentials(account, true);
+                await PlatformAuthService.updateLiveStreamMetadata(account.platform, credentials, {
+                    title,
+                    description
+                });
+                res.json({ success: true, message: 'Live stream metadata updated' });
+            } else {
+                throw error;
+            }
+        }
+    } catch (error: any) {
+        console.error('Live Metadata Update Error:', error);
         res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });

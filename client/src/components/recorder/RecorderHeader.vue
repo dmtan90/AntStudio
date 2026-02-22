@@ -37,57 +37,63 @@ const router = useRouter()
 .recorder-tabs {
     display: flex;
     gap: 8px;
-    background: rgba(10, 10, 10, 0.4);
-    backdrop-filter: blur(40px);
-    padding: 6px;
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(40px) saturate(180%);
+    padding: 8px;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .tab-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 14px;
-    border: none;
+    gap: 10px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid transparent;
     background: transparent;
     color: rgba(255, 255, 255, 0.4);
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 800;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    letter-spacing: -0.01em;
 
     &:hover {
         color: #fff;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-1px);
     }
 
     &.active {
-        background: rgb(249, 115, 22);
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
         color: #fff;
-        box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
     }
 }
 
 .btn-close {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    background: rgba(20, 20, 20, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
+    width: 48px;
+    height: 48px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 
     &:hover {
-        background: rgba(255, 100, 100, 0.2);
-        border-color: rgba(255, 100, 100, 0.3);
-        color: #ff6b6b;
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #ff5c5c;
+        transform: rotate(90deg) scale(1.1);
     }
 }
 </style>

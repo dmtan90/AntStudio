@@ -29,14 +29,14 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div v-for="style in styles" :key="style.value"
                         class="relative cursor-pointer rounded-lg border-2 transition-all overflow-hidden"
-                        :class="formData.style === style.value ? 'border-brand-primary bg-brand-primary/10' : 'border-white/10 hover:border-white/20'"
+                        :class="formData.style === style.value ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'"
                         @click="formData.style = style.value as 'default' | 'minimal' | 'bold' | 'gradient'">
                         <div class="p-4">
                             <div class="text-sm font-bold text-white mb-1">{{ style.label }}</div>
                             <div class="text-xs text-white/50">{{ style.description }}</div>
                         </div>
                         <div v-if="formData.style === style.value" class="absolute top-2 right-2">
-                            <div class="w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center">
+                            <div class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
                                 <Check class="w-3 h-3 text-white" />
                             </div>
                         </div>
@@ -52,7 +52,7 @@
                 <div class="flex gap-2">
                     <button v-for="pos in positions" :key="pos.value"
                         class="flex-1 px-4 py-2 rounded-lg border transition-all text-sm font-medium"
-                        :class="formData.position === pos.value ? 'border-brand-primary bg-brand-primary/10 text-brand-primary' : 'border-white/10 text-white/70 hover:border-white/20'"
+                        :class="formData.position === pos.value ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-white/10 text-white/70 hover:border-white/20'"
                         @click="formData.position = pos.value as 'bottom-left' | 'bottom-center' | 'bottom-right'">
                         {{ pos.label }}
                     </button>
@@ -67,7 +67,7 @@
                 <div class="flex gap-2">
                     <button v-for="anim in animations" :key="anim.value"
                         class="flex-1 px-4 py-2 rounded-lg border transition-all text-sm font-medium"
-                        :class="formData.animation === anim.value ? 'border-brand-primary bg-brand-primary/10 text-brand-primary' : 'border-white/10 text-white/70 hover:border-white/20'"
+                        :class="formData.animation === anim.value ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-white/10 text-white/70 hover:border-white/20'"
                         @click="formData.animation = anim.value as 'fade' | 'slide' | 'none'">
                         {{ anim.label }}
                     </button>

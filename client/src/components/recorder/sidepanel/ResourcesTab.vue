@@ -4,17 +4,17 @@
             <div class="flex items-center justify-between mb-4">
                 <span class="text-[10px] font-bold text-white/30 uppercase">Resource Pool</span>
                 <button @click="$emit('trigger-resource-upload')"
-                    class="text-orange-400 hover:text-orange-300 transition-colors">
+                    class="text-blue-400 hover:text-blue-300 transition-colors">
                     <file-addition size="16" />
                 </button>
             </div>
 
             <div v-if="resourcePool.length === 0"
-                class="upload-zone aspect-video border-2 border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:border-orange-500/30 group"
+                class="upload-zone aspect-video border-2 border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:border-blue-500/30 group"
                 @click="$emit('trigger-resource-upload')">
                 <div
-                    class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-orange-500/10">
-                    <file-addition size="20" class="text-white/20 group-hover:text-orange-400" />
+                    class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-500/10">
+                    <file-addition size="20" class="text-white/20 group-hover:text-blue-400" />
                 </div>
                 <span class="text-[9px] font-bold text-white/20 uppercase tracking-tighter">Add Overlay</span>
             </div>

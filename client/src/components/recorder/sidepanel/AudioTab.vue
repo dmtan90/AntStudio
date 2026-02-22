@@ -3,8 +3,8 @@
         <!-- Microphone Section (Re-located for consistency) -->
         <div class="panel-section">
             <div class="flex items-center justify-between mb-4">
-                <span class="text-[10px] font-bold text-orange-400 uppercase">Microphone Gain</span>
-                <span class="text-[10px] text-orange-400 font-mono">{{ (micVolume * 100).toFixed(0) }}%</span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase">Microphone Gain</span>
+                <span class="text-[10px] text-blue-400 font-mono">{{ (micVolume * 100).toFixed(0) }}%</span>
             </div>
             
             <div class="bg-white/[0.03] p-4 rounded-2xl border border-white/5 backdrop-blur-md">
@@ -17,11 +17,11 @@
         <!-- Background Music -->
         <div class="panel-section">
             <div class="flex items-center justify-between mb-4">
-                <span class="text-[10px] font-bold text-orange-400 uppercase">Background Music</span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase">Background Music</span>
                 <div class="flex items-center gap-2">
                     <button @click="$emit('toggle-bgm')" 
                         class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center transition-all"
-                        :class="bgmUrl ? 'text-orange-400 bg-orange-400/10 border border-orange-500/20' : 'text-white/40 border border-white/5'">
+                        :class="bgmUrl ? 'text-blue-400 bg-blue-400/10 border border-blue-500/20' : 'text-white/40 border border-white/5'">
                         <play v-if="!bgmUrl" size="14" />
                         <pause v-else size="14" />
                     </button>
@@ -32,7 +32,7 @@
             <div class="bg-white/[0.03] p-4 rounded-2xl border border-white/5 backdrop-blur-md mb-6">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-[9px] text-white/40 font-bold uppercase">BGM Volume</span>
-                    <span class="text-[10px] text-orange-400 font-mono">{{ (bgmVolume * 100).toFixed(0) }}%</span>
+                    <span class="text-[10px] text-blue-400 font-mono">{{ (bgmVolume * 100).toFixed(0) }}%</span>
                 </div>
                 <el-slider :model-value="bgmVolume" @update:model-value="v => $emit('update:bgmVolume', v as number)"
                     :min="0" :max="1" :step="0.01" :show-tooltip="false" size="small" />
@@ -42,11 +42,11 @@
             <div class="flex flex-col gap-2">
                 <div v-for="track in bgmLibrary" :key="track.id"
                     class="track-item p-4 rounded-2xl border transition-all cursor-pointer group"
-                    :class="bgmUrl === track.url ? 'bg-orange-500/10 border-orange-500/40' : 'bg-white/5 border-white/5 hover:border-white/10'"
+                    :class="bgmUrl === track.url ? 'bg-blue-500/10 border-blue-500/40' : 'bg-white/5 border-white/5 hover:border-white/10'"
                     @click="$emit('update:bgmUrl', track.url === bgmUrl ? null : track.url)">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center transition-all group-hover:bg-orange-500/20"
-                            :class="{ 'text-orange-400': bgmUrl === track.url }">
+                        <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center transition-all group-hover:bg-blue-500/20"
+                            :class="{ 'text-blue-400': bgmUrl === track.url }">
                             <music size="16" />
                         </div>
                         <div class="flex flex-col overflow-hidden">
@@ -54,7 +54,7 @@
                             <span class="text-[9px] text-white/40 uppercase tracking-widest font-mono">BGM Track</span>
                         </div>
                         <div v-if="bgmUrl === track.url" class="ml-auto">
-                            <check-one theme="filled" size="14" class="text-orange-500" />
+                            <check-one theme="filled" size="14" class="text-blue-500" />
                         </div>
                     </div>
                 </div>

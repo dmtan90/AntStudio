@@ -1,181 +1,205 @@
 <template>
-  <div class="platforms-view p-6 animate-in">
-    <header class="view-header mb-8">
-      <div>
-        <h1 class="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-          <connection theme="outline" size="28" class="text-primary" />
-          Personal Platforms
-        </h1>
-        <p class="text-gray-400 mt-1">Manage your professional streaming channels and distribution endpoints.</p>
+  <div class="platforms-view min-h-screen bg-[#0a0a0c] text-white font-outfit">
+    <!-- Header Section -->
+    <header class="relative py-16 px-8 overflow-hidden border-b border-white/5">
+      <div class="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/10 to-transparent pointer-events-none"></div>
+      
+      <!-- Ambient Glows -->
+      <div class="absolute -top-24 -right-24 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] animate-pulse"></div>
+      <div class="absolute top-1/2 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] animate-pulse" style="animation-delay: 1s"></div>
+
+      <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
+        <div>
+          <h1 class="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
+            Connected <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">
+              Platforms
+            </span>
+          </h1>
+          <p class="text-xl text-gray-400 max-w-xl leading-relaxed font-medium">
+             Manage your professional streaming channels and automated content distribution.
+          </p>
+        </div>
+
+        <button 
+           @click="showAddModal = true" 
+           class="group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden"
+        >
+           <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+           <plus theme="outline" size="20" />
+           Connect New
+        </button>
       </div>
-      <button class="primary-btn glass-btn" @click="showAddModal = true">
-        <plus theme="outline" size="18" class="mr-2" />
-        Connect New Platform
-      </button>
     </header>
 
-    <!-- Empty State -->
-    <div v-if="!accounts.length && !loading" class="empty-state glass-card">
-      <div class="icon-orb mb-6">
-        <connection theme="outline" size="40" />
-      </div>
-      <h3>No platforms connected yet</h3>
-      <p>Connect your YouTube, Facebook, or TikTok channels to start professional streaming and automated publishing.
-      </p>
-      <button class="primary-btn secondary mt-6" @click="showAddModal = true">
-        Get Started
-      </button>
-    </div>
-
-    <!-- Active Platforms Grid -->
-    <div v-else class="platforms-grid">
-      <div v-for="account in accounts" :key="account._id" class="platform-card cinematic-card animate-slide-up"
-        :class="{ 'error': account.status === 'error', [account.platform]: true }">
-
-        <div class="card-glow"></div>
-
-        <div class="card-header">
-          <div class="user-avatar-group">
-            <div class="avatar-ring">
-              <el-image :src="getFileUrl(account.avatarUrl)" :alt="account.accountName" class="user-avatar">
-                <template #error>
-                  <div class="avatar-placeholder">
-                    <user-icon theme="outline" size="20" />
-                  </div>
-                </template>
-                <template #placeholder>
-                  <div class="avatar-placeholder">
-                    <user-icon theme="outline" size="20" />
-                  </div>
-                </template>
-              </el-image>
-            </div>
-            <div class="platform-mini-icon" :class="account.platform">
-              <youtube v-if="account.platform === 'youtube'" theme="filled" />
-              <facebook v-else-if="account.platform === 'facebook'" theme="filled" />
-              <tiktok v-else-if="account.platform === 'tiktok'" theme="filled" />
-              <broadcast v-else theme="filled" />
-            </div>
-          </div>
-
-          <div class="status-indicator">
-            <div class="dot" :class="account.status"></div>
-            <span class="status-text">{{ account.status }}</span>
-          </div>
-        </div>
-
-        <div class="account-details mt-6">
-          <h4 class="account-name">{{ account.accountName }}</h4>
-          <div class="meta-tags">
-            <span class="platform-tag">{{ account.platform }}</span>
-            <span v-if="account.credentials?.email || account.accountEmail" class="email-tag">
-              {{ account.credentials?.email || account.accountEmail }}
-            </span>
-          </div>
-        </div>
-
-        <div class="card-actions mt-8">
-          <router-link v-if="account.platform == 'custom-rtmp'"
-            :to="{ name: 'live-studio', query: { platformId: account._id } }"
-            class="action-btn primary-action bg-red-600 w-full">
-            <Broadcast theme="outline" size="16" />
-            <span>Go Live</span>
-          </router-link>
-          <router-link v-else :to="{ name: 'platforms-cms', query: { accountId: account._id } }"
-            class="action-btn primary-action w-full">
-            <video-file theme="outline" size="16" />
-            <span>Manage Channel</span>
-          </router-link>
-
-          <div class="utility-actions">
-            <button v-if="account.platform == 'custom-rtmp' || account.platform == 'ant-media'" class="util-btn"
-              @click="editAccount(account)" title="Settings">
-              <setting theme="outline" size="16" />
-            </button>
-            <button class="util-btn" @click="syncAccount(account)" title="Sync Status">
-              <refresh theme="outline" size="16" />
-            </button>
-            <button class="util-btn delete" @click="disconnectAccount(account)" title="Disconnect">
-              <close theme="outline" size="16" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Add Platform Modal -->
-    <el-dialog v-model="showAddModal" title="Connect Dynamic Platform" width="500px"
-      class="glass-dialog dark-theme-dialog" :show-close="false" destroy-on-close>
-      <div class="platform-selector grid grid-cols-2 gap-4 mb-6">
-        <div v-for="p in availablePlatforms" :key="p.id" class="p-item glass-selectable"
-          :class="{ active: selectedPlatform === p.id }" @click="selectedPlatform = p.id">
-          <component :is="p.icon" theme="outline" size="24" :class="p.id" />
-          <span>{{ p.name }}</span>
-        </div>
+    <main class="max-w-7xl mx-auto py-12 px-8">
+      <!-- Empty State -->
+      <div v-if="!accounts.length && !loading" class="text-center py-32 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
+         <div class="text-7xl mb-6 grayscale opacity-20">📡</div>
+         <h3 class="text-2xl font-black text-white mb-2">No platforms connected</h3>
+         <p class="text-gray-500 mb-8 max-w-md mx-auto">Connect your YouTube, Facebook, or TikTok channels to start streaming.</p>
+         <button @click="showAddModal = true" class="px-8 py-4 bg-white/10 rounded-2xl font-bold text-sm uppercase tracking-wide hover:bg-white/20 transition-all border border-white/10">
+            Get Started
+         </button>
       </div>
 
-      <el-form :model="form" layout="vertical" class="mt-6">
+      <!-- Active Platforms Grid -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div v-for="account in accounts" :key="account._id" 
+           class="platform-card group relative bg-black rounded-3xl p-1 overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20"
+           :class="{'border border-red-500/50 shadow-red-900/20': account.status === 'error', 'border border-white/5': account.status !== 'error'}"
+        >
+           <!-- Inner Content -->
+           <div class="bg-[#0a0a0c] rounded-[22px] p-6 h-full flex flex-col relative z-10 overflow-hidden">
+               <!-- Background Glow -->
+               <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+               
+               <div class="flex justify-between items-start mb-8 relative">
+                   <div class="relative">
+                      <div class="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                         <img v-if="account.avatarUrl" :src="getFileUrl(account.avatarUrl)" class="w-full h-full object-cover" />
+                         <user-icon v-else theme="outline" size="24" class="text-gray-500" />
+                      </div>
+                      <div 
+                        class="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center border-2 border-[#0a0a0c]"
+                        :class="{
+                           'bg-red-600 text-white': account.platform === 'youtube',
+                           'bg-blue-600 text-white': account.platform === 'facebook',
+                           'bg-black text-white border-white/20': account.platform === 'tiktok',
+                           'bg-yellow-500 text-black': account.platform === 'ant-media'
+                        }"
+                      >
+                         <youtube v-if="account.platform === 'youtube'" theme="filled" size="14" />
+                         <facebook v-else-if="account.platform === 'facebook'" theme="filled" size="14" />
+                         <tiktok v-else-if="account.platform === 'tiktok'" theme="outline" size="14" />
+                         <broadcast v-else theme="filled" size="14" />
+                      </div>
+                   </div>
+
+                   <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                      <div 
+                        class="w-1.5 h-1.5 rounded-full"
+                        :class="account.status === 'connected' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'"
+                      ></div>
+                      <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">{{ account.status }}</span>
+                   </div>
+               </div>
+
+               <div class="mb-auto relative">
+                  <h3 class="text-2xl font-bold text-white mb-1 leading-tight">{{ account.accountName }}</h3>
+                  <p class="text-sm font-medium text-gray-500 truncate">{{ account.credentials?.email || account.accountEmail || 'No email' }}</p>
+               </div>
+
+               <div class="flex gap-3 mt-8 relative">
+                  <button 
+                     v-if="account.platform == 'custom-rtmp' || account.platform == 'ant-media'"
+                     @click="editAccount(account)"
+                     class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors text-gray-400 hover:text-white"
+                  >
+                     <setting theme="outline" size="18" />
+                  </button>
+                  <button 
+                     @click="syncAccount(account)"
+                     class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors text-gray-400 hover:text-white"
+                  >
+                     <refresh theme="outline" size="18" />
+                  </button>
+
+                  <router-link 
+                     :to="account.platform === 'custom-rtmp' ? { name: 'live-studio', query: { platformId: account._id } } : { name: 'platforms-cms', query: { accountId: account._id } }"
+                     class="flex-1 h-10 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wide flex items-center justify-center hover:scale-[1.02] transition-transform"
+                  >
+                     {{ account.platform === 'custom-rtmp' ? 'Go Live' : 'Manage' }}
+                  </router-link>
+
+                  <button 
+                     @click="disconnectAccount(account)"
+                     class="w-10 h-10 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center transition-colors text-red-500"
+                  >
+                     <close theme="outline" size="18" />
+                  </button>
+               </div>
+           </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Connect Modal -->
+    <el-dialog v-model="showAddModal" width="500px" class="glass-dialog" :show-close="false" destroy-on-close align-center>
+      <template #header>
+         <div class="text-white text-lg font-black uppercase tracking-wide">Connect Platform</div>
+      </template>
+
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        <div v-for="p in availablePlatforms" :key="p.id" 
+           class="p-4 rounded-xl border cursor-pointer flex flex-col items-center gap-3 transition-all duration-200"
+           :class="selectedPlatform === p.id ? 'bg-blue-600/10 border-blue-500/50' : 'bg-white/5 border-white/10 hover:border-white/20'"
+           @click="selectedPlatform = p.id"
+        >
+           <component :is="p.icon" theme="filled" size="28" :class="{'text-blue-400': selectedPlatform === p.id, 'text-gray-500': selectedPlatform !== p.id}" />
+           <span class="text-xs font-bold uppercase tracking-wider" :class="selectedPlatform === p.id ? 'text-blue-400' : 'text-gray-400'">{{ p.name }}</span>
+        </div>
+      </div>
+
+      <el-form :model="form" layout="vertical">
         <div v-if="selectedPlatform">
           <!-- AMS Fields -->
           <div v-if="selectedPlatform === 'ant-media'">
-            <div class="form-group mb-4">
-              <label class="form-label">Internal Name</label>
-              <el-input v-model="form.name" placeholder="e.g. My AMS Instance" />
+            <div class="mb-4">
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Internal Name</label>
+              <el-input v-model="form.name" placeholder="e.g. My AMS Instance" class="glass-input" />
             </div>
-            <div class="form-group mb-4">
-              <label class="form-label">Managing URL (REST API)</label>
-              <el-input v-model="form.serverUrl" placeholder="https://antmedia.server.com:5443" />
+            <div class="mb-4">
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Server URL</label>
+              <el-input v-model="form.serverUrl" placeholder="https://antmedia.server.com:5443" class="glass-input" />
             </div>
-            <div class="form-group mb-4">
-              <label class="form-label">Admin Email</label>
-              <el-input v-model="form.email" placeholder="admin@server.com" />
+            <div class="mb-4">
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Admin Email</label>
+              <el-input v-model="form.email" placeholder="admin@server.com" class="glass-input" />
             </div>
-            <div class="form-group mb-4">
-              <label class="form-label">Password</label>
-              <el-input v-model="form.password" type="password" show-password />
+            <div class="mb-4">
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Password</label>
+              <el-input v-model="form.password" type="password" show-password class="glass-input" />
             </div>
-            <div class="form-group mb-4">
-              <label class="form-label">App Name</label>
-              <el-input v-model="form.appName" placeholder="LiveApp" />
+            <div class="mb-4">
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">App Name</label>
+              <el-input v-model="form.appName" placeholder="LiveApp" class="glass-input" />
             </div>
           </div>
 
           <!-- Custom RTMP -->
           <div v-else-if="selectedPlatform === 'custom-rtmp'">
-            <div class="form-group mb-4">
-              <label class="form-label">Internal Name</label>
-              <el-input v-model="form.name" placeholder="e.g. Custom Endpoint" />
+            <div class="mb-4">
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Internal Name</label>
+              <el-input v-model="form.name" placeholder="e.g. Custom Endpoint" class="glass-input" />
             </div>
-            <div class="form-group mb-4">
-              <label class="form-label">RTMP URL</label>
-              <el-input v-model="form.rtmpUrl" placeholder="rtmp://server.com/app" />
+            <div class="mb-4">
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">RTMP URL</label>
+              <el-input v-model="form.rtmpUrl" placeholder="rtmp://server.com/app" class="glass-input" />
             </div>
-            <div class="form-group mb-4">
-              <label class="form-label">Stream Key</label>
-              <el-input v-model="form.streamKey" type="password" show-password />
+            <div class="mb-4">
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Stream Key</label>
+              <el-input v-model="form.streamKey" type="password" show-password class="glass-input" />
             </div>
           </div>
 
           <!-- OAuth Platforms -->
-          <div v-else class="oauth-connect flex flex-col items-center justify-center py-8">
-            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-              <component :is="availablePlatforms.find(p => p.id === selectedPlatform)?.icon" theme="filled" size="32"
-                :class="selectedPlatform" />
+          <div v-else class="flex flex-col items-center justify-center py-8 text-center">
+            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
+              <component :is="availablePlatforms.find(p => p.id === selectedPlatform)?.icon" theme="filled" size="32" class="text-white" />
             </div>
-            <p class="text-center text-gray-400 mb-6 px-8">
-              Connect your {{availablePlatforms.find(p => p.id === selectedPlatform)?.name}} account to automatically
-              sync videos and manage live streams.
+            <p class="text-gray-400 px-8">
+              Connect your {{availablePlatforms.find(p => p.id === selectedPlatform)?.name}} account to automatically sync videos and live streams.
             </p>
-            <!-- No input fields needed for OAuth initial step -->
           </div>
         </div>
       </el-form>
 
       <template #footer>
         <div class="flex gap-4">
-          <button class="primary-btn secondary flex-1" @click="showAddModal = false">Cancel</button>
-          <button class="primary-btn flex-1" :disabled="!selectedPlatform" @click="handleConnect" :loading="connecting">
-            Connect
+          <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors border border-white/5" @click="showAddModal = false">Cancel</button>
+          <button class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-blue-600/20" :disabled="!selectedPlatform" @click="handleConnect">
+            {{ loading ? 'Connecting...' : 'Connect' }}
           </button>
         </div>
       </template>
@@ -209,7 +233,7 @@ const form = ref({
   serverUrl: '',
   streamKey: '',
   email: '',
-  password: '', // Only filled if creating or explicitly changing
+  password: '',
   appName: '',
 });
 
@@ -230,39 +254,25 @@ const initiateOAuth = async (platform: string) => {
       toast.error('Failed to get authorization URL');
     }
   } catch (e) {
-    // Error handled in store but we catch here to stop flow if needed
   }
 };
 
 const handleConnect = async () => {
   const platformConfig = availablePlatforms.find(p => p.id === selectedPlatform.value);
 
-  // OAuth Flow (Only supported for NEW connections currently)
   if (platformConfig?.type === 'oauth' && !editingAccountId.value) {
     await initiateOAuth(selectedPlatform.value);
     return;
   }
 
-  // Manual Flow (AMS / Custom RTMP) validation
-  if (!form.value.name) {
-    return toast.error('Account Name is required');
-  }
+  if (!form.value.name) return toast.error('Account Name is required');
 
   if (selectedPlatform.value === 'ant-media') {
-    // If editing, password can be empty (unchanged). If creating, password required.
     const isPasswordRequired = !editingAccountId.value;
-
-    if (!form.value.serverUrl || !form.value.email) {
-      return toast.error('Server URL and Email are required');
-    }
-    if (isPasswordRequired && !form.value.password) {
-      return toast.error('Password is required for new connection');
-    }
-
+    if (!form.value.serverUrl || !form.value.email) return toast.error('Server URL and Email are required');
+    if (isPasswordRequired && !form.value.password) return toast.error('Password is required for new connection');
   } else if (selectedPlatform.value === 'custom-rtmp') {
-    if (!form.value.rtmpUrl || !form.value.streamKey) {
-      return toast.error('RTMP URL and Stream Key are required');
-    }
+    if (!form.value.rtmpUrl || !form.value.streamKey) return toast.error('RTMP URL and Stream Key are required');
   }
 
   try {
@@ -273,24 +283,21 @@ const handleConnect = async () => {
       rtmpUrl: form.value.rtmpUrl,
       credentials: {
         email: form.value.email,
-        password: form.value.password, // Store cleans empty pass for updates if needed? Actually store handles API call. Route handles empty pass.
+        password: form.value.password,
         serverUrl: form.value.serverUrl,
         appName: form.value.appName
       }
     };
 
     if (editingAccountId.value) {
-      // Update existing account
       await platformStore.updatePlatform(editingAccountId.value, payload);
     } else {
-      // Create new account
       await platformStore.connectPlatform(payload);
     }
 
     showAddModal.value = false;
     resetForm();
   } catch (e) {
-    // Error handled in store
   }
 };
 
@@ -308,7 +315,7 @@ const editAccount = (account: any) => {
     serverUrl: account.credentials?.serverUrl || '',
     streamKey: account.streamKey || '',
     email: account.credentials?.email || '',
-    password: '', // Clear password field for security
+    password: '',
     appName: account.credentials?.appName || ''
   };
   showAddModal.value = true;
@@ -317,12 +324,11 @@ const editAccount = (account: any) => {
 const resetForm = () => {
   form.value = { name: '', rtmpUrl: '', serverUrl: '', streamKey: '', email: '', password: '', appName: '' };
   editingAccountId.value = null;
-  selectedPlatform.value = 'youtube'; // Reset to default tab? Or keep last. Let's reset.
+  selectedPlatform.value = 'youtube';
 };
 
 const syncAccount = async (account: any) => {
   toast.info(`Syncing status for ${account.accountName}...`);
-  // Mock sync for now
   setTimeout(() => toast.success('Status synchronized'), 1000);
 };
 
@@ -332,792 +338,42 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.platforms-view {
-  min-height: 100vh;
-  background: #0a0a0a;
-  background-image: 
-    radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08), transparent 400px),
-    radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.08), transparent 400px);
+.font-outfit {
   font-family: 'Outfit', sans-serif;
 }
 
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.platforms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-}
-
-.cinematic-card {
-  position: relative;
-  background: rgba(20, 20, 25, 0.6);
-  backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 24px;
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
-    border-radius: 24px;
-    opacity: 0.5;
-  }
-
-  .card-glow {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, var(--accent-color, rgba(59, 130, 246, 0.15)) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  &:hover {
-    transform: translateY(-4px) scale(1.01);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
-
-    .card-glow {
-      opacity: 1;
-    }
-  }
-
-  &.youtube { --accent-color: rgba(254, 0, 0, 0.2); }
-  &.facebook { --accent-color: rgba(24, 119, 242, 0.2); }
-  &.tiktok { --accent-color: rgba(254, 44, 85, 0.2); }
-  &.ant-media { --accent-color: rgba(255, 193, 7, 0.2); }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    position: relative;
-    z-index: 1;
-  }
-
-  .user-avatar-group {
-    position: relative;
-
-    .avatar-ring {
-      width: 56px;
-      height: 56px;
-      padding: 2px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-
-      .user-avatar {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-      }
-
-      .avatar-placeholder {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.05);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgba(255, 255, 255, 0.3);
-      }
-    }
-
-    .platform-mini-icon {
-      position: absolute;
-      bottom: -2px;
-      right: -2px;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      border: 2px solid #000;
-      
-      &.youtube { color: #fe0000; }
-      &.facebook { color: #1877f2; }
-      &.tiktok { color: #fe2c55; }
-      &.ant-media { color: #ffc107; }
-    }
-  }
-
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 100px;
-    backdrop-filter: blur(4px);
-
-    .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #666;
-      box-shadow: 0 0 8px currentColor;
-
-      &.connected { background: #10b981; color: #10b981; }
-      &.error { background: #ef4444; color: #ef4444; }
-    }
-
-    .status-text {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: rgba(255, 255, 255, 0.5);
-    }
-  }
-
-  .account-details {
-      position: relative;
-      z-index: 1;
-  }
-
-  .account-name {
-    font-size: 18px;
-    font-weight: 700;
-    color: white;
-    letter-spacing: -0.01em;
-  }
-
-  .meta-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-
-    span {
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-    }
-
-    .platform-tag {
-      background: rgba(255, 255, 255, 0.05);
-      color: rgba(255, 255, 255, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .email-tag {
-      background: rgba(59, 130, 246, 0.1);
-      color: #3b82f6;
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      max-width: 160px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-
-  .card-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    height: 40px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.2s;
-    cursor: pointer;
-
-    &.primary-action {
-      background: #3b82f6;
-      color: white;
-      border: 1px solid rgba(255,255,255,0.05);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-
-      &:hover {
-        background: #2563eb;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
-      }
-    }
-  }
-
-  .utility-actions {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-
-    .util-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: transparent;
-      border: none;
-      color: rgba(255, 255, 255, 0.4);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: white;
-      }
-
-      &.delete:hover {
-        background: rgba(239, 68, 68, 0.15);
-        color: #ef4444;
-      }
-    }
-  }
-}
-
-.primary-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 20px;
-  height: 44px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-  color: #000;
-  border: none;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15);
-  }
-
-  &.glass-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-  }
-}
-
-.p-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 20px;
-  border-radius: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-
-  span {
-    font-size: 11px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.5);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  &:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  &.active {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
-    box-shadow: inset 0 0 20px rgba(59, 130, 246, 0.1);
-
-    span { color: #3b82f6; }
-    .youtube { color: #fe0000; }
-    .facebook { color: #1877f2; }
-    .tiktok { color: #fe2c55; }
-    .ant-media { color: #ffc107; }
-  }
-}
-
-.form-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 8px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 80px 32px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 32px;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  margin-top: 32px;
-
-  h3 {
-    font-size: 24px;
-    font-weight: 800;
-    color: white;
-    margin-bottom: 12px;
-    letter-spacing: -0.01em;
-  }
-
-  p {
-    color: rgba(255, 255, 255, 0.4);
-    max-width: 400px;
-    margin: 0 auto 24px;
-    line-height: 1.6;
-    font-size: 14px;
-  }
-}
-
-:deep(.glass-dialog) {
-    background: rgba(15, 15, 20, 0.85) !important;
-    backdrop-filter: blur(32px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+:global(.glass-dialog) {
+    background: rgba(20, 20, 25, 0.95) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 24px !important;
-    box-shadow: 0 40px 80px rgba(0,0,0,0.6) !important;
+    padding: 0 !important;
 
     .el-dialog__header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        margin-right: 0;
-        padding: 20px 24px;
-        .el-dialog__title { 
-            color: #fff; 
-            font-weight: 800; 
-            font-size: 16px; 
-            text-transform: uppercase; 
-            letter-spacing: 0.05em;
-        }
+       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+       margin: 0;
+       padding: 20px 24px;
     }
-    
+
     .el-dialog__body {
-        padding: 24px;
+       padding: 24px;
     }
-    
+
     .el-dialog__footer {
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-        padding: 16px 24px;
+       padding: 20px 24px;
+       border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 }
 
-.view-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+:global(.glass-input .el-input__wrapper) {
+   background: rgba(255, 255, 255, 0.05) !important;
+   box-shadow: none !important;
+   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+   border-radius: 12px;
 }
 
-.platforms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 32px;
-}
-
-.cinematic-card {
-  position: relative;
-  background: rgba(15, 15, 15, 0.7);
-  backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 28px;
-  transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
-  overflow: hidden;
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
-    pointer-events: none;
-  }
-
-  .card-glow {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, var(--accent-color, rgba(59, 130, 246, 0.1)) 0%, transparent 60%);
-    opacity: 0;
-    transition: opacity 0.6s ease;
-    pointer-events: none;
-  }
-
-  &:hover {
-    transform: translateY(-8px) scale(1.02);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.1);
-
-    .card-glow {
-      opacity: 1;
-    }
-  }
-
-  &.youtube {
-    --accent-color: rgba(254, 0, 0, 0.15);
-  }
-
-  &.facebook {
-    --accent-color: rgba(24, 119, 242, 0.15);
-  }
-
-  &.tiktok {
-    --accent-color: rgba(254, 44, 85, 0.15);
-  }
-
-  &.ant-media {
-    --accent-color: rgba(255, 193, 7, 0.15);
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .user-avatar-group {
-    position: relative;
-
-    .avatar-ring {
-      width: 64px;
-      height: 64px;
-      padding: 3px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-
-      .user-avatar {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-      }
-
-      .avatar-placeholder {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.05);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: rgba(255, 255, 255, 0.3);
-      }
-    }
-
-    .platform-mini-icon {
-      position: absolute;
-      bottom: -2px;
-      right: -2px;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #0f0f0f;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      border: 2px solid #0f0f0f;
-
-      &.youtube {
-        color: #fe0000;
-      }
-
-      &.facebook {
-        color: #1877f2;
-      }
-
-      &.tiktok {
-        color: #fe2c55;
-      }
-
-      &.ant-media {
-        color: #ffc107;
-      }
-    }
-  }
-
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 100px;
-
-    .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #666;
-      box-shadow: 0 0 8px currentColor;
-
-      &.connected {
-        background: #10b981;
-        color: #10b981;
-      }
-
-      &.error {
-        background: #ef4444;
-        color: #ef4444;
-      }
-    }
-
-    .status-text {
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: rgba(255, 255, 255, 0.5);
-    }
-  }
-
-  .account-name {
-    font-size: 20px;
-    font-weight: 800;
-    color: white;
-    letter-spacing: -0.5px;
-  }
-
-  .meta-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-
-    span {
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .platform-tag {
-      background: rgba(255, 255, 255, 0.05);
-      color: rgba(255, 255, 255, 0.4);
-    }
-
-    .email-tag {
-      background: rgba(59, 130, 246, 0.1);
-      color: #3b82f6;
-      max-width: 180px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-
-  .card-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    height: 44px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 700;
-    transition: all 0.2s;
-    cursor: pointer;
-
-    &.primary-action {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-
-      &:hover {
-        background: #2563eb;
-        transform: translateY(-2px);
-      }
-    }
-  }
-
-  .utility-actions {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-
-    .util-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: transparent;
-      border: none;
-      color: rgba(255, 255, 255, 0.3);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: white;
-      }
-
-      &.delete:hover {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-      }
-    }
-  }
-}
-
-.primary-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 24px;
-  height: 48px;
-  border-radius: 16px;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-  color: black;
-  border: none;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(255, 255, 255, 0.2);
-  }
-
-  &.glass-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
-    }
-  }
-}
-
-.p-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 24px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-
-  span {
-    font-size: 12px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.5);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  &.active {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
-    transform: scale(1.05);
-
-    span {
-      color: #3b82f6;
-    }
-
-    .youtube {
-      color: #fe0000;
-    }
-
-    .facebook {
-      color: #1877f2;
-    }
-
-    .tiktok {
-      color: #fe2c55;
-    }
-
-    .ant-media {
-      color: #ffc107;
-    }
-  }
-}
-
-.form-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 8px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 100px 40px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 40px;
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  margin-top: 40px;
-
-  h3 {
-    font-size: 28px;
-    font-weight: 900;
-    color: white;
-    margin-bottom: 16px;
-  }
-
-  p {
-    color: rgba(255, 255, 255, 0.4);
-    max-width: 480px;
-    margin: 0 auto 32px;
-    line-height: 1.6;
-  }
+:global(.glass-input .el-input__inner) {
+   color: white !important;
+   font-weight: 500;
 }
 </style>

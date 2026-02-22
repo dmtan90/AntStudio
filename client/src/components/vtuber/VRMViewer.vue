@@ -11,7 +11,14 @@
         <!-- 3D Canvas -->
         <canvas ref="canvas" class="w-full h-full block"></canvas>
 
-        <!-- Dynamic Lyrics Overlay removed (Moved to Global Stage) -->
+        <!-- Dynamic Lyrics Overlay -->
+        <StageLyricsOverlay 
+            v-if="lyricsEnabled && lyrics && lyrics.length > 0"
+            :lyrics="lyrics"
+            :currentTime="currentTime || 0"
+            :style="lyricsStyle || 'neon'"
+            :position="lyricsPosition || 'bottom'"
+        />
     </div>
 </template>
 
@@ -28,6 +35,7 @@ import { VRMPropManager } from '@/utils/vrm/VRMPropManager';
 import { VRMLightingManager } from '@/utils/vrm/VRMLightingManager';
 import { VRMCameraManager } from '@/utils/vrm/VRMCameraManager';
 import { VRMDirector } from '@/utils/vrm/VRMDirector';
+import StageLyricsOverlay from './StageLyricsOverlay.vue';
 
 const props = defineProps<{
     modelUrl: string;
@@ -45,11 +53,16 @@ const props = defineProps<{
     activeCameraPath?: string | null;
     cameraIntensity?: number;
     autoDirectorEnabled?: boolean;
+    lyrics?: any[];
+    currentTime?: number;
+    lyricsEnabled?: boolean;
+    lyricsStyle?: 'neon' | 'minimal' | 'kinetic';
+    lyricsPosition?: 'top' | 'bottom';
     config?: {
         zoom?: number;
         offset?: { x: number, y: number, z?: number };
         position?: { x: number, y: number, z?: number };
-    rotation?: number; // azimuth
+        rotation?: number; // azimuth
         scale?: number; // distance/zoom factor
     };
     is360?: boolean;

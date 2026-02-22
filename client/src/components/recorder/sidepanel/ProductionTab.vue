@@ -46,7 +46,7 @@
                 <div class="space-y-3">
                     <div class="flex items-center justify-between text-xs font-bold text-white/40 uppercase tracking-wider">
                         <span>Scroll Speed</span>
-                        <span class="text-orange-500">{{ teleprompterSpeed }}x</span>
+                        <span class="text-blue-500">{{ teleprompterSpeed }}x</span>
                     </div>
                     <el-slider v-model="localSpeed" :min="0.5" :max="10" :step="0.5" 
                         @input="v => emit('update:teleprompter-speed', v as number)" />
@@ -55,7 +55,7 @@
                 <div class="space-y-3">
                     <div class="flex items-center justify-between text-xs font-bold text-white/40 uppercase tracking-wider">
                         <span>Font Size</span>
-                        <span class="text-orange-500">{{ teleprompterFontSize }}px</span>
+                        <span class="text-blue-500">{{ teleprompterFontSize }}px</span>
                     </div>
                     <el-slider v-model="localFontSize" :min="16" :max="48" :step="2" 
                         @input="v => emit('update:teleprompter-font-size', v as number)" />
@@ -96,7 +96,7 @@
                 <div class="space-y-3">
                     <div class="flex items-center justify-between text-xs font-bold text-white/40">
                         <span>Size</span>
-                        <span class="text-orange-500">{{ annotationSize }}px</span>
+                        <span class="text-blue-500">{{ annotationSize }}px</span>
                     </div>
                     <el-slider v-model="localSize" :min="2" :max="20" @input="v => emit('update:annotation-size', v as number)" />
                 </div>
@@ -171,7 +171,7 @@ const emit = defineEmits<{
     (e: 'update:recording-quality', val: any): void
 }>()
 
-const colors = ['#f97316', '#22c55e', '#3b82f6', '#eab308', '#ec4899', '#ffffff']
+const colors = ['#3b82f6', '#22c55e', '#ef4444', '#eab308', '#ec4899', '#ffffff']
 
 const layouts = [
     { id: 'pip', label: 'Picture-in-Pic', icon: 'pip' },
@@ -238,10 +238,10 @@ watch(() => props.annotationSize, (v) => localSize.value = v)
     }
 
     &.active {
-        background: rgba(249, 115, 22, 0.1);
-        border-color: rgba(249, 115, 22, 0.4);
-        span { color: #f97316; }
-        svg, i { color: #f97316; }
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.4);
+        span { color: #3b82f6; }
+        svg, i { color: #3b82f6; }
     }
 }
 
@@ -258,14 +258,14 @@ watch(() => props.annotationSize, (v) => localSize.value = v)
     }
 
     .cam-area {
-        position: absolute; background: #f97316; border-radius: 2px;
+        position: absolute; background: #3b82f6; border-radius: 2px;
     }
 
     &.pip .cam-area { width: 30%; height: 30%; bottom: 4px; right: 4px; border-radius: 50%; opacity: 0.8; }
     &.split .cam-area { width: 50%; height: 100%; left: 0; opacity: 0.8; }
     &.split .screen-area { width: 50%; right: 0; left: auto; }
     &.cam-full .cam-area { inset: 0; width: 100%; height: 100%; opacity: 0.8; }
-    &.screen-full .screen-area { inset: 0; opacity: 0.3; background: #f97316; }
+    &.screen-full .screen-area { inset: 0; opacity: 0.3; background: #3b82f6; }
 }
 
 .play-btn, .reset-btn {
@@ -283,10 +283,11 @@ watch(() => props.annotationSize, (v) => localSize.value = v)
 }
 
 .play-btn {
-    background: #f97316;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
     color: #fff;
     border: none;
-    &:hover { background: #fb923c; transform: translateY(-1px); }
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    &:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); }
     &:active { transform: translateY(0); }
 }
 

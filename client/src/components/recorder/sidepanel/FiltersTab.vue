@@ -5,7 +5,7 @@
             <div class="grid grid-cols-2 gap-3">
                 <button v-for="filter in videoFilters" :key="filter.id"
                     class="filter-card flex flex-col gap-2 p-2 rounded-xl border transition-all"
-                    :class="appliedFilter === filter.id ? 'bg-orange-600 border-orange-400 shadow-[0_8px_20px_rgba(249,115,22,0.3)]' : 'bg-white/5 border-white/5 hover:border-white/10'"
+                    :class="appliedFilter === filter.id ? 'bg-blue-600 border-blue-400 shadow-[0_8px_25px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/5 hover:border-white/10'"
                     @click="$emit('update:appliedFilter', filter.id)">
                     <div class="aspect-video rounded-lg bg-gray-900 overflow-hidden relative">
                         <div class="absolute inset-0 bg-cover bg-center transition-transform hover:scale-110"
@@ -22,7 +22,7 @@
             <div class="grid grid-cols-2 gap-2 mb-4">
                 <button v-for="shape in ['circle', 'rect', 'square', 'round-rect']" :key="shape"
                     class="p-2 bg-white/5 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
-                    :class="{ 'border-orange-500 text-orange-400 bg-orange-500/10': camSettings.shape === shape }"
+                    :class="{ 'border-blue-500 text-blue-400 bg-blue-500/10': camSettings.shape === shape }"
                     @click="camSettings.shape = shape">
                     {{ shape.replace('-', ' ') }}
                 </button>
@@ -32,7 +32,7 @@
                 <div class="control-item">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-[9px] text-white/40 font-bold uppercase">Size</span>
-                        <span class="text-[9px] text-orange-400 font-mono">{{ camSettings.size }}%</span>
+                        <span class="text-[9px] text-blue-400 font-mono">{{ camSettings.size }}%</span>
                     </div>
                     <el-slider v-model="camSettings.size" :min="10" :max="100" :show-tooltip="false" size="small" />
                 </div>
@@ -43,7 +43,7 @@
                         <button
                             v-for="pos in ['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right']"
                             :key="pos" class="aspect-square w-full rounded-sm border border-transparent transition-all"
-                            :class="camSettings.position === pos ? 'bg-orange-500' : 'bg-white/10 hover:bg-white/20'"
+                            :class="camSettings.position === pos ? 'bg-blue-500' : 'bg-white/10 hover:bg-white/20'"
                             @click="camSettings.position = pos" :title="pos">
                         </button>
                     </div>

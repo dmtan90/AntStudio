@@ -99,8 +99,8 @@
                         </el-form-item>
                         <el-form-item label="Mode">
                             <el-radio-group v-model="apiConfigs.paypal.mode" size="small">
-                                <el-radio-button label="sandbox">Sandbox (Testing)</el-radio-button>
-                                <el-radio-button label="live">Live (Production)</el-radio-button>
+                                <el-radio-button value="sandbox">Sandbox (Testing)</el-radio-button>
+                                <el-radio-button value="live">Live (Production)</el-radio-button>
                             </el-radio-group>
                             <div class="text-[11px] text-gray-500 mt-1">
                                 Use Sandbox mode for testing, Live mode for production
@@ -117,8 +117,8 @@
                 <div class="flex justify-between items-center w-full">
                     <span>Multi-Cloud Storage Hub</span>
                     <el-radio-group v-model="apiConfigs.storage.activeProvider" size="small" class="premium-radio">
-                        <el-radio-button label="s3">AWS S3</el-radio-button>
-                        <el-radio-button label="google_drive">Google Drive</el-radio-button>
+                        <el-radio-button value="s3">AWS S3</el-radio-button>
+                        <el-radio-button value="google_drive">Google Drive</el-radio-button>
                     </el-radio-group>
                 </div>
             </template>

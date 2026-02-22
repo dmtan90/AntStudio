@@ -90,9 +90,8 @@ export class Canvas {
     this.template = createInstance(CanvasTemplate, this);
 
     // Initialize non-visual plugins immediately
-    // this.audio = createInstance(CanvasAudio, this); // Moved to mount()
-    // this.timeline = createInstance(CanvasTimeline, this); // Moved to mount()
-    // history, alignment, selection, etc depend on instance, so initialized in mount()
+    this.audio = createInstance(CanvasAudio, this); 
+    this.timeline = createInstance(CanvasTimeline, this); 
   }
 
   private _toggleControls(object: fabric.Object, enabled: boolean) {
@@ -185,14 +184,20 @@ export class Canvas {
     this.instance.on("object:removed", () => this.requestThumbnailUpdate());
   }
 
+  get duration(): number {
+    if (this.timeline) return this.timeline.duration;
+    if (this.template?.page) return this.template.page.duration;
+    return 15000;
+  }
+
   // Lifecycle Methods
   mount(instance: fabric.Canvas, workspaceEl?: HTMLDivElement) {
     console.log("Mounting Canvas:", this.id);
     this.instance = instance;
 
     // Initialize plugins that require the fabric instance
-    this.audio = createInstance(CanvasAudio, this); // Moved from constructor
-    this.timeline = createInstance(CanvasTimeline, this); // Moved from constructor
+    this.audio.initEvents();
+    this.timeline.initEvents();
     this.history = createInstance(CanvasHistory, this);
     this.alignment = createInstance(CanvasAlignment, this);
     this.selection = createInstance(CanvasSelection, this);

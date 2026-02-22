@@ -14,6 +14,7 @@ import { gamificationService } from './gamification/GamificationService.js';
 import { virtualEconomyService } from './economy/VirtualEconomyService.js';
 import { analyticsService } from './analytics/AnalyticsService.js';
 import { autoDirectorService } from './ai/AutoDirectorService.js';
+import { systemLogger } from '~/utils/systemLogger.js';
 
 /**
  * Unified Socket.io Server Manager for collaboration, gaming, and engagement.
@@ -23,6 +24,10 @@ export class SocketServer {
     private io: Server | null = null;
     private userSockets: Map<string, Set<string>> = new Map(); // userId -> Set of socket IDs
     private disconnectGracePeriods: Map<string, NodeJS.Timeout> = new Map();
+    private chatPageTokens: Map<string, string> = new Map(); // targetId -> nextPageToken
+    private chatNextPollTimes: Map<string, number> = new Map(); // tokenKey -> nextAllowedTimestamp
+    private chatSyncInterval: NodeJS.Timeout | null = null; // Track chat sync interval
+    private engagementSyncInterval: NodeJS.Timeout | null = null; // Track engagement sync interval
 
 
     constructor() {
@@ -52,7 +57,7 @@ export class SocketServer {
         this.setupAuthentication();
         this.setupHandlers();
         this.setupServiceListeners();
-        this.startChatSyncWorker();
+        // Chat and engagement sync workers will be started on-demand when sessions go live
 
         console.log("🚀 [SocketServer] Unified Socket.io running at /socket.io");
     }
@@ -211,6 +216,10 @@ export class SocketServer {
                 streamingService.ingestRelayChunk(payload.sessionId, payload.chunk);
             });
 
+            socket.on('ping_heartbeat', (data: any, callback: Function) => {
+                if (typeof callback === 'function') callback();
+            });
+
             // --- 2. Engagement & Gameplay (Legacy SocketService logic) ---
             
             // Hive Voting
@@ -291,6 +300,10 @@ export class SocketServer {
                         value: payload.value
                     });
                 }
+            });
+
+            socket.on('ping_heartbeat', (data, callback) => {
+                if (typeof callback === 'function') callback({ success: true });
             });
 
             socket.on('guest:signal', (payload: { to: string, signal: any }) => {
@@ -466,14 +479,32 @@ export class SocketServer {
         geminiLiveService.on('session:error', (data) => this.io?.to(data.sessionId).emit('ai:error', data));
     }
 
+    /**
+     * Starts the chat sync worker if not already running.
+     * Only polls when there are active live sessions.
+     */
     private startChatSyncWorker() {
-        setInterval(async () => {
+        // Prevent multiple intervals
+        if (this.chatSyncInterval) {
+            systemLogger.debug('[ChatSync] Worker already running', 'SocketServer');
+            return;
+        }
+
+        systemLogger.info('[ChatSync] Starting chat sync worker', 'SocketServer');
+        this.chatSyncInterval = setInterval(async () => {
             if (!this.io) return;
             try {
                 const activeSessions = await StreamSessionModel.find({
                     status: 'live',
                     'targets.externalChatId': { $exists: true, $ne: null }
                 });
+
+                // If no active sessions, stop the worker
+                if (activeSessions.length === 0) {
+                    systemLogger.info('[ChatSync] No active sessions, stopping worker', 'SocketServer');
+                    this.stopChatSyncWorker();
+                    return;
+                }
 
                 for (const session of activeSessions) {
                     for (const target of session.targets) {
@@ -482,22 +513,66 @@ export class SocketServer {
                         if (!account) continue;
 
                         try {
+                            const tokenKey = `${session.sessionId}:${target.accountId}`;
+                            
+                            // Quota Protection: Check if we are allowed to poll yet
+                            const now = Date.now();
+                            const nextAllowed = this.chatNextPollTimes.get(tokenKey) || 0;
+                            if (now < nextAllowed) continue;
+
                             const credentials = await PlatformAuthService.getValidCredentials(account);
-                            const messages = await PlatformAuthService.getLiveChatMessages(
+                            const currentPageToken = this.chatPageTokens.get(tokenKey);
+
+                            const { messages, nextPageToken, isOffline, pollingIntervalMillis } = await PlatformAuthService.getLiveChatMessages(
                                 account.platform as any,
                                 credentials,
-                                target.externalChatId
+                                target.externalChatId,
+                                currentPageToken
                             );
+
+                            // Set next allowed poll time (Default to 15s for YouTube if not provided, 8s for others)
+                            const defaultDelay = account.platform === 'youtube' ? 15000 : 8000;
+                            const delay = pollingIntervalMillis || defaultDelay;
+                            this.chatNextPollTimes.set(tokenKey, now + delay);
+
+                            // Detect Offline/Stale Chat for YouTube
+                            if (account.platform === 'youtube' && (isOffline || (messages.length === 0 && !nextPageToken))) {
+                                systemLogger.info(`[ChatSync] Refreshing YouTube chat ID for session ${session.sessionId}`, 'SocketServer');
+                                try {
+                                    const project = await (await import('../models/Project.js')).Project.findById((session as any).projectId);
+                                    const liveInfo = await PlatformAuthService.getLiveStreamInfo(
+                                        'youtube' as any,
+                                        credentials,
+                                        { title: project?.title || 'AntFlow Live', description: project?.description || '' }
+                                    );
+                                    if (liveInfo.externalChatId && liveInfo.externalChatId !== target.externalChatId) {
+                                        systemLogger.info(`[ChatSync] Found NEW YouTube Chat ID: ${liveInfo.externalChatId}`, 'SocketServer');
+                                        target.externalChatId = liveInfo.externalChatId;
+                                        // Clear token for new ID
+                                        this.chatPageTokens.delete(tokenKey);
+                                        // Persist to DB
+                                        await StreamSessionModel.updateOne(
+                                            { _id: session._id, 'targets.accountId': target.accountId },
+                                            { $set: { 'targets.$.externalChatId': liveInfo.externalChatId } }
+                                        );
+                                    }
+                                } catch (refreshErr: any) {
+                                    systemLogger.warn(`[ChatSync] Failed to refresh YouTube chat ID: ${refreshErr.message}`, 'SocketServer');
+                                }
+                            }
+
+                            if (nextPageToken) {
+                                this.chatPageTokens.set(tokenKey, nextPageToken);
+                            }
 
                             if (messages.length > 0) {
                                 this.io.to(session.sessionId).emit('chat:external', {
-                                    sessionId: session.sessionId,
                                     platform: account.platform,
                                     messages
                                 });
                             }
                         } catch (err: any) {
-                            console.error(`[ChatSync] Worker error for ${account.platform}:`, err.message);
+                            systemLogger.error(`[ChatSync] Error fetching chat for ${target.platform}: ${err.message}`, 'SocketServer');
                         }
                     }
                 }
@@ -505,6 +580,109 @@ export class SocketServer {
                 console.error('[ChatSync] Global worker error:', error);
             }
         }, 8000);
+    }
+
+    /**
+     * Stops the chat sync worker.
+     */
+    private stopChatSyncWorker() {
+        if (this.chatSyncInterval) {
+            clearInterval(this.chatSyncInterval);
+            this.chatSyncInterval = null;
+            systemLogger.info('[ChatSync] Chat sync worker stopped', 'SocketServer');
+        }
+    }
+
+    /**
+     * Periodically fetches engagement metrics (likes, shares, external viewers) from platforms.
+     */
+    private startEngagementSyncWorker() {
+        // Prevent multiple intervals
+        if (this.engagementSyncInterval) {
+            systemLogger.debug('[EngagementSync] Worker already running', 'SocketServer');
+            return;
+        }
+
+        systemLogger.info('[EngagementSync] Starting engagement sync worker', 'SocketServer');
+        this.engagementSyncInterval = setInterval(async () => {
+            try {
+                const liveSessions = await StreamSessionModel.find({ status: 'live' });
+                
+                // If no active sessions, stop the worker
+                if (liveSessions.length === 0) {
+                    systemLogger.info('[EngagementSync] No active sessions, stopping worker', 'SocketServer');
+                    this.stopEngagementSyncWorker();
+                    return;
+                }
+
+                for (const session of liveSessions) {
+                    const roomEngagement = {
+                        likes: 0,
+                        shares: 0,
+                        externalViewers: 0,
+                        comments: 0
+                    };
+
+                    let hasExternalStats = false;
+
+                    for (const target of session.targets) {
+                        if (target.externalId && (target.platform === 'youtube' || target.platform === 'facebook' || target.platform === 'tiktok')) {
+                            try {
+                                const account = await UserPlatformAccount.findById(target.accountId);
+                                if (!account) continue;
+
+                                const credentials = await PlatformAuthService.getValidCredentials(account);
+                                const stats = await PlatformAuthService.getVideoStats(target.platform, credentials, target.externalId);
+
+                                if (stats) {
+                                    roomEngagement.likes += (stats.likes || 0);
+                                    roomEngagement.shares += (stats.shares || 0);
+                                    roomEngagement.externalViewers += (stats.views || 0); // Note: views might be total, not CCU for some platforms
+                                    roomEngagement.comments += (stats.comments || 0);
+                                    hasExternalStats = true;
+                                }
+                            } catch (err: any) {
+                                systemLogger.warn(`[EngagementSync] Failed to fetch stats for ${target.platform}: ${err.message}`, 'SocketServer');
+                            }
+                        }
+                    }
+
+                    if (hasExternalStats && this.io) {
+                        // Broadcast aggregated engagement to the studio room
+                        this.io?.to(session.sessionId).emit('studio:engagement', {
+                            sessionId: session.sessionId,
+                            ...roomEngagement,
+                            timestamp: Date.now()
+                        });
+                        
+                        // Also update analytics service
+                        analyticsService.trackEvent('levelup' as any, `Platform Engagement Sync: ${roomEngagement.likes} likes`);
+                    }
+                }
+            } catch (error: any) {
+                systemLogger.error(`[EngagementSync] Worker error: ${error.message}`, 'SocketServer');
+            }
+        }, 60000); // Poll every 60 seconds
+    }
+
+    /**
+     * Stops the engagement sync worker.
+     */
+    private stopEngagementSyncWorker() {
+        if (this.engagementSyncInterval) {
+            clearInterval(this.engagementSyncInterval);
+            this.engagementSyncInterval = null;
+            systemLogger.info('[EngagementSync] Engagement sync worker stopped', 'SocketServer');
+        }
+    }
+
+    /**
+     * Public method to ensure sync workers are running.
+     * Called when a session goes live.
+     */
+    public ensureSyncWorkersRunning() {
+        this.startChatSyncWorker();
+        this.startEngagementSyncWorker();
     }
 }
 

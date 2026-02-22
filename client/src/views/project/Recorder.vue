@@ -271,40 +271,79 @@ onMounted(() => {
 .recorder-page {
     width: 100vw;
     height: 100vh;
-    background: #0a0a0a; /* Cinematic Dark */
+    background-color: #0a0a0c;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.08) 0, transparent 50%);
     display: flex;
     flex-direction: column;
     position: relative;
     overflow: hidden;
     color: #fff;
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Outfit', 'Inter', sans-serif;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -20%;
+        left: -10%;
+        width: 800px;
+        height: 800px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, transparent 70%);
+        filter: blur(100px);
+        animation: pulse-glow 12s infinite alternate;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: -10%;
+        right: -5%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+        filter: blur(100px);
+        animation: pulse-glow 15s infinite alternate-reverse;
+        pointer-events: none;
+        z-index: 1;
+    }
+}
+
+@keyframes pulse-glow {
+    0% { transform: scale(1) translate(0, 0); opacity: 0.3; }
+    100% { transform: scale(1.1) translate(20px, 20px); opacity: 0.6; }
 }
 
 :deep(.glass-dialog) {
-    background: rgba(15, 15, 20, 0.85) !important;
-    backdrop-filter: blur(32px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 24px !important;
-    box-shadow: 0 24px 70px rgba(0,0,0,0.7) !important;
+    background: rgba(10, 10, 12, 0.8) !important;
+    backdrop-filter: blur(40px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 32px !important;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+    overflow: hidden;
     
     .el-dialog__header {
         margin-right: 0;
-        padding: 24px;
+        padding: 32px 32px 24px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         .el-dialog__title { 
             color: #fff; 
-            font-weight: 800; 
-            font-size: 18px;
-            letter-spacing: -0.02em;
+            font-weight: 900; 
+            font-size: 22px;
+            letter-spacing: -0.03em;
         }
     }
     .el-dialog__body { 
-        padding: 24px;
-        color: rgba(255,255,255,0.8); 
+        padding: 32px;
+        color: rgba(255,255,255,0.7); 
     }
     .el-dialog__headerbtn .el-dialog__close {
         color: rgba(255,255,255,0.4);
-        &:hover { color: #fff; }
+        font-size: 20px;
+        transition: all 0.3s;
+        &:hover { color: #fff; transform: rotate(90deg); }
     }
 }
 
@@ -314,37 +353,37 @@ onMounted(() => {
     justify-content: center;
     gap: 12px;
     width: 100%;
-    padding: 16px;
-    border-radius: 16px;
-    font-weight: 800;
+    padding: 18px;
+    border-radius: 20px;
+    font-weight: 900;
     font-size: 14px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.1em;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: pointer;
 
     &.primary {
-        background: #f97316;
-        color: #fff;
+        background: #fff;
+        color: #000;
         border: none;
-        box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3);
+        box-shadow: 0 20px 40px rgba(255, 255, 255, 0.1);
 
         &:hover {
-            transform: translateY(-2px);
-            background: #fb923c;
-            box-shadow: 0 15px 40px rgba(249, 115, 22, 0.4);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(255, 255, 255, 0.15);
         }
     }
 
     &.secondary {
         background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         color: #fff;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(20px);
 
         &:hover {
             background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(249, 115, 22, 0.4);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
     }
 
@@ -352,10 +391,12 @@ onMounted(() => {
         background: transparent;
         border: none;
         color: rgba(255, 255, 255, 0.4);
-        font-size: 11px;
+        font-size: 12px;
+        margin-top: 8px;
 
         &:hover {
-            color: #ef4444;
+            color: #ff4d4d;
+            text-decoration: underline;
         }
     }
 }
@@ -363,26 +404,27 @@ onMounted(() => {
 // Transitions
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity 0.5s ease;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+    filter: blur(10px);
 }
 
 .scale-enter-active,
 .scale-leave-active {
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .scale-enter-from {
-    transform: scale(0.5);
+    transform: scale(0.6);
     opacity: 0;
 }
 
 .scale-leave-to {
-    transform: scale(1.5);
+    transform: scale(1.4);
     opacity: 0;
 }
 
@@ -392,9 +434,6 @@ onMounted(() => {
 
 .mini-preview-container {
     cursor: grab;
-
-    &:active {
-        cursor: grabbing;
-    }
+    &:active { cursor: grabbing; }
 }
 </style>

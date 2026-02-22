@@ -265,8 +265,11 @@ export const useVTuberStore = defineStore('vtuber', {
             if (vtuber) {
                 vtuber.animationConfig = { ...vtuber.animationConfig, ...config };
             }
-            if (this.currentVTuber?.entityId === entityId) {
-                this.currentVTuber.animationConfig = { ...this.currentVTuber.animationConfig, ...config };
+            if (this.currentVTuber && this.currentVTuber.entityId === entityId) {
+                this.currentVTuber.animationConfig = {
+                    ...(this.currentVTuber.animationConfig || {}),
+                    ...config
+                };
             }
             
             if (persist) {
@@ -288,8 +291,11 @@ export const useVTuberStore = defineStore('vtuber', {
             if (vtuber) {
                 vtuber.performanceConfig = { ...vtuber.performanceConfig, ...config };
             }
-            if (this.currentVTuber?.entityId === entityId) {
-                this.currentVTuber.performanceConfig = { ...this.currentVTuber.performanceConfig, ...config };
+            if (this.currentVTuber && this.currentVTuber.entityId === entityId) {
+                this.currentVTuber.performanceConfig = {
+                    ...(this.currentVTuber.performanceConfig || {}),
+                    ...config
+                };
             }
             
             if (persist) {
@@ -311,8 +317,11 @@ export const useVTuberStore = defineStore('vtuber', {
             if (vtuber) {
                 vtuber.visual = { ...vtuber.visual, ...visualUpdates };
             }
-            if (this.currentVTuber?.entityId === entityId) {
-                this.currentVTuber.visual = { ...this.currentVTuber.visual, ...visualUpdates };
+            if (this.currentVTuber && this.currentVTuber.entityId === entityId) {
+                this.currentVTuber.visual = {
+                    ...(this.currentVTuber.visual || {}),
+                    ...visualUpdates
+                };
             }
             
             if (persist) {

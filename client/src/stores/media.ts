@@ -8,7 +8,14 @@ export const useMediaStore = defineStore('media', () => {
     const { t } = useTranslations()
     const resources = ref<any[]>([])
     const videos = ref<any[]>([])
+    const exportedVideos = ref<any[]>([])
     const loading = ref(false)
+    const pagination = ref({
+        total: 0,
+        page: 1,
+        limit: 12,
+        totalPages: 1
+    })
 
     // Performance State (for lyrics display)
     const performingVTuberId = ref<string | null>(null)
@@ -31,8 +38,10 @@ export const useMediaStore = defineStore('media', () => {
             const res: any = await api.get('/media/list', {
                 params
             })
-            resources.value = res.data.media || []
-            return res.data
+            const data = res.data.data || res.data;
+            resources.value = data.media || []
+            pagination.value = data.pagination || { total: resources.value.length, page: 1, limit: 100, totalPages: 1 }
+            return data
         } catch (error) {
             handleError(error)
             throw error
@@ -41,17 +50,14 @@ export const useMediaStore = defineStore('media', () => {
         }
     }
 
-    // Alias for deprecated calls if any, or just consistent naming
-    async function fetchMediaList(purpose?: string) {
-        return fetchMedia(purpose)
-    }
-
-    async function fetchVideos() {
+    async function fetchExportedVideos(params: any = {}) {
         loading.value = true
         try {
-            const res: any = await api.get('/videos/list')
-            videos.value = res.data.videos || []
-            return res.data
+            const res: any = await api.get('/videos/list', { params })
+            const data = res.data.data || res.data;
+            exportedVideos.value = data.videos || []
+            pagination.value = data.pagination || { total: exportedVideos.value.length, page: 1, limit: 12, pages: 1 }
+            return data
         } catch (error) {
             handleError(error)
             throw error
@@ -108,7 +114,9 @@ export const useMediaStore = defineStore('media', () => {
     return {
         resources,
         videos,
+        exportedVideos,
         loading,
+        pagination,
         // Performance State
         performingVTuberId,
         performanceLyrics,
@@ -138,7 +146,7 @@ export const useMediaStore = defineStore('media', () => {
             performanceLyricsVisible.value = true
         },
         fetchMedia,
-        fetchVideos,
+        fetchExportedVideos,
         fetchCloudMedia,
         deleteMedia,
         uploadMedia,

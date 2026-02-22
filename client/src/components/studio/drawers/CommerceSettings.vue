@@ -38,16 +38,16 @@
                     <div class="flex justify-center mb-2">
                         <ranking theme="outline" size="16" class="opacity-20 group-hover:text-blue-400" />
                     </div>
-                    <p class="text-[8px] opacity-30 uppercase font-black mb-1">Total Clicks</p>
-                    <p class="text-xl font-black">1.2k</p>
+                    <p class="text-[8px] opacity-30 uppercase font-black mb-1">Total Orders</p>
+                    <p class="text-xl font-black">{{ report?.totalOrders || 0 }}</p>
                 </div>
                 <div
                     class="p-4 bg-black/40 rounded-2xl border border-white/5 text-center group hover:border-green-500/20 transition-all">
                     <div class="flex justify-center mb-2">
                         <shopping-cart theme="outline" size="16" class="opacity-20 group-hover:text-green-400" />
                     </div>
-                    <p class="text-[8px] opacity-30 uppercase font-black mb-1">Orders</p>
-                    <p class="text-xl font-black text-green-500">42</p>
+                    <p class="text-[8px] opacity-30 uppercase font-black mb-1">Revenue</p>
+                    <p class="text-xl font-black text-green-500">{{ report?.totalRevenue || 0 }} {{ report?.currency || 'USD' }}</p>
                 </div>
             </div>
         </section>
@@ -55,15 +55,32 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useStudioStore } from '@/stores/studio';
+import { useMarketplaceStore } from '@/stores/marketplace';
 import { Fire, Ranking, ShoppingCart } from '@icon-park/vue-next';
 
+const marketplaceStore = useMarketplaceStore();
 const studioStore = useStudioStore();
 
 const isFlashDeal = computed(() => !!studioStore.activeFlashSale);
-const liveProducts = computed(() => studioStore.liveProducts);
+const liveProducts = computed(() => marketplaceStore.products);
 const activeProductId = computed(() => studioStore.activeProductId);
+
+const report = ref<any>(null);
+
+onMounted(async () => {
+    // Fetch products from marketplace store (centralized)
+    marketplaceStore.fetchProducts();
+
+    if (studioStore.currentSessionId) {
+        try {
+            report.value = await studioStore.fetchCommerceReport(studioStore.currentSessionId);
+        } catch (e) {
+            console.warn('Commerce report fetch failed');
+        }
+    }
+});
 
 defineEmits(['trigger-flash-deal', 'toggle-product']);
 </script>

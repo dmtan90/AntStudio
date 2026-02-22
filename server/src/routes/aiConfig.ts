@@ -72,23 +72,53 @@ Generate a JSON object with the following structure:
   "endpoint": "full API endpoint URL",
   "method": "POST or GET",
   "headers": {
-    "header-name": "header-value (use {{apiKey}} placeholder for API key)"
+    "IMPORTANT - Content-Type rule": "ALWAYS include Content-Type based on how the API sends data:",
+    "  - If docs show '--form' or 'multipart/form-data'": "set Content-Type to 'multipart/form-data'",
+    "  - If docs show 'x-www-form-urlencoded' or URL-encoded form": "set Content-Type to 'application/x-www-form-urlencoded'",
+    "  - Default (JSON body, -d with braces, etc.)": "set Content-Type to 'application/json'",
+    "x-api-key": "{{apiKey}} (or Authorization: Bearer {{apiKey}}, depending on docs)"
   },
-  "payloadTemplate": "JSON string with placeholders like {{prompt}}, {{model}}, etc.",
+  "payloadTemplate": "The request body as a JSON-serialized string. For multipart/form-data or form-urlencoded, still represent the fields as a flat JSON object e.g. '{\"prompt\": \"{{prompt}}\", \"model\": \"{{model}}\"}'. The adapter will convert to FormData or URLEncoded automatically based on Content-Type.",
+  "models": ["list of available model IDs for this task (e.g. nano-banana-pro, gpt-4o)"],
   "responseMapping": {
-    "text": "JSON path to text result (if applicable)",
-    "url": "JSON path to media URL (if applicable)",
-    "b64": "JSON path to base64 data (if applicable)",
-    "jobId": "JSON path to job/task ID (if applicable)"
+    "text": "JSON path to text result (if applicable, omit otherwise)",
+    "url": "JSON path to media URL (if applicable, omit otherwise)",
+    "b64": "JSON path to base64 data (if applicable, omit otherwise)",
+    "jobId": "JSON path to the async job/task ID (ONLY if the API is async and returns a job ID to poll later)"
+  },
+  "pollConfig": {
+    "NOTE": "ONLY include this field if the API returns a job ID and requires polling. Omit entirely for synchronous APIs.",
+    "endpoint": "poll URL with {{jobId}} placeholder e.g. 'https://api.example.com/history/{{jobId}}'",
+    "method": "GET or POST",
+    "headers": { "x-api-key": "{{apiKey}}" },
+    "intervalMs": 3000,
+    "timeoutMs": 120000,
+    "statusPath": "JSON dot-path to status field e.g. 'status_desc'",
+    "successValues": ["values that mean done e.g. 'completed'"],
+    "failureValues": ["values that mean failed e.g. 'failed'"],
+    "responseMapping": {
+      "url": "JSON path to final media URL in poll response",
+      "b64": "JSON path to base64 data (if applicable)",
+      "text": "JSON path to text (if applicable)"
+    }
   }
 }
 
-Important:
-- Use placeholders like {{prompt}}, {{model}}, {{apiKey}}, {{voice}}, {{aspectRatio}}, etc.
-- For payloadTemplate, provide the actual JSON structure as a string
-- For responseMapping, use dot notation or array notation for nested paths (e.g., "data.url" or "choices[0].message.content")
-- Only include responseMapping fields that are relevant for this task type
-- Return ONLY the JSON object, no additional text or explanation
+Rules (follow strictly):
+1. ALWAYS detect and include Content-Type in headers:
+   - curl example uses --form or --multipart → use "multipart/form-data"
+   - docs say x-www-form-urlencoded → use "application/x-www-form-urlencoded"
+   - default → use "application/json"
+2. Use placeholders like {{prompt}}, {{model}}, {{apiKey}}, {{voice}}, {{aspectRatio}}, {{style}}, etc. for variable parts
+3. payloadTemplate must be a flat JSON object string (the adapter handles Content-Type conversion)
+4. For responseMapping, use dot notation for nested paths (e.g. "data.url", "generate_result")
+5. CRITICAL - Sync vs Async detection:
+   - If the example response shows the FINAL URL/data fields (e.g. "generate_result", "url", "audio_url") WITH a success status in the SAME response → this is a SYNCHRONOUS API. Use responseMapping.url (or .text/.b64) to extract the result. Do NOT use jobId or pollConfig.
+   - ONLY use responseMapping.jobId and pollConfig if the initial response contains ONLY a job identifier with NO final media/text data yet, and the user must poll a separate endpoint to get the result.
+   - Having a field named "uuid", "id", or "task_id" alone does NOT mean async — check whether the response also contains the actual result data.
+6. Only include relevant responseMapping fields, omit the rest
+7. Only include pollConfig if the API is truly async (returns ONLY a job ID, no final data). Remove the "NOTE" key from the output.
+8. Return ONLY valid JSON with no extra text, explanations, or comment keys
 
 Task Type: ${taskType}`;
 

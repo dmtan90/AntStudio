@@ -12,11 +12,11 @@
             <span class="label">{{ tab.name }}</span>
         </div>
 
-        <div class="rail-item" :class="{ active: activeTab === 'virtual' }"
+        <!-- <div class="rail-item" :class="{ active: activeTab === 'virtual' }"
             @click="$emit('update:activeTab', 'virtual')">
             <video-two theme="outline" size="20" />
             <span class="label">Virtual</span>
-        </div>
+        </div> -->
 
         <div class="rail-item" :class="{ active: activeTab === 'vibe' }" @click="$emit('update:activeTab', 'vibe')">
             <heart theme="outline" size="20" />
@@ -29,11 +29,11 @@
             <span class="label">Assets</span>
         </div>
 
-        <div class="rail-item" :class="{ active: activeTab === 'guests' }" @click="$emit('update:activeTab', 'guests')"
+        <!-- <div class="rail-item" :class="{ active: activeTab === 'guests' }" @click="$emit('update:activeTab', 'guests')"
             data-guide="guests">
             <peoples theme="outline" size="20" />
             <span class="label">AI Guests</span>
-        </div>
+        </div> -->
 
         <div class="rail-item" :class="{ active: activeTab === 'collaboration' }"
             @click="$emit('update:activeTab', 'collaboration')">

@@ -6,6 +6,8 @@ export type EditorPlaceholder = "main-image" | "brand-image" | "cta-text" | "hea
 export interface EditorTemplate {
   id: string;
   name: string;
+  description: string;
+  category: string;
   is_pubished: boolean;
   pages: EditorTemplatePage[];
 }

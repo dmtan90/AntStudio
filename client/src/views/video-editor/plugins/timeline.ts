@@ -19,7 +19,7 @@ export class CanvasTimeline {
     this._timeline = null;
     this._canvas = canvas;
 
-    this._initEvents();
+    this.initEvents();
     // makeAutoObservable(this);
   }
 
@@ -34,7 +34,8 @@ export class CanvasTimeline {
     return this._canvas.text;
   }
 
-  private _initEvents() {
+  initEvents() {
+    if (!this._canvas.instance) return;
     this.canvas.on("object:added", this._objectAddedEvent.bind(this));
   }
 

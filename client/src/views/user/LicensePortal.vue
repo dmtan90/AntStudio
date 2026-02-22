@@ -1,152 +1,215 @@
 <template>
-    <div class="license-portal p-8 animate-in">
-        <header class="flex justify-between items-start mb-12">
+    <div class="license-portal min-h-screen bg-[#0a0a0c] text-white font-outfit p-8 animate-in fade-in duration-700">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-16 relative z-10">
             <div>
-                <h1
-                    class="text-4xl font-black tracking-tighter text-white mb-2 underline decoration-blue-500 decoration-4 underline-offset-8">
-                    LICENSE HUB</h1>
-                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Orchestrating Global
-                    Production Units</p>
+                <h1 class="text-5xl font-black tracking-tighter text-white mb-2 relative inline-block">
+                    LICENSE HUB
+                    <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+                </h1>
+                <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Orchestrating Global Production Units</p>
             </div>
             <div class="flex gap-4">
                 <button @click="showSupportDialog = true"
-                    class="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase hover:bg-white/10 transition-all">Support
-                    Terminal</button>
+                    class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 group">
+                    <help theme="outline" size="14" class="group-hover:text-blue-400 transition-colors" />
+                    Support Terminal
+                </button>
                 <button @click="scrollToPricing"
-                    class="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full text-[10px] font-black uppercase shadow-lg shadow-blue-500/20">Upgrade
-                    Fleet</button>
+                    class="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                    <rocket theme="outline" size="14" />
+                    Upgrade Fleet
+                </button>
             </div>
         </header>
 
-        <div class="grid grid-cols-12 gap-10 mb-20">
+        <div class="grid grid-cols-12 gap-8 mb-20 max-w-[1600px] mx-auto">
             <!-- LEFT: Active Licenses -->
             <div class="col-span-12 lg:col-span-4 space-y-6">
-                <h3 class="text-xs font-black uppercase tracking-widest flex items-center gap-2 mb-6">
-                    <key theme="outline" /> Active Registries
+                <h3 class="text-xs font-black uppercase tracking-widest flex items-center gap-3 mb-6 text-gray-400">
+                    <key theme="filled" size="16" class="text-blue-500" /> Active Registries
                 </h3>
 
                 <div v-for="lic in licenses" :key="lic._id" @click="selectedLicense = lic"
-                    :class="['p-6 rounded-3xl border transition-all cursor-pointer group',
-                        selectedLicense?._id === lic._id ? 'bg-blue-600/10 border-blue-500/30' : 'bg-white/5 border-white/5 hover:border-white/20']">
-                    <div class="flex justify-between items-start mb-4">
+                    :class="['p-8 rounded-[2rem] border transition-all cursor-pointer group relative overflow-hidden',
+                        selectedLicense?._id === lic._id ? 'bg-blue-900/10 border-blue-500/30 ring-1 ring-blue-500/20' : 'bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.04]']">
+                    
+                    <div class="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none">
+                        <key theme="outline" size="64" />
+                    </div>
+
+                    <div class="flex justify-between items-start mb-6 relative z-10">
                         <span
-                            :class="['px-3 py-1 rounded-lg text-[8px] font-black uppercase border',
-                                lic.tier === 'enterprise' ? 'bg-purple-500/20 border-purple-500/30 text-purple-400' : 'bg-blue-500/20 border-blue-500/30 text-blue-400']">
+                            :class="['px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border backdrop-blur-md',
+                                lic.tier === 'enterprise' ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 'bg-blue-500/10 border-blue-500/30 text-blue-400']">
                             {{ lic.tier }}
                         </span>
-                        <span class="text-[10px] font-bold text-green-400 uppercase tracking-tighter">{{ lic.status
-                        }}</span>
-                    </div>
-                    <p class="text-[10px] font-mono opacity-40 mb-1 group-hover:opacity-100 transition-opacity">KEY ID:
-                        {{ lic.key }}</p>
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <p class="text-lg font-black">{{ lic.activeInstances || 0 }} / {{ lic.instancesLimit }}
-                                Units</p>
-                            <p class="text-[8px] font-bold opacity-30 mt-1 uppercase">EXPIRES: {{
-                                formatDate(lic.endDate) }}</p>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full animate-pulse" :class="lic.status === 'active' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500'"></div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ lic.status }}</span>
                         </div>
-                        <right theme="outline" class="group-hover:translate-x-1 transition-transform" />
+                    </div>
+                    
+                    <div class="mb-6 relative z-10">
+                        <p class="text-[10px] font-black uppercase text-gray-600 tracking-widest mb-1">License Key ID</p>
+                        <p class="text-xs font-mono text-gray-400 group-hover:text-white transition-colors truncate">{{ lic.key }}</p>
+                    </div>
+
+                    <div class="flex justify-between items-end relative z-10 pt-4 border-t border-white/5">
+                        <div>
+                            <div class="flex items-baseline gap-1 mb-1">
+                                <span class="text-2xl font-black text-white">{{ lic.activeInstances || 0 }}</span>
+                                <span class="text-sm font-bold text-gray-500">/ {{ lic.instancesLimit }} Units</span>
+                            </div>
+                            <p class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Expires: {{ formatDate(lic.endDate) }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all transform group-hover:rotate-[-45deg]">
+                            <arrow-right theme="outline" size="14" />
+                        </div>
                     </div>
                 </div>
 
                 <div v-if="licenses.length === 0"
-                    class="p-8 border border-dashed border-white/10 rounded-3xl text-center opactiy-50">
-                    <p class="text-xs font-black uppercase text-gray-500">No Active Licenses</p>
+                    class="p-12 border border-dashed border-white/10 rounded-[2rem] text-center bg-white/[0.02]">
+                    <div class="text-4xl mb-4 opacity-20 grayscale">📭</div>
+                    <p class="text-xs font-black uppercase text-gray-500 tracking-widest">No Active Licenses Detected</p>
                 </div>
             </div>
 
             <!-- RIGHT: Fleet Telemetry -->
-            <div class="col-span-12 lg:col-span-8">
+            <div class="col-span-12 lg:col-span-8 flex flex-col h-full">
                 <div v-if="selectedLicense"
-                    class="glass-card p-10 rounded-[3rem] border border-white/5 bg-gradient-to-br from-white/5 to-transparent h-full flex flex-col">
-                    <div class="flex justify-between items-center mb-10">
-                        <h3 class="text-sm font-black uppercase tracking-widest flex items-center gap-3">
-                            <data-server theme="outline" /> UNIT FLEET TELEMETRY
+                    class="glass-panel p-10 rounded-[3rem] border border-white/5 bg-[#0f0f12] relative overflow-hidden flex-1 flex flex-col shadow-2xl">
+                    
+                    <!-- Decor -->
+                    <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+                    <div class="flex justify-between items-center mb-10 relative z-10">
+                        <h3 class="text-sm font-black uppercase tracking-widest flex items-center gap-3 text-gray-300">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                <data-server theme="filled" />
+                            </div>
+                            Unit Fleet Telemetry
                         </h3>
-                        <button @click="renewLicense(selectedLicense)"
-                            class="px-4 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg text-[8px] font-black uppercase hover:bg-green-500/30 transition-all">
-                            Extend Validity
-                        </button>
+                        <div class="flex items-center gap-4">
+                            <div class="px-4 py-1.5 bg-black/40 rounded-lg border border-white/5 flex items-center gap-2">
+                                <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">System Operational</span>
+                            </div>
+                            <button @click="renewLicense(selectedLicense)"
+                                class="px-5 py-2 bg-green-500 hover:bg-green-400 text-black rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-green-500/10 hover:shadow-green-500/30">
+                                Extend Validity
+                            </button>
+                        </div>
                     </div>
 
                     <div v-if="selectedLicense.fleetTelemetry && selectedLicense.fleetTelemetry.length > 0"
-                        class="space-y-4 flex-1 overflow-y-auto pr-2">
+                        class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar relative z-10">
                         <div v-for="unit in selectedLicense.fleetTelemetry" :key="unit.instanceId"
-                            class="flex items-center gap-6 p-6 bg-black/40 border border-white/5 rounded-2xl hover:border-blue-500/20 transition-all">
+                            class="flex items-center gap-6 p-6 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.04] hover:border-white/10 transition-all group">
                             <div
-                                class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
-                                <computer theme="outline" />
+                                class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center text-blue-400 border border-white/5 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-shadow">
+                                <computer theme="filled" size="20" />
                             </div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3">
-                                    <h4 class="text-sm font-bold">{{ unit.instanceId }}</h4>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-3 mb-1">
+                                    <h4 class="text-sm font-bold text-white font-mono truncate">{{ unit.instanceId }}</h4>
                                     <span
-                                        class="px-2 py-0.5 bg-green-500/10 text-green-400 text-[8px] font-black rounded border border-green-500/20">PEAK
-                                        HEARTBEAT</span>
+                                        class="px-2 py-0.5 bg-green-500/10 text-green-400 text-[9px] font-black rounded border border-green-500/20 uppercase tracking-widest">
+                                        Active
+                                    </span>
                                 </div>
-                                <p class="text-[10px] font-mono opacity-40 mt-1">IP ADDR: {{ unit.lastIp }} | VERSION:
-                                    v{{ unit.version }}</p>
+                                <div class="flex items-center gap-4 text-[10px] text-gray-500 font-mono">
+                                    <span class="flex items-center gap-1"><global-icon theme="outline" /> {{ unit.lastIp }}</span>
+                                    <span class="w-1 h-1 bg-gray-700 rounded-full"></span>
+                                    <span>v{{ unit.version }}</span>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <p class="text-[8px] font-black uppercase opacity-30">Last Pulse</p>
-                                <p class="text-[10px] font-bold">{{ timeAgo(unit.lastHeartbeat) }}</p>
+                            <div class="text-right pl-4 border-l border-white/5">
+                                <p class="text-[9px] font-black uppercase text-gray-500 tracking-widest mb-1">Last Heartbeat</p>
+                                <p class="text-xs font-bold text-white font-mono">{{ timeAgo(unit.lastHeartbeat) }}</p>
                             </div>
                         </div>
                     </div>
-                    <div v-else class="text-center py-20 opacity-30 flex-1 flex flex-col justify-center">
-                        <caution theme="outline" size="40" class="mx-auto mb-4" />
-                        <p class="text-xs font-bold uppercase tracking-widest">No Tactical Units Activated Yet</p>
+                    
+                    <div v-else class="text-center py-20 opacity-30 flex-1 flex flex-col justify-center items-center relative z-10">
+                        <div class="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                            <radar theme="outline" size="40" class="mx-auto animate-spin-slow" />
+                        </div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-white">No Tactical Units Detected</p>
+                        <p class="text-[10px] text-gray-500 mt-2 max-w-xs mx-auto">Deploy instances with this license key to see telemetry data stream in real-time.</p>
                     </div>
                 </div>
+                
                 <div v-else
-                    class="flex flex-col items-center justify-center h-[500px] border-2 border-dashed border-white/5 rounded-[3rem] opacity-20">
-                    <Selected theme="outline" size="60" class="mb-4" />
-                    <p class="text-xs font-black uppercase tracking-widest">Select a registry for telemetry downlink</p>
+                    class="flex flex-col items-center justify-center h-full min-h-[500px] border-2 border-dashed border-white/10 rounded-[3rem] bg-white/[0.01]">
+                    <div class="w-32 h-32 rounded-full bg-white/5 flex items-center justify-center mb-8 animate-pulse">
+                        <doc-search theme="filled" size="48" class="text-gray-600" />
+                    </div>
+                    <p class="text-sm font-black uppercase tracking-widest text-gray-400">Select a registry to inspect telemetry</p>
                 </div>
             </div>
         </div>
 
         <!-- Pricing Section -->
-        <div id="pricing" class="py-20 border-t border-white/5">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl font-black mb-4">TACTICAL PACKAGES</h2>
-                <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Choose your operational tier</p>
+        <div id="pricing" class="py-32 border-t border-white/5 relative">
+            <div class="absolute inset-0 bg-gradient-to-b from-blue-900/5 to-transparent pointer-events-none"></div>
+            
+            <div class="text-center mb-20 relative z-10">
+                <span class="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-6 inline-block">
+                    Operational Tiers
+                </span>
+                <h2 class="text-5xl font-black mb-4">TACTICAL UPGRADES</h2>
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest">Scale your infrastructure capabilities</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto relative z-10 px-4">
                 <div v-for="pkg in packages" :key="pkg._id"
-                    class="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 hover:border-blue-500/30 transition-all group relative overflow-hidden">
+                    class="p-10 rounded-[3rem] bg-[#0f0f12] border border-white/5 hover:border-blue-500/30 hover:bg-blue-900/5 hover:-translate-y-2 transition-all duration-500 group relative overflow-hidden flex flex-col">
+                    
                     <div v-if="pkg.tier === 'pro'"
-                        class="absolute top-0 right-0 bg-blue-600 text-white text-[8px] font-black px-4 py-1 rounded-bl-xl uppercase">
-                        Recommended</div>
-
-                    <h3 class="text-xl font-black uppercase mb-2">{{ pkg.name }}</h3>
-                    <p class="text-[10px] text-gray-400 mb-8 h-8">{{ pkg.description }}</p>
-
-                    <div class="mb-8">
-                        <span class="text-4xl font-black">${{ pkg.price }}</span>
-                        <span class="text-xs font-bold text-gray-500"> / {{ pkg.billingPeriod }}</span>
+                        class="absolute top-0 right-0 bg-blue-600 text-white text-[9px] font-black px-6 py-2 rounded-bl-2xl uppercase tracking-widest shadow-lg shadow-blue-600/20 z-20">
+                        Most Popular
                     </div>
 
-                    <ul class="space-y-4 mb-10">
-                        <li class="flex items-center gap-3 text-xs font-bold">
-                            <check-one theme="outline" class="text-green-400" /> {{ pkg.limits.instances }} Edge Unit(s)
+                    <div class="mb-8">
+                        <h3 class="text-2xl font-black uppercase tracking-tighter mb-2 text-white group-hover:text-blue-400 transition-colors">{{ pkg.name }}</h3>
+                        <p class="text-xs text-gray-500 font-medium h-10 leading-relaxed">{{ pkg.description }}</p>
+                    </div>
+
+                    <div class="mb-10 p-6 bg-white/[0.03] rounded-2xl border border-white/5 group-hover:border-white/10 transition-colors">
+                        <span class="text-5xl font-black text-white block mb-1">${{ pkg.price }}</span>
+                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Billed {{ pkg.billingPeriod }}</span>
+                    </div>
+
+                    <ul class="space-y-5 mb-12 flex-1">
+                        <li class="flex items-center gap-4 text-xs font-bold text-gray-300">
+                            <div class="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 flex-shrink-0">
+                                <check-one theme="filled" size="12" />
+                            </div>
+                            {{ pkg.limits.instances }} Edge Unit(s)
                         </li>
-                        <li class="flex items-center gap-3 text-xs font-bold">
-                            <check-one theme="outline" class="text-green-400" /> {{ pkg.limits.usersPerInstance }} Users
-                            / Unit
+                        <li class="flex items-center gap-4 text-xs font-bold text-gray-300">
+                            <div class="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 flex-shrink-0">
+                                <check-one theme="filled" size="12" />
+                            </div>
+                            {{ pkg.limits.usersPerInstance }} Users / Unit
                         </li>
-                        <li class="flex items-center gap-3 text-xs font-bold">
-                            <check-one theme="outline" class="text-green-400" /> {{ pkg.limits.projectsPerInstance }}
-                            Projects / Unit
+                        <li class="flex items-center gap-4 text-xs font-bold text-gray-300">
+                            <div class="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 flex-shrink-0">
+                                <check-one theme="filled" size="12" />
+                            </div>
+                            {{ pkg.limits.projectsPerInstance }} Projects / Unit
                         </li>
                     </ul>
 
                     <button @click="initiateCheckout(pkg._id)"
-                        class="w-full py-4 rounded-xl bg-white text-black font-black uppercase text-xs hover:bg-blue-500 hover:text-white transition-all">
+                        class="w-full py-5 rounded-2xl bg-white text-black font-black uppercase text-xs tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl shadow-white/5 hover:shadow-blue-600/30 group-hover:scale-[1.02]">
                         Deploy {{ pkg.name }}
                     </button>
+                    
+                    <!-- Background Glow -->
+                    <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] group-hover:bg-blue-500/10 transition-colors pointer-events-none"></div>
                 </div>
             </div>
         </div>
@@ -157,9 +220,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { Key, DataServer, Computer, Right, Caution, Selected, CheckOne } from '@icon-park/vue-next';
+import { 
+    Key, DataServer, Computer, ArrowRight, Caution, 
+    CheckOne, Help, Rocket, DocSearch, Earth as GlobalIcon, Radar
+} from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
-import SupportTicketDialog from '@/components/SupportTicketDialog.vue'; // Need to ensure this import works
+import SupportTicketDialog from '@/components/SupportTicketDialog.vue';
 import { useLicenseStore } from '@/stores/license';
 import { usePaymentStore } from '@/stores/payment';
 
@@ -207,28 +273,14 @@ const initiateCheckout = async (packageId: string) => {
 };
 
 const renewLicense = async (license: any) => {
-    // For MVP, we scroll to pricing, but pass the license Key to handle renewal logic
-    // A robust impl would filter packages or show a modal. 
-    // Here we just scroll for now, but in reality we'd likely want to select the package 
-    // and call checkout with { packageId, licenseKey }.
-
-    // Simulating "Renew with same tier" logic:
     const currentPkg = packages.value.find(p => p.tier === license.tier) || packages.value[0];
     if (!currentPkg) return;
 
     try {
         toast.info(`Renewing ${license.key}...`);
-        // Payment store createCheckout likely supports custom payload or we update it?
-        // Actually paymentStore.createCheckout takes { packageId }.
-        // Does backend support licenseKey?
-        // Let's assume we pass full payload, but paymentStore arg is typed as { packageId: string } in my update.
-        // It says `payload: { packageId: string }`.
-        // I should probably cast or update store.
-        // `createCheckout` in `payment.ts` takes `payload`.
-        // So passing extra is fine if payload is anyish or extended.
         const res = await paymentStore.createCheckout({
             packageId: currentPkg._id,
-            licenseKey: license.key // passing extra prop
+            licenseKey: license.key
         } as any);
 
         if (res.data.url) {
@@ -251,8 +303,6 @@ const timeAgo = (date: string) => {
 onMounted(() => {
     fetchLicenses();
     fetchPackages();
-
-    // Handle payment callbacks from Stripe/PayPal
     handlePaymentCallback();
 });
 
@@ -264,75 +314,62 @@ const handlePaymentCallback = () => {
 
     if (!payment) return;
 
-    // Success
     if (payment === 'success') {
         const gatewayName = gateway === 'stripe' ? 'Stripe' : gateway === 'paypal' ? 'PayPal' : 'Payment Gateway';
-        toast.success(`🎉 Payment successful via ${gatewayName}! Your license has been activated.`, {
-            duration: 5000
-        });
-        
-        // Refresh licenses to show new/renewed license
-        setTimeout(() => {
-            fetchLicenses();
-        }, 1000);
+        toast.success(`🎉 Payment successful via ${gatewayName}! Your license has been activated.`, { duration: 5000 });
+        setTimeout(() => fetchLicenses(), 1000);
     }
 
-    // Failed
     if (payment === 'failed') {
         let errorMessage = 'Payment failed. Please try again.';
-        
         switch (reason) {
             case 'missing_session':
-            case 'missing_token':
-                errorMessage = 'Payment session expired. Please try again.';
-                break;
+            case 'missing_token': errorMessage = 'Payment session expired. Please try again.'; break;
             case 'verification_failed':
-            case 'capture_failed':
-                errorMessage = 'Payment verification failed. Please contact support if charged.';
-                break;
-            case 'error':
-                errorMessage = 'An error occurred during payment processing.';
-                break;
+            case 'capture_failed': errorMessage = 'Payment verification failed.'; break;
+            case 'error': errorMessage = 'An error occurred during payment processing.'; break;
         }
-        
         toast.error(errorMessage, { duration: 7000 });
     }
 
-    // Cancelled
     if (payment === 'cancelled') {
-        const gatewayName = gateway === 'stripe' ? 'Stripe' : gateway === 'paypal' ? 'PayPal' : 'payment';
-        toast.info(`Payment was cancelled. You can try again anytime.`, {
-            duration: 4000
-        });
+        toast.info(`Payment was cancelled. You can try again anytime.`, { duration: 4000 });
     }
 
-    // Clean URL after showing notification
     if (payment) {
         setTimeout(() => {
             window.history.replaceState({}, '', window.location.pathname);
         }, 500);
     }
 };
-
-// Legacy verify session method (kept for backward compatibility)
-const verifySession = async (sessionId: string | null) => {
-    if (!sessionId) return;
-    try {
-        await paymentStore.verifySession({ sessionId, gateway: 'stripe' });
-        fetchLicenses();
-        window.history.replaceState({}, '', window.location.pathname);
-    } catch (e) { }
-};
 </script>
 
 <style lang="scss" scoped>
-.license-portal {
-    min-height: 100vh;
-    background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.05), transparent 40%);
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
 }
 
-.glass-card {
-    backdrop-filter: blur(40px);
-    background: rgba(255, 255, 255, 0.02);
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.02);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.animate-spin-slow {
+    animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 </style>

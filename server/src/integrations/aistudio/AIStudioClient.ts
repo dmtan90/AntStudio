@@ -656,7 +656,7 @@ export class AIStudioClient {
                 console.log('[AIStudio Debug] Starting image extraction...');
 
                 // Helper: Check if element is strictly inside navigation
-                const isNav = (el: any) => {
+                const isNav = (el) => {
                     if (el.closest('nav, header, footer, aside, [role="navigation"], [role="banner"], .sidebar, #sidebar, .ms-sidebar, .ms-aistudio-sidebar')) {
                         return true;
                     }

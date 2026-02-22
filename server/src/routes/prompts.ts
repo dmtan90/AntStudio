@@ -3,6 +3,10 @@ import { Project } from '../models/Project.js';
 import { connectDB } from '../utils/db.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { buildCharacterSheetPrompt, buildScenePrompt, buildVeoVideoPrompt } from '../utils/PromptBuilder.js';
+import { AIServiceManager } from '../utils/ai/AIServiceManager.js';
+import { rbacMiddleware } from '../middleware/rbac.js';
+import { Permission } from '../utils/permissions.js';
+import { checkLicenseStatus } from '../middleware/license.js';
 
 const router = Router();
 
@@ -27,10 +31,13 @@ router.get('/character/:projectId/:charIndex', async (req: any, res: Response) =
             return res.status(404).json({ success: false, data: null, error: 'Character not found' });
         }
 
-        const style = project.creativeBrief?.visualStyle || project.videoStyle || 'Cinematic, Photo-realistic';
+        const style = project.videoStyle || project.creativeBrief?.visualStyle || 'Cinematic, Photo-realistic';
         const language = project.scriptAnalysis?.language;
 
-        const prompt = await buildCharacterSheetPrompt(character, style, language);
+        const aiManager = AIServiceManager.getInstance();
+        const translator = async (p: string) => await aiManager.generateText(p, 'gemini-2.5-flash');
+
+        const prompt = await buildCharacterSheetPrompt(character, style, project.scriptAnalysis, language, translator);
 
         res.json({
             success: true,
@@ -76,7 +83,11 @@ router.get('/scene/:projectId/:segmentId', async (req: any, res: Response) => {
             .filter((c: any): c is any => !!c);
 
         const style = project.creativeBrief?.visualStyle || project.videoStyle || 'Cinematic';
-        const prompt = buildScenePrompt(segment.description, characterContext, style);
+        
+        const aiManager = AIServiceManager.getInstance();
+        const translator = async (p: string) => await aiManager.generateText(p, 'gemini-2.5-flash');
+
+        const prompt = await buildScenePrompt(segment.description, characterContext, style, project.scriptAnalysis, project.scriptAnalysis?.language, translator);
 
         res.json({
             success: true,
@@ -120,7 +131,10 @@ router.get('/video/:projectId/:segmentId', async (req: any, res: Response) => {
         const projectStyle = project.creativeBrief?.visualStyle || project.videoStyle || 'Cinematic';
         const language = project.scriptAnalysis?.language;
 
-        const prompt = await buildVeoVideoPrompt(segment, allCharacters, projectStyle, language);
+        const aiManager = AIServiceManager.getInstance();
+        const translator = async (p: string) => await aiManager.generateText(p, 'gemini-2.5-flash');
+
+        const prompt = await buildVeoVideoPrompt(segment, allCharacters, project, language, translator);
 
         res.json({
             success: true,
@@ -138,6 +152,28 @@ router.get('/video/:projectId/:segmentId', async (req: any, res: Response) => {
     } catch (error: any) {
         console.error('Get video prompt error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to generate video prompt' });
+    }
+});
+
+// POST /api/prompts/generate - Generate optimized AI prompts for preview
+router.post('/generate', checkLicenseStatus, rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const { type, payload } = req.body;
+
+        if (!type || !payload) {
+            return res.status(400).json({ success: false, error: 'Type and payload are required' });
+        }
+
+        const mgr = AIServiceManager.getInstance();
+        await mgr.initialize();
+
+        const prompts = await mgr.generatePrompt(payload, type);
+
+        res.json({ success: true, data: prompts });
+    } catch (error: any) {
+        console.error('[generate-prompts] Error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

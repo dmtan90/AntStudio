@@ -6,6 +6,7 @@ import { genkit } from 'genkit'
 import { googleAI } from '@genkit-ai/google-genai'
 import { CustomAIAdapter } from './CustomAIAdapter.js'
 import { privateLLMClient } from './PrivateLLMClient.js'
+import { buildCharacterSheetPrompt, buildScenePrompt, buildVeoVideoPrompt } from '../PromptBuilder.js'
 
 // Singleton instance cache
 let providerInstances: Record<string, any> = {}
@@ -25,144 +26,128 @@ export class AIServiceManager {
     }
 
     /**
-     * Initializes or updates provider instances based on DB settings
+     * Initializes or updates project settings from DB
      */
     public async initialize() {
         try {
             // Ensure config is fresh
             await configService.refresh();
-            const settings = configService.ai;
-            currentSettings = settings // Cache settings for defaults
-
-            const providers = settings?.providers || []
-
-            // Clear old instances if needed
-            // providerInstances = {} 
-
-            for (const provider of providers) {
-                if (!provider.isActive) continue
-
-                if (provider.id === 'google' && provider.apiKey) {
-                    // Google GenAI (Native Genkit)
-                    providerInstances['google'] = genkit({
-                        plugins: [googleAI({ apiKey: provider.apiKey })]
-                    })
-                }
-                else if (provider.id === '11labs') {
-                    // ElevenLabs Direct Provider (from researched tools - Video & Audio)
-                    const { ElevenLabsDirectProvider } = await import('./providers/ElevenLabsDirectProvider.js');
-                    providerInstances['11labs'] = new ElevenLabsDirectProvider(provider.apiKey);
-                    console.log('[AIServiceManager] ElevenLabs Direct (Video & Audio) Provider initialized.');
-                }
-                else if (provider.id === 'aistudio') {
-                    // AIStudio (Browser Automation - Free Quota)
-                    const { AIStudioProvider } = await import('./providers/AIStudioProvider.js');
-                    providerInstances['aistudio'] = new AIStudioProvider();
-                    console.log('[AIServiceManager] AIStudio Browser-based Provider initialized.');
-                }
-                else if (provider.id === 'gemini-chat') {
-                    // Gemini Chat (Multi-Account API Pool - Professional)
-                    const { GeminiChatProvider } = await import('./providers/GeminiChatProvider.js');
-                    providerInstances['gemini-chat'] = new GeminiChatProvider();
-                    console.log('[AIServiceManager] Gemini Chat Multi-Account API Pool initialized.');
-                }
-                else if (provider.id === 'flow') {
-                    // Labs Flow (API-First Strategy - Experimental)
-                    const { FlowProvider } = await import('./providers/FlowProvider.js');
-                    providerInstances['flow'] = new FlowProvider();
-                    console.log('[AIServiceManager] Labs Flow API-First Provider initialized.');
-                }
-                else if (provider.apiKey && provider.baseUrl) {
-                    // Pass taskConfigs if available
-                    providerInstances[provider.id] = new CustomAIAdapter(
-                        provider.apiKey,
-                        provider.baseUrl,
-                        provider.taskConfigs // Pass the map directly
-                    )
-                }
-            }
-
-            // Always init Private Provider (Ollama) as a baseline for sovereignty
-            providerInstances['private'] = privateLLMClient;
-
-            // Fallback for Env Vars (Legacy) - ConfigService handles defaults too but good to double check
-            // If not in DB, check if we have a fallback key from ConfigService (which reads env)
-            const fallbackKey = process.env.GEMINI_API_KEY
-            if (fallbackKey && !providerInstances['google']) {
-                providerInstances['google'] = genkit({
-                    plugins: [googleAI({ apiKey: fallbackKey })]
-                })
-            }
-
-            // Init ElevenLabs if Key exists (Env or DB)
-            const elevenKey = settings?.providers?.find((p: any) => p.id === 'elevenlabs')?.apiKey || process.env.ELEVENLABS_API_KEY;
-            if (elevenKey && !providerInstances['elevenlabs']) {
-                const { ElevenLabsProvider } = await import('./providers/ElevenLabsProvider.js');
-                providerInstances['elevenlabs'] = new ElevenLabsProvider(elevenKey);
-            }
-
-            // Global Init native providers if not already initialized (to ensure they're always available as fallback/test)
-            if (!providerInstances['aistudio']) {
-                const { AIStudioProvider } = await import('./providers/AIStudioProvider.js');
-                providerInstances['aistudio'] = new AIStudioProvider();
-            }
-            if (!providerInstances['gemini-chat']) {
-                const { GeminiChatProvider } = await import('./providers/GeminiChatProvider.js');
-                providerInstances['gemini-chat'] = new GeminiChatProvider();
-            }
-            if (!providerInstances['google-tts']) {
-                const { GoogleTTSProvider } = await import('./providers/GoogleTTSProvider.js');
-                const staticKey = settings?.providers?.find((p: any) => p.id === 'google')?.apiKey || process.env.GOOGLE_API_KEY;
-                providerInstances['google-tts'] = new GoogleTTSProvider(staticKey ? { apiKey: staticKey } : {});
-            }
-
-            if (!providerInstances['flow']) {
-                const { FlowProvider } = await import('./providers/FlowProvider.js');
-                providerInstances['flow'] = new FlowProvider();
-            }
-
-            // Puter Provider (Phase 30.3 - Priority Provider)
-            if (!providerInstances['puter']) {
-                const { PuterProvider } = await import('./providers/PuterProvider.js');
-                providerInstances['puter'] = new PuterProvider();
-                console.log('[AIServiceManager] Puter AI (Free Priority) Provider initialized.');
-            }
-
+            currentSettings = configService.ai;
         } catch (error) {
-            console.error('Failed to initialize AI Service Manager:', error)
+            console.error('[AIServiceManager] Failed to load settings:', error);
         }
     }
 
     /**
-     * Get a specific provider instance
+     * Get a specific provider instance (Lazily initialized)
      */
     public async getProvider(providerId: string) {
         if (!providerInstances[providerId]) {
-            await this.initialize()
+            await this.initializeProvider(providerId);
         }
-        return providerInstances[providerId]
+        return providerInstances[providerId];
+    }
+
+    /**
+     * Internal: Initialize a specific provider instance
+     */
+    private async initializeProvider(providerId: string) {
+        if (providerInstances[providerId]) return;
+
+        try {
+            if (!currentSettings) await this.initialize();
+            const providers = currentSettings?.providers || [];
+            const providerConfig = providers.find((p: any) => p.id === providerId);
+
+            if (providerId === 'google') {
+                const apiKey = providerConfig?.isActive ? providerConfig.apiKey : process.env.GEMINI_API_KEY;
+                if (apiKey) {
+                    const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
+                    providerInstances['google'] = new GeminiClient({ apiKey });
+                    console.log('[AIServiceManager] Google Gemini Client (Unified) initialized.');
+                }
+            } else if (providerId === 'elevenlabs') {
+                const apiKey = providerConfig?.isActive ? providerConfig.apiKey : process.env.ELEVENLABS_API_KEY;
+                if (apiKey) {
+                    const { ElevenLabsProvider } = await import('./providers/ElevenLabsProvider.js');
+                    providerInstances['elevenlabs'] = new ElevenLabsProvider(apiKey);
+                    console.log('[AIServiceManager] ElevenLabs Provider initialized.');
+                }
+            } else if (providerId === 'aistudio') {
+                const { AIStudioProvider } = await import('./providers/AIStudioProvider.js');
+                providerInstances['aistudio'] = new AIStudioProvider();
+                console.log('[AIServiceManager] AI Studio Provider initialized.');
+            } else if (providerId === 'flow') {
+                const { FlowProvider } = await import('./providers/FlowProvider.js');
+                providerInstances['flow'] = new FlowProvider();
+                console.log('[AIServiceManager] Flow Provider initialized.');
+            } else if (providerId === 'puter') {
+                try {
+                    const { PuterProvider } = await import('./providers/PuterProvider.js');
+                    providerInstances['puter'] = new PuterProvider();
+                    console.log('[AIServiceManager] Puter AI (Free Priority) Provider initialized.');
+                } catch (puterError: any) {
+                    console.warn(`[AIServiceManager] Failed to initialize Puter AI: ${puterError.message}`);
+                }
+            } else if (providerId === 'private') {
+                providerInstances['private'] = privateLLMClient;
+            } else if (providerConfig?.baseUrl) {
+                // Custom Adapter
+                providerInstances[providerId] = new CustomAIAdapter(
+                    providerConfig.apiKey,
+                    providerConfig.baseUrl,
+                    providerConfig.taskConfigs
+                );
+                console.log(`[AIServiceManager] Custom Provider "${providerId}" initialized.`);
+            }
+        } catch (error: any) {
+            console.error(`[AIServiceManager] Failed to initialize provider "${providerId}":`, error.message);
+        }
     }
 
     /**
      * Resolve Provider and Model based on Defaults
      */
-    private async resolveProvider(type: 'text' | 'image' | 'video' | 'audio', requestedProviderId?: string, requestedModelId?: string) {
+    private async resolveProvider(type: 'text' | 'image' | 'video' | 'audio' | 'music', requestedProviderId?: string, requestedModelId?: string) {
         // Ensure settings are loaded
         if (!currentSettings) await this.initialize()
 
         let providerId = requestedProviderId;
         let modelId = requestedModelId;
 
-        // PRIORITY: Prefer Puter if no provider specified and not explicitly overridden by DB defaults
+        // 1. If not requested, check DB defaults for this type
+        if (!providerId && currentSettings?.defaults?.[type]) {
+            providerId = currentSettings.defaults[type].providerId;
+            modelId = modelId || currentSettings.defaults[type].modelId;
+            console.log(`[AIServiceManager] Resolved default for ${type}: ${providerId}/${modelId}`);
+        }
+
+        // 2. PRIORITY: Fallbacks if still no provider specified
         if (!providerId) {
-            providerId = 'puter'
-            modelId = modelId || 'gpt-4o-mini'
-            console.log(`[AIServiceManager] No provider specified, defaulting to Puter priority.`);
+            if (providerInstances['google']) {
+                providerId = 'google'
+                modelId = modelId || (type === 'image' ? 'imagen-3.0' : type === 'video' ? 'veo-2.0' : 'gemini-2.5-flash')
+            } else if (providerInstances['puter']) {
+                providerId = 'puter'
+                modelId = modelId || (type === 'image' ? 'dall-e-3' : 'gpt-4o-mini')
+            } else {
+                // Last resort fallback
+                providerId = Object.keys(providerInstances).find(k => k !== 'private') || 'puter';
+            }
+            console.log(`[AIServiceManager] Using hardcoded fallback for ${type}: ${providerId}/${modelId}`);
         }
 
         // Get Provider Instance
         const provider = await this.getProvider(providerId)
-        if (!provider) throw new Error(`Provider ${providerId} not found or not initialized`)
+        if (!provider) {
+             // Second chance fallback if the specific ID failed but others exist
+             const fallback = Object.keys(providerInstances).find(k => k !== 'private');
+             if (fallback) {
+                 console.warn(`[AIServiceManager] Provider ${providerId} not found. Falling back to ${fallback}.`);
+                 return { provider: providerInstances[fallback], providerId: fallback, modelId: modelId || 'gemini-2.5-flash' };
+             }
+             throw new Error(`Provider ${providerId} not found or not initialized`)
+        }
 
         return { provider, providerId, modelId }
     }
@@ -185,30 +170,13 @@ export class AIServiceManager {
         }
 
         // SMART MULTI-ACCOUNT SELECTION for Google/AIStudio tasks
-        if (providerId === 'google' || providerId === 'aistudio') {
-            const account = await aiAccountManager.getOptimalAccount('text');
-            if (account) {
-                console.log(`[AIServiceManager] Using ${account.accountType === 'antigravity' ? 'Antigravity' : 'CloudCode'} API with account: ${account.email}`);
-
-                let client: any;
-                if (account.accountType === 'antigravity') {
-                    const { AntigravityClient } = await import('../../integrations/ai/AntigravityClient.js');
-                    client = new AntigravityClient(account);
-                } else {
-                    client = new CloudCodeClient(account);
-                }
-
-                try {
-                    const result = await client.generateContent(prompt, finalModelName, options);
-
-                    // Track usage via centralized manager
-                    await aiAccountManager.recordUsage(account, finalModelName);
-
-                    return result.text;
-                } catch (apiError: any) {
-                    console.error(`[AIServiceManager] Direct API failed for ${account.email}, trying fallback chain...`);
-                    // If one account fails, we could loop here to try others
-                }
+        if (providerId === 'google' || providerId === 'aistudio' || providerId === 'gemini-chat') {
+            try {
+                const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
+                const client = new GeminiClient({});
+                return await client.generateContent(prompt, finalModelName, options).then(r => r.text);
+            } catch (apiError: any) {
+                console.error(`[AIServiceManager] Gemini direct failed, trying fallback chain...`);
             }
         }
 
@@ -267,59 +235,38 @@ export class AIServiceManager {
         const finalModelName = modelId || inputModelName || 'imagen-3.0' // Fallback
 
         // SMART MULTI-ACCOUNT SELECTION
-        if (providerId === 'google' || providerId === 'aistudio' || providerId === '11labs') {
-            const account = await aiAccountManager.getOptimalAccount('image');
-            if (account) {
-                console.log(`[AIServiceManager] Using ${account.accountType} API for image generation: ${account.email}`);
-
-                let client: any;
-                if (account.accountType === 'antigravity') {
-                    const { AntigravityClient } = await import('../../integrations/ai/AntigravityClient.js');
-                    client = new AntigravityClient(account);
-                } else if (account.accountType === '11labs-direct') {
-                    const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
-                    client = new ElevenLabsDirectClient({
-                        email: account.email,
-                        token: account.accessToken || 'invalid',
-                        licenseKey: account.licenseKey,
-                        serviceKeys: account.serviceKeys
-                    });
-                } else {
-                    client = new CloudCodeClient(account);
-                }
-
-                try {
-                    const result = await client.generateImage(prompt, finalModelName);
-                    // Central manager record usage
-                    await aiAccountManager.recordUsage(account, finalModelName);
-
-                    // Reformat for Service Manager response
-                    const base64Data = result.url.replace(/^data:image\/\w+;base64,/, "");
-                    return { buffer: Buffer.from(base64Data, 'base64'), mimeType: 'image/png' };
-                } catch (apiError: any) {
-                    console.error(`[AIServiceManager] Direct Image API failed, trying fallback chain...`);
-                }
+        if (providerId === 'google' || providerId === 'aistudio' || providerId === 'gemini-chat') {
+            try {
+                const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
+                const client = new GeminiClient({});
+                const result = await client.generateImage(prompt, finalModelName, options);
+                
+                // Reformat for Service Manager response
+                const base64Data = result.url.replace(/^data:image\/\w+;base64,/, "");
+                return { buffer: Buffer.from(base64Data, 'base64'), mimeType: result.mimeType || 'image/png' };
+            } catch (apiError: any) {
+                console.error(`[AIServiceManager] Gemini Image direct failed, trying fallback chain...`);
             }
         }
 
         // PRIORITY FALLBACK TO PUTER (Phase 30.3)
-        if (providerId !== 'puter') {
-            const puter = providerInstances['puter'];
-            if (puter && await puter.isReady()) {
-                try {
-                    console.log(`[AIServiceManager] Calling Puter as Priority Provider for image...`);
-                    const result = await puter.generateImage(prompt, finalModelName, options);
-                    const media = result.media;
-                    if (media && media.url) {
-                         const { getFileBuffer } = await import('../AIGenerator.js');
-                         const buffer = await getFileBuffer(media.url);
-                         return { buffer, mimeType: media.mimeType || 'image/png' };
-                    }
-                } catch (e) {
-                    console.warn(`[AIServiceManager] Puter priority failed for image, falling back to ${providerId}...`);
-                }
-            }
-        }
+        // if (providerId !== 'puter') {
+        //     const puter = providerInstances['puter'];
+        //     if (puter && await puter.isReady()) {
+        //         try {
+        //             console.log(`[AIServiceManager] Calling Puter as Priority Provider for image...`);
+        //             const result = await puter.generateImage(prompt, finalModelName, options);
+        //             const media = result.media;
+        //             if (media && media.url) {
+        //                  const { getFileBuffer } = await import('../AIGenerator.js');
+        //                  const buffer = await getFileBuffer(media.url);
+        //                  return { buffer, mimeType: media.mimeType || 'image/png' };
+        //             }
+        //         } catch (e) {
+        //             console.warn(`[AIServiceManager] Puter priority failed for image, falling back to ${providerId}...`);
+        //         }
+        //     }
+        // }
 
         console.debug(`generateImage [Provider: ${providerId}, Model: ${finalModelName}]`)
 
@@ -366,35 +313,35 @@ export class AIServiceManager {
             console.error(`AI Image Generation failed (${finalModelName}) via ${providerId}:`, error.message)
 
             // PRIORITY FALLBACK TO 11LABS
-            if (providerId !== '11labs') {
-                const labsProvider = providerInstances['11labs'];
-                if (labsProvider && await labsProvider.isReady()) {
-                    console.log(`[AIServiceManager] Falling back to 11Labs for image generation...`);
-                    try {
-                        return await executeImageGen(labsProvider, '11labs');
-                    } catch (labsError) {
-                        console.error(`[AIServiceManager] 11Labs fallback failed for image:`, (labsError as any).message);
-                    }
-                }
-            }
+            // if (providerId !== '11labs') {
+            //     const labsProvider = providerInstances['11labs'];
+            //     if (labsProvider && await labsProvider.isReady()) {
+            //         console.log(`[AIServiceManager] Falling back to 11Labs for image generation...`);
+            //         try {
+            //             return await executeImageGen(labsProvider, '11labs');
+            //         } catch (labsError) {
+            //             console.error(`[AIServiceManager] 11Labs fallback failed for image:`, (labsError as any).message);
+            //         }
+            //     }
+            // }
 
             // AUTOMATIC FALLBACK TO GEMINI CHAT
-            if (providerId !== 'gemini-chat') {
-                const geminiChat = providerInstances['gemini-chat'];
-                if (geminiChat && await geminiChat.isReady()) {
-                    console.log(`[AIServiceManager] Falling back to Gemini Chat for image generation...`);
-                    return await executeImageGen(geminiChat, 'gemini-chat');
-                }
-            }
+            // if (providerId !== 'gemini-chat') {
+            //     const geminiChat = providerInstances['gemini-chat'];
+            //     if (geminiChat && await geminiChat.isReady()) {
+            //         console.log(`[AIServiceManager] Falling back to Gemini Chat for image generation...`);
+            //         return await executeImageGen(geminiChat, 'gemini-chat');
+            //     }
+            // }
 
             // AUTOMATIC FALLBACK TO AISTUDIO
-            if (providerId !== 'aistudio') {
-                const aiStudio = providerInstances['aistudio'];
-                if (aiStudio && await aiStudio.isReady()) {
-                    console.log(`[AIServiceManager] Falling back to AIStudio for image generation...`);
-                    return await executeImageGen(aiStudio, 'aistudio');
-                }
-            }
+            // if (providerId !== 'aistudio') {
+            //     const aiStudio = providerInstances['aistudio'];
+            //     if (aiStudio && await aiStudio.isReady()) {
+            //         console.log(`[AIServiceManager] Falling back to AIStudio for image generation...`);
+            //         return await executeImageGen(aiStudio, 'aistudio');
+            //     }
+            // }
             throw error
         }
     }
@@ -406,48 +353,26 @@ export class AIServiceManager {
         let { provider, providerId, modelId } = await this.resolveProvider('video', inputProviderId, inputModelName)
         const finalModelName = modelId || inputModelName || 'veo-2.0' // Fallback
 
-        // SMART MULTI-ACCOUNT SELECTION
-        if (providerId === 'google' || providerId === 'aistudio' || providerId === '11labs') {
-            const account = await aiAccountManager.getOptimalAccount('video');
-            if (account) {
-                console.log(`[AIServiceManager] Using ${account.accountType} API for video generation: ${account.email}`);
-
-                let client: any;
-                if (account.accountType === 'antigravity') {
-                    const { AntigravityClient } = await import('../../integrations/ai/AntigravityClient.js');
-                    client = new AntigravityClient(account);
-                } else if (account.accountType === '11labs-direct') {
-                    const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
-                    const token = account.accessToken || 'invalid';
-                    client = new ElevenLabsDirectClient({ email: account.email, token, licenseKey: account.licenseKey });
-                } else {
-                    client = new CloudCodeClient(account);
+        // SMART MULTI-ACCOUNT SELECTION (Prefer GeminiVeoProvider for 'google' or pooled tasks)
+        if (providerId === 'google' || providerId === 'gemini-veo' || providerId === 'aistudio') {
+            try {
+                const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
+                const client = new GeminiClient({});
+                console.log(`[AIServiceManager] Calling GeminiClient.generateVideo for ${finalModelName}. Options:`, JSON.stringify(options, null, 2));
+                const result = await client.generateVideo(prompt, finalModelName, options);
+                
+                if (result.url && result.url.startsWith('data:')) {
+                    const base64Data = result.url.replace(/^data:video\/\w+;base64,/, "");
+                    return { buffer: Buffer.from(base64Data, 'base64'), mimeType: 'video/mp4' };
+                } else if (result.url && result.url.startsWith('http')) {
+                    console.log(`[AIServiceManager] Downloading video from: ${result.url}`);
+                    const { getFileBuffer } = await import('../AIGenerator.js');
+                    const buffer = await getFileBuffer(result.url);
+                    return { buffer, mimeType: result.mimeType || 'video/mp4', url: result.url };
                 }
-
-                try {
-                    // Correctly map options to VeoRequest
-                    const result = await client.generateVideo({
-                        prompt: prompt,
-                        aspectRatio: options.aspectRatio,
-                        duration: options.duration,
-                        seed: options.seed,
-                        upscale_1080p: options.upscale_1080p,
-                        image_url: options.characterImages?.[0] || options.imageStart || options.imageUrl
-                    });
-
-                    // Record usage
-                    await aiAccountManager.recordUsage(account, finalModelName);
-
-                    // Reformat for Service Manager response
-                    if (result.url && result.url.startsWith('data:')) {
-                        const base64Data = result.url.replace(/^data:video\/\w+;base64,/, "");
-                        return { buffer: Buffer.from(base64Data, 'base64'), mimeType: 'video/mp4' };
-                    }
-                    // If it's an operation name or external URL
-                    return { buffer: Buffer.from(''), mimeType: 'video/mp4', url: result.url };
-                } catch (apiError: any) {
-                    console.error(`[AIServiceManager] Direct Video API failed, trying fallback chain...`);
-                }
+                return { buffer: Buffer.from(''), mimeType: 'video/mp4', url: result.url };
+            } catch (err: any) {
+                console.error(`[AIServiceManager] Gemini Veo direct failed, trying fallbacks:`, err.message);
             }
         }
 
@@ -506,35 +431,35 @@ export class AIServiceManager {
             console.error(`AI Video Generation failed (${finalModelName}) via ${providerId}:`, error.message)
 
             // PRIORITY FALLBACK TO 11LABS
-            if (providerId !== '11labs') {
-                const labsProvider = providerInstances['11labs'];
-                if (labsProvider && await labsProvider.isReady()) {
-                    console.log(`[AIServiceManager] Falling back to 11Labs for video generation...`);
-                    try {
-                        return await executeVideoGen(labsProvider, '11labs');
-                    } catch (labsError) {
-                        console.error(`[AIServiceManager] 11Labs fallback failed for video:`, (labsError as any).message);
-                    }
-                }
-            }
+            // if (providerId !== '11labs') {
+            //     const labsProvider = providerInstances['11labs'];
+            //     if (labsProvider && await labsProvider.isReady()) {
+            //         console.log(`[AIServiceManager] Falling back to 11Labs for video generation...`);
+            //         try {
+            //             return await executeVideoGen(labsProvider, '11labs');
+            //         } catch (labsError) {
+            //             console.error(`[AIServiceManager] 11Labs fallback failed for video:`, (labsError as any).message);
+            //         }
+            //     }
+            // }
 
             // AUTOMATIC FALLBACK TO GEMINI CHAT
-            if (providerId !== 'gemini-chat') {
-                const geminiChat = providerInstances['gemini-chat'];
-                if (geminiChat && await geminiChat.isReady()) {
-                    console.log(`[AIServiceManager] Falling back to Gemini Chat for video generation...`);
-                    return await executeVideoGen(geminiChat, 'gemini-chat');
-                }
-            }
+            // if (providerId !== 'gemini-chat') {
+            //     const geminiChat = providerInstances['gemini-chat'];
+            //     if (geminiChat && await geminiChat.isReady()) {
+            //         console.log(`[AIServiceManager] Falling back to Gemini Chat for video generation...`);
+            //         return await executeVideoGen(geminiChat, 'gemini-chat');
+            //     }
+            // }
 
             // AUTOMATIC FALLBACK TO AISTUDIO
-            if (providerId !== 'aistudio') {
-                const aiStudio = providerInstances['aistudio'];
-                if (aiStudio && await aiStudio.isReady()) {
-                    console.log(`[AIServiceManager] Falling back to AIStudio for video generation...`);
-                    return await executeVideoGen(aiStudio, 'aistudio');
-                }
-            }
+            // if (providerId !== 'aistudio') {
+            //     const aiStudio = providerInstances['aistudio'];
+            //     if (aiStudio && await aiStudio.isReady()) {
+            //         console.log(`[AIServiceManager] Falling back to AIStudio for video generation...`);
+            //         return await executeVideoGen(aiStudio, 'aistudio');
+            //     }
+            // }
             throw error
         }
     }
@@ -547,64 +472,67 @@ export class AIServiceManager {
         const finalModelName = modelId || inputModelName || 'tts-1' // Fallback
 
         // Proactive switch to AIStudio if ready
-        if (providerId === 'google' || providerId === 'google-tts') {
-            const aiStudio = providerInstances['aistudio'];
-            if (aiStudio && await aiStudio.isReady()) {
-                console.log(`[AIServiceManager] AIStudio is Ready. Proactively using it for audio generation.`);
-                provider = aiStudio;
-                providerId = 'aistudio';
-            }
-        }
+        // if (providerId === 'google' || providerId === 'google-tts') {
+        //     const aiStudio = providerInstances['aistudio'];
+        //     if (aiStudio && await aiStudio.isReady()) {
+        //         console.log(`[AIServiceManager] AIStudio is Ready. Proactively using it for audio generation.`);
+        //         provider = aiStudio;
+        //         providerId = 'aistudio';
+        //     }
+        // }
 
         // SMART MULTI-ACCOUNT SELECTION for Audio
         if (providerId === 'google' || providerId === 'google-tts') {
-            // Sourcing from AI Account standard as requested
-            const account = await aiAccountManager.getOptimalAccount('audio');
-            // Check if it's a standard google account
-            if (account && account.providerId === 'google' && account.accountType === 'standard') {
-                console.log(`[AIServiceManager] Using Standard OAuth account for Google TTS: ${account.email}`);
-                const token = await aiAccountManager.refreshAccessToken(account);
-
-                // Get the instance and update its token
-                const googleTTS = providerInstances['google-tts'];
-                if (googleTTS && typeof googleTTS.updateClient === 'function') {
-                    googleTTS.updateClient({ accessToken: token });
-                    return await googleTTS.generateAudio(prompt, finalModelName, options);
+            try {
+                const voiceProvider = options.providerId || 'gemini';
+                if(voiceProvider === 'gemini'){
+                    const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
+                    const client = new GeminiClient({});
+                    const result = await client.generateAudio(prompt, options.voiceId || 'Puck', finalModelName, options);
+                    return { media: result };    
                 }
+                else{ // google-tts
+                    // const { GoogleTTSService } = await import('../../integrations/ai/GeminiClient.js');
+                    // const client = new GoogleTTSService({});
+                    // const result = await client.generateAudio(prompt, options.voiceId || 'Puck', finalModelName, options);
+                    // return { media: result };
+                }
+            } catch (err: any) {
+                console.error(`[AIServiceManager] Gemini direct audio failed, trying fallback chain...`);
             }
         }
 
-        if ((providerId === 'elevenlabs' || providerId === '11labs') && options.usePool) {
-            // Only use pool if explicitly requested or for general background tasks
-            // For "ElevenLabs provider" (static key), we skip this and use the direct instance below
-            const account = await aiAccountManager.getOptimalAccount('audio');
-            if (account && account.accountType === '11labs-direct') {
-                console.log(`[AIServiceManager] Using 11Labs Direct pooled account for audio: ${account.email}`);
-                const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
-                const client = new ElevenLabsDirectClient({
-                    email: account.email,
-                    token: account.accessToken || 'invalid',
-                    licenseKey: account.licenseKey,
-                    serviceKeys: account.serviceKeys
-                });
-                const buffer = await client.generateAudio(prompt, finalModelName, options);
-                return { media: { url: `data:audio/mpeg;base64,${buffer.toString('base64')}`, mimeType: 'audio/mpeg' } };
-            }
-        }
+        // if ((providerId === 'elevenlabs' || providerId === '11labs') && options.usePool) {
+        //     // Only use pool if explicitly requested or for general background tasks
+        //     // For "ElevenLabs provider" (static key), we skip this and use the direct instance below
+        //     const account = await aiAccountManager.getOptimalAccount('audio');
+        //     if (account && account.accountType === '11labs-direct') {
+        //         console.log(`[AIServiceManager] Using 11Labs Direct pooled account for audio: ${account.email}`);
+        //         const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
+        //         const client = new ElevenLabsDirectClient({
+        //             email: account.email,
+        //             token: account.accessToken || 'invalid',
+        //             licenseKey: account.licenseKey,
+        //             serviceKeys: account.serviceKeys
+        //         });
+        //         const buffer = await client.generateAudio(prompt, finalModelName, options);
+        //         return { media: { url: `data:audio/mpeg;base64,${buffer.toString('base64')}`, mimeType: 'audio/mpeg' } };
+        //     }
+        // }
 
         // PRIORITY FALLBACK TO PUTER (Phase 30.3)
-        if (providerId !== 'puter') {
-            const puter = providerInstances['puter'];
-            if (puter && await puter.isReady()) {
-                try {
-                    console.log(`[AIServiceManager] Calling Puter as Priority Provider for audio...`);
-                    const result = await puter.generateAudio(prompt, finalModelName, options);
-                    return result;
-                } catch (e) {
-                    console.warn(`[AIServiceManager] Puter priority failed for audio, falling back to ${providerId}...`);
-                }
-            }
-        }
+        // if (providerId !== 'puter') {
+        //     const puter = providerInstances['puter'];
+        //     if (puter && await puter.isReady()) {
+        //         try {
+        //             console.log(`[AIServiceManager] Calling Puter as Priority Provider for audio...`);
+        //             const result = await puter.generateAudio(prompt, finalModelName, options);
+        //             return result;
+        //         } catch (e) {
+        //             console.warn(`[AIServiceManager] Puter priority failed for audio, falling back to ${providerId}...`);
+        //         }
+        //     }
+        // }
 
         console.debug(`generateAudio [Provider: ${providerId}, Model: ${finalModelName}]`)
 
@@ -632,27 +560,27 @@ export class AIServiceManager {
             console.error(`AI Audio Generation failed (${finalModelName}) via ${providerId}:`, error.message)
 
             // PRIORITY FALLBACK TO 11LABS
-            if (providerId !== 'elevenlabs' && providerId !== '11labs') {
-                const labsProvider = providerInstances['11labs'] || providerInstances['elevenlabs'];
-                if (labsProvider && typeof labsProvider.generateAudio === 'function') {
-                    console.log(`[AIServiceManager] Falling back to 11Labs for audio generation...`);
-                    try {
-                        const result = await labsProvider.generateAudio(prompt, finalModelName, options);
-                        return result;
-                    } catch (labsError) {
-                        console.error(`[AIServiceManager] 11Labs fallback failed for audio:`, (labsError as any).message);
-                    }
-                }
-            }
+            // if (providerId !== 'elevenlabs' && providerId !== '11labs') {
+            //     const labsProvider = providerInstances['11labs'] || providerInstances['elevenlabs'];
+            //     if (labsProvider && typeof labsProvider.generateAudio === 'function') {
+            //         console.log(`[AIServiceManager] Falling back to 11Labs for audio generation...`);
+            //         try {
+            //             const result = await labsProvider.generateAudio(prompt, finalModelName, options);
+            //             return result;
+            //         } catch (labsError) {
+            //             console.error(`[AIServiceManager] 11Labs fallback failed for audio:`, (labsError as any).message);
+            //         }
+            //     }
+            // }
 
             // AUTOMATIC FALLBACK TO AISTUDIO
-            if (providerId !== 'aistudio') {
-                const aiStudio = providerInstances['aistudio'];
-                if (aiStudio && await aiStudio.isReady()) {
-                    console.log(`[AIServiceManager] Falling back to AIStudio for audio generation...`);
-                    return await aiStudio.generateAudio(prompt, finalModelName, options);
-                }
-            }
+            // if (providerId !== 'aistudio') {
+            //     const aiStudio = providerInstances['aistudio'];
+            //     if (aiStudio && await aiStudio.isReady()) {
+            //         console.log(`[AIServiceManager] Falling back to AIStudio for audio generation...`);
+            //         return await aiStudio.generateAudio(prompt, finalModelName, options);
+            //     }
+            // }
             throw error
         }
     }
@@ -664,29 +592,46 @@ export class AIServiceManager {
         let { provider, providerId, modelId } = await this.resolveProvider('audio', inputProviderId, inputModelName); // Reuse audio resolution for music
         const finalModelName = modelId || inputModelName || 'music-fx-default';
 
-        // SMART MULTI-ACCOUNT SELECTION for Music
-        if (providerId === '11labs' || providerId === 'elevenlabs') {
-            const account = await aiAccountManager.getOptimalAccount('audio'); // Reuse audio pool
-            if (account && account.accountType === '11labs-direct') {
-                console.log(`[AIServiceManager] Using 11Labs Direct account for music: ${account.email}`);
-                const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
-                const client = new ElevenLabsDirectClient({
-                    email: account.email,
-                    token: account.accessToken || 'invalid',
-                    licenseKey: account.licenseKey
-                });
-
-                try {
-                    const result = await client.generateMusic(prompt, { ...options, modelId: finalModelName });
-                    await aiAccountManager.recordUsage(account, finalModelName);
-
-                    const sound = result.sounds?.[0];
-                    return { buffer: Buffer.from(sound.data, 'base64'), mimeType: `audio/${sound.audioContainer.toLowerCase()}` };
-                } catch (e: any) {
-                    console.error(`[AIServiceManager] 11Labs music direct failed for ${account.email}:`, e.message);
+        // SMART MULTI-ACCOUNT SELECTION (Prefer GeminiMusicProvider for 'google' or pooled tasks)
+        if (providerId === 'google' || providerId === 'gemini-music' || providerId === 'aistudio') {
+            try {
+                const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
+                const client = new GeminiClient({});
+                const result = await client.generateMusic(prompt, finalModelName, options);
+                const media = result as any;
+                if (media.url && media.url.startsWith('data:')) {
+                    const base64Data = media.url.replace(/^data:audio\/\w+;base64,/, "");
+                    return { buffer: Buffer.from(base64Data, 'base64'), mimeType: media.mimeType || 'audio/mpeg' };
                 }
+                return { buffer: Buffer.from(''), mimeType: media.mimeType || 'audio/mpeg', url: media.url };
+            } catch (err: any) {
+                console.error(`[AIServiceManager] Gemini direct music failed, trying fallbacks:`, err.message);
             }
         }
+
+        // Direct handling for ElevenLabs music
+        // if (providerId === '11labs' || providerId === 'elevenlabs') {
+        //     const account = await aiAccountManager.getOptimalAccount('audio'); // Reuse audio pool
+        //     if (account && account.accountType === '11labs-direct') {
+        //         console.log(`[AIServiceManager] Using 11Labs Direct account for music: ${account.email}`);
+        //         const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
+        //         const client = new ElevenLabsDirectClient({
+        //             email: account.email,
+        //             token: account.accessToken || 'invalid',
+        //             licenseKey: account.licenseKey
+        //         });
+
+        //         try {
+        //             const result = await client.generateMusic(prompt, { ...options, modelId: finalModelName });
+        //             await aiAccountManager.recordUsage(account, finalModelName);
+
+        //             const sound = result.sounds?.[0];
+        //             return { buffer: Buffer.from(sound.data, 'base64'), mimeType: `audio/${sound.audioContainer.toLowerCase()}` };
+        //         } catch (e: any) {
+        //             console.error(`[AIServiceManager] 11Labs music direct failed for ${account.email}:`, e.message);
+        //         }
+        //     }
+        // }
 
         console.debug(`generateMusic [Provider: ${providerId}, Model: ${finalModelName}]`);
 
@@ -699,6 +644,48 @@ export class AIServiceManager {
             console.error(`AI Music Generation failed (${finalModelName}) via ${providerId}:`, error.message);
             throw error;
         }
+    }
+
+    /**
+     * Generate optimized English prompts for AI generation
+     */
+    public async generatePrompt(payload: any, type: string, options: any = {}) {
+        const translator = async (prompt: string) => {
+            return await this.generateText(prompt, 'gemini-2.5-flash', undefined, { ...options, usePrivateAI: false });
+        };
+
+        if (type === 'segment' || type === 'video' || type === 'image') {
+            // Resolve style from payload or project analysis
+            const videoStyle = payload.videoStyle || payload.projectAnalysis?.creativeBrief?.visualStyle || payload.projectAnalysis?.visuals?.visualStyle?.label || 'Cinematic';
+
+            // 1. Build Scene Prompt (for Images) - Now async with internal translation
+            const imagePrompt = await buildScenePrompt(payload.description, payload.characters_context || [], videoStyle, payload.projectAnalysis, 'vi', translator);
+
+            
+            // 2. Build Veo Video Prompt (for Video)
+            const videoPrompt = await buildVeoVideoPrompt(payload, payload.all_characters || [], payload.projectAnalysis || payload, 'vi', translator);
+
+            return {
+                imagePrompt: imagePrompt,
+                videoPrompt: videoPrompt
+            };
+        } else if (type === 'character') {
+            const videoStyle = payload.videoStyle || payload.projectAnalysis?.creativeBrief?.visualStyle || payload.projectAnalysis?.visuals?.visualStyle?.label || 'Cinematic';
+            const characterPrompt = await buildCharacterSheetPrompt(payload, videoStyle, payload.projectAnalysis, 'vi', translator);
+            
+            return { characterPrompt };
+
+        } else if (type === 'audio') {
+            const { buildVoiceoverPrompt } = await import('../PromptBuilder.js');
+            const audioPrompt = await buildVoiceoverPrompt(payload.text, payload.characterName, payload.all_characters || [], 'vi', translator);
+            return { audioPrompt };
+        } else if (type === 'music') {
+            const { buildMusicPrompt } = await import('../PromptBuilder.js');
+            const musicPrompt = await buildMusicPrompt(payload.mood, payload.projectAnalysis, 'vi', translator);
+            return { musicPrompt };
+        }
+
+        throw new Error(`Unsupported prompt generation type: ${type}`);
     }
 
     /**

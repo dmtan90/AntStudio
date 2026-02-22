@@ -17,6 +17,7 @@
     "@mediapipe/tasks-vision": "^0.10.32",
     "@meersagor/wavesurfer-vue": "^2.0.2",
     "@pixiv/three-vrm": "^3.4.5",
+    "@popperjs/core": "^2.11.8",
     "@singleway/vueflags": "^0.1.18",
     "@tanstack/vue-query": "^5.92.8",
     "@types/lodash": "^4.17.23",

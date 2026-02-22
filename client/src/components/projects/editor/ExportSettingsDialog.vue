@@ -3,7 +3,7 @@
     :show-close="!isAssembling">
     <template #header>
       <div class="flex items-center gap-3">
-        <div class="h-8 w-1.5 bg-brand-primary rounded-full shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
+        <div class="h-8 w-1.5 bg-blue-500 rounded-full shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
         <h3 class="text-sm font-black uppercase tracking-[0.2em] text-white/90">Export Settings</h3>
       </div>
     </template>
@@ -34,10 +34,7 @@
             <template #label><span
                 class="text-[10px] font-black uppercase tracking-widest text-white/30">Resolution</span></template>
             <el-select v-model="form.resolution" class="w-full high-contrast-select" popper-class="cinematic-dropdown">
-              <el-option label="HD (720p)" value="720p" />
-              <el-option label="Full HD (1080p)" value="1080p" />
-              <el-option label="2K (1440p)" value="2k" />
-              <el-option label="4K (2160p)" value="4k" />
+              <el-option v-for="opt in resolutionOptions" :key="opt.val" :label="opt.label" :value="opt.val" />
             </el-select>
           </el-form-item>
 
@@ -120,7 +117,7 @@
           <el-button @click="visible = false"
             class="cinematic-button !h-10 !px-6 !rounded-xl !bg-white/5 !border-white/10 !text-white/60 hover:!text-white hover:!bg-white/10">CANCEL</el-button>
           <el-button type="primary" @click="handleConfirm"
-            class="cinematic-button !h-10 !px-10 !rounded-xl !bg-brand-primary !text-white border-transparent shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:!scale-[1.02] active:!scale-95 !transition-all">
+            class="cinematic-button !h-10 !px-10 !rounded-xl !bg-blue-600 !text-white border-transparent shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:!scale-[1.02] active:!scale-95 !transition-all">
             <span class="text-[11px] font-black uppercase tracking-[0.2em]">Start Export</span>
           </el-button>
         </template>
@@ -189,6 +186,29 @@ const availableCodecs = computed(() => {
     { label: 'AV1', val: 'AV1' }
   ]
 })
+
+const resolutionOptions = computed(() => {
+  const ratio = props.projectData?.aspectRatio || '16:9';
+  const [rw, rh] = ratio.split(':').map(Number);
+  
+  const baseHeights = {
+    '720p': 720,
+    '1080p': 1080,
+    '2k': 1440,
+    '4k': 2160
+  };
+
+  return Object.entries(baseHeights).map(([key, h]) => {
+    const w = Math.round(h * (rw / rh));
+    let label = '';
+    if (key === '720p') label = `HD (${w}x${h})`;
+    else if (key === '1080p') label = `Full HD (${w}x${h})`;
+    else if (key === '2k') label = `2K (${w}x${h})`;
+    else if (key === '4k') label = `4K (${w}x${h})`;
+    
+    return { label, val: key };
+  });
+});
 
 watch(() => form.format, (newF) => {
   if (newF === 'webm') {

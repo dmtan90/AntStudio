@@ -25,6 +25,22 @@ const fillTemplate = (template: string, variables: Record<string, any>, escapeJs
     });
 }
 
+export interface IPollConfig {
+    endpoint: string
+    method?: 'GET' | 'POST'
+    headers?: Record<string, string>
+    intervalMs?: number
+    timeoutMs?: number
+    statusPath?: string
+    successValues?: string[]
+    failureValues?: string[]
+    responseMapping?: {
+        url?: string
+        b64?: string
+        text?: string
+    }
+}
+
 export interface ITaskConfig {
     endpoint: string
     method?: 'POST' | 'GET'
@@ -36,6 +52,7 @@ export interface ITaskConfig {
         b64?: string
         jobId?: string
     }
+    pollConfig?: IPollConfig
 }
 
 export class CustomAIAdapter {
@@ -193,13 +210,21 @@ export class CustomAIAdapter {
                 return response.data;
             }
 
-            return {
+            const initialResult = {
                 text: mapping.text ? resolvePath(response.data, mapping.text) : undefined,
                 url: mapping.url ? resolvePath(response.data, mapping.url) : undefined,
                 b64: mapping.b64 ? resolvePath(response.data, mapping.b64) : undefined,
                 jobId: mapping.jobId ? resolvePath(response.data, mapping.jobId) : undefined,
                 raw: response.data
             };
+
+            // === ASYNC POLLING: if we got a jobId and pollConfig is set, poll for the real result ===
+            if (initialResult.jobId && config?.pollConfig) {
+                console.log(`[CustomAdapter] Async job detected: ${initialResult.jobId}. Starting poll...`);
+                return await this.pollForResult(String(initialResult.jobId), config.pollConfig, headers);
+            }
+
+            return initialResult;
 
         } catch (error: any) {
             const errorMsg = error.response?.data?.error?.message
@@ -208,6 +233,86 @@ export class CustomAIAdapter {
             console.error(`CustomAIAdapter Error (${taskType}):`, errorMsg);
             throw new Error(errorMsg);
         }
+    }
+
+    /**
+     * Poll a status endpoint until the job is complete or timeout is reached.
+     * Called automatically by executeTask when the initial response contains a jobId
+     * and the task config has a pollConfig defined.
+     */
+    private async pollForResult(jobId: string, pollConfig: IPollConfig, requestHeaders: Record<string, string>): Promise<any> {
+        const {
+            endpoint,
+            method = 'GET',
+            headers: pollHeadersRaw,
+            intervalMs = 3000,
+            timeoutMs = 120000,
+            statusPath,
+            successValues = ['SUCCESS', 'completed', 'done'],
+            failureValues = ['FAILED', 'error', 'failed'],
+            responseMapping
+        } = pollConfig;
+
+        // Build the poll URL, substituting {{jobId}}
+        const pollUrl = fillTemplate(endpoint, { jobId }, false);
+
+        // Merge headers: use request headers as base, then overlay pollConfig-specific headers
+        const headers: Record<string, string> = { ...requestHeaders };
+        if (pollHeadersRaw) {
+            const raw = (typeof pollHeadersRaw === 'string') ? JSON.parse(pollHeadersRaw) : pollHeadersRaw;
+            Object.entries(raw).forEach(([k, v]) => {
+                if (!k.startsWith('$')) headers[k] = String(v).replace('{{apiKey}}', this.apiKey);
+            });
+        }
+
+        const deadline = Date.now() + timeoutMs;
+        let attempts = 0;
+
+        console.log(`[CustomAdapter] Starting poll for jobId=${jobId} → ${pollUrl}`);
+
+        while (Date.now() < deadline) {
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, intervalMs));
+
+            try {
+                const resp = await axios({ method, url: pollUrl, headers });
+                const data = resp.data;
+
+                // Resolve status if a path is configured
+                const status = statusPath ? resolvePath(data, statusPath) : null;
+
+                console.debug(`[CustomAdapter] Poll attempt ${attempts}: jobId=${jobId} status=${status}`);
+
+                // Check for failure
+                if (status && failureValues.includes(String(status))) {
+                    throw new Error(`Job ${jobId} failed with status: ${status}`);
+                }
+
+                // Check for success (by explicit status or absence of statusPath)
+                const isDone = !statusPath || (status && successValues.includes(String(status)));
+
+                if (isDone) {
+                    console.log(`[CustomAdapter] Job ${jobId} completed after ${attempts} attempts.`);
+                    // Extract final result using poll responseMapping
+                    if (responseMapping) {
+                        return {
+                            url: responseMapping.url ? resolvePath(data, responseMapping.url) : undefined,
+                            b64: responseMapping.b64 ? resolvePath(data, responseMapping.b64) : undefined,
+                            text: responseMapping.text ? resolvePath(data, responseMapping.text) : undefined,
+                            raw: data
+                        };
+                    }
+                    return { raw: data };
+                }
+
+            } catch (pollErr: any) {
+                // Re-throw explicit failure errors
+                if (pollErr.message?.includes('failed with status')) throw pollErr;
+                console.warn(`[CustomAdapter] Poll attempt ${attempts} error:`, pollErr.message);
+            }
+        }
+
+        throw new Error(`Job ${jobId} timed out after ${timeoutMs}ms (${attempts} attempts).`);
     }
 
     /**

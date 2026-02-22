@@ -6,6 +6,7 @@ import { useStreamingStore } from '@/stores/streaming';
 import { WebRTCPublisher } from '@/utils/ai/WebRTCPublisher.js';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService.js';
 import { useTranslations } from '@/composables/useTranslations';
+import { audioMixerService } from '@/utils/ai/AudioMixerService';
 import { toast } from 'vue-sonner';
 
 export function useStudioSession(
@@ -18,6 +19,7 @@ export function useStudioSession(
         availableAccounts: Ref<any[]>;
         networkStats: Ref<any>;
         qualityPresets: any;
+        resizeCanvas?: (width: number, height: number) => void;
     }
 ) {
     const { t } = useTranslations();
@@ -37,9 +39,79 @@ export function useStudioSession(
 
     let timerInterval: any = null;
     let infraInterval: any = null;
+    let relayStatsInterval: any = null;
+    let bytesSentInInterval = 0;
+    let lastStatsTime = 0;
+    const effectiveQuality = ref('high');
+    let lastQualitySwitch = 0;
+    const QUALITY_SWITCH_COOLDOWN = 10000;
+
+    watch(() => studioStore.health.bitrate, (bitrate) => {
+        if (options.streamQuality.value !== 'auto' || !isLive.value) return;
+
+        const now = Date.now();
+        if (now - lastQualitySwitch < QUALITY_SWITCH_COOLDOWN) return;
+
+        let targetQuality = effectiveQuality.value;
+        // Thresholds with some hysteresis
+        if (bitrate < 600) targetQuality = 'low';
+        else if (bitrate < 1500) targetQuality = 'medium';
+        else if (bitrate < 3000) targetQuality = 'high';
+        else if (bitrate > 4500) targetQuality = 'ultra';
+
+        if (targetQuality !== effectiveQuality.value) {
+            console.log(`[ABR] Triggering switch: ${effectiveQuality.value} -> ${targetQuality} (Current Bitrate: ${bitrate}kbps)`);
+            applyQualityChange(targetQuality);
+            effectiveQuality.value = targetQuality;
+            lastQualitySwitch = now;
+        }
+    });
+
+    const applyQualityChange = async (qualityKey: string) => {
+        const quality = options.qualityPresets[qualityKey];
+        if (!quality || !isLive.value) return;
+
+        console.log(`[ABR] Applying quality change: ${qualityKey} (${quality.width}x${quality.height}, ${quality.video}kbps)`);
+        effectiveQuality.value = qualityKey;
+
+        // Update Canvas Dimensions
+        if (options.resizeCanvas) {
+             options.resizeCanvas(quality.width, quality.height);
+        } else if (outputCanvas.value) {
+             // Fallback if resizeCanvas not provided (legacy behavior, but risky with worker)
+            outputCanvas.value.width = quality.width;
+            outputCanvas.value.height = quality.height;
+        }
+
+        // 1. Update WebRTC
+        if (rtcPublisher.value) {
+            await rtcPublisher.value.updateConfig({
+                videoBitrate: quality.video,
+                maxFramerate: quality.fps
+            });
+        }
+
+        // 2. Update Relay (Restart Recorder)
+        if (mediaRecorder.value && mediaRecorder.value.state === 'recording') {
+            const sid = currentSessionId.value;
+            if (sid) {
+                console.log("[ABR] Restarting Relay Recorder for resolution/bitrate change");
+                if (mediaRecorder.value) {
+                    mediaRecorder.value.stop();
+                    mediaRecorder.value = null;
+                }
+                if (relayStatsInterval) {
+                    clearInterval(relayStatsInterval);
+                    relayStatsInterval = null;
+                }
+                startRelayStream(sid);
+            }
+        }
+    };
 
     watch(currentSessionId, (id) => {
         if (infraInterval) clearInterval(infraInterval);
+        // if (relayStatsInterval) clearInterval(relayStatsInterval);
         studioStore.currentSessionId = id;
         if (id) {
             if (userStore.token) {
@@ -82,7 +154,14 @@ export function useStudioSession(
                     }
                 }
 
-                const quality = options.qualityPresets[options.streamQuality.value];
+                const qualityKey = options.streamQuality.value === 'auto' ? effectiveQuality.value : options.streamQuality.value;
+                const quality = options.qualityPresets[qualityKey];
+                
+                if (!quality) {
+                    console.error(`[StudioSession] Invalid quality preset: ${qualityKey}`);
+                    throw new Error(`Invalid quality preset: ${qualityKey}`);
+                }
+
                 const res = await streamingStore.startStream({
                     platformAccountIds: options.selectedPlatforms.value,
                     sessionId: currentSessionId.value,
@@ -113,11 +192,17 @@ export function useStudioSession(
                     currentSessionId.value = sessionId;
                     studioStore.currentSessionId = sessionId;
 
+                    console.log(`[StudioSession] Stream started. SessionID: ${sessionId}, Mode: ${mode}`);
+                    
                     if (mode === 'webrtc_ams' && amsAccount) {
+                        console.log("[StudioSession] Initializing WebRTC AMS Publisher");
                         await initWebRTCPublisher(amsAccount);
                     } else if (mode === 'webrtc_relay') {
+                        console.log("[StudioSession] Initializing WebRTC Relay");
                         toast.info("Using Direct Backend Relay (High Performance)");
                         startRelayStream(sessionId);
+                    } else {
+                        console.warn("[StudioSession] Unknown or unsupported mode:", mode);
                     }
 
                     isLive.value = true;
@@ -149,6 +234,11 @@ export function useStudioSession(
                 currentSessionId.value = null;
             }
         } catch (e) { }
+
+        if (relayStatsInterval) {
+            clearInterval(relayStatsInterval);
+            relayStatsInterval = null;
+        }
     };
 
     const cleanupPublishers = () => {
@@ -178,7 +268,8 @@ export function useStudioSession(
             const websocketUrl = `${wsProtocol}//${wsHost}/${appName}/websocket`;
             currentWebRTCUrl.value = websocketUrl;
 
-            const quality = options.qualityPresets[options.streamQuality.value];
+            const qualityKey = options.streamQuality.value === 'auto' ? effectiveQuality.value : options.streamQuality.value;
+            const quality = options.qualityPresets[qualityKey];
             rtcPublisher.value = new WebRTCPublisher({
                 websocketUrl,
                 streamId,
@@ -186,12 +277,13 @@ export function useStudioSession(
                 audioBitrate: quality?.audio,
                 maxFramerate: quality?.fps,
                 onStats: (stats) => {
+					console.log("[useStudioSession] Received WebRTC stats:", stats);
                     options.networkStats.value = stats;
                     studioStore.updateHealth({
                         bitrate: stats.bitrate,
                         rtt: stats.rtt,
                         packetLoss: stats.packetsLost || 0,
-                        fps: stats.framesEncoded > 0 ? 30 : 0
+                        fps: stats.fps || 0
                     });
                 },
                 onDisconnect: () => {
@@ -200,7 +292,23 @@ export function useStudioSession(
             });
 
             const canvasStream = outputCanvas.value!.captureStream(quality?.fps || 30);
-            if (hostStream.value) hostStream.value.getAudioTracks().forEach(track => canvasStream.addTrack(track));
+            
+            // Add host audio to the stream
+            // if (hostStream.value) {
+            //     hostStream.value.getAudioTracks().forEach(track => {
+            //         canvasStream.addTrack(track);
+            //         console.log("[WebRTC] Added host audio track to broadcast stream");
+            //     });
+            // }
+
+            // Add mixed audio (Music + VTubers) to the stream
+            const mixedAudioStream = audioMixerService.getDestinationStream();
+            if (mixedAudioStream) {
+                mixedAudioStream.getAudioTracks().forEach(track => {
+                    canvasStream.addTrack(track);
+                    console.log("[WebRTC] Attached mixed audio track to broadcast stream");
+                });
+            }
 
             await rtcPublisher.value.start(canvasStream);
             toast.success("Connection synchronized. Stream starting...");
@@ -211,25 +319,39 @@ export function useStudioSession(
     const startRelayStream = (sessionId: string) => {
         if (mediaRecorder.value) mediaRecorder.value.stop();
 
-        const quality = options.qualityPresets[options.streamQuality.value];
+        const qualityKey = options.streamQuality.value === 'auto' ? effectiveQuality.value : options.streamQuality.value;
+        const quality = options.qualityPresets[qualityKey];
         const canvasStream = outputCanvas.value!.captureStream(quality?.fps || 30);
 
         // Add host audio to the stream
-        if (hostStream.value) {
-            hostStream.value.getAudioTracks().forEach(track => {
+        // if (hostStream.value) {
+        //     hostStream.value.getAudioTracks().forEach(track => {
+        //         canvasStream.addTrack(track);
+        //         console.log("[Relay] Added host audio track to ingest stream");
+        //     });
+        // }
+
+        // Add mixed audio to the stream
+        const mixedAudioStream = audioMixerService.getDestinationStream();
+        if (mixedAudioStream) {
+            mixedAudioStream.getAudioTracks().forEach(track => {
                 canvasStream.addTrack(track);
-                console.log("[Relay] Added host audio track to ingest stream");
+                console.log("[Relay] Added mixed audio track to ingest stream");
             });
         }
 
-        // Use standard WebM for server compatibility
+        // Use standard WebM with H.264 for server compatibility and performance
+        // This allows the backend to use '-vcodec copy' reducing CPU load
         const recorderOptions = {
-            mimeType: 'video/webm;codecs=vp8,opus',
+            mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=h264') 
+                ? 'video/webm;codecs=h264' 
+                : 'video/webm;codecs=vp8,opus',
             videoBitsPerSecond: quality.video * 1000
         };
 
         try {
             mediaRecorder.value = new MediaRecorder(canvasStream, recorderOptions);
+            console.log(`[Relay] Started MediaRecorder with mimeType: ${mediaRecorder.value.mimeType}`);
         } catch (e) {
             console.warn("[Relay] Preferred mimeType not supported, using default");
             mediaRecorder.value = new MediaRecorder(canvasStream);
@@ -238,12 +360,43 @@ export function useStudioSession(
         mediaRecorder.value.ondataavailable = (e) => {
             if (e.data.size > 0) {
                 ActionSyncService.sendStreamRelay(sessionId, e.data);
+                bytesSentInInterval += e.data.size;
             }
         };
 
-        mediaRecorder.value.start(1000); // 1s chunks
-        startHighlightBuffering(canvasStream);
-        console.log(`[Relay] MediaRecorder started for session: ${sessionId}`);
+        // Start stats interval for relay
+        lastStatsTime = Date.now();
+        bytesSentInInterval = 0;
+        relayStatsInterval = setInterval(() => {
+            const now = Date.now();
+            const deltaTime = (now - lastStatsTime) / 1000; // seconds
+            if (deltaTime > 0) {
+                const bitrateKbps = Math.round((bytesSentInInterval * 8) / (deltaTime * 1000));
+                const latency = ActionSyncService.getLatency();
+
+                console.log(`[Relay Stats] Bitrate: ${bitrateKbps} kbps, RTT: ${latency}ms`);
+                
+                options.networkStats.value = {
+                    bitrate: bitrateKbps,
+                    timestamp: now,
+                    mode: 'relay',
+                    latency
+                };
+
+                studioStore.updateHealth({
+                    bitrate: bitrateKbps,
+                    fps: quality?.fps || 30, // Fallback to preset FPS if real mapping is unavailable
+                    rtt: latency, // Use real socket latency for relay RTT
+                    packetLoss: 0
+                });
+            }
+			lastStatsTime = now;
+			bytesSentInInterval = 0;
+        }, 2000);
+
+        // Start with a small timeslice to force the header chunk out immediately
+        mediaRecorder.value.start(100); 
+        console.log(`[Relay] MediaRecorder started for session: ${sessionId} (100ms slice)`);
     };
 
     const startHighlightBuffering = (canvasStream: MediaStream) => {
@@ -261,6 +414,7 @@ export function useStudioSession(
     onUnmounted(() => {
         clearInterval(timerInterval);
         clearInterval(infraInterval);
+        if (relayStatsInterval) clearInterval(relayStatsInterval);
         cleanupPublishers();
     });
 
@@ -270,6 +424,7 @@ export function useStudioSession(
         liveTime,
         currentSessionId,
         currentWebRTCUrl,
+        effectiveQuality,
         toggleLive,
         stopLive
     };

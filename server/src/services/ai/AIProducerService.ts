@@ -1,14 +1,14 @@
-import { GeminiChatProvider } from '../../utils/ai/providers/GeminiChatProvider.js';
+import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { audiencePredictor } from './AudiencePredictor.js';
 import { aiPerformanceService } from './AIPerformanceService.js';
 import { consensusService } from './ConsensusService.js';
 import { VTuberService } from '../VTuberService.js';
 
 export class AIProducerService {
-    private gemini: GeminiChatProvider;
+    private gemini: GeminiClient;
 
     constructor() {
-        this.gemini = new GeminiChatProvider();
+        this.gemini = new GeminiClient({});
     }
 
     /**
@@ -91,7 +91,12 @@ OUTPUT FORMAT (JSON):
         const userPrompt = "Analyze the studio state and provide the single most important Director Note right now.";
 
         try {
-            const result = await this.gemini.generateJson(userPrompt, 'gemini-2.5-flash', { systemPrompt });
+            const rawResult = await this.gemini.generateContent(userPrompt, 'gemini-2.5-flash', { 
+                systemPrompt,
+                generationConfig: { responseMimeType: "application/json" } 
+            });
+            let result: any = {};
+            try { result = JSON.parse(rawResult.text); } catch(e) {}
 
             // Board Consensus for High-Priority Actions
             if (result.priority === 'high' && studioState.projectId) {

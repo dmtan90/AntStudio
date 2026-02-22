@@ -1,8 +1,11 @@
 import ffmpeg from 'fluent-ffmpeg';
 /* @ts-ignore */
+import NodeMediaServer from 'node-media-server';
+/* @ts-ignore */
 import { systemLogger } from '../utils/systemLogger.js';
 import path from 'path';
 import { PassThrough } from 'stream';
+import { exec } from 'child_process';
 import { User } from '../models/User.js';
 import { GuestToken } from '../models/GuestToken.js';
 import { StreamSessionModel } from '../models/StreamSession.js';
@@ -17,6 +20,7 @@ import crypto from 'crypto';
 import { UserPlatformAccount, SocialPlatform } from '../models/UserPlatformAccount.js';
 import { highlightService } from './HighlightService.js';
 import { redisService } from './RedisService.js';
+import si from 'systeminformation';
 
 export interface StreamTarget {
     url: string;      // RTMP Base URL
@@ -24,6 +28,7 @@ export interface StreamTarget {
     platform: string; // e.g. "youtube"
     accountId?: string;
     externalChatId?: string;
+    externalId?: string;
 }
 
 // Finalized targets
@@ -35,6 +40,8 @@ export interface StreamSession {
     status: 'starting' | 'live' | 'error' | 'stopped';
     startTime?: Date;
     ffmpegProcess?: any;
+    // Store manually managed relay processes (ffmpeg instances)
+    relayProcesses?: any[]; 
     inputStream?: PassThrough;
     guestTokens?: string[];
     config?: {
@@ -51,11 +58,133 @@ import { EventEmitter } from 'events';
 export class StreamingService extends EventEmitter {
     private sessions: Map<string, StreamSession> = new Map();
     private nodeId: string;
+    private nms: any;
     private readonly GUEST_TOKEN_PREFIX = 'antflow:guest:token:';
+    private cachedCodec: string | null = null;
 
     constructor() {
         super();
         this.nodeId = process.env.NODE_ID || `node_${Math.random().toString(36).substring(2, 9)}`;
+        // Defer NMS init to explicit call
+    }
+
+    public async initialize() {
+        systemLogger.info('[StreamingService] Initializing Node Media Server...', 'StreamingService');
+        this.initNodeMediaServer();
+    }
+
+    private initNodeMediaServer() {
+        const config = {
+            rtmp: {
+                port: 1935,
+                chunk_size: 60000,
+                gop_cache: true,
+                ping: 30,
+                ping_timeout: 60
+            },
+            http: {
+                port: 8000,
+                allow_origin: '*'
+            },
+            relay: {
+                ffmpeg: FFMPEG_BIN,
+                tasks: [
+                    {
+                        app: 'live',
+                        mode: 'static',
+                        edge: 'rtmp://127.0.0.1/live',
+                        name: 'relay'
+                    }
+                ]
+            }
+        };
+
+        this.nms = new NodeMediaServer(config);
+        this.nms.run();
+
+        // Phase 92: Global Relay Manager - Direct FFmpeg Implementation
+        this.nms.on('postPublish', (id: any, streamPath: any, args: any) => {
+            try {
+                // Compatible ID extraction
+                let cleanPath = streamPath;
+                if (typeof id === 'object') {
+                    cleanPath = id.streamPath || id.StreamPath || streamPath;
+                    id = id.id; 
+                }
+
+                if (!cleanPath) {
+                    systemLogger.warn(`[NMS-Relay] postPublish received empty streamPath via id ${id}`, 'StreamingService');
+                    return;
+                }
+                
+                // Clean streamPath of any query params just in case
+                cleanPath = cleanPath.split('?')[0];
+                const pathParts = cleanPath.split('/');
+                const sessionId = pathParts[pathParts.length - 1];
+                
+                systemLogger.info(`[NMS-Debug] Extracted sessionId: "${sessionId}" from path: "${cleanPath}"`, 'StreamingService');
+                const session = this.sessions.get(sessionId);
+                
+                if (session) {
+                    if (session.targets && session.targets.length > 0) {
+                        systemLogger.info(`[NMS-Relay] Stream detected for session ${sessionId}. Starting DIRECT FFmpeg push to ${session.targets.length} targets.`, 'StreamingService', JSON.stringify(session.targets));
+                        
+                        // Initialize relay array if needed
+                        if (!session.relayProcesses) {
+                            session.relayProcesses = [];
+                        }
+
+                        // Local Input URL (RTMP Loopback)
+                        const inputUrl = `rtmp://127.0.0.1:1935${cleanPath}`;
+
+                        session.targets.forEach((target, index) => {
+                            const remoteUrl = `${target.url}/${target.key}`;
+                            systemLogger.info(`[NMS-Relay] Spawning Relay Process ${index + 1}: ${sessionId} -> ${target.platform}`, 'StreamingService');
+                            
+                            // Spawn separate FFmpeg process for each target
+                            // Logic: Read from local RTMP -> Copy Codec -> Push to Remote RTMP
+                            const relayCommand = ffmpeg(inputUrl)
+                                .inputOptions([
+                                    '-f flv'
+                                ])
+                                .outputOptions([
+                                    '-c copy', // Pass-through video/audio (very low CPU)
+                                    '-f flv'
+                                ])
+                                .output(remoteUrl)
+                                .on('start', (cmdLine: any) => {
+                                    systemLogger.info(`[NMS-Relay] Relay started for ${target.platform}: ${cmdLine}`, 'StreamingService');
+                                })
+                                .on('error', (err: any, stdout: any, stderr: any) => {
+                                    // Only log real errors, not kill signals
+                                    if (err.message && !err.message.includes('SIGKILL') && !err.message.includes('exited with code 1')) {
+                                        systemLogger.error(`[NMS-Relay] Error relaying to ${target.platform}: ${err.message}`, 'StreamingService');
+                                        systemLogger.debug(`[NMS-Relay] Stderr: ${stderr}`, 'StreamingService');
+                                    } else {
+                                        systemLogger.info(`[NMS-Relay] Relay to ${target.platform} stopped normally.`, 'StreamingService');
+                                    }
+                                })
+                                .on('end', () => {
+                                    systemLogger.info(`[NMS-Relay] Relay to ${target.platform} finished.`, 'StreamingService');
+                                });
+
+                            // Execute and track
+                            relayCommand.run();
+                            session.relayProcesses?.push(relayCommand);
+                        });
+                    } else {
+                        systemLogger.warn(`[NMS-Relay] Session ${sessionId} found but has NO targets. Relay skipped.`, 'StreamingService');
+                    }
+                } else {
+                    const availableSessions = Array.from(this.sessions.keys());
+                    systemLogger.warn(`[NMS-Relay] Session lookup failed for ID: "${sessionId}". Available sessions: ${JSON.stringify(availableSessions)}`, 'StreamingService');
+                }
+            } catch(err){
+                systemLogger.error(`[NMS-Relay] Error in postPublish: ${err}`, 'StreamingService');
+            }
+        });
+
+        systemLogger.info('Node Media Server initialized on port 1935 (RTMP) and 8000 (HTTP)', 'StreamingService');
     }
 
     /**
@@ -108,6 +237,46 @@ export class StreamingService extends EventEmitter {
             systemLogger.error(`AMS Restream Setup Error: ${error.message}`, 'StreamingService');
             // Fallback: Do not fail, just log. System will just stream to AMS and fail to restream.
         }
+    }
+
+    private async getOptimalVideoCodec(): Promise<string> {
+        if (this.cachedCodec) return this.cachedCodec;
+
+        let codec = 'libx264';
+        const platform = process.platform;
+
+        try {
+            const graphics = await si.graphics();
+            const controllers = graphics.controllers;
+            const gpuNames = controllers.map((c: any) => `${c.model || ''} ${c.vendor || ''}`.toLowerCase());
+
+            systemLogger.info(`[GPU-Detect] Detected Hardware: ${gpuNames.join(' | ')}`, 'StreamingService');
+
+            const hasNvidia = gpuNames.some((name: string) => name.includes('nvidia'));
+            const hasIntel = gpuNames.some((name: string) => name.includes('intel'));
+
+            if (platform === 'win32') {
+                if (hasNvidia) {
+                    codec = 'h264_nvenc';
+                } else if (hasIntel) {
+                    codec = 'h264_qsv';
+                }
+            } else if (platform === 'darwin') {
+                codec = 'h264_videotoolbox';
+            } else if (platform === 'linux') {
+                if (hasNvidia) {
+                    codec = 'h264_nvenc';
+                } else {
+                    codec = 'h264_vaapi';
+                }
+            }
+        } catch (err) {
+            systemLogger.warn(`[GPU-Detect] Detection failed, falling back to libx264: ${err}`, 'StreamingService');
+        }
+
+        this.cachedCodec = codec;
+        systemLogger.info(`[Relay-Optimization] Final Codec Selection: ${codec}`, 'StreamingService');
+        return codec;
     }
 
     /**
@@ -175,14 +344,17 @@ export class StreamingService extends EventEmitter {
                     status: 'live',
                     startTime: new Date(),
                     guestTokens: [],
-                    config: options.quality
+                    config: options.quality,
+                    inputStream: new PassThrough() // Create early to buffer ingest chunks
                 };
 
-                this.initRelayFFmpeg(sessionId, relaySession, externalTargets);
+                // CRITICAL: Register session BEFORE awaiting initRelayFFmpeg
+                // so ingestRelayChunk can start writing to the buffer immediately
                 this.sessions.set(sessionId, relaySession);
 
-                // Persist State
-                await this.syncSessionToDB(relaySession, { mode: 'webrtc_relay' });
+                await this.initRelayFFmpeg(sessionId, relaySession, externalTargets);
+
+                this.syncSessionToDB(relaySession, { mode: 'webrtc_relay' }).catch(() => { });
 
                 systemLogger.info(`WebRTC session ${sessionId} initialized with BACKEND RELAY bridge.`, 'StreamingService');
 
@@ -212,11 +384,21 @@ export class StreamingService extends EventEmitter {
 
             command.output(teeOutput);
 
-            command.on('start', (cmd: string) => {
+            command.on('start', async (cmd: string) => {
                 systemLogger.info(`FFmpeg process started: ${cmd}`, 'StreamingService');
                 session.status = 'live';
                 session.startTime = new Date();
-                this.syncSessionToDB(session, { mode: 'file_relay' }).catch(() => { });
+                
+                try {
+                    await this.syncSessionToDB(session, { mode: 'file_relay' });
+                    systemLogger.info(`Session ${session.id} is now LIVE`, 'StreamingService');
+                    
+                    // Start chat and engagement sync workers when session goes live
+                    const { socketServer } = await import('./SocketServer.js');
+                    socketServer.ensureSyncWorkersRunning();
+                } catch (err: any) {
+                    systemLogger.error(`Failed to sync session to DB: ${err.message}`, 'StreamingService');
+                }
             });
 
             command.on('error', (err: Error) => {
@@ -251,12 +433,11 @@ export class StreamingService extends EventEmitter {
     /**
      * Initialize FFmpeg for WebSocket ingestion (Internal Relay)
      */
-    private initRelayFFmpeg(sessionId: string, session: StreamSession, targets: StreamTarget[]) {
-        const rtmpUrls = targets.map(t => `[f=flv]${t.url}/${t.key}`).join('|');
-        const teeOutput = `tee:${rtmpUrls}`;
-
-        // Create a PassThrough stream to act as the ingest pipe
-        session.inputStream = new PassThrough();
+    private async initRelayFFmpeg(sessionId: string, session: StreamSession, targets: StreamTarget[]) {
+        // Use existing inputStream if already created (to preserve buffered chunks)
+        if (!session.inputStream) {
+            session.inputStream = new PassThrough();
+        }
 
         const config = session.config || {
             width: 1280,
@@ -268,37 +449,59 @@ export class StreamingService extends EventEmitter {
 
         systemLogger.info(`[Relay-Config] Session ${sessionId} Quality: ${config.width}x${config.height} @ ${config.videoBitrate}kbps`, 'StreamingService');
 
+        // Determine output: Push to local NMS first
+        const localRtmpUrl = `rtmp://127.0.0.1/live/${sessionId}`;
+
+        // Hardware Acceleration Check (Phase 92) - Cross Platform & Hardware Aware
+        const videoCodec = await this.getOptimalVideoCodec();
+
+        const outputOptions = [
+            '-f flv',
+            '-tune zerolatency',
+            '-flags +global_header',
+            '-max_interleave_delta 0',
+            '-max_muxing_queue_size 1024',
+            // Enforce yuv420p pixel format for RTMP compatibility (fixes nv12 issues with QSV/NVENC)
+            `-vf format=yuv420p,scale=${config.width}:-2`,
+            '-threads 0',
+            '-g 60',
+            `-r ${config.fps}`,
+            `-b:v ${config.videoBitrate}k`,
+            `-maxrate ${config.videoBitrate}k`,
+            `-bufsize ${config.videoBitrate * 2}k`,
+            '-ac 2',
+            '-ar 44100',
+            `-b:a ${config.audioBitrate}k`,
+            '-async 1',                    // Audio sync: resample to match video
+            '-fps_mode cfr'                // Constant frame rate (duplicate/drop frames as needed)
+        ];
+
+        if (videoCodec === 'libx264') {
+            outputOptions.push('-preset ultrafast');
+        } else if (videoCodec === 'h264_nvenc') {
+            outputOptions.push('-preset p1'); // Lowest latency for NVENC
+        } else if (videoCodec === 'h264_vaapi') {
+            outputOptions.push('-preset faster'); // Generic faster for VAAPI
+        } else if (videoCodec === 'h264_qsv') {
+            outputOptions.push('-preset veryfast'); // Veryfast for QSV
+        }
+        
         const command = ffmpeg(session.inputStream)
             .inputOptions([
-                '-analyzeduration 1000000',
-                '-probesize 1000000',
-                '-fflags +genpts+igndts',     // Generate PTS, ignore input DTS
-                '-avoid_negative_ts make_zero', // Shift timestamps to start at 0
-                '-max_delay 0'                  // Minimize muxing delay for live
+                '-analyzeduration 2000000',
+                '-probesize 2000000',
+                '-fflags +genpts+igndts+nobuffer', // Add nobuffer for real-time
+                '-avoid_negative_ts make_zero',
+                '-max_delay 0'
             ])
-            .inputFormat('webm')
-            .videoCodec('libx264')
+            .inputFormat('matroska') // More generic than 'webm'
+            .videoCodec(videoCodec)
             .audioCodec('aac')
-            .outputOptions([
-                '-f flv',
-                '-preset ultrafast',
-                '-tune zerolatency',
-                '-flags +global_header',
-                '-pix_fmt yuv420p',
-                `-vf scale=${config.width}:-2`,
-                '-threads 0',
-                '-g 60',
-                `-r ${config.fps}`,
-                `-b:v ${config.videoBitrate}k`,
-                `-maxrate ${config.videoBitrate}k`,
-                `-bufsize ${config.videoBitrate * 2}k`,
-                '-ac 2',
-                '-ar 44100',
-                `-b:a ${config.audioBitrate}k`,
-                '-async 1',                    // Audio sync: resample to match video
-                '-vsync cfr'                   // Constant frame rate (duplicate/drop frames as needed)
-            ])
-            .output(teeOutput);
+            .outputOptions(outputOptions)
+            .output(localRtmpUrl);
+
+        // Setup Managed Relay via NMS is now handled by the global postPublish listener
+        // in initNodeMediaServer, which triggers as soon as FFmpeg starts pushing to local NMS.
 
         command.on('start', (cmd: string) => {
             systemLogger.info(`Relay FFmpeg process started: ${cmd}`, 'StreamingService');
@@ -307,7 +510,10 @@ export class StreamingService extends EventEmitter {
 
         command.on('stderr', (line: string) => {
             // Log ALL messages from FFmpeg for debugging for now
-            systemLogger.info(`[Relay-Debug] ${line.trim()}`, 'StreamingService');
+            const lineString = line.trim();
+            if(!lineString.startsWith('frame=')){
+                systemLogger.info(`[Relay-Debug] ${lineString}`, 'StreamingService');
+            }
         });
 
         command.on('error', (err: Error) => {
@@ -337,6 +543,20 @@ export class StreamingService extends EventEmitter {
             try {
                 // Ensure we have a proper Node.js Buffer
                 const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+                
+                // Debug WebM Header presence
+                if (buffer.length >= 4) {
+                    const header = buffer.subarray(0, 4).toString('hex');
+                    if (header === '1a45dfa3') {
+                        systemLogger.info(`[Relay-Debug] Valid EBML Header found in chunk for ${sessionId}`, 'StreamingService');
+                    } else {
+                        // Only log if it's the very first chunk we are receiving
+                        if (!session.startTime) {
+                             systemLogger.warn(`[Relay-Debug] Chunk for ${sessionId} does NO START with EBML header: ${header}`, 'StreamingService');
+                        }
+                    }
+                }
+
                 session.inputStream.write(buffer);
                 // Maintain rolling buffer for highlights
                 highlightService.appendChunk(sessionId, buffer);
@@ -458,23 +678,107 @@ export class StreamingService extends EventEmitter {
      */
     public async stopRestream(sessionId: string) {
         const session = this.sessions.get(sessionId);
-        if (session && session.ffmpegProcess) {
+        if (session) {
+            // 1. Stop the Ingest FFmpeg Process (WebRTC -> Internal RTMP)
+            if (session.ffmpegProcess) {
+                try {
+                    // Start by sending SIGKILL to the known process wrapper
+                    session.ffmpegProcess.kill('SIGKILL');
+                    
+                    const proc = session.ffmpegProcess.ffmpegProc;
+                    const pid = proc ? proc.pid : null;
+
+                    // On Windows, use taskkill to ensuring the entire process tree is dead (including child threads)
+                    if (pid) {
+                        if (process.platform === 'win32') {
+                            systemLogger.info(`[Stop] Attempting taskkill for PID ${pid}`, 'StreamingService');
+                            await new Promise<void>((resolve) => {
+                                exec(`taskkill /pid ${pid} /f /t`, (err: any) => {
+                                    if (err && !err.message.includes('not found') && !err.message.includes('no instance(s)')) {
+                                        systemLogger.warn(`[Stop] taskkill error for ${sessionId}: ${err.message}`, 'StreamingService');
+                                    } else {
+                                        systemLogger.info(`[Stop] Force killed process tree for ${sessionId} (PID: ${pid})`, 'StreamingService');
+                                    }
+                                    resolve();
+                                });
+                            });
+                        } else if (process.platform === 'linux' || process.platform === 'darwin') {
+                            systemLogger.info(`[Stop] Attempting pkill for children of PID ${pid}`, 'StreamingService');
+                            await new Promise<void>((resolve) => {
+                                exec(`pkill -9 -P ${pid}`, (err: any) => {
+                                    // pkill returns 1 if no processes matched; we can ignore that
+                                    systemLogger.info(`[Stop] Deep kill (pkill) executed for ${sessionId}`, 'StreamingService');
+                                    resolve();
+                                });
+                            });
+                        }
+                    }
+                    systemLogger.info(`[Stop] Killed Ingest FFmpeg process for ${sessionId} (SIGKILL)`, 'StreamingService');
+                } catch (e) {
+                    systemLogger.warn(`[Stop] Failed to kill Ingest FFmpeg: ${e}`, 'StreamingService');
+                }
+            }
+
+            // 2. Stop Manual FFmpeg Relay Processes (Push to YouTube/Facebook)
+            if (session.relayProcesses && session.relayProcesses.length > 0) {
+                systemLogger.info(`[Stop] Stopping ${session.relayProcesses.length} relay processes for ${sessionId}`, 'StreamingService');
+                
+                for (const relayProc of session.relayProcesses) {
+                    try {
+                        relayProc.kill('SIGKILL');
+                        
+                        // Deep kill on Windows
+                        const pid = relayProc.ffmpegProc ? relayProc.ffmpegProc.pid : null;
+                        if (pid) {
+                            if (process.platform === 'win32') {
+                                exec(`taskkill /pid ${pid} /f /t`, (err: any) => {
+                                    if (!err) systemLogger.info(`[Stop] Relay process ${pid} killed via taskkill.`, 'StreamingService');
+                                });
+                            } else if (process.platform === 'linux' || process.platform === 'darwin') {
+                                exec(`pkill -9 -P ${pid}`, (err: any) => {
+                                    if (!err) systemLogger.info(`[Stop] Relay process ${pid} children killed via pkill.`, 'StreamingService');
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        systemLogger.warn(`[Stop] Error killing relay process: ${e}`, 'StreamingService');
+                    }
+                }
+                session.relayProcesses = [];
+            }
+
+            // 3. Stop NMS Session (The internal RTMP session)
+            try {
+                // NMS session shutdown - iterate to find by id because getSession might rely on internal ID
+                // NMS sessions is a Map<string, any>
+                const nmsSessions = this.nms.sessions; 
+                if (nmsSessions && nmsSessions.size > 0) {
+                    nmsSessions.forEach((s: any, key: string) => {
+                        // Check if this session matches our stream ID (often the last part of streamPath or name)
+                        if (s.streamPath === `/live/${sessionId}` || s.id === sessionId || (s.id && s.id.id === sessionId)) {
+                            systemLogger.info(`[Stop] Stopping NMS Session ${key} for stream ${sessionId}`, 'StreamingService');
+                            s.stop();
+                        }
+                    });
+                }
+            } catch (e) { 
+                systemLogger.error(`[Stop] Error clearing NMS sessions: ${e}`, 'StreamingService');
+            }
+
             // Calculate Duration
             const endTime = new Date();
             const startTime = session.startTime || endTime;
             const durationMs = endTime.getTime() - startTime.getTime();
             const durationMinutes = Math.floor(durationMs / (1000 * 60));
 
-            // Deduction: 1 Credit per 60 minutes (Minimum 1 credit)
+            // Deduction logic...
             const creditsToDeduct = Math.max(1, Math.ceil(durationMinutes / 60));
 
-            session.ffmpegProcess.kill('SIGKILL');
             session.status = 'stopped';
-
             systemLogger.info(`Stopped stream ${sessionId}. Duration: ${durationMinutes} mins. Deducting ${creditsToDeduct} credits.`, 'StreamingService');
 
             // Enforce Deduction
-            await creditManager.deductCredits(
+             await creditManager.deductCredits(
                 session.userId,
                 'streaming',
                 creditsToDeduct,
@@ -515,7 +819,8 @@ export class StreamingService extends EventEmitter {
                     key: t.key,
                     platform: t.platform,
                     accountId: t.accountId,
-                    externalChatId: t.externalChatId
+                    externalChatId: t.externalChatId,
+                    externalId: t.externalId
                 })),
                 startTime: session.startTime || new Date()
             };

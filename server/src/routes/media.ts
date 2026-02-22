@@ -87,6 +87,8 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 20;
         const purpose = req.query.purpose as string;
+        const search = req.query.search as string;
+        const contentType = req.query.contentType as string;
 
         const filter: any = { userId: req.user!.userId };
         if (purpose) {
@@ -95,6 +97,14 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
             } else {
                 filter.purpose = purpose;
             }
+        }
+
+        if (search) {
+            filter.fileName = { $regex: new RegExp(search, 'i') };
+        }
+
+        if (contentType) {
+            filter.contentType = { $regex: new RegExp(`^${contentType}`, 'i') };
         }
 
         const skip = (page - 1) * limit;
@@ -975,18 +985,31 @@ router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) =
         if (fetchLyrics) {
             try {
                 // 1. Try fetching official lyrics from YouTube first (most accurate)
-                const preferredLang = lyricsLanguage || 'vi,en';  // Default to vi,en if not specified
-                const officialLyrics = await AudioExtractionService.getLyrics(videoId, preferredLang);
-                
-                if (officialLyrics) {
-                    lyrics = officialLyrics;
-                    console.log(`[MediaRoute] Found official lyrics for ${videoId}`);
-                } else if (songTitle) {
-                    // 2. Fallback to AI generation if no official lyrics found
-                    console.log(`[MediaRoute] No official lyrics, attempting AI generation for ${songTitle}`);
+                const preferredLang = lyricsLanguage || 'en';  // Default to en if not specified
+                if(songTitle){
                     const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-                    lyrics = await LyricsService.searchLyrics(songTitle, metadata.channelTitle, youtubeUrl);
+                    lyrics = await LyricsService.searchLyrics(songTitle, metadata.channelTitle, youtubeUrl, preferredLang);
+                    if(lyrics){
+                        console.log(`[MediaRoute] Found Gemini lyrics for ${videoId}`);
+                    }
                 }
+                else{
+                    const officialLyrics = await AudioExtractionService.getLyrics(videoId, preferredLang);
+                    if (officialLyrics) {
+                        lyrics = officialLyrics;
+                        console.log(`[MediaRoute] Found official lyrics for ${videoId}`);
+                    }
+                }
+                
+                // if (officialLyrics) {
+                //     lyrics = officialLyrics;
+                //     console.log(`[MediaRoute] Found official lyrics for ${videoId}`);
+                // } else if (songTitle) {
+                //     // 2. Fallback to AI generation if no official lyrics found
+                //     console.log(`[MediaRoute] No official lyrics, attempting AI generation for ${songTitle}`);
+                //     const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                //     lyrics = await LyricsService.searchLyrics(songTitle, metadata.channelTitle, youtubeUrl, preferredLang);
+                // }
 
                 if (lyrics) {
                     lyricsLines = await LyricsService.syncLyrics(lyrics, metadata.duration);

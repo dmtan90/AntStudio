@@ -2,6 +2,8 @@ import { ref, type Ref, reactive, onUnmounted, watch, onMounted } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { QRCodeGenerator } from '@/utils/ai/QRCodeGenerator';
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
+import { useMediaStore } from '@/stores/media';
+import { getFileUrl } from '@/utils/api';
 // @ts-ignore
 import StudioWorker from '@/workers/StudioRender.worker?worker';
 
@@ -21,10 +23,12 @@ export function useStudioCanvas(
         useWebGL?: Ref<boolean>;
         screenVideo?: Ref<HTMLVideoElement | null>;
         activeMediaVideo?: Ref<HTMLVideoElement | null>;
+        cinematicVideo?: Ref<HTMLVideoElement | null>;
     },
     overlayCanvas?: Ref<HTMLCanvasElement | null>
 ) {
     const studioStore = useStudioStore();
+    const mediaStore = useMediaStore();
     const frameCount = ref(0);
     const lastRenderTime = ref(0);
     const transitionStartTime = ref(0);
@@ -185,6 +189,12 @@ export function useStudioCanvas(
             bridgeStream('media', options.activeMediaVideo.value);
         }
 
+        // 1.7 Bridge Cinematic Stage
+        if (options.cinematicVideo?.value) {
+            currentActiveIds.add('cinematic');
+            bridgeStream('cinematic', options.cinematicVideo.value);
+        }
+
         // 2. Remove what is no longer active
         bridgedStreams.forEach(id => {
             if (!currentActiveIds.has(id)) {
@@ -227,11 +237,34 @@ export function useStudioCanvas(
         () => sourceVideo.value,
         () => options.screenVideo?.value,
         () => options.activeMediaVideo?.value,
+        () => options.cinematicVideo?.value,
         () => studioStore.isScreenSharing,
         () => studioStore.activeMediaId
     ], () => {
         if (isWorkerEnabled) checkNewStreams();
     }, { deep: true, immediate: true });
+
+    // Phase 93: Sync lyrics to worker
+    watch([
+        () => mediaStore.performanceLyrics,
+        () => mediaStore.performanceLyricsCurrentTime,
+        () => mediaStore.performingVTuberId,
+        () => mediaStore.performanceLyricsVisible,
+        () => mediaStore.performanceLyricsStyle
+    ], ([lyrics, currentTime, vtuberId, visible, style]) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({
+                type: 'update-lyrics',
+                payload: {
+                    lyrics: JSON.parse(JSON.stringify(lyrics)),
+                    currentTime,
+                    performingVTuberId: vtuberId,
+                    visible,
+                    style
+                }
+            });
+        }
+    }, { immediate: true });
 
     // Handle Background Asset Changes
     let bgVideoElement: HTMLVideoElement | null = null;
@@ -255,7 +288,7 @@ export function useStudioCanvas(
             try {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
-                img.src = url;
+                img.src = getFileUrl(url);
                 await new Promise((resolve, reject) => {
                     img.onload = resolve;
                     img.onerror = reject;
@@ -272,23 +305,43 @@ export function useStudioCanvas(
         updateBackgroundAsset(url);
     }, { immediate: true });
 
-    // Handle Brand Logo Changes (Phase 18)
-    const updateBrandLogo = async (url: string | null) => {
-        if (!isWorkerEnabled || !worker || !url) return;
-        try {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = url;
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
+    // Chroma Key
+    watch(() => studioStore.visualSettings.chromaKey, (newSettings) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({ 
+                type: 'update-chroma', 
+                payload: JSON.parse(JSON.stringify(newSettings)) 
             });
-            const bitmap = await createImageBitmap(img);
-            worker.postMessage({ type: 'update-brand-logo', payload: { logoData: bitmap } }, [bitmap]);
-            console.log('[Studio Canvas] Brand logo updated');
-        } catch (e) {
-            console.error("[Studio Canvas] Brand logo load failed:", e);
         }
+    }, { deep: true, immediate: true });
+
+    // Lens Profile (LUT)
+    const updateLUT = async (profileId: string) => {
+        if (!isWorkerEnabled || !worker) return;
+
+        if (profileId === 'none') {
+            worker.postMessage({ type: 'update-lut', payload: { enabled: false } });
+            return;
+        }
+
+        // Send profile name to worker (Internal Generation)
+        worker.postMessage({ type: 'update-lut', payload: { enabled: true, profile: profileId } });
+    };
+
+    watch(() => studioStore.visualSettings.lensProfile, (newProfile) => {
+        updateLUT(newProfile);
+    });
+    
+    // Also watch activeFilter for backward compatibility if settings uses that
+    watch(() => studioStore.visualSettings.activeFilter, (newFilter) => {
+        if (newFilter !== 'none') updateLUT(newFilter);
+    });
+
+    // Handle Brand Logo Changes (Phase 18)
+    const updateBrandLogo = (url: string) => {
+        if (!isWorkerEnabled || !worker) return;
+        worker.postMessage({ type: 'update-brand-logo', payload: { logoUrl: url } });
+        console.log('[Studio Canvas] Brand logo URL updated:', url);
     };
 
     watch(() => studioStore.visualSettings.branding.logoUrl, (url) => {
@@ -423,6 +476,9 @@ export function useStudioCanvas(
                             }
                         });
                     }
+                    
+                    // Phase 93: Global Lyrics Burn-in removed from overlay canvas to prevent duplication
+                    // Per-slot lyrics are handled in drawActualRegion
 
                     renderCommerceOverlays(ctx, canvas);
                     if (!hasNotifications) overlayDirty.value = false;
@@ -593,6 +649,21 @@ export function useStudioCanvas(
             }
         } else if (region.source === 'host') {
             renderNameTag(ctx, 'HOST', x, y, w, h);
+        }
+
+        // Phase 93: Lyrics Rendering per-slot
+        const guestId = mediaStore.performingVTuberId;
+        if (guestId && mediaStore.performanceLyricsVisible) {
+            let isTarget = false;
+            if (region.source === 'host' && guestId === 'host') isTarget = true;
+            else if (region.source.startsWith('guest')) {
+                const slotGuest = studioStore.guestSlotMap[region.source];
+                if (slotGuest && slotGuest.uuid === guestId) isTarget = true;
+            }
+
+            if (isTarget) {
+                renderLyricsInRegion(ctx, x, y, w, h);
+            }
         }
     };
 
@@ -828,6 +899,52 @@ export function useStudioCanvas(
         return null;
     };
 
+    const renderLyricsInRegion = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => {
+        const lyrics = mediaStore.performanceLyrics;
+        const currentTime = mediaStore.performanceLyricsCurrentTime;
+        if (!lyrics || lyrics.length === 0) return;
+
+        // Find current line
+        const currentLine = lyrics.find(l => currentTime >= l.startTime && currentTime <= l.endTime);
+        if (!currentLine) return;
+
+        ctx.save();
+        
+        // Improved Scaling: Ensure text fits within region width
+        let fontSize = Math.max(16, h * 0.08); // Initial font size: 8% of height
+        ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
+        
+        const maxTextW = w * 0.9; // 90% of region width
+        let textMetrics = ctx.measureText(currentLine.text);
+        
+        if (textMetrics.width > maxTextW) {
+            fontSize = fontSize * (maxTextW / textMetrics.width);
+            ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
+        }
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+
+        // Improved Positioning: Above the name tag to avoid overlap
+        // Name tag is at y + h - 24 - 10 = y + h - 34
+        // We'll place lyrics at y + h - 40 to stay clear
+        const lyricY = y + h - 40;
+        const lyricX = x + w / 2;
+
+        // Draw shadow/outline for readability
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#000000';
+        ctx.strokeText(currentLine.text, lyricX, lyricY);
+
+        // Draw text
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(currentLine.text, lyricX, lyricY);
+
+        ctx.restore();
+    };
+
     const drawImageCover = (ctx: CanvasRenderingContext2D, img: any, x: number, y: number, w: number, h: number, useFaceFraming = false) => {
         const imgW = img instanceof HTMLVideoElement ? img.videoWidth : img.width;
         const imgH = img instanceof HTMLVideoElement ? img.videoHeight : img.height;
@@ -945,15 +1062,49 @@ export function useStudioCanvas(
         }
     };
 
+    const resizeCanvas = (width: number, height: number) => {
+        if (worker && options.streamQuality) {
+            // If worker is active, notify it
+            worker.postMessage({ type: 'resize', payload: { width, height } });
+        } else {
+            // Fallback for non-worker mode
+            if (outputCanvas.value) {
+                outputCanvas.value.width = width;
+                outputCanvas.value.height = height;
+            }
+        }
+
+        // Overlay canvas is always on main thread
+        if (overlayCanvas?.value) {
+            overlayCanvas.value.width = width;
+            overlayCanvas.value.height = height;
+        }
+    };
+
     onUnmounted(() => {
         stopRendering();
         liveAIEngine?.close();
     });
 
+    const setCinematicMode = (enabled: boolean) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({ type: 'set-cinematic-mode', payload: { enabled } });
+        }
+    };
+
+    const setSubtitles = (text: string) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({ type: 'set-subtitles', payload: { text } });
+        }
+    };
+
     return {
         frameCount,
         audioLevel,
         startRendering,
-        stopRendering
+        stopRendering,
+        resizeCanvas,
+        setCinematicMode,
+        setSubtitles
     };
 }

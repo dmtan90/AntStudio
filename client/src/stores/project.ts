@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import api from '@/utils/api.js'
 import { useTranslations } from '@/composables/useTranslations'
 import { toast } from 'vue-sonner'
+const GENERATE_ASSET_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 export const useProjectStore = defineStore('project', () => {
     const { t } = useTranslations()
@@ -125,7 +126,7 @@ export const useProjectStore = defineStore('project', () => {
     async function getPreview(inputData: any, projectId?: string) {
         isGenerating.value = true
         try {
-            const url = projectId ? `/projects/${projectId}/preview` : '/projects/preview'
+            const url = projectId ? `/projects/${projectId}/analysis` : '/projects/preview'
             const res : any = await api.post(url, inputData)
             return res.data
         } catch (error) {
@@ -184,7 +185,9 @@ export const useProjectStore = defineStore('project', () => {
 
     async function generateStoryboardAssetsBatch(id: string) {
         try {
-            const res : any = await api.post(`/projects/${id}/storyboard/generate-assets`)
+            const res : any = await api.post(`/projects/${id}/storyboard/generate-assets`, {}, {
+                timeout: GENERATE_ASSET_TIMEOUT
+            });
             toast.success(t('projects.editor.storyboard.batchStartSuccess') || 'Batch generation started')
             return res.data
         } catch (error) {
@@ -193,9 +196,34 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    async function generateMusic(id: string, options: any = {}) {
+        try {
+            isGenerating.value = true;
+            const res: any = await api.post(`/projects/${id}/assets/generate`, {
+                type: 'music',
+                ...options
+            }, {
+                timeout: GENERATE_ASSET_TIMEOUT
+            });
+            
+            // Re-fetch project to get updated musics
+            await fetchProject(id);
+            
+            toast.success(t('projects.editor.music.generated') || 'Background music generated');
+            return res.data;
+        } catch (error) {
+            handleError(error);
+            throw error;
+        } finally {
+            isGenerating.value = false;
+        }
+    }
+
     async function generateAsset(id: string, assetData: any) {
         try {
-            const res : any = await api.post(`/projects/${id}/assets/generate`, assetData)
+            const res : any = await api.post(`/projects/${id}/assets/generate`, assetData, {
+                timeout: GENERATE_ASSET_TIMEOUT
+            })
             return res.data
         } catch (error) {
             handleError(error)
@@ -213,19 +241,19 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
-    async function assembleVideo(id: string) {
-        try {
-            const res : any = await api.post(`/projects/${id}/assemble-video`)
-            if (res.data?.finalVideo && currentProject.value) {
-                currentProject.value.finalVideo = res.data.finalVideo
-                currentProject.value.status = 'completed'
-            }
-            return res.data
-        } catch (error) {
-            handleError(error)
-            throw error
-        }
-    }
+    // async function assembleVideo(id: string) {
+    //     try {
+    //         const res : any = await api.post(`/projects/${id}/assemble-video`)
+    //         if (res.data?.publish && currentProject.value) {
+    //             currentProject.value.publish = res.data.publish
+    //             currentProject.value.status = 'completed'
+    //         }
+    //         return res.data
+    //     } catch (error) {
+    //         handleError(error)
+    //         throw error
+    //     }
+    // }
 
     // Set project data directly
     function setProject(data: any) {
@@ -240,7 +268,6 @@ export const useProjectStore = defineStore('project', () => {
         if (asset) {
             asset.status = status
             if (data?.s3Key) asset.s3Key = data.s3Key
-            if (data?.url) asset.url = data.url
         }
 
         if (currentProject.value?.chatHistory) {
@@ -316,7 +343,8 @@ export const useProjectStore = defineStore('project', () => {
             const res : any = await api.post(`/projects/${id}/assets/upload`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
-                }
+                },
+                timeout: GENERATE_ASSET_TIMEOUT
             })
 
             // Refresh project to get updated data
@@ -335,7 +363,7 @@ export const useProjectStore = defineStore('project', () => {
             const res : any = await api.post(`/projects/${id}/segments/${segmentId}/generate-voiceover`, options)
             // Update local segment
             if (currentProject.value?.storyboard?.segments) {
-                const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId)
+                const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId || s.order?.toString() === segmentId?.toString())
                 if (segment) {
                     segment.generatedAudio = res.data.generatedAudio
                 }
@@ -352,7 +380,7 @@ export const useProjectStore = defineStore('project', () => {
             const res : any = await api.post(`/projects/${id}/segments/${segmentId}/captions`)
             // Update local segment
             if (currentProject.value?.storyboard?.segments) {
-                const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId)
+                const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId || s.order?.toString() === segmentId?.toString())
                 if (segment) {
                     segment.captions = res.data.captions
                 }
@@ -382,9 +410,9 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
-    async function uploadFinalVideo(id: string, formData: FormData, onProgress?: (percent: number) => void) {
+    async function publishProject(id: string, formData: FormData, onProgress?: (percent: number) => void) {
         try {
-            const res : any = await api.post(`/projects/${id}/upload-final-video`, formData, {
+            const res : any = await api.post(`/projects/${id}/publish`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 onUploadProgress: (progressEvent) => {
                     if (onProgress) {
@@ -429,6 +457,16 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    async function generatePrompts(id: string, type: 'segment' | 'character', payload: any) {
+        try {
+            const res: any = await api.post(`/prompts/generate`, { type, payload })
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     return {
         projects,
         currentProject,
@@ -455,18 +493,20 @@ export const useProjectStore = defineStore('project', () => {
         uploadAsset,
         generateVoiceover,
         generateCaptions,
-        assembleVideo,
+        // assembleVideo,
         setProject,
         updateVisualAssetStatus,
         syncAssetToElements,
         syncAllAssets,
         generateStoryboardAssetsBatch,
+        generateMusic,
         editorMode,
         startStreaming,
         addStreamEndpoint,
         saveToVoD,
         uploadMedia,
-        uploadFinalVideo,
-        trackEngagement
+        publishProject,
+        trackEngagement,
+        generatePrompts
     }
 })

@@ -5,20 +5,22 @@ self.onmessage = async (event: MessageEvent<any>) => {
     const { project, options, token } = event.data;
 
     try {
-        console.log("[Worker] Initializing Accelerated Video Assembly...");
+        console.log("[Worker] Initializing Accelerated Video Assembly...", project, options, token);
 
         const segments = project.pages || project.storyboard?.segments || [];
         if (segments.length === 0) throw new Error("No segments to assemble");
 
-        const resolutionMap: Record<string, { w: number, h: number }> = {
-            '720p': { w: 1280, h: 720 },
-            '1080p': { w: 1920, h: 1080 },
-            '2k': { w: 2560, h: 1440 },
-            '4k': { w: 3840, h: 2160 }
+        const ratioStr = project.aspectRatio || '16:9';
+        const [rw, rh] = ratioStr.split(':').map(Number);
+        
+        const baseHeights: Record<string, number> = {
+            '720p': 720,
+            '1080p': 1080,
+            '2k': 1440,
+            '4k': 2160
         };
-        const res = resolutionMap[options.resolution] || { w: 1920, h: 1080 };
-        const width = res.w;
-        const height = res.h;
+        const height = baseHeights[options.resolution] || 1080;
+        const width = Math.round(height * (rw / rh));
         const fps = options.fps || 30;
 
         // Normalize duration calculation for Pages (ms) vs Segments (s)
@@ -87,7 +89,8 @@ self.onmessage = async (event: MessageEvent<any>) => {
         }
 
         let bgmBlob: Blob | null = null;
-        const bgmKey = project.backgroundMusic?.s3Key;
+        const primaryMusic = project.musics?.[0];
+        const bgmKey = primaryMusic?.s3Key;
         if (bgmKey) {
             const bgmUrl = bgmKey.startsWith('http') ? bgmKey : `/api/s3/${encodeURIComponent(bgmKey)}`;
             const fetchOptions: RequestInit = {};
@@ -258,7 +261,7 @@ self.onmessage = async (event: MessageEvent<any>) => {
                     // Also if rawSeg has `voiceUrl` or `videoUrl` that might have sound.
                     // Strict Ducking: Duck if there is a generated Audio Blob.
                     const shouldDuck = !!segData.audioBlob || (rawSeg.voiceover && rawSeg.voiceover.length > 0);
-                    const vol = shouldDuck ? 0.1 : (project.backgroundMusic.volume || 0.3);
+                    const vol = shouldDuck ? 0.1 : (primaryMusic?.volume || 0.3);
 
                     // Calculate Duration of this segment in the timeline
                     // Note: This must match the video segment duration exactly
@@ -312,7 +315,7 @@ self.onmessage = async (event: MessageEvent<any>) => {
 
                 const voiceSegmentCount = segments.filter((s: any) => !!s.generatedAudio || !!s.voiceover).length;
                 const isTalkHeavy = voiceSegmentCount / segments.length > 0.3; // If > 30% has voice
-                const smartVolume = isTalkHeavy ? 0.1 : (project.backgroundMusic.volume || 0.3);
+                const smartVolume = isTalkHeavy ? 0.1 : (primaryMusic?.volume || 0.3);
 
                 const audioClip = new AudioClip(bgmBlob.stream(), {
                     volume: smartVolume,
@@ -351,19 +354,13 @@ self.onmessage = async (event: MessageEvent<any>) => {
             };
         };
 
-        // 1. Render Full Video
+        // Render Full Video
         console.log("[Worker] Rendering Full Video...");
         const mainResult = await runAssembly();
-
-        // 2. Render 5s Review Clip (Faster than FFmpeg.wasm)
-        console.log("[Worker] Rendering Review Clip...");
-        self.postMessage({ type: 'progress', progress: 0.9, status: 'Generating review clip...' });
-        const reviewResult = await runAssembly(5, true);
 
         self.postMessage({
             type: 'complete',
             blob: mainResult.blob,
-            reviewBlob: reviewResult.blob,
             duration: mainResult.duration,
             progress: 1
         });

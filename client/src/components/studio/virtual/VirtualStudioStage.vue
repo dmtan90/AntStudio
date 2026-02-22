@@ -39,7 +39,8 @@ if (typeof window !== 'undefined') {
 }
 
 const props = defineProps<{
-    guests: any[]; // Array of Guest objects with persona and audio information
+    guests: any[]; 
+    guestVideos: Record<string, HTMLVideoElement>;
     environmentId: string;
     debug?: boolean;
 }>();
@@ -50,7 +51,8 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 let app: PIXI.Application | null = null;
 let backgroundSprite: PIXI.Sprite | null = null;
 let particleContainer: PIXI.Container | null = null;
-const models = new Map<string, Live2DModel>();
+const videoSprites = new Map<string, PIXI.Sprite>();
+const models = new Map<string, any>(); // Retain map for potential future native needs, currently unused
 const particles: any[] = [];
 const studioStore = useStudioStore();
 const targetLookX = ref(0); // Normalized -1.0 to 1.0 (left to right)
@@ -181,57 +183,58 @@ const initParticles = (type: string) => {
 const syncGuests = async () => {
     if (!app) return;
 
-    const activeIds = new Set(props.guests.map(g => g.id));
+    const activeIds = new Set(props.guests.map(g => g.uuid));
 
-    // Remove old guests
-    for (const [id, model] of models.entries()) {
+    // 1. Remove orphaned video sprites
+    for (const [id, sprite] of videoSprites.entries()) {
         if (!activeIds.has(id)) {
-            app.stage.removeChild(model as any);
-            model.destroy({ children: true });
-            models.delete(id);
+            app.stage.removeChild(sprite);
+            sprite.destroy();
+            videoSprites.delete(id);
         }
     }
 
-    // Add/Update current guests
+    // 2. Add/Update video sprites for all VTubers
     for (let i = 0; i < props.guests.length; i++) {
         const guest = props.guests[i];
-        if (!models.has(guest.id)) {
-            await loadGuestModel(guest, i);
-        } 
+        const guestId = guest.uuid || guest.id; // Fallback to id if uuid is missing
+        const video = props.guestVideos[guestId];
         
-        const model = models.get(guest.id);
-        if (model) {
-            // Respect videoEnabled
-            model.visible = guest.videoEnabled !== false;
-            // Update positioning
-            updateGuestPosition(guest.id, i);
+        if (!video) {
+            console.log(`[VirtualStudioStage] No video found for guest: ${guestId}`);
+            continue;
         }
+
+        let sprite = videoSprites.get(guestId);
+        if (!sprite) {
+            console.log(`[VirtualStudioStage] Creating sprite for guest: ${guestId}`, {
+                src: video.srcObject instanceof MediaStream ? video.srcObject.id : 'none',
+                readyState: video.readyState,
+                videoWidth: video.videoWidth
+            });
+
+            // Create new video sprite
+            // We use PIXI.BaseTexture to have more control if needed
+            const texture = PIXI.Texture.from(video);
+            sprite = new PIXI.Sprite(texture);
+            sprite.anchor.set(0.5, 1); // Anchor at bottom center
+            
+            videoSprites.set(guestId, sprite);
+            app.stage.addChild(sprite);
+        } else if ((sprite.texture.baseTexture.resource as any).source !== video) {
+            console.log(`[VirtualStudioStage] Updating video source for guest: ${guestId}`);
+            const texture = PIXI.Texture.from(video);
+            sprite.texture = texture;
+        }
+
+        sprite.visible = guest.videoEnabled !== false;
+        updateVideoPosition(guestId, i);
     }
 };
 
-
-const loadGuestModel = async (guest: any, index: number) => {
-    if (!app || !guest.persona?.visualIdentity?.live2dModelUrl) return;
-
-    try {
-        const url = getFileUrl(guest.persona.visualIdentity.live2dModelUrl);
-        const model = await Live2DModel.from(url, { autoHitTest: true, autoFocus: false });
-        
-        // Basic Setup
-        setupModelNaturalBehavior(model);
-        
-        models.set(guest.id, model);
-        app.stage.addChild(model as any);
-        
-        updateGuestPosition(guest.id, index);
-    } catch (e) {
-        console.error(`[VirtualStudioStage] Failed to load model for ${guest.name}:`, e);
-    }
-};
-
-const updateGuestPosition = (guestId: string, index: number) => {
-    const model = models.get(guestId);
-    if (!model || !app) return;
+const updateVideoPosition = (guestId: string, index: number) => {
+    const sprite = videoSprites.get(guestId);
+    if (!sprite || !app) return;
 
     const width = app.screen.width;
     const height = app.screen.height;
@@ -240,52 +243,37 @@ const updateGuestPosition = (guestId: string, index: number) => {
     const slotPoints = [0.2, 0.4, 0.6, 0.8];
     const x = slotPoints[index % 4] * width;
 
-    // Relative Scaling
-    const bounds = model.getBounds();
+    // Scale to fit height with some padding
     const padding = 0.8;
-    const scale = (height / bounds.height) * padding;
+    const spriteHeight = sprite.texture.height || 1080; // Fallback to 1080 if not loaded
+    const scale = (height / spriteHeight) * padding;
     
-    model.scale.set(scale);
-    model.anchor.set(0.5, 1); // Anchor at bottom center
-    model.x = x;
-    model.y = height + 20; // Slight overlap with bottom
+    sprite.scale.set(scale);
+    sprite.x = x;
+    sprite.y = height + 20; // Slight overlap with bottom
 };
 
-const setupModelNaturalBehavior = (model: Live2DModel) => {
-    // Disable auto-tracking to allow us to control eyes spatially
-    (model as any).autoInteract = false;
-    
-    // Add custom ticker for natural idle/blink
-    let blinkTimer = Math.random() * 100;
-    let blinkState = 1.0;
-    let swayX = Math.random() * 100;
 
-    const ticker = () => {
-        const core = (model.internalModel as any).coreModel;
-        
-        // Blink
-        blinkTimer--;
-        if (blinkTimer <= 0) {
-            blinkState = blinkState === 1.0 ? 0.0 : 1.0;
-            blinkTimer = blinkState === 0.0 ? 5 : 120 + Math.random() * 200;
-        }
-        
-        const eyeL = core.getParameterIndex('ParamEyeOpenL');
-        const eyeR = core.getParameterIndex('ParamEyeOpenR');
-        if (eyeL >= 0) core.setParameterValueById(eyeL, blinkState);
-        if (eyeR >= 0) core.setParameterValueById(eyeR, blinkState);
+// Video Positioning & Spatial Interaction
+const updateLoop = (delta: number) => {
+    // Update Camera (Phase 64)
+    updateCamera(delta);
 
-        // Subtle Sway
-        swayX += 0.02;
-        const angleX = core.getParameterIndex('ParamAngleX');
-        if (angleX >= 0) {
-            const current = core.getParameterValueById(angleX);
-            core.setParameterValueById(angleX, current + Math.sin(swayX) * 0.1);
-        }
-    };
+    // Update Particles
+    particles.forEach(p => {
+        p.sprite.x += p.vx * delta;
+        p.sprite.y += p.vy * delta;
+        p.sprite.rotation += p.va * delta;
 
-    (model as any)._customTicker = ticker;
-    app?.ticker.add(ticker);
+        // Wrap around
+        if (p.sprite.x < -20) p.sprite.x = (app?.screen.width || 0) + 20;
+        if (p.sprite.x > (app?.screen.width || 0) + 20) p.sprite.x = -20;
+        if (p.sprite.y < -20) p.sprite.y = (app?.screen.height || 0) + 20;
+        if (p.sprite.y > (app?.screen.height || 0) + 20) p.sprite.y = -20;
+    });
+
+    // Update all video sprites for smooth movements or interactions if needed
+    // (Most logic is handled inside VirtualGuest streams now)
 };
 
 // Phase 64: Auto-Camera Logic
@@ -350,95 +338,18 @@ watch(() => studioStore.currentSpeakerId, (speakerId) => {
     }
 });
 
-const updateModelSpatialGaze = (model: Live2DModel, delta: number) => {
-    const internal = model.internalModel as any;
-    const core = internal.coreModel;
-    
-    // We target the current Look X
-    // Note: Some models use -30 to 30, others -1 to 1. 
-    // Live2DModel usually normalizes or we use Parameter IDs
-    
-    const target = targetLookX.value;
-    const lerpSpeed = 0.05 * delta;
-
-    const params = [
-        { id: 'ParamAngleX', scale: 30 },
-        { id: 'ParamEyeBallX', scale: 1.0 },
-        { id: 'ParamBodyAngleX', scale: 10 }
-    ];
-
-    params.forEach(p => {
-        const idx = core.getParameterIndex(p.id);
-        if (idx >= 0) {
-            const current = core.getParameterValueById(idx);
-            const goal = target * p.scale;
-            const next = current + (goal - current) * lerpSpeed;
-            core.setParameterValueById(idx, next);
-        }
-    });
-};
-
-const updateLoop = (delta: number) => {
-    // Update Camera (Phase 64)
-    updateCamera(delta);
-
-    // Update Particles
-    particles.forEach(p => {
-        p.sprite.x += p.vx * delta;
-        p.sprite.y += p.vy * delta;
-        p.sprite.rotation += p.va * delta;
-
-        // Wrap around
-        if (p.sprite.x < -20) p.sprite.x = (app?.screen.width || 0) + 20;
-        if (p.sprite.x > (app?.screen.width || 0) + 20) p.sprite.x = -20;
-        if (p.sprite.y < -20) p.sprite.y = (app?.screen.height || 0) + 20;
-        if (p.sprite.y > (app?.screen.height || 0) + 20) p.sprite.y = -20;
-    });
-
-    // Update Lip Sync & Spatial Gaze from props
-    props.guests.forEach(guest => {
-        const model = models.get(guest.id);
-        if (model && model.visible) {
-            if (guest.audioLevel !== undefined && guest.audioEnabled !== false) {
-                updateModelLipSync(model, guest.audioLevel);
-            }
-            
-            // Don't make the speaker look at themselves too much, or keep them slightly front
-            if (guest.id === studioStore.currentSpeakerId) {
-                updateModelSpatialGaze(model, delta * 0.5); 
-            } else {
-                updateModelSpatialGaze(model, delta);
-            }
-        }
-    });
-};
-
-const updateModelLipSync = (model: Live2DModel, vol: number) => {
-    const internal = model.internalModel as any;
-    const core = internal.coreModel;
-    const mouthValue = Math.min(1.0, vol * 4.0);
-    
-    const mouthParams = ['ParamMouthOpenY', 'ParamMouthOpen', 'ParamMouthY'];
-    mouthParams.forEach(p => {
-        const idx = core.getParameterIndex(p);
-        if (idx >= 0) core.setParameterValueById(idx, mouthValue);
-    });
-};
+// Interaction handlers removed (Handled by streaming)
 
 watch(() => props.guests, syncGuests, { deep: true });
+watch(() => props.guestVideos, () => {
+    console.log('[VirtualStudioStage] guestVideos updated', Object.keys(props.guestVideos));
+    syncGuests();
+}, { deep: true });
 watch(() => props.environmentId, updateEnvironment);
 
 // Expose methods for spatial tracking and emotions
-const triggerEmotion = (guestId: string, emotion: string) => {
-    const model = models.get(guestId);
-    if (!model) return;
-    
-    // Simple motion trigger
-    (model as any).motion(emotion, 0, PIXI.UPDATE_PRIORITY.HIGH);
-};
-
 defineExpose({
-    triggerEmotion
+    canvas
 });
 </script>
 

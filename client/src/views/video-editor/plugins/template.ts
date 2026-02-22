@@ -58,6 +58,7 @@ export class CanvasTemplate {
   }
 
   private async _scene() {
+    console.log("_scene", this.page);
     this.canvas.clear();
     this.timeline.destroy();
 
@@ -149,6 +150,7 @@ export class CanvasTemplate {
   }
 
   set(template: EditorTemplatePage) {
+    console.log("Set template", template);
     this.page = template;
   }
 

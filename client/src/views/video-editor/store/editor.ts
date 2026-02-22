@@ -84,17 +84,20 @@ export const useEditorStore = defineStore('editor', {
       const progress = editor.progress;
 
       if (exporting === ExportProgress.None || exporting === ExportProgress.Completed) return 0;
-      if (exporting === ExportProgress.Error) return 0;
+      else if (exporting === ExportProgress.Error) return 0;
 
       // Simple weighted progress
-      if (exporting === ExportProgress.CaptureVideo) {
-        return (progress.capture / 100) * 0.7; // 70% for capture
+      else if (exporting === ExportProgress.CaptureAudio) {
+        return 0.1; // Audio is usually fast
       }
-      if (exporting === ExportProgress.CaptureAudio) {
-        return 0.7; // Audio is usually fast
+      else if (exporting === ExportProgress.CaptureVideo) {
+        return 0.1 + (progress.capture / 100) * 0.6; // 60% for capture video
       }
-      if (exporting === ExportProgress.CompileVideo) {
-        return 0.7 + (progress.compile / 100) * 0.3; // Last 30% for compile
+      else if (exporting === ExportProgress.CompileVideo) {
+        return 0.7 + (progress.compile / 100) * 0.2; // Last 25% for compile
+      }
+      else if(exporting == ExportProgress.UploadVideo){
+        return 0.95 + (progress.upload / 100) * 0.05; // Last 5% for upload
       }
       return 0;
     },
@@ -106,6 +109,7 @@ export const useEditorStore = defineStore('editor', {
         case ExportProgress.CompileVideo: return "Compiling Video...";
         case ExportProgress.Completed: return "Completed";
         case ExportProgress.Error: return "Error during export";
+        case ExportProgress.UploadVideo: return "Uploading video...";
         default: return "Idle";
       }
     },
@@ -192,7 +196,8 @@ export const useEditorStore = defineStore('editor', {
       this._editor._progressEvent({ progress, frame });
     },
 
-    async initialize(mode?: EditorMode) {
+    async initialize(mode: EditorMode = "creator") {
+      console.log('initialize editor', mode);
       this._editor.onModified = () => {
         console.log("Editor modified, triggering autoSave");
         this.autoSave();
@@ -214,8 +219,12 @@ export const useEditorStore = defineStore('editor', {
       return await this._editor.exportAudio();
     },
 
-    async exportVideo() {
-      return await this._editor.exportVideo();
+    async exportVideo(headless: boolean = false, upload: boolean = true) {
+      return await this._editor.exportVideo(headless);
+    },
+
+    async autoRenderAndExport() {
+      return await this._editor.autoRenderAndExport();
     },
 
     async exportTemplate() {
@@ -383,6 +392,10 @@ export const useEditorStore = defineStore('editor', {
       this._editor.resize(dimensions, changeArtboards);
     },
 
+    getCanvasInstance(page: number): fabric.Canvas {
+      return this.pages[page]?.instance;
+    },
+
     onModified() {
       this._editor.onModified?.();
     },
@@ -423,10 +436,6 @@ export const useEditorStore = defineStore('editor', {
     autoSave: throttle(async function (this: any) {
       await this.saveProject();
     }, 10000, { leading: false, trailing: true }),
-
-    getCanvasInstance(page: number): any {
-      return (this._editor.pages[page] as any)?.instance;
-    },
 
     seekToGlobalTime(seconds: number) {
       const ms = seconds * 1000;

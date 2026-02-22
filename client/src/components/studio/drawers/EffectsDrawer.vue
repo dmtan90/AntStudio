@@ -36,10 +36,16 @@
         @summon-guest="$emit('summon-guest', $event)" 
         @toggle-guest="$emit('toggle-guest', $event)" 
         @talk-guest="$emit('talk-guest', $event)"
-        @manual-gesture="$emit('manual-gesture', $event)" 
+        @manual-gesture="$emit('manual-gesture', $event)"
         @toggle-live-voice="$emit('toggle-live-voice', $event)"
         @toggle-vision="$emit('toggle-vision', $event)" 
-        @toggle-role="$emit('toggle-role', $event)" 
+        @toggle-role="$emit('toggle-role', $event)"
+        @set-emotion="$emit('set-emotion', $event)"
+        @update-animation="$emit('update-animation', $event)"
+        @update-performance="$emit('update-performance', $event)"
+        @set-background="$emit('set-background', $event)"
+        @open-music-selector="$emit('open-music-selector', $event)"
+        @start-performance="$emit('start-performance', $event)"
       />
 
       <GraphicSettings v-else-if="activeTab === 'graphics'" 
@@ -194,7 +200,9 @@ defineEmits([
   'toggle-vision', 'toggle-role', 'toggle-lower-third', 'toggle-ticker', 'invite-guest',
   'add-mobile-cam', 'update:isTranslating', 'update:enableAsl', 'update:sourceLang', 'update:targetLang',
   'trigger-flash-deal', 'toggle-product', 'start-poll', 'feature-question',
-  'update:autoAtmosphere', 'apply-preset', 'invite-cohost', 'open-script-generator'
+  'update:autoAtmosphere', 'apply-preset', 'invite-cohost', 'open-script-generator',
+  'set-emotion', 'update-animation', 'update-performance', 'set-background',
+  'open-music-selector', 'start-performance'
 ]);
 
 const currentTabName = computed(() => {
@@ -209,7 +217,7 @@ const iconTabs = [
 ];
 </script>
 
-<style scoped>
+<style scoped lang="postcss">
 .effects-drawer {
   @apply fixed right-0 bottom-0 top-0 w-[360px] z-40 flex flex-col;
 }

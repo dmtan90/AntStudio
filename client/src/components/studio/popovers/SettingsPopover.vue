@@ -56,7 +56,7 @@
                                     <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Enable AI Features</span>
                                     <span class="text-[8px] text-white/40">Face Tracking, Reframing & Virtual Backgrounds</span>
                                 </div>
-                                <el-switch v-model="studioStore.aiEnabled" size="small" 
+                                <el-switch v-model="visualSettings.aiEnabled" size="small" 
                                     style="--el-switch-on-color: #3b82f6;" />
                             </div>
 
@@ -177,10 +177,229 @@
                                         <div v-for="asset in backgroundAssets" :key="asset.url" class="asset-thumb"
                                             :class="{ 'active': visualSettings.background.assetUrl === asset.url }"
                                             @click="selectAsset(asset)">
-                                            <img :src="asset.thumbnail" class="w-full h-full object-cover">
+                                            <el-image :src="getFileUrl(asset.thumbnail)" class="w-full h-full" fit="cover">
+                                                <template #error>
+                                                    <pic theme="outline" size="16" />
+                                                </template>
+                                            </el-image>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    <!-- 4. Filters (New) -->
+                    <el-tab-pane name="filters">
+                        <template #label>
+                            <div class="tab-item">
+                                <magic theme="outline" size="14" />
+                                <span>Filters</span>
+                            </div>
+                        </template>
+
+                        <div class="space-y-6 py-2">
+                            <!-- Lens Profiles -->
+                            <div class="space-y-3">
+                                <label class="section-label">Lens Profile</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="mode-select-box"
+                                        :class="{ 'active': visualSettings.lensProfile === 'none' }"
+                                        @click="visualSettings.lensProfile = 'none'">
+                                        <span class="text-[9px] font-black uppercase">None</span>
+                                    </div>
+                                    <div class="mode-select-box"
+                                        :class="{ 'active': visualSettings.lensProfile === 'noir' }"
+                                        @click="visualSettings.lensProfile = 'noir'">
+                                        <span class="text-[9px] font-black uppercase">Noir</span>
+                                    </div>
+                                    <div class="mode-select-box"
+                                        :class="{ 'active': visualSettings.lensProfile === 'vintage' }"
+                                        @click="visualSettings.lensProfile = 'vintage'">
+                                        <span class="text-[9px] font-black uppercase">Vintage</span>
+                                    </div>
+                                    <div class="mode-select-box"
+                                        :class="{ 'active': visualSettings.lensProfile === 'cool' }"
+                                        @click="visualSettings.lensProfile = 'cool'">
+                                        <span class="text-[9px] font-black uppercase">Cool</span>
+                                    </div>
+                                     <div class="mode-select-box"
+                                        :class="{ 'active': visualSettings.lensProfile === 'warm' }"
+                                        @click="visualSettings.lensProfile = 'warm'">
+                                        <span class="text-[9px] font-black uppercase">Warm</span>
+                                    </div>
+                                     <div class="mode-select-box"
+                                        :class="{ 'active': visualSettings.lensProfile === 'cinematic' }"
+                                        @click="visualSettings.lensProfile = 'cinematic'">
+                                        <span class="text-[9px] font-black uppercase">Cinema</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Chroma Key -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <label class="section-label">Green Screen</label>
+                                    <el-switch v-model="visualSettings.chromaKey.enabled" size="small"
+                                        style="--el-switch-on-color: #3b82f6;" />
+                                </div>
+
+                                <div v-if="visualSettings.chromaKey.enabled"
+                                    class="space-y-4 animate-in slide-in-from-top-2">
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <label class="slider-label">Key Color</label>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full border border-white/20" :style="{ backgroundColor: visualSettings.chromaKey.keyColor + ' !important' }"></div>
+                                            <input type="color" v-model="visualSettings.chromaKey.keyColor" class="w-8 h-8 opacity-0 absolute cursor-pointer" />
+                                            <span class="text-[9px] text-white/50 font-mono">{{ visualSettings.chromaKey.keyColor }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="slider-group">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <label class="slider-label">Similarity</label>
+                                            <span class="value-badge">{{ (visualSettings.chromaKey.similarity * 100).toFixed(0) }}%</span>
+                                        </div>
+                                        <el-slider v-model="visualSettings.chromaKey.similarity" :min="0" :max="1" :step="0.01" size="small" />
+                                    </div>
+
+                                    <div class="slider-group">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <label class="slider-label">Smoothness</label>
+                                            <span class="value-badge">{{ (visualSettings.chromaKey.smoothness * 100).toFixed(0) }}%</span>
+                                        </div>
+                                        <el-slider v-model="visualSettings.chromaKey.smoothness" :min="0" :max="1" :step="0.01" size="small" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+
+                    <!-- 5. Branding (New) -->
+                    <el-tab-pane name="branding">
+                        <template #label>
+                            <div class="tab-item">
+                                <tag theme="outline" size="14" />
+                                <span>Branding</span>
+                            </div>
+                        </template>
+
+                        <div class="space-y-6 py-2">
+                            <div class="space-y-3">
+                                <label class="section-label">Studio Identity</label>
+                                <div class="space-y-4">
+                                    <div class="slider-group">
+                                        <label class="slider-label">Studio Name</label>
+                                        <el-input v-model="visualSettings.branding.name" size="small" placeholder="Add Studio Name"
+                                            class="!bg-white/5 !border-white/10 !rounded-xl custom-input" />
+                                    </div>
+                                    <div class="slider-group">
+                                        <label class="slider-label">Sub-Header</label>
+                                        <el-input v-model="visualSettings.branding.title" size="small" placeholder="Add Header Title"
+                                            class="!bg-white/5 !border-white/10 !rounded-xl custom-input" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <label class="section-label">Branding Style</label>
+                                <div class="flex items-center justify-between">
+                                    <label class="slider-label">Accent Color</label>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full border border-white/20" :style="{ backgroundColor: visualSettings.branding.color }"></div>
+                                        <input type="color" v-model="visualSettings.branding.color" class="w-8 h-8 opacity-0 absolute cursor-pointer" />
+                                        <span class="text-[9px] text-white/50 font-mono">{{ visualSettings.branding.color }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+
+                    <!-- 6. Overlays (New) -->
+                    <el-tab-pane name="overlays">
+                        <template #label>
+                            <div class="tab-item">
+                                <layers theme="outline" size="14" />
+                                <span>Overlays</span>
+                            </div>
+                        </template>
+
+                        <div class="space-y-4 py-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-black text-white/60 uppercase">Lower Third</span>
+                                    <span class="text-[7px] text-white/30">Display name & title overlay</span>
+                                </div>
+                                <el-switch v-model="visualSettings.showLowerThird" size="small" />
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-black text-white/60 uppercase">Ticker Bar</span>
+                                    <span class="text-[7px] text-white/30">Scrolling news ticker</span>
+                                </div>
+                                <el-switch v-model="visualSettings.showTicker" size="small" />
+                            </div>
+
+                            <div v-if="visualSettings.showTicker" class="slider-group animate-in slide-in-from-top-2">
+                                <label class="slider-label">Ticker Content</label>
+                                <el-input v-model="visualSettings.tickerText" size="small" type="textarea" :rows="2"
+                                    class="!bg-white/5 !border-white/10 !rounded-xl custom-input" />
+                            </div>
+
+                            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-black text-white/60 uppercase">Break Mode</span>
+                                    <span class="text-[7px] text-white/30">Pause stream with message</span>
+                                </div>
+                                <el-switch v-model="visualSettings.breakMode.enabled" size="small" />
+                            </div>
+                        </div>
+                    </el-tab-pane>
+
+                    <!-- 7. Accessibility (New) -->
+                    <el-tab-pane name="accessibility">
+                        <template #label>
+                            <div class="tab-item">
+                                <eyes theme="outline" size="14" />
+                                <span>Accessibility</span>
+                            </div>
+                        </template>
+
+                        <div class="space-y-5 py-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-black text-white/60 uppercase">AI Translations</span>
+                                    <span class="text-[7px] text-white/30">Real-time speech translation</span>
+                                </div>
+                                <el-switch v-model="visualSettings.accessibility.translationEnabled" size="small" />
+                            </div>
+
+                            <div v-if="visualSettings.accessibility.translationEnabled" class="grid grid-cols-2 gap-3 animate-in slide-in-from-top-2">
+                                <div class="slider-group">
+                                    <label class="slider-label">Source</label>
+                                    <el-select v-model="visualSettings.accessibility.sourceLang" size="small" class="custom-select">
+                                        <el-option label="English" value="en-US" />
+                                        <el-option label="Vietnamese" value="vi-VN" />
+                                        <el-option label="Japanese" value="ja-JP" />
+                                    </el-select>
+                                </div>
+                                <div class="slider-group">
+                                    <label class="slider-label">Target</label>
+                                    <el-select v-model="visualSettings.accessibility.targetLang" size="small" class="custom-select">
+                                        <el-option label="Vietnamese" value="vi-VN" />
+                                        <el-option label="English" value="en-US" />
+                                        <el-option label="Japanese" value="ja-JP" />
+                                    </el-select>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] font-black text-white/60 uppercase">Live Captions</span>
+                                    <span class="text-[7px] text-white/30">Show subtitles for all guests</span>
+                                </div>
+                                <el-switch v-model="visualSettings.accessibility.captions" size="small" />
                             </div>
                         </div>
                     </el-tab-pane>
@@ -199,8 +418,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useStudioStore } from '@/stores/studio';
-import { Magic, Pic, Broadcast, Plus } from '@icon-park/vue-next';
+import { Magic, Pic, Broadcast, Plus, Tag, Layers, Eyes } from '@icon-park/vue-next';
 import { storeToRefs } from 'pinia';
+import { getFileUrl } from '@/utils/api';
 
 const props = defineProps<{
     streamQuality: string;
@@ -212,8 +432,8 @@ const studioStore = useStudioStore();
 const { visualSettings, backgroundAssets } = storeToRefs(studioStore);
 
 const localStreamQuality = computed({
-    get: () => props.streamQuality,
-    set: (val) => emit('update:streamQuality', val)
+    get: () => studioStore.visualSettings.streamQuality,
+    set: (val) => studioStore.visualSettings.streamQuality = val
 });
 
 const activeTab = ref('beauty'); // Default to beauty for quick access
@@ -221,6 +441,7 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const showAdvancedEnhance = ref(false);
 
 const qualityPresets = {
+    auto: { label: 'Auto (ABR)' },
     low: { label: '360p' },
     medium: { label: '480p' },
     high: { label: '720p' },
@@ -272,7 +493,7 @@ const resetSettings = () => {
 };
 </script>
 
-<style lang="css">
+<style lang="postcss">
 /* Re-use styles but adapted for smaller popover */
 .custom-settings-tabs .el-tabs__header {
     margin-bottom: 0px !important;
@@ -359,5 +580,22 @@ const resetSettings = () => {
     --el-slider-runway-bg-color: rgba(255, 255, 255, 0.05);
     --el-slider-stop-bg-color: transparent;
     --el-slider-button-size: 16px;
+}
+
+.custom-input .el-textarea__inner,
+.custom-input .el-input__inner {
+    @apply !bg-white/5 !border-none !text-white !text-[10px] !font-bold !px-3 !py-2 !rounded-xl;
+}
+
+.custom-select {
+    @apply !w-full;
+}
+
+.custom-select .el-input__wrapper {
+    @apply !bg-white/5 !shadow-none !border-none !rounded-xl;
+}
+
+.custom-select .el-input__inner {
+    @apply !text-white !text-[9px] !font-black !uppercase;
 }
 </style>

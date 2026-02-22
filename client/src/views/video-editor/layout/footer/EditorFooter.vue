@@ -10,7 +10,7 @@ import EditorFooter2 from './EditorFooter2.vue';
 import SplitLine from './components/SplitLine.vue';
 
 // Toggle to test new Google Vids timeline
-const useGoogleVidsTimeline = ref(true); // Set to true to use EditorFooter2
+const useGoogleVidsTimeline = ref(false); // Set to true to use EditorFooter2
 
 const editor = useEditorStore();
 const isTablet = useIsTablet();

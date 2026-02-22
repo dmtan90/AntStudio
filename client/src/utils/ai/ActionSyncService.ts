@@ -9,6 +9,8 @@ import { toast } from 'vue-sonner';
 export class ActionSyncService {
     private static socket: Socket | null = null;
     private static roomId: string | null = null;
+    private static relayQueue: { sessionId: string, chunk: any }[] = [];
+    private static latency: number = 0;
 
     /**
      * Connects to the collaboration server for a specific room.
@@ -36,6 +38,17 @@ export class ActionSyncService {
 
         this.socket.on('connect', async () => {
             console.log(`✅ [ActionSync] Connected to signaling transport (Transport: ${this.socket?.id})`);
+            
+            // Phase 96: Flush buffered relay chunks once connected
+            if (this.relayQueue.length > 0) {
+                console.log(`[ActionSync] Flushing ${this.relayQueue.length} buffered relay chunks`);
+                while (this.relayQueue.length > 0) {
+                    const item = this.relayQueue.shift();
+                    if (item && this.socket) {
+                        this.socket.emit('stream:relay', item);
+                    }
+                }
+            }
         });
 
         this.socket.on('session:connected', async (data: { userId: string, role: string, name: string }) => {
@@ -48,7 +61,22 @@ export class ActionSyncService {
             console.error(`❌ [ActionSync] Connection error:`, err.message);
         });
 
+        // Add periodic latency test for stats
+        setInterval(() => {
+            if (this.socket?.connected) {
+                const start = Date.now();
+                this.socket.emit('ping_heartbeat', {}, () => {
+                   ActionSyncService.latency = Date.now() - start;
+                   //console.log(`[ActionSync] Latency updated: ${ActionSyncService.latency}ms`);
+                });
+            }
+        }, 5000);
+
         this.setupListeners();
+    }
+
+    public static getLatency(): number {
+        return ActionSyncService.latency || 0;
     }
 
     /**
@@ -123,6 +151,28 @@ export class ActionSyncService {
                 description: 'AI Producer is clipping this for social media!',
                 duration: 8000
             });
+        });
+
+        // Sync Engagement Metrics (Real-time from Platforms)
+        this.socket.on('studio:engagement', (data: { likes: number, shares: number, externalViewers: number, comments: number }) => {
+            console.log('[ActionSync] Received Engagement Update:', data);
+            
+            // Update Studio Store metrics
+            studio.engagement.likes = data.likes;
+            studio.engagement.shares = data.shares;
+            
+            // CCU calculation: Internal Socket Users + External Platform Viewers
+            const internalViewers = studio.viewerCount; 
+            const totalViewers = internalViewers + (data.externalViewers || 0);
+            
+            // Update total viewer count in store
+            studio.viewerCount = totalViewers;
+            studio.engagement.viewerCount = totalViewers;
+            
+            // Update peak if total is higher
+            if (totalViewers > studio.engagement.peakViewers) {
+                studio.engagement.peakViewers = totalViewers;
+            }
         });
 
         // Guest Management
@@ -303,7 +353,14 @@ export class ActionSyncService {
      * Send binary stream chunk for backend relay (FFmpeg ingest)
      */
     public static sendStreamRelay(sessionId: string, chunk: Blob | Buffer | ArrayBuffer) {
-        if (!this.socket?.connected) return;
+        if (!this.socket?.connected) {
+            // Buffer the critical initial chunks (especially the EBML header)
+            this.relayQueue.push({ sessionId, chunk });
+            if (this.relayQueue.length % 10 === 0) {
+                console.warn(`[ActionSync] Socket not connected, queued ${this.relayQueue.length} chunks for ${sessionId}`);
+            }
+            return;
+        }
         this.socket.emit('stream:relay', { sessionId, chunk });
     }
 

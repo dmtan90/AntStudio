@@ -247,17 +247,21 @@ defineEmits<{
 
 <style lang="scss" scoped>
 .side-panel {
-    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.5);
-    animation: sidebarPulse 10s infinite alternate;
+    background: rgba(10, 10, 12, 0.7);
+    backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    animation: sidebarGlow 8s infinite alternate;
 }
 
-@keyframes sidebarPulse {
+@keyframes sidebarGlow {
     from {
-        border-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6);
     }
-
     to {
-        border-color: rgba(249, 115, 22, 0.2);
+        border-color: rgba(59, 130, 246, 0.2);
+        box-shadow: -20px 0 60px rgba(59, 130, 246, 0.1);
     }
 }
 
@@ -271,12 +275,12 @@ defineEmits<{
     }
 
     &::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.08);
         border-radius: 10px;
     }
 
     &::-webkit-scrollbar-thumb:hover {
-        background: rgba(249, 115, 22, 0.3);
+        background: rgba(59, 130, 246, 0.4);
     }
 }
 </style>

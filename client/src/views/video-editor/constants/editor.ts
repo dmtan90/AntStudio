@@ -43,7 +43,6 @@ export const pastelHexCodes = ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE
 import placeholder from 'video-editor/assets/editor/filters/default.jpg';
 export const filterPlaceholder = placeholder;
 
-//"https://plus.unsplash.com/premium_photo-1710119487743-48959c984d45?q=75&w=265";
 import squareFrame from 'video-editor/assets/editor/frames/square.svg';
 import portraitFrame from 'video-editor/assets/editor/frames/portrait.svg';
 import landscapeFrame from 'video-editor/assets/editor/frames/landscape.svg';

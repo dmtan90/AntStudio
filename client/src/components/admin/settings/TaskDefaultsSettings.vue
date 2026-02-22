@@ -28,7 +28,7 @@
                         <el-select v-if="aiSettings.defaults[type]" v-model="aiSettings.defaults[type].modelId"
                             filterable allow-create default-first-option size="small" class="glass-input w-full"
                             placeholder="Select or Type Model">
-                            <el-option v-for="m in getModelsForProvider(aiSettings.defaults[type].providerId)" :key="m"
+                            <el-option v-for="m in getModelsForProvider(aiSettings.defaults[type].providerId, type)" :key="m"
                                 :label="m" :value="m" />
                         </el-select>
                     </div>
@@ -48,7 +48,7 @@
 defineProps<{
     aiSettings: any;
     getProvidersForType: (type: string) => any[];
-    getModelsForProvider: (providerId: string) => string[];
+    getModelsForProvider: (providerId: string, type: string) => string[];
 }>();
 </script>
 

@@ -15,7 +15,7 @@ export class AudioMixerService {
         if (this.audioCtx) return;
         this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
         this.masterGain = this.audioCtx.createGain();
-        this.masterGain.connect(this.audioCtx.destination);
+        // this.masterGain.connect(this.audioCtx.destination); // Removed to prevent local playback/feedback loop
     }
 
     /**
@@ -24,19 +24,44 @@ export class AudioMixerService {
      * @param stream MediaStream containing the audio
      */
     public addTrack(id: string, stream: MediaStream) {
-        if (!this.audioCtx || !this.masterGain) this.init();
-        const ctx = this.audioCtx!;
+        try{
+            if (!this.audioCtx || !this.masterGain) this.init();
+            const ctx = this.audioCtx!;
 
-        const source = ctx.createMediaStreamSource(stream);
-        const gain = ctx.createGain();
-        const analyzer = ctx.createAnalyser();
-        analyzer.fftSize = 256;
+            // Resume context if it was suspended (browser policy)
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
 
-        source.connect(gain);
-        gain.connect(analyzer);
-        analyzer.connect(this.masterGain!);
+            // Clean up previous track with same ID
+            this.removeTrack(id);
 
-        this.tracks.set(id, { gain, analyzer, source });
+            console.log("AudioMixer addTrack: ", id);
+
+            const source = ctx.createMediaStreamSource(stream);
+            const gain = ctx.createGain();
+            const analyzer = ctx.createAnalyser();
+            analyzer.fftSize = 256;
+
+            source.connect(gain);
+            gain.connect(analyzer);
+            analyzer.connect(this.masterGain!);
+
+            this.tracks.set(id, { gain, analyzer, source });
+            console.log(`[AudioMixer] Added track: ${id}`, { enabled: stream.getAudioTracks()[0]?.enabled, muted: stream.getAudioTracks()[0]?.muted, readyState: stream.getAudioTracks()[0]?.readyState });
+        }catch(err){
+            console.error("addTrack error: ", err);
+        }
+    }
+
+    public removeTrack(id: string) {
+        const track = this.tracks.get(id);
+        if (track) {
+            track.source?.disconnect();
+            track.gain.disconnect();
+            track.analyzer.disconnect();
+            this.tracks.delete(id);
+        }
     }
 
     public setVolume(id: string, volume: number) {
@@ -62,8 +87,8 @@ export class AudioMixerService {
     }
 
     public getDestinationStream(): MediaStream | null {
-        if (!this.audioCtx) return null;
-        const destination = this.audioCtx.createMediaStreamDestination();
+        if (!this.audioCtx) this.init();
+        const destination = this.audioCtx!.createMediaStreamDestination();
         this.masterGain?.connect(destination);
         return destination.stream;
     }

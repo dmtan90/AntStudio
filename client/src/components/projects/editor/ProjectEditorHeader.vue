@@ -24,28 +24,15 @@
           @keyup.enter="saveTitle"
         />
       </div>
-
-      <!-- <div class="sidebar-toggles">
-        <GButton 
-          circle 
-          size="small" 
-          :type="leftVisible ? 'primary' : 'default'"
-          class="toggle-btn" 
-          @click="$emit('toggle-left')"
-        >
-          <menu-unfold v-if="!leftVisible" theme="outline" size="18" />
-          <menu-fold v-else theme="outline" size="18" />
-        </GButton>
-      </div> -->
     </div>
 
     <div class="header-right">
       <div class="credit-wrapper" v-if="user">
        <GPopover trigger="hover" placement="bottom" :width="300">
           <template #reference>
-            <div class="credit-balance glass-dark">
+            <div class="credit-balance glass-premium">
               <div class="credit-item">
-                <ticket theme="outline" size="14" />
+                <ticket theme="filled" size="14" class="text-blue-200" />
                 <span class="count">{{ totalCredits }}</span>
                 <span class="label">{{ t('projects.editor.header.credits') }}</span>
               </div>
@@ -95,47 +82,9 @@
 
       <div class="action-divider" />
 
-      <GDropdown v-model="editorMode" placement="bottom" @command="handleEditorMode">
-        <GButton type="primary" class="export-btn">
-          <upload theme="outline" size="16" />
-          <span>{{ editorMode == 'studio' ? t('projects.editor.header.studio') : t('projects.editor.header.simple') }}</span>
-          <down theme="outline" size="12" />
-        </GButton>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="studio">
-              <AdobePremiere theme="outline" size="14" /> {{ t('projects.editor.header.studio') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="flow">
-              <RobotOne theme="outline" size="14" /> {{ t('projects.editor.header.simple') }}
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </GDropdown>
-
-      <GDropdown @command="handleExport" placement="bottom">
-        <GButton type="primary" class="export-btn">
-          <upload theme="outline" size="16" />
-          <span>{{ t('projects.editor.header.export') }}</span>
-          <down theme="outline" size="12" />
-        </GButton>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="video">
-              <movie theme="outline" size="14" /> {{ t('projects.editor.header.exportMp4') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="capcut">
-              <application-one theme="outline" size="14" /> {{ t('projects.editor.header.exportCapcut') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="premiere">
-              <adobe-premiere theme="outline" size="14" /> {{ t('projects.editor.header.exportPremiere') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="zip">
-              <zip theme="outline" size="14" /> {{ t('projects.editor.header.exportAssets') }}
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </GDropdown>
+      <GButton type="primary" :icon="ApplicationOne" class="premium-button" @click="handleEditorMode('studio')">
+        <span>{{ t('projects.editor.header.studio') }}</span>
+      </GButton>
 
       <GDropdown @command="handleUserCommand" placement="bottom">
         <div class="user-profile">
@@ -292,25 +241,26 @@ const handleUserCommand = (command: string) => {
 <style lang="scss" scoped>
 .project-editor-header {
   height: 64px;
-  background: rgba(10, 10, 10, 0.95);
-  backdrop-filter: blur(20px);
+  background: rgba(10, 10, 12, 0.7);
+  backdrop-filter: blur(40px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 24px;
   z-index: 100;
+  font-family: 'Outfit', sans-serif;
 
   .header-left, .header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
   }
 }
 
 .logo-divider {
   width: 1px;
-  height: 24px;
+  height: 20px;
   background: rgba(255, 255, 255, 0.1);
   margin: 0 4px;
 }
@@ -330,19 +280,23 @@ const handleUserCommand = (command: string) => {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background 0.2s;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    letter-spacing: -0.01em;
 
     &:hover {
       background: rgba(255, 255, 255, 0.05);
-      .edit-icon { opacity: 1; }
+      .edit-icon { 
+        opacity: 1; 
+        transform: scale(1.1);
+      }
     }
 
     .edit-icon {
       opacity: 0;
       color: rgba(255, 255, 255, 0.4);
-      transition: opacity 0.2s;
+      transition: all 0.3s ease;
     }
   }
 
@@ -351,67 +305,85 @@ const handleUserCommand = (command: string) => {
   }
 }
 
-.sidebar-toggles {
-  display: flex;
-  gap: 8px;
-  margin-left: 8px;
-}
-
 .credit-balance {
   display: flex;
   align-items: center;
-  padding: 4px 12px;
+  padding: 6px 16px;
   border-radius: 99px;
-  background: linear-gradient(135deg, #ffab00 0%, #ff6d00 100%);
-  border: none;
-  box-shadow: 0 4px 12px rgba(255, 171, 0, 0.2);
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   .credit-item {
     display: flex;
     align-items: center;
-    gap: 6px;
-    color: #000;
+    gap: 8px;
+    color: #fff;
 
     .count {
       font-weight: 800;
       font-size: 13px;
-      color: #000;
+      letter-spacing: 0.5px;
     }
 
     .label {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: 1px;
       opacity: 0.8;
-      color: #000;
     }
+  }
+
+  &:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 }
 
 .action-divider {
   width: 1px;
-  height: 24px;
+  height: 20px;
   background: rgba(255, 255, 255, 0.1);
 }
 
-.export-btn {
-  padding: 8px 16px !important;
+.premium-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 10px 20px !important;
   font-weight: 700 !important;
-  letter-spacing: 0.5px;
-  gap: 8px !important;
+  font-size: 13px !important;
+  letter-spacing: 0.5px !important;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2) !important;
+  transition: all 0.3s ease !important;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4) !important;
+    filter: brightness(1.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 .user-profile {
   cursor: pointer;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: transform 0.2s;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
 
   &:hover {
-    transform: scale(1.05);
+    transform: scale(1.08);
+    border-color: rgba(59, 130, 246, 0.4);
   }
 
   .user-avatar {
@@ -425,15 +397,11 @@ const handleUserCommand = (command: string) => {
     height: 100%;
     background: #fff;
     color: #000;
-    @include flex-center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 800;
     font-size: 14px;
-  }
-}
-
-.toggle-btn {
-  &.right-toggle {
-    margin-left: 8px;
   }
 }
 
@@ -441,22 +409,9 @@ const handleUserCommand = (command: string) => {
   color: #ff5252 !important;
 }
 
-.credit-wrapper {
-  display: flex;
-  align-items: center;
-}
-
-.credit-balance {
-  cursor: pointer;
-  transition: transform 0.2s;
-  &:hover {
-    transform: translateY(-1px);
-    background: linear-gradient(135deg, #ffab00 0%, #ff8f00 100%);
-  }
-}
-
 .credit-popover-content {
   min-width: 260px;
+  padding: 12px;
 
   .user-info {
     display: flex;
@@ -464,7 +419,7 @@ const handleUserCommand = (command: string) => {
     gap: 4px;
     margin-bottom: 16px;
     padding-bottom: 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
     .user-name-pop {
       font-weight: 700;
@@ -474,17 +429,16 @@ const handleUserCommand = (command: string) => {
 
     .user-email {
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.4);
     }
   }
 
   .upgrade-btn-pop {
     width: 100%;
     margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    border: none;
+    font-weight: 700;
   }
 
   .credit-section {
@@ -495,18 +449,18 @@ const handleUserCommand = (command: string) => {
     }
 
     .section-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.5);
+      font-size: 10px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.3);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
     }
 
     .credit-items {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 10px;
     }
   }
 
@@ -515,7 +469,7 @@ const handleUserCommand = (command: string) => {
     justify-content: space-between;
     align-items: center;
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.6);
 
     .credit-value {
       font-weight: 700;
@@ -524,10 +478,11 @@ const handleUserCommand = (command: string) => {
     
     .reset-info {
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.4);
+      color: rgba(255, 255, 255, 0.3);
       font-style: italic;
     }
   }
 }
+
 
 </style>

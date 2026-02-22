@@ -20,25 +20,25 @@ import {
 export type RecordingMode = 'camera' | 'camera-screen' | 'screen' | 'audio' | 'podcast' | 'autopilot' | 'whiteboard'
 
 export const videoFilters = [
-    { id: 'none', name: 'Original', css: '', thumb: 'https://images.unsplash.com/photo-1492691523567-69b92043628e?w=200' },
-    { id: '1977', name: '1977', css: 'sepia(0.5) hue-rotate(-30deg) saturate(1.2)', thumb: 'https://images.unsplash.com/photo-1500462418194-7ee11185598c?w=200&sig=1' },
-    { id: 'aden', name: 'Aden', css: 'hue-rotate(-20deg) contrast(0.9) saturate(0.85) brightness(1.2)', thumb: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=200&sig=2' },
-    { id: 'brannan', name: 'Brannan', css: 'sepia(0.5) contrast(1.4)', thumb: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?w=200&sig=3' },
-    { id: 'brooklyn', name: 'Brooklyn', css: 'contrast(0.9) brightness(1.1)', thumb: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=200&sig=4' },
-    { id: 'clarendon', name: 'Clarendon', css: 'contrast(1.2) saturate(1.35)', thumb: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=200&sig=5' },
-    { id: 'gingham', name: 'Gingham', css: 'brightness(1.05) hue-rotate(-10deg)', thumb: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=200&sig=6' },
-    { id: 'hudson', name: 'Hudson', css: 'brightness(1.2) contrast(0.9) saturate(1.1)', thumb: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=200&sig=7' },
-    { id: 'inkwell', name: 'Inkwell', css: 'sepia(0.3) contrast(1.1) brightness(1.1) grayscale(1)', thumb: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=200&sig=8' },
-    { id: 'lofi', name: 'Lo-Fi', css: 'saturate(1.1) contrast(1.5)', thumb: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=200&sig=9' },
-    { id: 'maven', name: 'Maven', css: 'sepia(0.25) brightness(0.95) contrast(0.95) saturate(1.5)', thumb: 'https://images.unsplash.com/photo-1523712999610-f77fbcfc3843?w=200&sig=10' },
-    { id: 'mayfair', name: 'Mayfair', css: 'contrast(1.1) saturate(1.1)', thumb: 'https://images.unsplash.com/photo-1434725039720-abb26e22cf8e?w=200&sig=11' },
-    { id: 'moon', name: 'Moon', css: 'grayscale(1) contrast(1.1) brightness(1.1)', thumb: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=200&sig=12' },
-    { id: 'nashville', name: 'Nashville', css: 'sepia(0.2) contrast(1.2) brightness(1.05) saturate(1.2)', thumb: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=200&sig=13' },
-    { id: 'rise', name: 'Rise', css: 'brightness(1.05) sepia(0.2) contrast(0.9) saturate(0.9)', thumb: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=200&sig=14' },
-    { id: 'toaster', name: 'Toaster', css: 'contrast(1.5) brightness(0.9)', thumb: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=200&sig=15' },
-    { id: 'walden', name: 'Walden', css: 'brightness(1.1) hue-rotate(-10deg) sepia(0.3) saturate(1.6)', thumb: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=200&sig=16' },
-    { id: 'willow', name: 'Willow', css: 'grayscale(0.5) contrast(0.95) brightness(0.9)', thumb: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=200&sig=17' },
-    { id: 'xpro2', name: 'X-Pro II', css: 'sepia(0.3) contrast(1.3) brightness(0.8)', thumb: 'https://images.unsplash.com/photo-1441834493933-4076755490c0?w=200&sig=18' }
+    { id: 'none', name: 'Original', css: '', thumb: '/bg/friends.jpg' },
+    { id: '1977', name: '1977', css: 'sepia(0.5) hue-rotate(-30deg) saturate(1.2)', thumb: '/bg/friends.jpg' },
+    { id: 'aden', name: 'Aden', css: 'hue-rotate(-20deg) contrast(0.9) saturate(0.85) brightness(1.2)', thumb: '/bg/friends.jpg' },
+    { id: 'brannan', name: 'Brannan', css: 'sepia(0.5) contrast(1.4)', thumb: '/bg/friends.jpg' },
+    { id: 'brooklyn', name: 'Brooklyn', css: 'contrast(0.9) brightness(1.1)', thumb: '/bg/friends.jpg' },
+    { id: 'clarendon', name: 'Clarendon', css: 'contrast(1.2) saturate(1.35)', thumb: '/bg/friends.jpg' },
+    { id: 'gingham', name: 'Gingham', css: 'brightness(1.05) hue-rotate(-10deg)', thumb: '/bg/friends.jpg' },
+    { id: 'hudson', name: 'Hudson', css: 'brightness(1.2) contrast(0.9) saturate(1.1)', thumb: '/bg/friends.jpg' },
+    { id: 'inkwell', name: 'Inkwell', css: 'sepia(0.3) contrast(1.1) brightness(1.1) grayscale(1)', thumb: '/bg/friends.jpg' },
+    { id: 'lofi', name: 'Lo-Fi', css: 'saturate(1.1) contrast(1.5)', thumb: '/bg/friends.jpg' },
+    { id: 'maven', name: 'Maven', css: 'sepia(0.25) brightness(0.95) contrast(0.95) saturate(1.5)', thumb: '/bg/friends.jpg' },
+    { id: 'mayfair', name: 'Mayfair', css: 'contrast(1.1) saturate(1.1)', thumb: '/bg/friends.jpg' },
+    { id: 'moon', name: 'Moon', css: 'grayscale(1) contrast(1.1) brightness(1.1)', thumb: '/bg/friends.jpg' },
+    { id: 'nashville', name: 'Nashville', css: 'sepia(0.2) contrast(1.2) brightness(1.05) saturate(1.2)', thumb: '/bg/friends.jpg' },
+    { id: 'rise', name: 'Rise', css: 'brightness(1.05) sepia(0.2) contrast(0.9) saturate(0.9)', thumb: '/bg/friends.jpg' },
+    { id: 'toaster', name: 'Toaster', css: 'contrast(1.5) brightness(0.9)', thumb: '/bg/friends.jpg' },
+    { id: 'walden', name: 'Walden', css: 'brightness(1.1) hue-rotate(-10deg) sepia(0.3) saturate(1.6)', thumb: '/bg/friends.jpg' },
+    { id: 'willow', name: 'Willow', css: 'grayscale(0.5) contrast(0.95) brightness(0.9)', thumb: '/bg/friends.jpg' },
+    { id: 'xpro2', name: 'X-Pro II', css: 'sepia(0.3) contrast(1.3) brightness(0.8)', thumb: '/bg/friends.jpg' }
 ]
 
 export function useRecorder() {
@@ -203,19 +203,20 @@ export function useRecorder() {
     })
 
     const avatarPresets = [
-        { id: 'sarah', name: 'Sarah (AI)', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400' },
-        { id: 'james', name: 'James (AI)', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400' },
-        { id: 'eva', name: 'Eva (Digital)', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400' }
+        { id: 'sarah', name: 'Sarah (AI)', image: '/avatars/sarah.jpg' },
+        { id: 'james', name: 'James (AI)', image: '/avatars/james.jpg' },
+        { id: 'eva', name: 'Eva (Digital)', image: '/avatar/eva.jpg' }
     ]
 
     const tabs = computed(() => [
         { value: 'camera', label: 'Camera', icon: Camera },
         { value: 'camera-screen', label: 'Cam + Screen', icon: Monitor },
         { value: 'screen', label: 'Screen', icon: Monitor },
-        { value: 'audio', label: 'Audio Only', icon: Voice },
-        { value: 'podcast', label: 'Podcast', icon: Voice },
-        { value: 'autopilot', label: 'Autopilot', icon: Cpu },
-        { value: 'audio', label: 'Audio', icon: VolumeOne }
+        { value: 'audio', label: 'Audio', icon: Voice },
+        // { value: 'podcast', label: 'Podcast', icon: Voice },
+        // { value: 'autopilot', label: 'Autopilot', icon: Cpu },
+        // { value: 'audio', label: 'Audio', icon: VolumeOne }
+        { value: 'whiteboard', label: 'Whiteboard', icon: Cpu },       
     ])
 
     const camSettings = ref<any>({

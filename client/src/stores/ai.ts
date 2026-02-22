@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/utils/api'
 import { toast } from 'vue-sonner'
+const GENERATE_ASSET_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 export const useAIStore = defineStore('ai', () => {
     const loading = ref(false)
@@ -19,7 +20,9 @@ export const useAIStore = defineStore('ai', () => {
     }) {
         loading.value = true
         try {
-            const res: any = await api.post('/ai/generate-avatar-video', payload)
+            const res: any = await api.post('/ai/generate-avatar-video', payload, {
+                timeout: GENERATE_ASSET_TIMEOUT
+            });
             const jobId = res.data?.jobId
             if (jobId) {
                 processingJobs.value.set(jobId, { status: 'processing', type: 'avatar-video' })
@@ -78,7 +81,9 @@ export const useAIStore = defineStore('ai', () => {
     async function generateVoice(payload: { text: string, voiceId?: string }) {
         loading.value = true
         try {
-            const { data } = await api.post('/headless/generate-voice', payload)
+            const { data } = await api.post('/headless/generate-voice', payload, {
+                timeout: GENERATE_ASSET_TIMEOUT
+            });
             // Or /api/ai/generate-voice depending on backend route found in grep? 
             // Grep said: axios.post('/api/ai/generate-voice', {
             // But headless.ts has /generate-voice. Let's stick to what the view was using or standardise.
@@ -97,8 +102,9 @@ export const useAIStore = defineStore('ai', () => {
         try {
             // View Used: axios.post('/api/ai/enhance-audio', formData);
             const { data } = await api.post('/ai/enhance-audio', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+                headers: { 'Content-Type': 'multipart/form-data' },
+                timeout: GENERATE_ASSET_TIMEOUT
+            });
             return data
         } catch (error: any) {
             toast.error(error.message || 'Failed to enhance audio')

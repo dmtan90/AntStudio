@@ -125,6 +125,14 @@ export const useUIStore = defineStore('ui', {
                 return `${state.domain}${state.favicon}`
             }
             return state.favicon
+        },
+        /**
+         * Generate public product landing page link
+         * @param productId - The product ID
+         * @returns Full product landing page URL
+         */
+        getProductLandingLink: (state) => (productId: string) => {
+            return `${state.domain}/p/${productId}`;
         }
     }
 })

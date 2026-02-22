@@ -64,11 +64,27 @@ export interface IAdminSettings extends Document {
                 method: 'POST' | 'GET'
                 headers?: Record<string, string>
                 payloadTemplate?: string
+                models?: string[]
                 responseMapping?: {
                     text?: string
                     url?: string
                     b64?: string
                     jobId?: string
+                }
+                pollConfig?: {
+                    endpoint: string           // e.g. "https://api.example.com/history/{{jobId}}"
+                    method?: 'GET' | 'POST'
+                    headers?: Record<string, string>
+                    intervalMs?: number        // Poll interval (default: 3000ms)
+                    timeoutMs?: number         // Total timeout (default: 120000ms)
+                    statusPath?: string        // JSON path to status field, e.g. "data.status"
+                    successValues?: string[]   // e.g. ["SUCCESS", "completed"]
+                    failureValues?: string[]   // e.g. ["FAILED", "error"]
+                    responseMapping?: {
+                        url?: string
+                        b64?: string
+                        text?: string
+                    }
                 }
             }>
         }>
@@ -239,11 +255,27 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                             method: { type: String, default: 'POST' },
                             headers: { type: Schema.Types.Mixed }, // Support both Map and JSON string
                             payloadTemplate: String,
+                            models: { type: [String], default: [] },
                             responseMapping: {
                                 text: String,
                                 url: String,
                                 b64: String,
                                 jobId: String
+                            },
+                            pollConfig: {
+                                endpoint: String,
+                                method: { type: String, default: 'GET' },
+                                headers: { type: Schema.Types.Mixed },
+                                intervalMs: { type: Number, default: 3000 },
+                                timeoutMs: { type: Number, default: 120000 },
+                                statusPath: String,
+                                successValues: { type: [String], default: [] },
+                                failureValues: { type: [String], default: [] },
+                                responseMapping: {
+                                    url: String,
+                                    b64: String,
+                                    text: String
+                                }
                             }
                         }, { _id: false })
                     }

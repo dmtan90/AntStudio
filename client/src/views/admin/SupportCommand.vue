@@ -1,5 +1,5 @@
 <template>
-    <div class="support-command p-8 animate-in">
+    <div class="support-command min-h-screen bg-[#0a0a0c] text-white font-outfit p-8 animate-in fade-in duration-700">
         <header class="flex justify-between items-start mb-12">
             <div>
                 <h1 class="text-4xl font-black tracking-tighter text-white mb-2">SUPPORT COMMAND</h1>

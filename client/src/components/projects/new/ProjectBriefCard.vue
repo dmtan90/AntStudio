@@ -13,16 +13,16 @@
         <div class="inline-comment-icon" @click.stop="$emit('comment', 'Creative Brief Title')"><comment theme="outline" size="12"/></div>
       </h2>
       
-      <div class="brief-field"><strong>{{ t('projects.new.results.brief.videoType') }}:</strong> {{ msg.result.creativeBrief.videoType }}</div>
-      <div class="brief-field"><strong>{{ t('projects.new.results.brief.narrativeDriver') }}:</strong> {{ msg.result.creativeBrief.narrativeDriver }}</div>
-      <div class="brief-field"><strong>{{ t('projects.new.results.brief.tone') }}:</strong> {{ msg.result.creativeBrief.tone }}</div>
-      <div class="brief-field"><strong>{{ t('projects.new.results.brief.visualStyle') }}:</strong> {{ msg.result.creativeBrief.visualStyle }}</div>
-      <div class="brief-field"><strong>{{ t('projects.new.results.brief.pacing') }}:</strong> {{ msg.result.creativeBrief.pacing }}</div>
-      <div class="brief-field"><strong>{{ t('projects.new.results.brief.soundDesign') }}:</strong> {{ msg.result.creativeBrief.soundDesign }}</div>
-      <div class="brief-field"><strong>{{ t('projects.new.results.analysis.duration') }}:</strong> {{ msg.result.analysis.overview.duration }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.brief.videoType') }}:</strong> {{ msg.result.cumulative?.creativeBrief?.videoType }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.brief.narrativeDriver') }}:</strong> {{ msg.result.cumulative?.creativeBrief?.narrativeDriver }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.brief.tone') }}:</strong> {{ msg.result.cumulative?.creativeBrief?.tone }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.brief.visualStyle') }}:</strong> {{ msg.result.cumulative?.creativeBrief?.visualStyle }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.brief.pacing') }}:</strong> {{ msg.result.cumulative?.creativeBrief?.pacing }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.brief.soundDesign') }}:</strong> {{ msg.result.cumulative?.creativeBrief?.soundDesign }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.analysis.duration') }}:</strong> {{ msg.result.cumulative?.analysis?.overview?.duration || '60s' }}</div>
       <div class="brief-field"><strong>{{ t('projects.new.results.brief.aspectRatio') }}:</strong> {{ aspectRatio }}</div>
-      <div class="brief-field"><strong>{{ t('projects.new.results.brief.language') }}:</strong> {{ msg.result.language }}</div>
-      <div class="brief-field"><strong>{{ t('projects.new.results.brief.audience') }}:</strong> {{ msg.result.creativeBrief.targetAudience }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.brief.language') }}:</strong> {{ msg.result.cumulative?.language }}</div>
+      <div class="brief-field"><strong>{{ t('projects.new.results.brief.audience') }}:</strong> {{ msg.result.cumulative?.creativeBrief?.targetAudience }}</div>
     </div>
   </div>
 </template>
@@ -43,81 +43,96 @@ defineEmits(['text-selection', 'comment'])
 
 <style lang="scss" scoped>
 .storyboard-collapsible {
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 8px;
 
-  &:hover { background: rgba(40, 40, 40, 0.6); }
+  &:hover { 
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
 }
 
 .storyboard-summary-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  background: rgba(30, 30, 30, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  padding: 20px 24px;
   cursor: pointer;
-  transition: all 0.2s;
 
   .bar-content {
     display: flex;
     align-items: center;
-    gap: 12px;
-    color: #eee;
-    font-size: 14px;
-    font-weight: 600;
+    gap: 16px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
 
-    .status-ready { color: #888; font-weight: 400; margin-left: 4px; }
+    i { color: #3b82f6; }
+    .status-ready { color: rgba(255, 255, 255, 0.4); font-weight: 600; font-size: 13px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
   }
 
   .collapsible-icon {
-    color: #555; 
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
+    color: rgba(255, 255, 255, 0.2); 
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
     &.expanded { transform: rotate(90deg); color: #fff; }
   }
 }
 
 .document-content {
-  padding: 24px 30px;
-  color: #ccc;
-  font-size: 14px;
-  line-height: 1.6;
-  height: 100px;
-  position: relative;
-  overflow-y: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 32px 32px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  line-height: 1.7;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   
-  &.expanded { height: auto; overflow-y: auto; }
+  &.expanded { height: auto; opacity: 1; padding-top: 12px; }
 
   .brief-main-title {
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 28px;
+    font-weight: 900;
     color: #fff;
-    margin-bottom: 24px;
+    margin-bottom: 32px;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
   }
 
   .brief-field {
-    margin-bottom: 12px;
-    font-size: 14px;
-    strong { color: #fff; display: inline-block; min-width: 160px; }
+    margin-bottom: 16px;
+    font-size: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    strong { color: rgba(255, 255, 255, 0.4); font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; min-width: 140px; }
+    span { color: #fff; font-weight: 600; text-align: right; }
   }
 
   .inline-comment-icon {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     @include flex-center;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
     cursor: pointer;
     opacity: 0;
     transition: all 0.2s;
-    color: #888;
+    color: rgba(255, 255, 255, 0.4);
     &:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
   }
 
@@ -126,6 +141,5 @@ defineEmits(['text-selection', 'comment'])
   }
 }
 
-.animate-up { animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
-@keyframes slideInUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 </style>

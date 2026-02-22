@@ -47,6 +47,13 @@ const routes: Array<RouteRecordRaw> = [
         props: true
     },
     {
+        path: '/projects/studio/:id',
+        name: 'project-studio',
+        component: () => import('@/views/project/Studio.vue'),
+        meta: { requiresAuth: true, layout: 'none' },
+        props: true
+    },
+    {
         path: '/templates',
         name: 'templates',
         component: () => import('@/views/user/Templates.vue'),
@@ -54,9 +61,7 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         path: '/gallery',
-        name: 'gallery',
-        component: () => import('@/views/user/Gallery.vue'),
-        meta: { requiresAuth: true, layout: 'app' }
+        redirect: '/resources'
     },
     {
         path: '/billing',
@@ -96,10 +101,17 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         path: '/merchants',
-        name: 'merchant-orders',
-        component: () => import('@/views/user/MerchantOrders.vue'),
+        name: 'merchants',
+        component: () => import('@/views/user/Merchants.vue'),
         meta: { requiresAuth: true, layout: 'app' }
     },
+    // {
+    //     path: '/merchants/ad-wizard',
+    //     name: 'ad-wizard',
+    //     component: () => import('@/views/user/ProductAdWizard.vue'),
+    //     meta: { requiresAuth: true, layout: 'app' },
+    //     props: true
+    // },
     {
         path: '/organization',
         name: 'organization',
@@ -116,7 +128,8 @@ const routes: Array<RouteRecordRaw> = [
         path: '/live/studio',
         name: 'live-studio',
         component: () => import('@/views/user/LiveStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
+        meta: { requiresAuth: true, layout: 'none' },
+        props: true
     },
     {
         path: '/gemini-live-chat',
@@ -251,16 +264,14 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
-        path: '/viral-hub',
-        name: 'viral-hub',
+        path: '/viral',
+        name: 'viral',
         component: () => import('@/views/user/ViralHub.vue'),
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
         path: '/recordings',
-        name: 'recordings',
-        component: () => import('@/views/user/Recordings.vue'),
-        meta: { requiresAuth: true, layout: 'app' }
+        redirect: '/resources'
     },
     {
         path: '/resources',
@@ -279,6 +290,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'admin-fleet',
         component: () => import('@/views/admin/FleetManager.vue'),
         meta: { requiresAuth: true, requiresAdmin: true, layout: 'app' }
+    },
+    {
+        path: '/p/:id',
+        name: 'product-landing',
+        component: () => import('@/views/general/ProductLanding.vue'),
+        meta: { requiresAuth: false, layout: 'none' }
     }
 ]
 

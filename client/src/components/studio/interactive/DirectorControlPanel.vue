@@ -100,12 +100,12 @@ const newPoll = ref({
     options: ['', '', '']
 });
 
-const actions = ref([
+const actions = [
     { id: 'sfx_airhorn', name: 'Air Horn', desc: 'Hype up the moment', icon: VolumeNotice, cost: 50, color: 'text-yellow-400', cooldown: 0 },
     { id: 'visual_confetti', name: 'Confetti', desc: 'Celebrate a win', icon: PartyBalloon, cost: 100, color: 'text-pink-400', cooldown: 0 },
     { id: 'camera_cut', name: 'Dramatic Cut', desc: 'Focus on speaker', icon: Camera, cost: 200, color: 'text-blue-400', cooldown: 0 },
     { id: 'b_roll', name: 'Random Clip', desc: 'Insert chaos B-roll', icon: Movie, cost: 500, color: 'text-green-400', cooldown: 0 },
-]);
+];
 
 // Map vibe 'happy' | 'tense' | 'neutral' to a 0-100 value visual
 // Only for mapping purposes, real value comes from server

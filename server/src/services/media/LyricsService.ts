@@ -16,20 +16,20 @@ export class LyricsService {
      * @param artist Artist name (optional)
      * @param youtubeUrl Reference YouTube URL for context (optional)
      */
-    static async searchLyrics(songTitle: string, artist?: string, youtubeUrl?: string): Promise<string> {
+    static async searchLyrics(songTitle: string, artist?: string, youtubeUrl?: string, preferredLang?: string): Promise<string> {
         try {
-            const modelName = "gemini-2.5-flash";
+            const modelName = "gemini-2.5-pro";
             const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
 
             const prompt = `
-            Generate the full lyrics for the song '${songTitle}' by '${artist || 'unknown artist'}'.
-            Reference URL: ${youtubeUrl || 'N/A'}
+            Search the full lyrics for the song: '${youtubeUrl}' by language: '${preferredLang || 'en'}' and format: 'webvtt'.
 
-            Return ONLY the lyrics text. 
+            Return ONLY the lyrics webvtt format.
             Do not include conversational filler (e.g. "Here are the lyrics").
             Do not include the title or artist header unless it's part of the lyrics structure.
             If the song is instrumental, return '[Instrumental]'.
             If the song is completely unknown and you cannot generate lyrics, return empty string.
+            If you can't find the exact lyrics for the song, return empty string.
             `;
 
             const result = await (ai as any).models.generateContent({

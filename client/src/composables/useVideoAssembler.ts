@@ -58,10 +58,37 @@ export function useVideoAssembler() {
                 handleError(e.message);
             };
 
+            // Helper to recursively unwrap Vue Proxies and handle circular refs for Web Worker communication
+            const deepRaw = (obj: any, seen = new WeakSet()): any => {
+                if (obj === null || typeof obj !== 'object') return obj;
+                if (obj instanceof Blob || obj instanceof File || obj instanceof ArrayBuffer) return obj;
+                if (seen.has(obj)) return '[Circular]'; // Prevent infinite loops
+                
+                // Get the raw object (unwrapped if it was a Proxy)
+                const raw = (obj as any).__v_raw || obj;
+                if (seen.has(raw)) return '[Circular]';
+                seen.add(raw);
+
+                if (Array.isArray(raw)) {
+                    return raw.map(item => deepRaw(item, seen));
+                }
+
+                const result: any = {};
+                for (const key in raw) {
+                    if (Object.prototype.hasOwnProperty.call(raw, key)) {
+                        const val = raw[key];
+                        // Skip non-serializable properties
+                        if (typeof val === 'function' || typeof val === 'symbol') continue;
+                        result[key] = deepRaw(val, seen);
+                    }
+                }
+                return result;
+            };
+
             // Start Assembly
             const token = localStorage.getItem('auth-token');
             worker.postMessage({
-                project: projectData, // Pass the override which might contain blobs
+                project: deepRaw(projectData),
                 options: JSON.parse(JSON.stringify(options)),
                 token
             });
@@ -97,15 +124,10 @@ export function useVideoAssembler() {
 
             // Use FormData for direct multipart upload
             const formData = new FormData();
-            formData.append('video', data.blob, `final_video.${options.format || 'mp4'}`);
-            if (data.reviewBlob) {
-                formData.append('review', data.reviewBlob, `review_clip.${options.format || 'mp4'}`);
-            }
-            formData.append('duration', data.duration.toString());
-            formData.append('resolution', options.resolution);
+            formData.append('video', data.blob, `${projectStore.currentProject?.title ?? 'Untitled'}.${options.format || 'mp4'}`);
 
             // Upload directly to project endpoint via store
-            await projectStore.uploadFinalVideo(projectId, formData, (percent) => {
+            await projectStore.publishProject(projectId, formData, (percent) => {
                 progress.value = 95 + (percent * 0.05); // Last 5% for upload
                 status.value = `Uploading: ${percent}%`;
             });

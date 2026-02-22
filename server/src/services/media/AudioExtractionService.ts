@@ -145,7 +145,7 @@ export class AudioExtractionService {
         const args = [
             '-o', '-',             
             '-f', 'bestaudio/best', // Robust format selection
-            '--extractor-args', 'youtube:player_client=android,ios,web', // Broader clients
+            '--extractor-args', 'youtube:player_client=web', // Broader clients
             '--no-playlist',
             '--no-warnings',
             `https://www.youtube.com/watch?v=${videoId}`
@@ -208,7 +208,7 @@ export class AudioExtractionService {
                 '--sub-lang', `${preferredLanguage}`, // Try preferred, fallback to en, then anything
                 '--convert-subs', 'vtt',
                 '-f', 'bestaudio/best', // Ensure a format is valid even if skipping download
-                '--extractor-args', 'youtube:player_client=android,ios,web', // Broaden player clients
+                '--extractor-args', 'youtube:player_client=android', // Broaden player clients
                 '-o', path.join(this.tempDir, baseFilename),
                 `https://www.youtube.com/watch?v=${videoId}`
             ];

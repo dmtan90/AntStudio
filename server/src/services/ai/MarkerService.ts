@@ -82,7 +82,6 @@ export class MarkerService extends EventEmitter {
                     description: `Autonomous viral highlight captured during a engagement spike. Reason: ${reason}`,
                     type: 'video',
                     status: 'ready',
-                    url: highlight.s3Url,
                     s3Key: highlight.s3Key,
                     metadata: { 
                         isViralClip: true, 

@@ -2,8 +2,8 @@
     <div class="flex flex-col gap-8">
         <div class="panel-section space-y-6">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-orange-400 uppercase">Whiteboard Content</span>
-                <button v-if="!isLaunchpadActive" @click="$emit('reset-whiteboard')" class="text-[9px] font-bold text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1.5 uppercase">
+                <span class="text-[10px] font-bold text-blue-400 uppercase">Whiteboard Content</span>
+                <button v-if="!isLaunchpadActive" @click="$emit('reset-whiteboard')" class="text-[9px] font-bold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 uppercase">
                     <refresh size="12" /> Reset
                 </button>
             </div>
@@ -16,10 +16,10 @@
                 </div>
                 <div v-else class="space-y-4">
                      <div class="flex items-center gap-3">
-                         <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-                             <monitor v-if="contentType === 'stream'" theme="outline" size="20" class="text-orange-400" />
-                             <file-pdf v-else-if="contentType === 'pdf'" theme="outline" size="20" class="text-orange-400" />
-                             <file-ppt v-else theme="outline" size="20" class="text-orange-400" />
+                         <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                             <monitor v-if="contentType === 'stream'" theme="outline" size="20" class="text-blue-400" />
+                             <file-pdf v-else-if="contentType === 'pdf'" theme="outline" size="20" class="text-blue-400" />
+                             <file-ppt v-else theme="outline" size="20" class="text-blue-400" />
                          </div>
                          <div class="flex flex-col">
                              <span class="text-xs font-black text-white uppercase tracking-tighter">Active Session</span>
@@ -49,7 +49,7 @@
 
             <!-- Quick Actions -->
             <div class="space-y-4">
-                <span class="text-[10px] font-bold text-orange-400 uppercase block">Quick Actions</span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase block">Quick Actions</span>
                 <div class="grid grid-cols-2 gap-3">
                     <button @click="$emit('trigger-import', 'pdf')" class="action-card group">
                         <file-pdf theme="outline" size="14" />
@@ -72,11 +72,11 @@
 
             <!-- AI Vision Presentation -->
             <div v-if="contentType === 'pdf' || contentType === 'ppt'" class="space-y-4 pt-6 border-t border-white/5">
-                <span class="text-[10px] font-bold text-orange-400 uppercase block">AI Vision Presentation</span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase block">AI Vision Presentation</span>
                 
-                <div class="bg-gradient-to-br from-orange-500/10 to-transparent p-4 rounded-2xl border border-orange-500/20 space-y-4">
+                <div class="bg-gradient-to-br from-blue-500/10 to-transparent p-4 rounded-2xl border border-blue-500/20 space-y-4">
                     <div class="flex items-center gap-3">
-                         <div class="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center shadow-[0_4px_12px_rgba(249,115,22,0.3)]">
+                         <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-[0_8px_20px_rgba(59,130,246,0.3)]">
                              <robot theme="outline" size="20" class="text-white" />
                          </div>
                          <div class="flex flex-col">
@@ -87,11 +87,11 @@
 
                     <div class="flex gap-2">
                         <button v-if="whiteboardScripts.length === 0" @click="$emit('generate-scripts')"
-                            class="flex-1 py-2 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-white hover:bg-orange-500 hover:border-orange-400 transition-all uppercase">
+                            class="flex-1 py-2 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-white hover:bg-blue-600 hover:border-blue-500 transition-all uppercase">
                             Analyze Slides
                         </button>
                         <button v-else @click="$emit('start-autopilot')"
-                            class="flex-1 py-2 rounded-lg bg-orange-500 border border-orange-400 text-[10px] font-bold text-white shadow-[0_4px_20px_rgba(249,115,22,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all uppercase">
+                            class="flex-1 py-2 rounded-lg bg-blue-600 border border-blue-500 text-[10px] font-bold text-white shadow-[0_8px_25px_rgba(59,130,246,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all uppercase">
                             Start Autopilot
                         </button>
                     </div>

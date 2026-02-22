@@ -101,7 +101,7 @@ export class Recorder {
   private editor: Editor;
 
   instance!: fabric.StaticCanvas;
-  timeline!: any;
+  timeline!: anime.AnimeTimelineInstance | null;
   // animations!: CanvasAnimations | null;
   duration: number = 0;
 
@@ -133,7 +133,7 @@ export class Recorder {
 
   private get contents() {
     let canvas = [], timelines = [], animations = [], duration = 0;
-    for (let i = 0; i < this.editor.pages.length; i++) {
+    for(let i = 0; i < this.editor.pages.length; i++){
       let page = this.editor.pages[i];
       canvas.push(page.instance);
       timelines.push(page.timeline);
@@ -150,34 +150,35 @@ export class Recorder {
     };
   }
 
-  private buildExportContent() {
+  private buildExportContent(){
     const contents = this.contents;
     console.log("buildExportContent", contents);
     let jsonObjects = [];
     let startDuration = 0;
-    for (let i = 0; i < contents.scenes; i++) {
+    for(let i = 0; i < contents.scenes; i++){
       const canvas = contents.canvas[i];
       const timeline = contents.timelines[i];
       canvas.fire("recorder:start");
       const json = canvas.toDatalessJSON(propertiesToInclude);
+      console.log("json", json);
       //meta: {duration: 4835, offset: 165, blocks: Array(1)}
       //anim: {in: {…}, scene: {…}, out: {…}, state: {…}}
       //should update duration and offset of the objects to match new timeline
       let offsetMs = startDuration;
-      for (let j = 0; j < json.objects.length; j++) {
+      for(let j = 0; j < json.objects.length; j++){
         const object = json.objects[j];
         const anim = object.anim;
-        if (anim.in && anim.in.offset != undefined) {
-          anim.in.offset = anim.in.offset += offsetMs
+        if (anim && anim.in && anim.in.offset != undefined) {
+          anim.in.offset = anim.in.offset + offsetMs
         }
-        if (anim.out && anim.out.offset != undefined) {
-          anim.out.offset = anim.out.offset += offsetMs
+        if (anim && anim.out && anim.out.offset != undefined) {
+          anim.out.offset = anim.out.offset + offsetMs
         }
-        if (anim.scene && anim.scene.offset != undefined) {
-          anim.scene.offset = anim.scene.offset += offsetMs
+        if (anim && anim.scene && anim.scene.offset != undefined) {
+          anim.scene.offset = anim.scene.offset + offsetMs
         }
-        if (anim.state && anim.state.offset != undefined) {
-          anim.state.offset = anim.state.offset += offsetMs
+        if (anim && anim.state && anim.state.offset != undefined) {
+          anim.state.offset = anim.state.offset + offsetMs
         }
 
         const meta = object.meta;
@@ -194,7 +195,7 @@ export class Recorder {
     }
     const fabricVersion = fabric.version;
     return {
-      json: { objects: jsonObjects, version: fabricVersion },
+      json: {objects: jsonObjects, version: fabricVersion },
       duration: contents.duration
     }
   }
@@ -612,12 +613,37 @@ export class Recorder {
 
     // this.timeline = anime.timeline({ duration: this.preview.duration, loop: false, autoplay: false, update: this.instance.renderAll.bind(this.instance) });
     // this.animations.initialize(this.instance, this.timeline, this.preview.duration);
+    console.log("[Recorder] Starting capture...");
+    
+    // Safety check: In headless mode, if the UI hasn't initialized the recorder yet,
+    // we create an autonomous OffscreenCanvas to proceed.
+    if (!this.instance) {
+      console.log("[Recorder] Headless mode: Creating autonomous OffscreenCanvas for rendering");
+      try {
+        const width = this.workspace?.width || this.editor.dimension.width || 1920;
+        const height = this.workspace?.height || this.editor.dimension.height || 1080;
+        const canvas = new OffscreenCanvas(width, height);
+        this.initialize(canvas as any);
+      } catch (e) {
+        console.error("[Recorder] Failed to create OffscreenCanvas:", e);
+        // Fallback or rethrow if strictly required
+      }
+    }
+
+    if (!this.instance) {
+      throw new Error("[Recorder] Cannot start: Canvas instance is not initialized.");
+    }
+
     const data = this.buildExportContent();
-    // const canvas = new OffscreenCanvas(this.workspace.width, this.workspace.height);
-    // this.initialize(canvas);
-    this.instance.setDimensions({ height: this.workspace.height, width: this.workspace.width });
+    
+    // Ensure we use the editor dimensions if workspace isn't available
+    const width = this.workspace?.width || this.editor.dimension.width || 1920;
+    const height = this.workspace?.height || this.editor.dimension.height || 1080;
+
+    this.instance.setDimensions({ height, width });
     this.instance.clear();
     await createPromise<void>((resolve) => this.instance.loadFromJSON(data.json, resolve));
+    
     const artboard: fabric.Object = await createPromise<fabric.Object>((resolve) => this.artboard.clone((clone: fabric.Object) => resolve(clone), propertiesToInclude));
     this.instance.insertAt(artboard, 0, false);
     this.instance.clipPath = artboard;
@@ -626,15 +652,28 @@ export class Recorder {
     this.instance.renderAll();
     this.duration = data.duration;
 
-    this.timeline = anime.timeline({ duration: this.duration, loop: false, autoplay: false, update: this.instance.renderAll.bind(this.instance) }) as any;
+    this.timeline = anime.timeline({ 
+      duration: this.duration, 
+      loop: false, 
+      autoplay: false, 
+      update: this.instance.renderAll.bind(this.instance) 
+    }) as any;
     this.animations.initialize(this.instance, this.timeline, this.duration);
   }
 
   stop() {
-    this.canvas.fire("recorder:stop");
-    anime.remove(this.timeline);
-    this.instance.clear();
-    this.timeline = null;
+    if(this.canvas){
+      this.canvas.fire("recorder:stop");
+    }
+
+    if(this.timeline){
+      anime.remove(this.timeline);
+    }
+
+    if(this.instance){
+      this.instance.clear();
+      this.timeline = null;
+    }
   }
 
   destroy() {

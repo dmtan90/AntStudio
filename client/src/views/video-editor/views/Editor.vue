@@ -2,7 +2,7 @@
   <AnimatePresence mode="wait">
     <Motion v-if="status === 'pending' || status === 'uninitialized'" key="loading" :initial="{ opacity: 1 }"
       :exit="{ opacity: 0 }" :transition="{ duration: 0.5, ease: 'easeInOut' }"
-      class="fixed inset-0 z-50 grid place-items-center bg-[#0a0a0a] select-none">
+      class="fixed inset-0 z-50 grid place-items-center bg-[#0a0a0c] select-none">
       <div class="flex flex-col gap-4 items-center">
         <Motion :initial="{ scale: 0.9, opacity: 0 }" :animate="{ scale: 1, opacity: 1 }"
           :transition="{ duration: 0.5, ease: 'easeOut' }" class="relative flex items-center justify-center">
@@ -17,8 +17,8 @@
       </div>
     </Motion>
 
-    <template v-else-if="status === 'complete'">
-      <section key="editor" class="h-[100dvh] overflow-hidden flex flex-col select-none relative bg-[#0a0a0a]">
+    <Motion v-else-if="status === 'complete'" key="editor" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }" :exit="{ opacity: 0 }">
+      <section class="h-[100dvh] overflow-hidden flex flex-col select-none relative bg-[#0a0a0c]">
         <!-- Full Editor UI (Hidden in Headless) -->
         <template v-if="!editor.isHeadless">
           <EditorMenubar />
@@ -40,7 +40,7 @@
 
         <!-- Headless Render UI -->
         <template v-else>
-          <div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0a0a0a] p-10">
+          <div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0a0a0c] p-10">
             <div class="w-full max-w-lg space-y-8 animate-in">
               <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
@@ -71,7 +71,8 @@
               </div>
 
               <!-- Hidden Workspace for Rendering -->
-              <div class="opacity-0 pointer-events-none absolute" style="width: 1920px; height: 1080px;">
+              <div class="opacity-0 pointer-events-none absolute" 
+                   :style="{ width: (editor.dimension?.width || 1920) + 'px', height: (editor.dimension?.height || 1080) + 'px' }">
                  <EditorCanvas id="shared-canvas" />
                  <EditorRecorder />
               </div>
@@ -83,16 +84,16 @@
         <KeyboardShortcutsPanel />
         <ExportDialog ref="exportDialogRef" />
       </section>
-    </template>
+    </Motion>
 
-    <template v-else>
-      <section key="error" class="h-[100dvh] grid place-items-center bg-[#0a0a0a]">
+    <Motion v-else key="error" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }" :exit="{ opacity: 0 }">
+      <section class="h-[100dvh] grid place-items-center bg-[#0a0a0c]">
         <div class="flex flex-col items-center gap-2">
           <span class="text-base font-medium text-destructive">Unable to load editor</span>
           <span class="text-sm text-muted-foreground">Your browser might not be supported</span>
         </div>
       </section>
-    </template>
+    </Motion>
   </AnimatePresence>
 </template>
 

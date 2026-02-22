@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AdminSettings } from '../models/AdminSettings.js';
 import { User } from '../models/User.js';
 import { Project } from '../models/Project.js';
+import { systemLogger } from '~/utils/systemLogger.js';
 
 export const checkLicenseStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -17,10 +18,10 @@ export const checkLicenseStatus = async (req: Request, res: Response, next: Next
             // However, 'trial' might be just a type, status would be 'valid' or 'expired'.
             // Let's check my model default.
             // status: 'invalid' (default).
-            console.log(`[License Check] FAILED. Status: ${status}`);
+            systemLogger.warn(`[License Check] FAILED. Status: ${status}`);
             return res.status(403).json({ success: false, error: 'License invalid or expired. Please contact administrator.' });
         }
-        console.log(`[License Check] PASSED. Status: ${status}`);
+        systemLogger.info(`[License Check] PASSED. Status: ${status}`);
         next();
     } catch (error) {
         res.status(500).json({ success: false, error: 'Internal Server Error during license check' });
@@ -38,8 +39,10 @@ export const checkUserLimit = async (req: Request, res: Response, next: NextFunc
         }
 
         if (currentUsers >= maxUsers) {
+            systemLogger.warn(`[User Limit] FAILED. Current: ${currentUsers}, Max: ${maxUsers}`);
             return res.status(403).json({ success: false, error: `User limit reached (${maxUsers}). Please upgrade license.` });
         }
+        systemLogger.info(`[User Limit] PASSED. Current: ${currentUsers}, Max: ${maxUsers}`);
         next();
     } catch (error) {
         res.status(500).json({ success: false, error: 'Internal Server Error during limit check' });
@@ -50,17 +53,24 @@ export const checkProjectLimit = async (req: Request, res: Response, next: NextF
     try {
         const settings = await AdminSettings.findOne();
         const maxProjects = settings?.license?.info?.maxProjects || 10;
+        const valid = settings?.license?.info?.status === 'valid';
+        systemLogger.info(`[Project Limit] CHECK. Max: ${maxProjects}`, JSON.stringify(settings?.license?.info));
         const currentProjects = await Project.countDocuments();
+        if (!valid) {
+            systemLogger.warn(`[Project Limit] FAILED. Invalid license`);
+            return res.status(403).json({ success: false, error: 'License invalid or expired. Please contact administrator.' });
+        }
+
         if (maxProjects == -1) {//unlimited
             next();
             return;
         }
 
         if (currentProjects >= maxProjects) {
-            console.log(`[Project Limit] FAILED. Current: ${currentProjects}, Max: ${maxProjects}`);
+            systemLogger.warn(`[Project Limit] FAILED. Current: ${currentProjects}, Max: ${maxProjects}`);
             return res.status(403).json({ success: false, error: `Project limit reached (${maxProjects}). Please upgrade license.` });
         }
-        console.log(`[Project Limit] PASSED. Current: ${currentProjects}, Max: ${maxProjects}`);
+        systemLogger.info(`[Project Limit] PASSED. Current: ${currentProjects}, Max: ${maxProjects}`);
         next();
     } catch (error) {
         res.status(500).json({ success: false, error: 'Internal Server Error during limit check' });

@@ -51,8 +51,8 @@
                    <setting-two theme="outline" /> Deployment Strategy
                 </h3>
                 <el-radio-group v-model="tenant.deployment.mode" size="small">
-                   <el-radio-button label="internal">Internal Only</el-radio-button>
-                   <el-radio-button label="public">Public Reseller</el-radio-button>
+                   <el-radio-button value="internal">Internal Only</el-radio-button>
+                   <el-radio-button value="public">Public Reseller</el-radio-button>
                 </el-radio-group>
              </div>
              

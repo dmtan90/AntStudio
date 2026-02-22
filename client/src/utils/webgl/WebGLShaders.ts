@@ -255,6 +255,10 @@ export function createVirtualBackgroundShader(gl: WebGLRenderingContext): Shader
             
             float mask = texture2D(u_mask, maskUV).r;
             
+            // Combine with original alpha (from Chroma Key)
+            // If original.a is 0 (Transparent), then effective mask is 0 (Background)
+            mask = min(mask, original.a);
+
             // Feather the mask edges for smoother compositing
             float featheredMask = smoothstep(0.5 - u_feather, 0.5 + u_feather, mask);
             
@@ -462,4 +466,122 @@ export function renderWithShader(
 
     // Draw
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+/**
+ * Creates a Chroma Key shader (Green Screen)
+ */
+export function createChromaKeyShader(gl: WebGLRenderingContext): ShaderProgram {
+    const fragmentSource = `
+        precision mediump float;
+        uniform sampler2D u_texture;
+        uniform vec3 u_keyColor;
+        uniform float u_similarity;
+        uniform float u_smoothness;
+        uniform float u_spill;
+        varying vec2 v_texCoord;
+
+        // Convert RGB to Y/Cb/Cr
+        vec3 rgb2yuv(vec3 rgb) {
+            float y = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+            float u = -0.169 * rgb.r - 0.331 * rgb.g + 0.5 * rgb.b + 0.5;
+            float v = 0.5 * rgb.r - 0.419 * rgb.g - 0.081 * rgb.b + 0.5;
+            return vec3(y, u, v);
+        }
+
+        void main() {
+            vec4 color = texture2D(u_texture, v_texCoord);
+            
+            vec3 target = rgb2yuv(u_keyColor);
+            vec3 inputYUV = rgb2yuv(color.rgb);
+            
+            // Calculate distance in UV space (chrominance)
+            float dist = distance(target.gb, inputYUV.gb);
+            
+            float blend = smoothstep(u_similarity, u_similarity + u_smoothness, dist);
+            
+            // Spill suppression: Desaturate green edges
+            if (dist < u_similarity + u_smoothness + u_spill) {
+                // simple desaturation
+                float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                color.rgb = mix(vec3(gray), color.rgb, blend);
+            }
+            
+            gl_FragColor = vec4(color.rgb, color.a * blend);
+        }
+    `;
+
+    return compileShaderProgram(gl, fragmentSource, ['u_texture', 'u_keyColor', 'u_similarity', 'u_smoothness', 'u_spill']);
+}
+
+/**
+ * Creates a Color Grading shader (LUT)
+ */
+export function createColorGradingShader(gl: WebGLRenderingContext): ShaderProgram {
+    const fragmentSource = `
+        precision mediump float;
+        uniform sampler2D u_texture;
+        uniform sampler2D u_lut;
+        uniform float u_intensity;
+        varying vec2 v_texCoord;
+
+        void main() {
+            vec4 color = texture2D(u_texture, v_texCoord);
+            
+            // LUT Lookup (assuming 512x512 LUT or similar standard)
+            // For simplicity, we'll implement a standard 3D LUT lookup on 2D texture approach
+            // However, WebGL 1.0 doesn't support 3D textures easily.
+            // A common approach for 2D LUTs (like the ones from filter libraries) is often an 8x8 grid of 64x64 blocks.
+            // Let's assume a standard Neutral LUT map layout (512x512)
+            
+            float blueColor = color.b * 63.0;
+            
+            vec2 quad1;
+            quad1.y = floor(floor(blueColor) / 8.0);
+            quad1.x = floor(blueColor) - (quad1.y * 8.0);
+            
+            vec2 quad2;
+            quad2.y = floor(ceil(blueColor) / 8.0);
+            quad2.x = ceil(blueColor) - (quad2.y * 8.0);
+            
+            vec2 texPos1;
+            texPos1.x = (quad1.x * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.r);
+            texPos1.y = (quad1.y * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.g);
+            
+            vec2 texPos2;
+            texPos2.x = (quad2.x * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.r);
+            texPos2.y = (quad2.y * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.g);
+            
+            vec4 newColor1 = texture2D(u_lut, texPos1);
+            vec4 newColor2 = texture2D(u_lut, texPos2);
+            
+            vec4 gradedColor = mix(newColor1, newColor2, fract(blueColor));
+            
+            gl_FragColor = mix(color, gradedColor, u_intensity);
+        }
+    `;
+
+    return compileShaderProgram(gl, fragmentSource, ['u_texture', 'u_lut', 'u_intensity']);
+}
+
+/**
+ * Creates a simple Alpha Blend shader (Foreground over Background)
+ */
+export function createAlphaBlendShader(gl: WebGLRenderingContext): ShaderProgram {
+    const fragmentSource = `
+        precision mediump float;
+        uniform sampler2D u_foreground;
+        uniform sampler2D u_background;
+        varying vec2 v_texCoord;
+
+        void main() {
+            vec4 fg = texture2D(u_foreground, v_texCoord);
+            vec4 bg = texture2D(u_background, v_texCoord);
+            
+            // Standard Alpha Blending: src_alpha, 1-src_alpha
+            gl_FragColor = vec4(mix(bg.rgb, fg.rgb, fg.a), 1.0);
+        }
+    `;
+
+    return compileShaderProgram(gl, fragmentSource, ['u_foreground', 'u_background']);
 }

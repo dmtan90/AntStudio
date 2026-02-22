@@ -61,21 +61,23 @@ onMounted(() => {
     align-items: center;
     pointer-events: none;
     z-index: 100;
-    padding: 0 40px;
+    padding: 0 5%; /* Relative padding */
     text-align: center;
     transition: all 0.5s ease;
+    container-type: inline-size; /* Enable container-relative units */
 
-    &.bottom { bottom: 80px; }
+    &.bottom { bottom: 15%; } /* Use percentage for vertical positioning */
     &.center { top: 50%; transform: translateY(-50%); }
-    &.top { top: 80px; }
+    &.top { top: 15%; }
 }
 
 .lyric-line-wrapper {
     position: relative;
-    padding: 10px 24px;
+    padding: 2% 4%;
     display: flex;
     justify-content: center;
     align-items: center;
+    max-width: 100%;
 }
 
 .lyric-backdrop {
@@ -93,18 +95,20 @@ onMounted(() => {
     font-family: 'Inter', 'Roboto', 'Segoe UI', 'system-ui', sans-serif;
     font-weight: 800;
     letter-spacing: 0.02em;
-    // Enhanced readability for all backgrounds
     -webkit-text-stroke: 1.5px rgba(0, 0, 0, 0.8);
     paint-order: stroke fill;
     line-height: 1.2;
-    color: #ffffff; /* Default color for missing styles */
-    font-size: 32px; /* Default font size */
+    color: #ffffff;
+    font-size: clamp(14px, 8cqw, 40px); /* Dynamic Scaling */
+    word-break: break-word; /* Ensure wrapping */
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 /* --- STYLE: NEON --- */
 .neon {
     .lyric-line {
-        font-size: 32px;
+        font-size: clamp(16px, 9cqw, 44px);
         color: #fff;
         text-shadow: 
             0 0 8px rgba(0, 242, 255, 0.8),
@@ -136,7 +140,7 @@ onMounted(() => {
         mask-image: none;
     }
     .lyric-line {
-        font-size: 22px;
+        font-size: clamp(12px, 6cqw, 28px);
         color: rgba(255, 255, 255, 0.95);
         letter-spacing: 0.1em;
         font-weight: 600;
@@ -148,7 +152,7 @@ onMounted(() => {
 /* --- STYLE: KINETIC --- */
 .kinetic {
     .lyric-line {
-        font-size: 36px;
+        font-size: clamp(18px, 10cqw, 48px);
         color: #fff;
         text-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
         transform: perspective(500px) rotateX(5deg);
@@ -165,7 +169,7 @@ onMounted(() => {
 /* --- STYLE: BOUNCE (Compatibility) --- */
 .bounce {
     .lyric-line {
-        font-size: 32px;
+        font-size: clamp(16px, 8cqw, 40px);
         color: #fff;
         text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
         animation: lyrics-bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);

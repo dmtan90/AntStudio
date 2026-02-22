@@ -37,14 +37,14 @@
                 <p class="text-gray-400 leading-relaxed text-lg">Harness the power of Veo 3 and Imagen 3 to generate high-fidelity cinematic video and product photography instantly. No camera required.</p>
              </div>
              <div class="visual p-1 rounded-3xl bg-white/5 border border-white/10 overflow-hidden relative group">
-                <img src="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="AI Production" class="w-full h-auto opacity-80 group-hover:scale-105 transition-transform duration-1000" />
+                <img src="/bg/photo-1620641788421-7a1c342ea42e.jpg" alt="AI Production" class="w-full h-auto opacity-80 group-hover:scale-105 transition-transform duration-1000" />
                 <div class="absolute inset-0 bg-blue-500/10 mix-blend-overlay"></div>
              </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center flex-row-reverse">
              <div class="visual order-2 lg:order-1 p-1 rounded-3xl bg-white/5 border border-white/10 overflow-hidden relative group">
-                <img src="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Global Streaming" class="w-full h-auto opacity-80 group-hover:scale-105 transition-transform duration-1000" />
+                <img src="/bg/photo-1590602847861-f357a9332bbc.jpg" alt="Global Streaming" class="w-full h-auto opacity-80 group-hover:scale-105 transition-transform duration-1000" />
                 <div class="absolute inset-0 bg-purple-500/10 mix-blend-overlay"></div>
              </div>
              <div class="content space-y-6 order-1 lg:order-2">

@@ -1,11 +1,11 @@
-import { GeminiChatProvider } from '../../utils/ai/providers/GeminiChatProvider.js';
+import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { VTuberService } from '../VTuberService.js';
 
 export class AIGuestService {
-    private gemini: GeminiChatProvider;
+    private gemini: GeminiClient;
 
     constructor() {
-        this.gemini = new GeminiChatProvider();
+        this.gemini = new GeminiClient({});
     }
 
     /**
@@ -157,7 +157,12 @@ DO NOT say "I'm preparing to use the tool". JUST USE IT IMMEDIATELY.
         console.log(`[AI/Guest] Generating response for ${vtuber.identity.name}. Input: ${input.type}`);
         
         try {
-            const result = await this.gemini.generateJson(systemInstruction, 'gemini-2.0-flash', { systemPrompt });
+            const rawResult = await this.gemini.generateContent(systemInstruction, 'gemini-2.5-flash', { 
+                systemPrompt,
+                generationConfig: { responseMimeType: "application/json" }
+            });
+            let result: any = {};
+            try { result = JSON.parse(rawResult.text); } catch (e) {}
             console.log(`[AI/Guest] RAW JSON Result for ${vtuber.identity.name}:`, JSON.stringify(result));
             
             // Robust parsing with fallbacks
@@ -255,7 +260,12 @@ DO NOT say "I'm preparing to use the tool". JUST USE IT IMMEDIATELY.
 
         try {
             console.log('[AI/Guest] Normalizing Live Response:', text);
-            const result = await this.gemini.generateJson(text, 'gemini-2.5-flash', { systemPrompt });
+            const rawResult = await this.gemini.generateContent(text, 'gemini-2.5-flash', { 
+                systemPrompt,
+                generationConfig: { responseMimeType: "application/json" }
+            });
+            let result: any = {};
+            try { result = JSON.parse(rawResult.text); } catch (e) {}
             
             return {
                 text, // Return original text to preserve speech timing

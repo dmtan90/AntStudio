@@ -75,7 +75,7 @@ const createProject = async () => {
         })
 
         toast.success('Project created successfully')
-        router.push({ name: 'project-editor', params: { id: res.project._id }, query: { mode: "studio" } })
+        router.push({ name: 'project-studio', params: { id: res.project._id } })
     } catch (error: any) {
         toast.error(error.response?.data?.message || 'Failed to create project')
     } finally {

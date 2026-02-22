@@ -11,11 +11,13 @@
         v-if="type === 'video'"
         v-bind="$attrs"
         :src="resolvedUrl"
+        class="object-cover"
       ></video>
       <img
         v-else
         v-bind="$attrs"
         :src="resolvedUrl"
+        class="object-cover"
       />
     </template>
     
@@ -55,7 +57,7 @@ const resolveMedia = async (path: string | undefined | null) => {
   
   isMediaLoading.value = true
   try {
-    resolvedUrl.value = await getFileUrl(path, { cached: true })
+    resolvedUrl.value = await getFileUrl(path, { cached: false })
   } catch (e) {
     console.error('Failed to resolve media:', path, e)
     resolvedUrl.value = ''

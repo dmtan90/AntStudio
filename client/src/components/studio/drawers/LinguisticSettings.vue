@@ -31,6 +31,7 @@
                 </div>
             </div>
 
+            <!-- Neural Dubbing -->
             <div
                 class="mt-6 p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20">
                 <div class="flex justify-between items-center">
@@ -39,12 +40,28 @@
                             Dubbing</span>
                         <span class="text-[8px] opacity-40 font-bold uppercase tracking-widest">Voice Clone Relay</span>
                     </div>
-                    <el-switch v-model="dubbingEnabled" active-color="#a855f7" />
+                    <el-switch v-model="dubbingEnabled" active-color="#a855f7"
+                        @change="studioStore.visualSettings.accessibility.dubbingEnabled = dubbingEnabled" />
                 </div>
                 <div v-if="dubbingEnabled && isDubbing" class="mt-4 flex gap-1 items-center animate-pulse">
                     <div v-for="i in 3" :key="i" class="w-1 h-2 bg-purple-500/40 rounded-full"></div>
                     <span class="text-[8px] text-purple-400 font-black italic ml-1 uppercase">Cloning in Progress</span>
                 </div>
+            </div>
+
+            <!-- Canvas Subtitles Toggle -->
+            <div class="mt-4 p-4 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+                <div class="flex justify-between items-center">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-black text-cyan-400 uppercase tracking-tighter">Canvas Subtitles</span>
+                        <span class="text-[8px] opacity-40 font-bold uppercase tracking-widest">Burn-in Live Text</span>
+                    </div>
+                    <el-switch v-model="showSubtitlesOnCanvas" active-color="#06b6d4"
+                        @change="studioStore.visualSettings.accessibility.showSubtitlesOnCanvas = showSubtitlesOnCanvas" />
+                </div>
+                <p v-if="showSubtitlesOnCanvas" class="mt-3 text-[8px] opacity-40 leading-relaxed">
+                    Transcribed text will render directly on the broadcast canvas for viewers.
+                </p>
             </div>
         </section>
 
@@ -69,6 +86,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { Translation } from '@icon-park/vue-next';
+import { useStudioStore } from '@/stores/studio';
+
+const studioStore = useStudioStore();
 
 const props = defineProps<{
     isTranslating: boolean;
@@ -84,7 +104,8 @@ const emit = defineEmits(['update:isTranslating', 'update:enableAsl', 'update:so
 const localIsTranslating = ref(props.isTranslating);
 const localSourceLang = ref(props.sourceLang);
 const localTargetLang = ref(props.targetLang);
-const dubbingEnabled = ref(false); // Local switch for the FEATURE, not the ACTIVITY state
+const dubbingEnabled = ref(studioStore.visualSettings.accessibility?.dubbingEnabled || false);
+const showSubtitlesOnCanvas = ref(studioStore.visualSettings.accessibility?.showSubtitlesOnCanvas || false);
 
 watch(() => props.isTranslating, (val) => localIsTranslating.value = val);
 watch(() => props.sourceLang, (val) => localSourceLang.value = val);

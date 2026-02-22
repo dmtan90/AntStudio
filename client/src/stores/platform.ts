@@ -313,14 +313,14 @@ export const usePlatformStore = defineStore('platform', {
             }
         },
 
-        async updateLiveTitle(accountId: string, title: string) {
+        async updateLiveMetadata(accountId: string, metadata: { title: string, description: string }) {
             try {
-                const res: any = await api.patch(`/platforms/${accountId}/live-info`, { title });
+                const res: any = await api.patch(`/platforms/${accountId}/live-info`, metadata);
                 if (res.success) {
                     return res.data;
                 }
             } catch (error: any) {
-                console.error('Update Live Title Error:', error);
+                console.error('Update Live Metadata Error:', error);
                 throw error;
             }
         },

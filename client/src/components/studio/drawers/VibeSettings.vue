@@ -129,10 +129,10 @@ watch(() => props.autoAtmosphere, (val) => localAutoAtmosphere.value = val);
 
 const currentPreset = ref('');
 const scenePresets = [
-    { name: 'Late Night Talk', mood: 'noir', bg: 'https://images.unsplash.com/photo-1514525253344-9ecd9e701962?q=80&w=2070', icon: Moon, color: 'purple' },
-    { name: 'Morning Vibes', mood: 'dreamy', bg: 'https://images.unsplash.com/photo-1470252649358-96753a782901?q=80&w=2070', icon: Tea, color: 'yellow' },
-    { name: 'Cyberpunk Stream', mood: 'cyberpunk', bg: 'https://images.unsplash.com/photo-1605152276897-4f618f831968?q=80&w=2070', icon: CupOne, color: 'pink' },
-    { name: 'Cozy Fireside', mood: 'sepia', bg: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=2070', icon: Fire, color: 'orange' }
+    { name: 'Late Night Talk', mood: 'noir', bg: '/bg/late-night-talk.jpg', icon: Moon, color: 'purple' },
+    { name: 'Morning Vibes', mood: 'dreamy', bg: '/bg/morning-vibes.jpg', icon: Tea, color: 'yellow' },
+    { name: 'Cyberpunk Stream', mood: 'cyberpunk', bg: '/bg/cyberpunk-stream.jpg', icon: CupOne, color: 'pink' },
+    { name: 'Cozy Fireside', mood: 'sepia', bg: '/bg/cozy-fireside.jpg', icon: Fire, color: 'orange' }
 ];
 
 const applyPreset = (p: any) => {
@@ -142,10 +142,10 @@ const applyPreset = (p: any) => {
 
 const activeTab = ref('classic');
 const panoPresets = [
-    { name: 'Nebula Void', bg: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=2070', mood: 'cosmic' },
-    { name: 'Digital Forest', bg: 'https://images.unsplash.com/photo-1542641728-6ca359b085f4?q=80&w=2070', mood: 'lush' },
-    { name: 'Neon City Peak', bg: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=2070', mood: 'cyberpunk' },
-    { name: 'Minimal Stage', bg: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2070', mood: 'clean' }
+    { name: 'Nebula Void', bg: '/bg/nebula-void.jpg', mood: 'cosmic' },
+    { name: 'Digital Forest', bg: '/bg/digital-forest.jpg', mood: 'lush' },
+    { name: 'Neon City Peak', bg: '/bg/neon-city-peak.jpg', mood: 'cyberpunk' },
+    { name: 'Minimal Stage', bg: '/bg/minimal-stage.jpg', mood: 'clean' }
 ];
 
 const applyPano = (p: any) => {

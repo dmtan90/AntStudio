@@ -22,7 +22,8 @@ import {
   Config as Settings,
   Edit,
   Ticket,
-  Check
+  Check,
+  Robot
 } from '@icon-park/vue-next';
 import Spinner from 'video-editor/components/ui/spinner.vue';
 import ThemeToggle from 'video-editor/components/ui/theme-toggle.vue';
@@ -54,7 +55,7 @@ const uploadTemplate = useMutation({
   mutationFn: async () => {
     const pages = await editor.exportTemplate();
     console.log("uploadTemplate", editor.name, editor.id, pages)
-    const template: EditorTemplate = { name: editor.name, id: editor.id, pages, is_pubished: false };
+    const template = { name: editor.name, id: editor.id, pages, is_pubished: false } as unknown as EditorTemplate;
     createBase64Download(template, "text/json", `template-${editor.name}-${Date.now()}.json`);
     return template;
   },
@@ -179,7 +180,7 @@ const isFormat = (format) => {
       <div class="h-4 w-px bg-white/10 mx-1"></div>
 
       <!-- Aspect Ratio Switcher -->
-      <div class="flex items-center gap-2 px-2 py-1 rounded-xl bg-white/5 border border-white/5">
+      <!-- <div class="flex items-center gap-2 px-2 py-1 rounded-xl bg-white/5 border border-white/5">
         <el-dropdown trigger="click" @command="resize" popper-class="cinematic-dropdown">
           <button class="flex items-center gap-2 px-2 py-0.5 hover:text-brand-primary transition-colors group">
             <span
@@ -203,7 +204,7 @@ const isFormat = (format) => {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-      </div>
+      </div> -->
 
 
       <el-dropdown trigger="click" popper-class="cinematic-dropdown">
@@ -228,7 +229,7 @@ const isFormat = (format) => {
         </template>
       </el-dropdown>
 
-      <div class="h-4 w-px bg-white/10 mx-1"></div>
+      <!-- <div class="h-4 w-px bg-white/10 mx-1"></div> -->
 
       <el-button-group class="cinematic-button-group">
         <el-tooltip content="Undo (Ctrl+Z)" placement="bottom" popper-class="cinematic-tooltip">
@@ -246,7 +247,7 @@ const isFormat = (format) => {
       </el-button-group>
     </section>
 
-    <section id="center" class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+    <!-- <section id="center" class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
       <div v-if="user"
         class="credit-badge flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-orange-500/20 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent backdrop-blur-md shadow-[0_0_15px_rgba(249,115,22,0.1)] group cursor-help transition-all hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]">
         <div class="relative flex items-center justify-center">
@@ -258,22 +259,21 @@ const isFormat = (format) => {
           }}</span>
         <span class="text-[9px] font-bold text-orange-500/40 uppercase tracking-[0.1em] relative z-10">Credits</span>
       </div>
-    </section>
+    </section> -->
 
     <section id="right" class="ml-auto flex items-center gap-3 relative z-10">
       <!-- Mode Toggle -->
       <el-button
         class="cinematic-button !h-9 !px-4 !rounded-xl border-brand-primary/20 text-brand-primary hover:!bg-brand-primary/10 transition-all font-bold flex items-center gap-2"
-        @click="projectStore.editorMode = 'simple'">
-        <CloudUpload :size="14" />
-        <span class="text-[10px] uppercase tracking-[0.2em]">Flow</span>
-        <ChevronRight :size="12" class="opacity-40" />
+        @click="projectStore.editorMode = 'simple'" :icon="Robot">
+        <span class="text-[10px] uppercase tracking-[0.2em]">Agentic</span>
+        <!-- <ChevronRight :size="12" class="opacity-40" /> -->
       </el-button>
 
       <div class="h-5 w-px bg-white/10 mx-1"></div>
 
       <!-- Auto-save Status -->
-      <div class="flex items-center gap-2 px-2">
+      <!-- <div class="flex items-center gap-2 px-2">
         <div v-if="editor.saving" class="flex items-center gap-1.5">
           <Spinner size="xs" class="text-brand-primary/60" />
           <span class="text-[8px] font-bold text-white/30 uppercase tracking-[0.1em]">Saving...</span>
@@ -282,14 +282,14 @@ const isFormat = (format) => {
           <Check :size="10" class="text-brand-primary" />
           <span class="text-[8px] font-bold text-white/30 uppercase tracking-[0.1em]">Saved</span>
         </div>
-      </div>
+      </div> -->
 
-      <div class="h-5 w-px bg-white/10 mx-1"></div>
+      <!-- <div class="h-5 w-px bg-white/10 mx-1"></div> -->
 
       <el-button
         class="cinematic-button !h-9 !px-4 !rounded-xl border-white/10 bg-white/5 hover:bg-white/10 transition-all font-bold flex items-center gap-2"
-        :loading="editor.saving" @click="handleSaveTemplate">
-        <CloudUpload :size="14" class="text-white/40" />
+        :loading="editor.saving" @click="handleSaveTemplate" :icon="CloudUpload">
+        <!-- <CloudUpload :size="14" class="text-white/40" /> -->
         <span class="text-[10px] uppercase tracking-[0.15em] text-white/60">Save</span>
       </el-button>
 

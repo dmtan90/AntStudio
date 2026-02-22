@@ -568,11 +568,11 @@ const startTrackingLoop = () => {
 };
 
 const backgroundPresets = [
-    { name: 'Studio', url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=400' },
-    { name: 'Cyberpunk', url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=400' },
-    { name: 'Nature', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=400' },
-    { name: 'Abstract', url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=400' },
-    { name: 'Solid Black', url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=400' }
+    { name: 'Studio', url: '/bg/pro-studio.jpg' },
+    { name: 'Cyberpunk', url: '/bg/cyberpunk_penthouse.jpg' },
+    { name: 'Nature', url: '/bg/zen_garden.jpg' },
+    { name: 'Abstract', url: '/bg/neon.jpg' },
+    { name: 'Solid Black', url: '/bg/solid-black.jpg' }
 ];
 
 // Preview state

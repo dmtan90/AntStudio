@@ -29,21 +29,25 @@ const { sidebarCollapsed: isSidebarCollapsed } = storeToRefs(uiStore)
 .app-main {
   flex: 1;
   transition: $transition-base;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   position: relative;
   z-index: 1;
+  @include scrollbar;
 }
 
 .content-wrapper {
   max-width: 1600px;
   margin: 0 auto;
   padding: $spacing-xl;
+  min-height: 100.1%; // Ensure scroll is always possible
 }
 
 @media (max-width: 768px) {
   .app-main {
     margin-left: 0 !important;
     padding: $spacing-lg;
+    height: 100vh;
   }
 }
 </style>

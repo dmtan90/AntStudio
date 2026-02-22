@@ -162,6 +162,7 @@ const TemplateSchema = new Schema<ITemplate>(
 );
 
 // Indexes for marketplace queries
+TemplateSchema.index({ category: 1, 'pages.data.orientation': 1, is_published: 1 });
 TemplateSchema.index({ category: 1, featured: -1, downloads: -1 });
 TemplateSchema.index({ tags: 1, rating: -1 });
 TemplateSchema.index({ 'pricing.type': 1, downloads: -1 });

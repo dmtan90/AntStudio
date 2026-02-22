@@ -1,26 +1,26 @@
 <template>
-    <div class="admin-monitoring">
-        <div class="page-header">
+    <div class="admin-monitoring min-h-screen bg-[#0a0a0c] text-white font-outfit p-8 animate-in fade-in duration-700">
+        <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-12 relative z-10">
             <div>
-                <h1>System Monitoring</h1>
-                <p class="subtitle">Real-time resource analytics and system health.</p>
+                <h1 class="text-4xl font-black tracking-tight mb-2 bg-gradient-to-r from-white via-white/80 to-white/40 bg-clip-text text-transparent">System Monitoring</h1>
+                <p class="text-white/40 text-lg font-light tracking-wide max-w-xl">Real-time resource analytics and system health diagnostics.</p>
             </div>
-            <div class="flex gap-2">
-                <button class="primary-btn secondary" @click="showSupportDialog = true">
-                    <help theme="outline" size="20" />
-                    Tactical Support
+            <div class="flex flex-wrap gap-3">
+                <button class="h-10 px-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center gap-2 group backdrop-blur-md" @click="showSupportDialog = true">
+                    <help theme="outline" size="18" class="text-white/60 group-hover:text-white transition-colors" />
+                    <span class="text-sm font-medium text-white/80 group-hover:text-white">Support</span>
                 </button>
-                <button class="primary-btn secondary" @click="exportDiagnostics" :loading="exporting">
-                    <terminal theme="outline" size="20" />
-                    Export Diagnostics
+                <button class="h-10 px-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center gap-2 group backdrop-blur-md" @click="exportDiagnostics" :disabled="exporting">
+                    <terminal theme="outline" size="18" class="text-white/60 group-hover:text-white transition-colors" />
+                    <span class="text-sm font-medium text-white/80 group-hover:text-white">{{ exporting ? 'Exporting...' : 'Export Logs' }}</span>
                 </button>
-                <button class="primary-btn secondary" @click="showSettings = !showSettings">
-                    <setting-config theme="outline" size="20" />
-                    Settings
+                <button class="h-10 px-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center gap-2 group backdrop-blur-md" @click="showSettings = !showSettings">
+                    <setting-config theme="outline" size="18" class="text-white/60 group-hover:text-white transition-colors" />
+                    <span class="text-sm font-medium text-white/80 group-hover:text-white">Config</span>
                 </button>
-                <button class="primary-btn delete" @click="clearLogs">
-                    <delete theme="outline" size="20" />
-                    Clear Logs
+                <button class="h-10 px-5 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30 transition-all duration-300 flex items-center gap-2 group backdrop-blur-md" @click="clearLogs">
+                    <delete theme="outline" size="18" class="text-red-400 group-hover:text-red-300 transition-colors" />
+                    <span class="text-sm font-medium text-red-400 group-hover:text-red-300">Clean</span>
                 </button>
             </div>
         </div>

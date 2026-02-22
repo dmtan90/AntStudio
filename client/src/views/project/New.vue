@@ -27,15 +27,52 @@
             <div v-else class="ai-content-wrapper">
               <!-- Result Grid -->
               <div v-if="msg.result" class="analysis-grid doc-style-flow">
-                <ProjectAnalysisCard :msg="msg" @text-selection="handleTextSelection" @comment="commentOn" />
+                <!-- Step 3: Script -->
+                <ProjectScriptCard 
+                  v-if="msg.result.cumulative?.script && msg.result.stage === 'script'" 
+                  :msg="msg" 
+                  :approved="msg.result.approved || msg.result.stage !== 'script'"
+                  @text-selection="handleTextSelection" 
+                  @approve="approveStage(idx, 'script')" 
+                />
 
-                <ProjectBriefCard :msg="msg" :aspect-ratio="form.aspectRatio" @text-selection="handleTextSelection"
-                  @comment="commentOn" />
+                <!-- Step 4: Analysis -->
+                <ProjectAnalysisCard 
+                  v-if="msg.result.cumulative?.analysis && msg.result.stage === 'analysis'" 
+                  :msg="msg" 
+                  :approved="msg.result.approved || msg.result.stage !== 'analysis'"
+                  @text-selection="handleTextSelection" 
+                  @comment="commentOn" 
+                  @approve="approveStage(idx, 'analysis')"
+                />
 
-                <ProjectStoryboardCard :msg="msg" @text-selection="handleTextSelection" @comment="commentOn" />
+                <ProjectBriefCard 
+                  v-if="msg.result.cumulative?.creativeBrief && msg.result.stage === 'analysis'"
+                  :msg="msg" 
+                  :aspect-ratio="form.aspectRatio" 
+                  @text-selection="handleTextSelection"
+                  @comment="commentOn" 
+                />
 
-                <ProjectClosingMessage :msg="msg" :index="idx" :creating="creating" @apply-suggestion="applySuggestion"
-                  @finalize="finalizeProject" @re-generate="reGenerate" />
+                <!-- Step 5: Storyboard -->
+                <ProjectStoryboardCard 
+                  v-if="msg.result.cumulative?.storyboard && msg.result.stage === 'storyboard'" 
+                  :msg="msg" 
+                  :approved="msg.result.approved && msg.result.stage === 'storyboard'"
+                  @text-selection="handleTextSelection" 
+                  @comment="commentOn" 
+                  @approve="approveStage(idx, 'storyboard')"
+                />
+
+                <ProjectClosingMessage 
+                  v-if="msg.result.stage === 'storyboard' && msg.result.approved"
+                  :msg="msg" 
+                  :index="idx" 
+                  :creating="creating" 
+                  @apply-suggestion="applySuggestion"
+                  @finalize="finalizeProject(msg.result.cumulative)" 
+                  @re-generate="reGenerate" 
+                />
               </div>
             </div>
           </div>
@@ -77,6 +114,7 @@ import ProjectThinking from '@/components/projects/new/ProjectThinking.vue'
 import ProjectAnalysisCard from '@/components/projects/new/ProjectAnalysisCard.vue'
 import ProjectBriefCard from '@/components/projects/new/ProjectBriefCard.vue'
 import ProjectStoryboardCard from '@/components/projects/new/ProjectStoryboardCard.vue'
+import ProjectScriptCard from '@/components/projects/new/ProjectScriptCard.vue'
 import ProjectBlankSetup from '@/components/projects/new/ProjectBlankSetup.vue'
 import ProjectProductAdsSetup from '@/components/projects/new/ProjectProductAdsSetup.vue'
 import ProjectAvatarSetup from '@/components/projects/new/ProjectAvatarSetup.vue'
@@ -108,6 +146,7 @@ onMounted(() => {
 const prompt = ref('')
 const statusMessage = ref(t('projects.new.flow.analyzing'))
 const hasResults = ref(false)
+const cumulativeResult = ref<any>({})
 const containerRef = ref<HTMLElement | null>(null)
 const chatInputRef = ref<any>(null)
 const selectedFiles = ref<File[]>([])
@@ -147,7 +186,7 @@ const quickSuggestions = [
 const form = reactive({
   aspectRatio: '16:9',
   videoStyle: 'Cinematic',
-  targetDuration: 60,
+  targetDuration: 15,
   title: ''
 })
 
@@ -253,15 +292,32 @@ const reGenerate = (idx: number) => {
   startAnalysis()
 }
 
-const startAnalysis = async () => {
-  if ((!prompt.value.trim() && !selectedFiles.value.length) || loading.value) return
+const approveStage = async (idx: number, stage: string) => {
+  const msg = messages.value[idx]
+  if (!msg || !msg.result) return
 
-  lastInput.prompt = prompt.value
+  msg.result.approved = true
+  
+  if (stage === 'script') {
+    await startAnalysis('analysis', msg.result.script, undefined, t('projects.new.flow.approve_script'))
+  } else if (stage === 'analysis') {
+    await startAnalysis('storyboard', msg.result.cumulative?.script || msg.result.script, msg.result.analysis, t('projects.new.flow.approve_analysis'))
+  } else if (stage === 'storyboard') {
+    // Stage storyboard approval is the final step
+    await finalizeProject(msg.result.cumulative || msg.result)
+  }
+}
+
+const startAnalysis = async (stage: string = 'script', script?: string, analysis?: any, customPrompt?: string) => {
+  if ((!prompt.value.trim() && !selectedFiles.value.length && !script && !analysis && !customPrompt) || loading.value) return
+
+  const displayPrompt = customPrompt || prompt.value
+  lastInput.prompt = displayPrompt
   lastInput.files = [...selectedFiles.value]
 
   messages.value.push({
     author: 'user',
-    content: prompt.value,
+    content: displayPrompt,
     files: selectedFiles.value.map(f => ({ name: f.name }))
   })
 
@@ -288,7 +344,7 @@ const startAnalysis = async () => {
     })
   }
 
-  const currentPrompt = prompt.value
+  const currentPrompt = customPrompt || prompt.value
   const currentFiles = [...selectedFiles.value]
   prompt.value = ''
 
@@ -309,6 +365,13 @@ const startAnalysis = async () => {
     formData.append('aspectRatio', form.aspectRatio)
     formData.append('videoStyle', form.videoStyle)
     formData.append('targetDuration', form.targetDuration.toString())
+    formData.append('stage', stage)
+    if (script) formData.append('script', script)
+    if (analysis) formData.append('analysis', JSON.stringify(analysis))
+    if (messages.value.length > 0) {
+      const lastMsg = messages.value.find(m => m.author === 'ai' && m.result)
+      if (lastMsg?.result?.language) formData.append('language', lastMsg.result.language)
+    }
 
     currentFiles.forEach(file => {
       formData.append('files', file)
@@ -316,18 +379,32 @@ const startAnalysis = async () => {
 
     const res = await projectStore.getPreview(formData)
 
-    if (res && res.creativeBrief) {
-		res.expandAnalysis = true;
-		res.expandBrief = true;
-		res.expandStoryboard = true;
-	  }
-	  messages.value.push({
-		author: 'ai',
-		type: 'result',
-		result: res
-	  })
-	  hasResults.value = true
-	  scrollToBottom()
+    if (res) {
+      res.expandScript = true;
+      res.expandAnalysis = true;
+      res.expandBrief = true;
+      res.expandStoryboard = true;
+      
+      // Merge into cumulative result
+      Object.assign(cumulativeResult.value, res)
+      
+      const messageObj = reactive({
+        author: 'ai',
+        type: 'result',
+        result: res,
+        expandScript: true,
+        expandAnalysis: true,
+        expandBrief: true,
+        expandStoryboard: true
+      })
+      
+      // Ensure the result has a reactive reference to the cumulative data
+      messageObj.result.cumulative = cumulativeResult.value
+      
+      messages.value.push(messageObj as any)
+      hasResults.value = true
+      scrollToBottom()
+    }
   } catch (error: any) {
     if (error.name === 'AbortError') return
     toast.error(error.response?.data?.message || 'AI Analysis failed')
@@ -336,10 +413,20 @@ const startAnalysis = async () => {
   }
 }
 
-const finalizeProject = async (resultData: any) => {
+function scrollToBottom() {
+  setTimeout(() => {
+    if (containerRef.value) {
+      containerRef.value.scrollTo({ top: containerRef.value.scrollHeight, behavior: 'smooth' })
+    }
+  }, 100)
+}
+
+async function finalizeProject(previewData: any) {
+  if (!previewData) previewData = cumulativeResult.value
+  creating.value = true
   projectStore.isProcessing = true
   try {
-    const title = form.title || resultData.creativeBrief?.title || 'Project ' + new Date().toLocaleDateString()
+    const title = form.title || previewData.creativeBrief?.title || 'Project ' + new Date().toLocaleDateString()
 
     const projectRes = await projectStore.createProject({
       title, aspectRatio: form.aspectRatio, videoStyle: form.videoStyle, targetDuration: form.targetDuration
@@ -347,11 +434,35 @@ const finalizeProject = async (resultData: any) => {
 
     const project = projectRes.project
 
+    // Map AI analysis (which uses 'overview') to Project schema (flat fields)
+    const rawAnalysis = previewData.analysis || {}
+    const mappedAnalysis = {
+      summary: rawAnalysis.summary || rawAnalysis.overview?.summary || '',
+      genre: rawAnalysis.overview?.genre || '',
+      mood: rawAnalysis.overview?.mood || '',
+      themes: Array.isArray(rawAnalysis.overview?.themes) ? rawAnalysis.overview.themes : (rawAnalysis.overview?.themes || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+      characters: rawAnalysis.characters || [],
+      scenes: rawAnalysis.scenes || [],
+      locations: rawAnalysis.locations || [],
+      visuals: rawAnalysis.visuals || {},
+      language: previewData.language || 'English',
+      analyzedAt: new Date()
+    }
+
     await projectStore.updateProject({
       'input.topic': lastInput.prompt,
-      scriptAnalysis: resultData.analysis,
-      'storyboard.segments': resultData.storyboard,
-      'storyboard.totalDuration': resultData.totalDuration,
+      creativeBrief: previewData.creativeBrief || {
+        videoType: previewData.analysis?.overview?.genre || '',
+        visualStyle: form.videoStyle || 'cinematic',
+        aspectRatio: form.aspectRatio || '16:9'
+      },
+      scriptAnalysis: mappedAnalysis,
+      storyboard: {
+        segments: Array.isArray(previewData.storyboard) ? previewData.storyboard : (previewData.storyboard?.segments || []),
+        totalDuration: previewData.totalDuration || previewData.storyboard?.totalDuration || 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
       status: 'storyboard',
       chatHistory: [
         ...messages.value
@@ -385,7 +496,7 @@ const finalizeProject = async (resultData: any) => {
     toast.success('Project created!')
     selectedFiles.value = []
     hasResults.value = false
-    router.push(`/projects/${project._id}/editor`)
+    router.push({name: "project-editor", params: {id: project._id}});
   } catch (error: any) {
     toast.error('Failed to create project')
   } finally {
@@ -393,7 +504,7 @@ const finalizeProject = async (resultData: any) => {
   }
 }
 
-const resetFlow = () => {
+function resetFlow() {
   messages.value = []
   hasResults.value = false
   prompt.value = ''
@@ -403,17 +514,10 @@ const resetFlow = () => {
   toast.success('Chat memory and project state reset.')
 }
 
-const scrollToBottom = () => {
-  setTimeout(() => {
-    if (containerRef.value) {
-      containerRef.value.scrollTo({ top: containerRef.value.scrollHeight, behavior: 'smooth' })
-    }
-  }, 100)
-}
 
-watch(messages, () => {
+watch(() => messages.value.length, () => {
   scrollToBottom()
-}, { deep: true })
+})
 </script>
 
 <style lang="scss" scoped>
@@ -421,23 +525,61 @@ watch(messages, () => {
   height: calc(100vh - 30px);
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 80%);
+  background-color: #0a0a0c;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.08) 0, transparent 50%);
   overflow: hidden;
   position: relative;
+  font-family: 'Outfit', 'Inter', sans-serif;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -24%;
+    left: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+    filter: blur(80px);
+    animation: pulse-glow 8s infinite alternate;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    right: -5%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
+    filter: blur(80px);
+    animation: pulse-glow 10s infinite alternate-reverse;
+    pointer-events: none;
+  }
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(1); opacity: 0.3; }
+  100% { transform: scale(1.2); opacity: 0.6; }
 }
 
 .setup-layout-wrapper {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 60px; // Space for action buttons if they overlap
+  padding-bottom: 60px;
+  position: relative;
+  z-index: 10;
 
   &::-webkit-scrollbar {
     width: 6px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
+    &:hover { background: rgba(255, 255, 255, 0.1); }
   }
 }
 
@@ -448,20 +590,22 @@ watch(messages, () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  z-index: 10;
 
   &::-webkit-scrollbar {
     width: 4px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
   }
 }
 
 .chat-timeline {
   width: 100%;
-  max-width: 1000px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -489,15 +633,14 @@ watch(messages, () => {
 .doc-style-flow {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 800px;
+  gap: 24px;
   width: 100%;
 }
 
 .analysis-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
+  gap: 24px;
   width: 100%;
   margin-top: 16px;
 }

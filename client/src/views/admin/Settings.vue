@@ -1,65 +1,120 @@
 <template>
-    <div class="admin-settings p-6 max-w-7xl mx-auto animate-in">
-        <header class="page-header flex justify-between items-center mb-10">
+    <div class="admin-settings min-h-screen bg-[#0a0a0c] text-white font-outfit p-8 animate-in fade-in duration-700">
+        <header class="flex flex-col md:flex-row justify-between items-end gap-6 mb-12 relative z-10">
             <div>
-                <h1 class="text-3xl font-black uppercase tracking-tighter">System Configuration</h1>
-                <p class="text-xs font-bold opacity-40 uppercase tracking-widest mt-1">Global AntFlow Intelligence
-                    Registry</p>
+                <h1 class="text-5xl font-black tracking-tighter mb-2 relative inline-block">
+                    System Core
+                    <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+                </h1>
+                <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Global AntFlow Intelligence Registry</p>
             </div>
             <div class="flex gap-4">
-                <el-button @click="fetchSettings" :loading="loading" class="glass-btn">Reload</el-button>
-                <el-button @click="saveSettings" :loading="saving" class="save-btn px-8">Save All
-                    Changes</el-button>
+                <button @click="fetchSettings" :disabled="loading" 
+                    class="px-6 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 group disabled:opacity-50">
+                    <refresh theme="outline" size="14" :class="{ 'animate-spin': loading }" />
+                    Sync
+                </button>
+                <button @click="saveSettings" :disabled="saving"
+                    class="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-50">
+                    <save theme="outline" size="14" v-if="!saving" />
+                    <loading-one theme="outline" size="14" class="animate-spin" v-else />
+                    {{ saving ? 'Committing...' : 'Save Configuration' }}
+                </button>
             </div>
         </header>
 
-        <el-tabs v-model="activeTab" class="settings-tabs custom-tabs"
-            v-if="settings && settings.license && settings.whitelabel && settings.apiConfigs && settings.aiSettings && settings.plans && settings.creditPackages">
-            <!-- License & Identity -->
-            <el-tab-pane label="License & Identity" name="license">
-                <div class="space-y-6">
-                    <LicenseSettings :license="settings.license" />
-                    <WhitelabelSettings :whitelabel="settings.whitelabel" />
-                </div>
-            </el-tab-pane>
+        <div class="settings-container relative z-10">
+            <el-tabs v-model="activeTab" class="settings-tabs custom-tabs"
+                v-if="settings && settings.license && settings.whitelabel && settings.apiConfigs && settings.aiSettings && settings.plans && settings.creditPackages">
+                
+                <!-- License & Identity -->
+                <el-tab-pane name="license">
+                    <template #label>
+                        <div class="tab-label">
+                            <id-card theme="filled" size="14" /> License & Identity
+                        </div>
+                    </template>
+                    <div class="space-y-8 animate-in slide-up">
+                        <LicenseSettings :license="settings.license" />
+                        <WhitelabelSettings :whitelabel="settings.whitelabel" />
+                    </div>
+                </el-tab-pane>
 
-            <!-- System Infrastructure -->
-            <el-tab-pane label="System Infrastructure" name="system">
-                <SystemConfigSettings :api-configs="settings.apiConfigs"
-                    :oauth-providers="settings.apiConfigs?.oauth" />
-            </el-tab-pane>
+                <!-- System Infrastructure -->
+                <el-tab-pane name="system">
+                    <template #label>
+                        <div class="tab-label">
+                            <server theme="filled" size="14" /> Infrastructure
+                        </div>
+                    </template>
+                    <div class="animate-in slide-up">
+                        <SystemConfigSettings :api-configs="settings.apiConfigs"
+                            :oauth-providers="settings.apiConfigs?.oauth" />
+                    </div>
+                </el-tab-pane>
 
-            <!-- Media Content APIs -->
-            <el-tab-pane label="Media Asset APIs" name="media">
-                <MediaApiSettings :api-configs="settings.apiConfigs" />
-            </el-tab-pane>
+                <!-- Media Content APIs -->
+                <el-tab-pane name="media">
+                    <template #label>
+                        <div class="tab-label">
+                            <play-one theme="filled" size="14" /> Media Assets
+                        </div>
+                    </template>
+                    <div class="animate-in slide-up">
+                        <MediaApiSettings :api-configs="settings.apiConfigs" />
+                    </div>
+                </el-tab-pane>
 
-            <!-- Artificial Intelligence -->
-            <el-tab-pane label="VTuber Engine" name="ai">
-                <div class="space-y-8">
-                    <AIModelSettings :providers="settings.aiSettings.providers"
-                        :gemini-api-keys="settings.geminiApiKeys"
-                        :ai-o-auth="settings.apiConfigs.oauth"
-                        :google-cookies="settings.aiSettings.sessionSync?.googleCookies || ''"
-                        :flow-cookies="settings.aiSettings.sessionSync?.flowCookies || ''"
-                        :suggested-redirect-uri="suggestedRedirectUri" :known-providers="KNOWN_PROVIDERS"
-                        @add-provider="addProvider" @remove-provider="removeProvider" @save-cookies="saveSessionCookies"
-                        @sync-google="syncGoogleAI"
-                        @remove-gemini-key="removeGeminiKey"
-                        @bulk-add-gemini-keys="bulkAddGeminiKeys" />
+                <!-- Artificial Intelligence -->
+                <el-tab-pane name="ai">
+                    <template #label>
+                        <div class="tab-label">
+                            <brain theme="filled" size="14" /> VTuber Engine
+                        </div>
+                    </template>
+                    <div class="space-y-8 animate-in slide-up">
+                        <AIModelSettings :providers="settings.aiSettings.providers"
+                            :gemini-api-keys="settings.geminiApiKeys"
+                            :ai-o-auth="settings.apiConfigs.oauth"
+                            :google-cookies="settings.aiSettings.sessionSync?.googleCookies || ''"
+                            :flow-cookies="settings.aiSettings.sessionSync?.flowCookies || ''"
+                            :suggested-redirect-uri="suggestedRedirectUri" :known-providers="KNOWN_PROVIDERS"
+                            @add-provider="addProvider" @remove-provider="removeProvider" @save-cookies="saveSessionCookies"
+                            @sync-google="syncGoogleAI"
+                            @remove-gemini-key="removeGeminiKey"
+                            @bulk-add-gemini-keys="bulkAddGeminiKeys"
+                            @configure-provider="openConfig" />
 
-                    <TaskDefaultsSettings :ai-settings="settings.aiSettings"
-                        :get-providers-for-type="getProvidersForType" :get-models-for-provider="getModelsForProvider" />
-                </div>
-            </el-tab-pane>
+                        <TaskDefaultsSettings :ai-settings="settings.aiSettings"
+                            :get-providers-for-type="getProvidersForType" :get-models-for-provider="getModelsForProvider" />
+                    </div>
+                </el-tab-pane>
 
-            <!-- Subscriptions & Economy -->
-            <el-tab-pane label="Commercial Core" name="billing">
-                <SubscriptionSettings :plans="settings.plans" :credit-packages="settings.creditPackages"
-                    @add-package="addPackage" @remove-package="removePackage" />
-            </el-tab-pane>
-        </el-tabs>
-        <el-empty description="No settings found" v-else />
+                <!-- Subscriptions & Economy -->
+                <el-tab-pane name="billing">
+                    <template #label>
+                        <div class="tab-label">
+                            <shopping-bag theme="filled" size="14" /> Commercial
+                        </div>
+                    </template>
+                    <div class="animate-in slide-up">
+                        <SubscriptionSettings :plans="settings.plans" :credit-packages="settings.creditPackages"
+                            @add-package="addPackage" @remove-package="removePackage" />
+                    </div>
+                </el-tab-pane>
+            </el-tabs>
+
+            <div v-else class="flex flex-col items-center justify-center py-32 opacity-50">
+                <loading-four theme="outline" size="40" class="animate-spin mb-4 text-blue-500" />
+                <p class="text-xs font-black uppercase tracking-widest text-gray-500">Loading System Core...</p>
+            </div>
+        </div>
+
+        <AIProviderTaskConfigDialog v-model="showConfigDialog" :provider="selectedProvider"
+            @save="saveTaskConfig" />
+
+        <!-- Ambient Glow -->
+        <div class="fixed bottom-0 left-0 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
     </div>
 </template>
 
@@ -67,6 +122,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
+import { 
+    Refresh, Save, LoadingOne, IdCard, Server, 
+    PlayOne, Brain, ShoppingBag, LoadingFour 
+} from '@icon-park/vue-next';
 
 // Components
 import LicenseSettings from '@/components/admin/settings/LicenseSettings.vue';
@@ -76,6 +135,7 @@ import MediaApiSettings from '@/components/admin/settings/MediaApiSettings.vue';
 import AIModelSettings from '@/components/admin/settings/AIModelSettings.vue';
 import TaskDefaultsSettings from '@/components/admin/settings/TaskDefaultsSettings.vue';
 import SubscriptionSettings from '@/components/admin/settings/SubscriptionSettings.vue';
+import AIProviderTaskConfigDialog from '@/components/admin/settings/AIProviderTaskConfigDialog.vue';
 
 const adminStore = useAdminStore();
 const activeTab = ref('license');
@@ -84,6 +144,9 @@ const saving = ref(false);
 
 const settings = computed(() => adminStore.settings);
 
+const showConfigDialog = ref(false);
+const selectedProvider = ref<any>(null);
+
 const suggestedRedirectUri = computed(() => {
     return `${window.location.origin}/platforms/callback/google`;
 });
@@ -91,15 +154,15 @@ const suggestedRedirectUri = computed(() => {
 const KNOWN_PROVIDERS = [
     // { id: 'gemini_chat', name: 'Gemini Chat (Native)', supportedTypes: ['text'] },
     { id: 'aistudio', name: 'Gemini', supportedTypes: ['text', 'image', 'video', 'audio'] },
-    { id: 'google_gemini', name: 'Google Clound (Vertex AI)', supportedTypes: ['text', 'image', 'video', 'audio'] },
+    { id: 'google_gemini', name: 'Google Cloud (Vertex AI)', supportedTypes: ['text', 'image', 'video', 'audio'] },
     // { id: 'geminigen_ai', name: 'GeminiGen AI', supportedTypes: ['image', 'video'] },
     // { id: 'labs_flow', name: 'Labs Flow (Native)', supportedTypes: ['image', 'video'] },
     // { id: '11labs_direct', name: '11Labs Direct', supportedTypes: ['image', 'video', 'audio'] },
     // { id: 'openai_gpt', name: 'OpenAI (GPT-4 / DALL-E)', supportedTypes: ['text', 'image'] },
     // { id: 'anthropic', name: 'Anthropic (Claude)', supportedTypes: ['text'] },
     // { id: 'stability_ai', name: 'Stability AI', supportedTypes: ['image', 'video'] },
-    { id: 'eleven_labs', name: 'Eleven Labs', supportedTypes: ['audio'] },
-    { id: 'suno', name: 'Suno', supportedTypes: ['music'] }
+    // { id: 'eleven_labs', name: 'Eleven Labs', supportedTypes: ['audio'] },
+    // { id: 'suno', name: 'Suno', supportedTypes: ['music'] }
 ];
 
 // Methods
@@ -107,7 +170,6 @@ const fetchSettings = async () => {
     loading.value = true;
     try {
         await adminStore.fetchSettings();
-        console.log(settings.value);
         toast.success("System settings synchronized");
     } catch (e) {
         toast.error("Failed to load settings registry");
@@ -142,6 +204,22 @@ const addProvider = (known: any) => {
 
 const removeProvider = (idx: number) => {
     settings.value.aiSettings.providers.splice(idx, 1);
+};
+
+const openConfig = (provider: any) => {
+    if (!provider.taskConfigs) {
+        provider.taskConfigs = {};
+    }
+    selectedProvider.value = provider;
+    showConfigDialog.value = true;
+};
+
+const saveTaskConfig = ({ type, config }: { type: string, config: any }) => {
+    if (!selectedProvider.value.taskConfigs) {
+        selectedProvider.value.taskConfigs = {};
+    }
+    selectedProvider.value.taskConfigs[type] = config;
+    toast.success(`Staged ${type} protocol for ${selectedProvider.value.name}`);
 };
 
 const removeGeminiKey = (idx: number) => {
@@ -190,21 +268,17 @@ const syncGoogleAI = async () => {
     try {
         toast.info("Validating and syncing session cookies...");
 
-        // Validate that at least one cookie field has data
         if (!settings.value.aiSettings.sessionSync?.googleCookies && !settings.value.aiSettings.sessionSync?.flowCookies) {
             toast.error("Please paste cookies in at least one field before syncing");
             return;
         }
 
-        // Try to parse and validate cookies
         const validateCookies = (cookieStr: string) => {
             if (!cookieStr) return true;
             try {
-                // Try parsing as JSON first
                 JSON.parse(cookieStr);
                 return true;
             } catch {
-                // If not JSON, check if it's a valid cookie string format
                 return cookieStr.includes('=') && cookieStr.length > 10;
             }
         };
@@ -217,7 +291,6 @@ const syncGoogleAI = async () => {
             return;
         }
 
-        // Save the settings
         await adminStore.updateSettings(settings.value);
         toast.success("✅ Session cookies synced successfully!");
     } catch (error: any) {
@@ -230,9 +303,14 @@ const getProvidersForType = (type: string) => {
     return settings.value.aiSettings.providers.filter((p: any) => p.supportedTypes.includes(type));
 };
 
-const getModelsForProvider = (providerId: string) => {
-    // Logic to return known models for provider or return empty for custom
-    if (providerId === 'google_gemini') return ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-ultra'];
+const getModelsForProvider = (providerId: string, type: string) => {
+    const provider = settings.value.aiSettings.providers.find((p: any) => p.id === providerId);
+    if (provider?.taskConfigs?.[type]?.models) {
+        return provider.taskConfigs[type].models;
+    }
+    
+    // Fallbacks for built-in providers if no taskConfigs defined
+    if (providerId === 'google_gemini') return ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
     if (providerId === 'openai_gpt') return ['gpt-4o', 'gpt-4-turbo', 'dall-e-3'];
     return [];
 };
@@ -249,40 +327,25 @@ onMounted(fetchSettings);
 </script>
 
 <style lang="scss" scoped>
-.admin-settings {
-    min-height: 100vh;
-    background: radial-gradient(circle at top right, rgba(30, 64, 175, 0.05), transparent 40%);
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
 }
 
-.save-btn {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    border: none;
-    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-
-    &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 15px 30px rgba(37, 99, 235, 0.3);
-    }
+.slide-up {
+   animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.glass-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    color: #fff;
-
-    &:hover {
-        background: rgba(255, 255, 255, 0.08);
-    }
+@keyframes slideUp {
+   from { opacity: 0; transform: translateY(20px); }
+   to { opacity: 1; transform: translateY(0); }
 }
 
 :deep(.custom-tabs) {
     .el-tabs__header {
         margin-bottom: 40px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-
+    
     .el-tabs__nav-wrap::after {
         display: none;
     }
@@ -295,16 +358,29 @@ onMounted(fetchSettings);
     }
 
     .el-tabs__item {
+        font-family: 'Outfit', sans-serif;
         font-size: 11px;
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 2px;
-        color: rgba(255, 255, 255, 0.3);
-        padding: 0 32px;
-        height: 48px;
+        color: rgba(255, 255, 255, 0.4);
+        padding: 16px 32px;
+        height: auto;
+        transition: all 0.3s;
+
+        &:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
 
         &.is-active {
             color: #fff;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+        
+        .tab-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
     }
 }

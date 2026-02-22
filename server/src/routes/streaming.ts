@@ -44,10 +44,10 @@ router.post('/start', async (req: AuthRequest, res) => {
         // If projectId is provided, get the final video URL
         if (projectId) {
             project = await Project.findOne({ _id: projectId, userId: req.user?.userId });
-            if (!project || (!project.finalVideo?.s3Url && !project.finalVideo?.s3Key)) {
+            if (!project || !project.publish?.s3Key) {
                 return res.status(404).json({ success: false, error: 'Project video not found or not completed' });
             }
-            finalSource = project.finalVideo.s3Url || project.finalVideo.s3Key;
+            finalSource = project.publish.s3Key;
         }
 
         if (!finalSource || !platformAccountIds?.length) {
@@ -89,6 +89,7 @@ router.post('/start', async (req: AuthRequest, res) => {
             let url = acc.rtmpUrl;
             let key = acc.streamKey;
             let externalChatId = undefined;
+            let externalId = undefined;
 
             if (acc.platform === 'youtube' || acc.platform === 'facebook') {
                 try {
@@ -102,6 +103,7 @@ router.post('/start', async (req: AuthRequest, res) => {
                     url = liveInfo.rtmpUrl;
                     key = liveInfo.streamKey;
                     externalChatId = liveInfo.externalChatId;
+                    externalId = liveInfo.externalId;
                     
                     // Update account with latest info
                     acc.rtmpUrl = url;
@@ -117,7 +119,8 @@ router.post('/start', async (req: AuthRequest, res) => {
                 key: key || '',
                 platform: acc.platform,
                 accountId: acc._id.toString(),
-                externalChatId
+                externalChatId,
+                externalId
             };
         });
 
@@ -157,9 +160,9 @@ router.post('/start', async (req: AuthRequest, res) => {
 /**
  * POST /api/streaming/stop
  */
-router.post('/stop', async (req: AuthRequest, res) => {
+router.post('/stop/:sessionId', async (req: AuthRequest, res) => {
     try {
-        const { sessionId } = req.body;
+        const { sessionId } = req.params;
         if (!sessionId) return res.status(400).json({ success: false, error: 'Session ID required' });
 
         streamingService.stopRestream(sessionId);
@@ -212,7 +215,6 @@ router.post('/status/:id/highlight', async (req: AuthRequest, res) => {
                         description: description || 'AI Captured Moment',
                         type: 'video',
                         status: 'ready',
-                        url: result.s3Url,
                         s3Key: result.s3Key,
                         metadata: {
                             importance: importance || 5,

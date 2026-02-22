@@ -1,12 +1,28 @@
 <script setup lang="ts">
 import { useStudioStore } from '@/stores/studio';
+import { useUIStore } from '@/stores/ui';
 import { ShoppingCart, Shopping } from '@icon-park/vue-next';
 import { computed } from 'vue';
 
 const studioStore = useStudioStore();
+const uiStore = useUIStore();
 const activeProduct = computed(() => {
     return studioStore.liveProducts.find(p => p.id === studioStore.activeProductId || p._id === studioStore.activeProductId);
 });
+
+const landingPageUrl = computed(() => {
+    if (!activeProduct.value) return '';
+    const id = activeProduct.value._id || activeProduct.value.id;
+    return uiStore.getProductLandingLink(id);
+});
+
+const buyNow = () => {
+    if (landingPageUrl.value) {
+        window.open(landingPageUrl.value, '_blank');
+    } else if (activeProduct.value?.link) {
+        window.open(activeProduct.value.link, '_blank');
+    }
+};
 </script>
 
 <template>
@@ -41,16 +57,16 @@ const activeProduct = computed(() => {
                     </div>
                     
                     <div class="flex items-center gap-2">
-                         <el-button type="primary" size="small" class="!bg-orange-500 !border-none !h-7 !px-4 !rounded-xl !text-[9px] font-black uppercase tracking-widest">
+                         <el-button type="primary" size="small" class="!bg-orange-500 !border-none !h-7 !px-4 !rounded-xl !text-[9px] font-black uppercase tracking-widest" @click="buyNow">
                             <shopping-cart theme="outline" size="12" class="mr-1.5" /> Buy Now
                          </el-button>
                     </div>
                  </div>
 
-                 <!-- QR Code Generator -->
-                 <div class="w-16 h-16 bg-white p-1 rounded-xl shadow-lg transform rotate-3 hover:rotate-0 transition-transform flex-shrink-0 ml-2">
-                    <img :src="QRCodeGenerator.getProductQR(activeProduct.link)" class="w-full h-full" />
-                 </div>
+                  <!-- QR Code Generator -->
+                  <div class="w-16 h-16 bg-white p-1 rounded-xl shadow-lg transform rotate-3 hover:rotate-0 transition-transform flex-shrink-0 ml-2 cursor-pointer" @click="buyNow">
+                     <img :src="QRCodeGenerator.getProductQR(landingPageUrl)" class="w-full h-full" />
+                  </div>
 
                  <!-- Close Tag -->
                  <div class="absolute -top-2 -right-2 bg-orange-500 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black shadow-lg cursor-pointer" @click="studioStore.removeProduct(activeProduct.id)">

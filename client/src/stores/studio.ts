@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, reactive, onMounted, onUnmounted, watch, type Ref } from 'vue';
+import { useLocalStorage } from '@/composables/useLocalStorage';
 import api from '@/utils/api';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { toast } from 'vue-sonner';
@@ -67,6 +68,7 @@ export interface Overlay {
 export interface Guest {
     uuid: string; // Primary unique identifier (generated on creation)
     name: string;
+    title?: string;
     type: 'real' | 'ai';
     stream?: MediaStream;
     streamId?: string; // Standardized for WebRTC (usually guest_socketId)
@@ -118,7 +120,7 @@ export interface StreamHealth {
     rtt: number;
     fps: number;
     packetLoss: number;
-    status: 'good' | 'fair' | 'poor';
+    status: 'good' | 'fair' | 'poor' | 'waiting';
 }
 
 export interface AutoDirectorConfig {
@@ -152,6 +154,71 @@ export interface UserProgress {
     activeQuests: Quest[];
     achievements: string[];
 }
+
+export const DEFAULT_VISUAL_SETTINGS = {
+    streamQuality: 'high',
+    aiEnabled: true,
+    activeFilter: 'none',
+    beauty: {
+        smoothing: 0,
+        brightness: 1.0,
+        sharpen: 0,
+        denoise: 0,
+        saturation: 1.0,
+        redEye: false
+    },
+    background: {
+        mode: 'none' as 'none' | 'blur' | 'virtual',
+        blurLevel: 'low' as 'low' | 'medium' | 'high',
+        assetUrl: null as string | null,
+        isAssetVideo: false,
+        is360: false
+    },
+    branding: {
+        logoUrl: null as string | null,
+        logoPosition: 'top-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right',
+        logoScale: 1.0,
+        name: 'Alex Thompson',
+        title: 'AI Specialist',
+        color: '#3b82f6'
+    },
+    breakMode: {
+        enabled: false,
+        message: 'BE RIGHT BACK',
+        backgroundUrl: null as string | null
+    },
+    specialOverlays: {
+        showSponsorship: false,
+        sponsorName: 'AntFlow VTuber',
+        confetti: false,
+        fireworks: false
+    },
+    showLowerThird: false,
+    showTicker: false,
+    tickerText: 'Breaking News • Latest Updates • ',
+    accessibility: {
+        translationEnabled: false,
+        dubbingEnabled: false,
+        showSubtitlesOnCanvas: false,
+        sourceLang: 'en-US',
+        targetLang: 'vi-VN',
+        highContrast: false,
+        fontSize: 'medium',
+        captions: false
+    },
+    cinematic: {
+        enabled: false,
+        environmentId: 'standard',
+        showVTuberLinks: true
+    },
+    chromaKey: {
+        enabled: false,
+        similarity: 0.4,
+        smoothness: 0.1,
+        keyColor: '#00ff00'
+    },
+    lensProfile: 'none'
+};
 
 export interface EconomyItem {
     id: string;
@@ -355,7 +422,7 @@ export const useStudioStore = defineStore('studio', () => {
     // ============================================
 
     // Scene Management
-    const activeScene = ref<Scene>(SCENE_PRESETS[0]);
+    const activeScene = useLocalStorage<Scene>('antflow_studio_active_scene', SCENE_PRESETS[0]);
     const nextScene = ref<Scene | null>(null);
     const scenes = ref<Scene[]>([...SCENE_PRESETS]);
     const transitionType = ref<TransitionType>('fade');
@@ -371,6 +438,7 @@ export const useStudioStore = defineStore('studio', () => {
 
     const guestJoinLink = ref<string | null>(null);
     const coHosts = ref<CoHost[]>([]);
+    const projectTeam = ref<CoHost[]>([]);
     const isGuest = ref(window.location.search.includes('role=guest'));
     const maxGuests = ref(4);
     const currentProjectId = ref<string | null>(null);
@@ -383,60 +451,15 @@ export const useStudioStore = defineStore('studio', () => {
         camEnabled: true
     });
 
-    const visualSettings = ref({
-        beauty: {
-            smoothing: 0,
-            brightness: 1.0,
-            sharpen: 0,
-            denoise: 0,
-            saturation: 1.0,
-            redEye: false
-        },
-        background: {
-            mode: 'none' as 'none' | 'blur' | 'virtual',
-            blurLevel: 'low' as 'low' | 'medium' | 'high',
-            assetUrl: null as string | null,
-            isAssetVideo: false,
-            is360: false
-        },
-        branding: {
-            logoUrl: null as string | null,
-            logoPosition: 'top-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right',
-            logoScale: 1.0
-        },
-        breakMode: {
-            enabled: false,
-            message: 'BE RIGHT BACK',
-            backgroundUrl: null as string | null
-        },
-        specialOverlays: {
-            showSponsorship: false,
-            sponsorName: 'AntFlow VTuber',
-            confetti: false,
-            fireworks: false
-        },
-        accessibility: {
-            translationEnabled: false,
-            sourceLang: 'en',
-            targetLang: 'es',
-            highContrast: false,
-            fontSize: 'medium',
-            captions: false
-        },
-        cinematic: {
-            enabled: false,
-            environmentId: 'standard',
-            showVTuberLinks: true
-        }
-    });
+    const visualSettings = useLocalStorage('antflow_studio_visual_settings', { ...DEFAULT_VISUAL_SETTINGS });
 
     const backgroundAssets = ref([
-        { id: 'none', name: 'None', url: '', thumbnail: '', isVideo: false },
-        { id: 'blur', name: 'Blur', url: '', thumbnail: '', isVideo: false },
-        { id: 'office', name: 'Modern Office', url: '/bg/office.jpg', thumbnail: '/bg/office.jpg', isVideo: false },
-        { id: 'studio', name: 'Pro Studio', url: '/bg/neon.jpg', thumbnail: '/bg/neon.jpg', isVideo: false },
-        { id: 'cyberpunk', name: 'Cyberpunk City', url: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80', thumbnail: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&w=150', isVideo: false },
-        { id: 'nebula', name: 'Nebula Space', url: 'https://images.unsplash.com/photo-1464802686167-b939a67e06a1?auto=format&fit=crop&q=80', thumbnail: 'https://images.unsplash.com/photo-1464802686167-b939a67e06a1?auto=format&fit=crop&w=150', isVideo: false }
+        // { id: 'none', name: 'None', url: '', thumbnail: '', isVideo: false },
+        { id: 'blur', name: 'Blur', url: '/bg/blur.jpg', thumbnail: '/bg/blur.jpg', isVideo: false },
+        { id: 'office', name: 'Modern Office', url: '/bg/modern-office.jpg', thumbnail: '/bg/modern-office.jpg', isVideo: false },
+        { id: 'studio', name: 'Pro Studio', url: '/bg/pro-studio.jpg', thumbnail: '/bg/pro-studio.jpg', isVideo: false },
+        { id: 'cyberpunk', name: 'Cyberpunk City', url: '/bg/cyberpunk_city.jpg', thumbnail: '/bg/cyberpunk_city.jpg', isVideo: false },
+        { id: 'nebula', name: 'Nebula Space', url: '/bg/nebula-space.jpg', thumbnail: '/bg/nebula-space.jpg', isVideo: false }
     ]);
 
     // Commerce
@@ -461,7 +484,7 @@ export const useStudioStore = defineStore('studio', () => {
         rtt: 0,
         fps: 0,
         packetLoss: 0,
-        status: 'good'
+        status: 'waiting'
     });
     const sessionInfra = ref<any>(null);
     const clientHighlightBuffer = ref<{ data: Blob, timestamp: number }[]>([]);
@@ -472,7 +495,7 @@ export const useStudioStore = defineStore('studio', () => {
 
     // God Mode
     const godModeEnabled = ref(false);
-    const autoDirectorSettings = ref<AutoDirectorConfig>({
+    const autoDirectorSettings = useLocalStorage<AutoDirectorConfig>('antflow_studio_auto_director', {
         enabled: false,
         sensitivity: 0.5,
         transitionStyle: 'instant',
@@ -1306,7 +1329,12 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function updateHealth(stats: Partial<StreamHealth>) {
-        Object.assign(health.value, stats);
+        console.log("[Store] Updating health with stats:", stats);
+        health.value = { 
+            ...health.value, 
+            ...stats 
+        };
+        
         if (health.value.bitrate < 500 || health.value.rtt > 300) {
             health.value.status = 'poor';
         } else if (health.value.bitrate < 1500 || health.value.rtt > 150) {
@@ -1329,52 +1357,7 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function resetVisualSettings() {
-        visualSettings.value = {
-            beauty: {
-                smoothing: 0,
-                brightness: 0.5,
-                sharpen: 0,
-                denoise: 0,
-                saturation: 1.0,
-                redEye: false
-            },
-            background: {
-                mode: 'none',
-                blurLevel: 'low',
-                assetUrl: null,
-                isAssetVideo: false,
-                is360: false
-            },
-            branding: {
-                logoUrl: null,
-                logoPosition: 'top-right',
-                logoScale: 1.0
-            },
-            breakMode: {
-                enabled: false,
-                message: 'BE RIGHT BACK',
-                backgroundUrl: null
-            },
-            specialOverlays: {
-                showSponsorship: false,
-                sponsorName: 'AntFlow AI',
-                confetti: false,
-                fireworks: false
-            },
-            accessibility: {
-                translationEnabled: false,
-                sourceLang: 'en',
-                targetLang: 'es',
-                highContrast: false,
-                fontSize: 'medium',
-                captions: false
-            },
-            cinematic: {
-                enabled: false,
-                environmentId: 'standard',
-                showVTuberLinks: true
-            }
-        };
+        visualSettings.value = { ...DEFAULT_VISUAL_SETTINGS };
         broadcastCurrentState();
     }
 
@@ -1382,7 +1365,27 @@ export const useStudioStore = defineStore('studio', () => {
         backgroundAssets.value.push(asset);
     };
 
+    const fetchCollaborators = async (projectId: string) => {
+        try {
+            const res = (await api.get(`/collaboration/${projectId}/users`)) as any;
+            if (res.success) {
+                projectTeam.value = res.data.data.collaborators.map((c: any) => ({
+                    id: c.userId._id,
+                    name: c.userId.name,
+                    avatar: c.userId.avatar || '',
+                    permissions: c.permissions,
+                    status: 'offline' // Online status will be synced via ActionSyncService
+                }));
+            }
+        } catch (error) {
+            console.error('[StudioStore] Error fetching collaborators:', error);
+        }
+    };
+
     return {
+        currentProjectId,
+        projectTeam,
+        fetchCollaborators,
         // State
         activeScene,
         nextScene,
@@ -1403,7 +1406,7 @@ export const useStudioStore = defineStore('studio', () => {
         activeProductId,
         activeFlashSale,
         // AI & Performance
-        aiEnabled: true,
+        aiEnabled: computed(() => visualSettings.value.aiEnabled),
         currentSessionId,
         viewerCount,
         engagement,

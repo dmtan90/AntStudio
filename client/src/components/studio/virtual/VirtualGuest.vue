@@ -11,7 +11,7 @@
                 :aura-color="hypeLevel > 1.5 ? '#ff0055' : (persona.performanceConfig?.auraColor || '#00f2ff')"
                 :particle-type="persona.performanceConfig?.particleType || (isThinking ? 'glitter' : (hypeLevel > 0.8 ? 'glitter' : null))"
                 :particle-density="(persona.performanceConfig?.particleDensity || 0.4) + (hypeLevel * 0.5)"
-                :background-url="is360 ? backgroundUrl : persona.visual.backgroundUrl"
+                :background-url="hideBackground ? null : (persona.visual?.backgroundUrl || backgroundUrl)"
                 :is360="is360"
                 :emotion="currentEmotion || persona.emotion"
                 :gesture="currentGesture || persona.gesture"
@@ -20,6 +20,9 @@
                     zoom: persona.visual.live2dConfig?.zoom || 1.0,
                     offset: persona.visual.live2dConfig?.offset || { x: 0, y: 0 }
                 }"
+                :lyrics="performanceLyrics"
+                :current-time="performanceLyricsCurrentTime"
+                :lyrics-enabled="!hideBackground"
                 @ready="handleReady"
             />
 
@@ -33,9 +36,12 @@
                 :is-host-speaking="isHostSpeaking"
                 :emotion="currentEmotion || persona.emotion"
                 :intensity="safeAnimationConfig"
-                :background-url="persona.visual.backgroundUrl"
+                :background-url="hideBackground ? null : (persona.visual?.backgroundUrl || backgroundUrl)"
                 :aura-enabled="persona.performanceConfig?.auraEnabled"
                 :aura-color="persona.performanceConfig?.auraColor"
+                :lyrics="performanceLyrics"
+                :current-time="performanceLyricsCurrentTime"
+                :lyrics-enabled="!hideBackground"
                 @ready="handleReady"
             />
 
@@ -48,9 +54,12 @@
                 :is-host-speaking="isHostSpeaking"
                 :emotion="currentEmotion || persona.emotion"
                 :intensity="safeAnimationConfig"
-                :background-url="persona.visual.backgroundUrl"
+                :background-url="hideBackground ? null : (persona.visual?.backgroundUrl || backgroundUrl)"
                 :aura-enabled="persona.performanceConfig?.auraEnabled"
                 :aura-color="persona.performanceConfig?.auraColor"
+                :lyrics="performanceLyrics"
+                :current-time="performanceLyricsCurrentTime"
+                :lyrics-enabled="!hideBackground"
                 @ready="handleReady"
             />
         </div>
@@ -85,11 +94,16 @@ const props = defineProps<{
     isHostSpeaking?: boolean;
     backgroundUrl?: string | null;
     is360?: boolean;
+    hideBackground?: boolean;
 }>();
 
 const emit = defineEmits<{
     'stream-ready': [stream: MediaStream];
 }>();
+
+onMounted(() => {
+    console.log('[VirtualGuest] Mounted:', props);
+});
 
 const mediaStore = useMediaStore();
 

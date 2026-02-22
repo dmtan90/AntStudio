@@ -1,12 +1,12 @@
 import { GoogleTTSProvider } from '../../utils/ai/providers/GoogleTTSProvider.js';
-import { GeminiTTSProvider } from '../../utils/ai/providers/GeminiTTSProvider.js';
+import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { ElevenLabsProvider } from '../../utils/ai/providers/ElevenLabsProvider.js';
 import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
 import { AdminSettings } from '../../models/AdminSettings.js';
 
 export class TTSService {
     private googleProvider: GoogleTTSProvider;
-    private geminiProvider: GeminiTTSProvider | null = null;
+    private geminiClient: GeminiClient | null = null;
     private elevenLabsProvider: ElevenLabsProvider | null = null;
 
     constructor() {
@@ -38,7 +38,7 @@ export class TTSService {
             }
 
             case 'gemini': {
-                if (!this.geminiProvider) {
+                if (!this.geminiClient) {
                     const settings = await AdminSettings.findOne();
                     const geminiConfig = settings?.aiSettings?.providers?.find((p: any) => p.id === 'google');
                     const apiKey = geminiConfig?.apiKey || process.env.GOOGLE_API_KEY;
@@ -47,9 +47,10 @@ export class TTSService {
                         throw new Error('Gemini API key not configured');
                     }
                     
-                    this.geminiProvider = new GeminiTTSProvider({ apiKey });
+                    this.geminiClient = new GeminiClient({ apiKey });
                 }
-                return await this.geminiProvider.generateAudio(text, voiceId);
+                const result = await this.geminiClient.generateAudio(text, voiceId);
+                return { media: result };
             }
 
             case 'elevenlabs': {

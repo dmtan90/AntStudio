@@ -114,12 +114,12 @@ const showPurchase = ref(false);
 const selectedAsset = ref<any>(null);
 
 const assets = ref([
- { id: 1, title: 'CYBERPUNK HUD PRO', type: 'overlay', price: 450, author: 'NeonVibe', rating: 4.8, isOfficial: true, previewUrl: 'https://images.unsplash.com/photo-1614728263952-84ea206f99b6?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
- { id: 2, title: 'ZEN MINIMALIST STUDIO', type: 'template', price: 120, author: 'SkyDesign', rating: 4.9, isOfficial: false, previewUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
- { id: 3, title: 'AI NEWS ANCHOR - EMMA', type: 'persona', price: 1500, author: 'AntFlow Labs', rating: 5.0, isOfficial: true, previewUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
- { id: 4, title: 'LO-FI BEATS COLLECTION', type: 'audio', price: 25, author: 'BeatMaster', rating: 4.5, isOfficial: false, previewUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
- { id: 5, title: 'HOLOGRAM NEWS OVERLAY', type: 'overlay', price: 85, author: 'AeroVisuals', rating: 4.7, isOfficial: false, previewUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
- { id: 6, title: 'VAPORWAVE LIVE TEMPLATE', type: 'template', price: 50, author: 'RetroMod', rating: 4.6, isOfficial: false, previewUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' },
+ { id: 1, title: 'CYBERPUNK HUD PRO', type: 'overlay', price: 450, author: 'NeonVibe', rating: 4.8, isOfficial: true, previewUrl: '/bg/photo-1518770660439-4636190af475.jpg' },
+ { id: 2, title: 'ZEN MINIMALIST STUDIO', type: 'template', price: 120, author: 'SkyDesign', rating: 4.9, isOfficial: false, previewUrl: '/bg/photo-1518770660439-4636190af475.jpg' },
+ { id: 3, title: 'AI NEWS ANCHOR - EMMA', type: 'persona', price: 1500, author: 'AntFlow Labs', rating: 5.0, isOfficial: true, previewUrl: '/bg/photo-1494790108377-be9c29b29330.jpg' },
+ { id: 4, title: 'LO-FI BEATS COLLECTION', type: 'audio', price: 25, author: 'BeatMaster', rating: 4.5, isOfficial: false, previewUrl: '/bg/photo-1470225620780-dba8ba36b745.jpg' },
+ { id: 5, title: 'HOLOGRAM NEWS OVERLAY', type: 'overlay', price: 85, author: 'AeroVisuals', rating: 4.7, isOfficial: false, previewUrl: '/bg/photo-1485827404703-89b55fcc595e.jpg' },
+ { id: 6, title: 'VAPORWAVE LIVE TEMPLATE', type: 'template', price: 50, author: 'RetroMod', rating: 4.6, isOfficial: false, previewUrl: '/bg/photo-1550745165-9bc0b252726f.jpg' },
 ]);
 
 const filteredAssets = computed(() => {

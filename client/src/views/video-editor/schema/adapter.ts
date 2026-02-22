@@ -33,6 +33,62 @@ export const EditorBrandSchema = z.object({
   tone_of_voice: z.string().nullish(),
 });
 
+export const EditorTemplateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  category: z.string(),
+  is_published: z.boolean(),
+  pages: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    thumbnail: z.string(),
+    preview: z.string().optional(),
+    duration: z.number(),
+    transition: z.string().optional(),
+    transitionDirection: z.string().optional(),
+    transitionDuration: z.number().optional(),
+    transitionEasing: z.string().optional(),
+    data: z.object({
+      scene: z.string(),
+      audios: z.array(z.object({
+        id: z.string(),
+        url: z.string(),
+        src: z.string().optional(),
+        crossOrigin: z.string().optional(),
+        trimStart: z.number().optional(),
+        trimEnd: z.number().optional(),
+        visualType: z.string().optional(),
+        visualProps: z.object({
+          type: z.string(),
+          props: z.object({
+            color: z.string(),
+            width: z.number(),
+            height: z.number(),
+            format: z.string().optional(),
+            orientation: z.string().optional(),
+          }),
+        }).optional(),
+        fadeIn: z.number().optional(),
+        fadeOut: z.number().optional(),
+      })),
+      fill: z.string(),
+      width: z.number(),
+      height: z.number(),
+      format: z.string().optional(),
+      orientation: z.string().optional(),
+    }),
+    blocks: z.array(z.object({
+      id: z.string(),
+      start: z.number(),
+      end: z.number(),
+    })).optional(),
+    _id: z.string().optional(),
+  })),
+  _id: z.string().optional(),
+});
+
 export type EditorProductImage = z.infer<typeof EditorProductImageSchema>;
 export type EditorProduct = z.infer<typeof EditorProductSchema>;
 export type EditorBrand = z.infer<typeof EditorBrandSchema>;
+export type EditorTemplate = z.infer<typeof EditorTemplateSchema>;

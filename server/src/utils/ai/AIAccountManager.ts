@@ -363,20 +363,25 @@ export class AIAccountManager {
     /**
      * Get the most optimal account for a task
      */
-    public async getOptimalAccount(type: 'text' | 'image' | 'video' | 'audio', accountType?: string): Promise<IAIAccount | null> {
+    public async getOptimalAccount(type: 'text' | 'image' | 'video' | 'audio' | 'music' | 'live', accountType?: string): Promise<IAIAccount | null> {
         // Build base query
         const query: any = { isActive: true, status: 'ready' };
         if (accountType) query.accountType = accountType;
 
-        // Prefer specific account types based on task if needed
-        if (type === 'video') {
-            // For video, 11labs-direct and antigravity are top tier
-            // We can search for all then sort
-        } else if (type === 'text') {
-            // 11labs-direct does not support text generation (LLM), so exclude it
-            query.accountType = { $ne: '11labs-direct' };
-        } else if (type === 'audio' && !accountType) {
-            // Default to standard google for audio if not specified
+        // // Prefer specific account types based on task if needed
+        // if (type === 'video') {
+        //     // For video, 11labs-direct and antigravity are top tier
+        //     // We can search for all then sort
+        // } else if (type === 'text' && !accountType) {
+        //     // 11labs-direct does not support text generation (LLM), so exclude it
+        //     query.accountType = { $ne: '11labs-direct' };
+        // } else if ((type === 'audio' || type === 'music') && !accountType) {
+        //     // Default to standard google for audio if not specified
+        //     const standard = await AIAccount.findOne({ ...query, accountType: 'standard', providerId: 'google' });
+        //     if (standard) return standard;
+        // }
+
+        if (!accountType) {
             const standard = await AIAccount.findOne({ ...query, accountType: 'standard', providerId: 'google' });
             if (standard) return standard;
         }
@@ -618,17 +623,22 @@ export class AIAccountManager {
                 const safeId = this.sanitizeModelId(modelId);
                 discoveredIds.add(safeId);
 
-                if (!account.quotas.has(safeId)) {
-                    // Default quota for newly discovered models
-                    // We can be generous since Antigravity/Sandbox often has high limits
-                    let limit = 20;
-                    if (modelId.includes('flash')) limit = 50;
-                    if (modelId.includes('pro')) limit = 15;
-                    if (modelId.includes('image') || modelId.includes('imagen')) limit = 10;
-                    if (modelId.includes('video') || modelId.includes('veo')) limit = 2;
+                const fraction = typeof model.remainingFraction === 'number' ? model.remainingFraction : 1;
+                const percentage = Math.floor(fraction * 100);
 
-                    account.quotas.set(safeId, { used: 0, limit });
+                // Default quota for newly discovered models
+                let limit = 100;
+                let used = 100 - percentage;
+
+                if (!account.quotas.has(safeId)) {
+                    account.quotas.set(safeId, { used, limit });
                     changed = true;
+                } else {
+                    const existingQuota = account.quotas.get(safeId)!;
+                    if (existingQuota.used !== used || existingQuota.limit !== limit) {
+                        account.quotas.set(safeId, { used, limit });
+                        changed = true;
+                    }
                 }
             }
 

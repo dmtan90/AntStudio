@@ -2,6 +2,7 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { SocialPlatform, UserPlatformAccount } from '../models/UserPlatformAccount.js';
 import { getAdminSettings } from '../models/AdminSettings.js';
+import { systemLogger } from '../utils/systemLogger.js';
 
 interface PlatformConfig {
     clientId: string;
@@ -817,28 +818,48 @@ export class PlatformAuthService {
 
         switch (platform) {
             case SocialPlatform.YOUTUBE:
-                // Use googleapis for resumable upload
-                const oauth2Client = new google.auth.OAuth2();
-                oauth2Client.setCredentials({ access_token: accessToken });
-
-                const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
-
-                const res = await youtube.videos.insert({
-                    part: ['snippet', 'status'],
-                    requestBody: {
-                        snippet: {
-                            title: metadata.title,
-                            description: metadata.description
+                {
+                    // Use direct API for resumable upload to avoid googleapis/fetch issues
+                    systemLogger.info(`🚀 [YouTube Upload] Starting resumable upload session`, 'PlatformAuthService');
+                    
+                    // 1. Initiate resumable upload session
+                    const initiateRes = await axios.post(
+                        'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+                        {
+                            snippet: {
+                                title: metadata.title,
+                                description: metadata.description,
+                                categoryId: '22' // People & Blogs
+                            },
+                            status: {
+                                privacyStatus: 'public',
+                                selfDeclaredMadeForKids: false
+                            }
                         },
-                        status: {
-                            privacyStatus: 'public' // Default to private or public?
+                        {
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            }
                         }
-                    },
-                    media: {
-                        body: videoStream
+                    );
+
+                    const uploadUrl = initiateRes.headers['location'];
+                    if (!uploadUrl) {
+                        throw new Error('Failed to get YouTube upload location');
                     }
-                });
-                return res.data;
+
+                    systemLogger.info(`🚀 [YouTube Upload] Session created: ${uploadUrl}`, 'PlatformAuthService');
+
+                    // 2. Upload the video stream
+                    const uploadRes = await axios.put(uploadUrl, videoStream, {
+                        headers: {
+                            'Content-Type': contentType || 'video/mp4'
+                        }
+                    });
+
+                    return uploadRes.data;
+                }
 
             case SocialPlatform.ANT_MEDIA:
                 // AMS Upload via multipart/form-data
@@ -905,115 +926,197 @@ export class PlatformAuthService {
     /**
      * Fetch Live Chat Messages from Platforms
      */
-    static async getLiveChatMessages(platform: SocialPlatform, credentials: any, liveId: string): Promise<any[]> {
+    static async getLiveChatMessages(
+        platform: SocialPlatform,
+        credentials: any,
+        liveId: string,
+        pageToken?: string
+    ): Promise<{ messages: any[], nextPageToken?: string, isOffline?: boolean, pollingIntervalMillis?: number }> {
         const { accessToken } = credentials;
-        if (!accessToken) return [];
+        if (!accessToken) return { messages: [] };
 
         try {
             switch (platform) {
                 case SocialPlatform.YOUTUBE:
                     // liveId here should be the liveChatId
-                    const ytRes = await axios.get(`https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveId}&part=snippet,authorDetails&maxResults=20`, {
+                    let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveId}&part=snippet,authorDetails&maxResults=200`;
+                    if (pageToken) url += `&pageToken=${pageToken}`;
+
+                    const ytRes = await axios.get(url, {
                         headers: { Authorization: `Bearer ${accessToken}` }
                     });
-                    return ytRes.data.items.map((item: any) => ({
+                    
+                    if (ytRes.data.items?.length === 0) {
+                        systemLogger.info(`[ChatSync] YouTube Chat Fetch for ${liveId}: Found 0 items. Full Response: ${JSON.stringify(ytRes.data)}`, 'PlatformAuth');
+                    } else {
+                        systemLogger.info(`[ChatSync] YouTube Chat Fetch for ${liveId}: Found ${ytRes.data.items?.length} items.`, 'PlatformAuth');
+                    }
+
+                    const messages = ytRes.data.items?.map((item: any) => ({
                         id: item.id,
                         platform: 'youtube',
                         author: item.authorDetails.displayName,
                         avatar: item.authorDetails.profileImageUrl,
                         text: item.snippet.displayMessage,
                         timestamp: item.snippet.publishedAt
-                    }));
+                    })) || [];
+
+                    return {
+                        messages,
+                        nextPageToken: ytRes.data.nextPageToken,
+                        isOffline: !!ytRes.data.offlineAt,
+                        pollingIntervalMillis: ytRes.data.pollingIntervalMillis
+                    };
 
                 case SocialPlatform.FACEBOOK:
                     // liveId here is the live_video_id
                     const fbRes = await axios.get(`https://graph.facebook.com/${liveId}/comments?fields=id,from,message,created_time&limit=20`, {
                         headers: { Authorization: `Bearer ${accessToken}` }
                     });
-                    return fbRes.data.data.map((item: any) => ({
-                        id: item.id,
-                        platform: 'facebook',
-                        author: item.from?.name || 'Facebook User',
-                        avatar: `https://graph.facebook.com/${item.from?.id}/picture`,
-                        text: item.message,
-                        timestamp: item.created_time
-                    }));
+                    return {
+                        messages: fbRes.data.data.map((item: any) => ({
+                            id: item.id,
+                            platform: 'facebook',
+                            author: item.from?.name || 'Facebook User',
+                            avatar: `https://graph.facebook.com/${item.from?.id}/picture`,
+                            text: item.message,
+                            timestamp: item.created_time
+                        }))
+                    };
 
                 case SocialPlatform.TIKTOK:
-                    // TikTok currently requires specialized Live Webcast SDK for real-time chat.
-                    // Returning simulated data or empty list for now until specific API is verified.
-                    return [];
+                    return { messages: [] };
 
                 default:
-                    return [];
+                    return { messages: [] };
             }
         } catch (error: any) {
             console.error(`[ChatSync] Failed to fetch ${platform} chat:`, error.response?.data || error.message);
-            return [];
+            return { messages: [] };
         }
     }
 
     /**
      * Create or Fetch Live Stream Ingest Info
      */
-    static async getLiveStreamInfo(platform: SocialPlatform, credentials: any, metadata: { title: string, description: string }): Promise<{ rtmpUrl: string, streamKey: string, externalChatId?: string }> {
+    static async getLiveStreamInfo(platform: SocialPlatform, credentials: any, metadata: { title: string, description: string }): Promise<{ rtmpUrl: string, streamKey: string, externalChatId?: string, externalId?: string }> {
         const { accessToken, serverUrl, email, password, appName } = credentials;
 
         switch (platform) {
             case SocialPlatform.YOUTUBE:
-                const { google } = await import('googleapis');
-                const oauth2Client = new google.auth.OAuth2();
-                oauth2Client.setCredentials({ access_token: accessToken });
-                const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
-
                 try {
-                    // 1. Create a live broadcast
-                    const broadcastRes = await youtube.liveBroadcasts.insert({
-                        part: ['snippet', 'status'],
-                        requestBody: {
-                            snippet: {
-                                title: metadata.title || 'AntFlow Live Stream',
-                                description: metadata.description || 'Streaming via AntFlow',
-                                scheduledStartTime: new Date().toISOString()
-                            },
-                            status: {
-                                privacyStatus: 'public',
-                                selfDeclaredMadeForKids: false
-                            },
-                            contentDetails: {
-                                enableAutoStart: true,
-                                enableAutoStop: true,
-                                monitorStream: { enableMonitorStream: false }
+                    const headers = { Authorization: `Bearer ${accessToken}` };
+                    
+                    // 0. Check for broadcasts
+                    const activeBroadcastsRes = await axios.get('https://www.googleapis.com/youtube/v3/liveBroadcasts', {
+                        params: {
+                            part: 'snippet,contentDetails,status',
+                            broadcastStatus: 'all',
+                            maxResults: 10
+                        },
+                        headers
+                    });
+
+                    const broadcasts = activeBroadcastsRes.data.items || [];
+                    console.log(`[PlatformAuth] Found ${broadcasts.length} broadcasts for YouTube.`);
+                    broadcasts.forEach((b: any) => {
+                        console.log(`[PlatformAuth] Broadcast ${b.id}: status=${b.status.lifeCycleStatus}, title=${b.snippet.title}, chatId=${b.snippet.liveChatId}`);
+                    });
+
+                    // Find the best match: live > testing > ready
+                    const existing = broadcasts.find((b: any) => b.status.lifeCycleStatus === 'live') ||
+                                     broadcasts.find((b: any) => b.status.lifeCycleStatus === 'testing') ||
+                                     broadcasts.find((b: any) => b.status.lifeCycleStatus === 'ready') ||
+                                     broadcasts[0];
+
+                    if (existing) {
+                        console.log(`[PlatformAuth] Selected broadcast: ${existing.id} (${existing.status.lifeCycleStatus})`);
+                        
+                        // Get stream info if bound
+                        let rtmpUrl = 'rtmp://a.rtmp.youtube.com/live2';
+                        let streamKey = '';
+                        
+                        if (existing.contentDetails?.boundStreamId) {
+                            try {
+                                const streamInfoRes = await axios.get('https://www.googleapis.com/youtube/v3/liveStreams', {
+                                    params: {
+                                        part: 'cdn',
+                                        id: existing.contentDetails.boundStreamId
+                                    },
+                                    headers
+                                });
+                                const cdn = streamInfoRes.data.items?.[0]?.cdn?.ingestionInfo;
+                                if (cdn) {
+                                    rtmpUrl = cdn.ingestionAddress || rtmpUrl;
+                                    streamKey = cdn.streamName || '';
+                                }
+                            } catch (e) {
+                                console.warn('[PlatformAuth] Failed to fetch bound stream details, using defaults.');
                             }
                         }
+
+                        return {
+                            rtmpUrl,
+                            streamKey,
+                            externalChatId: existing.snippet?.liveChatId || undefined,
+                            externalId: existing.id
+                        };
+                    }
+
+                    // 1. Create a live broadcast (If no active one found)
+                    const broadcastRes = await axios.post('https://www.googleapis.com/youtube/v3/liveBroadcasts', {
+                        snippet: {
+                            title: metadata.title || 'AntFlow Live Stream',
+                            description: metadata.description || 'Streaming via AntFlow',
+                            scheduledStartTime: new Date().toISOString()
+                        },
+                        status: {
+                            privacyStatus: 'public',
+                            selfDeclaredMadeForKids: false
+                        },
+                        contentDetails: {
+                            enableAutoStart: true,
+                            enableAutoStop: true,
+                            monitorStream: { enableMonitorStream: false }
+                        }
+                    }, {
+                        params: { part: 'snippet,status,contentDetails' },
+                        headers
                     });
 
                     // 2. Create a live stream
-                    const streamRes = await youtube.liveStreams.insert({
-                        part: ['snippet', 'cdn'],
-                        requestBody: {
-                            snippet: {
-                                title: metadata.title || 'AntFlow Ingest'
-                            },
-                            cdn: {
-                                frameRate: 'variable',
-                                ingestionType: 'rtmp',
-                                resolution: 'variable'
-                            }
+                    const streamRes = await axios.post('https://www.googleapis.com/youtube/v3/liveStreams', {
+                        snippet: {
+                            title: metadata.title || 'AntFlow Ingest'
+                        },
+                        cdn: {
+                            frameRate: 'variable',
+                            ingestionType: 'rtmp',
+                            resolution: 'variable'
                         }
+                    }, {
+                        params: { part: 'snippet,cdn' },
+                        headers
                     });
 
                     // 3. Bind them
-                    await youtube.liveBroadcasts.bind({
-                        part: ['id', 'contentDetails'],
-                        id: broadcastRes.data.id!,
-                        streamId: streamRes.data.id!
+                    await axios.post('https://www.googleapis.com/youtube/v3/liveBroadcasts/bind', null, {
+                        params: {
+                            part: 'id,contentDetails',
+                            id: broadcastRes.data.id,
+                            streamId: streamRes.data.id
+                        },
+                        headers
                     });
+
+                    const chatId = broadcastRes.data.snippet?.liveChatId;
+                    console.log(`[PlatformAuth] Created YouTube Broadcast: ${broadcastRes.data.id}, ChatID: ${chatId}`);
 
                     return {
                         rtmpUrl: streamRes.data.cdn?.ingestionInfo?.ingestionAddress || 'rtmp://a.rtmp.youtube.com/live2',
                         streamKey: streamRes.data.cdn?.ingestionInfo?.streamName || '',
-                        externalChatId: broadcastRes.data.snippet?.liveChatId || undefined
+                        externalChatId: chatId || undefined,
+                        externalId: broadcastRes.data.id
                     };
                 } catch (error: any) {
                     const errMsg = error.response?.data?.error?.message || error.message || '';
@@ -1037,7 +1140,8 @@ export class PlatformAuthService {
                 return {
                     rtmpUrl: fbRes.data.secure_stream_url || fbRes.data.stream_url,
                     streamKey: '', // Facebook usually embeds it in URL or secure_stream_url
-                    externalChatId: fbRes.data.id // For Facebook, the live_video_id is used for comments
+                    externalChatId: fbRes.data.id, // For Facebook, the live_video_id is used for comments
+                    externalId: fbRes.data.id
                 };
 
             case SocialPlatform.ANT_MEDIA:
@@ -1066,6 +1170,114 @@ export class PlatformAuthService {
 
             default:
                 throw new Error(`Live stream setup not supported for ${platform} via API yet`);
+        }
+    }
+
+    /**
+     * Update Live Stream Metadata (Title/Description)
+     */
+    static async updateLiveStreamMetadata(platform: SocialPlatform, credentials: any, metadata: { title: string, description: string }): Promise<boolean> {
+        const { accessToken, serverUrl, email, password, appName } = credentials;
+
+        switch (platform) {
+            case SocialPlatform.YOUTUBE:
+                try {
+                    const headers = { Authorization: `Bearer ${accessToken}` };
+                    
+                    // 1. Find the active/ready broadcast
+                    const activeBroadcastsRes = await axios.get('https://www.googleapis.com/youtube/v3/liveBroadcasts', {
+                        params: {
+                            part: 'snippet,status',
+                            broadcastStatus: 'all',
+                            maxResults: 5
+                        },
+                        headers
+                    });
+
+                    const broadcasts = activeBroadcastsRes.data.items || [];
+                    const existing = broadcasts.find((b: any) => 
+                        ['live', 'testing', 'ready'].includes(b.status.lifeCycleStatus)
+                    ) || broadcasts[0];
+
+                    if (!existing) throw new Error('No active YouTube broadcast found to update.');
+
+                    // 2. Update the snippet
+                    await axios.put('https://www.googleapis.com/youtube/v3/liveBroadcasts', {
+                        id: existing.id,
+                        snippet: {
+                            title: metadata.title || existing.snippet.title,
+                            description: metadata.description || existing.snippet.description,
+                            scheduledStartTime: existing.snippet.scheduledStartTime
+                        }
+                    }, {
+                        params: { part: 'snippet' },
+                        headers
+                    });
+
+                    return true;
+                } catch (error: any) {
+                    systemLogger.error(`YouTube Metadata Update Error: ${error.response?.data || error.message}`);
+                    throw error;
+                }
+
+            case SocialPlatform.FACEBOOK:
+                try {
+                    // We need to find the active live video ID. 
+                    // Usually it's the latest live video from 'me/live_videos'
+                    const liveVideosRes = await axios.get('https://graph.facebook.com/me/live_videos', {
+                        params: { fields: 'id,status', limit: 5 },
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+
+                    const activeVideo = liveVideosRes.data.data?.find((v: any) => v.status === 'LIVE' || v.status === 'UNPUBLISHED');
+                    if (!activeVideo) throw new Error('No active Facebook Live video found.');
+
+                    await axios.post(`https://graph.facebook.com/${activeVideo.id}`, {
+                        title: metadata.title,
+                        description: metadata.description
+                    }, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+
+                    return true;
+                } catch (error: any) {
+                    systemLogger.error(`Facebook Metadata Update Error: ${error.response?.data || error.message}`);
+                    throw error;
+                }
+
+            case SocialPlatform.ANT_MEDIA:
+                try {
+                    const amsBaseUrl = serverUrl.replace(/\/$/, '');
+                    const amsHashedPassword = crypto.createHash('md5').update(password).digest('hex');
+                    const amsAuthRes = await axios.post(`${amsBaseUrl}/rest/v2/users/authenticate`, {
+                        email,
+                        password: amsHashedPassword
+                    });
+                    const amsCookie = Array.isArray(amsAuthRes.headers['set-cookie']) ? amsAuthRes.headers['set-cookie'].join('; ') : amsAuthRes.headers['set-cookie'] || '';
+                    const amsApp = appName || 'WebRTCAppEE';
+
+                    // Update requires streamId. We'll fetch the list and find the most recent live stream
+                    const streamsRes = await axios.get(`${amsBaseUrl}/${amsApp}/rest/v2/broadcasts/list/0/5`, {
+                        headers: { Cookie: amsCookie }
+                    });
+
+                    const activeStream = streamsRes.data?.find((s: any) => s.status === 'broadcasting') || streamsRes.data?.[0];
+                    if (!activeStream) throw new Error('No active Ant Media stream found.');
+
+                    await axios.post(`${amsBaseUrl}/${amsApp}/rest/v2/broadcasts/update/${activeStream.streamId}`, {
+                        name: metadata.title
+                    }, {
+                        headers: { Cookie: amsCookie }
+                    });
+
+                    return true;
+                } catch (error: any) {
+                    systemLogger.error(`AMS Metadata Update Error: ${error.response?.data || error.message}`);
+                    throw error;
+                }
+
+            default:
+                throw new Error(`Metadata update not supported for ${platform} yet`);
         }
     }
 }

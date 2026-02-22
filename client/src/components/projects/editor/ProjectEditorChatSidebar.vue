@@ -1,13 +1,13 @@
 <template>
-    <div v-if="isVisible">
+    <div v-if="isVisible" class="flex flex-row">
         <!-- Resize Handle -->
         <div class="resize-handle" @mousedown="startResizing" />
 
         <!-- Right Sidebar: Chat & AI Assistant -->
         <aside class="right-sidebar-panel" :style="{ width: `${width}px` }">
             <div
-                class="px-5 py-4 border-b border-white/5 text-[13px] font-semibold text-[#aaa] flex items-center gap-2">
-                <robot theme="outline" size="18" />
+                class="px-6 py-5 border-b border-white/5 text-[11px] font-black text-white/30 uppercase tracking-[0.2em] flex items-center gap-2">
+                <robot theme="outline" size="18" class="text-blue-400" />
                 <span>{{ t('projects.editor.assistant') }}</span>
             </div>
 
@@ -22,26 +22,20 @@
                     <div v-else class="flex flex-col gap-4">
                         <!-- Text Content -->
                         <div v-if="msg.content"
-                            class="text-white/90 text-sm leading-relaxed max-w-[85%] bg-white/10 backdrop-blur-md border border-white/10 px-6 py-4 rounded-[24px_24px_24px_8px] shadow-lg"
+                            class="ai-bubble group"
                             v-html="formatContent(msg.content)"></div>
 
                         <!-- Cards -->
-                        <ProjectAnalysisCard v-if="msg.result?.analysis"
-                            :msg="{ result: { analysis: msg.result.analysis, language: project?.scriptAnalysis?.language || 'English' }, expandAnalysis: false }" />
+                        <ProjectAnalysisCard v-if="msg.result?.analysis" :msg="msg" />
 
-                        <ProjectBriefCard v-if="msg.result?.creativeBrief"
-                            :msg="{ result: { creativeBrief: msg.result.creativeBrief, analysis: { overview: { duration: '60s' } }, language: project?.scriptAnalysis?.language || 'English' }, expandBrief: false }"
-                            :aspect-ratio="project?.aspectRatio" />
+                        <ProjectBriefCard v-if="msg.result?.creativeBrief" :msg="msg" :aspect-ratio="project?.aspectRatio" />
 
-                        <ProjectStoryboardCard v-if="msg.result?.storyboard"
-                            :msg="{ result: { storyboard: msg.result.storyboard, language: project?.scriptAnalysis?.language || 'English' }, expandStoryboard: false }" />
+                        <ProjectStoryboardCard v-if="msg.result?.storyboard" :msg="msg" />
 
                         <!-- Visual Path & Assets -->
-                        <VisualGenPathCard v-if="msg.type === 'visual-path' && msg.result?.path"
-                            :content="msg.result.path" />
+                        <VisualGenPathCard v-if="msg.type === 'visual-path' && msg.result?.path" :content="msg.result.path" />
 
-                        <VisualAssetsCard v-if="msg.type === 'visual-assets' && msg.result?.assets"
-                            :images="msg.result.assets" :project-id="projectId" />
+                        <VisualAssetsCard v-if="msg.type === 'visual-assets' && msg.result?.assets" :images="msg.result.assets" :project-id="projectId" />
                     </div>
                 </div>
                 <!-- Thinking -->
@@ -62,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { Robot } from '@icon-park/vue-next'
 import { useTranslations } from '@/composables/useTranslations'
 
@@ -111,7 +105,7 @@ const startResizing = () => {
 const handleResizing = (e: MouseEvent) => {
     if (!isResizing.value) return
     const newWidth = window.innerWidth - e.clientX
-    if (newWidth >= 300 && newWidth <= 800) {
+    if (newWidth >= 300 && newWidth <= 600) {
         emit('update:width', newWidth)
     }
 }
@@ -124,7 +118,33 @@ const stopResizing = () => {
     document.body.style.userSelect = ''
 }
 
-defineExpose({ chatContainer })
+const scrollToBottom = () => {
+    nextTick(() => {
+        if (chatContainer.value) {
+            chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+        }
+    })
+}
+
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+    if (chatContainer.value) {
+        resizeObserver = new ResizeObserver(() => {
+            scrollToBottom()
+        })
+        resizeObserver.observe(chatContainer.value)
+        scrollToBottom()
+    }
+})
+
+onUnmounted(() => {
+    if (resizeObserver) {
+        resizeObserver.disconnect()
+    }
+})
+
+defineExpose({ chatContainer, scrollToBottom })
 </script>
 
 <style lang="scss" scoped>
@@ -132,46 +152,75 @@ defineExpose({ chatContainer })
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: #0a0a0a;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(10, 10, 12, 0.4);
+    backdrop-filter: blur(40px) saturate(180%);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
     overflow: hidden;
+    position: relative;
+    z-index: 20;
 }
 
 .chat-messages-container {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 32px;
+}
+
+.ai-bubble {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 90%;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 16px 20px;
+    border-radius: 20px 20px 20px 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    letter-spacing: -0.01em;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
 }
 
 .resize-handle {
-    width: 4px;
+    width: 6px;
     height: 100%;
     background: transparent;
     cursor: col-resize;
-    transition: background 0.2s;
-    z-index: 10;
+    transition: all 0.3s ease;
+    z-index: 30;
     position: relative;
+    margin-right: -3px;
+    margin-left: -3px;
 
     &::after {
         content: '';
         position: absolute;
-        left: 1px;
+        left: 50%;
         top: 0;
         bottom: 0;
         width: 1px;
         background: rgba(255, 255, 255, 0.05);
+        transform: translateX(-50%);
+        transition: all 0.3s ease;
     }
 
     &:hover,
     &:active {
-        background: rgba(var(--brand-primary-rgb), 0.5);
+        background: rgba(59, 130, 246, 0.1);
 
         &::after {
-            background: transparent;
+            background: #3b82f6;
+            width: 2px;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
         }
     }
 }
@@ -181,7 +230,11 @@ defineExpose({ chatContainer })
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
 }
 </style>

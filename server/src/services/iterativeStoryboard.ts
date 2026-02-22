@@ -1,8 +1,10 @@
 import { generateJSON } from '../utils/AIGenerator.js'
 import type { IProject } from '../models/Project.js'
+import { projectContext } from '../utils/ProjectContext.js'
 
 export interface StoryboardSegment {
     order: number
+    uuid?: string
     title: string
     description: string
     duration: number
@@ -40,6 +42,8 @@ export interface StoryboardSegment {
         timing: string
     }[]
     characters: string[]
+    visualKeywords: string[]
+    audioKeywords: string[]
     lipSyncRequired: boolean
 }
 
@@ -67,46 +71,78 @@ export const generateStoryboardIteratively = async (
     const maxIterations = 5 // Prevent infinite loops
     let iteration = 0
 
-    while (currentDuration < targetDuration && iteration < maxIterations) {
-        const remainingDuration = targetDuration - currentDuration
-        const blockPrompt = `You are a professional video director. Continue creating the storyboard for the following script.
-        
+    const characters = scriptAnalysis.characters || []
+    const characterMap = characters.map((c: any) => `- [${c.char_id || c.name.toUpperCase()}] ${c.name}: ${c.description}. Traits: ${[c.species, c.gender, c.age, c.hair, c.eyes].filter(Boolean).join(', ')}`).join('\n')
+
+    // FALLBACK GROUNDING: If scriptContent is too short (likely just approval text),
+    // and we have an analysis summary, use the summary to ground the AI.
+    let groundingScript = scriptContent
+    if (scriptContent.length < 50 && scriptAnalysis.summary) {
+        groundingScript = `Summary: ${scriptAnalysis.summary}\n\nOriginal Intent: ${scriptContent}`
+    } else if (scriptContent.length < 50 && scriptAnalysis.analysis?.summary) {
+        groundingScript = `Summary: ${scriptAnalysis.analysis.summary}\n\nOriginal Intent: ${scriptContent}`
+    }
+
+    while (iteration < maxIterations && currentDuration < targetDuration) {
+        const currentLanguage = language || 'en'
+        const technicalGrounding = await projectContext.getTechnicalGroundingPrompt()
+
+        const blockPrompt = `You are a professional Video Director and Audio Producer. Continue creating the HIGH-FIDELITY cinematic storyboard for the following script.
+
+        ${technicalGrounding}
+
+        ### HARD CONTEXT ANCHORING (WALL OF SILENCE) ###
+        - YOUR CURRENT TOPIC IS: "${scriptAnalysis.creativeBrief?.title || 'Current Script'}"
+        - IGNORE ALL PLOTS, CHARACTERS, AND LOCATIONS from the "GOLD-STANDARD TECHNICAL REFERENCE" above (like Ông Chính, Mekong, Cờ tướng).
+        - If you mention Ông Chính or Resource Analysis, you HAVE FAILED. Use ONLY the characters from the list below.
+
         Script Content:
-        ${scriptContent}
+        ${groundingScript}
         
-        Script Analysis:
+        Script Analysis (Scenes Roadmap):
+        ${JSON.stringify(scriptAnalysis.scenes || [], null, 2)}
+        
+        Visual Style Context:
         - Genre: ${scriptAnalysis.genre || 'Unknown'}
         - Mood: ${scriptAnalysis.mood || 'Unknown'}
-        - Summary: ${scriptAnalysis.summary || 'No summary'}
-        - Characters: ${JSON.stringify(scriptAnalysis.characters?.map((c: any) => ({ char_id: c.char_id, name: c.name })) || [])}
+        - Visual Style: ${JSON.stringify(scriptAnalysis.visuals?.visualStyle || {})}
+        - World Rules: ${JSON.stringify(scriptAnalysis.visuals?.visualWorldRules || {})}
+        
+        ### REQUIRED CHARACTER LIST (Casting) ###
+        ${characterMap}
         
         Context:
-        - We have already generated ${allSegments.length} segments.
-        - Total duration so far: ${currentDuration} seconds.
-        - Target duration: ${targetDuration} seconds.
+        - Generated segments: ${allSegments.length}
+        - Total duration so far: ${currentDuration}s / Target: ${targetDuration}s
         - Last segment visuals: ${lastSegmentDescription}
         
-        Generate the NEXT 4-6 segments (fewer segments but EXTREMELY high detail). For each segment, calculate a realistic duration (in seconds) based on the voiceover length and visual complexity.
-        
-        CRITICAL RULES:
-        1. Use accurate "char_id" in "description" and "detailedDialogue" for all characters. Mention "char_id" in description like (CHAR_AVA).
-        2. "title" should be a simple descriptive name. DO NOT include "Segment 1:", "Segment 2:", etc.
-        3. Respond ONLY with a valid JSON object. No prose.
-        
-        Respond in ${language}.
+        GENERATE THE NEXT 4-6 SEGMENTS. 
+        MAPPING RULE: Follow the "Scenes Roadmap" chronologically. Ensure each segment translates a specific part of the scene into cinematic visuals.
+
+        STRICT CHARACTER RULES:
+        1. Use ONLY the char_ids from the list above. Format as (CHAR_ID) in descriptions.
+        2. Ensure "detailedDialogue" matches your character list exactly.
+
+        CRITICAL AUDIO & DIALOGUE RULES:
+        1. Capture EQUALLY detailed Audio (SFX, Ambience, Music) as the Gold Standard references.
+        2. Dialogue MUST be the EXACT lines from the script.
+
+        Respond in ${currentLanguage}.
         
         Return in JSON format:
         {
           "segments": [
             {
               "title": "Segment title",
-              "description": "Visual-first description",
+              "description": "Visual-first description (Location, Camera, Action). Reference character IDs like (CHAR_AVA).",
               "duration": 5,
-              "voiceover": "Narration or dialogue",
+              "voiceover": "Full narration or all dialogue lines combined",
+              "visualKeywords": [],
+              "audioKeywords": [],
               "locationDetails": { "type": "", "objects": "", "layout": "", "atmosphere": "", "visualStyle": "", "lighting": "" },
               "cameraDetails": { "framing": "", "angle": "", "movement": "", "focus": "" },
-              "audioDetails": { "ambience": "", "sfx": "", "music": "" },
-              "detailedDialogue": [ { "characterId": "", "characterName": "", "line": "", "language": "", "delivery": "", "style": "", "timing": "" } ],
+              "audioDetails": { "ambience": "Specific environment background", "sfx": "Precise sound triggers", "music": "Description: mood, tempo, instruments" },
+              "detailedDialogue": [ { "characterId": "", "characterName": "", "line": "", "language": "", "delivery": "e.g., whispering", "style": "natural", "timing": "mid" } ],
               "characters": ["Name1"],
               "lipSyncRequired": true
             }
@@ -120,10 +156,13 @@ export const generateStoryboardIteratively = async (
         for (const segment of result.segments) {
             const cleanedSegment: StoryboardSegment = {
                 order: allSegments.length + 1,
+                uuid: crypto.randomUUID(),
                 title: segment.title || 'Untitled Segment',
                 description: segment.description || 'No description provided.',
                 duration: Math.max(1, segment.duration || 5),
                 voiceover: segment.voiceover || ' ',
+                visualKeywords: Array.isArray(segment.visualKeywords) ? segment.visualKeywords : [],
+                audioKeywords: Array.isArray(segment.audioKeywords) ? segment.audioKeywords : [],
                 locationDetails: segment.locationDetails,
                 cameraDetails: segment.cameraDetails,
                 audioDetails: segment.audioDetails,

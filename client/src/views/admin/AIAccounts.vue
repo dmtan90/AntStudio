@@ -1,206 +1,211 @@
 <template>
-  <div class="admin-ai-accounts">
-    <div class="page-header">
+  <div class="admin-ai-accounts min-h-screen bg-[#0a0a0c] text-white font-outfit p-8 animate-in fade-in duration-700">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 relative z-10">
       <div>
-        <h1>AI Account Manager</h1>
-        <p class="subtitle">Manage multi-account pool and monitor model quotas.</p>
+        <h1 class="text-5xl font-black tracking-tighter mb-2 relative inline-block">
+           AI Accounts
+           <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+        </h1>
+        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Multi-Account Intelligence Pool</p>
       </div>
-      <div class="flex gap-2">
-        <button class="primary-btn secondary" @click="addAccount(true)">
-          <gemini theme="outline" size="20" />
+      <div class="flex gap-3">
+        <button class="px-5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group hover:text-blue-400" @click="addAccount(true)">
+          <google-ads theme="filled" size="14" />
           Antigravity
         </button>
-        <button class="primary-btn labs" @click="add11LabsAccount">
-          <brain theme="outline" size="20" />
+        <!-- <button class="px-5 py-3 rounded-xl bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group text-purple-400" @click="add11LabsAccount">
+          <brain theme="filled" size="14" />
           11Labs
-        </button>
-        <button class="primary-btn" @click="addAccount(false)">
-          <plus theme="outline" size="20" />
+        </button> -->
+        <button class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center gap-2" @click="addAccount(false)">
+          <google theme="outline" size="14" />
           Google
         </button>
       </div>
     </div>
 
-    <div class="accounts-content">
+    <div class="accounts-content relative z-10">
       <!-- Stats Overview -->
-      <div class="stats-overview">
-        <div class="cinematic-card stats-card">
-          <label>Total Accounts</label>
-          <div class="value">{{ accounts.length }}</div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+        <div class="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 backdrop-blur-sm hover:bg-white/[0.04] transition-colors group">
+          <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2 group-hover:text-white transition-colors">Total Accounts</label>
+          <div class="text-4xl font-black text-white tracking-tighter">{{ accounts.length }}</div>
         </div>
-        <div class="cinematic-card stats-card">
-          <label>Active</label>
-          <div class="value text-green">{{ activeAccounts.length }}</div>
+        <div class="p-6 rounded-[2rem] bg-green-500/[0.05] border border-green-500/10 backdrop-blur-sm hover:bg-green-500/[0.1] transition-colors group">
+          <label class="block text-[9px] font-black uppercase tracking-widest text-green-500/60 mb-2 group-hover:text-green-400 transition-colors">Active Nodes</label>
+          <div class="text-4xl font-black text-green-400 tracking-tighter">{{ activeAccounts.length }}</div>
         </div>
-        <div class="cinematic-card stats-card">
-          <label>Rate Limited</label>
-          <div class="value text-amber">{{ limitedAccounts.length }}</div>
+        <div class="p-6 rounded-[2rem] bg-amber-500/[0.05] border border-amber-500/10 backdrop-blur-sm hover:bg-amber-500/[0.1] transition-colors group">
+          <label class="block text-[9px] font-black uppercase tracking-widest text-amber-500/60 mb-2 group-hover:text-amber-400 transition-colors">Rate Limited</label>
+          <div class="text-4xl font-black text-amber-400 tracking-tighter">{{ limitedAccounts.length }}</div>
         </div>
-        <div class="cinematic-card stats-card">
-          <label>Errors</label>
-          <div class="value text-red">{{ errorAccounts.length }}</div>
+        <div class="p-6 rounded-[2rem] bg-red-500/[0.05] border border-red-500/10 backdrop-blur-sm hover:bg-red-500/[0.1] transition-colors group">
+          <label class="block text-[9px] font-black uppercase tracking-widest text-red-500/60 mb-2 group-hover:text-red-400 transition-colors">Systems Down</label>
+          <div class="text-4xl font-black text-red-400 tracking-tighter">{{ errorAccounts.length }}</div>
         </div>
       </div>
 
       <!-- Account Grid -->
-      <div v-if="!loading && accounts.length > 0" class="account-grid">
+      <div v-if="!loading && accounts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <div v-for="account in accounts" :key="account._id"
-          :class="['cinematic-card account-card group', { 'inactive-card': account.isActive === false }]">
+          :class="['p-8 rounded-[2.5rem] border transition-all duration-500 flex flex-col gap-6 relative overflow-hidden group hover:-translate-y-2', 
+             account.isActive === false ? 'bg-white/[0.01] border-white/5 grayscale opacity-60' : 'bg-[#0f0f12] border-white/5 hover:border-blue-500/30 shadow-2xl']">
+          
+          <!-- Background Glow -->
+          <div v-if="account.isActive !== false" class="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] group-hover:bg-blue-500/10 transition-colors pointer-events-none"></div>
+
           <!-- Card Header -->
-          <div class="card-header">
-            <div class="user-info">
-              <div class="avatar-circle" :style="{ background: getAvatarColor(account.email) }">
-                <img v-if="account.avatarUrl" :src="getFileUrl(account.avatarUrl)" class="avatar-img" />
-                <span v-else>{{ getInitials(account.email) }}</span>
-              </div>
-              <div class="details">
-                <div class="email-row">
-                  <div class="email" :title="account.email">{{ account.email }}</div>
-                  <!-- <div class="account-type no-wrap">
-                    <span v-if="account.accountType === 'antigravity'" class="ag-badge">ANTIGRAVITY</span>
-                    <span v-else-if="account.accountType === '11labs-direct'" class="ag-badge labs">11LABS DIRECT</span>
-                    <span v-else-if="account.accountType === 'google'" class="ag-badge google">GOOGLE</span>
-                    
-                  </div> -->
+          <div class="flex justify-between items-start relative z-10">
+            <div class="flex items-center gap-4">
+              <div class="relative">
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg relative overflow-hidden" 
+                    :style="{ background: getAvatarColor(account.email) }">
+                  <div class="absolute inset-0 bg-black/10"></div>
+                  <img v-if="account.avatarUrl" :src="getFileUrl(account.avatarUrl)" class="w-full h-full object-cover relative z-10" />
+                  <span v-else class="relative z-10">{{ getInitials(account.email) }}</span>
                 </div>
-                <div class="status">
-                  <span v-if="account.accountType === 'antigravity'" class="ag-badge">ANTIGRAVITY</span>
-                  <span v-else-if="account.accountType === '11labs-direct'" class="ag-badge labs">11LABS DIRECT</span>
-                  <span v-else class="ag-badge google">GOOGLE</span>
-                  <span :class="['status-dot', account.status, { 'inactive-dot': account.isActive === false }]"></span>
-                  <span class="status-text">{{ account.isActive !== false ? account.status.toUpperCase() : 'DISABLED'
-                  }}</span>
+                <div 
+                  class="absolute -bottom-2 -right-2 w-7 h-7 z-10 bg-red-600 text-white rounded-xl flex items-center justify-center border-2 border-[#0a0a0c]"
+                >
+                    <google-ads v-if="account.accountType === 'antigravity'" theme="filled" size="14" />
+                    <google v-else-if="account.accountType === 'google' || account.accountType === 'standard'" theme="outline" size="14" />
+                    <robot v-else theme="filled" size="14" />
+                </div>
+              </div>
+              
+              <div>
+                <div class="text-sm font-bold text-white mb-1 truncate max-w-[150px]" :title="account.email">{{ account.email }}</div>
+                <div class="flex items-center gap-2">
+                   <div :class="['w-1.5 h-1.5 rounded-full animate-pulse', 
+                      account.status === 'ready' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 
+                      account.status === 'rate-limited' ? 'bg-amber-500' : 'bg-red-500']"></div>
+                   <span class="text-[9px] font-black opacity-40 uppercase tracking-widest">{{ account.isActive !== false ? account.status : 'DISABLED' }}</span>
                 </div>
               </div>
             </div>
-            <div class="actions">
-              <button :class="['icon-btn', { 'active-power': account.isActive !== false }]"
-                @click="toggleActive(account)"
-                :title="account.isActive !== false ? 'Disable Account' : 'Enable Account'">
-                <power theme="outline" size="16" />
+            
+            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-4 group-hover:translate-x-0">
+               <button :class="['w-8 h-8 rounded-lg flex items-center justify-center transition-colors', account.isActive !== false ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-white/5 text-gray-500 hover:bg-white/10']"
+                @click="toggleActive(account)" :title="account.isActive !== false ? 'Disable' : 'Enable'">
+                <power theme="outline" size="14" />
               </button>
-              <button class="icon-btn" @click="syncAccount(account._id)" title="Sync Quota">
-                <refresh theme="outline" size="16" />
+              <button class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center justify-center transition-colors" @click="syncAccount(account._id)" title="Sync Quota">
+                <refresh theme="outline" size="14" />
               </button>
-              <button class="icon-btn delete" @click="deleteAccount(account._id)" title="Remove Account">
-                <delete theme="outline" size="16" />
+              <button class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-colors" @click="deleteAccount(account._id)" title="Remove">
+                <delete theme="outline" size="14" />
               </button>
             </div>
           </div>
 
           <!-- Quotas -->
-          <div class="quotas-list">
-            <!-- Priority Models -->
-            <div v-for="(quota, model) in getPriorityQuotas(account)" :key="model" class="quota-item">
-              <div class="quota-header">
-                <span class="model-name">
-                  <component :is="getModelIcon(model as string)" theme="outline" size="12" class="mr-1-5 opacity-70" />
-                  {{ cleanModelName(model as string) }}
-                </span>
-                <span class="quota-values" :class="getRemainingColorClass(quota)">
-                  {{ quota.limit - quota.used }}/{{ quota.limit }} left ({{ Math.round(calculateRemaining(quota)) }}%)
-                </span>
-              </div>
-              <div class="progress-pill-container">
-                <div class="progress-pill-bar" :style="{ width: calculateRemaining(quota) + '%' }"
-                  :class="getRemainingBarClass(quota)"></div>
-              </div>
-            </div>
+          <div class="space-y-5 relative z-10 flex-1">
+            <template v-for="(quota, model) in getPriorityQuotas(account)" :key="model">
+               <div>
+                  <div class="flex justify-between items-center mb-2">
+                     <span class="text-[10px] font-bold text-gray-400 flex items-center gap-2 uppercase tracking-wide">
+                        <component :is="getModelIcon(model as string)" theme="filled" />
+                        {{ cleanModelName(model as string) }}
+                     </span>
+                     <span :class="['text-[10px] font-black tracking-widest', getRemainingColorClass(quota)]">
+                        {{ Math.round(calculateRemaining(quota)) }}%
+                     </span>
+                  </div>
+                  <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                     <div class="h-full rounded-full transition-all duration-1000" :style="{ width: calculateRemaining(quota) + '%' }" :class="getRemainingBarClass(quota)"></div>
+                  </div>
+               </div>
+            </template>
 
-            <!-- Collapsible Section -->
+            <!-- Expanded Section -->
             <div v-if="account.quotas && Object.keys(account.quotas).length > 3">
-              <button class="collapse-toggle" @click="toggleExpand(account._id)">
-                <span>{{ isExpanded(account._id) ? 'SHOW LESS' : `+ ${Object.keys(account.quotas).length - 3} MORE
-                  MODELS` }}</span>
+              <button @click="toggleExpand(account._id)" class="w-full py-2 bg-white/[0.02] hover:bg-white/[0.05] rounded-lg border border-dashed border-white/10 text-[9px] font-black uppercase text-gray-500 hover:text-white transition-all flex items-center justify-center gap-2">
+                <span>{{ isExpanded(account._id) ? 'SHOW LESS' : `+ ${Object.keys(account.quotas).length - 3} MORE MODELS` }}</span>
                 <down v-if="!isExpanded(account._id)" theme="outline" size="12" />
                 <up v-else theme="outline" size="12" />
               </button>
 
-              <div v-if="isExpanded(account._id)" class="expanded-quotas mt-4 space-y-4">
-                <div v-for="(quota, model) in getSecondaryQuotas(account)" :key="model" class="quota-item animate-in">
-                  <div class="quota-header">
-                    <span class="model-name">
-                      <component :is="getModelIcon(model as string)" theme="outline" size="12"
-                        class="mr-1-5 opacity-40" />
-                      {{ cleanModelName(model as string) }}
-                    </span>
-                    <span class="quota-values text-[9px] opacity-60">
-                      {{ quota.limit - quota.used }}/{{ quota.limit }} ({{ Math.round(calculateRemaining(quota)) }}%)
-                    </span>
-                  </div>
-                  <div class="progress-pill-container h-1">
-                    <div class="progress-pill-bar" :style="{ width: calculateRemaining(quota) + '%' }"
-                      :class="getRemainingBarClass(quota)"></div>
-                  </div>
+              <div v-if="isExpanded(account._id)" class="space-y-4 mt-4 animate-in fade-in slide-in-from-top-2">
+                <div v-for="(quota, model) in getSecondaryQuotas(account)" :key="model">
+                   <div class="flex justify-between items-center mb-1">
+                     <span class="text-[9px] font-bold text-gray-500 flex items-center gap-2 uppercase">
+                        <component :is="getModelIcon(model as string)" theme="filled" class="opacity-50"/>
+                        {{ cleanModelName(model as string) }}
+                     </span>
+                     <span class="text-[9px] font-mono text-gray-600">{{ Math.round(calculateRemaining(quota)) }}%</span>
+                   </div>
+                   <div class="h-1 bg-white/5 rounded-full overflow-hidden">
+                     <div class="h-full rounded-full transition-all duration-1000" :style="{ width: calculateRemaining(quota) + '%' }" :class="getRemainingBarClass(quota)"></div>
+                   </div>
                 </div>
               </div>
             </div>
 
-            <div v-if="!Object.keys(account.quotas || {}).length" class="empty-quotas">
-              No active quotas tracked yet.
+            <div v-if="!Object.keys(account.quotas || {}).length" class="text-center py-8 opacity-20">
+               <p class="text-[10px] font-black uppercase tracking-widest">No Quota Data</p>
             </div>
           </div>
 
           <!-- Card Footer -->
-          <div class="card-footer">
-            <div class="project-info">
-              <span class="label">PRJ:</span>
-              <span class="value" @click="copyText(account.projectId)">{{ account.projectId || 'N/A' }}</span>
-
-              <div class="footer-actions ml-2" v-if="account.accountType === 'google' || account.accountType === 'standard'">
-                <copy v-if="account.projectId" theme="outline" size="12" class="footer-icon"
-                  @click="copyText(account.projectId)" title="Copy ID" />
-
-                <edit theme="outline" size="12" class="footer-icon" @click="editProjectId(account)"
-                  title="Edit Project ID" />
-
-                <el-icon v-if="isCreatingProject === account._id" class="is-loading footer-icon">
-                  <Loading />
-                </el-icon>
-                <plus v-else theme="outline" size="12" class="footer-icon" @click="createNewProject(account)"
-                  title="Create New Project" />
-
-                <a v-if="account.projectId"
-                  :href="`https://console.cloud.google.com/apis/library/aiplatform.googleapis.com?project=${account.projectId}`"
-                  target="_blank" class="enable-link" title="Enable Vertex AI API">
-                  ENABLE API
-                </a>
-                <a v-if="account.projectId"
-                  :href="`https://console.cloud.google.com/billing/enable?project=${account.projectId}`" target="_blank"
-                  class="enable-link billing" title="Enable Billing for this project">
-                  ENABLE BILLING
-                </a>
-              </div>
+          <div class="pt-4 border-t border-white/5 flex justify-between items-center relative z-10">
+            <div class="flex items-center gap-2">
+               <!-- <span class="px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                  {{ account.accountType === '11labs-direct' ? '11LABS' : account.accountType === 'antigravity' ? 'ANTIGRAVITY' : 'GOOGLE' }}
+               </span> -->
+               <template v-if="account.projectId && (account.accountType == 'google' || account.accountType == 'standard')">
+                  <el-dropdown trigger="hover">
+                    <div class="group/pid flex items-center gap-1 cursor-pointer" @click="copyText(account.projectId)">
+                      <span class="text-[9px] font-mono text-gray-600 group-hover/pid:text-blue-400 transition-colors truncate max-w-[80px]">{{ account.projectId }}</span>
+                      <copy theme="outline" size="10" class="text-gray-700 group-hover/pid:text-blue-400" />
+                    </div>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item :icon="Edit" @click="editProjectId(account)">Change Project ID</el-dropdown-item>
+                        <el-dropdown-item :icon="Plus" @click="createNewProject(account)">Create New Project</el-dropdown-item>
+                        <el-dropdown-item :icon="Check" @click="enableAPI(account)">Enable API</el-dropdown-item>
+                        <el-dropdown-item :icon="Bill" @click="enableBilling(account)">Enable Billing</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+               </template>
+               <div v-else class="group/pid flex items-center gap-1 cursor-pointer" @click="copyText(account.projectId)">
+                  <span class="text-[9px] font-mono text-gray-600 group-hover/pid:text-blue-400 transition-colors truncate max-w-[80px]">{{ account.projectId }}</span>
+                  <copy theme="outline" size="10" class="text-gray-700 group-hover/pid:text-blue-400" />
+                </div>
             </div>
-            <div class="usage-info">
-              <span class="label">USED:</span>
-              <span class="value">{{ formatDate(account.lastUsedAt) }}</span>
-            </div>
+            <div class="text-[9px] font-bold text-gray-600 uppercase tracking-widest">{{ formatDate(account.lastUsedAt) }}</div>
           </div>
         </div>
       </div>
 
       <!-- Empty State -->
-      <div v-if="!loading && accounts.length === 0" class="empty-state">
-        <wallet theme="outline" size="48" />
-        <h3>No AI Accounts Found</h3>
-        <p>Connect your first Google account to start using the multi-account pool.</p>
+      <div v-if="!loading && accounts.length === 0" class="flex flex-col items-center justify-center py-32 border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]">
+        <div class="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
+            <wallet theme="filled" size="40" class="text-gray-600" />
+        </div>
+        <h3 class="text-xl font-black uppercase text-white mb-2">Initialize Neural Pool</h3>
+        <p class="text-sm font-medium text-gray-500">Connect Google or 11Labs accounts to spin up the intelligence grid.</p>
       </div>
 
       <!-- Loading State -->
-      <div v-if="loading" class="loading-state">
-        <el-icon class="is-loading">
-          <Loading />
-        </el-icon>
-        <span>Fetching account data...</span>
+      <div v-if="loading" class="flex items-center justify-center py-32">
+        <loading-four theme="outline" size="40" class="animate-spin text-blue-500" />
       </div>
     </div>
+    
+    <!-- Ambient Glow -->
+    <div class="fixed top-0 left-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { Plus, User, Refresh, Delete, Wallet, Copy, Loading, Gemini, Brain, VideoTwo, Pic, Down, Up, Power, Edit } from '@icon-park/vue-next';
+import { Plus, User, Refresh, Delete, Wallet, 
+  Copy, Loading, Gemini, Brain, VideoTwo, Pic, 
+  Down, Up, Power, Edit, LoadingFour, Google, GoogleAds,
+  Bill, Check , Robot
+} from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 import { getFileUrl } from '@/utils/api';
 import { useAdminStore } from '@/stores/admin';
@@ -258,6 +263,22 @@ const createNewProject = async (account: any) => {
     toast.error(e?.error || 'Project creation failed');
   } finally {
     isCreatingProject.value = null;
+  }
+};
+
+const enableAPI = async (account: any) => {
+  try {
+    window.open(`https://console.cloud.google.com/apis/library/aiplatform.googleapis.com?project=${account.projectId}`, '_blank');
+  } catch (e: any) {
+    toast.error(e?.error || 'API enabling failed');
+  }
+};
+
+const enableBilling = async (account: any) => {
+  try {
+    window.open(`https://console.cloud.google.com/billing/enable?project=${account.projectId}`, '_blank');
+  } catch (e: any) {
+    toast.error(e?.error || 'Billing enabling failed');
   }
 };
 
@@ -347,15 +368,11 @@ const addAccount = async (isAntigravity = false) => {
 const add11LabsAccount = async () => {
   const email = prompt('1. Enter 11Labs Account Email:');
   if (!email) return;
-  const licenseKey = prompt('2. (Optional) Enter License Key:');
-  // // if (!licenseKey) return;
-  // const token = prompt('3. (Optional) Enter Google Bearer Token if you have it (for direct compute bypass):');
   const token = undefined;
   try {
     toast.info('Integrating 11Labs account...');
     await adminStore.addDirectAccount({
       email,
-      // licenseKey,
       accessToken: token || undefined,
       accountType: '11labs-direct',
       providerId: '11labs'
@@ -387,7 +404,6 @@ const deleteAccount = async (id: string) => {
 };
 
 const calculateRemaining = (quota: any) => {
-  // If limit is 0, we can't calculate. Assume 100% until synced.
   if (!quota.limit) return 100;
   const remaining = Math.max(0, quota.limit - quota.used);
   return (remaining / quota.limit) * 100;
@@ -395,16 +411,16 @@ const calculateRemaining = (quota: any) => {
 
 const getRemainingBarClass = (quota: any) => {
   const p = calculateRemaining(quota);
-  if (p < 10) return 'bar-red';
-  if (p < 30) return 'bar-amber';
-  return 'bar-blue';
+  if (p < 10) return 'bg-red-500';
+  if (p < 30) return 'bg-amber-500';
+  return 'bg-blue-500';
 };
 
 const getRemainingColorClass = (quota: any) => {
   const p = calculateRemaining(quota);
-  if (p < 10) return 'text-red';
-  if (p < 30) return 'text-amber';
-  return 'text-green';
+  if (p < 10) return 'text-red-500';
+  if (p < 30) return 'text-amber-500';
+  return 'text-green-500';
 };
 
 const getModelIcon = (modelId: string) => {
@@ -438,6 +454,7 @@ const formatDate = (date: string) => {
   if (diff < 3600) return `${Math.floor(diff / 60)}M AGO`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}H AGO`;
   return d.toLocaleDateString();
+  
 };
 
 const cleanModelName = (name: string) => {
@@ -453,7 +470,6 @@ const copyText = (text: string) => {
 
 onMounted(() => {
   fetchAccounts();
-  // Auto refresh every 30 seconds
   refreshInterval = setInterval(() => fetchAccounts(true), 30000);
 
   if (success === 'true') {
@@ -469,524 +485,7 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.admin-ai-accounts {
-  padding: 24px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-
-  h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: #fff;
-    margin: 0;
-  }
-
-  .subtitle {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 14px;
-    margin-top: 4px;
-  }
-}
-
-.primary-btn {
-  background: #3b82f6;
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-  }
-
-  &.labs {
-    background: #8b5cf6;
-
-    &:hover {
-      background: #7c3aed;
-    }
-  }
-}
-
-.stats-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 32px;
-
-  .stats-card {
-    padding: 20px;
-
-    label {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.4);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-    }
-
-    .value {
-      font-size: 28px;
-      font-weight: 800;
-      color: #fff;
-
-      &.text-green {
-        color: #10b981;
-      }
-
-      &.text-amber {
-        color: #f59e0b;
-      }
-
-      &.text-red {
-        color: #ef4444;
-      }
-    }
-  }
-}
-
-.account-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-}
-
-.account-card {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-
-  &.inactive-card {
-    opacity: 0.6;
-    filter: grayscale(0.5);
-    background: rgba(255, 255, 255, 0.01);
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-
-      .avatar-circle {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-weight: 800;
-        font-size: 18px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        overflow: hidden;
-
-        .avatar-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-      }
-
-      .details {
-        .email {
-          font-weight: 700;
-          color: #fff;
-          max-width: 180px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          font-size: 15px;
-        }
-
-        .status {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          margin-top: 4px;
-
-          .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-
-            &.inactive-dot {
-              background: #6b7280 !important;
-              box-shadow: none !important;
-            }
-
-            &.ready {
-              background: #10b981;
-              box-shadow: 0 0 8px #10b981;
-            }
-
-            &.rate-limited {
-              background: #f59e0b;
-            }
-
-            &.error,
-            &.unauthorized {
-              background: #ef4444;
-            }
-          }
-
-          .status-text {
-            font-size: 10px;
-            font-weight: 900;
-            color: rgba(255, 255, 255, 0.3);
-            letter-spacing: 1px;
-          }
-        }
-      }
-    }
-
-    .actions {
-      display: flex;
-      gap: 6px;
-      opacity: 0;
-      transition: all 0.2s;
-
-      .active-power {
-        color: #10b981;
-        border-color: rgba(16, 185, 129, 0.3);
-        background: rgba(16, 185, 129, 0.1);
-      }
-    }
-  }
-
-  &:hover .card-header .actions {
-    opacity: 1;
-  }
-
-  .quotas-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-
-    .quota-item {
-      .quota-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 11px;
-        font-weight: 700;
-        margin-bottom: 8px;
-
-        .model-name {
-          color: rgba(255, 255, 255, 0.5);
-          display: flex;
-          align-items: center;
-        }
-
-        .quota-values {
-          font-weight: 800;
-
-          &.text-green {
-            color: #10b981;
-          }
-
-          &.text-amber {
-            color: #f59e0b;
-          }
-
-          &.text-red {
-            color: #ef4444;
-          }
-        }
-      }
-
-      .progress-pill-container {
-        height: 10px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        overflow: hidden;
-        padding: 2px;
-
-        .progress-pill-bar {
-          height: 100%;
-          border-radius: 20px;
-          transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-
-          &.bar-blue {
-            background: linear-gradient(90deg, #3b82f6, #6366f1);
-          }
-
-          &.bar-amber {
-            background: linear-gradient(90deg, #f59e0b, #fbbf24);
-          }
-
-          &.bar-red {
-            background: linear-gradient(90deg, #ef4444, #f87171);
-          }
-        }
-      }
-    }
-
-    .collapse-toggle {
-      width: 100%;
-      margin-top: 8px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px dashed rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      color: rgba(255, 255, 255, 0.4);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.06);
-        color: rgba(255, 255, 255, 0.6);
-        border-style: solid;
-      }
-    }
-
-    .empty-quotas {
-      text-align: center;
-      padding: 16px;
-      background: rgba(255, 255, 255, 0.02);
-      border-radius: 12px;
-      color: rgba(255, 255, 255, 0.3);
-      font-size: 12px;
-      font-style: italic;
-    }
-  }
-
-  .card-footer {
-    margin-top: auto;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    color: rgba(255, 255, 255, 0.2);
-
-    .project-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-
-      .value {
-        cursor: pointer;
-        transition: color 0.2s;
-        color: rgba(255, 255, 255, 0.4);
-
-        &:hover {
-          color: rgba(255, 255, 255, 0.5);
-        }
-      }
-
-      .copy-icon {
-        opacity: 0.5;
-        cursor: pointer;
-
-        &:hover {
-          opacity: 1;
-        }
-      }
-
-      .footer-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-left: 12px;
-
-        .footer-icon {
-          opacity: 0.5;
-          cursor: pointer;
-          transition: all 0.2s;
-          color: rgba(255, 255, 255, 0.6);
-
-          &:hover {
-            opacity: 1;
-            color: #fff;
-            transform: scale(1.1);
-          }
-
-          &.is-loading {
-            color: #3b82f6;
-          }
-        }
-      }
-
-      .enable-link {
-        margin-left: 8px;
-        padding: 2px 8px;
-        background: rgba(59, 130, 246, 0.15);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        border-radius: 6px;
-        color: #60a5fa;
-        font-size: 9px;
-        font-weight: 900;
-        text-decoration: none;
-        transition: all 0.2s;
-
-        &:hover {
-          background: #3b82f6;
-          color: #fff;
-          transform: scale(1.05);
-        }
-
-        &.billing {
-          background: rgba(245, 158, 11, 0.15);
-          border-color: rgba(245, 158, 11, 0.3);
-          color: #f59e0b;
-          margin-left: 4px;
-
-          &:hover {
-            background: #f59e0b;
-            color: #fff;
-          }
-        }
-      }
-    }
-  }
-}
-
-.icon-btn {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  padding: 7px;
-  border-radius: 10px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-  }
-
-  &.delete:hover {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: #ef4444;
-  }
-}
-
-.animate-in {
-  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.empty-state {
-  padding: 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 2px dashed rgba(255, 255, 255, 0.05);
-  border-radius: 24px;
-  color: rgba(255, 255, 255, 0.3);
-
-  h3 {
-    color: rgba(255, 255, 255, 0.6);
-    margin: 16px 0 8px;
-    font-size: 18px;
-  }
-
-  p {
-    margin: 0;
-    font-size: 14px;
-  }
-}
-
-.loading-state {
-  padding: 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.mr-1-5 {
-  margin-right: 6px;
-}
-
-.email-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.ag-badge {
-  background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
-  color: #fff;
-  font-size: 8px;
-  font-weight: 900;
-  padding: 1px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-
-  &.labs {
-    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
-    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
-  }
-}
-
-.primary-btn.secondary {
-  background: rgba(168, 85, 247, 0.15);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  color: #c084fc;
-
-  &:hover {
-    background: #a855f7;
-    color: #fff;
-    border-color: #a855f7;
-  }
-}
-
-.flex {
-  display: flex;
-}
-
-.gap-2 {
-  gap: 8px;
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
 }
 </style>

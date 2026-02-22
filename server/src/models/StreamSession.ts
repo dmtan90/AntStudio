@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 export interface IStreamSession {
     sessionId: string;
     userId: string;
+    projectId?: string;
     status: 'starting' | 'live' | 'error' | 'stopped';
     mode: 'ams' | 'internal';
     source: string;
@@ -13,6 +14,7 @@ export interface IStreamSession {
         platform: string;
         accountId?: string;
         externalChatId?: string;
+        externalId?: string;
     }>;
     startTime?: Date;
     endTime?: Date;
@@ -22,6 +24,7 @@ export interface IStreamSession {
 const streamSessionSchema = new mongoose.Schema<IStreamSession>({
     sessionId: { type: String, required: true, unique: true, index: true },
     userId: { type: String, required: true, index: true },
+    projectId: { type: String, index: true },
     status: { type: String, enum: ['starting', 'live', 'error', 'stopped'], default: 'starting' },
     mode: { type: String, enum: ['ams', 'internal'], required: true },
     source: { type: String },
@@ -31,7 +34,8 @@ const streamSessionSchema = new mongoose.Schema<IStreamSession>({
         key: String,
         platform: String,
         accountId: String,
-        externalChatId: String
+        externalChatId: String,
+        externalId: String
     }],
     startTime: { type: Date },
     endTime: { type: Date },

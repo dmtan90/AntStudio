@@ -1,460 +1,219 @@
 <template>
-  <div class="subscription-page">
-    <div class="page-container">
-      <div class="page-header">
+  <div class="subscription-page min-h-screen bg-[#0a0a0c] text-white font-outfit">
+    <!-- Header Section -->
+    <header class="relative py-16 px-8 overflow-hidden border-b border-white/5">
+      <div class="absolute inset-0 bg-gradient-to-br from-green-900/20 via-blue-900/10 to-transparent pointer-events-none"></div>
+      
+      <!-- Ambient Glows -->
+      <div class="absolute -top-24 -right-24 w-96 h-96 bg-green-500/10 rounded-full blur-[100px] animate-pulse"></div>
+      <div class="absolute top-1/2 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] animate-pulse" style="animation-delay: 1s"></div>
+
+      <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
         <div>
-          <h1 class="glow-title">{{ t('subscription.title').toUpperCase() }}</h1>
-          <p class="subtitle">{{ t('subscription.description') }}</p>
+          <h1 class="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
+            Manage <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500">
+              Subscription
+            </span>
+          </h1>
+          <p class="text-xl text-gray-400 max-w-xl leading-relaxed font-medium">
+             Control your plan, monitor usage, and manage your billing history.
+          </p>
         </div>
       </div>
-      <div class="subscription-layout">
+    </header>
+
+    <main class="max-w-7xl mx-auto py-12 px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
         <!-- Current Plan -->
-        <GCard>
-          <template #header>
-            <div class="card-title">{{ t('subscription.currentPlan') }}</div>
-          </template>
-          <div class="plan-details">
-            <div class="plan-info-box">
-              <div class="label">{{ t('subscription.currentPlan') }}</div>
-              <div class="value">{{ user?.subscription?.plan?.toUpperCase() || 'FREE' }}</div>
-            </div>
-
-            <div class="status-row">
-              <span class="label">STATUS:</span>
-              <GTag :type="user.subscription?.status === 'active' ? 'success' : 'danger'">
-                {{ user.subscription?.status?.toUpperCase() || 'ACTIVE' }}
-              </GTag>
-            </div>
-
-            <div class="period" v-if="user.subscription?.endDate">
-              RENEWS ON: {{ new Date(user.subscription.endDate).toLocaleDateString() }}
-            </div>
-
-            <div class="actions mt-auto">
-              <GButton type="primary" class="w-full upgrade-btn" @click="showUpgradeDialog">
-                {{ t('subscription.upgrade').toUpperCase() }}
-              </GButton>
-              <GButton v-if="user?.subscription?.plan && user.subscription.plan !== 'free'"
-                class="w-full mt-3 cancel-btn">
-                {{ t('subscription.cancel').toUpperCase() }}
-              </GButton>
-            </div>
-          </div>
-        </GCard>
-
-        <!-- Credits Stats -->
-        <GCard>
-          <template #header>
-            <div class="flex items-center justify-between w-full">
-              <div class="card-title">{{ t('subscription.credits').toUpperCase() }} OVERVIEW</div>
-              <GButton size="small" variant="secondary" @click="showBuyCreditsDialog" class="!px-4 !h-8 !text-[10px] !font-black !tracking-widest">
-                TOP UP
-              </GButton>
-            </div>
-          </template>
-          <div class="credits-overview">
-            <div class="credit-grid">
-              <div class="credit-stat">
-                <div class="stat-label">CURRENT BALANCE</div>
-                <div class="stat-value primary">{{ user?.credits?.balance || 0 }}</div>
+        <div class="bg-black rounded-3xl p-1 relative group overflow-hidden border border-white/5 transition-all hover:border-white/20 hover:shadow-2xl hover:shadow-green-900/10">
+           <div class="bg-[#0f0f12] rounded-[20px] p-8 h-full flex flex-col relative z-10">
+              <div class="flex justify-between items-start mb-8">
+                 <div>
+                    <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Current Plan</div>
+                    <div class="text-5xl font-black text-white uppercase tracking-tight">{{ user?.subscription?.plan || 'Free' }}</div>
+                 </div>
+                 <div class="px-3 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest"
+                    :class="user?.subscription?.status === 'active' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'">
+                    {{ user?.subscription?.status || 'Active' }}
+                 </div>
               </div>
-              <div class="credit-stat">
-                <div class="stat-label">CONSUMED THIS MONTH</div>
-                <div class="stat-value consumed">{{ creditsConsumedThisMonth }}</div>
-                <div class="g-progress">
-                  <div class="g-progress-bar" :style="{ width: creditUsagePercent + '%' }"></div>
-                </div>
-              </div>
-            </div>
 
-            <div class="credit-breakdown">
-              <div class="breakdown-item">
-                <span class="label">MEMBERSHIP</span>
-                <span class="value">{{ user.credits?.membership || 0 }}</span>
+              <div class="flex-1">
+                 <div v-if="user?.subscription?.endDate" class="mb-8 p-4 bg-white/5 rounded-xl border border-white/5">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Renewal Date</div>
+                    <div class="text-lg font-bold text-white">{{ new Date(user.subscription.endDate).toLocaleDateString() }}</div>
+                 </div>
               </div>
-              <div class="breakdown-item">
-                <span class="label">BONUS</span>
-                <span class="value">{{ user.credits?.bonus || 0 }}</span>
+
+              <div class="grid grid-cols-2 gap-4 mt-auto">
+                 <button 
+                    @click="showUpgradeDialog" 
+                    class="py-4 bg-white text-black rounded-xl font-black uppercase text-xs hover:bg-gray-100 transition-colors shadow-lg shadow-white/5"
+                 >
+                    Upgrade Plan
+                 </button>
+                 <button 
+                    v-if="user?.subscription?.plan && user.subscription.plan !== 'free'"
+                    class="py-4 bg-white/5 text-white rounded-xl font-black uppercase text-xs hover:bg-white/10 hover:text-red-400 transition-colors border border-white/5"
+                 >
+                    Cancel Plan
+                 </button>
               </div>
-              <div class="breakdown-item">
-                <span class="label">WEEKLY</span>
-                <span class="value">{{ user.credits?.weekly || 0 }}</span>
+           </div>
+        </div>
+
+        <!-- Credits Overview -->
+        <div class="bg-black rounded-3xl p-1 relative group overflow-hidden border border-white/5 transition-all hover:border-white/20 hover:shadow-2xl hover:shadow-blue-900/10">
+           <div class="bg-[#0f0f12] rounded-[20px] p-8 h-full flex flex-col relative z-10">
+              <div class="flex justify-between items-center mb-8">
+                 <div class="text-[10px] font-black uppercase tracking-widest text-gray-500">Credits Balance</div>
+                 <button 
+                    @click="showBuyCreditsDialog"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors shadow-lg shadow-blue-600/20"
+                 >
+                    Top Up
+                 </button>
               </div>
-            </div>
-          </div>
-        </GCard>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                 <div>
+                    <div class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500 mb-2">{{ user?.credits?.balance || 0 }}</div>
+                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wide">Available</div>
+                 </div>
+                 <div class="flex flex-col justify-end">
+                    <div class="text-2xl font-black text-white mb-2">{{ creditsConsumedThisMonth }}</div>
+                    <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">Used This Month</div>
+                    <div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                       <div class="h-full bg-blue-500 rounded-full transition-all duration-1000" :style="{ width: `${creditUsagePercent}%` }"></div>
+                    </div>
+                 </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 mt-auto pt-8 border-t border-white/5">
+                 <div class="text-center">
+                    <div class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Plan Limit</div>
+                    <div class="text-lg font-black text-white">{{ user?.credits?.membership || 0 }}</div>
+                 </div>
+                 <div class="text-center border-l border-white/5">
+                    <div class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Bonus</div>
+                    <div class="text-lg font-black text-white">{{ user?.credits?.bonus || 0 }}</div>
+                 </div>
+                 <div class="text-center border-l border-white/5">
+                    <div class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Weekly</div>
+                    <div class="text-lg font-black text-white">{{ user?.credits?.weekly || 0 }}</div>
+                 </div>
+              </div>
+           </div>
+        </div>
       </div>
 
-      <!-- Payment History -->
-      <div class="history-section">
-        <h2 class="section-title">BILLING HISTORY</h2>
-        <GTable :columns="[
-          { title: 'DATE', key: 'createdAt' },
-          { title: 'PLAN', key: 'plan' },
-          { title: 'AMOUNT', key: 'amount' },
-          { title: 'STATUS', key: 'status' }
-        ]" :data="payments">
-          <template #cell-createdAt="{ value }">
-            {{ new Date(value).toLocaleDateString() }}
-          </template>
-          <template #cell-plan="{ value }">
-            {{ value?.toUpperCase() }}
-          </template>
-          <template #cell-amount="{ row }">
-            ${{ row.amount }} {{ row.currency?.toUpperCase() }}
-          </template>
-          <template #cell-status="{ value }">
-            <GTag :type="value === 'completed' ? 'success' : 'danger'">
-              {{ value?.toUpperCase() }}
-            </GTag>
-          </template>
-        </GTable>
+      <!-- Billing History -->
+      <div>
+         <h2 class="text-2xl font-black mb-8 flex items-center gap-3">
+            <span class="w-1.5 h-8 bg-blue-500 rounded-full"></span>
+            Billing History
+         </h2>
+
+         <div class="bg-white/5 rounded-3xl overflow-hidden border border-white/5 backdrop-blur-sm">
+            <div class="overflow-x-auto">
+               <table class="w-full text-left">
+                  <thead>
+                     <tr class="border-b border-white/5">
+                        <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Date</th>
+                        <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Plan</th>
+                        <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Amount</th>
+                        <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">Status</th>
+                     </tr>
+                  </thead>
+                  <tbody v-if="payments.length">
+                     <tr v-for="payment in payments" :key="payment.id" class="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                        <td class="px-8 py-6 font-bold text-sm text-gray-300">{{ new Date(payment.createdAt).toLocaleDateString() }}</td>
+                        <td class="px-8 py-6 font-bold text-white uppercase">{{ payment.plan }}</td>
+                        <td class="px-8 py-6 font-mono font-bold text-gray-300">${{ payment.amount }} {{ payment.currency?.toUpperCase() }}</td>
+                        <td class="px-8 py-6 text-right">
+                           <span class="inline-flex px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border"
+                              :class="payment.status === 'completed' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'">
+                              {{ payment.status }}
+                           </span>
+                        </td>
+                     </tr>
+                  </tbody>
+                  <tbody v-else>
+                     <tr>
+                        <td colspan="4" class="px-8 py-16 text-center text-gray-500 font-medium">No billing history available.</td>
+                     </tr>
+                  </tbody>
+               </table>
+            </div>
+         </div>
       </div>
-    </div>
+    </main>
+
+    <!-- Dialogs -->
+    <SubscriptionPlansDialog v-model="subscriptionDialogVisible" @select="handlePlanSelection" />
+    <BuyCreditsDialog v-model="buyCreditsDialogVisible" />
   </div>
-
-  <!-- Subscription Plans Dialog -->
-  <SubscriptionPlansDialog v-model="subscriptionDialogVisible" @select="handlePlanSelection" />
-  
-  <!-- Buy Credits Dialog -->
-  <BuyCreditsDialog v-model="buyCreditsDialogVisible" />
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import GCard from '@/components/ui/GCard.vue'
-import GTag from '@/components/ui/GTag.vue'
-import GButton from '@/components/ui/GButton.vue'
-import GTable from '@/components/ui/GTable.vue'
-import { useUserStore } from '@/stores/user'
-import { storeToRefs } from 'pinia'
-import { useTranslations } from '@/composables/useTranslations'
-import SubscriptionPlansDialog from '@/components/subscription/SubscriptionPlansDialog.vue'
-import BuyCreditsDialog from '@/components/subscription/BuyCreditsDialog.vue'
+import { onMounted, computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { toast } from 'vue-sonner';
+import { useUserStore } from '@/stores/user';
+import { storeToRefs } from 'pinia';
+import SubscriptionPlansDialog from '@/components/subscription/SubscriptionPlansDialog.vue';
+import BuyCreditsDialog from '@/components/subscription/BuyCreditsDialog.vue';
 
-const { t } = useTranslations()
-const router = useRouter()
-const userStore = useUserStore()
-const { user } = storeToRefs(userStore)
-const payments = ref<any[]>([])
-const subscriptionDialogVisible = ref(false)
-const buyCreditsDialogVisible = ref(false)
+const router = useRouter();
+const userStore = useUserStore();
+const { user } = storeToRefs(userStore);
+const payments = ref<any[]>([]);
+const subscriptionDialogVisible = ref(false);
+const buyCreditsDialogVisible = ref(false);
 
 const fetchData = async () => {
   try {
-    await userStore.fetchProfile()
-    payments.value = await userStore.fetchPaymentHistory()
+    await userStore.fetchProfile();
+    payments.value = await userStore.fetchPaymentHistory();
   } catch (error: any) {
-    toast.error(error.response?.data?.message || 'Failed to load subscription data')
+    toast.error(error.response?.data?.message || 'Failed to load subscription data');
   }
-}
+};
 
 const creditsConsumedThisMonth = computed(() => {
-  if (!user.value?.creditLogs) return 0
-  const now = new Date()
+  if (!user.value?.creditLogs) return 0;
+  const now = new Date();
   const thisMonth = user.value.creditLogs.filter((log: any) => {
-    const logDate = new Date(log.timestamp)
+    const logDate = new Date(log.timestamp);
     return log.type === 'consumed' &&
       logDate.getMonth() === now.getMonth() &&
-      logDate.getFullYear() === now.getFullYear()
-  })
-  return thisMonth.reduce((sum: number, log: any) => sum + log.amount, 0)
-})
+      logDate.getFullYear() === now.getFullYear();
+  });
+  return thisMonth.reduce((sum: number, log: any) => sum + log.amount, 0);
+});
 
 const creditUsagePercent = computed(() => {
-  const total = (user.value?.credits?.balance || 0) + (creditsConsumedThisMonth.value || 0)
-  if (total === 0) return 0
-  return Math.min((creditsConsumedThisMonth.value / total) * 100, 100)
-})
+  const total = (user.value?.credits?.balance || 0) + (creditsConsumedThisMonth.value || 0);
+  if (total === 0) return 0;
+  return Math.min((creditsConsumedThisMonth.value / total) * 100, 100);
+});
 
-const showUpgradeDialog = () => {
-  subscriptionDialogVisible.value = true
-}
-
-const showBuyCreditsDialog = () => {
-  buyCreditsDialogVisible.value = true
-}
+const showUpgradeDialog = () => subscriptionDialogVisible.value = true;
+const showBuyCreditsDialog = () => buyCreditsDialogVisible.value = true;
 
 const handlePlanSelection = (data: any) => {
-  // Satisfying TODO: Navigate to tactical billing gateway
-  subscriptionDialogVisible.value = false
-  fetchData()
-  // router.push({ path: '/billing', query: { selectedPlan: data.id } })
-}
+  subscriptionDialogVisible.value = false;
+  fetchData();
+};
 
 onMounted(() => {
-  fetchData()
-})
+  fetchData();
+});
 </script>
 
 <style lang="scss" scoped>
-@use "sass:color";
-@use "@/assets/scss/_variables.scss" as vars;
-// $primary-rgb: var(--primary-rgb);
-// $primary: var(--primary-rgb);
-
-.subscription-page {
-  min-height: 100vh;
-  padding: 60px 0 100px 0;
-  background: radial-gradient(circle at top right, rgba(vars.$primary-rgb, 0.05), transparent 40%),
-    radial-gradient(circle at bottom left, rgba(vars.$primary-rgb, 0.05), transparent 40%);
-}
-
-.page-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 40px;
-}
-
-.page-header {
-  margin-bottom: 48px;
-
-  .glow-title {
-    font-size: 48px;
-    font-weight: 900;
-    margin: 0 0 12px 0;
-    letter-spacing: -2px;
-    color: #fff;
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
-    position: relative;
-    display: inline-block;
-
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      left: 0;
-      width: 80px;
-      height: 4px;
-      background: vars.$primary;
-      box-shadow: 0 0 20px vars.$primary;
-      border-radius: 2px;
-    }
-  }
-
-  .subtitle {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 16px;
-    font-weight: 500;
-  }
-}
-
-.subscription-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 32px;
-  margin-bottom: 80px;
-
-  @media (min-width: 1200px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.card-title {
-  font-weight: 800;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.plan-details {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 10px 0;
-
-  .plan-info-box {
-    background: rgba(255, 255, 255, 0.03);
-    padding: 24px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    margin-bottom: 32px;
-
-    .label {
-      font-size: 10px;
-      font-weight: 900;
-      color: rgba(255, 255, 255, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 8px;
-    }
-
-    .value {
-      font-size: 32px;
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: -1px;
-    }
-  }
-
-  .status-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 12px;
-
-    .label {
-      font-size: 12px;
-      font-weight: 800;
-      color: rgba(255, 255, 255, 0.4);
-      letter-spacing: 1px;
-    }
-  }
-
-  .period {
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 40px;
-    letter-spacing: 0.5px;
-  }
-
-  .actions {
-    margin-top: auto;
-
-    .upgrade-btn {
-      height: 54px;
-      font-weight: 900;
-      letter-spacing: 2px;
-      font-size: 14px;
-      box-shadow: 0 8px 24px rgba(vars.$primary-rgb, 0.2);
-    }
-
-    .cancel-btn {
-      color: rgba(255, 255, 255, 0.4);
-
-      &:hover {
-        color: #ff4d4f;
-      }
-    }
-  }
-}
-
-.credits-overview {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  padding: 10px 0;
-}
-
-.credit-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-
-  @media (min-width: 480px) {
-    grid-template-columns: 1fr 1.5fr;
-    gap: 32px;
-  }
-}
-
-.credit-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-
-  .stat-label {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.4);
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .stat-value {
-    font-size: 40px;
-    font-weight: 900;
-    color: #fff;
-    line-height: 1;
-
-    &.primary {
-      background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.5) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    &.consumed {
-      font-size: 28px;
-      color: rgba(255, 255, 255, 0.8);
-    }
-  }
-}
-
-.credit-breakdown {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 16px;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-
-  .breakdown-item {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    .label {
-      font-size: 10px;
-      font-weight: 800;
-      color: rgba(255, 255, 255, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
-
-    .value {
-      font-size: 24px;
-      font-weight: 800;
-      color: #fff;
-    }
-  }
-}
-
-.g-progress {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-top: 4px;
-
-  .g-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, vars.$primary, color.adjust(vars.$primary, $lightness: 20%));
-    box-shadow: 0 0 10px rgba(vars.$primary-rgb, 0.5);
-    border-radius: 4px;
-    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-}
-
-.history-section {
-  .section-title {
-    margin-bottom: 32px;
-    font-size: 20px;
-    font-weight: 900;
-    color: #fff;
-    letter-spacing: 2px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .subscription-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .page-container {
-    padding: 0 20px;
-  }
-
-  .page-header h1 {
-    font-size: 36px;
-  }
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
 }
 </style>

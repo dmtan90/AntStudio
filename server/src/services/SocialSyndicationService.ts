@@ -50,7 +50,7 @@ export class SocialSyndicationService {
             const project = await Project.findById(record.projectId);
             if (!project) throw new Error('Project missing');
 
-            let s3Key = project.finalVideo?.s3Key;
+            let s3Key = project.publish?.s3Key;
             if (record.assetId) {
                 const asset = project.visualAssets?.find(a => a._id?.toString() === record.assetId?.toString());
                 if (asset?.s3Key) s3Key = asset.s3Key;
@@ -92,7 +92,7 @@ export class SocialSyndicationService {
     public async syndicateFinalVideo(projectId: string, metadata: { caption: string, hashtags: string[] }) {
         try {
             const project = await Project.findById(projectId);
-            if (!project || !project.finalVideo?.s3Key) {
+            if (!project || !project.publish?.s3Key) {
                 systemLogger.warn(`[Syndication] Aborted: Final video not ready for project ${projectId}`, 'SocialSyndicationService');
                 return;
             }
@@ -155,15 +155,36 @@ export class SocialSyndicationService {
             if (!project) return;
 
             const asset = project.visualAssets?.find(a => a._id?.toString() === assetId);
-            if (!asset) return;
+            if (!asset || !asset.s3Key) {
+                systemLogger.warn(`[Syndication] Asset ${assetId} not found or missing s3Key`, 'SocialSyndicationService');
+                return;
+            }
 
             systemLogger.info(`🚀 [Syndication] Syndicating clip: ${asset.name}`, 'SocialSyndicationService');
             
-            // For now, use project-level syndication or logic similar to syndicateFinalVideo
-            return this.syndicateFinalVideo(projectId, { 
-                caption: asset.name, 
-                hashtags: ['#viral', '#clipping', '#antstudio'] 
+            // Find enabled platform accounts
+            const accounts = await UserPlatformAccount.find({
+                userId: project.userId,
+                isActive: true,
+                platform: { $in: ['tiktok', 'youtube', 'facebook'] }
             });
+
+            if (accounts.length === 0) {
+                systemLogger.warn(`[Syndication] No active platform accounts for user ${project.userId}`, 'SocialSyndicationService');
+                return;
+            }
+
+            // Immediately publish to all eligible platforms
+            return this.publishVideo(
+                projectId,
+                asset.s3Key,
+                accounts.map(acc => acc._id.toString()),
+                { 
+                    title: asset.name, 
+                    description: asset.description || `Viral clip from project ${project.title}` 
+                },
+                { id: assetId, type: 'visualAsset' }
+            );
         } catch (error: any) {
             systemLogger.error(`❌ [Syndication] Clip syndication failed: ${error.message}`, 'SocialSyndicationService');
         }
@@ -275,8 +296,8 @@ export class SocialSyndicationService {
                 }
             });
 
-            return { success: true, results };
-
+            return results;
+            
         } catch (error: any) {
             systemLogger.error(`❌ [Syndication] Publish failed: ${error.message}`, 'SocialSyndicationService');
             throw error;
@@ -348,7 +369,7 @@ export class SocialSyndicationService {
         if (!project) throw new Error('Project missing for retry');
 
         // Identify s3Key
-        let s3Key = project.finalVideo?.s3Key;
+        let s3Key = project.publish?.s3Key;
         if (record.assetId) {
             const asset = project.visualAssets?.find(a => a._id?.toString() === record.assetId?.toString());
             if (asset?.s3Key) s3Key = asset.s3Key;

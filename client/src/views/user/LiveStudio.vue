@@ -3,13 +3,17 @@
       <StudioLoading :visible="!isStudioReady" @ready="isStudioReady = true" @exit="handleExit" />
       <StudioHeader :is-live="isLive" :live-time="liveTime" :is-god-mode="studioStore.godModeEnabled"
          :demo-mode="studioStore.demoMode" :title="currentProject?.title || t('studio.title')"
+         :description="currentProject?.description || ''"
          :show-swarm-monitor="showSwarmMonitor"
          :auto-emotion-enabled="isAutoDirectorEnabled"
          :auto-atmosphere-enabled="studioStore.autoDirectorSettings.autoAtmosphereEnabled"
+         :director-log="directorLog"
          @toggle-auto-emotion="handleToggleDirector"
          @toggle-auto-atmosphere="handleToggleAtmosphere"
          @toggle-god-mode="toggleGodMode" @toggle-demo="studioStore.toggleDemoMode" @exit="handleExit"
-         @update:title="handleTitleUpdate" @toggle-swarm="showSwarmMonitor = !showSwarmMonitor" />
+         @update:title="v => handleMetadataUpdate({ title: v })" 
+         @update:description="v => handleMetadataUpdate({ description: v })"
+         @toggle-swarm="showSwarmMonitor = !showSwarmMonitor" />
 
       <main class="studio-main">
          <StudioRail v-model:active-tab="activeTab" :effect-tabs="currentTabs" />
@@ -19,16 +23,9 @@
                <div class="relative w-full h-full overflow-hidden rounded-[2.5rem] border border-white/10 shadow-2xl transition-all duration-700"
                   :class="['mood-' + studioMood]">
                   
-                  <VirtualStudioStage 
-                    v-if="studioStore.visualSettings?.cinematic?.enabled"
-                    :guests="stageGuests"
-                    :environment-id="studioStore.visualSettings?.cinematic?.environmentId"
-                    :is-host-speaking="isHostSpeaking"
-                  />
-
-                  <div v-else class="canvas-transform-wrapper w-full h-full transition-all duration-1000 ease-in-out"
+                  <div class="canvas-transform-wrapper w-full h-full transition-all duration-1000 ease-in-out"
                      :style="{ 
-                        transform: `scale(${cameraZoom}) translate(${cameraPanX}%, ${cameraPanY}%)`,
+                        transform: studioStore.visualSettings?.cinematic?.enabled ? 'none' : `scale(${cameraZoom}) translate(${cameraPanX}%, ${cameraPanY}%)`,
                         filter: studioMood === 'noir' ? 'grayscale(1) contrast(1.2)' : 
                                 studioMood === 'cyberpunk' ? 'hue-rotate(280deg) saturate(1.5) contrast(1.1)' :
                                 studioMood === 'dreamy' ? 'blur(0.5px) saturate(0.8) sepia(0.2)' :
@@ -75,54 +72,54 @@
                   </div>
 
                 <!-- Lower Third Overlay -->
-            <transition name="graphic-slide">
-               <div v-if="showLowerThird" class="dynamic-graphic lower-third">
-                  <div class="graphic-accent"></div>
-                  <div class="graphic-main">
-                     <h3 class="title">{{ studioStore.activeGraphicContent.title }}</h3>
-                     <p class="subtitle">{{ studioStore.activeGraphicContent.subtitle }}</p>
-                  </div>
-               </div>
-            </transition>
+                <transition name="graphic-slide">
+                    <div v-if="showLowerThird" class="dynamic-graphic lower-third">
+                        <div class="graphic-accent"></div>
+                        <div class="graphic-main">
+                            <h3 class="title">{{ studioStore.activeGraphicContent.title }}</h3>
+                            <p class="subtitle">{{ studioStore.activeGraphicContent.subtitle }}</p>
+                        </div>
+                    </div>
+                </transition>
 
-            <!-- Phase 65: Dynamic Data Overlay -->
-            <DynamicOverlay 
-                :visible="showDynamicOverlay"
-                :type="dynamicOverlayType === 'none' ? null : dynamicOverlayType"
-                :data="dynamicOverlayData"
-            />
+                <!-- Phase 65: Dynamic Data Overlay -->
+                <DynamicOverlay 
+                    :visible="showDynamicOverlay"
+                    :type="dynamicOverlayType === 'none' ? null : dynamicOverlayType"
+                    :data="dynamicOverlayData"
+                />
 
-                  <!-- Phase 65: ShowRunner Monitor -->
-            <LiveScriptMonitor />
+                <!-- Phase 65: ShowRunner Monitor -->
+                <LiveScriptMonitor />
 
-            <!-- Phase 66: Hive Mind Polls -->
-            <HivePollOverlay />
+                <!-- Phase 66: Hive Mind Polls -->
+                <HivePollOverlay />
 
-            <!-- Phase 67: Gamification Popups -->
-            <AchievementPopup />
+                <!-- Phase 67: Gamification Popups -->
+                <AchievementPopup />
 
-            <!-- Phase 29: Quest Overlay -->
-                   <QuestOverlay 
-                     :visible="showQuestOverlay" 
-                     :quest="activeQuest" 
-                     :floor-agent="floorAgentName"
-                     :sync-strength="calculatedSyncStrength"
-                   />
+                <!-- Phase 29: Quest Overlay -->
+                <QuestOverlay 
+                    :visible="showQuestOverlay" 
+                    :quest="activeQuest" 
+                    :floor-agent="floorAgentName"
+                    :sync-strength="calculatedSyncStrength"
+                />
 
-                    <!-- Global Lyrics Overlay (Phase 85) -->
-                    <StageLyricsOverlay 
-                        v-if="performanceLyricsVisible && performanceLyrics?.length > 0"
-                        :lyrics="performanceLyrics"
-                        :current-time="performanceLyricsCurrentTime"
-                        :style="performanceLyricsStyle"
-                        :position="performanceLyricsPosition"
-                    />
+                <!-- Global Lyrics Overlay (Phase 85) -->
+                <!-- <StageLyricsOverlay 
+                    v-if="performanceLyricsVisible && performanceLyrics?.length > 0"
+                    :lyrics="performanceLyrics"
+                    :current-time="performanceLyricsCurrentTime"
+                    :style="performanceLyricsStyle"
+                    :position="performanceLyricsPosition"
+                /> -->
                </div>
             </template>
             <template #controls>
                <StageControls :mic-on="micOn" :cam-on="camOn" :is-live="isLive" :is-recording="studioRecorder.isRecording.value"
                   :platform-count="selectedPlatforms.length" :guest-count="waitingGuests.length" :is-guest="isGuest"
-                  :is-screen-sharing="studioStore.isScreenSharing" v-model:stream-quality="streamQuality"
+                  :is-screen-sharing="studioStore.isScreenSharing" v-model:stream-quality="studioStore.visualSettings.streamQuality"
                   @toggle-mic="v => micOn = !micOn" @toggle-cam="v => camOn = !camOn" @toggle-screen="toggleScreenShare"
                   @toggle-live="toggleLive" @toggle-record="toggleRecord" @capture-highlight="handleHighlight"
                   @invite-guest="inviteGuest" @show-platforms="showPlatformSelector = true" @exit="handleExit" />
@@ -134,8 +131,7 @@
             :toggle-guest="toggleGuest" :add-mobile-cam="generateMobileLink" :toggle-mute="studioStore.muteGuest"
             :toggle-camera="studioStore.toggleGuestCamera" :remove-guest="handleKickGuest"
             :assign-slot="studioStore.assignGuestToSlot" :is-guest="isGuest" :guest-video-elements="guestVideoElements"
-            :viewers="viewers" :health="studioStore.health" :engagement="studioStore.engagement" />
-
+            :effective-quality="effectiveQuality" />
 
          <DirectorNotes />
       </main>
@@ -225,7 +221,7 @@
       <!-- Virtual Guests (Hidden/Off-screen Rendering) -->
       <!-- Virtual Guests (Hidden/Off-screen Rendering) -->
       <!-- changing v-show="false" to offscreen to ensure ResizeObserver triggers -->
-      <div class="absolute -left-[9999px] top-0 w-[500px] h-[500px] overflow-hidden opacity-0 pointer-events-none">
+      <div class="absolute -left-[9999px] top-0 w-[1920px] h-[1080px] overflow-hidden opacity-0 pointer-events-none">
          <VirtualGuest 
             v-for="guest in activeGuests" 
             :key="guest.persona.uuid" 
@@ -234,7 +230,17 @@
             :is-host-speaking="isHostSpeaking"
             :background-url="studioStore.visualSettings.background.assetUrl"
             :is360="studioStore.visualSettings.background.is360"
+            :hide-background="studioStore.visualSettings?.cinematic?.enabled"
             @stream-ready="(stream) => handleVirtualGuestStream(guest.persona.uuid, stream)"
+         />
+
+         <!-- Off-screen Cinematic Stage for Canvas Bridging -->
+         <VirtualStudioStage 
+            ref="virtualStage"
+            :guests="stageGuests"
+            :guest-videos="guestVideos"
+            :environment-id="studioStore.visualSettings?.cinematic?.environmentId"
+            :is-host-speaking="isHostSpeaking"
          />
       </div>
 
@@ -357,6 +363,7 @@ import { useStudioStore } from '@/stores/studio';
 import { QRCodeGenerator } from '@/utils/ai/QRCodeGenerator';
 import { useAudioAnalysis } from '@/composables/useAudioAnalysis';
 import { getFileUrl } from '@/utils/api';
+import { audioMixerService } from '@/utils/ai/AudioMixerService';
 
 // Studio Composables
 import SwarmMonitor from '@/components/studio/SwarmMonitor.vue';
@@ -427,6 +434,10 @@ const isGuest = computed(() => route.query.role === 'guest' || !!route.query.tok
 const { isAutoDirectorEnabled, toggleDirector } = useAutoDirector();
 const { startAILoop, stopAILoop } = useStudioAI(studioStore);
 
+onMounted(() => {
+    console.log('[LiveStudio] Mounted', studioStore.visualSettings);
+});
+
 const handleToggleDirector = (enabled: boolean) => {
    toggleDirector(enabled);
    studioStore.updateAutoDirector({ 
@@ -451,17 +462,83 @@ const handleToggleAtmosphere = () => {
 const handleDirectorCut = ((e: CustomEvent) => {
    if (studioStore.autoDirectorSettings.enabled || isAutoDirectorEnabled.value) {
       studioStore.setCameraFocus(e.detail.target);
+      addDirectorLog('Camera Switch', `Automated cut to ${e.detail.target} based on voice activity.`);
    }
 }) as EventListener;
 
-onMounted(() => {
+const handleGiftEvent = ((e: CustomEvent) => {
+    const { item, senderId } = e.detail;
+    
+    // Trigger floating animation
+    const id = Date.now() + Math.random();
+    activeFX.value.push({
+        id,
+        type: item.effectId || item.id,
+        style: {
+            left: `${10 + Math.random() * 80}%`,
+            transitionDelay: `${Math.random() * 0.5}s`
+        }
+    });
+
+    // Trigger explosion if it's a 'big' gift
+    if (item.cost >= 100) {
+        activeExplosions.value.push({
+            id: id + 1,
+            type: 'confetti',
+            style: { left: '50%', top: '50%' }
+        });
+        setTimeout(() => {
+            activeExplosions.value = activeExplosions.value.filter(ex => ex.id !== (id + 1));
+        }, 2000);
+    }
+
+    setTimeout(() => {
+        activeFX.value = activeFX.value.filter(fx => fx.id !== id);
+    }, 5000);
+}) as EventListener;
+
+onMounted(async () => {
    syntheticGuestManager.init(studioStore);
+   // Sync VTuber Library
+   await syntheticGuestManager.syncLibrary();
+   
    startAILoop();
    window.addEventListener('director:cut', handleDirectorCut);
+   window.addEventListener('economy:gift', handleGiftEvent);
+
+   // Initialize Commerce & Project Assets
+   if (!isGuest.value) {
+       studioStore.fetchCommerceProducts().catch(() => {});
+       if (!studioStore.currentSessionId) {
+           studioStore.currentSessionId = `session_${Date.now()}`;
+       }
+
+       const projectId = route.params.id as string;
+       if (projectId) {
+           studioStore.currentProjectId = projectId;
+           studioStore.fetchCollaborators(projectId).catch(() => {});
+           try {
+               const project = await projectStore.fetchProject(projectId);
+               if (project && project.visualAssets) {
+                   studioStore.resourcePool = project.visualAssets.map((a: any) => ({
+                       id: a.s3Key,
+                       name: a.name,
+                       type: a.type as 'image' | 'video',
+                       url: getFileUrl(a.s3Key),
+                       thumbnail: getFileUrl(a.s3Key),
+                       addedAt: new Date(a.createdAt).getTime()
+                   }));
+               }
+           } catch (e) {
+               console.error('Failed to load project assets');
+           }
+       }
+   }
 });
 
 onUnmounted(() => {
    window.removeEventListener('director:cut', handleDirectorCut);
+   window.removeEventListener('economy:gift', handleGiftEvent);
    stopAILoop();
 });
 const guestName = computed(() => (route.query.guestName as string) || (route.query.name as string) || 'Guest');
@@ -476,7 +553,12 @@ const qualityPresets = {
 };
 
 // State
-const currentProject = ref({ id: 'current', title: 'Dynamic Studio Session', role: 'host' });
+const currentProject = ref({ 
+    id: 'current', 
+    title: 'Dynamic Studio Session', 
+    description: '',
+    role: 'host' 
+});
 const micOn = ref(true);
 const camOn = ref(true);
 const activeTab = ref<string | null>(null);
@@ -523,6 +605,8 @@ const activePoll = ref<any>(null);
 const showPollCreator = ref(false);
 const showScriptConfig = ref(false);
 const enableChromakey = ref(false);
+const virtualStage = ref<any>(null);
+const cinematicVideo = ref<HTMLVideoElement | null>(null);
 const chromaSettings = ref({ keyColor: '#00ff00', similarity: 0.1, smoothness: 0.05 });
 const guestPersonas = computed(() => {
    const library = syntheticGuestManager.getPersonaLibrary();
@@ -598,6 +682,34 @@ const calculatedSyncStrength = computed(() => {
 const screenStream = ref<MediaStream | null>(null);
 const screenVideo = ref<HTMLVideoElement | null>(null);
 
+// VTuber State
+const liveVoiceActiveGuestId = ref<string | null>(null);
+const isVisionActive = ref(false);
+
+// Global helper for the "active" agent (for vision, etc)
+const activeAgent = computed(() => {
+    if (!liveVoiceActiveGuestId.value) return null;
+    const persona = guestPersonas.value.find(p => p.uuid === liveVoiceActiveGuestId.value);
+    const archiveId = (persona as any)?.entityId || persona?.uuid;
+    return archiveId ? swarmAgents[archiveId] : null;
+});
+
+// Computed: Is any VTuber connected via LiveChat?
+const isGeminiConnected = computed(() => connectedVTubers.value.length > 0);
+
+// Computed: Is any VTuber speaking?
+const isGeminiSpeaking = computed(() => isAnyVTuberSpeaking.value);
+
+// Computed: Audio level of active VTuber
+const geminiAudioLevel = computed(() => {
+    if (liveVoiceActiveGuestId.value) {
+        const connection = liveChatConnections[liveVoiceActiveGuestId.value];
+        return connection?.audioLevel || 0;
+    }
+    // Return max audio level from all connected VTubers
+    return Math.max(0, ...Object.values(liveChatConnections).map((c: any) => c.audioLevel || 0));
+});
+
 // Media Resources
 const activeMediaVideo = ref<HTMLVideoElement | null>(null);
 
@@ -628,7 +740,7 @@ const handlePerformanceEnded = () => {
     if (performingVTuber.value) {
          // Stop gesture/emotion if needed
          if (activeAgent.value && activeAgent.value.sessionId) {
-              activeAgent.value.isMuted.value = false;
+              activeAgent.value.isMuted = false;
          }
          // Reset lip-sync override
          const guestRef = virtualGuestRefs[performingVTuber.value.uuid];
@@ -665,7 +777,7 @@ const handlePerformanceLyricsState = (state: { currentTime: number; showLyrics: 
 
 watch(performanceModalVisible, (visible) => {
     if (!visible && activeAgent.value) {
-        activeAgent.value.isMuted.value = false;
+        activeAgent.value.isMuted = false;
     }
 });
 
@@ -764,6 +876,39 @@ watch(camOn, (val) => {
       hostStream.value.getVideoTracks().forEach(t => t.enabled = val);
    }
 });
+
+// Watch for cinematic mode toggle to bridge stage and update worker state
+watch(() => studioStore.visualSettings?.cinematic?.enabled, async (isCinematicEnabled, wasEnabled) => {
+   if (wasEnabled === undefined) return; 
+   
+   if (isCinematicEnabled) {
+      // Cinematic mode enabled
+      setCinematicMode(true);
+      
+      // Initialize cinematic stage bridging
+      await nextTick();
+      if (virtualStage.value && !cinematicVideo.value) {
+         const stageCanvas = virtualStage.value.canvas;
+         if (stageCanvas) {
+            console.log('[LiveStudio] Capturing Cinematic Stage Stream');
+            const stream = stageCanvas.captureStream(30);
+            cinematicVideo.value = document.createElement('video');
+            cinematicVideo.value.autoplay = true;
+            cinematicVideo.value.muted = true;
+            cinematicVideo.value.playsInline = true;
+            cinematicVideo.value.style.display = 'none';
+            document.body.appendChild(cinematicVideo.value);
+            cinematicVideo.value.srcObject = stream;
+            
+            // bridgeStream call inside useStudioCanvas will trigger because cinematicVideo ref is bridged
+         }
+      }
+   } else {
+      // Cinematic mode disabled
+      setCinematicMode(false);
+   }
+}, { immediate: true });
+
 const outputCanvas = ref<HTMLCanvasElement | null>(null);
 const overlayCanvas = ref<HTMLCanvasElement | null>(null);
 
@@ -773,7 +918,7 @@ const canvasStream = ref<MediaStream | null>(null);
 // Composables Integration
 const { guestVideos, guestVideoElements, syncGuestVideos, stopGuestSubscriber, initiateAsGuest, addSyntheticGuest } = useStudioP2P(hostStream, canvasStream, isGuest);
 
-const { isLive, isRecording, liveTime, currentSessionId, toggleLive: baseToggleLive, stopLive } = useStudioSession(
+const { isLive, isRecording, liveTime, currentSessionId, effectiveQuality, toggleLive: baseToggleLive, stopLive } = useStudioSession(
    outputCanvas,
    hostStream,
    {
@@ -782,11 +927,12 @@ const { isLive, isRecording, liveTime, currentSessionId, toggleLive: baseToggleL
       selectedPlatforms,
       availableAccounts,
       networkStats,
-      qualityPresets
+      qualityPresets,
+      resizeCanvas: (w, h) => resizeCanvas && resizeCanvas(w, h)
    }
 );
 
-const { frameCount, audioLevel, startRendering, stopRendering } = useStudioCanvas(
+const { frameCount, audioLevel, startRendering, stopRendering, resizeCanvas, setCinematicMode, setSubtitles } = useStudioCanvas(
    outputCanvas,
    sourceVideo,
    guestVideos,
@@ -800,6 +946,7 @@ const { frameCount, audioLevel, startRendering, stopRendering } = useStudioCanva
       myGuestId: computed(() => studioStore.myGuestId),
       screenVideo,
       activeMediaVideo,
+      cinematicVideo,
       realChatVelocity: computed(() => {
          const now = Date.now();
          return messages.value.filter(m => now - m.timestamp < 30000).length;
@@ -813,7 +960,6 @@ import { useLiveChatManager } from '@/composables/studio/useLiveChatManager';
 import { useConversationRouter } from '@/composables/studio/useConversationRouter';
 import { useTurnTakingCoordinator } from '@/composables/studio/useTurnTakingCoordinator';
 
-const liveChatManager = useLiveChatManager();
 const {
     connections: liveChatConnections,
     connectedVTubers,
@@ -821,8 +967,10 @@ const {
     syncConnections: syncLiveChatConnections,
     disconnectAll: disconnectAllLiveChat,
     setToolCallCallback: setLiveChatToolCallback,
-    broadcastToVTubers
-} = liveChatManager;
+    broadcastToVTubers,
+    connectVTuber: connectLiveChat,
+    disconnectVTuber: disconnectLiveChat
+} = useLiveChatManager();
 
 const conversationRouter = useConversationRouter();
 const turnTakingCoordinator = useTurnTakingCoordinator(liveChatConnections);
@@ -832,34 +980,16 @@ const currentSpeakerId = turnTakingCoordinator.currentSpeakerId;
 // Swarm State (Phase 28)
 // const showSwarmMonitor = ref(false);
 // const swarmAgents = reactive<Record<string, any>>({});
-const liveVoiceActiveGuestId = ref<string | null>(null);
-const isVisionActive = ref(false);
+// Ref swarmAgents duplicate removed.
+// Ref liveVoiceActiveGuestId duplicate removed.
+// Ref isVisionActive duplicate removed.
 const virtualGuestRefs = reactive<Record<string, any>>({});
 
 
-// Computed: Is any VTuber connected via LiveChat?
-const isGeminiConnected = computed(() => connectedVTubers.value.length > 0);
-
-// Computed: Is any VTuber speaking?
-const isGeminiSpeaking = computed(() => isAnyVTuberSpeaking.value);
-
-// Computed: Audio level of active VTuber
-const geminiAudioLevel = computed(() => {
-    if (liveVoiceActiveGuestId.value) {
-        const connection = liveChatConnections[liveVoiceActiveGuestId.value];
-        return connection?.audioLevel || 0;
-    }
-    // Return max audio level from all connected VTubers
-    return Math.max(0, ...Object.values(liveChatConnections).map(c => c.audioLevel));
-});
-
-// Global helper for the "active" agent (for vision, etc)
-const activeAgent = computed(() => {
-    if (!liveVoiceActiveGuestId.value) return null;
-    const persona = guestPersonas.value.find(p => p.uuid === liveVoiceActiveGuestId.value);
-    const archiveId = (persona as any)?.entityId || persona?.uuid;
-    return archiveId ? swarmAgents[archiveId] : null;
-});
+// Computed: Is any VTuber connected via LiveChat? (Moved to top)
+// Computed: Is any VTuber speaking? (Moved to top)
+// Computed: Audio level of active VTuber (Moved to top)
+// Global helper for the "active" agent (Moved to top)
 
 const handleToggleLiveVoice = async (persona: any) => {
     const archiveId = (persona as any).entityId || persona.uuid;
@@ -961,208 +1091,219 @@ const handleToggleLiveVoice = async (persona: any) => {
 
 const executeAgentTool = async (agent: any, persona: any, callId: string, fn: string, args: any) => {
     let result: any = { success: true };
-    const guestRef = virtualGuestRefs[persona.id];
+    try{
+        const guestRef = virtualGuestRefs[persona.id];
 
-    if (fn === 'change_expression') {
-        if (studioStore.autoDirectorSettings.autoEmotionEnabled && guestRef) {
-            guestRef.setLiveVoiceEmotion(args.expression);
-        }
-    } else if (fn === 'play_animation') {
-        if (guestRef) guestRef.setLiveVoiceGesture(args.animation);
-    } else if (fn === 'switch_scene' || fn === 'switch_layout') {
-        studioStore.switchScene(args.sceneId || args.layoutId);
-    } else if (fn === 'trigger_graphic') {
-        if (args.type === 'lower_third') showLowerThird.value = args.enabled;
-        if (args.type === 'ticker') showTicker.value = args.enabled;
-    } else if (fn === 'update_lower_third') {
-        studioStore.updateGraphicContent(args.title, args.subtitle);
-        showLowerThird.value = true;
-    } else if (fn === 'set_production_auto') {
-        if (args.mode === 'camera') studioStore.setAutoCamera(args.enabled);
-        toast.info(`AI Production: ${args.mode} auto-${args.enabled ? 'enabled' : 'disabled'}`);
-    } else if (fn === 'trigger_production_sequence') {
-        handleProductionSequence(args.sequenceName);
-    } else if (fn === 'trigger_visual_fx') {
-        spawnFX(args.type, args.x, args.y);
-        toast(`AI Director: Visual Effect [${args.type}]`);
-    } else if (fn === 'trigger_sponsorship') {
-        studioStore.visualSettings.specialOverlays.sponsorName = args.sponsorName;
-        studioStore.visualSettings.specialOverlays.showSponsorship = true;
-        toast.info(`AI Sponsorship: ${args.sponsorName} active`);
-        setTimeout(() => studioStore.visualSettings.specialOverlays.showSponsorship = false, 15000);
-    } else if (fn === 'assemble_highlights') {
-        handleHighlight();
-    } else if (fn === 'request_vision') {
-        handleVisionRequest(`guest_${persona.id}`);
-        result = { success: true, message: 'Vision snapshot captured and sent to your multimodal bridge.' };
-    } else if (fn === 'set_camera_transform') {
-        cameraZoom.value = args.zoom || 1;
-        cameraPanX.value = args.panX || 0;
-        cameraPanY.value = args.panY || 0;
-        toast.info('AI Director: Camera Focus Adjusted');
-    } else if (fn === 'capture_moment') {
-        if (currentSessionId.value) await studioStore.captureHighlight(currentSessionId.value);
-    } else if (fn === 'shoutout_viewer') {
-        toast.success(`Shoutout to ${args.viewerName}!`, { description: args.reason });
-    } else if (fn === 'push_show_note') {
-        studioProducer.addNote({
-            title: args.title,
-            description: args.description || args.content,
-            priority: args.priority || 'medium'
-        });
-    } else if (fn === 'archive_moment') {
-        toast.info(`${persona.name} archived: ${args.description}`);
-    } else if (fn === 'update_fan_bond') {
-        toast.info(`Social Bond with ${args.viewerName} updated`);
-    } else if (fn === 'send_agent_message' || fn === 'broadcast_to_swarm') {
-        // Backend relays these
-    } else if (fn === 'set_camera_transform') {
-        cameraZoom.value = args.zoom || 1.0;
-        cameraPanX.value = args.panX || 0;
-        cameraPanY.value = args.panY || 0;
-    } else if (fn === 'set_studio_mood') {
-        studioMood.value = args.mood;
-    } else if (fn === 'start_quest') {
-        activeQuest.value = {
-            title: args.title,
-            type: args.type,
-            goal: args.goal,
-            progress: 0,
-            statusText: 'Quest Started!',
-            masterId: persona.id
-        };
-        showQuestOverlay.value = true;
-        toast.success(`New Quest: ${args.title}`, { description: `Master: ${persona.name}` });
-    } else if (fn === 'update_quest') {
-        if (activeQuest.value) {
-            activeQuest.value.progress = args.progress;
-            if (args.statusText) activeQuest.value.statusText = args.statusText;
-        }
-    } else if (fn === 'set_avatar_pose') {
-        if (guestRef) guestRef.setLiveVoicePose(args.part, args.value);
-    } else if (fn === 'set_eye_focus') {
-        if (guestRef) guestRef.setLiveVoiceEyeFocus(args.target);
-    } else if (fn === 'trigger_performance') {
-        if (guestRef) guestRef.setLiveVoicePerformance(args.style, args.intensity);
-    } else if (fn === 'assign_floor') {
-        floorAgentId.value = args.targetAgentId;
-        toast.info(`The floor is now assigned to ${args.targetAgentId}`);
-    } else if (fn === 'trigger_hype_event') {
-        toast.success(`HYPE EVENT: ${args.reason}`, { description: `Intensity: ${args.intensity}` });
-        // Spawn constant likes for 5 seconds
-        const hypeTimer = setInterval(spawnLike, 100);
-        setTimeout(() => clearInterval(hypeTimer), 5000);
-    } else if (fn === 'summon_broll') {
-        showBRoll.value = args.enabled;
-        if (args.enabled) {
-            bRollTopic.value = args.topic;
-            // Phase 64: Resolve real asset if possible
-            const asset = studioStore.bRollLibrary.find(a => a.topic.toLowerCase().includes(args.topic.toLowerCase()));
-            if (asset && bRollVideo.value) {
-                bRollVideo.value.src = getFileUrl(asset.url);
-                bRollVideo.value.play();
+        if (fn === 'change_expression') {
+            if (studioStore.autoDirectorSettings.autoEmotionEnabled && guestRef) {
+                guestRef.setLiveVoiceEmotion(args.expression);
             }
-        }
-    } else if (fn === 'trigger_data_overlay') {
-        // Phase 65: Dynamic Data Overlay
-        showDynamicOverlay.value = true;
-        dynamicOverlayType.value = args.type;
-        dynamicOverlayData.value = args.data;
-        
-        if (args.duration) {
-            setTimeout(() => {
-                showDynamicOverlay.value = false;
-            }, args.duration * 1000);
-        }
-    } else if (fn === 'create_poll') {
-        startPoll({
-            question: args.question,
-            options: args.options.map((opt: string) => ({ text: opt, votes: 0 }))
-        });
-    } else if (fn === 'feature_question') {
-        featureQuestion({ id: Date.now().toString(), user: args.user, text: args.text });
-    } else if (fn === 'trigger_dynamic_deal') {
-        studioStore.startFlashSale({
-            id: 'ai_deal_' + Date.now(),
-            productId: args.productId,
-            discount: args.discount,
-            duration: args.durationSeconds,
-            title: args.reason || 'AI Dynamic Deal'
-        });
-        toast.success(`AI triggered a deal: ${args.reason}`);
-    } else if (fn === 'showcase_product') {
-        const product = studioStore.liveProducts.find(p => p.id === args.productId || p._id === args.productId);
-        if (product) {
-            studioStore.showcaseProduct(product);
-            toast.success(`AI Showcase: ${product.name}`);
-        } else {
-            toast.error(`AI tried to showcase product ${args.productId} but it wasn't found.`);
-        }
-    } else if (fn === 'update_product_scarcity') {
-        studioStore.updateProductScarcity(args.productId, args.remainingStock);
-    } else if (fn === 'generate_stream_summary') {
-        studioStore.triggerStreamSummary();
-    } else if (fn === 'set_translation_mode') {
-        studioStore.setTranslationMode(args.enabled, args.sourceLang, args.targetLang);
-    } else if (fn === 'change_mood' || fn === 'set_studio_mood') {
-        studioMood.value = args.mood;
-        toast.info(`Studio Atmosphere: ${args.mood}`);
-    } else if (fn === 'syndicate_montage') {
-        toast.success("Syndicating highlights to social platforms!", {
-            description: args.caption
-        });
-    } else if (fn === 'suggest_viral_captions') {
-        toast.info("AI suggested viral metadata for highlights", {
-            description: "Check the production panel for details."
-        });
-    } else if (fn === 'assemble_highlights') {
-        toast.info("AI is assembling your final highlights...");
-        runAssembler({
-            format: 'mp4',
-            codec: 'h264',
-            resolution: '1080p',
-            fps: 30,
-            bitrate: 'medium',
-            includeAudio: true
-        });
-    } else if (fn === 'generate_background') {
-        const loadingToast = toast.loading(`Generating background: ${args.prompt}...`);
-        try {
-            // Native AI Image Generation
-            const res = await vtuberStore.generateImage({ prompt: args.prompt });
-            const url = res.data?.url;
+        } else if (fn === 'play_animation') {
+            if (guestRef) guestRef.setLiveVoiceGesture(args.animation);
+        } else if (fn === 'switch_scene' || fn === 'switch_layout') {
+            studioStore.switchScene(args.sceneId || args.layoutId);
+        } else if (fn === 'trigger_graphic') {
+            if (args.type === 'lower_third') showLowerThird.value = args.enabled;
+            if (args.type === 'ticker') showTicker.value = args.enabled;
+        } else if (fn === 'update_lower_third') {
+            studioStore.updateGraphicContent(args.title, args.subtitle);
+            showLowerThird.value = true;
+        } else if (fn === 'set_production_auto') {
+            if (args.mode === 'camera') studioStore.setAutoCamera(args.enabled);
+            toast.info(`AI Production: ${args.mode} auto-${args.enabled ? 'enabled' : 'disabled'}`);
+        } else if (fn === 'trigger_production_sequence') {
+            handleProductionSequence(args.sequenceName);
+        } else if (fn === 'trigger_visual_fx') {
+            spawnFX(args.type, args.x, args.y);
+            toast(`AI Director: Visual Effect [${args.type}]`);
+        } else if (fn === 'trigger_sponsorship') {
+            studioStore.visualSettings.specialOverlays.sponsorName = args.sponsorName;
+            studioStore.visualSettings.specialOverlays.showSponsorship = true;
+            toast.info(`AI Sponsorship: ${args.sponsorName} active`);
+            setTimeout(() => studioStore.visualSettings.specialOverlays.showSponsorship = false, 15000);
+        } else if (fn === 'assemble_highlights') {
+            handleHighlight();
+        } else if (fn === 'request_vision') {
+            handleVisionRequest(`guest_${persona.id}`);
+            result = { success: true, message: 'Vision snapshot captured and sent to your multimodal bridge.' };
+        } else if (fn === 'set_camera_transform') {
+            cameraZoom.value = args.zoom || 1;
+            cameraPanX.value = args.panX || 0;
+            cameraPanY.value = args.panY || 0;
+            toast.info('AI Director: Camera Focus Adjusted');
+        } else if (fn === 'capture_moment') {
+            if (currentSessionId.value) await studioStore.captureHighlight(currentSessionId.value);
+        } else if (fn === 'shoutout_viewer') {
+            toast.success(`Shoutout to ${args.viewerName}!`, { description: args.reason });
+        } else if (fn === 'push_show_note') {
+            studioProducer.addNote({
+                title: args.title,
+                description: args.description || args.content,
+                priority: args.priority || 'medium'
+            });
+        } else if (fn === 'archive_moment') {
+            toast.info(`${persona.name} archived: ${args.description}`);
+        } else if (fn === 'update_fan_bond') {
+            toast.info(`Social Bond with ${args.viewerName} updated`);
+        } else if (fn === 'send_agent_message' || fn === 'broadcast_to_swarm') {
+            // Backend relays these
+        } else if (fn === 'set_camera_transform') {
+            cameraZoom.value = args.zoom || 1.0;
+            cameraPanX.value = args.panX || 0;
+            cameraPanY.value = args.panY || 0;
+        } else if (fn === 'set_studio_mood') {
+            studioMood.value = args.mood;
+        } else if (fn === 'start_quest') {
+            activeQuest.value = {
+                title: args.title,
+                type: args.type,
+                goal: args.goal,
+                progress: 0,
+                statusText: 'Quest Started!',
+                masterId: persona.id
+            };
+            showQuestOverlay.value = true;
+            toast.success(`New Quest: ${args.title}`, { description: `Master: ${persona.name}` });
+        } else if (fn === 'update_quest') {
+            if (activeQuest.value) {
+                activeQuest.value.progress = args.progress;
+                if (args.statusText) activeQuest.value.statusText = args.statusText;
+            }
+        } else if (fn === 'set_avatar_pose') {
+            if (guestRef) guestRef.setLiveVoicePose(args.part, args.value);
+        } else if (fn === 'set_eye_focus') {
+            if (guestRef) guestRef.setLiveVoiceEyeFocus(args.target);
+        } else if (fn === 'trigger_performance') {
+            if (guestRef) guestRef.setLiveVoicePerformance(args.style, args.intensity);
+        } else if (fn === 'assign_floor') {
+            floorAgentId.value = args.targetAgentId;
+            toast.info(`The floor is now assigned to ${args.targetAgentId}`);
+        } else if (fn === 'trigger_hype_event') {
+            toast.success(`HYPE EVENT: ${args.reason}`, { description: `Intensity: ${args.intensity}` });
+            // Spawn constant likes for 5 seconds
+            const hypeTimer = setInterval(spawnLike, 100);
+            setTimeout(() => clearInterval(hypeTimer), 5000);
+        } else if (fn === 'summon_broll') {
+            showBRoll.value = args.enabled;
+            if (args.enabled) {
+                bRollTopic.value = args.topic;
+                // Phase 64: Resolve real asset if possible
+                const asset = studioStore.bRollLibrary.find(a => a.topic.toLowerCase().includes(args.topic.toLowerCase()));
+                if (asset && bRollVideo.value) {
+                    bRollVideo.value.src = getFileUrl(asset.url);
+                    bRollVideo.value.play();
+                }
+            }
+        } else if (fn === 'trigger_data_overlay') {
+            // Phase 65: Dynamic Data Overlay
+            showDynamicOverlay.value = true;
+            dynamicOverlayType.value = args.type;
+            dynamicOverlayData.value = args.data;
             
-            if (url) {
-                selectStage({
-                    id: `ai_gen_${Date.now()}`,
-                    name: `AI: ${args.prompt}`,
-                    url: url,
-                    isVideo: false,
-                    isAI: true
-                });
-                toast.dismiss(loadingToast);
-                toast.success("Studio background updated!");
+            if (args.duration) {
+                setTimeout(() => {
+                    showDynamicOverlay.value = false;
+                }, args.duration * 1000);
+            }
+        } else if (fn === 'create_poll') {
+            startPoll({
+                question: args.question,
+                options: args.options.map((opt: string) => ({ text: opt, votes: 0 }))
+            });
+        } else if (fn === 'feature_question') {
+            featureQuestion({ id: Date.now().toString(), user: args.user, text: args.text });
+        } else if (fn === 'trigger_dynamic_deal') {
+            studioStore.startFlashSale({
+                id: 'ai_deal_' + Date.now(),
+                productId: args.productId,
+                discount: args.discount,
+                duration: args.durationSeconds,
+                title: args.reason || 'AI Dynamic Deal'
+            });
+            toast.success(`AI triggered a deal: ${args.reason}`);
+        } else if (fn === 'showcase_product') {
+            const product = studioStore.liveProducts.find(p => p.id === args.productId || p._id === args.productId);
+            if (product) {
+                studioStore.showcaseProduct(product);
+                toast.success(`AI Showcase: ${product.name}`);
             } else {
-                throw new Error("No URL returned");
+                toast.error(`AI tried to showcase product ${args.productId} but it wasn't found.`);
             }
-        } catch (e) {
-            toast.dismiss(loadingToast);
-            toast.error("Failed to generate background");
-        }
-    } else if (fn === 'perform_song') {
-        handlePerformSongTool(persona, args);
-    } else if (fn === 'stop_performance') {
-        performanceModalVisible.value = false;
-        
-        // Unmute the performer
-        if (performingVTuber.value) {
-            const guest = guestPersonas.value.find(p => p.uuid === performingVTuber.value.uuid);
-             // Also need to unmute the actual connection
-            if (activeAgent.value && activeAgent.value.sessionId) {
-                 activeAgent.value.isMuted.value = false;
+        } else if (fn === 'update_product_scarcity') {
+            studioStore.updateProductScarcity(args.productId, args.remainingStock);
+        } else if (fn === 'generate_stream_summary') {
+            studioStore.triggerStreamSummary();
+        } else if (fn === 'set_translation_mode') {
+            studioStore.setTranslationMode(args.enabled, args.sourceLang, args.targetLang);
+        } else if (fn === 'change_mood' || fn === 'set_studio_mood') {
+            studioMood.value = args.mood;
+            toast.info(`Studio Atmosphere: ${args.mood}`);
+        } else if (fn === 'syndicate_montage') {
+            toast.success("Syndicating highlights to social platforms!", {
+                description: args.caption
+            });
+        } else if (fn === 'suggest_viral_captions') {
+            toast.info("AI suggested viral metadata for highlights", {
+                description: "Check the production panel for details."
+            });
+        } else if (fn === 'assemble_highlights') {
+            toast.info("AI is assembling your final highlights...");
+            runAssembler({
+                format: 'mp4',
+                codec: 'h264',
+                resolution: '1080p',
+                fps: 30,
+                bitrate: 'medium',
+                includeAudio: true
+            });
+        } else if (fn === 'generate_background') {
+            const loadingToast = toast.loading(`Generating background: ${args.prompt}...`);
+            try {
+                // Native AI Image Generation
+                const res = await vtuberStore.generateImage({ prompt: args.prompt });
+                const url = res.data?.url;
+                
+                if (url) {
+                    selectStage({
+                        id: `ai_gen_${Date.now()}`,
+                        name: `AI: ${args.prompt}`,
+                        url: url,
+                        isVideo: false,
+                        isAI: true
+                    });
+                    toast.dismiss(loadingToast);
+                    toast.success("Studio background updated!");
+                } else {
+                    throw new Error("No URL returned");
+                }
+            } catch (e) {
+                toast.dismiss(loadingToast);
+                toast.error("Failed to generate background");
             }
+        } else if (fn === 'perform_song') {
+            result = await handlePerformSongTool(persona, args);
+        } else if (fn === 'stop_performance') {
+            performanceModalVisible.value = false;
+            
+            // Fully stop the performance state
+            mediaStore.stopPerformance();
+
+            // Unmute the performer
+            if (performingVTuber.value) {
+                // Find the agent instance for this performer to unmute
+                const personaId = performingVTuber.value.uuid || performingVTuber.value.id;
+                const agent = liveChatConnections[personaId]?.geminiLive;
+                if (agent) {
+                    // Fix: isMuted is unwrapped in reactive 'liveChatConnections'
+                (agent.isMuted as any) = false;
+                }
+            }
+            performingVTuber.value = null;
+            toast.info(`${persona.name} stopped the performance.`);
+            result = { success: true, message: 'Performance stopped' };
         }
-        toast.info(`${persona.name} stopped the performance.`);
+    }catch(err){
+
     }
 
     return result;
@@ -1209,7 +1350,7 @@ const handlePerformSongTool = async (persona: any, args: any) => {
 
         // Initialize store state
         mediaStore.startPerformance(
-            persona.uuid, 
+            persona.uuid || persona.id, 
             metadata.lyricsLines || [], 
             args.style || 'bounce', 
             args.position || 'bottom'
@@ -1492,7 +1633,7 @@ const captureCanvasSnapshot = async () => {
 const toggleLive = async () => {
    if (isLive.value) {
       // STOPPING: Trigger Synthesis
-      if (isGeminiConnected.value) {
+    //   if (isGeminiConnected.value) {
           isSynthesizing.value = true;
           showPostStreamSummary.value = true;
           broadcastToVTubers("[Stream Synthesis Request] The live session has ended. Please generate a stream summary and suggest social captions for any highlights captured.");
@@ -1500,15 +1641,14 @@ const toggleLive = async () => {
           // Fetch Commercial Report (Phase 17)
           if (currentSessionId.value) {
               try {
-                  const res = await studioStore.fetchCommerceReport(currentSessionId.value);
-                  if (res?.success) {
-                      commerceReport.value = res.data;
-                  }
+                  const data = await studioStore.fetchCommerceReport(currentSessionId.value);
+                  commerceReport.value = data;
               } catch (e) {
                   console.error('[Commerce] Failed to fetch final report:', e);
               }
           }
-      }
+		  isSynthesizing.value = false;
+    //   }
    }
    const result = await baseToggleLive();
    if (result === 'select_platform') {
@@ -1527,26 +1667,86 @@ const toggleGodMode = () => {
    }
 };
 
-const handleTitleUpdate = async (newTitle: string) => {
-    currentProject.value.title = newTitle;
+const directorLog = ref<any[]>([]);
+
+const addDirectorLog = (action: string, reason: string) => {
+    directorLog.value.unshift({ action, reason, timestamp: Date.now() });
+    if (directorLog.value.length > 20) directorLog.value.pop();
+};
+
+const handleMetadataUpdate = async (metadata: { title?: string, description?: string }) => {
+    if (metadata.title) currentProject.value.title = metadata.title;
+    if (metadata.description !== undefined) currentProject.value.description = metadata.description;
     
-    // 1. Sync to ConversationOrchestrator topic
-    conversationOrchestrator.setTopic(newTitle);
+    // 1. Sync to ConversationOrchestrator topic if title changed
+    if (metadata.title) {
+        conversationOrchestrator.setTopic(metadata.title);
+    }
     
     // 2. Sync to Platforms if live
     if (isLive.value) {
-        toast.info(t('studio.messages.syncingTitle') || 'Syncing title with platforms...');
+        toast.info(t('studio.messages.syncingMetadata') || 'Syncing metadata with platforms...');
         try {
+            const updatePayload = {
+                title: currentProject.value.title,
+                description: currentProject.value.description || ''
+            };
             await Promise.all(selectedPlatforms.value.map(pId => 
-                platformStore.updateLiveTitle(pId, newTitle)
+                platformStore.updateLiveMetadata(pId, updatePayload)
             ));
-            toast.success(t('studio.messages.titleSynced') || 'Title synced across platforms');
+            toast.success(t('studio.messages.metadataSynced') || 'Metadata synced across platforms');
         } catch (e) {
             console.error('[Studio] Platform sync failed:', e);
-            toast.error('Failed to sync title across all platforms');
+            toast.error('Failed to sync metadata across all platforms');
         }
     }
 };
+
+
+// Demo Mode Simulated Engagement (Phase 82)
+let demoInterval: any = null;
+watch(() => studioStore.demoMode, (active) => {
+    if (active) {
+        addDirectorLog('Demo Mode Engaged', 'Studio is now in simulation mode. External streaming is paused.');
+        demoInterval = setInterval(() => {
+            const mockUsers = ['CyberSpectator', 'FutureFan', 'NeonViewer', 'DigitalDrift'];
+            const mockMsgs = [
+                'Wow, the VTuber looks so real!',
+                'Love the lighting in this scene!',
+                'Is this running on Gemini Live?',
+                'Amazing production quality! 🔥',
+                'Can we see the marketplace integration?',
+                'The Swarm monitor is showing 100% health, nice!'
+            ];
+            
+            // Randomly push a message
+            if (active && Math.random() > 0.7) {
+                const user = mockUsers[Math.floor(Math.random() * mockUsers.length)];
+                const text = mockMsgs[Math.floor(Math.random() * mockMsgs.length)];
+                messages.value.push({
+                    id: 'demo_' + Date.now(),
+                    user: user + ' (Demo)',
+                    text,
+                    timestamp: Date.now(),
+                    isSocial: true,
+                    platform: 'demo'
+                });
+                if (messages.value.length > 50) messages.value.shift();
+            }
+
+            // Randomly trigger FX (likes)
+            if (active && Math.random() > 0.8) {
+                spawnFX('hearts');
+            }
+        }, 5000);
+    } else {
+        if (demoInterval) {
+            clearInterval(demoInterval);
+            demoInterval = null;
+            addDirectorLog('Demo Mode Disengaged', 'Studio returned to production mode.');
+        }
+    }
+}, { immediate: true });
 
 
 const toggleRecord = () => {
@@ -1690,9 +1890,10 @@ const spawnPurchaseNotification = (userName: string, productName: string) => {
 };
 
 // Stats & Vibe Automation
+const { health } = storeToRefs(studioStore);
 const viewers = computed(() => studioStore.viewerCount);
-const health_status = computed(() => studioStore.health.status);
-const bitrate = computed(() => studioStore.health.bitrate);
+const health_status = computed(() => health.value.status);
+const bitrate = computed(() => health.value.bitrate);
 const chatVelocity = computed(() => messages.value.filter(m => Date.now() - m.timestamp < 60000).length);
 
 const { startMonitoring: startViralDetection, stopMonitoring: stopViralDetection } = useViralMomentDetector({
@@ -1782,6 +1983,17 @@ watch(sourceLang, (newLang) => {
    }
 });
 
+// Bridge live transcript to canvas subtitles
+watch(currentTranscript, (text) => {
+   if (studioStore.visualSettings.accessibility?.showSubtitlesOnCanvas) {
+      setSubtitles(text || '');
+   }
+});
+
+watch(() => studioStore.visualSettings.accessibility?.showSubtitlesOnCanvas, (enabled) => {
+   if (!enabled) setSubtitles('');
+});
+
 
 watch(autoAtmosphere, (enabled) => {
    if (enabled) {
@@ -1827,7 +2039,20 @@ const activeGuests = computed(() => syntheticGuestManager.getGuests());
 const stageGuests = computed(() => {
     // Collect all guests from slots
     const guests = [];
-    for (const [slotId, guest] of Object.entries(studioStore.guestSlotMap)) {
+    
+    // No render host in cinematic mode
+    // if (hostStream.value) {
+    //     guests.push({
+    //         id: 'host',
+    //         name: 'Host',
+    //         type: 'host',
+    //         videoEnabled: camOn.value,
+    //         audioLevel: hostLevel.value || 0
+    //     });
+    // }
+    
+    for (const [slotId, rawGuest] of Object.entries(studioStore.guestSlotMap)) {
+        const guest = rawGuest as any;
         if (!guest) continue;
         
         // Find persona if it's an AI guest
@@ -1840,9 +2065,11 @@ const stageGuests = computed(() => {
             ...guest,
             slotId, // e.g. guest1
             persona: persona || undefined,
-            // Ensure visual state is passed if available
-            visual: persona?.visual || {},
-            // Map audio level if available (need a way to get this from store or manager)
+            // Unified visual state
+            modelType: persona?.persona?.visual?.modelType || persona?.visual?.modelType,
+            modelUrl: persona?.persona?.visual?.modelUrl || persona?.visual?.modelUrl,
+            visual: persona?.visual || persona?.persona?.visual || {},
+            // Map audio level
             audioLevel: (guestLevels.value && guest.uuid ? guestLevels.value[guest.uuid] : 0)
         });
     }
@@ -1875,6 +2102,45 @@ const handleKickGuest = (guestId: string) => {
 };
 
 const isHostSpeaking = computed(() => hostLevel.value > 0.05);
+
+// Auto-sync StudioStore guests with SyntheticGuestManager
+watch(() => studioStore.liveGuests, (guests) => {
+    if (isGuest.value) return; // Only host manages AI guests
+
+    guests.forEach(guest => {
+        if (guest.type === 'ai') {
+            const isManaged = syntheticGuestManager.getGuests().some(g => g.persona.uuid === guest.uuid);
+            if (!isManaged) {
+                console.log(`[Studio] Auto-summoning managed guest: ${guest.name} (${guest.uuid})`);
+                // Find full persona from library if possible, or create one
+                const library = syntheticGuestManager.getPersonaLibrary();
+                const persona = library.find(p => p.uuid === guest.uuid || p.entityId === guest.uuid);
+                
+                if (persona) {
+                    syntheticGuestManager.summonGuest(persona);
+                } else {
+                    // Fallback: summon with basic data
+                    syntheticGuestManager.summonGuest({
+                        uuid: guest.uuid,
+                        id: guest.uuid,
+                        name: guest.name,
+                        visual: { thumbnailUrl: guest.avatar },
+                        identity: { name: guest.name, role: 'guest' }
+                    } as any);
+                }
+            }
+        }
+    });
+
+    // Handle removals
+    const guestIds = new Set(guests.map(g => g.uuid));
+    syntheticGuestManager.getGuests().forEach(managedGuest => {
+        if (!guestIds.has(managedGuest.persona.uuid)) {
+            console.log(`[Studio] Auto-removing managed guest: ${managedGuest.persona.uuid}`);
+            syntheticGuestManager.removeGuest(managedGuest.persona.uuid);
+        }
+    });
+}, { immediate: true, deep: true });
 
 // Automated Studio Direction: Speaker-based Scene Switching
 watch(activeGuests, (guests) => {
@@ -2009,11 +2275,11 @@ const handleVisionRequest = async (guestId: string) => {
 };
 
 const toggleLowerThird = () => {
-   showLowerThird.value = !showLowerThird.value;
+   studioStore.visualSettings.showLowerThird = !studioStore.visualSettings.showLowerThird;
 }
 
 const toggleTicker = () => {
-   showTicker.value = !showTicker.value;
+   studioStore.visualSettings.showTicker = !studioStore.visualSettings.showTicker;
 }
 
 const generateMobileLink = async () => {
@@ -2429,28 +2695,33 @@ onMounted(async () => {
    (studioStore as any).currentProjectId = route.params.id as string;
    window.addEventListener('keydown', handleKeyPress);
    // Handle AI Producer Actions
-   window.addEventListener('producer:action', (e: any) => {
-      const { type, payload } = e.detail;
-      if (type === 'switch_scene' && payload.actionPayload) {
-         studioStore.switchScene(payload.actionPayload);
-         toast.success(`Producer Auto-Switch: ${payload.actionPayload}`);
-      } else if (type === 'start_poll') {
-          startPoll(null);
-      } else if (type === 'trigger_product') {
-          studioStore.showcaseProduct({ id: payload.actionPayload });
-      } else if (type === 'vision:request_snapshot') {
-          handleVisionRequest(payload.id);
-      }
-   });
+    window.addEventListener('producer:action', (e: any) => {
+       const { type, payload } = e.detail;
+       if (type === 'switch_scene' && payload.actionPayload) {
+          studioStore.switchScene(payload.actionPayload);
+          toast.success(`Producer Auto-Switch: ${payload.actionPayload}`);
+          addDirectorLog('Scene Transition', `Director switched to scene: ${payload.actionPayload}`);
+       } else if (type === 'start_poll') {
+           startPoll(null);
+           addDirectorLog('Interactive Content', 'AI Producer initiated an audience poll.');
+       } else if (type === 'trigger_product') {
+           studioStore.showcaseProduct({ id: payload.actionPayload });
+           addDirectorLog('Live Commerce', `AI Producer showcased product: ${payload.actionPayload}`);
+       } else if (type === 'vision:request_snapshot') {
+           handleVisionRequest(payload.id);
+           addDirectorLog('Vision analysis', 'Director requested canvas snapshot for scene understanding.');
+       }
+    });
 
    // Handle Autonomous Style Switches (Phase 26)
-   window.addEventListener('style:switch', (e: any) => {
-       const { style } = e.detail;
-       studioMood.value = style;
-       toast.success(`Autonomous Style Switch: ${style.toUpperCase()}`, {
-           description: 'Triggered by Style A/B Testing Engine'
-       });
-   });
+    window.addEventListener('style:switch', (e: any) => {
+        const { style } = e.detail;
+        studioMood.value = style;
+        toast.success(`Autonomous Style Switch: ${style.toUpperCase()}`, {
+            description: 'Triggered by Style A/B Testing Engine'
+        });
+        addDirectorLog('Atmosphere Shift', `Switched theme to ${style} for A/B performance optimization.`);
+    });
 
    try {
       hostStream.value = await navigator.mediaDevices.getUserMedia({
@@ -2463,25 +2734,29 @@ onMounted(async () => {
       });
       // hostStream.value = stream;
 
+      // Register with audio mixer for multi-track streaming
+      if (hostStream.value) {
+          audioMixerService.addTrack('host_mic', hostStream.value);
+      }
+
       const setCanvasSize = () => {
          const quality = (qualityPresets as any)[streamQuality.value];
-         if (outputCanvas.value) {
+         if (resizeCanvas) {
+            resizeCanvas(quality.width, quality.height);
+         } else if (outputCanvas.value) {
+            // Fallback
             outputCanvas.value.width = quality.width;
             outputCanvas.value.height = quality.height;
-            if (overlayCanvas.value) {
-               overlayCanvas.value.width = quality.width;
-               overlayCanvas.value.height = quality.height;
-            }
-
-            // Capture Canvas Stream for Host (Broadcasting/Recording)
-            if (!isGuest.value && !canvasStream.value) {
-               try {
-                  canvasStream.value = (outputCanvas.value as any).captureStream(30);
-               } catch (e) {
-                  console.error("Failed to capture canvas stream:", e);
-               }
-            }
          }
+
+          // Capture Canvas Stream for Host (Broadcasting/Recording)
+          if (!isGuest.value && !canvasStream.value && outputCanvas.value) {
+             try {
+                canvasStream.value = (outputCanvas.value as any).captureStream(30);
+             } catch (e) {
+                console.error("Failed to capture canvas stream:", e);
+             }
+          }
       };
 
       setCanvasSize();
@@ -2516,6 +2791,7 @@ onMounted(async () => {
          currentProject.value = { 
             id: 'guest-session',
             title: `${t('studio.guest')} - ${guestName.value}`,
+            description: 'Guest Session',
             role: 'guest'
          };
 
@@ -2550,9 +2826,9 @@ onMounted(async () => {
          
          if (studioStore.liveProducts.length === 0) {
             studioStore.liveProducts = [
-               { id: 'p1', name: 'AntFlow Ultra Pro', price: 299, image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=150', stock: 50 },
-               { id: 'p2', name: 'Neural Light Ring', price: 79, image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=150', stock: 12 },
-               { id: 'p3', name: 'Studio Box', price: 120, image: 'https://images.unsplash.com/photo-1616423641324-5e6bc906d200?auto=format&fit=crop&w=150', stock: 8 }
+               { id: 'p1', name: 'AntFlow Ultra Pro', price: 299, image: '/bg/photo-1590658268037-6bf12165a8df.jpg', stock: 50 },
+               { id: 'p2', name: 'Neural Light Ring', price: 79, image: '/bg/photo-1598488035139-bdbb2231ce04.jpg', stock: 12 },
+               { id: 'p3', name: 'Studio Box', price: 120, image: '/bg/photo-1590602847861-f357a9332bbc.jpg', stock: 8 }
             ];
          }
          startVibeDrift();
@@ -2602,18 +2878,43 @@ watch(() => hostStream.value, async (stream) => {
 });
 
 // Handle tool calls from Gemini Live VTubers
-const handleStudioToolCall = (personaId: string, toolCall: any) => {
+const handleStudioToolCall = async (personaId: string, toolCall: any) => {
     console.log(`[Debug] handleStudioToolCall triggered for ${personaId}`, toolCall);
-    const persona = guestPersonas.value.find(p => p.uuid === personaId);
+    const persona = guestPersonas.value.find(p => p.uuid === personaId || p.entityId === personaId);
     if (!persona) {
         console.warn(`[Debug] Persona not found for ${personaId}`);
         return;
     }
     
-    (toolCall.functionCalls || []).forEach((call: any) => {
+    // Find the GeminiLive instance to send responses
+    const agent = liveChatConnections[personaId]?.geminiLive;
+    if (!agent) {
+        console.warn(`[Debug] GeminiLive agent instance not found for ${personaId}`);
+    }
+
+    const responses: any[] = [];
+    for (const call of (toolCall.functionCalls || [])) {
         console.log(`[Debug] Executing tool: ${call.name}`, call.args);
-        executeAgentTool(null, persona, call.id, call.name, call.args);
-    });
+        // Important: Await the tool execution so we have a result
+        const result = await executeAgentTool(agent, persona, call.id, call.name, call.args);
+        
+        if (agent) {
+            responses.push({
+                id: call.id,
+                name: call.name,
+                response: result || { success: true }
+            });
+        }
+    }
+
+    // Send all responses back to Gemini to keep the session alive and acknowledged
+    if (agent && responses.length > 0) {
+        console.log(`[Debug] Sending ${responses.length} tool responses back to ${persona.name}`);
+        agent.sendToolResponse(responses[0].id, responses[0].name, responses[0].response); 
+        // Note: Gemini Live API currently usually sends one call per message, 
+        // but if multiple exist, we should ideally batch or send individually.
+        // Our sendToolResponse currently takes a single ID/Name for simple relay.
+    }
 };
 
 // Register LiveChat tool call handler
@@ -2621,6 +2922,20 @@ setLiveChatToolCallback((personaId, toolCall) => {
     console.log(`[LiveStudio] Tool call from ${personaId}:`, toolCall);
     handleStudioToolCall(personaId, toolCall);
 });
+
+// Sync VTuber Audio Tracks to AudioMixerService
+watch(() => liveChatConnections, (connections) => {
+    Object.values(connections).forEach((conn: any) => {
+        if (conn.isConnected && conn.geminiLive) {
+            const stream = conn.geminiLive.getAudioStream();
+            if (stream && stream.value) {
+                audioMixerService.addTrack(`vtuber_${conn.personaId}`, stream.value);
+            }
+        } else {
+            audioMixerService.removeTrack(`vtuber_${conn.personaId}`);
+        }
+    });
+}, { deep: true, immediate: true });
 
 // Initial sync of LiveChat connections
 syncLiveChatConnections(studioStore.guestSlotMap, guestPersonas.value, hostStream.value || undefined);
@@ -2635,7 +2950,6 @@ onUnmounted(() => {
 });
 
 const effectTabs = computed(() => [
-   { id: 'filters', name: t('studio.tabs.filters'), icon: Effects },
    { id: 'ai', name: t('studio.tabs.ai'), icon: Magic },
    { id: 'graphics', name: t('studio.tabs.graphics'), icon: GraphicDesign },
    { id: 'linguistic', name: t('studio.tabs.linguistic'), icon: Translation },

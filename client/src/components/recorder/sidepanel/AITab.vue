@@ -2,7 +2,7 @@
     <div class="flex flex-col gap-8">
         <div class="panel-section space-y-6">
             <div class="space-y-4">
-                <span class="text-[10px] font-bold text-orange-400 uppercase block">Beauty Filter</span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase block">Beauty Filter</span>
                 <div
                     class="toggle-card flex items-center justify-between bg-white/[0.03] p-4 rounded-2xl border border-white/5 backdrop-blur-md">
                     <div class="flex flex-col gap-1">
@@ -17,7 +17,7 @@
                     <div class="control-item">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-[9px] text-white/60 uppercase">Smoothing</span>
-                            <span class="text-[9px] text-orange-400 font-mono">{{ (beautySettings.smoothing *
+                            <span class="text-[9px] text-blue-400 font-mono">{{ (beautySettings.smoothing *
                                 100).toFixed(0)
                             }}%</span>
                         </div>
@@ -27,7 +27,7 @@
                     <div class="control-item">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-[9px] text-white/60 uppercase">Brightness</span>
-                            <span class="text-[9px] text-orange-400 font-mono">{{ (beautySettings.brightness *
+                            <span class="text-[9px] text-blue-400 font-mono">{{ (beautySettings.brightness *
                                 100).toFixed(0)
                             }}%</span>
                         </div>
@@ -38,7 +38,7 @@
             </div>
 
             <div class="space-y-4">
-                <span class="text-[10px] font-bold text-orange-400 uppercase block">Accessibility</span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase block">Accessibility</span>
                 <div class="toggle-card flex flex-col gap-4 bg-white/[0.03] p-4 rounded-2xl border border-white/5 backdrop-blur-md">
                     <div class="flex items-center justify-between">
                         <div class="flex flex-col gap-1">
@@ -53,12 +53,12 @@
                         <span class="text-[9px] text-white/40 uppercase">Mode</span>
                         <div class="grid grid-cols-2 gap-2">
                             <button class="p-2 rounded-lg text-[9px] font-bold border transition-all"
-                                :class="aslMode === 'asl-to-text' ? 'bg-orange-500 border-orange-400 text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)]' : 'bg-white/5 border-white/10 text-white/40'"
+                                :class="aslMode === 'asl-to-text' ? 'bg-blue-600 border-blue-400 text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/10 text-white/40'"
                                 @click="$emit('update:aslMode', 'asl-to-text')">
                                 Sign to Text
                             </button>
                             <button class="p-2 rounded-lg text-[9px] font-bold border transition-all"
-                                :class="aslMode === 'text-to-asl' ? 'bg-orange-500 border-orange-400 text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)]' : 'bg-white/5 border-white/10 text-white/40'"
+                                :class="aslMode === 'text-to-asl' ? 'bg-blue-600 border-blue-400 text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/10 text-white/40'"
                                 @click="$emit('update:aslMode', 'text-to-asl')">
                                 Text to Sign
                             </button>
@@ -89,14 +89,14 @@
             </div>
 
             <div class="space-y-4">
-                <span class="text-[10px] font-bold text-orange-400 uppercase block">Virtual Camera</span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase block">Virtual Camera</span>
                 <div class="bg-white/[0.03] p-4 rounded-2xl border border-white/5 backdrop-blur-md space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-[9px] text-white/40 uppercase">Background</span>
                         <div class="flex gap-2">
                             <button v-for="t in ['none', 'blur', 'image', 'video']" :key="t"
                                 class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[8px] font-bold uppercase transition-all"
-                                :class="camSettings.backgroundType === t ? 'bg-orange-500 text-white shadow-[0_4px_12px_rgba(249,115,22,0.3)]' : 'text-white/40'"
+                                :class="camSettings.backgroundType === t ? 'bg-blue-600 text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)]' : 'text-white/40'"
                                 @click="$emit('update:camSettings', { ...camSettings, backgroundType: t })">
                                 {{ t[0] }}
                             </button>
@@ -106,7 +106,7 @@
                     <div v-if="camSettings.backgroundType === 'blur'" class="control-item">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-[9px] text-white/60 uppercase">Blur Strength</span>
-                            <span class="text-[9px] text-orange-400 font-mono">{{ camSettings.blurStrength }}px</span>
+                            <span class="text-[9px] text-blue-400 font-mono">{{ camSettings.blurStrength }}px</span>
                         </div>
                         <el-slider :model-value="camSettings.blurStrength" @update:model-value="v => $emit('update:camSettings', { ...camSettings, blurStrength: v })"
                             :min="0" :max="30" :show-tooltip="false" size="small" />
@@ -118,7 +118,7 @@
                         <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
                             <div v-for="res in filteredResources" :key="res.id"
                                 class="w-12 h-12 rounded-lg bg-black/40 border-2 cursor-pointer overflow-hidden transition-all"
-                                :class="camSettings.backgroundResource === res.id ? 'border-orange-500 shadow-[0_4px_12px_rgba(249,115,22,0.3)]' : 'border-transparent'"
+                                :class="camSettings.backgroundResource === res.id ? 'border-blue-500 shadow-[0_4px_12px_rgba(59,130,246,0.3)]' : 'border-transparent'"
                                 @click="$emit('update:camSettings', { ...camSettings, backgroundResource: res.id })">
                                 <img v-if="res.type === 'image'" :src="res.url" class="w-full h-full object-cover" />
                                 <div v-else class="w-full h-full flex items-center justify-center">
@@ -144,7 +144,7 @@
                 <div class="panel-section border-t border-white/5 pt-6">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex flex-col gap-1">
-                            <span class="text-[10px] font-bold text-orange-400 uppercase">FaceSwap</span>
+                            <span class="text-[10px] font-bold text-blue-400 uppercase">FaceSwap</span>
                             <span class="text-[9px] text-white/40">AI Face Replacement</span>
                         </div>
                         <el-switch :model-value="camSettings.enableFaceSwap" 
@@ -159,7 +159,7 @@
                                 class="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar">
                                 <div v-for="res in resourcePool.filter(r => r.type === 'image')" :key="res.id"
                                     class="w-12 h-12 rounded-lg bg-black/40 border-2 cursor-pointer overflow-hidden transition-all"
-                                    :class="camSettings.faceSwapResource === res.id ? 'border-orange-500 shadow-[0_4px_12px_rgba(249,115,22,0.3)]' : 'border-transparent'"
+                                    :class="camSettings.faceSwapResource === res.id ? 'border-blue-500 shadow-[0_4px_12px_rgba(59,130,246,0.3)]' : 'border-transparent'"
                                     @click="$emit('update:camSettings', { ...camSettings, faceSwapResource: res.id })">
                                     <img :src="res.url" class="w-full h-full object-cover" />
                                 </div>
@@ -167,7 +167,7 @@
                             <div v-else class="text-center py-4 border-2 border-dashed border-white/5 rounded-xl">
                                 <p class="text-[8px] text-white/20 uppercase mb-2">No Face Images</p>
                                 <button @click="$emit('trigger-resource-upload')" 
-                                    class="text-[8px] text-orange-400 font-bold hover:underline">UPLOAD FACE</button>
+                                    class="text-[8px] text-blue-400 font-bold hover:underline">UPLOAD FACE</button>
                             </div>
                         </div>
                     </div>
@@ -177,7 +177,7 @@
                 <div class="panel-section border-t border-white/5 pt-6">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex flex-col gap-1">
-                            <span class="text-[10px] font-bold text-orange-400 uppercase">AI Avatar</span>
+                            <span class="text-[10px] font-bold text-blue-400 uppercase">AI Avatar</span>
                             <span class="text-[9px] text-white/40">Virtual Guest Presence</span>
                         </div>
                         <el-switch :model-value="isVTuberActive" 
@@ -189,14 +189,14 @@
                         <div class="grid grid-cols-3 gap-2">
                              <div v-for="av in avatarPresets" :key="av.id"
                                 class="av-mini-card p-2 rounded-xl border transition-all cursor-pointer flex flex-col items-center gap-1.5"
-                                :class="selectedAvatar === av.id ? 'bg-orange-500/10 border-orange-500/40' : 'bg-white/5 border-white/5'"
+                                :class="selectedAvatar === av.id ? 'bg-blue-500/10 border-blue-500/40' : 'bg-white/5 border-white/5'"
                                 @click="$emit('update:selectedAvatar', av.id)">
                                 <div class="w-10 h-10 rounded-full overflow-hidden border"
-                                    :class="selectedAvatar === av.id ? 'border-orange-500' : 'border-white/10'">
+                                    :class="selectedAvatar === av.id ? 'border-blue-500' : 'border-white/10'">
                                     <img :src="av.image" class="w-full h-full object-cover" />
                                 </div>
                                 <span class="text-[7px] font-bold uppercase truncate w-full text-center"
-                                    :class="selectedAvatar === av.id ? 'text-orange-400' : 'text-white/40'">{{ av.name }}</span>
+                                    :class="selectedAvatar === av.id ? 'text-blue-400' : 'text-white/40'">{{ av.name }}</span>
                             </div>
                         </div>
                     </div>

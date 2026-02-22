@@ -18,13 +18,13 @@ import {
 } from '@icon-park/vue-next'
 
 const options = [
-    // {
-    //     label: 'AI Video',
-    //     desc: 'Generate from text prompt',
-    //     icon: MagicWand,
-    //     class: 'bg-gradient-purple',
-    //     value: 'ai-video'
-    // },
+    {
+        label: 'AI Video',
+        desc: 'Generate from text prompt',
+        icon: MagicWand,
+        class: 'bg-gradient-purple',
+        value: 'ai-video'
+    },
     {
         label: 'AI Avatar',
         desc: 'Talking head video',

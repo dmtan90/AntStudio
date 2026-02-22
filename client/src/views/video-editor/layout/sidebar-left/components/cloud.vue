@@ -40,10 +40,10 @@
         >
           <!-- Preview -->
           <div class="absolute inset-0 flex items-center justify-center p-2 bg-black/40">
-            <img v-if="isImage(file.url)" :src="file.url" class="w-full h-full object-cover rounded-xl" />
+            <img v-if="isImage(file.key)" :src="getFileUrl(file.key)" class="w-full h-full object-cover rounded-xl" />
             <div v-else class="flex flex-col items-center gap-2">
-               <video-one v-if="isVideo(file.url)" class="text-2xl text-blue-400" />
-               <music v-else-if="isAudio(file.url)" class="text-2xl text-purple-400" />
+               <video-one v-if="isVideo(file.key)" class="text-2xl text-blue-400" />
+               <music v-else-if="isAudio(file.key)" class="text-2xl text-purple-400" />
                <file-doc v-else class="text-2xl text-gray-400" />
             </div>
           </div>
@@ -73,6 +73,7 @@ import { useMediaStore } from '@/stores/media';
 import { Refresh, Search, FolderOpen, VideoOne, Music, FileDoc, AddOne, Info } from '@icon-park/vue-next';
 import { useEditorStore } from 'video-editor/store/editor';
 import { toast } from 'vue-sonner';
+import { getFileUrl } from '@/utils/api';
 
 const mediaStore = useMediaStore();
 const editorStore = useEditorStore();
@@ -93,8 +94,8 @@ const isAudio = (url: string) => /\.(mp3|wav|m4a)$/i.test(url);
 const fetchFiles = async () => {
   loading.value = true;
   try {
-    const res = await mediaStore.fetchCloudMedia();
-    files.value = res.data.files || [];
+    const data = await mediaStore.fetchCloudMedia();
+    files.value = data.files || [];
   } catch (error) {
     console.error('Failed to sync cloud assets:', error);
   } finally {

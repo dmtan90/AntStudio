@@ -265,7 +265,7 @@ router.post('/:entityId/model', upload.single('model'), async (req: AuthRequest,
 import { getAdminSettings } from '../models/AdminSettings.js';
 import { GoogleTTSProvider } from '../utils/ai/providers/GoogleTTSProvider.js';
 import { ElevenLabsProvider } from '../utils/ai/providers/ElevenLabsProvider.js';
-import { GeminiTTSProvider } from '../utils/ai/providers/GeminiTTSProvider.js';
+import { GeminiClient } from '../integrations/ai/GeminiClient.js';
 
 router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
     try {
@@ -339,8 +339,8 @@ router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
                 return res.status(500).json({ success: false, error: 'Google API Key not configured' });
             }
             
-            const ttsProvider = new GeminiTTSProvider({ apiKey });
-            const voices = await ttsProvider.listVoices();
+            const client = new GeminiClient({ apiKey });
+            const voices = await client.listVoices();
             
             return res.json({ success: true, data: voices });
         }

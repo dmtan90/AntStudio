@@ -1,13 +1,13 @@
-import { GeminiChatProvider } from '../../utils/ai/providers/GeminiChatProvider.js';
+import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { uploadToS3 } from '../../utils/s3.js';
 import { VTuberService } from '../VTuberService.js';
 import config from '../../utils/config.js';
 
 export class DigitalDoubleService {
-    private gemini: GeminiChatProvider;
+    private gemini: GeminiClient;
 
     constructor() {
-        this.gemini = new GeminiChatProvider();
+        this.gemini = new GeminiClient({});
     }
 
     /**
@@ -46,31 +46,21 @@ export class DigitalDoubleService {
             }
         ];
 
-        const response = await this.gemini.generateText(analysisPrompt, 'gemini-2.5-flash');
+        const response = await this.gemini.generateContent(analysisPrompt, 'gemini-2.5-flash');
         const imagenPrompt = response.text;
         console.log(`[DigitalDoubleService] Synthesized Imagen Prompt: ${imagenPrompt}`);
 
         // 3. Call Imagen to generate the actual texture map
-        const visualPrompt = [
-            {
-                inlineData: {
-                    data: base64Image,
-                    mimeType: mimeType
-                }
-            },
-            {
-                text: `(3D Texture Map, Albedo, Flat Lighting, Delit, UV Unwrapped) ${imagenPrompt}`
-            }
-        ];
+        const visualPrompt = `(3D Texture Map, Albedo, Flat Lighting, Delit, UV Unwrapped) ${imagenPrompt}`;
 
-        const imageResult = await this.gemini.generateImage(visualPrompt, 'gemini-3-pro-image');
+        const imageResult = await this.gemini.generateImage(visualPrompt, 'imagen-3.0-generate-001');
 
-        if (!imageResult || !imageResult.media?.url) {
+        if (!imageResult || !imageResult.url) {
             throw new Error('Failed to generate texture map via Imagen');
         }
 
         // 4. Upload the generated texture map to S3
-        const textureBase64 = imageResult.media.url.split(',')[1];
+        const textureBase64 = imageResult.url.split(',')[1];
         const textureBuffer = Buffer.from(textureBase64, 'base64');
         const texturePath = `vtuber/${userId}/${entityId}/texture_${Date.now()}.png`;
         const textureS3 = await uploadToS3(texturePath, textureBuffer, 'image/png');

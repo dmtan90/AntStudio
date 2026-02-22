@@ -45,7 +45,7 @@
           <span v-if="!collapsed" class="nav-text">{{ t('nav.projects') }}</span>
         </router-link>
         <router-link to="/templates" class="nav-item" :class="{ active: route.path === '/templates' }">
-          <shopping theme="outline" size="20" />
+          <theme theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.templates') }}</span>
         </router-link>
         <!-- <router-link to="/organization" class="nav-item" :class="{ active: route.path === '/organization' }">
@@ -56,25 +56,17 @@
           <brain theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.avatars') }}</span>
         </router-link>
-        <router-link to="/gallery" class="nav-item" :class="{ active: route.path === '/gallery' }">
-          <video-two theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">{{ t('nav.gallery') }}</span>
-        </router-link>
         <router-link to="/platforms" class="nav-item" :class="{ active: route.path === '/platforms' }">
           <connection theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.platforms') }}</span>
         </router-link>
-        <router-link to="/viral-hub" class="nav-item" :class="{ active: route.path === '/viral-hub' }">
+        <router-link to="/viral" class="nav-item" :class="{ active: route.path === '/viral' }">
           <share-two theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">{{ t('nav.viralHub') }}</span>
-        </router-link>
-        <router-link to="/recordings" class="nav-item" :class="{ active: route.path === '/recordings' }">
-          <video-file theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">{{ t('nav.archives') }}</span>
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.viral') }}</span>
         </router-link>
         <router-link to="/merchants" class="nav-item" :class="{ active: route.path === '/merchants' }">
           <shopping theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">{{ t('nav.merchantHub') }}</span>
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.merchant') }}</span>
         </router-link>
         <router-link to="/resources" class="nav-item" :class="{ active: route.path === '/resources' }">
           <book-one theme="outline" size="20" />
@@ -150,12 +142,12 @@
             <router-link to="/admin/network" class="nav-item sub-item"
               :class="{ active: route.path.startsWith('/admin/network') }">
               <earth theme="outline" size="18" />
-              <span class="nav-text">{{ t('nav.networkHub') }}</span>
+              <span class="nav-text">{{ t('nav.network') }}</span>
             </router-link>
             <router-link to="/developer" class="nav-item sub-item"
               :class="{ active: route.path === '/developer' }">
               <connection-point theme="outline" size="20" />
-              <span v-if="!collapsed" class="nav-text">{{ t('nav.developerHub') }}</span>
+              <span v-if="!collapsed" class="nav-text">{{ t('nav.developer') }}</span>
             </router-link>
           </div>
         </div>
@@ -212,7 +204,8 @@ import {
   ConnectionPoint,
   DataServer,
   DatabaseNetwork,
-  ShareTwo
+  ShareTwo,
+  Theme
 } from '@icon-park/vue-next'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'

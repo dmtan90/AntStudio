@@ -578,6 +578,12 @@ export const useTimelinePlayer = (options: PlayerOptions) => {
         voiceElements.clear()
     })
 
+    const setMusicVolume = (volume: number) => {
+        if (bgMusicElement.value) {
+            bgMusicElement.value.volume = volume
+        }
+    }
+
     return {
         currentTime,
         isPlaying,
@@ -587,6 +593,7 @@ export const useTimelinePlayer = (options: PlayerOptions) => {
         pause,
         seek,
         draw,
-        setCanvas
+        setCanvas,
+        setMusicVolume
     }
 }

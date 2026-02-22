@@ -68,6 +68,7 @@ import { LicenseWorker } from './services/LicenseWorker.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeLiveWebSocket } from './routes/live.js';
+import { streamingService } from './services/StreamingService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -181,7 +182,8 @@ app.use('/api/collaboration', collaborationRouter);
 app.use('/api/versions', versionsRouter);
 app.use('/api/syndication', syndicationRouter);
 app.use('/api/live', liveRouter);
-app.use('/api/show', showRouter);
+import envRouter from './routes/env.js';
+app.use('/api/admin/env', envRouter);
 app.use('/api/economy', economyRouter);
 app.use('/api/gamification', gamificationRouter);
 
@@ -251,6 +253,10 @@ const startServer = async () => {
         // Initialize dynamic config from DB (Must happen after DB connection)
         await configService.initialize();
 
+        // Initialize EnvironmentManager for process.env overrides
+        const { envManager } = await import('./utils/EnvironmentManager.js');
+        await envManager.initialize();
+
         // Initialize Redis cache (Optional - continues without cache if unavailable)
         const { redisService } = await import('./services/RedisService.js');
         await redisService.connect();
@@ -266,6 +272,9 @@ const startServer = async () => {
 
         // Start License Heartbeat (Edge Mode Only)
         LicenseWorker.start();
+
+        // Initialize Streaming Service (NMS) - Async to prevent blocking startup
+        await streamingService.initialize();
 
         const httpServer = createServer(app);
         socketServer.initialize(httpServer);

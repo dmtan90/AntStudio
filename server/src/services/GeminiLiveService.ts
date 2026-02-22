@@ -1,15 +1,15 @@
 import { EventEmitter } from 'events';
 import { GoogleGenAI, Modality } from '@google/genai';
-import { GeminiLiveSession } from '../models/GeminiLiveSession.js';
-import { geminiPool } from '../utils/gemini.js';
-import { VTuberService } from './VTuberService.js';
-import { VTuber } from '../models/VTuber.js';
-import { User } from '../models/User.js';
-import { aiAgentBus } from './ai/AIAgentBus.js';
-import { questService } from './ai/QuestService.js';
-import { GeminiTTSProvider } from '~/utils/ai/providers/GeminiTTSProvider.js';
+import { GeminiLiveSession } from '~/models/GeminiLiveSession.js';
+import { geminiPool } from '~/utils/gemini.js';
+import { VTuberService } from '~/services/VTuberService.js';
+import { VTuber } from '~/models/VTuber.js';
+import { User } from '~/models/User.js';
+import { aiAgentBus } from '~/services/ai/AIAgentBus.js';
+import { questService } from '~/services/ai/QuestService.js';
 import { getAdminSettings } from '~/models/AdminSettings.js';
-
+import { systemLogger } from '~/utils/systemLogger.js';
+import { GeminiClient } from '~/integrations/ai/GeminiClient.js';
 interface LiveSessionConfig {
     userId: string;
     archiveId: string;
@@ -45,6 +45,7 @@ interface SessionData {
     swarmListener?: (msg: any) => void;
     isDisconnected?: boolean;
     disconnectTimer?: NodeJS.Timeout;
+    startTime?: number;
 }
 
 const SUPPORTED_LIVE_VOICES = ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'];
@@ -740,7 +741,7 @@ const AVATAR_TOOLS: FunctionDeclaration[] = [
 
 export class GeminiLiveService extends EventEmitter {
     private activeSessions: Map<string, SessionData> = new Map();
-    private notFoundSession: Array<string> = [];
+    private notFoundSessions: Set<string> = new Set();
 
     constructor() {
         super();
@@ -758,9 +759,9 @@ export class GeminiLiveService extends EventEmitter {
             return SUPPORTED_LIVE_VOICES;
         }
         
-        const ttsProvider = new GeminiTTSProvider({ apiKey });
-        const voices = await ttsProvider.listVoices();
-        const geminiVoices = voices.map(voice => voice.name);
+        const client = new GeminiClient({ apiKey });
+        const voices = await client.listVoices();
+        const geminiVoices = voices.map((voice: any) => voice.name);
         return [...SUPPORTED_LIVE_VOICES, ...geminiVoices];
     }
 
@@ -769,13 +770,13 @@ export class GeminiLiveService extends EventEmitter {
      */
     async createSession(config: LiveSessionConfig): Promise<string> {
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        // gemini-live-2.5-flash-preview
-        const model = 'gemini-2.5-flash';
+        // gemini-live-2.5-flash-preview please don't change this model
+        const model = 'gemini-2.5-flash-native-audio-preview-12-2025';
         // Normalize voice for Gemini Live (Phase 35)
         let normalizedVoice = config.voiceName || 'Puck';
         const geminiVoices = await this.getAvailableVoices();
         if (!geminiVoices.includes(normalizedVoice)) {
-            console.warn(`[GeminiLive] Unsupported voice '${normalizedVoice}', falling back to 'Puck'`);
+            systemLogger.warn(`[GeminiLive] Unsupported voice '${normalizedVoice}', falling back to 'Puck'`);
             normalizedVoice = 'Puck';
         }
 
@@ -850,17 +851,17 @@ export class GeminiLiveService extends EventEmitter {
                     NEVER refer to yourself as "Gemini", "Google Gemini", or a "large language model trained by Google". 
                     If users ask about "Gemini", treat it as the underlying technical engine, not your personality or name.
                     `;
-                    console.log(`[GeminiLive] Character Identity Found and Injected: ${archive.identity.name} for session ${sessionId}`);
+                    systemLogger.info(`[GeminiLive] Character Identity Found and Injected: ${archive.identity.name} for session ${sessionId}`);
                 } else {
-                    console.warn(`[GeminiLive] No VTuber found for archiveId: ${config.archiveId}. Falling back to default identity.`);
+                    systemLogger.warn(`[GeminiLive] No VTuber found for archiveId: ${config.archiveId}. Falling back to default identity.`);
                 }
 
                 const memories = await VTuberService.getRelevantMemories(config.userId, config.archiveId, ['stream', 'session', 'host', 'fan']);
                 if (memories.length > 0) {
                     sessionConfig.systemInstruction += `\n\nRELEVANT MEMORIES FROM PREVIOUS SESSIONS:\n${memories.map(m => `- ${m}`).join('\n')}`;
                 }
-            } catch (err) {
-                console.error('[GeminiLive] Failed to fetch identity/memories:', err);
+            } catch (err: any) {
+                systemLogger.error('[GeminiLive] Failed to fetch identity/memories:', 'GeminiLiveService', err);
             }
         }
 
@@ -870,25 +871,29 @@ export class GeminiLiveService extends EventEmitter {
         }
 
         try {
-            const { client: ai, key } = await geminiPool.getOptimalClient(model);
-            
-            const session = await (ai as any).live.connect({
+            const client = new GeminiClient({});
+            const { session, apiKey } = await client.connectLive({
                 model: model,
-                config: sessionConfig,
+                systemInstruction: sessionConfig.systemInstruction,
+                generationConfig: {
+                    responseModalities: sessionConfig.responseModalities,
+                    speechConfig: sessionConfig.speechConfig
+                },
+                tools: sessionConfig.tools,
                 callbacks: {
                     onopen: () => {
-                        console.log(`[GeminiLive] Session ${sessionId} connected`);
+                        systemLogger.info(`[GeminiLive] Session ${sessionId} connected`);
                         this.emit('session:connected', { sessionId, archiveId: config.archiveId });
                     },
                     onmessage: (message: any) => {
                         this.handleIncomingMessage(sessionId, message);
                     },
                     onerror: (error: any) => {
-                        console.error(`[GeminiLive] Session ${sessionId} error:`, error);
+                        systemLogger.error(`[GeminiLive] Session ${sessionId} error:`, 'GeminiLiveService', error);
                         this.emit('session:error', { sessionId, error: error.message });
                     },
                     onclose: (event: any) => {
-                        console.log(`[GeminiLive] Session ${sessionId} closed:`, event.reason);
+                        systemLogger.info(`[GeminiLive] Session ${sessionId} closed:`, event.reason);
                         this.handleSessionClose(sessionId, event.reason);
                     }
                 }
@@ -911,10 +916,11 @@ export class GeminiLiveService extends EventEmitter {
                 session,
                 userId: config.userId,
                 archiveId: config.archiveId,
-                apiKey: key,
+                apiKey: apiKey || '',
                 modelName: model,
                 projectId: config.projectId, // Group ID
-                audioQueue: []
+                audioQueue: [],
+                startTime: Date.now()
             };
             this.activeSessions.set(sessionId, sessionData);
 
@@ -925,7 +931,7 @@ export class GeminiLiveService extends EventEmitter {
                     if (msg.fromAgent === config.archiveId) return;
 
                     const relay = `[SWARM MESSAGE from ${msg.fromAgent}${msg.type === 'broadcast' ? ' (broadcast)' : ''}]: ${msg.payload.message || JSON.stringify(msg.payload)}`;
-                    console.log(`[GeminiLive] [${sessionId}] Relaying swarm message: ${relay}`);
+                    systemLogger.info(`[GeminiLive] [${sessionId}] Relaying swarm message: ${relay}`);
                     
                     // Send to Gemini as context
                     this.sendText(sessionId, relay);
@@ -947,7 +953,7 @@ export class GeminiLiveService extends EventEmitter {
 
             return sessionId;
         } catch (error: any) {
-            console.error('[GeminiLive] Failed to create session:', error);
+            systemLogger.error('[GeminiLive] Failed to create session:', 'GeminiLiveService', error);
             throw new Error(`Failed to create Live API session: ${error.message}`);
         }
     }
@@ -958,9 +964,9 @@ export class GeminiLiveService extends EventEmitter {
     sendAudio(sessionId: string, audioChunk: AudioChunk): void {
         const sessionData = this.activeSessions.get(sessionId);
         if (!sessionData) {
-            if(!this.notFoundSession.includes(sessionId)){
-                this.notFoundSession.push(sessionId);
-                console.warn(`[GeminiLive] Session ${sessionId} not found`);
+            if(!this.notFoundSessions.has(sessionId)){
+                this.notFoundSessions.add(sessionId);
+                systemLogger.warn(`[GeminiLive] Session ${sessionId} not found`);
             }
             return;
         }
@@ -973,7 +979,7 @@ export class GeminiLiveService extends EventEmitter {
                 }
             });
         } catch (error: any) {
-            console.error(`[GeminiLive] Failed to send audio for session ${sessionId}:`, error);
+            systemLogger.error(`[GeminiLive] Failed to send audio for session ${sessionId}:`, 'GeminiLiveService', error);
             this.emit('session:error', { sessionId, error: error.message });
         }
     }
@@ -984,7 +990,10 @@ export class GeminiLiveService extends EventEmitter {
     sendVideo(sessionId: string, frameData: { data: string, mimeType: string }): void {
         const sessionData = this.activeSessions.get(sessionId);
         if (!sessionData) {
-            console.warn(`[GeminiLive] Session ${sessionId} not found`);
+            if(!this.notFoundSessions.has(sessionId)){
+                this.notFoundSessions.add(sessionId);
+                systemLogger.warn(`[GeminiLive] Session ${sessionId} not found for video`);
+            }
             return;
         }
 
@@ -996,7 +1005,7 @@ export class GeminiLiveService extends EventEmitter {
                 }]
             });
         } catch (error: any) {
-            console.error(`[GeminiLive] Failed to send video for session ${sessionId}:`, error);
+            systemLogger.error(`[GeminiLive] Failed to send video for session ${sessionId}:`, 'GeminiLiveService', error);
             this.emit('session:error', { sessionId, error: error.message });
         }
     }
@@ -1007,7 +1016,7 @@ export class GeminiLiveService extends EventEmitter {
     sendToolResponse(sessionId: string, functionResponses: any[]): void {
         const sessionData = this.activeSessions.get(sessionId);
         if (!sessionData) {
-            console.warn(`[GeminiLive] Session ${sessionId} not found`);
+            systemLogger.warn(`[GeminiLive] Session ${sessionId} not found`, 'GeminiLiveService');
             return;
         }
 
@@ -1024,7 +1033,7 @@ export class GeminiLiveService extends EventEmitter {
                 }
             });
         } catch (error: any) {
-            console.error(`[GeminiLive] Failed to send tool response for session ${sessionId}:`, error);
+            systemLogger.error(`[GeminiLive] Failed to send tool response for session ${sessionId}:`, 'GeminiLiveService', error);
         }
     }
 
@@ -1034,7 +1043,7 @@ export class GeminiLiveService extends EventEmitter {
     sendText(sessionId: string, text: string): void {
         const sessionData = this.activeSessions.get(sessionId);
         if (!sessionData) {
-            console.warn(`[GeminiLive] Session ${sessionId} not found`);
+            systemLogger.warn(`[GeminiLive] Session ${sessionId} not found`, 'GeminiLiveService');
             return;
         }
 
@@ -1049,7 +1058,7 @@ export class GeminiLiveService extends EventEmitter {
                 }
             });
         } catch (error: any) {
-            console.error(`[GeminiLive] Failed to send text for session ${sessionId}:`, error);
+            systemLogger.error(`[GeminiLive] Failed to send text for session ${sessionId}:`, 'GeminiLiveService', error);
             this.emit('session:error', { sessionId, error: error.message });
         }
     }
@@ -1066,12 +1075,12 @@ export class GeminiLiveService extends EventEmitter {
                     { endTime: new Date() }
                 );
             } catch (error) {
-                console.error(`[GeminiLive] Failed to update session completion in DB:`, error);
+                systemLogger.error(`[GeminiLive] Failed to update session completion in DB:`, 'GeminiLiveService', error);
             }
             // Record usage on close or after some activity?
             // User requested to record quota.
             if (sessionData.apiKey) {
-                await geminiPool.recordUsage(sessionData.apiKey, sessionData.modelName || 'gemini-2.0-flash-exp');
+                await geminiPool.recordUsage(sessionData.apiKey, sessionData.modelName || 'gemini-2.5-flash');
             }
             // Cleanup swarm listener
             if (sessionData.swarmListener && sessionData.projectId) {
@@ -1107,7 +1116,14 @@ export class GeminiLiveService extends EventEmitter {
     resumeSession(sessionId: string): boolean {
         const sessionData = this.activeSessions.get(sessionId);
         if (!sessionData) {
-            console.warn(`[GeminiLive] Cannot resume: Session ${sessionId} not found`);
+            systemLogger.warn(`[GeminiLive] Cannot resume: Session ${sessionId} not found`, 'GeminiLiveService');
+            // Keep track of non-existent sessions to avoid excessive lookups
+            this.notFoundSessions.add(sessionId);
+            if (this.notFoundSessions.size > 100) {
+                // Keep the set size manageable
+                const first = this.notFoundSessions.values().next().value;
+                if (first) this.notFoundSessions.delete(first);
+            }
             return false;
         }
 
@@ -1117,7 +1133,7 @@ export class GeminiLiveService extends EventEmitter {
         }
         
         sessionData.isDisconnected = false;
-        console.log(`[GeminiLive] Session ${sessionId} resumed`);
+        systemLogger.info(`[GeminiLive] Session ${sessionId} resumed`, 'GeminiLiveService');
         return true;
     }
 
@@ -1138,7 +1154,7 @@ export class GeminiLiveService extends EventEmitter {
         try {
             sessionData.session.close();
         } catch (error: any) {
-            console.error(`[GeminiLive] Failed to close session ${sessionId}:`, error);
+            systemLogger.error(`[GeminiLive] Failed to close session ${sessionId}:`, 'GeminiLiveService', error);
         }
     }
 
@@ -1150,9 +1166,17 @@ export class GeminiLiveService extends EventEmitter {
             const sessionData = this.activeSessions.get(sessionId);
             if (!sessionData) return;
 
+            // Proactive Session Refresh (Avoid 10-minute Deadline Exceeded)
+            // If session is older than 9.5 minutes, signal for a clean refresh
+            if (sessionData.startTime && (Date.now() - sessionData.startTime) > 9.5 * 60 * 1000) {
+                systemLogger.info(`[GeminiLive] Session ${sessionId} reaching 10-minute deadline. Triggering proactive refresh.`, 'GeminiLiveService');
+                this.handleSessionClose(sessionId, 'Session Lifetime Refresh');
+                return;
+            }
+
             // Handle interruption
             if (message.serverContent?.interrupted) {
-                console.log(`[GeminiLive] Session ${sessionId} interrupted`);
+                systemLogger.info(`[GeminiLive] Session ${sessionId} interrupted`, 'GeminiLiveService');
                 sessionData.audioQueue = []; // Clear audio queue
                 this.emit('session:interrupted', { sessionId });
                 return;
@@ -1204,7 +1228,7 @@ export class GeminiLiveService extends EventEmitter {
                     let localResult: any = { success: true };
 
                     if (call.name === 'archive_moment') {
-                        console.log(`[GeminiLive] Intercepted archive_moment:`, call.args);
+                        systemLogger.info(`[GeminiLive] Intercepted ${call.name}: ${JSON.stringify(call.args)}`, 'GeminiLiveService');
                         if (sessionData.userId && sessionData.archiveId) {
                             await VTuberService.archiveEvent(
                                 sessionData.userId, 
@@ -1216,7 +1240,7 @@ export class GeminiLiveService extends EventEmitter {
                             handledLocally = true;
                         }
                     } else if (call.name === 'update_fan_bond') {
-                        console.log(`[GeminiLive] Intercepted update_fan_bond:`, call.args);
+                        systemLogger.info(`[GeminiLive] Intercepted ${call.name}: ${JSON.stringify(call.args)}`, 'GeminiLiveService');
                         if (sessionData.userId && sessionData.archiveId) {
                             await VTuberService.updateSocialRelationship(
                                 sessionData.userId,
@@ -1229,7 +1253,7 @@ export class GeminiLiveService extends EventEmitter {
                             handledLocally = true;
                         }
                     } else if (call.name === 'send_agent_message') {
-                        console.log(`[GeminiLive] Intercepted send_agent_message:`, call.args);
+                        systemLogger.info(`[GeminiLive] Intercepted ${call.name}: ${JSON.stringify(call.args)}`, 'GeminiLiveService');
                         if (sessionData.projectId && sessionData.archiveId) {
                             aiAgentBus.sendMessage(sessionData.projectId, {
                                 fromAgent: sessionData.archiveId,
@@ -1241,7 +1265,7 @@ export class GeminiLiveService extends EventEmitter {
                             handledLocally = true;
                         }
                     } else if (call.name === 'broadcast_to_swarm') {
-                        console.log(`[GeminiLive] Intercepted broadcast_to_swarm:`, call.args);
+                        systemLogger.info(`[GeminiLive] Swarm: ${call.name} tool handled`, 'GeminiLiveService');
                         if (sessionData.projectId && sessionData.archiveId) {
                             aiAgentBus.sendMessage(sessionData.projectId, {
                                 fromAgent: sessionData.archiveId,
@@ -1314,8 +1338,8 @@ export class GeminiLiveService extends EventEmitter {
                     });
                 }
             }
-        } catch (error) {
-            console.error(`[GeminiLive] Error handling incoming message for session ${sessionId}:`, error);
+        } catch (error: any) {
+            systemLogger.error(`[GeminiLive] Error handling incoming message for session ${sessionId}:`, 'GeminiLiveService', error);
         }
     }
 
@@ -1337,8 +1361,8 @@ export class GeminiLiveService extends EventEmitter {
                     }
                 }
             );
-        } catch (error) {
-            console.error(`[GeminiLive] Failed to save message to DB for session ${sessionId}:`, error);
+        } catch (error: any) {
+            systemLogger.error(`[GeminiLive] Failed to save message to DB for session ${sessionId}:`, 'GeminiLiveService', error);
         }
     }
 

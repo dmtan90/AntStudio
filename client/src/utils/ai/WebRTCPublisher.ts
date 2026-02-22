@@ -13,6 +13,7 @@ export interface WebRTCStats {
     rtt: number; // ms
     packetsLost: number;
     framesEncoded: number;
+    fps?: number;
     timestamp: number;
 }
 
@@ -23,7 +24,7 @@ export class WebRTCPublisher {
     private localStream: MediaStream | null = null;
     private pingInterval: any = null;
     private statsInterval: any = null;
-    private lastStats: any = null;
+    private lastStats: any = {};
 
     constructor(config: WebRTCConfig) {
         this.config = config;
@@ -150,6 +151,7 @@ export class WebRTCPublisher {
         this.pc.oniceconnectionstatechange = () => {
             console.log("[WebRTC] Connection state:", this.pc?.iceConnectionState);
             if (this.pc?.iceConnectionState === 'connected') {
+                console.log("[WebRTC] ICE connected, starting stats interval...");
                 this.applyBitrateConstraints();
                 this.startStatsInterval();
             } else if (this.pc?.iceConnectionState === 'disconnected' || this.pc?.iceConnectionState === 'failed' || this.pc?.iceConnectionState === 'closed') {
@@ -213,31 +215,81 @@ export class WebRTCPublisher {
 
             try {
                 const stats = await this.pc.getStats();
+                if (!this.lastStats) this.lastStats = {};
                 let currentStats: Partial<WebRTCStats> = { timestamp: Date.now() };
 
+                const reportTypes = new Set();
+                stats.forEach(r => reportTypes.add(r.type));
+                console.log("[WebRTC Stats] Available report types:", Array.from(reportTypes));
+
                 stats.forEach(report => {
-                    // Get RTT from candidate-pair
+                    // 1. Get RTT from remote-inbound-rtp (Standard but sometimes missing)
                     if (report.type === 'remote-inbound-rtp' && report.kind === 'video') {
-                        currentStats.rtt = Math.round(report.roundTripTime * 1000);
-                        currentStats.packetsLost = report.packetsLost;
+                        console.log("[WebRTC Stats] Found remote-inbound-rtp:", report);
+                        if (report.roundTripTime !== undefined) {
+                            currentStats.rtt = Math.round(report.roundTripTime * 1000);
+                        }
+                        currentStats.packetsLost = report.packetsLost || 0;
                     }
 
-                    // Get Bitrate from outbound-rtp
-                    if (report.type === 'outbound-rtp' && report.kind === 'video') {
-                        if (this.lastStats && this.lastStats[report.id]) {
+                    // 2. Fallback RTT from candidate-pair (Often more reliable in some browsers)
+                    if (report.type === 'candidate-pair' && report.state === 'succeeded' && !currentStats.rtt) {
+                        if (report.currentRoundTripTime !== undefined) {
+                            currentStats.rtt = Math.round(report.currentRoundTripTime * 1000);
+                            console.log("[WebRTC Stats] Found RTT from candidate-pair:", currentStats.rtt);
+                        }
+                    }
+
+                    // 3. Get Bitrate from outbound-rtp
+                    if (report.type === 'outbound-rtp' && (report.kind === 'video' || report.mediaType === 'video')) {
+                        console.log("[WebRTC Stats] Found outbound-rtp:", report);
+                        if (this.lastStats[report.id]) {
                             const lastReport = this.lastStats[report.id];
                             const deltaBytes = report.bytesSent - lastReport.bytesSent;
-                            const deltaTime = report.timestamp - lastReport.timestamp;
-                            currentStats.bitrate = Math.round((deltaBytes * 8) / deltaTime); // bps to kbps (roughly since deltaTime is ms)
+                            const deltaFrames = (report.framesEncoded || 0) - (lastReport.framesEncoded || 0);
+                            const deltaTime = report.timestamp - lastReport.timestamp; // ms
+                            
+                            if (deltaTime > 0) {
+                                if (deltaBytes >= 0) {
+                                    // bits/ms = kbps
+                                    currentStats.bitrate = Math.round((deltaBytes * 8) / deltaTime); 
+                                    console.log("[WebRTC Stats] Calculated Bitrate:", currentStats.bitrate);
+                                }
+                                if (deltaFrames >= 0) {
+                                    currentStats.fps = Math.round((deltaFrames * 1000) / deltaTime);
+                                }
+                            }
                         }
                         currentStats.framesEncoded = report.framesEncoded;
-                        this.lastStats = { [report.id]: report };
+                        this.lastStats[report.id] = {
+                            bytesSent: report.bytesSent,
+                            framesEncoded: report.framesEncoded,
+                            timestamp: report.timestamp
+                        };
                     }
                 });
 
-                if (currentStats.bitrate !== undefined || currentStats.rtt !== undefined) {
-                    this.config.onStats(currentStats as WebRTCStats);
+                // Fallback RTT from ActionSync if WebRTC RTT is missing
+                if (currentStats.rtt === undefined) {
+                    try {
+                        const { ActionSyncService } = await import('./ActionSyncService');
+                        const socketLatency = ActionSyncService.getLatency();
+                        if (socketLatency > 0) {
+                            currentStats.rtt = socketLatency;
+                            console.log("[WebRTC Stats] Using ActionSync fallback RTT:", socketLatency);
+                        }
+                    } catch (e) {}
                 }
+
+                // Always call onStats if we are in this interval
+                this.config.onStats({
+                    bitrate: currentStats.bitrate || 0,
+                    rtt: currentStats.rtt || 0,
+                    packetsLost: currentStats.packetsLost || 0,
+                    framesEncoded: currentStats.framesEncoded || 0,
+                    fps: currentStats.fps || 0,
+                    timestamp: currentStats.timestamp || Date.now()
+                });
             } catch (e) {
                 console.error("[WebRTC] Stats failed:", e);
             }

@@ -13,7 +13,15 @@
             <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Neural Link Establishing</span>
         </div>
     </div>
-    <!-- Dynamic Lyrics Overlay removed (Moved to Global Stage) -->
+
+    <!-- Dynamic Lyrics Overlay -->
+    <StageLyricsOverlay 
+        v-if="lyricsEnabled && lyrics && lyrics.length > 0"
+        :lyrics="lyrics"
+        :currentTime="currentTime || 0"
+        :style="lyricsStyle || 'neon'"
+        :position="lyricsPosition || 'bottom'"
+    />
 </template>
 
 <script setup lang="ts">
@@ -105,6 +113,11 @@ const props = defineProps<{
     emotion?: string;
     cinematicMode?: boolean;
     interactive?: boolean;
+    lyrics?: any[];
+    currentTime?: number;
+    lyricsStyle?: 'neon' | 'minimal' | 'kinetic';
+    lyricsPosition?: 'top' | 'bottom';
+    lyricsEnabled?: boolean;
 }>();
 
 const emit = defineEmits<{

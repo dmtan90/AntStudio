@@ -12,14 +12,15 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="md:col-span-2">
                     <div
-                        class="video-preview-wrapper aspect-video bg-black/40 rounded-2xl overflow-hidden shadow-2xl relative border border-white/5 ring-1 ring-white/5 p-1">
+                        class="video-preview-wrapper bg-black/40 rounded-2xl overflow-hidden shadow-2xl relative border border-white/5 ring-1 ring-white/5 p-1"
+                        :class="previewAspectClass">
                         <div class="w-full h-full rounded-xl overflow-hidden relative">
-                            <GMedia :src="project?.finalVideo?.s3Key || project?.finalVideo?.s3Url" type="video"
+                            <GMedia :src="project?.publish?.s3Key" type="video"
                                 controls class="w-full h-full object-contain" />
 
                             <div v-if="syncing"
                                 class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-xl">
-                                <el-icon class="is-loading text-4xl text-brand-primary">
+                                <el-icon class="is-loading text-4xl text-blue-400">
                                     <Loading />
                                 </el-icon>
                                 <span class="mt-6 text-[11px] font-black uppercase tracking-[0.2em] text-white/90">{{
@@ -33,16 +34,16 @@
                             class="flex-1 p-3.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div class="w-2.5 h-2.5 rounded-full"
-                                    :class="project?.finalVideo?.s3Url ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' : 'bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.4)]'">
+                                    :class="project?.publish?.s3Key ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' : 'bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.4)]'">
                                 </div>
                                 <span class="text-[11px] font-black uppercase tracking-widest text-white/70">Cloud
                                     Storage</span>
                             </div>
                             <span class="text-[10px] text-white/40 uppercase font-black tracking-tighter">{{
-                                project?.finalVideo?.s3Url ? 'Archived' : 'Syncing...' }}</span>
+                                project?.publish?.s3Key ? 'Archived' : 'Syncing...' }}</span>
                         </div>
                         <el-button @click="downloadVideo"
-                            class="cinematic-button !h-auto !px-8 !bg-brand-primary !text-white !border-transparent !rounded-xl shadow-[0_8px_20px_rgba(59,130,246,0.3)] hover:!scale-[1.02] active:!scale-95 group">
+                            class="cinematic-button !h-auto !px-8 !bg-blue-600 !text-white !border-transparent !rounded-xl shadow-[0_8px_20px_rgba(59,130,246,0.3)] hover:!scale-[1.02] active:!scale-95 group">
                             <div class="flex items-center gap-2.5 py-1">
                                 <Download :size="16" :stroke-width="5"
                                     class="group-hover:translate-y-0.5 transition-transform" />
@@ -84,7 +85,7 @@
                         </h4>
                         
                         <div v-if="loadingAccounts" class="py-4 text-center">
-                            <el-icon class="is-loading text-brand-primary"><Loading /></el-icon>
+                            <el-icon class="is-loading text-blue-400"><Loading /></el-icon>
                         </div>
                         
                         <div v-else-if="accounts.length === 0" class="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
@@ -187,9 +188,9 @@
 
                         <!-- Stream Metrics -->
                         <div v-if="isStreaming && streamStatus"
-                            class="mt-4 p-4 rounded-xl bg-brand-primary/5 border border-brand-primary/20 space-y-3 animate-in fade-in duration-500">
+                            class="mt-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 space-y-3 animate-in fade-in duration-500">
                             <div class="flex items-center justify-between">
-                                <span class="text-[10px] font-black text-brand-primary uppercase tracking-widest">Live
+                                <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Live
                                     Metrics</span>
                                 <div class="flex items-center gap-2">
                                     <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
@@ -238,7 +239,7 @@
                                         </el-icon></el-button>
                                 </div>
                                 <el-button type="primary" link @click="addEndpoint"
-                                    class="!text-[10px] font-black uppercase tracking-widest !text-brand-primary/80 hover:!text-brand-primary">+
+                                    class="!text-[10px] font-black uppercase tracking-widest !text-blue-400/80 hover:!text-blue-400">+
                                     Add Endpoint</el-button>
                             </div>
                         </div>
@@ -269,11 +270,12 @@ import { useProjectStore } from '@/stores/project'
 import { useUIStore } from '@/stores/ui'
 import { getFileUrl } from '@/utils/api'
 import GMedia from '@/components/ui/GMedia.vue'
-import { ElMessage as toast } from 'element-plus'
+import { toast } from 'vue-sonner';
 
 const props = defineProps<{
     modelValue: boolean
-    project: any
+    project: any,
+    video?: Blob
 }>()
 
 const emit = defineEmits(['update:modelValue'])
@@ -309,9 +311,18 @@ const ams = computed(() => {
 
 const syncing = computed(() => props.project?.status === 'processing')
 const syncStatus = ref('Optimizing and Finalizing...')
-const blobSize = computed(() => props.project?.finalVideo?.fileSize || 0)
-const duration = computed(() => props.project?.finalVideo?.duration || 0)
-const format = computed(() => props.project?.finalVideo?.s3Key?.split('.').pop() || 'mp4')
+const blobSize = computed(() => props.project?.publish?.fileSize || 0)
+const duration = computed(() => props.project?.publish?.duration || 0)
+const format = computed(() => props.project?.publish?.s3Key?.split('.').pop() || 'mp4')
+
+const previewAspectClass = computed(() => {
+  switch (props.project?.aspectRatio) {
+    case '9:16': return 'aspect-[9/16]'
+    case '1:1':  return 'aspect-square'
+    case '4:3':  return 'aspect-[4/3]'
+    default:     return 'aspect-video'
+  }
+})
 
 watch(() => props.modelValue, (val) => {
     visible.value = val
@@ -359,7 +370,7 @@ const handlePublish = async () => {
     try {
         const payload = {
             projectId: props.project._id,
-            s3Key: props.project.finalVideo?.s3Key,
+            s3Key: props.project.publish?.s3Key,
             platformAccountIds: selectedAccountIds.value,
             metadata: publishMetadata.value
         }
@@ -389,7 +400,7 @@ const getPlatformBg = (platform: string) => {
 }
 
 const downloadVideo = async () => {
-    const url = await getFileUrl(props.project?.finalVideo?.s3Key || props.project?.finalVideo?.s3Url, { cached: true })
+    const url = await getFileUrl(props.project?.publish?.s3Key, { cached: true })
     if (!url) return
     const a = document.createElement('a')
     a.href = url

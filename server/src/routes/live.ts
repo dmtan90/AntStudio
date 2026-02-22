@@ -1,17 +1,29 @@
 import { Router } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
-import { geminiLiveService } from '../services/GeminiLiveService.js';
-import { VTuber } from '../models/VTuber.js';
-import { GeminiLiveSession } from '../models/GeminiLiveSession.js';
-import { verifyToken } from '../utils/jwt.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { aiGuestService } from '../services/ai/AIGuestService.js';
+import { geminiLiveService } from '~/services/GeminiLiveService.js';
+import { VTuber } from '~/models/VTuber.js';
+import { GeminiLiveSession } from '~/models/GeminiLiveSession.js';
+import { verifyToken } from '~/utils/jwt.js';
+import { authMiddleware, AuthRequest } from '~/middleware/auth.js';
+import { aiGuestService } from '~/services/ai/AIGuestService.js';
+import { systemLogger } from '~/utils/systemLogger.js';
 
 const router = Router();
 
 // Store WebSocket server instance
 let wss: WebSocketServer | null = null;
+const activeWebSockets = new Map<string, WebSocket>();
+
+// Listen for session closures
+geminiLiveService.on('session:closed', ({ sessionId }) => {
+    const ws = activeWebSockets.get(sessionId);
+    if (ws) {
+        systemLogger.info(`[LiveWS] Closing WebSocket for session ${sessionId} because Gemini session ended.`, 'LiveWS');
+        ws.close(4000, 'Gemini Session Ended');
+        activeWebSockets.delete(sessionId);
+    }
+});
 
 /**
  * Initialize WebSocket server
@@ -23,7 +35,7 @@ export function initializeLiveWebSocket(server: Server) {
     });
 
     wss.on('connection', async (ws: WebSocket, req) => {
-        console.log('[LiveWS] New WebSocket connection');
+        systemLogger.info('[LiveWS] New WebSocket connection');
 
         // Extract params from query
         const url = new URL(req.url!, `http://${req.headers.host}`);
@@ -54,12 +66,12 @@ export function initializeLiveWebSocket(server: Server) {
                 return;
             }
         } else {
-            console.warn('[LiveWS] Connection without token, using system user');
+            systemLogger.warn('[LiveWS] Connection without token, using system user');
         }
 
         try {
             // Load VTuber configuration
-            console.log('[LiveWS] Loading VTuber configuration for archiveId:', archiveId);
+            systemLogger.info(`[LiveWS] Loading VTuber configuration for archiveId: ${archiveId}`, 'LiveWS');
             const archive = await VTuber.findOne({ 
                 $or: [
                     { entityId: archiveId },
@@ -78,9 +90,9 @@ export function initializeLiveWebSocket(server: Server) {
             if (sessionId) {
                 isResumed = geminiLiveService.resumeSession(sessionId);
                 if (isResumed) {
-                    console.log(`[LiveWS] Resumed existing session ${sessionId} for archive ${archiveId}`);
+                    systemLogger.info(`[LiveWS] Resumed existing session ${sessionId} for archive ${archiveId}`, 'LiveWS');
                 } else {
-                    console.warn(`[LiveWS] Failed to resume session ${sessionId}, creating new one.`);
+                    systemLogger.warn(`[LiveWS] Failed to resume session ${sessionId}, creating new one.`, 'LiveWS');
                     sessionId = null;
                 }
             }
@@ -98,7 +110,7 @@ export function initializeLiveWebSocket(server: Server) {
                     isMaster,
                 });
 
-                console.log(`[LiveWS] Created new session ${sessionId} for archive ${archiveId}`);
+                systemLogger.info(`[LiveWS] Created new session ${sessionId} for archive ${archiveId}`, 'LiveWS');
             }
 
             // Send connection success
@@ -112,7 +124,7 @@ export function initializeLiveWebSocket(server: Server) {
 
             // Set up event listeners for Gemini Live API responses
             const handleAudioChunk = (data: any) => {
-                // console.log('[LiveWS] Audio chunk received:', data.audioData.length, 'bytes');
+                // systemLogger.info('[LiveWS] Audio chunk received:', data.audioData.length, 'bytes');
                 if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({
                         type: 'audio',
@@ -123,7 +135,7 @@ export function initializeLiveWebSocket(server: Server) {
             };
 
             const handleTextResponse = async (data: any) => {
-                console.log('[LiveWS] Text response received:', data.text);
+                systemLogger.info(`[LiveWS] Text response received: ${data.text}`, 'LiveWS');
                 if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
                     // Phase 6: AI-powered Normalization
                     // The user explicitly requested we normalize plain text into JSON via Gemini
@@ -135,14 +147,14 @@ export function initializeLiveWebSocket(server: Server) {
 
                     try {
                         const normalized = await aiGuestService.normalizeLiveResponse(data.text);
-                        console.log('[LiveWS] Normalized response:', JSON.stringify(normalized));
+                        systemLogger.info('[LiveWS] Normalized response:', 'LiveWS', normalized);
                         responseData = {
                             ...responseData,
                             ...normalized,
                             isConsolidated: true
                         };
-                    } catch (e) {
-                        console.error('[LiveWS] Normalization failed:', e);
+                    } catch (e: any) {
+                        systemLogger.error('[LiveWS] Normalization failed:', 'LiveWS', e);
                     }
 
                     ws.send(JSON.stringify(responseData));
@@ -155,7 +167,7 @@ export function initializeLiveWebSocket(server: Server) {
             };
 
             const handleInterrupted = (data: any) => {
-                console.log('[LiveWS] Interrupted:', data);
+                systemLogger.info('[LiveWS] Interrupted:', 'LiveWS', data);
                 if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({
                         type: 'interrupted'
@@ -164,7 +176,7 @@ export function initializeLiveWebSocket(server: Server) {
             };
 
             const handleSessionError = (data: any) => {
-                console.log('[LiveWS] Session error:', data.error);
+                systemLogger.info(`[LiveWS] Session error: ${data.error}`, 'LiveWS');
                 if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({
                         type: 'error',
@@ -174,9 +186,9 @@ export function initializeLiveWebSocket(server: Server) {
             };
 
             const handleToolCall = (data: any) => {
-                console.log('[LiveWS] Tool call received:', data.toolCall);
+                systemLogger.info('[LiveWS] Tool call received:', 'LiveWS', data.toolCall);
                 if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    console.log(`[LiveWS] Tool call:`, data.toolCall);
+                    systemLogger.info(`[LiveWS] Tool call: ${JSON.stringify(data.toolCall)}`, 'LiveWS');
                     ws.send(JSON.stringify({
                         type: 'tool_call',
                         toolCall: data.toolCall
@@ -185,7 +197,7 @@ export function initializeLiveWebSocket(server: Server) {
             };
 
             const handleSwarmMessage = (data: any) => {
-                console.log('[LiveWS] Swarm message received:', data.payload);
+                systemLogger.info('[LiveWS] Swarm message received:', 'LiveWS', data.payload);
                 if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({
                         type: 'swarm_message',
@@ -257,7 +269,7 @@ export function initializeLiveWebSocket(server: Server) {
                     } else if (data.type === 'talk') {
                         // Unified 'Talk' handler for Standard mode VTubers over WebSocket
                         const { prompt, context } = data;
-                        console.log(`[LiveWS] Talk request received for archive ${archiveId}: ${sessionId ? '(Routing to Live API)' : '(Routing to GuestService)'}`, prompt.substring(0, 50));
+                        systemLogger.info(`[LiveWS] Talk request received for archive ${archiveId}: ${sessionId ? '(Routing to Live API)' : '(Routing to GuestService)'} ${prompt.substring(0, 50)}`, 'LiveWS');
 
                         if (sessionId) {
                             // Forward to Gemini Live API
@@ -295,20 +307,26 @@ export function initializeLiveWebSocket(server: Server) {
                                     mimeType: 'audio/mpeg'
                                 }));
                             } catch (audioError: any) {
-                                console.error('[LiveWS] Failed to stream audio for talk:', audioError.message);
+                                systemLogger.error(`[LiveWS] Failed to stream audio for talk: ${audioError.message}`, 'LiveWS', audioError);
                             }
                         }
                     }
                 } catch (error: any) {
-                    console.error('[LiveWS] Error processing message:', error);
+                    systemLogger.error('[LiveWS] Error processing message:', 'LiveWS', error);
                     ws.send(JSON.stringify({ type: 'error', message: error.message }));
                 }
             });
 
+            // Track WebSocket by sessionId for clean closure (Phase 2)
+            activeWebSockets.set(sessionId, ws);
+
             // Handle client disconnect
             ws.on('close', () => {
-                console.log(`[LiveWS] Client disconnected, marking session ${sessionId} for graceful cleanup.`);
+                systemLogger.info(`[LiveWS] Client disconnected, marking session ${sessionId} for graceful cleanup.`, 'LiveWS');
                 if (sessionId) {
+                    if (activeWebSockets.get(sessionId) === ws) {
+                        activeWebSockets.delete(sessionId);
+                    }
                     geminiLiveService.disconnectSession(sessionId);
                 }
 
@@ -327,13 +345,13 @@ export function initializeLiveWebSocket(server: Server) {
             });
 
         } catch (error: any) {
-            console.error('[LiveWS] Error setting up session:', error);
+            systemLogger.error('[LiveWS] Error setting up session:', 'LiveWS', error);
             ws.send(JSON.stringify({ type: 'error', message: error.message }));
             ws.close();
         }
     });
 
-    console.log('[LiveWS] WebSocket server initialized on /live');
+    systemLogger.info('[LiveWS] WebSocket server initialized on /live');
 }
 
 /**

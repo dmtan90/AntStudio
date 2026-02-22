@@ -1,104 +1,166 @@
 <template>
-   <div class="infra-health p-6 animate-in">
-      <header class="page-header mb-10 flex justify-between items-start">
+   <div class="infra-health min-h-screen p-8 relative overflow-hidden">
+      <!-- Ambient Glows -->
+      <div class="absolute top-0 right-1/3 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
+      <div class="absolute bottom-0 left-1/4 w-80 h-80 bg-indigo-600/4 rounded-full blur-3xl pointer-events-none" />
+
+      <!-- Header -->
+      <header class="mb-10 flex justify-between items-start relative z-10">
          <div>
-            <h1 class="text-3xl font-black text-white tracking-tight mb-2 uppercase">Global Infrastructure Hub</h1>
-            <p class="text-gray-400">Mission-critical monitoring and disaster recovery control center.</p>
+            <div class="flex items-center gap-3 mb-2">
+               <div class="w-1 h-8 rounded-full bg-gradient-to-b from-blue-400 to-indigo-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
+               <h1 class="text-3xl font-black tracking-tight text-white">Infrastructure Hub</h1>
+            </div>
+            <p class="text-sm text-white/30 ml-4 pl-3">Mission-critical monitoring and disaster recovery control center.</p>
          </div>
-         <div
-            class="system-badge flex items-center gap-3 bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20">
-            <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-            <span class="text-[10px] font-black text-green-500 tracking-widest uppercase">System Operational</span>
+         <div class="flex items-center gap-2.5 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 backdrop-blur-md">
+            <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
+            <span class="text-[10px] font-bold text-green-400 tracking-widest uppercase">System Operational</span>
          </div>
       </header>
 
-      <!-- Global Regions Map/Grid -->
-      <div class="regions-grid grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <!-- Global Regions Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10 relative z-10">
          <div v-for="region in regions" :key="region.id"
-            class="region-card glass-card p-6 rounded-2xl border border-white/5 relative overflow-hidden">
-            <div class="flex justify-between items-start mb-6">
+            class="glass-card p-6 hover:border-blue-500/20 hover:shadow-[0_8px_30px_rgba(59,130,246,0.07)] transition-all duration-300 group">
+            <div class="flex justify-between items-start mb-5">
                <div>
-                  <h3 class="text-xs font-black uppercase opacity-40 mb-1">{{ region.name }}</h3>
-                  <p class="text-lg font-black text-white">{{ region.status }}</p>
+                  <p class="text-[10px] font-bold text-white/25 uppercase tracking-widest mb-1">{{ region.name }}</p>
+                  <p class="text-base font-bold text-white">{{ region.status }}</p>
                </div>
-               <connection-point :class="region.load > 70 ? 'text-orange-500' : 'text-blue-400'" />
-            </div>
-
-            <div class="stats-row flex gap-4">
-               <div class="stat">
-                  <p class="text-[8px] font-black opacity-20 uppercase">Latency</p>
-                  <p class="text-xs font-mono font-bold">{{ region.latency }}ms</p>
-               </div>
-               <div class="stat">
-                  <p class="text-[8px] font-black opacity-20 uppercase">Load</p>
-                  <p class="text-xs font-mono font-bold">{{ region.load }}%</p>
-               </div>
-               <div class="stat">
-                  <p class="text-[8px] font-black opacity-20 uppercase">Nodes</p>
-                  <p class="text-xs font-mono font-bold text-blue-400">{{ region.nodes || 0 }}</p>
+               <div class="w-9 h-9 rounded-xl border flex items-center justify-center transition-colors"
+                  :class="region.load > 70
+                     ? 'bg-orange-500/10 border-orange-500/20 text-orange-400'
+                     : 'bg-blue-500/10 border-blue-500/20 text-blue-400'">
+                  <connection-point size="18" />
                </div>
             </div>
 
-            <div class="mt-6 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-               <div class="h-full bg-blue-500" :style="{ width: region.load + '%' }"></div>
+            <div class="flex gap-6 mb-5">
+               <div>
+                  <p class="text-[9px] font-bold text-white/20 uppercase tracking-widest mb-1">Latency</p>
+                  <p class="text-sm font-mono font-bold text-white/70">{{ region.latency }}ms</p>
+               </div>
+               <div>
+                  <p class="text-[9px] font-bold text-white/20 uppercase tracking-widest mb-1">Load</p>
+                  <p class="text-sm font-mono font-bold"
+                     :class="region.load > 70 ? 'text-orange-400' : 'text-white/70'">{{ region.load }}%</p>
+               </div>
+               <div>
+                  <p class="text-[9px] font-bold text-white/20 uppercase tracking-widest mb-1">Nodes</p>
+                  <p class="text-sm font-mono font-bold text-blue-400">{{ region.nodes || 0 }}</p>
+               </div>
             </div>
+
+            <!-- Load bar -->
+            <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+               <div class="h-full rounded-full transition-all duration-500"
+                  :class="region.load > 70 ? 'bg-gradient-to-r from-orange-500 to-red-500' : 'bg-gradient-to-r from-blue-500 to-indigo-500'"
+                  :style="{ width: region.load + '%' }" />
+            </div>
+         </div>
+
+         <!-- Empty regions placeholder -->
+         <div v-if="regions.length === 0" class="col-span-3 glass-card p-12 flex flex-col items-center justify-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+               <connection-point size="22" class="text-blue-400/40" />
+            </div>
+            <p class="text-xs text-white/20 uppercase tracking-widest font-bold">No regions reporting</p>
          </div>
       </div>
 
       <!-- Cluster Management -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-         <section class="glass-card p-8 rounded-3xl border border-white/5">
-            <div class="flex justify-between items-center mb-8">
-               <h2 class="text-xs font-black uppercase tracking-[0.2em] opacity-40">Database Cluster</h2>
-               <button class="text-[10px] font-black text-blue-400 hover:underline">OPTIMIZE INDEXES</button>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
+
+         <!-- Database Cluster -->
+         <section class="glass-card p-6">
+            <div class="flex justify-between items-center mb-6">
+               <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                     <database-network size="16" class="text-blue-400" />
+                  </div>
+                  <h2 class="text-xs font-bold text-white/40 uppercase tracking-widest">Database Cluster</h2>
+               </div>
+               <button
+                  class="text-[10px] font-bold text-blue-400 hover:text-blue-300 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 transition-all hover:bg-blue-500/15 uppercase tracking-wider">
+                  Optimize Indexes
+               </button>
             </div>
 
-            <div class="nodes-list space-y-4">
+            <div class="space-y-3">
                <div v-for="node in dbNodes" :key="node.id"
-                  class="node-item p-4 bg-white/5 rounded-xl border border-white/5 flex justify-between items-center">
-                  <div class="flex items-center gap-4">
-                     <div class="w-8 h-8 rounded-lg bg-black flex items-center justify-center">
-                        <database-network size="16" class="opacity-40" />
+                  class="p-4 rounded-xl bg-white/3 border border-white/5 flex justify-between items-center hover:border-white/10 hover:bg-white/5 transition-all group">
+                  <div class="flex items-center gap-3">
+                     <div class="w-9 h-9 rounded-xl bg-black/40 border border-white/5 flex items-center justify-center">
+                        <database-network size="15" class="text-white/25 group-hover:text-blue-400/60 transition-colors" />
                      </div>
                      <div>
-                        <p class="text-[10px] font-black">{{ node.host }}</p>
-                        <span class="text-[8px] px-2 py-0.5 rounded bg-white/10 uppercase">{{ node.role }}</span>
+                        <p class="text-[11px] font-bold text-white/80 font-mono">{{ node.host }}</p>
+                        <span class="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider"
+                           :class="node.role === 'WRITER'
+                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                              : 'bg-white/5 text-white/30 border border-white/10'">
+                           {{ node.role }}
+                        </span>
                      </div>
                   </div>
-                  <div class="flex items-center gap-6">
+                  <div class="flex items-center gap-4">
                      <div class="text-right">
-                        <p class="text-[10px] font-mono">{{ node.uptime }}</p>
-                        <p class="text-[8px] opacity-20 uppercase">Uptime</p>
+                        <p class="text-[11px] font-mono text-white/60">{{ node.uptime }}</p>
+                        <p class="text-[9px] text-white/20 uppercase tracking-wide">Uptime</p>
                      </div>
-                     <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                     <div class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
                   </div>
                </div>
             </div>
          </section>
 
-         <section class="glass-card p-8 rounded-3xl border border-white/5">
-            <div class="flex justify-between items-center mb-8">
-               <h2 class="text-xs font-black uppercase tracking-[0.2em] opacity-40">Failover Orchestration</h2>
-               <span
-                  class="text-[8px] px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 font-bold uppercase border border-orange-500/20">Standby
-                  Ready</span>
+         <!-- Failover Orchestration -->
+         <section class="glass-card p-6">
+            <div class="flex justify-between items-center mb-5">
+               <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                     <connection-point size="16" class="text-indigo-400" />
+                  </div>
+                  <h2 class="text-xs font-bold text-white/40 uppercase tracking-widest">Failover Orchestration</h2>
+               </div>
+               <span class="text-[9px] px-3 py-1 rounded-full bg-green-500/10 text-green-400 font-bold uppercase border border-green-500/20 tracking-wider">
+                  Standby Ready
+               </span>
             </div>
 
-            <p class="text-xs text-gray-400 mb-8 leading-relaxed">Automated disaster recovery is active. If the Primary
-               Region (Asia-East-1) fails, traffic is automatically re-routed to US-West-2 within 45 seconds.</p>
+            <p class="text-[12px] text-white/35 mb-6 leading-relaxed">
+               Automated disaster recovery is active. If the Primary Region (Asia-East-1) fails,
+               traffic is automatically re-routed to US-West-2 within 45 seconds.
+            </p>
 
-            <div class="flex gap-4">
-               <button class="primary-btn flex-1 py-4 text-[10px] font-black" @click="triggerManualFailover">AI
-                  REDISTRIBUTE</button>
-               <button class="secondary-btn flex-1 py-4 text-[10px] font-black" @click="syncBackups">VALIDATE
-                  BACKUPS</button>
+            <div class="flex gap-3 mb-8">
+               <button
+                  class="flex-1 py-3 text-[11px] font-bold uppercase tracking-wider rounded-xl bg-blue-600 text-white border-none shadow-[0_4px_15px_rgba(59,130,246,0.25)] hover:brightness-110 hover:-translate-y-0.5 transition-all active:translate-y-0"
+                  @click="triggerManualFailover">
+                  AI Redistribute
+               </button>
+               <button
+                  class="flex-1 py-3 text-[11px] font-bold uppercase tracking-wider rounded-xl bg-white/5 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white/80 transition-all"
+                  @click="syncBackups">
+                  Validate Backups
+               </button>
             </div>
 
-            <div class="mt-10 pt-10 border-t border-white/5">
-               <h4 class="text-[8px] font-black opacity-30 uppercase mb-4">Live Heartbeat Log</h4>
-               <div class="log-stream h-32 overflow-y-auto font-mono text-[9px] text-gray-500 space-y-1">
-                  <p v-for="l in heartbeats" :key="l.t">[{{ l.t }}] INFRA_PULSE: Region {{ l.region }} healthy. Load: {{
-                     l.load }}%</p>
+            <div class="pt-5 border-t border-white/5">
+               <div class="flex items-center gap-2 mb-3">
+                  <div class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <h4 class="text-[9px] font-bold text-white/25 uppercase tracking-widest">Live Heartbeat Log</h4>
+               </div>
+               <div class="log-stream h-32 overflow-y-auto font-mono text-[10px] text-white/20 space-y-1 pr-1">
+                  <p v-for="l in heartbeats" :key="l.t" class="leading-relaxed">
+                     <span class="text-white/15">[{{ l.t }}]</span>
+                     <span class="text-green-400/60 ml-1">PULSE</span>
+                     <span class="text-white/30 ml-1">{{ l.region }}</span>
+                     <span class="text-white/15 ml-1">— load: </span>
+                     <span :class="l.load > 70 ? 'text-orange-400/70' : 'text-blue-400/60'">{{ l.load }}%</span>
+                  </p>
+                  <p v-if="heartbeats.length === 0" class="text-white/10 italic">Waiting for heartbeat data...</p>
                </div>
             </div>
          </section>
@@ -141,12 +203,10 @@ const fetchMetrics = async () => {
 
       if (heartbeatData) {
          regions.value = heartbeatData;
-         // Add to log
          const now = new Date().toLocaleTimeString();
          heartbeatData.forEach((r: any) => {
             heartbeats.value.unshift({ t: now, region: r.name, load: r.load });
          });
-         // Keep last 50
          if (heartbeats.value.length > 50) heartbeats.value = heartbeats.value.slice(0, 50);
       }
    } catch (e) {
@@ -156,7 +216,7 @@ const fetchMetrics = async () => {
 
 onMounted(() => {
    fetchMetrics();
-   pollInterval = setInterval(fetchMetrics, 30000); // 30s
+   pollInterval = setInterval(fetchMetrics, 30000);
 });
 
 onUnmounted(() => {
@@ -174,12 +234,25 @@ const syncBackups = () => {
 
 <style lang="scss" scoped>
 .infra-health {
-   .region-card:hover {
-      background: rgba(59, 130, 246, 0.03);
-   }
+   background: #0a0a0c;
+   color: #e5e5e5;
+   font-family: 'Inter', sans-serif;
+}
 
-   .log-stream::-webkit-scrollbar {
-      width: 4px;
+.glass-card {
+   background: rgba(15, 15, 18, 0.6);
+   border: 1px solid rgba(255, 255, 255, 0.06);
+   border-radius: 20px;
+   backdrop-filter: blur(30px) saturate(180%);
+   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.log-stream {
+   &::-webkit-scrollbar { width: 3px; }
+   &::-webkit-scrollbar-track { background: transparent; }
+   &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
    }
 }
 </style>
