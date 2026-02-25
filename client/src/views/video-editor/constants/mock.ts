@@ -124,7 +124,7 @@ export const objective: string = "CTX";
 
 export const brand: EditorBrand = {
   brand_name: "Zewar",
-  brand_logo: "https://d273i1jagfl543.cloudfront.net/testing/media/business/MI6ykjD-_Sxp6RqpodVvJ.png",
+  brand_logo: "/ai/upscale.png", // Using a local asset as placeholder
   brand_description: "Zewar | Unique As You. Dime Free Jewellery at Unbeatable Price.",
   primary_colors: ["#FFFDFC", "#050807", "#666666"],
   secondary_colors: [],
@@ -142,15 +142,15 @@ export const product: EditorProduct = {
   images: [
     {
       id: 2519,
-      url: "https://d273i1jagfl543.cloudfront.net/testing/media/product/f4BPonMWP9dV6sw-lLQcu.png",
+      url: "/ai/upscale.png",
     },
     {
       id: 4092,
-      url: "https://d273i1jagfl543.cloudfront.net/testing/media/product/d94d72e7-47af-49c3-86b2-a9c3c8a8cca2",
+      url: "/ai/upscale.png",
     },
     {
       id: 4093,
-      url: "https://d273i1jagfl543.cloudfront.net/testing/media/product/7ae5bbeb-9e00-44f1-a9f5-3c5bfa5a6a0b",
+      url: "/ai/upscale.png",
     },
   ],
 };

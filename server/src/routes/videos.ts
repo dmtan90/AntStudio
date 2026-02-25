@@ -9,7 +9,8 @@ import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import { clippingEngine } from '../services/ai/ClippingEngine.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const uploadDir = path.join(__dirname, '../../tmp/recordings');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 

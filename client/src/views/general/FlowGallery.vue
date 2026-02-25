@@ -59,7 +59,7 @@
         </button>
       </div>
       <div class="disclaimer">
-        Disclaimer: These films were created with AntFlow alongside other tools and techniques.
+        Disclaimer: These films were created with AntStudio alongside other tools and techniques.
       </div>
     </footer>
   </div>

@@ -2,7 +2,7 @@
  * CapCutToFabricParser
  * 
  * This utility converts CapCut's internal template JSON (tracks/clips/materials)
- * into a Fabric.js compatible JSON structure for AntFlow.
+ * into a Fabric.js compatible JSON structure for AntStudio.
  */
 
 export interface CapCutTimeline {
@@ -254,7 +254,7 @@ export class CapCutToFabricParser {
     }
 
     /**
-     * Extract clips into the AntFlow block format
+     * Extract clips into the AntStudio block format
      */
     extractBlocks(capcutData: any): any[] {
         const blocks: any[] = [];

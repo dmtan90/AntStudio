@@ -47,7 +47,7 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 			);
-			name = AntFlowMobile;
+			name = AntStudioMobile;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
@@ -117,7 +117,7 @@
 			dependencies = (
 			);
 			name = AntFlowMobile;
-			productName = AntFlowMobile;
+			productName = AntStudioMobile;
 			productReference = 13B07F961A680F5B00A75B9A /* AntFlowMobile.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -272,7 +272,7 @@
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = AntFlowMobile;
+				PRODUCT_NAME = AntStudioMobile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";

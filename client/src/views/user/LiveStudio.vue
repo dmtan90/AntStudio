@@ -2826,7 +2826,7 @@ onMounted(async () => {
          
          if (studioStore.liveProducts.length === 0) {
             studioStore.liveProducts = [
-               { id: 'p1', name: 'AntFlow Ultra Pro', price: 299, image: '/bg/photo-1590658268037-6bf12165a8df.jpg', stock: 50 },
+               { id: 'p1', name: 'AntStudio Ultra Pro', price: 299, image: '/bg/photo-1590658268037-6bf12165a8df.jpg', stock: 50 },
                { id: 'p2', name: 'Neural Light Ring', price: 79, image: '/bg/photo-1598488035139-bdbb2231ce04.jpg', stock: 12 },
                { id: 'p3', name: 'Studio Box', price: 120, image: '/bg/photo-1590602847861-f357a9332bbc.jpg', stock: 8 }
             ];
@@ -2985,13 +2985,13 @@ const backgrounds = computed(() => studioStore.backgroundAssets);
 
 <style lang="scss" scoped>
 .live-studio {
-   width: 100vw;
+   background: #050505;
+   color: #fff;
    height: 100vh;
-   background: #080808;
    display: flex;
    flex-direction: column;
-   color: #fff;
    overflow: hidden;
+   font-family: 'Inter', sans-serif;
 }
 
 .studio-main {
@@ -2999,11 +2999,14 @@ const backgrounds = computed(() => studioStore.backgroundAssets);
    display: flex;
    overflow: hidden;
    position: relative;
+   padding: 12px;
+   gap: 12px;
 
    @media (max-width: 768px) {
       flex-direction: column;
       overflow-y: auto;
       overflow-x: hidden;
+      padding: 0;
    }
 }
 
@@ -3011,69 +3014,76 @@ const backgrounds = computed(() => studioStore.backgroundAssets);
    width: 100%;
    height: 100%;
    object-fit: contain;
-   border-radius: 20px;
+   border-radius: 2rem;
 }
 
 /* Studio Global Elements */
 :deep(.glass-dark) {
-   background: rgba(10, 10, 10, 0.8);
-   backdrop-filter: blur(20px);
-   -webkit-backdrop-filter: blur(20px);
-   border: 1px solid rgba(255, 255, 255, 0.05);
+   background: rgba(13, 13, 13, 0.7);
+   backdrop-filter: blur(24px) saturate(180%);
+   -webkit-backdrop-filter: blur(24px) saturate(180%);
+   border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 1.5rem;
 }
 
 :deep(.side-rail) {
-   width: 72px;
+   width: 80px;
    display: flex;
    flex-direction: column;
    align-items: center;
-   padding: 16px 0;
-   gap: 8px;
-   border-right: 1px solid rgba(255, 255, 255, 0.05);
+   padding: 20px 0;
+   gap: 12px;
    z-index: 60;
+   background: rgba(10, 10, 10, 0.4);
+   backdrop-filter: blur(20px);
+   border: 1px solid rgba(255, 255, 255, 0.05);
+   border-radius: 1.5rem;
 
    .rail-item {
-      width: 56px;
-      height: 56px;
+      width: 60px;
+      height: 60px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      border-radius: 12px;
+      gap: 6px;
+      border-radius: 1rem;
       cursor: pointer;
-      transition: all 0.2s;
-      color: rgba(255, 255, 255, 0.4);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: rgba(255, 255, 255, 0.3);
+      border: 1px solid transparent;
 
       &:hover {
          background: rgba(255, 255, 255, 0.05);
          color: #fff;
+         transform: translateY(-2px);
       }
 
       &.active {
-         background: rgba(59, 130, 246, 0.1);
+         background: rgba(59, 130, 246, 0.15);
          color: #3b82f6;
-         border: 1px solid rgba(59, 130, 246, 0.2);
+         border-color: rgba(59, 130, 246, 0.3);
+         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       }
 
       .label {
-         font-size: 8px;
+         font-size: 9px;
          font-weight: 900;
          text-transform: uppercase;
-         letter-spacing: 0.5px;
+         letter-spacing: 0.1em;
       }
    }
 }
 
 .effects-drawer {
    position: absolute;
-   top: 0;
-   left: 72px;
-   bottom: 0;
+   top: 12px;
+   left: 104px;
+   bottom: 12px;
    width: 320px;
    z-index: 50;
-   border-right: 1px solid rgba(255, 255, 255, 0.05);
    padding: 0;
+   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 
    @media (max-width: 768px) {
       position: fixed;
@@ -3082,9 +3092,11 @@ const backgrounds = computed(() => studioStore.backgroundAssets);
       width: 100%;
       height: 100%;
       transform: translateX(-100%);
-      transition: transform 0.3s ease-in-out;
-      background: #080808;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: #050505;
       z-index: 100;
+      bottom: 0;
+      border-radius: 0;
 
       &.open {
          transform: translateX(0);
@@ -3095,14 +3107,15 @@ const backgrounds = computed(() => studioStore.backgroundAssets);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 20px;
+      padding: 20px 24px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
       .drawer-title {
-         font-size: 10px;
-         font-weight: 900;
+         font-size: 11px;
+         font-weight: 950;
          text-transform: uppercase;
-         letter-spacing: 2px;
+         letter-spacing: 0.2em;
+         color: rgba(255, 255, 255, 0.5);
       }
    }
 

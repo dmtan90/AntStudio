@@ -40,7 +40,7 @@ export class WebhookService {
             await axios.post(subscription.url, body, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'User-Agent': 'AntFlow-Webhook-Engine/1.0',
+                    'User-Agent': 'AntStudio-Webhook-Engine/1.0',
                     'x-antflow-signature': signature,
                     'x-antflow-event': 'true'
                 },

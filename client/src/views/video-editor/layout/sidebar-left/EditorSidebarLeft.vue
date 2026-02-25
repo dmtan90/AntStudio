@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch, ref } from 'vue';
 
-import { CarouselVideo as Clapperboard, Play, Application as Grid2X2, ImageFiles as Image, Layers, Music, Scale as Scaling, Text as Type, Upload, VideoFile as Video, ChartLineArea as ChartArea, Robot as Bot } from '@icon-park/vue-next';
+import { CarouselVideo as Clapperboard, Play, Application as Grid2X2, ImageFiles as Image, Layers, Music, Scale as Scaling, Text as Type, Upload, VideoFile as Video, ChartLineArea as ChartArea, Robot as Bot, Record as RecordIcon, MovieBoard } from '@icon-park/vue-next';
 
 import { ElButton, ElDrawer } from 'element-plus';
 
@@ -27,10 +27,12 @@ import PromptMenu from './components/prompt.vue';
 import AIMenu from './components/ai.vue';
 import CloudMenu from './components/cloud.vue';
 import LayersMenu from './components/layers.vue';
+import RecorderMenu from './components/recorder.vue';
 
 const sidebarComponentMap: Record<string, any> = {
   scene: SceneMenu,
   template: TemplateMenu,
+  record: RecorderMenu,
   text: TextMenu,
   upload: UploadMenu,
   image: ImageMenu,
@@ -43,6 +45,7 @@ const sidebarComponentMap: Record<string, any> = {
   ai: AIMenu,
   cloud: CloudMenu,
   layers: LayersMenu,
+  recorder: RecorderMenu,
 };
 
 const editor = useEditorStore();
@@ -61,11 +64,11 @@ const items = computed(() => {
       label: "Template",
       value: "template",
     },
-    // {
-    //   icon: Bot,
-    //   label: "GPT",
-    //   value: "prompt",
-    // },
+    {
+      icon: RecordIcon,
+      label: "Record",
+      value: "record",
+    },
     {
       icon: Bot,
       label: "Magic",
@@ -112,11 +115,6 @@ const items = computed(() => {
       value: "cloud",
     },
     // {
-    //   icon: Bot,
-    //   label: "AI",
-    //   value: "prompt",
-    // },
-    // {
     //   icon: Scaling,
     //   label: "Formats",
     //   value: "formats",
@@ -124,14 +122,9 @@ const items = computed(() => {
   ];
 });
 
-const activeSidebarComponent = ref(null);
+const activeSidebarComponent = shallowRef(null);
 watch(sidebarLeft, (menu) => {
-  if (menu) {
-    activeSidebarComponent.value = shallowRef(sidebarComponentMap[menu]);
-  }
-  else {
-    activeSidebarComponent.value = null;
-  }
+  activeSidebarComponent.value = menu ? sidebarComponentMap[menu] : null;
 });
 
 const handleDrawerClose = () => {
@@ -155,7 +148,7 @@ const handleDrawerClose = () => {
       </button>
     </aside>
     <el-drawer :model-value="!!activeSidebarComponent" @update:model-value="handleDrawerClose" direction="ltr">
-      <component :is="activeSidebarComponent.value" v-if="activeSidebarComponent" />
+      <component :is="activeSidebarComponent" v-if="activeSidebarComponent" />
     </el-drawer>
   </template>
 
@@ -178,10 +171,11 @@ const handleDrawerClose = () => {
     </aside>
     <AnimatePresence>
       <Motion layout :style="{ width: activeSidebarComponent ? (leftSidebarWidth + 'px') : '0px' }"
+        class="h-[calc(100vh-60px)]"
         :transition="{ default: { ease: 'easeInOut' }, layout: { duration: 0.3 } }">
         <aside v-if="activeSidebarComponent" :style="{ width: leftSidebarWidth + 'px' }"
           class="overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-3xl border-r border-white/5 shrink-0 h-full relative z-40 shadow-2xl">
-          <component :is="activeSidebarComponent.value" :key="editor.sidebarLeft" />
+          <component :is="activeSidebarComponent" :key="editor.sidebarLeft" />
         </aside>
       </Motion>
     </AnimatePresence>

@@ -1,6 +1,5 @@
 import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+import { config } from '../../utils/config.js';
 import path from 'path';
 import fs from 'fs';
 import { Project } from '../../models/Project.js';
@@ -9,9 +8,9 @@ import { socialSyndicationService } from '../SocialSyndicationService.js';
 import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { uploadToS3, deleteFromS3 } from '../../utils/s3.js';
 
-// FFmpeg setup - use portable installer
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-ffmpeg.setFfprobePath(ffprobeInstaller.path);
+// FFmpeg setup - use portable installer from config
+ffmpeg.setFfmpegPath(config.ffmpegPath);
+ffmpeg.setFfprobePath(config.ffprobePath);
 
 /**
  * Service for autonomous short-form clipping of live sessions.

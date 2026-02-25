@@ -309,7 +309,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { toast } from 'vue-sonner';
 import { useVTuberStore } from '@/stores/vtuber';
 import { useMediaStore } from '@/stores/media';
@@ -964,7 +964,19 @@ const onClose = () => {
         isPlayingMusic.value = false;
         if (musicTimeInterval) clearInterval(musicTimeInterval);
     }
+
+    if (enableTracking.value) {
+        enableTracking.value = false;
+        if (trackingInterval) clearInterval(trackingInterval);
+        stopWebcam();
+        trackingData.value = null;
+    }
+    stopAnalysis();
 };
+
+onUnmounted(() => {
+    onClose();
+});
 </script>
 
 <script lang="ts">

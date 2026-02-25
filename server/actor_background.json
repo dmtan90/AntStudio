@@ -1,0 +1,351 @@
+{
+  "character_lock": {
+    "CHAR_1": {
+      "char_id": "CHAR_1",
+      "name": "Ông Chính",
+      "species": "Human",
+      "gender": "Male",
+      "age": "Mid-40s",
+      "voice_personality": "Deep, authoritative yet trembling with underlying worry",
+      "body_build": "Tall, authoritative build, commanding presence",
+      "face_shape": "Square jawline with high cheekbones and a furrowed brow",
+      "hair": "Black, neatly combed back with a slight sheen. 3D rendered surface with smooth shading, PBR materials",
+      "skin_or_fur_color": "Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials",
+      "signature_feature": "Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving",
+      "outfit_top": "High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen",
+      "outfit_bottom": "Matching black silk loose-fitting trousers",
+      "helmet_or_hat": "None (bare head)",
+      "shoes_or_footwear": "Traditional black cloth slippers",
+      "props": "Wooden prayer beads (fixed accessory)",
+      "body_metrics": "Stiff posture reflecting high social status and internal tension",
+      "emotional_state": null,
+      "action": null,
+      "position": null,
+      "facing": null,
+      "pose": null,
+      "expression": null,
+      "interaction": null,
+      "color_spec": {
+        "primary_body": {
+          "hex": "#C68642",
+          "natural": "weathered bronze tan",
+          "coverage": "face, neck, and hands"
+        },
+        "clothing_primary": {
+          "hex": "#3E2723",
+          "natural": "dark ebony silk",
+          "coverage": "traditional black silk tunic (áo dài)"
+        },
+        "clothing_accent": {
+          "hex": "#000000",
+          "natural": "shadow black",
+          "coverage": "silk trousers"
+        }
+      },
+      "prohibited_items": null,
+      "language_profile": null,
+      "tts_config": {
+        "voice_id": "Alnilam",
+        "base_speaking_rate": 1.0,
+        "base_pitch": -2.5,
+        "style_category": "Professional"
+      }
+    },
+    "CHAR_2": {
+      "char_id": "CHAR_2",
+      "name": "Bà Chính",
+      "species": "Human",
+      "gender": "Female",
+      "age": "Early 40s",
+      "voice_personality": "Soft, whispering, filled with grief",
+      "body_build": "Slender, fragile posture, appearing physically weakened by sorrow",
+      "face_shape": "Thin, oval face with high forehead and sunken cheeks",
+      "hair": "Long black hair, tied in a low, neat bun. 3D rendered surface with smooth shading",
+      "skin_or_fur_color": "Pale, wan complexion. 3D rendered surface with smooth shading, PBR materials",
+      "signature_feature": "Deep, sorrowful expression with red-rimmed eyes from crying; always clutching a white handkerchief",
+      "outfit_top": "Elegant but muted grey silk traditional tunic with simple silver embroidery",
+      "outfit_bottom": "White silk trousers",
+      "helmet_or_hat": "Silver hairpin with a small lotus motif",
+      "shoes_or_footwear": "Embroidered grey silk slippers",
+      "props": "White silk handkerchief (fixed accessory)",
+      "body_metrics": "Slightly hunched shoulders, slow and deliberate movements",
+      "emotional_state": null,
+      "action": null,
+      "position": null,
+      "facing": null,
+      "pose": null,
+      "expression": null,
+      "interaction": null,
+      "color_spec": {
+        "primary_body": {
+          "hex": "#F5F5DC",
+          "natural": "pale alabaster",
+          "coverage": "all visible skin"
+        },
+        "clothing_primary": {
+          "hex": "#D3D3D3",
+          "natural": "muted slate grey",
+          "coverage": "traditional silk tunic"
+        },
+        "clothing_accent": {
+          "hex": "#C0C0C0",
+          "natural": "silver",
+          "coverage": "hairpin and embroidery"
+        }
+      },
+      "prohibited_items": null,
+      "language_profile": null,
+      "tts_config": {
+        "voice_id": "Vindemiatrix",
+        "base_speaking_rate": 0.9,
+        "base_pitch": -1.5,
+        "style_category": "Warm"
+      }
+    },
+    "CHAR_3": {
+      "char_id": "CHAR_3",
+      "name": "Bà Nhỏ",
+      "species": "Human",
+      "gender": "Female",
+      "age": "Early 20s",
+      "voice_personality": "Clear, high-pitched, often laced with sarcasm",
+      "body_build": "Petite and youthful, graceful and light on her feet",
+      "face_shape": "Heart-shaped face with a sharp chin and full lips",
+      "hair": "Long, flowing black hair, often decorated with fresh jasmine flowers",
+      "skin_or_fur_color": "Fair skin, glowing and healthy. 3D rendered surface with smooth shading, PBR materials",
+      "signature_feature": "A slightly mocking, confident smile; sharp, ambitious eyes",
+      "outfit_top": "Vibrant pink silk bà ba outfit with a form-fitting cut",
+      "outfit_bottom": "Wide-leg white silk trousers",
+      "helmet_or_hat": "Small white jasmine flowers tucked behind her ear",
+      "shoes_or_footwear": "Beaded wooden clogs (guốc mộc)",
+      "props": "None in base character lock",
+      "body_metrics": "Fluid, confident movements, often swaying slightly",
+      "emotional_state": null,
+      "action": null,
+      "position": null,
+      "facing": null,
+      "pose": null,
+      "expression": null,
+      "interaction": null,
+      "color_spec": {
+        "primary_body": {
+          "hex": "#FFE4C4",
+          "natural": "creamy peach",
+          "coverage": "face and limbs"
+        },
+        "clothing_primary": {
+          "hex": "#FFC0CB",
+          "natural": "vibrant lotus pink",
+          "coverage": "silk bà ba outfit"
+        },
+        "clothing_accent": {
+          "hex": "#FFFFFF",
+          "natural": "pure white",
+          "coverage": "silk trousers"
+        }
+      },
+      "prohibited_items": null,
+      "language_profile": null,
+      "tts_config": {
+        "voice_id": "Autonoe",
+        "base_speaking_rate": 1.15,
+        "base_pitch": 2.0,
+        "style_category": "Energetic"
+      }
+    },
+    "CHAR_4": {
+      "char_id": "CHAR_4",
+      "name": "Bà Cố",
+      "species": "Human",
+      "gender": "Female",
+      "age": "Late 50s",
+      "voice_personality": "Raspy, low, sounding like cracking dry wood",
+      "body_build": "Thin, wiry frame with surprisingly strong, steady hands",
+      "face_shape": "Sharp, angular face with deep lines of hardship and intensity",
+      "hair": "Long and wild, gray-streaked black hair. Often hidden under a brown turban",
+      "skin_or_fur_color": "Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials",
+      "signature_feature": "Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban",
+      "outfit_top": "Rough-spun brown male carpenter’s tunic, worn and stained with wood dust",
+      "outfit_bottom": "Matching rough-spun brown trousers tied at the waist",
+      "helmet_or_hat": "A simple dark brown fabric turban (khăn đóng) wrapped tightly",
+      "shoes_or_footwear": "Barefoot or simple straw sandals",
+      "props": "Small woodworking knife tucked into a belt (fixed accessory)",
+      "body_metrics": "Low center of gravity, moves with a silent, predatory grace",
+      "emotional_state": null,
+      "action": null,
+      "position": null,
+      "facing": null,
+      "pose": null,
+      "expression": null,
+      "interaction": null,
+      "color_spec": {
+        "primary_body": {
+          "hex": "#5D4037",
+          "natural": "burnt sienna tan",
+          "coverage": "face and calloused hands"
+        },
+        "clothing_primary": {
+          "hex": "#3E2723",
+          "natural": "earthy chocolate brown",
+          "coverage": "carpenter's tunic and trousers"
+        },
+        "clothing_accent": {
+          "hex": "#8B0000",
+          "natural": "deep crimson",
+          "coverage": "hidden stains on clothing"
+        }
+      },
+      "prohibited_items": null,
+      "language_profile": null,
+      "tts_config": {
+        "voice_id": "Gacrux",
+        "base_speaking_rate": 1.0,
+        "base_pitch": -2.5,
+        "style_category": "Professional"
+      }
+    },
+    "CHAR_5": {
+      "char_id": "CHAR_5",
+      "name": "Ông Nội",
+      "species": "Human",
+      "gender": "Male",
+      "age": "Elderly (70+)",
+      "voice_personality": "Gravelly, slow, otherworldly, and calm",
+      "body_build": "Aged and slightly hunched, frail but serene",
+      "face_shape": "Deeply wrinkled, kind face with a wispy white beard",
+      "hair": "Thin, long white hair and a sparse white goatee",
+      "skin_or_fur_color": "Wrinkled, pale, paper-thin skin. 3D rendered surface with smooth shading, PBR materials",
+      "signature_feature": "Clouded, milky white blind eyes that seem to gaze into another world",
+      "outfit_top": "Simple, clean white cotton bà ba shirt",
+      "outfit_bottom": "Matching white cotton trousers",
+      "helmet_or_hat": "None (bare head)",
+      "shoes_or_footwear": "Simple black cloth slippers",
+      "props": "None in base character lock",
+      "body_metrics": "Fragile, slow-motion movements, often sitting perfectly still",
+      "emotional_state": null,
+      "action": null,
+      "position": null,
+      "facing": null,
+      "pose": null,
+      "expression": null,
+      "interaction": null,
+      "color_spec": {
+        "primary_body": {
+          "hex": "#FDF5E6",
+          "natural": "aged parchment white",
+          "coverage": "all visible skin"
+        },
+        "clothing_primary": {
+          "hex": "#FFFFFF",
+          "natural": "simple cotton white",
+          "coverage": "bà ba outfit"
+        },
+        "secondary_accent": {
+          "hex": "#E0E0E0",
+          "natural": "milky white",
+          "coverage": "blind eyes"
+        }
+      },
+      "prohibited_items": null,
+      "language_profile": null,
+      "tts_config": {
+        "voice_id": "Algenib",
+        "base_speaking_rate": 1.0,
+        "base_pitch": -2.5,
+        "style_category": "Professional"
+      }
+    },
+    "CHAR_6": {
+      "char_id": "CHAR_6",
+      "name": "Kỳ",
+      "species": "Human",
+      "gender": "Male",
+      "age": "Mid-20s",
+      "voice_personality": "Clear, resonant, youthful, and determined",
+      "body_build": "Fit, modern build with an athletic posture",
+      "face_shape": "Square jaw, friendly features, and bright, curious eyes",
+      "hair": "Short, modern black hair, styled naturally",
+      "skin_or_fur_color": "Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials",
+      "signature_feature": "Always carrying either a modern smartphone or a weathered, old yellowed diary",
+      "outfit_top": "Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles",
+      "outfit_bottom": "Dark blue denim jeans with natural fade patterns",
+      "helmet_or_hat": "None (bare head)",
+      "shoes_or_footwear": "Modern brown leather casual shoes",
+      "props": "None in base character lock (diary/phone used per scene)",
+      "body_metrics": "Energetic, purposeful walk and expressive hand gestures",
+      "emotional_state": null,
+      "action": null,
+      "position": null,
+      "facing": null,
+      "pose": null,
+      "expression": null,
+      "interaction": null,
+      "color_spec": {
+        "primary_body": {
+          "hex": "#D2B48C",
+          "natural": "warm golden tan",
+          "coverage": "face and arms"
+        },
+        "clothing_primary": {
+          "hex": "#FFFFFF",
+          "natural": "bright crisp white",
+          "coverage": "modern t-shirt"
+        },
+        "clothing_accent": {
+          "hex": "#1E3A5F",
+          "natural": "denim blue",
+          "coverage": "jeans"
+        }
+      },
+      "prohibited_items": null,
+      "language_profile": null,
+      "tts_config": {
+        "voice_id": "Iapetus",
+        "base_speaking_rate": 1.05,
+        "base_pitch": 0.0,
+        "style_category": "Casual"
+      }
+    }
+  },
+  "background_lock": {
+    "BACKGROUND_1": {
+      "background_id": "BACKGROUND_1",
+      "location_type": "The Grand Mekong Mansion (1920s)",
+      "key_objects": "Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock",
+      "spatial_layout": "Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background",
+      "atmosphere": "Opulent yet eerie, with long shadows cast by the sunset",
+      "visual_style": "Vintage Retro Cinematic 3D with high-detail wood textures and water reflections",
+      "lighting": "Golden hour sunset, high contrast with long, dramatic shadows"
+    },
+    "BACKGROUND_2": {
+      "background_id": "BACKGROUND_2",
+      "location_type": "Ancestral Altar Room",
+      "key_objects": "Dark wood altar, five small memorial tablets, incense burners, flickering candles, rhythmic wooden bell (mõ), The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)",
+      "spatial_layout": "Cramped, dim interior room with the altar as the central focus",
+      "atmosphere": "Mournful, heavy with incense smoke, spiritually charged",
+      "visual_style": "3D CGI rendering with octane-style lighting and volumetric smoke",
+      "lighting": "Flickering orange candlelight against deep dark ebony furniture shadows"
+    },
+    "BACKGROUND_3": {
+      "background_id": "BACKGROUND_3",
+      "location_type": "The Reed Banks (Bờ sậy)",
+      "key_objects": "Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)",
+      "spatial_layout": "Isolation within a dense marshland; a small clearing for the hut near the water's edge",
+      "atmosphere": "Vengeful, secretive, humid, and wild",
+      "visual_style": "Naturalistic 3D with realistic foliage and murky, silt-heavy river water",
+      "lighting": "Dappled moonlight or harsh, direct midday sun depending on time"
+    },
+    "BACKGROUND_4": {
+      "background_id": "BACKGROUND_4",
+      "location_type": "Modern Descendant's Home",
+      "key_objects": "Polished wooden platform (phản), modern furniture, dusty wooden chest, old handwritten diary, framed family photos",
+      "spatial_layout": "Comfortable, airy living room with a mix of traditional and modern Vietnamese elements",
+      "atmosphere": "Quiet, reflective, searching for truth",
+      "visual_style": "Clean, high-detail 3D animation with soft, naturalistic lighting",
+      "lighting": "Soft morning sunlight through open windows"
+    }
+  },
+  "narrator_lock": {},
+  "visual_style": "High-quality 3D CGI animation with a cinematic, vintage retro aesthetic. The style utilizes Physically Based Rendering (PBR) for materials like dark polished ebony wood, luxurious silk fabrics, and murky Mekong river water. For the 1920s segments, a sepia-toned, high-contrast palette is used to evoke a haunting, spiritual atmosphere with dramatic shadows. The modern segments feature a clean, bright, and naturalistic look with vibrant but soft lighting. Style reference: Pixar-level character detail combined with Studio Ghibli's environmental mood, applied to a realistic 3D cinematic context. Volumetric lighting and atmospheric smoke effects are used throughout to enhance the spiritual themes.",
+  "detected_language": "vi-VN"
+}

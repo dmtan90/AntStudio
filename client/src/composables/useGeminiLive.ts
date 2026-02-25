@@ -90,19 +90,21 @@ export function useGeminiLive() {
         manualDisconnect.value = false;
         lastConfig.value = config;
 
-        let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        let host = window.location.host;
+        // let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // let host = window.location.host;
+        let domain = window.location.origin;
+	    domain = domain.replace("https:", "wss:").replace("http:", "ws:");
         
         // If domain is explicitly set in UI store and it's different from current host
-        const uiStore = useUIStore();
-        if (uiStore.domain && !uiStore.domain.includes(host)) {
-            const domain = uiStore.domain.replace('https://', '').replace('http://', '');
-            host = domain.endsWith('/') ? domain.slice(0, -1) : domain;
-        }
+        // const uiStore = useUIStore();
+        // if (uiStore.domain && !uiStore.domain.includes(host)) {
+        //     const domain = uiStore.domain.replace('https://', '').replace('http://', '');
+        //     host = domain.endsWith('/') ? domain.slice(0, -1) : domain;
+        // }
 
         // Phase 87: Check for existing session ID to resume
         const storedSessionId = localStorage.getItem(`gemini_live_session_${config.archiveId}`);
-        const wsUrl = `${protocol}//${host}/api/live?archiveId=${config.archiveId}${config.projectId ? `&projectId=${config.projectId}` : ''}${config.token ? `&token=${config.token}` : ''}${config.isMaster ? `&isMaster=true` : ''}${storedSessionId ? `&resumeSessionId=${storedSessionId}` : ''}`;
+        const wsUrl = `${domain}/api/live?archiveId=${config.archiveId}${config.projectId ? `&projectId=${config.projectId}` : ''}${config.token ? `&token=${config.token}` : ''}${config.isMaster ? `&isMaster=true` : ''}${storedSessionId ? `&resumeSessionId=${storedSessionId}` : ''}`;
         
         console.log('[GeminiLive] Connecting to:', wsUrl);
         
@@ -746,6 +748,7 @@ export function useGeminiLive() {
         }
 
         stopMicrophone();
+        stopCamera();
         stopPlayback();
 
         if (ws.value) {

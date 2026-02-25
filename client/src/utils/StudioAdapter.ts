@@ -8,7 +8,7 @@ export interface StudioProject {
     title: string;
     description?: string;
     category?: string;
-    is_pubished: boolean;
+    is_published: boolean;
     aspectRatio?: string;
     storyboard?: {
         segments: Array<{
@@ -28,13 +28,19 @@ export interface StudioProject {
         s3Key?: string;
         volume?: number;
     }>;
-    advancedEditorState?: any;
+    pages?: any;
 }
 
 export function convertFlowToStudio(project: StudioProject): EditorTemplate {
-    if (project.advancedEditorState) {
-        // If we have a saved state, use it directly
-        return project.advancedEditorState as EditorTemplate;
+    if (project.pages) {
+        return {
+            id: project._id,
+            name: project.title,
+            description: project.description || '',
+            category: project.category || 'general',
+            is_published: project.is_published,
+            pages: project.pages as Array<EditorTemplatePage>
+        };
     }
 
     let width = project.aspectRatio === '9:16' ? 1080 : 1920;
@@ -167,7 +173,7 @@ export function convertFlowToStudio(project: StudioProject): EditorTemplate {
         name: project.title,
         description: project.description || '',
         category: 'general',
-        is_pubished: false,
+        is_published: false,
         pages: pages
     };
 }

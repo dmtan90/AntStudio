@@ -9,7 +9,8 @@
     "build:client": "pnpm --filter client build",
     "build:client-only": "pnpm --filter client build:only",
     "build:server": "pnpm --filter server build",
-    "install:all": "pnpm install"
+    "install:all": "pnpm install",
+    "build:standalone": "node server/scripts/build-standalone.cjs"
   },
   "dependencies": {
     "form-data": "^4.0.5"

@@ -450,6 +450,9 @@ export class CanvasAudio {
     const audio: EditorAudioElement = { id, buffer, url, timeline, name, duration, source, muted: false, playing: false, trim: 0, offset: 0, volume: 1, fadeIn: 0, fadeOut: 0, trimStart: 0, trimEnd: 0, visible: true, visualEnabled: false, visualType: 'bars', visualProps: {}, type: 'audio' };
     this.elements.push(audio);
 
+    // Trigger modified to ensure autosave
+    this._canvas.editor.onModified?.();
+
     //add visual audio object
     if (visual) {
       this.addAudioVisual(audio);

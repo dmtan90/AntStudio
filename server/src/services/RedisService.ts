@@ -3,7 +3,7 @@ import { systemLogger } from '../utils/systemLogger.js';
 import { NodeHeartbeat } from '../models/NodeHeartbeat.js';
 
 /**
- * Service to manage distributed state across the AntFlow cluster.
+ * Service to manage distributed state across the AntStudio cluster.
  */
 export class RedisService {
     private client: Redis | null = null;

@@ -91,7 +91,7 @@
        </div>
        <template #footer>
           <div class="flex justify-between items-center px-4 pb-4">
-             <div class="text-left text-[8px] font-black uppercase opacity-20">Secured via AntFlow Economy</div>
+             <div class="text-left text-[8px] font-black uppercase opacity-20">Secured via AntStudio Economy</div>
              <div class="flex gap-2">
                 <button class="secondary-btn text-[10px] px-6 py-2" @click="showPurchase = false">CANCEL</button>
                 <button class="primary-btn text-[10px] px-8 py-3" @click="processPurchase">CONFIRM & BUY</button>
@@ -116,7 +116,7 @@ const selectedAsset = ref<any>(null);
 const assets = ref([
  { id: 1, title: 'CYBERPUNK HUD PRO', type: 'overlay', price: 450, author: 'NeonVibe', rating: 4.8, isOfficial: true, previewUrl: '/bg/photo-1518770660439-4636190af475.jpg' },
  { id: 2, title: 'ZEN MINIMALIST STUDIO', type: 'template', price: 120, author: 'SkyDesign', rating: 4.9, isOfficial: false, previewUrl: '/bg/photo-1518770660439-4636190af475.jpg' },
- { id: 3, title: 'AI NEWS ANCHOR - EMMA', type: 'persona', price: 1500, author: 'AntFlow Labs', rating: 5.0, isOfficial: true, previewUrl: '/bg/photo-1494790108377-be9c29b29330.jpg' },
+ { id: 3, title: 'AI NEWS ANCHOR - EMMA', type: 'persona', price: 1500, author: 'AntStudio Labs', rating: 5.0, isOfficial: true, previewUrl: '/bg/photo-1494790108377-be9c29b29330.jpg' },
  { id: 4, title: 'LO-FI BEATS COLLECTION', type: 'audio', price: 25, author: 'BeatMaster', rating: 4.5, isOfficial: false, previewUrl: '/bg/photo-1470225620780-dba8ba36b745.jpg' },
  { id: 5, title: 'HOLOGRAM NEWS OVERLAY', type: 'overlay', price: 85, author: 'AeroVisuals', rating: 4.7, isOfficial: false, previewUrl: '/bg/photo-1485827404703-89b55fcc595e.jpg' },
  { id: 6, title: 'VAPORWAVE LIVE TEMPLATE', type: 'template', price: 50, author: 'RetroMod', rating: 4.6, isOfficial: false, previewUrl: '/bg/photo-1550745165-9bc0b252726f.jpg' },

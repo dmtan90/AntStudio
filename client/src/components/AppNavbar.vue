@@ -383,8 +383,8 @@ const changePassword = async () => {
   changingPassword.value = true
   try {
     await userStore.changePassword({
-      current: passwordForm.value.current,
-      new: passwordForm.value.new
+      currentPassword: passwordForm.value.current,
+      newPassword: passwordForm.value.new
     })
     toast.success('Password changed successfully')
     passwordDialogVisible.value = false

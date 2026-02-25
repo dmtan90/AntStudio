@@ -245,7 +245,7 @@ export interface IProject extends Document {
         metadata?: any
         createdAt: Date
     }>
-    advancedEditorState?: any
+    pages?: any //pages in editor templates
     scriptContent?: string // Legacy or raw input
     metadata?: any
     analytics?: {
@@ -390,7 +390,7 @@ const ProjectSchema = new Schema<IProject>(
                 createdAt: { type: Date, default: Date.now }
             }
         ],
-        advancedEditorState: { type: Schema.Types.Mixed, default: null },
+        pages: { type: Schema.Types.Mixed, default: null },
         scriptContent: String,
         metadata: { type: Schema.Types.Mixed, default: {} },
         analytics: {

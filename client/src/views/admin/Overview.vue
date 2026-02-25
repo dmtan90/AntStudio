@@ -179,34 +179,50 @@ const uiStore = useUIStore();
 const adminStore = useAdminStore()
 const { stats } = storeToRefs(adminStore)
 const systemHealth = ref<any>(null);
-const healthItems = ref([
-    { name: 'Core API Hub', status: 'ok', latency: 42 },
-    { name: 'S3 Asset Matrix', status: 'ok', latency: 120 },
-    { name: 'Gemini VTuber Cluster', status: 'ok', latency: 1350 },
-    { name: 'Redis Cache Cluster', status: 'ok', latency: 2 }
-]);
+const healthItems = ref<any[]>([]);
+const cpuTrend = ref<string>('Stable');
+const isCpuPositive = ref<boolean>(true);
 
 const statCards = computed(() => [
    { label: 'Total Command Units', value: stats.value?.totalUsers || 0, trend: '+12%', isPositive: true, color: '#3b82f6' },
    { label: 'Monthly Delta', value: `$${stats.value?.monthlyRevenue || 0}`, trend: '+8.4%', isPositive: true, color: '#10b981' },
-   { label: 'Enterprise Nodes', value: stats.value?.activeSubscriptions || 0, trend: 'Stable', isPositive: true, color: '#a855f7' },
+   { label: 'CPU Dynamics', value: `${systemHealth.value?.cpuUsage || 0}%`, trend: cpuTrend.value, isPositive: isCpuPositive.value, color: '#a855f7' },
    { label: 'Storage Footprint', value: `${stats.value?.storageUsed || 0} GB`, trend: '+2.1%', isPositive: false, color: '#f59e0b' }
 ]);
 
 const fetchAllData = async () => {
   try {
-    const [statsRes, healthData] = await Promise.all([
+    const [statsRes, healthData, componentHealth, history] = await Promise.all([
         adminStore.fetchStats(),
-        adminStore.fetchMonitoringHealth()
+        adminStore.fetchMonitoringHealth(),
+        adminStore.fetchComponentHealth(),
+        adminStore.fetchMonitoringHistory(10)
     ]);
     
     if (healthData) {
         systemHealth.value = healthData;
     }
+
+    if (componentHealth) {
+        healthItems.value = componentHealth;
+    }
+
+    if (history && history.length > 1) {
+        const current = history[0].cpuUsage;
+        const previous = history[1].cpuUsage;
+        const diff = current - previous;
+        if (diff === 0) {
+            cpuTrend.value = 'Stable';
+            isCpuPositive.value = true;
+        } else {
+            cpuTrend.value = `${diff > 0 ? '+' : ''}${diff}%`;
+            isCpuPositive.value = diff <= 0; // Negative diff is good for CPU
+        }
+    }
   } catch (error: any) {
     if (error.status === 403) {
       toast.error('Access denied: You do not have admin permissions')
-      return
+      return;
     }
     console.error('Failed to fetch admin stats', error)
   }

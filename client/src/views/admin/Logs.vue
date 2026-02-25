@@ -116,7 +116,7 @@
       <!-- Pagination -->
       <div class="pagination-footer">
         <el-pagination v-model:current-page="filter.page" :page-size="100" layout="prev, pager, next" :total="totalLogs"
-          @current-change="fetchLogs" background small />
+          @update:current-page="fetchLogs" background small />
       </div>
     </div>
   </div>

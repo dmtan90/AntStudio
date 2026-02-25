@@ -24,6 +24,20 @@ router.post('/client-logs', async (req: AuthRequest, res) => {
     }
 });
 
+/**
+ * GET /api/admin/monitoring/client-logs
+ * Fetch aggregated client errors
+ */
+router.get('/client-logs', adminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const logs = await ClientLog.find().sort({ timestamp: -1 }).limit(100);
+        res.json({ success: true, data: logs, error: null });
+    } catch (error: any) {
+        res.status(500).json({ success: false, data: null, error: error.message });
+    }
+});
+
 // All other routes require admin authentication
 // router.use(adminMiddleware);
 
@@ -59,6 +73,30 @@ router.get('/heartbeat', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         const heartbeats = await monitoringService.getHeartbeat();
         res.json({ success: true, data: heartbeats, error: null });
+    } catch (error: any) {
+        res.status(500).json({ success: false, data: null, error: error.message });
+    }
+});
+
+/**
+ * GET /api/admin/monitoring/components/health
+ */
+router.get('/components/health', adminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const health = await monitoringService.getComponentHealth();
+        res.json({ success: true, data: health, error: null });
+    } catch (error: any) {
+        res.status(500).json({ success: false, data: null, error: error.message });
+    }
+});
+
+/**
+ * GET /api/admin/monitoring/db-cluster
+ */
+router.get('/db-cluster', adminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const cluster = await monitoringService.getDatabaseClusterInfo();
+        res.json({ success: true, data: cluster, error: null });
     } catch (error: any) {
         res.status(500).json({ success: false, data: null, error: error.message });
     }

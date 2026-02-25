@@ -150,7 +150,7 @@
           v-model:page-size="filters.limit" 
           :total="pagination.total" 
           layout="total, prev, pager, next"
-          @current-change="handlePageChange"
+          @update:current-page="handlePageChange"
         />
       </div>
     </main>

@@ -27,7 +27,7 @@ const backgroundURL = ref("");
 
 const SEEK_TIME_WIDTH = 42;
 const HANDLE_WIDTH = 16;
-const HANDLE_HEIGHT = 40;
+const HANDLE_HEIGHT = 28;
 
 const offset = ref(0);
 const width = ref(0);

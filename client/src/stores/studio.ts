@@ -5,6 +5,8 @@ import api from '@/utils/api';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { toast } from 'vue-sonner';
 import { generateUUID } from '@/utils/uuid';
+import { useProjectStore } from './project.js';
+import { useUserStore } from './user.js';
 
 // ============================================
 // Types & Interfaces
@@ -189,7 +191,7 @@ export const DEFAULT_VISUAL_SETTINGS = {
     },
     specialOverlays: {
         showSponsorship: false,
-        sponsorName: 'AntFlow VTuber',
+        sponsorName: 'AntStudio VTuber',
         confetti: false,
         fireworks: false
     },
@@ -630,9 +632,13 @@ export const useStudioStore = defineStore('studio', () => {
         } else if (target === 'wide') {
             // Wide Shot (Grid or Full)
              // If multiple guests, go grid. If solo, go wide/standard
-             if (liveGuests.value.length > 0) {
+             if (liveGuests.value.length == 1) {
+                 if (activeScene.value.id !== 'interview') await switchScene('interview');
+             }
+             else if (liveGuests.value.length > 1) {
                  if (activeScene.value.id !== 'grid') await switchScene('grid');
-             } else {
+             } 
+             else {
                  if (activeScene.value.id !== 'fullscreen') await switchScene('fullscreen');
              }
         } else if (target === 'screen') {
@@ -925,7 +931,7 @@ export const useStudioStore = defineStore('studio', () => {
 
         // Implementation of 'Solo' mode: 
         // We temporarily override the host region's source or swap slots.
-        // For standard AntFlow logic, we assign the guest to Slot 1 
+        // For standard AntStudio logic, we assign the guest to Slot 1 
         // and if it's a 'shoutout' or 'standard' scene, it will show them.
 
         // Let's create a temporary scene override or just assign to Slot 0 (S1) 
@@ -1565,16 +1571,70 @@ export const useStudioStore = defineStore('studio', () => {
         },
 
         async draftMoment(momentId: string) {
-            toast.info('Drafting social post...');
-            setTimeout(() => toast.success('Social draft created! Check your Syndication Dashboard.'), 1500);
+            const projectStore = useProjectStore();
+            const moment = viralMoments.value.find(m => m.id === momentId);
+            
+            if (!moment) {
+                toast.error('Moment not found');
+                return;
+            }
+
+            try {
+                toast.info('Drafting viral moment to editor...');
+                const project = await projectStore.createFromMoment(moment);
+                
+                if (project && project._id) {
+                    return project;
+                }
+            } catch (error: any) {
+                console.error('Failed to draft moment:', error);
+                toast.error('Failed to create project draft');
+            }
         },
 
-        async publishMoment(momentId: string) {
-            toast.promise(new Promise(resolve => setTimeout(resolve, 2000)), {
-                loading: 'Publishing to all platforms...',
-                success: 'Viral clip is now LIVE on TikTok, YouTube & Facebook!',
-                error: 'Failed to publish'
-            });
+        async publishMoment(momentId: string, platformAccountIds?: string[]) {
+            const projectStore = useProjectStore();
+            const moment = viralMoments.value.find(m => m.id === momentId);
+            
+            if (!moment) {
+                toast.error('Moment not found');
+                return;
+            }
+
+            try {
+                toast.info('Preparing viral clip for publication...');
+                
+                const project = await projectStore.createFromMoment(moment);
+                if (!project || !project._id) throw new Error('Failed to create project for syndication');
+
+                let targets = platformAccountIds;
+                if (!targets || targets.length === 0) {
+                   const res : any = await api.get('/platform-accounts');
+                   targets = res.data.accounts.filter((a: any) => a.isActive && ['tiktok', 'youtube', 'facebook'].includes(a.platform)).map((a: any) => a._id);
+                }
+
+                if (!targets || targets.length === 0) {
+                    toast.warning('No active social accounts found. Moment drafted to editor instead.');
+                    return project;
+                }
+
+                const publishRes : any = await api.post('/syndication/publish-video', {
+                    projectId: project._id,
+                    s3Key: moment.s3Key,
+                    platformAccountIds: targets,
+                    metadata: {
+                        title: project.title,
+                        description: moment.reason || 'Viral clip from live stream'
+                    }
+                });
+
+                toast.success('Viral clip is now being published!');
+                return { project, results: publishRes.data };
+
+            } catch (error: any) {
+                console.error('Failed to publish moment:', error);
+                toast.error('Failed to publish viral moment');
+            }
         }
     };
 });

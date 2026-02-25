@@ -4,11 +4,11 @@ import { alertService } from '../services/AlertService.js';
 import { configService } from './configService.js';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+// import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 export class SystemLogger {
     private static instance: SystemLogger;
@@ -18,7 +18,8 @@ export class SystemLogger {
     private io: Server | null = null;
 
     private constructor() {
-        this.logDir = path.join(__dirname, '../../logs');
+        // Use process.cwd() to keep logs external and avoid bundling them
+        this.logDir = path.join(process.cwd(), 'logs');
         this.currentLogFile = path.join(this.logDir, 'antstudio-system.log');
         this.ensureLogDir();
     }

@@ -717,20 +717,21 @@ const applyLipSync = () => {
     
     const expressionManager = currentVrm.expressionManager;
     if (!expressionManager) return;
-    // Centralized Smart Sync Logic
-    const isSinging = isSingingAtTime(props.lyrics, props.currentTime);
+    const hasLyrics = props.lyrics && props.lyrics.length > 0;
+    const isSinging = hasLyrics ? isSingingAtTime(props.lyrics, props.currentTime) : false;
 
-    const vol = isSinging ? props.speakingVol : 0;
+    // Use volume if not in performance mode (hasLyrics=false) OR if currently singing
+    const activeVol = (hasLyrics ? (isSinging ? props.speakingVol : 0) : props.speakingVol) || 0;
     
     // Boost sensitivity: vol is typically 0-0.3, we need 0-1 range
-    const mouthOpen = Math.min(1.0, vol * 8);
+    const mouthOpen = Math.min(1.0, activeVol * 8);
     
     // Primary mouth open (aa = jaw drop)
     expressionManager.setValue('aa', mouthOpen);
     
     // Secondary shapes for more natural lip movement  
     // "oh" shape at lower volumes for resting-open feel
-    expressionManager.setValue('oh', Math.min(0.4, vol * 3));
+    expressionManager.setValue('oh', Math.min(0.4, activeVol * 3));
     // "ee" flicker for consonant-like variation
     const flickerT = Date.now() * 0.01;
     const consonantFlicker = mouthOpen > 0.2 ? Math.sin(flickerT) * 0.15 * mouthOpen : 0;

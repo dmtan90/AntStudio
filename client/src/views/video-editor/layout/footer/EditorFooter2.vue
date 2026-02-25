@@ -193,8 +193,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { debounce } from 'lodash';
-import SceneCard from './components/SceneCard.vue';
-import TransitionTrigger from './components/TransitionTrigger.vue';
+import SceneCard from './components2/SceneCard.vue';
+import TransitionTrigger from './components2/TransitionTrigger.vue';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import {
     Play,

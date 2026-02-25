@@ -21,6 +21,8 @@ server/tmp
 # Node dependencies
 node_modules
 backup
+tmp
+standalone
 
 # Logs
 logs
@@ -35,3 +37,12 @@ logs
 .env
 .env.*
 !.env.example
+pnpm-lock.yaml
+.vscode/settings.json
+server/build_log_utf8.txt
+server/build_log_v2.txt
+server/build_log.txt
+server/cert1.pem
+server/chain1.pem
+server/eval_log.txt
+server/fullchain1.pem

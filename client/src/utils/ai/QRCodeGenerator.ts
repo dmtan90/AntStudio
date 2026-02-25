@@ -11,7 +11,7 @@ export class QRCodeGenerator {
      */
     public static getProductQR(url: string): string {
         const encodedUrl = encodeURIComponent(url);
-        // Using qrserver API with AntFlow orange (#f97316)
+        // Using qrserver API with AntStudio orange (#f97316)
         return `https://api.qrserver.com/v1/create-qr-code/?size=100x100&color=f97316&bgcolor=000000&data=${encodedUrl}`;
     }
 }

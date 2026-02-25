@@ -32,7 +32,9 @@
       </div>
     </main>
 
-    <ProjectCreationDialog v-model="showCreationDialog" />
+    <ProjectCreationDialog v-model="showCreationDialog" @create-ad="adDialogVisible = true; showCreationDialog = false" />
+    <ProductAdDialog v-model="adDialogVisible" />
+
     <AppTour v-model="showTour" :steps="tourSteps" @finish="onTourFinish" />
   </div>
 </template>
@@ -46,6 +48,7 @@ import { useMarketplaceStore } from '@/stores/marketplace';
 import { useUIStore } from '@/stores/ui';
 import { storeToRefs } from 'pinia';
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue';
+import ProductAdDialog from '@/components/studio/dialogs/ProductAdDialog.vue';
 import AppTour from '@/components/ui/AppTour.vue';
 
 // Dashboard Components
@@ -68,6 +71,7 @@ const { commerceStats } = storeToRefs(marketplaceStore);
 
 const showCreationDialog = ref(false);
 const showTour = ref(false);
+const adDialogVisible = ref(false);
 
 const tourSteps = [
   {

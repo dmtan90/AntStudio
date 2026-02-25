@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { useMutation } from '@tanstack/vue-query';
 import { toast } from 'vue-sonner';
 
-import { Plus, Search, Close as X, ArrowLeft as Left, Voice, Pic, VideoOne, TextMessage, Transform, DistributeVertically, Magic, Focus, Scan, FaceRecognition } from '@icon-park/vue-next';
+import { Plus, Search, Close as X, ArrowLeft as Left, Voice, Pic, VideoOne, TextMessage, Transform, DistributeVertically, Magic, Focus, Scan, FaceRecognition, Translate, TrendingUp, TypeDrive, Diamond, Analysis as DataAnalysis, Google as BrandPalette } from '@icon-park/vue-next';
 import { ElButton, ElInput, ElTabs, ElTabPane } from 'element-plus';
 import Label from 'video-editor/components/ui/label.vue';
 
@@ -38,7 +38,7 @@ const expanded = ref<false | string>(false);
 <template>
    <div class="h-full w-full flex flex-col cinematic-panel">
       <!-- Header -->
-      <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5">
+      <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 shrink-0">
          <h2 class="font-bold text-sm tracking-wider uppercase text-white/90 flex items-center gap-2">
             <span
                class="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
@@ -52,7 +52,7 @@ const expanded = ref<false | string>(false);
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-y-auto custom-scrollbar">
+      <div class="flex-1 overflow-y-auto custom-scrollbar sidebar-container">
          <!-- Breadcrumb / Header when expanded -->
          <div v-if="expanded"
             class="px-5 py-4 border-b border-white/5 sticky top-0 bg-[#0a0a0a]/95 backdrop-blur-xl z-20">
@@ -88,6 +88,118 @@ const expanded = ref<false | string>(false);
             </div>
 
             <div class="grid grid-cols-1 gap-4 pt-2">
+               <button @click="expanded = 'storyboard'"
+                  class="group w-full p-4 rounded-xl border border-brand-primary/20 bg-brand-primary/5 hover:bg-brand-primary/10 hover:border-brand-primary/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-brand-primary/10 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/10 to-transparent"></div>
+                  <div
+                     class="w-10 h-10 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-brand-primary/20 relative z-10">
+                     <Magic theme="filled" size="18" />
+                  </div>
+                  <div class="flex flex-col items-start translate-y-[-1px] relative z-10">
+                     <span
+                        class="text-xs font-black text-white group-hover:text-brand-primary transition-colors uppercase tracking-[0.15em]">AI Creative Director</span>
+                     <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Script-to-Video Zero-to-One Automation</span>
+                  </div>
+               </button>
+
+               <button @click="expanded = 'avatars'"
+                  class="group w-full p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent"></div>
+                  <div
+                     class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-blue-500/20 relative z-10">
+                     <FaceRecognition theme="filled" size="18" />
+                  </div>
+                  <div class="flex flex-col items-start translate-y-[-1px] relative z-10">
+                     <span
+                        class="text-xs font-black text-white group-hover:text-blue-400 transition-colors uppercase tracking-[0.15em]">AI Talking Heads</span>
+                     <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Lip-Sync Avatar Video Generation</span>
+                  </div>
+               </button>
+
+               <button @click="expanded = 'highlights'"
+                  class="group w-full p-4 rounded-xl border border-orange-500/20 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent"></div>
+                  <div
+                     class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-orange-500/20 relative z-10">
+                     <TrendingUp theme="filled" size="18" />
+                  </div>
+                  <div class="flex flex-col items-start translate-y-[-1px] relative z-10">
+                     <span
+                        class="text-xs font-black text-white group-hover:text-orange-400 transition-colors uppercase tracking-[0.15em]">Viral Highlights</span>
+                     <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Extract & Crop Clips for Social Media</span>
+                  </div>
+               </button>
+
+               <button @click="expanded = 'typography'"
+                  class="group w-full p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent"></div>
+                  <div
+                     class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-blue-500/20 relative z-10">
+                     <TypeDrive theme="filled" size="18" />
+                  </div>
+                  <div class="flex flex-col items-start translate-y-[-1px] relative z-10">
+                     <span
+                        class="text-xs font-black text-white group-hover:text-blue-400 transition-colors uppercase tracking-[0.15em]">Kinetic Typography</span>
+                     <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Animated Captions & Motion Tracking</span>
+                  </div>
+               </button>
+
+               <button @click="expanded = 'enrichment'"
+                  class="group w-full p-4 rounded-xl border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-rose-500/10 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-rose-500/10 to-transparent"></div>
+                  <div
+                     class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-rose-500/20 relative z-10">
+                     <Diamond theme="filled" size="18" />
+                  </div>
+                  <div class="flex flex-col items-start translate-y-[-1px] relative z-10">
+                     <span
+                        class="text-xs font-black text-white group-hover:text-rose-400 transition-colors uppercase tracking-[0.15em]">Visual Enrichment</span>
+                     <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">AI B-Roll & Cinematic Polish</span>
+                  </div>
+               </button>
+
+               <button @click="expanded = 'analytics'"
+                  class="group w-full p-4 rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-violet-500/10 to-transparent"></div>
+                  <div
+                     class="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-violet-500/20 relative z-10">
+                     <DataAnalysis theme="filled" size="18" />
+                  </div>
+                  <div class="flex flex-col items-start translate-y-[-1px] relative z-10">
+                     <span
+                        class="text-xs font-black text-white group-hover:text-violet-400 transition-colors uppercase tracking-[0.15em]">AI Analytics</span>
+                     <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Engagement Score & Export Optimizer</span>
+                  </div>
+               </button>
+
+               <button @click="expanded = 'brand'"
+                  class="group w-full p-4 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 hover:bg-fuchsia-500/10 hover:border-fuchsia-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-fuchsia-500/10 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-fuchsia-500/10 to-transparent"></div>
+                  <div
+                     class="w-10 h-10 rounded-xl bg-fuchsia-500/10 text-fuchsia-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-fuchsia-500/20 relative z-10">
+                     <BrandPalette theme="filled" size="18" />
+                  </div>
+                  <div class="flex flex-col items-start translate-y-[-1px] relative z-10">
+                     <span
+                        class="text-xs font-black text-white group-hover:text-fuchsia-400 transition-colors uppercase tracking-[0.15em]">Brand Kit</span>
+                     <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Style Transfer & Brand Enforcement</span>
+                  </div>
+               </button>
+
+               <button @click="expanded = 'dubbing'"
+                  class="group w-full p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 hover:border-indigo-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 flex flex-row items-center gap-4 relative overflow-hidden">
+                  <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent"></div>
+                  <div
+                     class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-indigo-500/20 relative z-10">
+                     <Translate theme="filled" size="18" />
+                  </div>
+                  <div class="flex flex-col items-start translate-y-[-1px] relative z-10">
+                     <span
+                        class="text-xs font-black text-white group-hover:text-indigo-400 transition-colors uppercase tracking-[0.15em]">AI Dubbing</span>
+                     <span class="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Global Project Localization & Sync</span>
+                  </div>
+               </button>
+
                <button @click="expanded = 'voice'"
                   class="group w-full p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 flex flex-row items-center gap-4">
                   <div

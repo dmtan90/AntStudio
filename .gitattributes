@@ -1,0 +1,2 @@
+server/bin/* filter=lfs diff=lfs merge=lfs -text
+server/scripts/* filter=lfs diff=lfs merge=lfs -text

@@ -14,7 +14,7 @@
           <div class="legal-sections card" :class="{ glass: !embedded }">
             <section>
               <h2>1. Introduction</h2>
-              <p>Your privacy is important to us. This Privacy Policy explains how AntFlow ("we", "us", or "our") collects, uses, and protects your personal information when you use our website and services.</p>
+              <p>Your privacy is important to us. This Privacy Policy explains how AntStudio ("we", "us", or "our") collects, uses, and protects your personal information when you use our website and services.</p>
             </section>
 
             <section>
@@ -24,7 +24,7 @@
 
             <section>
               <h2>3. Use of AI Technologies</h2>
-              <p>AntFlow utilizes advanced generative AI models (including Google Veo and Gemini). The content you provide may be processed by these models to generate cinematic video outputs.</p>
+              <p>AntStudio utilizes advanced generative AI models (including Google Veo and Gemini). The content you provide may be processed by these models to generate cinematic video outputs.</p>
             </section>
 
             <section>

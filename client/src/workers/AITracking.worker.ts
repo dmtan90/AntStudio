@@ -89,6 +89,17 @@ self.onmessage = async (event) => {
                     results.faceBlendshapes = faceResult.faceBlendshapes;
                     results.facialTransformationMatrixes = faceResult.facialTransformationMatrixes;
 
+                    if (renderPort && faceResult.faceBlendshapes?.[0]) {
+                        renderPort.postMessage({
+                            type: 'UPDATE_FACE_FULL',
+                            payload: {
+                                blendshapes: faceResult.faceBlendshapes[0].categories,
+                                matrix: faceResult.facialTransformationMatrixes?.[0],
+                                landmarks: faceResult.faceLandmarks?.[0]
+                            }
+                        });
+                    }
+
                     if (now - lastLogTime > 2000) {
                         const nose = faceResult.faceLandmarks?.[0]?.[1];
                         // console.log(`[AITrackingWorker] Detected faces: ${faceResult.faceLandmarks?.length || 0}, Nose: ${nose ? `x=${nose.x.toFixed(2)}, y=${nose.y.toFixed(2)}` : 'N/A'}`);

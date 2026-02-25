@@ -26,7 +26,7 @@
                 </div>
                 <h2 class="text-2xl font-black uppercase tracking-widest mb-4">Hardware Acceleration Required</h2>
                 <p class="text-white/60 text-sm mb-8 leading-relaxed">
-                    WebGL initialization failed. To provide a professional broadcast experience, AntFlow requires GPU
+                    WebGL initialization failed. To provide a professional broadcast experience, AntStudio requires GPU
                     acceleration enabled in your browser.
                 </p>
 

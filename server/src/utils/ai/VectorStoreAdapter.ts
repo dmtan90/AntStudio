@@ -3,8 +3,9 @@ import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MEMORY_DIR = path.join(__dirname, '../../../tmp/ai-memory');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const MEMORY_DIR = path.join(process.cwd(), 'tmp/ai-memory');
 
 /**
  * Adapter for local, encrypted AI vector memory (Project RAG).

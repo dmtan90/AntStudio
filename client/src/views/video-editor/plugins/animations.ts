@@ -7,6 +7,8 @@ import { FabricUtils } from "video-editor/fabric/utils";
 import { modifyAnimationEasing } from "video-editor/lib/animations";
 import { createInstance } from "video-editor/lib/utils";
 
+type AnimationTimeline = fabric.AnimationTimeline;
+
 type AnimationState = ReturnType<CanvasAnimations["_save"]>;
 
 export class CanvasAnimations {
@@ -14,7 +16,7 @@ export class CanvasAnimations {
 
   private _extras: fabric.Object[];
   private _active: fabric.Object | null;
-  private _timeline: any | null;
+  private _timeline: anime.AnimeTimelineInstance | null;
 
   private _blur = 10;
   private _merge = 15;
@@ -116,7 +118,7 @@ export class CanvasAnimations {
     return { ...state };
   }
 
-  private _entry(object: fabric.Object, timeline: any, entry: any, state: AnimationState, meta: Record<string, any>, mask?: boolean, preview?: boolean) {
+  private _entry(object: fabric.Object, timeline: anime.AnimeTimelineInstance, entry: AnimationTimeline["in"], state: AnimationState, meta: Record<string, any>, mask?: boolean, preview?: boolean) {
     if (!entry) return;
 
     const { left, top, height, width, opacity, angle, scaleX, scaleY } = state;
@@ -493,7 +495,7 @@ export class CanvasAnimations {
     }
   }
 
-  private _exit(object: fabric.Object, timeline: any, exit: any, state: AnimationState, meta: Record<string, any>, _mask?: boolean, preview?: boolean) {
+  private _exit(object: fabric.Object, timeline: anime.AnimeTimelineInstance, exit: AnimationTimeline["in"], state: AnimationState, meta: Record<string, any>, _mask?: boolean, preview?: boolean) {
     if (!exit) return;
 
     const { left, top, height, width, angle, scaleX, scaleY } = state;
@@ -654,10 +656,10 @@ export class CanvasAnimations {
 
   private _scene(
     object: fabric.Object,
-    timeline: any,
-    entry: any,
-    exit: any,
-    scene: any,
+    timeline: anime.AnimeTimelineInstance,
+    entry: AnimationTimeline["in"],
+    exit: AnimationTimeline["out"],
+    scene: AnimationTimeline["scene"],
     state: AnimationState,
     meta: Record<string, any>,
     mask?: boolean,
@@ -753,7 +755,7 @@ export class CanvasAnimations {
     }
   }
 
-  private _preview(element: fabric.Object, type: "in" | "out" | "scene", animation: any, meta: Record<string, any>, mask?: boolean) {
+  private _preview(element: fabric.Object, type: "in" | "out" | "scene", animation: AnimationTimeline, meta: Record<string, any>, mask?: boolean) {
     const state = this._save(element);
     switch (type) {
       case "in":
@@ -769,7 +771,7 @@ export class CanvasAnimations {
     }
   }
 
-  private _initialize(object: fabric.Object, timeline: any, entry: any, exit: any, scene: any, keyframes: any[], meta: Record<string, any>, mask?: boolean) {
+  private _initialize(object: fabric.Object, timeline: anime.AnimeTimelineInstance, entry: AnimationTimeline["in"], exit: AnimationTimeline["out"], scene: AnimationTimeline["scene"], keyframes: any[], meta: Record<string, any>, mask?: boolean) {
     const state = this._save(object);
     this._entry(object, timeline, entry, state, meta, mask);
     this._exit(object, timeline, exit, state, meta, mask);
@@ -831,7 +833,7 @@ export class CanvasAnimations {
     element.on("deselected", this.dispose.bind(this, element));
   }
 
-  initialize(canvas: fabric.Canvas | fabric.StaticCanvas, timeline: any, duration: number) {
+  initialize(canvas: fabric.Canvas | fabric.StaticCanvas, timeline: anime.AnimeTimelineInstance, duration: number) {
     timeline.add({ targets: canvas, duration: duration });
     for (const object of canvas._objects) {
       if (object.excludeFromTimeline) continue;

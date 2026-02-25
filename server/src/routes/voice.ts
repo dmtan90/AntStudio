@@ -124,7 +124,7 @@ router.post('/clone', upload.array('files', 5), async (req: AuthRequest, res) =>
 
         const voiceId = await provider.cloneVoice(
             name || `Cloned Voice ${Date.now()}`,
-            description || 'AntFlow Instant Clone',
+            description || 'AntStudio Instant Clone',
             buffers
         );
 

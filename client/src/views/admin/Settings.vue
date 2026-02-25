@@ -6,7 +6,7 @@
                     System Core
                     <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
                 </h1>
-                <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Global AntFlow Intelligence Registry</p>
+                <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Global AntStudio Intelligence Registry</p>
             </div>
             <div class="flex gap-4">
                 <button @click="fetchSettings" :disabled="loading" 
@@ -69,7 +69,7 @@
                 <el-tab-pane name="ai">
                     <template #label>
                         <div class="tab-label">
-                            <brain theme="filled" size="14" /> VTuber Engine
+                            <brain theme="filled" size="14" /> AI Engine
                         </div>
                     </template>
                     <div class="space-y-8 animate-in slide-up">

@@ -230,6 +230,26 @@ export function useAudioVisualizer(options: AudioVisualizerOptions = {}) {
         };
     };
 
+    const attachToStream = (stream: MediaStream) => {
+        initAudioContext();
+        if (!audioCtx.value) return;
+
+        if (!analyser.value) {
+            analyser.value = audioCtx.value.createAnalyser();
+            analyser.value.fftSize = options.fftSize || 512;
+            analyser.value.smoothingTimeConstant = options.smoothingTimeConstant || 0.8;
+        }
+
+        try {
+            const streamSource = audioCtx.value.createMediaStreamSource(stream);
+            streamSource.connect(analyser.value);
+            startAnalysis();
+            console.log('[AudioVisualizer] Connected stream source');
+        } catch (e) {
+            console.error('[AudioVisualizer] Failed to connect stream source:', e);
+        }
+    };
+
     onUnmounted(() => {
         stopAnalysis();
         if (audioCtx.value && audioCtx.value.state !== 'closed') {
@@ -239,6 +259,7 @@ export function useAudioVisualizer(options: AudioVisualizerOptions = {}) {
 
     return {
         speakingVol,
+        volume: speakingVol, // Alias for component compatibility
         pitchFactor,
         emphasis,
         initAudioContext,
@@ -246,6 +267,7 @@ export function useAudioVisualizer(options: AudioVisualizerOptions = {}) {
         startAnalysis,
         stopAnalysis,
         attachToAudioElement,
+        attachToStream,
         analyzeMusicAudio
     };
 }

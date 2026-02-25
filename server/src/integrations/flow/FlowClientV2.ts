@@ -41,7 +41,7 @@ export class FlowClientV2 {
         }
 
         if (!projectId) {
-            projectId = await flowApiClient.createProject(stToken, "AntFlow Production");
+            projectId = await flowApiClient.createProject(stToken, "AntStudio Production");
         }
 
         return { at, projectId, stToken, apiKey: await this.getActiveKey() };

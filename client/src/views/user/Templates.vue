@@ -201,7 +201,7 @@
 
       <el-pagination class="mt-12 w-full flex justify-center" v-model:current-page="filters.page"
         v-model:page-size="filters.limit" :total="filters.total" :page-sizes="[12, 24, 48]"
-        layout="total, prev, pager, next" @current-change="handlePageChange" @size-change="handleSizeChange" />
+        layout="total, prev, pager, next" @update:current-page="handlePageChange" @update:page-size="handleSizeChange" />
     </main>
 
     <!-- Import Dialog -->
@@ -328,20 +328,32 @@ const useTemplate = async (template: any) => {
     const selectedPage = template.pages.find((page: any) => page.id === template.selectedPageId)
     console.log('Selected page:', selectedPage)
     const duration = (selectedPage?.duration ?? 0) / 1000;
-    const aspectRatio = selectedPage?.data?.[0]?.orientation == 'square' ? '1:1' : (selectedPage?.data?.[0]?.orientation == 'portrait' ? '9:16' : '16:9');
+    const aspectRatio = selectedPage?.data?.orientation == 'square' ? '1:1' : (selectedPage?.data?.orientation == 'portrait' ? '9:16' : '16:9');
+    const templateData = { ...template, pages: [selectedPage] };
 
-    const projectResponse = await projectStore.createProject({
+    const data = await projectStore.createProject({
       title: `${template.name}`,
       description: template.description,
+      mode: "template",
       targetDuration: duration,
       aspectRatio: aspectRatio,
-      mode: 'template',
-      // templateData: JSON.stringify(template) // Pass full template data including selected variant
-    })
+      videoStyle: 'ads',
+      pages: [selectedPage]
+    });
 
-    if (projectResponse.project) {
-      router.push({ path: `/projects/${projectResponse.project._id}/editor`, params: { template: JSON.stringify(template) } } as any)
-    }
+
+
+    // const payload = {
+    //   objective: 'E-commerce Ad',
+    //   adapter: 'edit',//create
+    //   ratio: aspectRatio,
+    //   template: templateData,
+    //   headless: false
+    // };
+
+    // const encodedState = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const project = data.project;
+    router.push({name: 'project-studio', params: {id: project._id}});
   } catch (e) {
     console.error('Failed to use template:', e)
   }
@@ -382,7 +394,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="postcss">
 .marketplace-view {
   background-color: #0a0a0a;
   background-image:

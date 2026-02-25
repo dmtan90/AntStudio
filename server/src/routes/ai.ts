@@ -1,5 +1,16 @@
 import { Router, Request, Response } from 'express';
-import { generateJSON, generateText, generateImage, generateAudio, generateVideo, checkVideoStatus } from '../utils/AIGenerator.js';
+import { 
+    generateJSON, 
+    generateText, 
+    generateImage, 
+    generateAudio, 
+    generateVideo, 
+    checkVideoStatus,
+    generateStoryboard,
+    extractHighlights,
+    generateSocialMeta,
+    translateContent
+} from '../utils/AIGenerator.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { parseDocument } from '../utils/documentParser.js';
 import { enhanceAudioFile } from '../utils/audioEnhancer.js'; // Added for audio enhancement
@@ -205,6 +216,205 @@ router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
     } catch (error: any) {
         console.error('Video status check error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to check video status' });
+    }
+});
+
+/**
+ * AI Storyboard Generation
+ */
+router.post('/generate-storyboard', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { scriptOrTopic, projectAnalysis, targetDuration, language } = req.body;
+        const userId = req.user!.userId;
+
+        // Credit Deduction
+        const cost = await getCreditCost('text');
+        try {
+            await deductCredits(userId, 'text', cost, `Generate Storyboard: ${scriptOrTopic?.substring(0, 30)}...`);
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
+
+        const storyboard = await generateStoryboard(scriptOrTopic, projectAnalysis, targetDuration, language);
+        res.json({ success: true, data: { storyboard } });
+    } catch (error: any) {
+        console.error('Storyboard generation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate storyboard' });
+    }
+});
+
+/**
+ * AI Highlight Extraction
+ */
+router.post('/extract-highlights', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { context, mediaId } = req.body;
+        const userId = req.user!.userId;
+
+        let analysisContext = context;
+        if (mediaId && !context) {
+            const media = await Media.findById(mediaId);
+            if (media) analysisContext = media.fileName + " " + (media.metadata?.description || "");
+        }
+
+        // Credit Deduction
+        try {
+            await deductCredits(userId, 'text', 10, 'Extract Highlights');
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
+
+        const result = await extractHighlights(analysisContext);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('Highlight extraction error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to extract highlights' });
+    }
+});
+
+/**
+ * AI Social Meta Generation
+ */
+router.post('/generate-social-meta', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { contentSummary } = req.body;
+        const userId = req.user!.userId;
+
+        // Credit Deduction
+        try {
+            await deductCredits(userId, 'text', 5, 'Generate Social Meta');
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
+
+        const result = await generateSocialMeta(contentSummary);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        console.error('Social meta generation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate social meta' });
+    }
+});
+
+/**
+ * AI Translation / Localization
+ */
+router.post(['/translate-media', '/translate-project'], async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { text, targetLanguage } = req.body;
+        const userId = req.user!.userId;
+
+        // Credit Deduction
+        try {
+            await deductCredits(userId, 'text', 5, `Translate Content to ${targetLanguage}`);
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
+
+        const translated = await translateContent(text, targetLanguage);
+        res.json({ success: true, data: { translated } });
+    } catch (error: any) {
+        console.error('Translation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to translate content' });
+    }
+});
+
+/**
+ * AI Vision: Image Captioning
+ */
+router.post(['/generate-caption', '/generate-image-caption'], upload.single('file'), async (req: AuthRequest, res) => {
+    try {
+        const file = req.file;
+        const { image } = req.body;
+        
+        let inputImage = image;
+        if (file) {
+            inputImage = file.buffer.toString('base64');
+        }
+
+        if (!inputImage) return res.status(400).json({ success: false, error: 'No image provided' });
+
+        const prompt = "Describe this image in detail for a blind user. Be concise but descriptive.";
+        const result = await generateText(prompt, 'gemini-2.5-flash', { images: [inputImage] });
+
+        res.json({ success: true, data: { caption: result } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * AI Vision: Object Detection
+ */
+router.post('/detect-objects', upload.single('file'), async (req: AuthRequest, res) => {
+    try {
+        const file = req.file;
+        const { image } = req.body;
+        
+        let inputImage = image;
+        if (file) {
+            inputImage = file.buffer.toString('base64');
+        }
+
+        if (!inputImage) return res.status(400).json({ success: false, error: 'No image provided' });
+
+        const prompt = "Detect all major objects in this image and return a JSON list: { \"objects\": [ { \"name\": \"obj_name\", \"confidence\": 0.9, \"box_2d\": [ymin, xmin, ymax, xmax] } ] }";
+        const result = await generateJSON(prompt, 'gemini-2.5-flash', { images: [inputImage] });
+
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * AI Vision: Face Detection
+ */
+router.post('/detect-faces', upload.single('file'), async (req: AuthRequest, res) => {
+    try {
+        const file = req.file;
+        const { image } = req.body;
+        
+        let inputImage = image;
+        if (file) {
+            inputImage = file.buffer.toString('base64');
+        }
+
+        if (!inputImage) return res.status(400).json({ success: false, error: 'No image provided' });
+
+        const prompt = "Detect all faces in this image and return a JSON list with bounding boxes: { \"faces\": [ { \"box_2d\": [ymin, xmin, ymax, xmax], \"emotion\": \"happy\", \"confidence\": 0.99 } ] }";
+        const result = await generateJSON(prompt, 'gemini-2.5-flash', { images: [inputImage] });
+
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * AI Vision: Text Extraction (OCR)
+ */
+router.post('/extract-text', upload.single('file'), async (req: AuthRequest, res) => {
+    try {
+        const file = req.file;
+        const { image } = req.body;
+        
+        let inputImage = image;
+        if (file) {
+            inputImage = file.buffer.toString('base64');
+        }
+
+        if (!inputImage) return res.status(400).json({ success: false, error: 'No image provided' });
+
+        const prompt = "Extract all text from this image as it appears. Return ONLY the extracted text.";
+        const result = await generateText(prompt, 'gemini-2.5-flash', { images: [inputImage] });
+
+        res.json({ success: true, data: { text: result } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -863,8 +1073,8 @@ router.post('/test-connection', adminMiddleware, async (req: AuthRequest, res: a
 
 // --- AI Performance & Optimization Endpoints ---
 
-// POST /api/ai/autopilot/analyze
-router.post('/autopilot/analyze', upload.single('file'), async (req: AuthRequest, res) => {
+// POST /api/ai/presentation/analyze
+router.post('/presentation/analyze', upload.single('file'), async (req: AuthRequest, res) => {
     try {
         const file = req.file;
         const userId = req.user!.userId;
@@ -955,7 +1165,7 @@ router.post('/autopilot/analyze', upload.single('file'), async (req: AuthRequest
 
     } catch (error: any) {
         console.error('Autopilot analysis error:', error);
-        res.status(500).json({ success: false, error: error.message || 'Failed to analyze presentation for autopilot' });
+        res.status(500).json({ success: false, error: error.message || 'Failed to analyze presentation' });
     }
 });
 

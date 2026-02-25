@@ -80,36 +80,6 @@ export const formats = [
     preview: landscapeFrame,
     purpose: "Cinema TV (21:9), Sony Phone (21:9)"
   },
-  // {
-  //   name: "Logo",
-  //   dimensions: { height: 500, width: 500 },
-  //   aspectRatio: 1 / 1,
-  //   preview: "https://img.ly/showcases/cesdk/cases/page-sizes/thumbnail-brochure.svg",
-  // },
-  // {
-  //   name: "Flyer",
-  //   dimensions: { height: 3507, width: 2480 },
-  //   aspectRatio: 2480 / 3507,
-  //   preview: "https://img.ly/showcases/cesdk/cases/page-sizes/thumbnail-flyer.svg",
-  // },
-  // {
-  //   name: "Poster",
-  //   dimensions: { height: 2229, width: 1587 },
-  //   aspectRatio: 529 / 743,
-  //   preview: "https://img.ly/showcases/cesdk/cases/page-sizes/thumbnail-poster.svg",
-  // },
-  // {
-  //   name: "Facebook Post",
-  //   dimensions: { height: 788, width: 940 },
-  //   aspectRatio: 235 / 197,
-  //   preview: "https://img.ly/showcases/cesdk/cases/page-sizes/thumbnail-fb-photo-post.svg",
-  // },
-  // {
-  //   name: "Instagram Post",
-  //   dimensions: { height: 1080, width: 1080 },
-  //   aspectRatio: 1 / 1,
-  //   preview: "https://img.ly/showcases/cesdk/cases/page-sizes/thumbnail-ig-profile.svg",
-  // },
 ];
 
 export const placeholders = [

@@ -88,7 +88,7 @@ router.post('/extract-product', async (req: AuthRequest, res: Response) => {
         // Fetch page HTML
         const response = await fetch(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; AntFlow/1.0; +https://antflow.io)',
+                'User-Agent': 'Mozilla/5.0 (compatible; AntStudio/1.0; +https://antstudio.io)',
                 'Accept': 'text/html,application/xhtml+xml'
             },
             signal: AbortSignal.timeout(10000)
@@ -102,29 +102,32 @@ router.post('/extract-product', async (req: AuthRequest, res: Response) => {
         // Truncate to avoid token limits
         const truncatedHtml = html.substring(0, 30000);
 
-        const prompt = `You are a product data extraction AI. Analyze the following HTML from a product page and extract structured product information.
-
-Return a JSON object with these fields:
-- name: string (product name)
-- price: number (numeric price, no currency symbol)
-- currency: string (3-letter code like USD, VND, EUR)
-- description: string (short marketing description, max 200 characters)
-- image: string (the main product image URL, must be an absolute URL)
-- images: string[] (array of ALL product image URLs found on the page, must be absolute URLs, up to 10)
-- features: string[] (array of key product highlights, bullet points, or specs)
-- brand_name: string (the name of the company or brand that makes the product, if identifiable)
-- brand_logo: string (the URL of the brand's logo, if found, absolute URL)
-- brand_slogan: string (the brand's tagline or slogan, if found)
-- primary_colors: string[] (up to 3 HEX color codes representing the brand or product's primary color palette)
-- secondary_colors: string[] (up to 3 HEX color codes representing the brand or product's secondary color palette)
-- video: string (the URL of a product video if found, absolute URL)
-
-If a field cannot be determined, use reasonable defaults (price: 0, currency: "USD", description: "", image: "", images: []).
-
+        const prompt = `Task: Extract structured product data from the provided HTML.
 URL: ${url}
+HTML: ${truncatedHtml}
 
-HTML Content:
-${truncatedHtml}`;
+Return EXACTLY ONE JSON object. 
+IMPORTANT: 
+- No explanations.
+- No extra text outside the JSON.
+- No trailing commas.
+- Use null or empty values if not found.
+- DO NOT use Python "None".
+
+Fields to extract:
+- name (string)
+- price (number, numeric only, default 0)
+- currency (string, 3-letter code, default "USD")
+- description (string, max 200 chars)
+- image (string, absolute URL)
+- images (string array, absolute URLs, max 5)
+- features (string array)
+- brand_name (string)
+- brand_logo (string, absolute URL)
+- brand_slogan (string)
+- primary_colors (string array, HEX)
+- secondary_colors (string array, HEX)
+- video (string, absolute URL)`;
 
         const result = await generateJSON<{
             name: string;
@@ -140,7 +143,12 @@ ${truncatedHtml}`;
             primary_colors: string[];
             secondary_colors: string[];
             video: string;
-        }>(prompt, 'gemini-2.5-flash');
+        }>(prompt, 'gemini-2.5-flash', {
+            generationConfig: { 
+                responseMimeType: 'application/json',
+                maxOutputTokens: 4096
+            }
+        });
 
         res.json({ success: true, data: result });
     } catch (error: any) {

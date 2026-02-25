@@ -9,11 +9,12 @@ import { exec } from 'child_process';
 import { User } from '../models/User.js';
 import { GuestToken } from '../models/GuestToken.js';
 import { StreamSessionModel } from '../models/StreamSession.js';
+import { config } from '../utils/config.js';
 import { creditManager } from '../utils/CreditManager.js';
 
-// Set FFmpeg path to your discovered binary
-const FFMPEG_BIN = 'D:\\Tools\\vanthe_video\\bin\\ffmpeg.exe';
-ffmpeg.setFfmpegPath(FFMPEG_BIN);
+// Set FFmpeg path from config
+ffmpeg.setFfmpegPath(config.ffmpegPath);
+const FFMPEG_BIN = config.ffmpegPath;
 
 import axios from 'axios';
 import crypto from 'crypto';
@@ -21,6 +22,8 @@ import { UserPlatformAccount, SocialPlatform } from '../models/UserPlatformAccou
 import { highlightService } from './HighlightService.js';
 import { redisService } from './RedisService.js';
 import si from 'systeminformation';
+
+const RTMP_PORT = process.env.RTMP_PORT || 1935;
 
 export interface StreamTarget {
     url: string;      // RTMP Base URL
@@ -76,7 +79,7 @@ export class StreamingService extends EventEmitter {
     private initNodeMediaServer() {
         const config = {
             rtmp: {
-                port: 1935,
+                port: RTMP_PORT,
                 chunk_size: 60000,
                 gop_cache: true,
                 ping: 30,
@@ -135,7 +138,7 @@ export class StreamingService extends EventEmitter {
                         }
 
                         // Local Input URL (RTMP Loopback)
-                        const inputUrl = `rtmp://127.0.0.1:1935${cleanPath}`;
+                        const inputUrl = `rtmp://127.0.0.1:${RTMP_PORT}${cleanPath}`;
 
                         session.targets.forEach((target, index) => {
                             const remoteUrl = `${target.url}/${target.key}`;
@@ -184,7 +187,7 @@ export class StreamingService extends EventEmitter {
             }
         });
 
-        systemLogger.info('Node Media Server initialized on port 1935 (RTMP) and 8000 (HTTP)', 'StreamingService');
+        systemLogger.info(`Node Media Server initialized on port ${RTMP_PORT} (RTMP) and 8000 (HTTP)`, 'StreamingService');
     }
 
     /**
@@ -473,7 +476,7 @@ export class StreamingService extends EventEmitter {
             '-ar 44100',
             `-b:a ${config.audioBitrate}k`,
             '-async 1',                    // Audio sync: resample to match video
-            '-fps_mode cfr'                // Constant frame rate (duplicate/drop frames as needed)
+            '-vsync 1'                // Constant frame rate (duplicate/drop frames as needed)
         ];
 
         if (videoCodec === 'libx264') {
@@ -778,7 +781,7 @@ export class StreamingService extends EventEmitter {
             systemLogger.info(`Stopped stream ${sessionId}. Duration: ${durationMinutes} mins. Deducting ${creditsToDeduct} credits.`, 'StreamingService');
 
             // Enforce Deduction
-             await creditManager.deductCredits(
+            await creditManager.deductCredits(
                 session.userId,
                 'streaming',
                 creditsToDeduct,

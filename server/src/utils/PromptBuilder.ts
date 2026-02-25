@@ -225,6 +225,63 @@ Generate high-quality cinematic frame. STRICT ADHERENCE TO VISUAL STYLE IS MANDA
 };
 
 // ============================================================================
+// STORYBOARD & PROJECT PLANNING
+// ============================================================================
+
+export const buildStoryboardPrompt = async (
+    scriptOrTopic: string,
+    projectAnalysis: any,
+    targetDuration: number = 60,
+    language: string = 'English',
+    translator?: (prompt: string) => Promise<string>
+): Promise<string> => {
+    const grounding = getProjectGroundingPrompt(projectAnalysis);
+    const translatedInput = await translateToEnglish(scriptOrTopic, language, translator);
+
+    return `
+${grounding}
+
+### CINEMATIC STORYBOARD GENERATION ###
+**INPUT SCRIPT/TOPIC**: ${translatedInput}
+**TARGET DURATION**: ${targetDuration} seconds
+**OUTPUT LANGUAGE**: ${language}
+
+Task: Break down the input into a high-fidelity cinematic storyboard. 
+Each segment must be designed for professional production.
+
+### STRICT JSON STRUCTURE ###
+Return ONLY a valid JSON object with the following structure:
+{
+  "segments": [
+    {
+      "order": 1,
+      "title": "Short descriptive title",
+      "description": "Vivid visual description of the action and characters",
+      "duration": 5.0,
+      "location": "Location name",
+      "cameraAngle": "e.g., Close-up, Wide shot, tracking",
+      "mood": "Emotional tone",
+      "visualKeywords": ["keyword1", "keyword2"],
+      "audioKeywords": ["sfx1", "music_mood"],
+      "characters": ["Name1", "Name2"],
+      "voiceover": "Spoken dialogue or narration if any",
+      "detailedDialogue": [
+        { "characterName": "Name", "line": "Exact text", "delivery": "tone" }
+      ]
+    }
+  ],
+  "totalDuration": 60.0
+}
+
+### PRODUCTION REQUIREMENTS ###
+1. **Consistency**: Use characters and locations defined in the GROUNDING section if they match.
+2. **Pacing**: Ensure segments total approximately the TARGET DURATION.
+3. **Detail**: Visual descriptions must be sufficient for image/video generation models.
+4. **Resilience**: Ensure all JSON property names are exactly as specified.
+`.trim();
+};
+
+// ============================================================================
 // VIDEO GENERATION (VEO) - HIGH FIDELITY
 // ============================================================================
 
@@ -401,5 +458,64 @@ export const buildMusicPrompt = async (
 **MOOD**: ${translatedMood}
 
 Generate a high-quality cinematic background track that matches the project's genre and mood.
+`.trim();
+};
+
+// ============================================================================
+// CONTENT ANALYSIS & METADATA
+// ============================================================================
+
+export const buildHighlightsPrompt = (context: string): string => {
+    return `
+### VIRAL HIGHLIGHT EXTRACTION ###
+Analyze the provided transcript or visual description to identify the most engaging, "viral", or impactful segments.
+
+**CONTEXT**: ${context}
+
+### OUTPUT FORMAT (JSON) ###
+{
+  "highlights": [
+    {
+      "start": 0.0,
+      "end": 15.0,
+      "title": "Catchy segment title",
+      "description": "Why this is a highlight",
+      "viralScore": 0.95,
+      "platform": "TikTok/YouTube Shorts"
+    }
+  ]
+}
+`.trim();
+};
+
+export const buildSocialMetaPrompt = (contentSummary: string): string => {
+    return `
+### SOCIAL MEDIA OPTIMIZATION ###
+Generate optimized metadata for social media distribution based on the provided content.
+
+**CONTENT SUMMARY**: ${contentSummary}
+
+### OUTPUT FORMAT (JSON) ###
+{
+  "headlines": ["Option 1", "Option 2"],
+  "descriptions": ["Short version", "Long version"],
+  "tags": ["tag1", "tag2"],
+  "ctas": ["Call to action 1"],
+  "thumbnailPrompts": ["Text-to-image prompt for a viral thumbnail"]
+}
+`.trim();
+};
+
+export const buildTranslationPrompt = (text: string, targetLanguage: string): string => {
+    return `
+### CREATIVE TRANSLATION & LOCALIZATION ###
+Translate and localize the following text into ${targetLanguage}. 
+Maintain the original emotional tone, technical depth, and cultural nuances.
+
+**TEXT**: ${text}
+
+### INSTRUCTIONS ###
+1. Respond ONLY with the translated text.
+2. If it's a technical script, maintain the structural tags (e.g., [CHAR_X]).
 `.trim();
 };

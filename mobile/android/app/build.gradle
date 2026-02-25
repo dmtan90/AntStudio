@@ -79,7 +79,7 @@ android {
 
     namespace "com.antflowmobile"
     defaultConfig {
-        applicationId "com.antflowmobile"
+        applicationId "com.antstudiomobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

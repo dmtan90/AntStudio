@@ -72,6 +72,33 @@ export class ClusterManager {
         if (this.primaryConnection) await this.primaryConnection.close();
         for (const conn of this.readReplicas) await conn.close();
     }
+
+    /**
+     * Returns information about all nodes in the cluster.
+     */
+    public getClusterInfo() {
+        const nodes = [];
+        
+        if (this.primaryConnection) {
+            nodes.push({
+                id: 'primary',
+                host: this.primaryConnection.host,
+                role: 'WRITER',
+                status: this.primaryConnection.readyState === 1 ? 'Active' : 'Disconnected'
+            });
+        }
+
+        this.readReplicas.forEach((conn, index) => {
+            nodes.push({
+                id: `replica-${index + 1}`,
+                host: conn.host,
+                role: 'READER',
+                status: conn.readyState === 1 ? 'Active' : 'Disconnected'
+            });
+        });
+
+        return nodes;
+    }
 }
 
 export const clusterManager = new ClusterManager();

@@ -14,22 +14,22 @@
           <div class="legal-sections card" :class="{ glass: !embedded }">
             <section>
               <h2>1. Acceptance of Terms</h2>
-              <p>By accessing or using AntFlow, you agree to be bound by these Terms of Service. If you do not agree, please do not use our services.</p>
+              <p>By accessing or using AntStudio, you agree to be bound by these Terms of Service. If you do not agree, please do not use our services.</p>
             </section>
 
             <section>
               <h2>2. Use of Service</h2>
-              <p>You agree to use AntFlow only for lawful purposes. You are responsible for all content generated using your account.</p>
+              <p>You agree to use AntStudio only for lawful purposes. You are responsible for all content generated using your account.</p>
             </section>
 
             <section>
               <h2>3. Intellectual Property</h2>
-              <p>While AntFlow provides tools to generate content, you must ensure you have the necessary rights to any assets used as input. Ownership of generated content is subject to your specific plan terms.</p>
+              <p>While AntStudio provides tools to generate content, you must ensure you have the necessary rights to any assets used as input. Ownership of generated content is subject to your specific plan terms.</p>
             </section>
 
             <section>
               <h2>4. Prohibited Conduct</h2>
-              <p>You may not use AntFlow to generate content that is harmful, illegal, or violates the rights of others.</p>
+              <p>You may not use AntStudio to generate content that is harmful, illegal, or violates the rights of others.</p>
             </section>
           </div>
         </div>

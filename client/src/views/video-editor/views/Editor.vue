@@ -22,7 +22,7 @@
         <!-- Full Editor UI (Hidden in Headless) -->
         <template v-if="!editor.isHeadless">
           <EditorMenubar />
-          <main class="flex-1 flex w-full h-[calc(100dvh-56px)]">
+          <main class="flex-1 flex w-full h-[calc(100dvh-56px)] overflow-hidden">
             <EditorSidebarLeft />
             <section class="flex-1 flex flex-col relative w-0 pb-16 sm:pb-0">
               <EditorToolbar v-if="active" />

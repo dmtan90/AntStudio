@@ -1,5 +1,5 @@
 <template>
-    <div class="onboarding-page flex items-center justify-center min-height-screen">
+    <div class="onboarding-page flex items-center justify-center min-h-screen">
         <!-- Background Elements -->
         <div class="macos-bg">
             <div class="blob blob-1"></div>

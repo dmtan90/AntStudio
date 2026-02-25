@@ -36,10 +36,9 @@ const emit = defineEmits(['snap', 'click']); // Added 'click' to defined emits
 const handle = ref<NodeJS.Timeout | null>(null);
 const backgroundURL = ref("");
 
-const SEEK_TIME_HEIGHT = computed(() => props.height || 40);
-const SEEK_TIME_WIDTH = computed(() => 42 * (props.zoom || 1));
+const SEEK_TIME_WIDTH = 42;
 const HANDLE_WIDTH = 16;
-// const HANDLE_HEIGHT = 40; // Deprecated, use props.height
+const HANDLE_HEIGHT = 28;
 const MIN_WIDTH = HANDLE_WIDTH * 2;
 
 // const offset = ref(0);
@@ -47,32 +46,25 @@ const MIN_WIDTH = HANDLE_WIDTH * 2;
 // const width = ref(0);
 // const backgroundWidth = ref(0);
 // const disabled = ref(false);
-const timelineMs = computed(() => props.sceneDuration ?? timeline.value?.duration ?? 5000);
-const globalSceneOffset = computed(() => props.sceneOffset || 0);
-
-const disabled = computed(() => timeline.value?.playing || animations.value?.previewing || props.element?.meta?.locked);
+const timelineMs = computed(() => timeline.value?.duration ?? 5000);
+const disabled = computed(() => timeline.value?.playing || animations.value?.previewing);
 const baseId = computed(() => props.element?.id ?? props.element?.name ?? "");
-const offsetMs = computed(() => props.element?.meta?.offset || (props.element?.offset ? props.element.offset * 1000 : 0));
-const durationMs = computed(() => props.element?.meta?.duration || (props.element?.timeline ? props.element.timeline * 1000 : 3000));
-
-// Position relative to the unified timeline container
-const offsetInSecond = computed(() => ((globalSceneOffset.value + offsetMs.value) / 1000) * SEEK_TIME_WIDTH.value);
-
-const widthInSecond = computed(() => {
-  // Clamp visually to scene end
-  const duration = durationMs.value;
-  const offset = offsetMs.value; // Local offset
-  const sceneEnd = timelineMs.value;
-
-  // Logic: Real width is duration. Visual width is min(duration, sceneEnd - offset)
-  // Ensure we don't return negative width
-  const visibleDuration = Math.max(0, Math.min(duration, sceneEnd - offset));
-
-  return (visibleDuration / 1000) * SEEK_TIME_WIDTH.value;
+const offsetMs = computed(() => {
+  const metaOffset = props.element?.meta?.offset;
+  if (metaOffset != null) return metaOffset;
+  const rawOffset = props.element?.offset;
+  return rawOffset != null ? rawOffset * 1000 : 0;
 });
-
-const backgroundWidth = computed(() => props.type == "audio" ? (props.element.timeline * SEEK_TIME_WIDTH.value) : (SEEK_TIME_HEIGHT.value * (props.element.width! / props.element.height!)));
-const timelineInSecond = computed(() => (timelineMs.value / 1000) * SEEK_TIME_WIDTH.value);
+const durationMs = computed(() => {
+  const metaDuration = props.element?.meta?.duration;
+  if (metaDuration != null) return metaDuration;
+  const rawTimeline = props.element?.timeline;
+  return rawTimeline != null ? rawTimeline * 1000 : 3000;
+});
+const offsetInSecond = computed(() => (offsetMs.value / 1000) * SEEK_TIME_WIDTH);
+const widthInSecond = computed(() => (durationMs.value / 1000) * SEEK_TIME_WIDTH);
+const backgroundWidth = computed(() => props.type == "audio" ? (props.element.timeline * SEEK_TIME_WIDTH) : (HANDLE_HEIGHT * (props.element.width! / props.element.height!)));
+const timelineInSecond = computed(() => (timelineMs.value / 1000) * SEEK_TIME_WIDTH);
 
 // Explicit click handler to ensure propagation
 const onCardClick = (event: MouseEvent) => {
@@ -103,7 +95,7 @@ const onCardClick = (event: MouseEvent) => {
 const trackStyle = computed(() => {
   return {
     backgroundImage: `url(${backgroundURL.value})`,
-    backgroundSize: `${backgroundWidth.value}px ${SEEK_TIME_HEIGHT.value}px`,
+    backgroundSize: `${backgroundWidth.value}px ${HANDLE_HEIGHT}px`,
   }
 });
 
@@ -135,7 +127,7 @@ const isSelected = ref(false);
 // });
 
 const drawWaveformFromAudio = debounce((audio: any) => {
-  drawWaveformFromAudioBuffer(audio.buffer, SEEK_TIME_HEIGHT.value, widthInSecond.value, audio.trim, audio.timeline).then((blob) => {
+  drawWaveformFromAudioBuffer(audio.buffer, HANDLE_HEIGHT, widthInSecond.value, audio.trim, audio.timeline).then((blob) => {
     backgroundURL.value = URL.createObjectURL(blob);
   });
 }, 1000);
@@ -243,70 +235,13 @@ onUnmounted(() => {
 });
 
 const handleDragTrack = (x: number, y: number) => {
+  console.log("handleDragTrack", x, y);
+  if (y < 0) {
+    return false;
+  }
+
   if (disabled.value || x < 0) return false;
-
-  const SNAP_THRESHOLD = 10; // pixels
-  let targetX = x;
-
-  // 1. Define Snap Points (in pixels)
-  const snapPoints: number[] = [
-    0,
-    (timelineMs.value / 1000) * SEEK_TIME_WIDTH.value,
-    (timeline.value?.seek || 0) * SEEK_TIME_WIDTH.value
-  ];
-
-  // Add 1-second grid snap points
-  for (let s = 1; s < timelineMs.value / 1000; s++) {
-    snapPoints.push(s * SEEK_TIME_WIDTH.value);
-  }
-
-  // Add other elements' bounds as snap points
-  // If we are in a unified timeline, we should consider all elements across all scenes
-  // For now, elements.value usually contains elements of the active scene.
-  // To support cross-scene snapping, we'd need access to all project elements.
-  // Let's at least ensure we snap accurately to our own scene boundaries.
-  elements.value.forEach(el => {
-    if (el.name === props.element.name || el.id === props.element.id) return;
-    const offset = (el.meta?.offset || el.offset * 1000) / 1000 * SEEK_TIME_WIDTH.value;
-    const duration = (el.meta?.duration || el.duration * 1000) / 1000 * SEEK_TIME_WIDTH.value;
-    snapPoints.push(offset);
-    snapPoints.push(offset + duration);
-  });
-
-  // 2. Check for Snapping
-  const myWidth = widthInSecond.value;
-  let snappedX: number | null = null;
-  const SNAP_THRESHOLD_INNER = 8; // tighter snap for better feel
-
-  for (const point of snapPoints) {
-    // Snap my start to point
-    if (Math.abs(targetX - point) < SNAP_THRESHOLD_INNER) {
-      targetX = point;
-      snappedX = point;
-      break;
-    }
-    // Snap my end to point
-    if (Math.abs((targetX + myWidth) - point) < SNAP_THRESHOLD_INNER) {
-      targetX = point - myWidth;
-      snappedX = point;
-      break;
-    }
-  }
-
-  emit('snap', snappedX);
-
-  let newOffset = Math.floor((targetX / SEEK_TIME_WIDTH.value) * 1000);
-
-  // Clamp to 0
-  if (newOffset < 0) newOffset = 0;
-
-  // Clamp end to Scene Duration
-  const timelineDurationMs = props.sceneDuration ?? canvas.value.timeline.duration;
-  // Note: We use durationMs.value as the current element width
-  if (newOffset + durationMs.value > timelineDurationMs) {
-    newOffset = timelineDurationMs - durationMs.value;
-    if (newOffset < 0) newOffset = 0; // Fallback if element is longer than scene
-  }
+  const newOffset = Math.floor((x / SEEK_TIME_WIDTH) * 1000);
 
   if (props.type == "audio") {
     // ... rest of audio update logic ...
@@ -361,15 +296,7 @@ const handleResizeTrack = (x: number, y: number, width: number, height: number) 
 const handleDragRightBar = (value: number) => {
   console.log("handleDragRightBar", value);
   if (disabled.value) return false;
-  let newDuration = Math.floor((value / SEEK_TIME_WIDTH.value) * 1000);// - offsetMs.value;
-
-  // Clamp duration + offset <= Scene Duration
-  const timelineDurationMs = props.sceneDuration ?? canvas.value.timeline.duration;
-  if (offsetMs.value + newDuration > timelineDurationMs) {
-    newDuration = timelineDurationMs - offsetMs.value;
-  }
-  if (newDuration < 100) newDuration = 100; // Minimum duration clamp (0.1s)
-
+  const newDuration = Math.floor((value / SEEK_TIME_WIDTH) * 1000);// - offsetMs.value;
   if (props.type == "audio") {
     const _audio = audio.value!.get(baseId.value);
     if (_audio) {

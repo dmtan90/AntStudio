@@ -113,7 +113,7 @@ const intensity = computed({
 <template>
   <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
     <!-- Header -->
-    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group">
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group shrink-0">
       <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
       <h2 class="font-bold text-xs tracking-[0.2em] uppercase text-white/90 relative z-10">Filters</h2>
       <div class="flex items-center gap-2 relative z-10">

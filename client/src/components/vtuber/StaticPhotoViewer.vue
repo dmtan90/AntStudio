@@ -542,12 +542,11 @@ const update = (delta: number) => {
     const positions = geom.positions || geom.getBuffer?.('aVertexPosition')?.data || new Float32Array(originalVertices.length);
     if (!positions || positions.length === 0) return;
     
-    // Centralized Smart Sync Logic
-    let isSinging = isSingingAtTime(props.lyrics, props.currentTime);
-    
     const rawVol = props.speakingVol || 0;
-    // If not singing (instrumental), force volume to 0 for lip sync
-    const targetVol = isSinging ? rawVol : 0;
+    const hasLyrics = props.lyrics && props.lyrics.length > 0;
+    const isSinging = hasLyrics ? isSingingAtTime(props.lyrics, props.currentTime) : false;
+    
+    const targetVol = (hasLyrics ? (isSinging ? rawVol : 0) : rawVol) || 0;
     
     const pitch = props.pitchFactor || 0;
     const emp = props.emphasis || 0;

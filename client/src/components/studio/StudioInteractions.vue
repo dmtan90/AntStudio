@@ -366,35 +366,40 @@ onUpdated(() => {
     width: 320px;
     display: flex;
     flex-direction: column;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    gap: 12px;
 
     .section-tabs {
         display: flex;
-        padding: 12px;
-        gap: 8px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        padding: 4px;
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
 
         .tab-btn {
             flex: 1;
             height: 32px;
             border-radius: 8px;
             font-size: 10px;
-            font-weight: 800;
+            font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.1em;
             color: rgba(255, 255, 255, 0.3);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
             background: transparent;
 
             &:hover {
                 color: rgba(255, 255, 255, 0.6);
+                background: rgba(255, 255, 255, 0.02);
             }
 
             &.active {
-                background: rgba(255, 255, 255, 0.05);
+                background: rgba(255, 255, 255, 0.08);
                 color: #fff;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
             }
         }
     }
@@ -402,10 +407,10 @@ onUpdated(() => {
     .chat-flow {
         flex: 1;
         overflow-y: auto;
-        padding: 16px;
+        padding: 8px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 16px;
         scrollbar-width: none;
 
         &::-webkit-scrollbar {
@@ -413,46 +418,59 @@ onUpdated(() => {
         }
 
         .chat-message {
-            font-size: 12px;
-            line-height: 1.5;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 1rem;
+            transition: all 0.3s;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.04);
+                border-color: rgba(255, 255, 255, 0.06);
+            }
 
             .user {
-                font-weight: 800;
+                font-weight: 900;
                 color: #3b82f6;
-                margin-right: 4px;
+                margin-right: 6px;
+                text-transform: uppercase;
+                font-size: 10px;
+                letter-spacing: 0.05em;
             }
 
             .text {
-                opacity: 0.8;
+                color: rgba(255, 255, 255, 0.85);
             }
 
             &.is-social {
-                padding: 8px 12px;
-                background: rgba(59, 130, 246, 0.05);
-                border-radius: 12px;
-                border-left: 2px solid #3b82f6;
+                background: rgba(59, 130, 246, 0.08);
+                border-left: 3px solid #3b82f6;
+                border-radius: 1rem;
             }
         }
     }
 
     .interaction-buttons {
-        padding: 12px 16px 16px;
+        padding: 4px;
         display: flex;
         flex-direction: column;
-        border-top: 1px solid rgba(255, 255, 255, 0.03);
+        gap: 12px;
 
         .chat-input-wrapper {
             display: flex;
             align-items: center;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 2px 2px 2px 14px;
-            transition: all 0.2s;
+            border-radius: 1rem;
+            padding: 4px 4px 4px 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
             &:focus-within {
-                background: rgba(255, 255, 255, 0.05);
-                border-color: rgba(59, 130, 246, 0.3);
+                background: rgba(255, 255, 255, 0.06);
+                border-color: rgba(59, 130, 246, 0.4);
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
             }
 
             .chat-input {
@@ -460,19 +478,20 @@ onUpdated(() => {
                 background: transparent;
                 border: none;
                 color: #fff;
-                font-size: 13px;
-                height: 36px;
+                font-size: 14px;
+                height: 40px;
                 outline: none;
 
                 &::placeholder {
                     color: rgba(255, 255, 255, 0.2);
+                    font-size: 13px;
                 }
             }
 
             .send-btn {
-                width: 32px;
-                height: 32px;
-                border-radius: 10px;
+                width: 36px;
+                height: 36px;
+                border-radius: 12px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -480,68 +499,76 @@ onUpdated(() => {
                 color: #fff;
                 border: none;
                 cursor: pointer;
-                transition: all 0.2s;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
                 &:disabled {
-                    opacity: 0.3;
+                    opacity: 0.2;
                     cursor: not-allowed;
                     background: rgba(255, 255, 255, 0.05);
                 }
 
                 &:not(:disabled):hover {
-                    transform: scale(1.05);
-                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+                    transform: scale(1.05) rotate(5deg);
+                    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
                 }
             }
         }
 
         .interact-btn {
             flex: 1;
-            height: 40px;
-            border-radius: 12px;
+            height: 44px;
+            border-radius: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            border: none;
-            transition: all 0.2s;
+            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
             &.like {
-                background: rgba(255, 77, 79, 0.1);
+                background: rgba(255, 77, 79, 0.08);
+                border-color: rgba(255, 77, 79, 0.1);
                 color: #ff4d4f;
 
                 &:hover {
-                    background: rgba(255, 77, 79, 0.2);
-                    transform: scale(1.05);
+                    background: rgba(255, 77, 79, 0.15);
+                    border-color: rgba(255, 77, 79, 0.3);
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 15px rgba(255, 77, 79, 0.2);
                 }
             }
 
             &.dislike {
-                background: rgba(255, 255, 255, 0.05);
-                color: #666;
+                background: rgba(255, 255, 255, 0.03);
+                border-color: rgba(255, 255, 255, 0.05);
+                color: rgba(255, 255, 255, 0.4);
 
                 &:hover {
-                    background: rgba(255, 255, 255, 0.1);
-                    transform: scale(1.05);
+                    background: rgba(255, 255, 255, 0.06);
+                    color: rgba(255, 255, 255, 0.7);
+                    transform: translateY(-2px);
                 }
             }
         }
         
         .gift-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            height: 28px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            height: 32px;
             font-size: 10px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.7);
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.5);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             
             &:hover {
-                background: rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.05);
                 color: #fff;
-                border-color: rgba(255, 255, 255, 0.2);
+                border-color: rgba(255, 255, 255, 0.1);
+                transform: translateY(-1px);
             }
         }
     }

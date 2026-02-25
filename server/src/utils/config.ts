@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 
 // Handling __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -45,6 +47,10 @@ export const config = {
     geminiModelImageGeneration: process.env.GEMINI_MODEL_IMAGE_GENERATION || 'gemini-2.5-flash-image',
     geminiModelVideoGeneration: process.env.GEMINI_MODEL_VIDEO_GENERATION || 'veo-3.1-fast-generate-preview',
     geminiModelTts: process.env.GEMINI_MODEL_TTS || 'lyria-002',
+
+    // FFmpeg & FFprobe
+    ffmpegPath: process.env.FFMPEG_PATH || ffmpegInstaller.path,
+    ffprobePath: process.env.FFPROBE_PATH || ffprobeInstaller.path,
 
     // Public keys (matching Nuxt public config)
     public: {

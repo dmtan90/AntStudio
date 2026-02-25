@@ -97,6 +97,7 @@ export class Editor {
   public onTick?: () => void;
   public onThumbnailUpdated?: () => void;
   private _isRenderingHeadless = false;
+  public isRendering = false;
 
   constructor() {
     this.page = 0;
@@ -236,7 +237,7 @@ export class Editor {
       this.fps = this.canvas?.artboard.fps || 30;
       this.codec = this.canvas?.artboard.codec || "H264";
       this.format = this.canvas?.artboard.format || "mp4";
-      const blob = await this.exportVideo();
+      const blob = await this.exportVideo(true, false);
       return blob;
     } catch (error) {
       console.error("[Editor] Headless render failed:", error);
@@ -441,6 +442,7 @@ export class Editor {
   }
 
   async exportVideo(headless: boolean = false, upload: boolean = true): Promise<Blob> {
+    this.isRendering = true;
     this.isHeadless = headless;
     this.blob = undefined;
     this.frame = undefined;
@@ -468,21 +470,27 @@ export class Editor {
       this.blob = blob;
 
       //upload video to S3
-      if(this.id && upload){
-        const projectStore = useProjectStore();
-        // Use FormData for direct multipart upload
-        const formData = new FormData();
-        formData.append('video', blob, `${this.name || 'Untitled'}.${this.format}`);
-        // Upload directly to project endpoint via store
-        await projectStore.publishProject(this.id, formData, (percent) => {
-            this.progress.upload = percent;
-            // toast.info(`Uploading: ${percent}%`);
-        });
-        toast.success('Video exported and saved successfully!');
+      try{
+        if(this.id && upload){
+          const projectStore = useProjectStore();
+          // Use FormData for direct multipart upload
+          const formData = new FormData();
+          formData.append('video', blob, `${this.name || 'Untitled'}.${this.format}`);
+          // Upload directly to project endpoint via store
+          await projectStore.publishProject(this.id, formData, (percent) => {
+              this.progress.upload = percent;
+              // toast.info(`Uploading: ${percent}%`);
+          });
+          toast.success('Video exported and saved successfully!');
 
-        // Refresh project data
-        await projectStore.fetchProject(this.id);
+          // Refresh project data
+          await projectStore.fetchProject(this.id);
+        }
+      }catch(err){
+        console.log("Upload error", err);
+        toast.error("Failed to upload video");
       }
+      
       this.onChangeExportStatus(ExportProgress.Completed);
       
       return blob;
@@ -492,6 +500,7 @@ export class Editor {
       throw error;
     } finally {
       this.recorder.stop();
+      this.isRendering = false;
     }
   }
 

@@ -200,7 +200,7 @@
 
                 <div class="flex justify-center mt-4">
                     <el-pagination v-model:current-page="logFilter.page" :page-size="100" layout="prev, pager, next"
-                        :total="totalLogs" @current-change="() => fetchLogs()" background small />
+                        :total="totalLogs" @update:current-page="() => fetchLogs()" background small />
                 </div>
             </div>
 
@@ -300,12 +300,12 @@ const fetchLogs = async (silent = false) => {
             adminStore.fetchMonitoringLogs(logFilter),
             adminStore.fetchClientLogs()
         ]);
-        if (res && res.data) {
-            logs.value = res.data.logs;
-            totalLogs.value = res.data.total;
+        if (res) {
+            logs.value = res.logs;
+            totalLogs.value = res.total;
         }
-        if (clientRes && clientRes.data) {
-            clientLogs.value = clientRes.data;
+        if (clientRes) {
+            clientLogs.value = clientRes.logs;
         }
     } catch (e) {
         if (!silent) toast.error('Failed to load logs');
@@ -350,8 +350,9 @@ const clearLogs = async () => {
 const setupSocket = () => {
     const token = authStore.token;
     if (!token) return;
-
-    socket.value = io(import.meta.env.VITE_API_URL || 'http://localhost:4000', {
+	let domain = window.location.origin;
+	domain = domain.replace("https:", "wss:").replace("http:", "ws:");
+    socket.value = io(domain, {
         path: '/api/socket.io',
         auth: { token }
     });

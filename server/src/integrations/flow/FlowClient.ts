@@ -241,7 +241,7 @@ export class FlowClient {
         }
 
         if (needsNewProject) {
-            projectId = await flowApiClient.createProject(stToken, `AntFlow_Workspace_${Date.now()}`);
+            projectId = await flowApiClient.createProject(stToken, `AntStudio_Workspace_${Date.now()}`);
             await this.saveWorkspaceUrlToDB(`https://labs.google/fx/vi/tools/flow/project/${projectId}`);
         }
 

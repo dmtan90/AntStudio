@@ -141,7 +141,7 @@ export function useStudioSession(
                         toast.info(`Configuring live stream for ${acc.accountName}...`);
                         const data = await platformStore.fetchLiveInfo(pId, {
                             title: options.currentProject.value.title,
-                            description: 'Live via AntFlow'
+                            description: 'Live via AntStudio'
                         });
 
                         // Store updates the account automatically, but we might need to update our local reference if it's a copy

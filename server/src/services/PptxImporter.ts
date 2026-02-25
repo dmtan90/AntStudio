@@ -1,6 +1,6 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pptxParser = require('pptx-parser');
+import * as pkgPptxtojson from 'pptxtojson';
+// @ts-ignore
+const parsePptx = pkgPptxtojson.parse || (pkgPptxtojson as any).default?.parse;
 import { PptxToFabricParser } from '../utils/parsers/PptxToFabricParser.js';
 import { uploadToS3 } from '../utils/s3.js';
 import { Template } from '../models/Template.js';
@@ -14,9 +14,10 @@ export class PptxImporter {
     }
 
     async importPptx(file: Express.Multer.File, userId: string): Promise<any> {
-        console.log(`[PptxImporter] 📦 Importing PPTX: ${file.originalname}`);
+        console.log(`[PptxImporter] 📦 Importing PPTX with pptist: ${file.originalname}`);
 
-        const result = await pptxParser.parse(file.buffer);
+        // @ts-ignore
+        const result = await parsePptx(file.buffer);
         if (!result || !result.slides) {
             throw new Error('Failed to parse PPTX or file is empty');
         }

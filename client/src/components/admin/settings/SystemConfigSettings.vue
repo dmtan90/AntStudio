@@ -13,6 +13,38 @@
             </el-form>
         </el-card>
 
+        <!-- Proxy Configuration -->
+        <el-card class="settings-section" v-if="apiConfigs.proxy">
+            <template #header>
+                <div class="flex justify-between items-center w-full">
+                    <span>Global Proxy</span>
+                    <el-switch v-model="apiConfigs.proxy.enabled" size="small" />
+                </div>
+            </template>
+            
+            <el-form :model="apiConfigs.proxy.webshare" label-position="top" :disabled="!apiConfigs.proxy.enabled">
+                <el-row :gutter="20">
+                    <el-col :span="16">
+                        <el-form-item label="Proxy Domain">
+                            <el-input v-model="apiConfigs.proxy.webshare.domainName" placeholder="p.webshare.io" class="glass-input" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-form-item label="Port">
+                            <el-input-number v-model="apiConfigs.proxy.webshare.proxyPort" :controls="false" style="width: 100%" class="glass-input" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-form-item label="Proxy Username">
+                    <el-input v-model="apiConfigs.proxy.webshare.proxyUsername" class="glass-input" />
+                </el-form-item>
+                <el-form-item label="Proxy Password">
+                    <el-input v-model="apiConfigs.proxy.webshare.proxyPassword" type="password" show-password class="glass-input" />
+                </el-form-item>
+            </el-form>
+            <div class="text-[10px] text-gray-500 mt-2 uppercase tracking-widest font-bold opacity-50">Webshare.io Integration</div>
+        </el-card>
+
         <!-- SMTP -->
         <el-card class="settings-section">
             <template #header>SMTP Configuration</template>

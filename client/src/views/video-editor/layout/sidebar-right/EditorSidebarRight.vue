@@ -104,12 +104,8 @@ const handleDrawerClose = () => {
 </script>
 
 <template>
-  <template>
-    <template v-if="sidebar">
-      <aside :style="{ width: rightSidebarWidth }"
-        class="overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-xl border-l border-white/5 shrink-0 cinematic-panel">
-        <component :is="sidebar.Component" v-if="sidebar" />
-      </aside>
-    </template>
-  </template>
+  <aside v-if="sidebar" :style="{ width: rightSidebarWidth }"
+    class="h-[calc(100vh-60px)] overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-xl border-l border-white/5 shrink-0 h-full cinematic-panel">
+    <component :is="sidebar.Component" />
+  </aside>
 </template>

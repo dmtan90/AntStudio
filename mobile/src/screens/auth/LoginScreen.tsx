@@ -11,7 +11,7 @@ export const LoginScreen = () => {
         try {
             // Mock login for demo
             if (email && password) {
-                await login('mock-jwt-token', { name: 'AntFlow User', email });
+                await login('mock-jwt-token', { name: 'AntStudio User', email });
             } else {
                 Alert.alert('Error', 'Please enter email and password');
             }
@@ -23,7 +23,7 @@ export const LoginScreen = () => {
 
     return (
         <View className="flex-1 justify-center items-center bg-gray-900 p-4">
-            <Text className="text-3xl font-bold text-white mb-8">AntFlow Mobile</Text>
+            <Text className="text-3xl font-bold text-white mb-8">AntStudio Mobile</Text>
 
             <View className="w-full space-y-4">
                 <TextInput

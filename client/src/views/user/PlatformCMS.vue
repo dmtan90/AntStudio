@@ -111,8 +111,11 @@
            <div v-else-if="videos.length" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
               <div v-for="video in videos" :key="video.id" class="group relative cursor-pointer" @click="openVideoDetail(video)">
                  <div class="aspect-video bg-black rounded-2xl overflow-hidden mb-3 relative border border-white/5 group-hover:border-white/20 transition-colors">
-                    <img :src="getFileUrl(video.thumbnail)" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105" />
-                    
+                    <el-image :src="getFileUrl(video.thumbnail)" class="w-full h-full" fit="cover">
+                        <template #error>
+                           <pic size="24" />
+                        </template>
+                    </el-image>
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                        <play-one theme="filled" size="40" class="text-white drop-shadow-xl" />
                     </div>
@@ -150,7 +153,7 @@
            <div class="flex justify-center mt-12">
                <el-pagination 
                   v-model:current-page="filters.page"
-                  v-model:page-size="filters.limit"
+                  :page-size="filters.limit"
                   :total="totalVideos"
                   :page-sizes="[12, 24, 48]"
                   layout="prev, pager, next"
@@ -193,7 +196,11 @@
                      >
                         <div class="text-2xl font-black text-gray-600 w-8 text-center group-hover:text-white transition-colors">#{{ index + 1 }}</div>
                         <div class="w-32 aspect-video bg-black rounded-lg overflow-hidden relative">
-                           <img :src="video.thumbnail" class="w-full h-full object-cover" />
+                           <el-image :src="video.thumnail" class="w-full h-full" fit="cover">
+                              <template #error>
+                                 <pic size="24" />
+                              </template>
+                           </el-image>
                         </div>
                         <div class="flex-1 min-w-0">
                            <div class="font-bold text-white text-lg truncate mb-1">{{ video.title }}</div>
@@ -217,8 +224,7 @@
         <div class="grid grid-cols-3 gap-8 h-[600px] text-white">
            <div class="col-span-2 flex flex-col h-full">
                <div class="aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl mb-6 flex-shrink-0">
-                  <iframe v-if="selectedVideo?.platform === 'youtube'" :src="`https://www.youtube.com/embed/${selectedVideo.id}?autoplay=1`" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
-                  <div v-else class="w-full h-full flex items-center justify-center text-gray-500 bg-[#0a0a0c]">Preview Unavailable</div>
+                  <iframe :src="selectedVideo?.url" class="w-full h-full" controls frameborder="0" allowfullscreen></iframe>
                </div>
                <div>
                   <h2 class="text-2xl font-bold leading-tight mb-2">{{ selectedVideo?.title }}</h2>
@@ -252,7 +258,11 @@
                      <div v-if="store.comments.length === 0" class="text-center py-8 text-gray-500 text-xs">No comments</div>
                      <div v-for="comment in store.comments" :key="comment.id" class="flex gap-3 text-sm pb-3 border-b border-white/5 last:border-0">
                         <div class="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 overflow-hidden">
-                           <img v-if="comment.avatar" :src="comment.avatar" class="w-full h-full" />
+                           <el-image :src="comment.avatar" class="w-full h-full" fit="cover">
+                              <template #error>
+                                 <pic size="24" />
+                              </template>
+                           </el-image>
                         </div>
                         <div>
                            <div class="font-bold text-xs mb-1">{{ comment.author }} <span class="text-gray-500 font-normal ml-1">{{ formatDate(comment.date) }}</span></div>
@@ -267,7 +277,7 @@
 
      <!-- Simple Upload & Live Dialogs Implementation (omitted for brevity but would follow same style) -->
      <!-- Keeping the existing dialog structure but wrapping logic -->
-     <el-dialog v-model="showUploadDialog" title="Upload Video" width="500px" class="glass-dialog" :show-close="false">
+     <el-dialog v-model="showUploadDialog" title="Upload Video" width="500px" class="glass-dialog" :show-close="false" align-center>
          <!-- ... Upload form content with glass inputs ... -->
          <el-form :model="uploadForm" layout="vertical">
             <div class="mb-4">
@@ -308,7 +318,7 @@
          </template>
      </el-dialog>
 
-     <el-dialog v-model="showLiveStreamDialog" title="Live Streaming" width="600px" class="glass-dialog" :show-close="false">
+     <el-dialog v-model="showLiveStreamDialog" title="Live Streaming" width="600px" class="glass-dialog" :show-close="false" align-center>
         <div class="grid grid-cols-2 gap-6 mb-8">
            <div>
               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Stream Title</label>
@@ -362,7 +372,7 @@ import {
    ArrowLeft, Refresh, PlayOne, VideoOne,
    Youtube, Facebook, Tiktok, Broadcast, Connection,
    User, UploadOne, Delete, PreviewOpen, Broadcast as Construction,
-   Search, Loading, Copy
+   Search, Loading, Copy, Pic
 } from '@icon-park/vue-next';
 import { getFileUrl } from '@/utils/api';
 import { cn } from '@/utils/ui';
@@ -405,7 +415,7 @@ const uploading = ref(false);
 const loadingLive = ref(false);
 const liveForm = reactive({
    title: '',
-   description: 'Live via AntFlow',
+   description: 'Live via AntStudio',
    privacy: 'public'
 });
 

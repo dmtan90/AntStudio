@@ -2,7 +2,7 @@
  * PptxToFabricParser
  * 
  * Converts PPTX internal structure (from pptx-parser) into Fabric.js 
- * compatible JSON for AntFlow's template engine.
+ * compatible JSON for AntStudio's template engine.
  */
 
 export class PptxToFabricParser {

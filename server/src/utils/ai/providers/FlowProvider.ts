@@ -58,7 +58,7 @@ export class FlowProvider {
         }
 
         if (!projectId) {
-            projectId = await flowApiClient.createProject(stToken, "AntFlow Production");
+            projectId = await flowApiClient.createProject(stToken, "AntStudio Production");
             // Optionally save this back to settings? For now, we just use it.
             // Saving it would be good optimization for next time.
         }

@@ -46,6 +46,15 @@ export interface IAdminSettings extends Document {
                 rootFolderId: string
             }
         }
+        proxy?: {
+            enabled: boolean
+            webshare?: {
+                proxyUsername: string
+                proxyPassword: string
+                domainName?: string
+                proxyPort?: number
+            }
+        }
         publicDomain?: string
     }
     // settings.oauthProviders is deprecated in favor of apiConfigs.oauth but kept for migration if needed, 
@@ -229,6 +238,15 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                     clientEmail: { type: String, default: '' },
                     privateKey: { type: String, default: '' },
                     rootFolderId: { type: String, default: 'root' }
+                }
+            },
+            proxy: {
+                enabled: { type: Boolean, default: false },
+                webshare: {
+                    proxyUsername: { type: String, default: '' },
+                    proxyPassword: { type: String, default: '' },
+                    domainName: { type: String, default: 'p.webshare.io' },
+                    proxyPort: { type: Number, default: 80 }
                 }
             },
             publicDomain: { type: String, default: '' }

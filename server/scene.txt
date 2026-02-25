@@ -1,0 +1,2308 @@
+[Segment 1] 0.0s - 8.0s
+Scene 1 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: off-screen, Orientation: facing river, Pose: standing tall
+  Expression: solemn, distant
+  Actions: CHAR_1 stands out of sight near the rice boats then The flycam glides over the water lilies -> the mansion comes into view -> shadows stretch long; the voice carries over the wind then The scene establishes the vastness and isolation of the estate
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Wide establishing panoramic flycam shot
+- Angle: High-angle looking down at the river
+- Movement: Slow sweeping flycam gliding toward the mansion
+- Focus: Deep focus; water lilies in foreground, mansion sharp in background
+
+AUDIO:
+- Ambience: Mekong river flowing, Cricket chirps beginning, Gentle wind rustling reeds
+- Sound FX: Distant boat engine hum, Water lapping against wood
+- Music: Melancholy traditional flute melody
+
+DIALOGUE:
+- CHAR_1 [TTS: Alnilam | rate=0.8] (vi-VN): [Hò ơ... Dòng sông chảy xiết lục bình trôi... Ai về xứ ấy cho tui nhắn lời...]
+  [delivery: authoritatively but with a distant, haunting quality, style: low-pitched chanting with slight echo and melodic pause, timing: at scene start]
+
+LIP SYNC: Dialogue is off-screen; no lip sync required for CHAR_1.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 2] 8.0s - 16.0s
+Scene 2 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: Ancestral Altar Room
+  Layout: Cramped, dim interior room with the altar as the central focus
+  Objects: Dark wood altar, five small memorial tablets, incense burners, flickering candles, rhythmic wooden bell (mõ), The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Mournful, heavy with incense smoke, spiritually charged
+  Visual Style: 3D CGI rendering with octane-style lighting and volumetric smoke
+  Lighting: Flickering orange candlelight against deep dark ebony furniture shadows
+
+CHARACTERS:
+- [CHAR_2] Bà Chính (Human) - Female, Early 40s
+  Appearance: Slender, fragile posture, appearing physically weakened by sorrow, Thin, oval face with high forehead and sunken cheeks, Pale, wan complexion. 3D rendered surface with smooth shading, PBR materials, Deep, sorrowful expression with red-rimmed eyes from crying; always clutching a white handkerchief
+  Outfit: Elegant but muted grey silk traditional tunic with simple silver embroidery, White silk trousers, Silver hairpin with a small lotus motif, Embroidered grey silk slippers
+  Position: center frame foreground, Orientation: facing ancestral altar, Pose: sitting on floor, hunched
+  Expression: devastated, red-rimmed eyes
+  Actions: CHAR_2 sits in heavy silence before the tablets then She stares at the five tablets -> her shoulders shake with a sob -> she wipes a tear with her handkerchief; she whispers to the empty room then She remains motionless, a picture of profound grief
+  Voice: Soft, whispering, filled with grief [TTS: Vindemiatrix | rate=0.9 | pitch=-1.5 | style=Warm]
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: right background at doorway, Orientation: 45° left toward CHAR_2, Pose: standing rigid
+  Expression: worried, tense
+  Actions: CHAR_1 stands in the doorway shadows then He watches his wife -> his fingers move faster on the beads -> he sighs and speaks; his head bows slightly then He stays at the threshold, unable to cross into her grief
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium shot
+- Angle: Eye-level with CHAR_2
+- Movement: Static
+- Focus: CHAR_2 in sharp focus, CHAR_1 slightly soft in background
+
+AUDIO:
+- Ambience: Heavy incense smoke silence, Distant cricket hum, Low hum of night
+- Sound FX: Rhythmic click of wooden beads, Flickering candle crackle, Soft sob
+- Music: Subtle, low-frequency mournful strings
+
+DIALOGUE:
+- CHAR_2 [TTS: Vindemiatrix | rate=0.8] (vi-VN): [Sao chúng nó không ở lại với tôi... Đứa thứ năm rồi Chính ơi...]
+  [delivery: softly and choked with tears, style: trembling voice with heavy pauses and breathy sobs, timing: at scene start]
+- CHAR_1 [TTS: Alnilam] (vi-VN): [Bà đừng nói nữa. Số trời đã định, nhà mình có tiền mà không có đức giữ con.]
+  [delivery: seriously and with a deep sigh, style: authoritative but heavy with resignation and internal pain, timing: after 3 seconds]
+
+LIP SYNC: CHAR_2's lip sync should be muffled by her handkerchief during the first line. CHAR_1's sync should reflect his jaw tension.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 3] 16.0s - 24.0s
+Scene 3 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: left third, Orientation: facing right toward elderly woman, Pose: standing with head bowed
+  Expression: subdued, conflicted
+  Actions: CHAR_1 stands before the invisible authority of the elderly woman then He flinches as a hand strikes the table off-screen -> his jaw tightens -> he nods slowly in obedience; shadows play across his face then He remains in a subservient stance, his pride wounded
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium close-up
+- Angle: Slight low angle looking up at CHAR_1
+- Movement: Static with subtle zoom in
+- Focus: Sharp focus on CHAR_1's face
+
+AUDIO:
+- Ambience: Quiet hall echo, Afternoon wind
+- Sound FX: Sharp wood-on-wood strike, Creak of floorboard
+- Music: Tense, rhythmic percussion
+
+DIALOGUE:
+- CHAR_1 [TTS: Alnilam | rate=1.2] (vi-VN): [Gia sản này để cho thiên hạ hưởng hay sao? Vợ anh không sanh được con trai thì anh phải cưới vợ bé. Đó là lệnh!]
+  [delivery: firmly and authoritatively, style: sharp delivery with commanding emphasis on the final word, timing: at scene start]
+
+LIP SYNC: Sync CHAR_1's mouth to the authoritative command, ensuring sharp transitions for the 'lệnh' sound.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 4] 24.0s - 32.0s
+Scene 4 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: left foreground, Orientation: facing pier, Pose: standing rigid
+  Expression: impassive, guarded
+  Actions: CHAR_1 stands at the edge of the dock waiting then He watches the small boat approach -> he remains unmoving as CHAR_3 steps off -> he gives a single, curt nod; his eyes avoid hers then He turns slightly to lead the way without a word
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+- [CHAR_3] Bà Nhỏ (Human) - Female, Early 20s
+  Appearance: Petite and youthful, graceful and light on her feet, Heart-shaped face with a sharp chin and full lips, Fair skin, glowing and healthy. 3D rendered surface with smooth shading, PBR materials, A slightly mocking, confident smile; sharp, ambitious eyes
+  Outfit: Vibrant pink silk bà ba outfit with a form-fitting cut, Wide-leg white silk trousers, Small white jasmine flowers tucked behind her ear, Beaded wooden clogs (guốc mộc)
+  Position: center right, Orientation: facing CHAR_1, Pose: bowing low
+  Expression: calculating, youthful beauty
+  Actions: CHAR_3 balances on the bow of the sampan then She steps onto the pier gracefully -> she performs a deep, respectful bow -> she looks up at CHAR_1 with a hidden glint; she smiles subtly then She stands tall, smoothing her vibrant pink tunic
+  Voice: Clear, high-pitched, often laced with sarcasm [TTS: Autonoe | rate=1.15 | pitch=2.0 | style=Energetic]
+
+CAMERA:
+- Framing: Wide shot
+- Angle: Eye-level
+- Movement: Slow pan from boat to the dock
+- Focus: CHAR_3 in focus as she steps off the boat
+
+AUDIO:
+- Ambience: Mekong river sounds, Bustling distant market sounds, Water lilies rustling
+- Sound FX: Boat wood hitting pier, Clack of wooden clogs, Soft silk rustle
+- Music: Traditional upbeat yet slightly mysterious string melody
+
+DIALOGUE:
+- CHAR_3 [TTS: Autonoe] (vi-VN): [Con chào ông... Từ nay con về đây hầu hạ ông bà.]
+  [delivery: playfully and brightly, style: sweet, high-pitched tone with a melodic, respectful lilt, timing: as she steps off boat]
+
+LIP SYNC: Sync CHAR_3's mouth to her respectful greeting; her smile should linger after she finishes speaking.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 5] 32.0s - 40.0s
+Scene 5 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_2] Bà Chính (Human) - Female, Early 40s
+  Appearance: Slender, fragile posture, appearing physically weakened by sorrow, Thin, oval face with high forehead and sunken cheeks, Pale, wan complexion. 3D rendered surface with smooth shading, PBR materials, Deep, sorrowful expression with red-rimmed eyes from crying; always clutching a white handkerchief
+  Outfit: Elegant but muted grey silk traditional tunic with simple silver embroidery, White silk trousers, Silver hairpin with a small lotus motif, Embroidered grey silk slippers
+  Position: center frame foreground, Orientation: facing window slat, Pose: leaning forward, peeking
+  Expression: bitter, pained
+  Actions: CHAR_2 stands in the dark bedroom then She pulls a window slat back -> she watches CHAR_1 and CHAR_3 walk toward the side house -> she squeezes the cloth tight; her breath hitches then She drops her gaze, the bitterness hardening on her face
+  Voice: Soft, whispering, filled with grief [TTS: Vindemiatrix | rate=0.9 | pitch=-1.5 | style=Warm]
+
+CAMERA:
+- Framing: Medium shot with frame-within-a-frame
+- Angle: Eye-level
+- Movement: Slow zoom in on CHAR_2's face
+- Focus: CHAR_2 in sharp focus, exterior view through window slightly blurred
+
+AUDIO:
+- Ambience: Indoor stillness, Distant bird calls
+- Sound FX: Wooden window slat creak, Sharp intake of breath, Cloth stretching sound
+- Music: Dissonant, low-tone strings
+
+DIALOGUE:
+- CHAR_2 [TTS: Vindemiatrix | rate=0.8] (vi-VN): [Vì cái nhà... hay vì bản thân ông ấy?]
+  [delivery: softly and with a hint of bitterness, style: whispered with a sharp, breathy exhale at the end, timing: at scene start]
+
+LIP SYNC: Sync CHAR_2's lips to the whisper; the movement should be minimal as she speaks through partially gritted teeth.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 6] 40.0s - 48.0s
+Scene 6 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_2] Bà Chính (Human) - Female, Early 40s
+  Appearance: Slender, fragile posture, appearing physically weakened by sorrow, Thin, oval face with high forehead and sunken cheeks, Pale, wan complexion. 3D rendered surface with smooth shading, PBR materials, Deep, sorrowful expression with red-rimmed eyes from crying; always clutching a white handkerchief
+  Outfit: Elegant but muted grey silk traditional tunic with simple silver embroidery, White silk trousers, Silver hairpin with a small lotus motif, Embroidered grey silk slippers
+  Position: left side of stone table, Orientation: 45° right toward CHAR_3, Pose: sitting upright, pregnant belly prominent
+  Expression: cold, weary
+  Actions: CHAR_2 sits in the garden, a picture of fading grace then She listens to CHAR_3's taunt -> she slowly turns her head -> she looks at CHAR_3's belly with disdain; her posture remains stiff then She looks away back toward the garden foliage
+  Voice: Soft, whispering, filled with grief [TTS: Vindemiatrix | rate=0.9 | pitch=-1.5 | style=Warm]
+- [CHAR_3] Bà Nhỏ (Human) - Female, Early 20s
+  Appearance: Petite and youthful, graceful and light on her feet, Heart-shaped face with a sharp chin and full lips, Fair skin, glowing and healthy. 3D rendered surface with smooth shading, PBR materials, A slightly mocking, confident smile; sharp, ambitious eyes
+  Outfit: Vibrant pink silk bà ba outfit with a form-fitting cut, Wide-leg white silk trousers, Small white jasmine flowers tucked behind her ear, Beaded wooden clogs (guốc mộc)
+  Position: right side of stone table, Orientation: 45° left toward CHAR_2, Pose: leaning slightly forward, pregnant belly prominent
+  Expression: mocking, triumphant
+  Actions: CHAR_3 fans herself slowly then She leans toward CHAR_2 -> she gestures to her own belly -> she delivers her lines with a sharp smile; she watches CHAR_2's reaction then She leans back, satisfied by the silence she created
+  Voice: Clear, high-pitched, often laced with sarcasm [TTS: Autonoe | rate=1.15 | pitch=2.0 | style=Energetic]
+
+CAMERA:
+- Framing: Medium shot of both characters
+- Angle: Eye-level
+- Movement: Static
+- Focus: Deep focus, both characters sharp against the green garden
+
+AUDIO:
+- Ambience: Garden insects, Distant river wind, Lush foliage rustling
+- Sound FX: Sound of silk moving, Stone table scrape, Light fanning
+- Music: High-pitched, uncomfortable violin notes
+
+DIALOGUE:
+- CHAR_3 [TTS: Autonoe | rate=1.2] (vi-VN): [Nghe thầy nói bụng em nhọn, dễ là con trai lắm. Chị sanh trước em 10 ngày, chắc là chị cũng mong lắm nhỉ?]
+  [delivery: playfully and mockingly, style: energetic with a sharp, sarcastic edge to the questioning tone, timing: at scene start]
+
+LIP SYNC: Sync CHAR_3's mouth to her energetic mockery; ensure a slight smirk during the pauses in her speech.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 7] 48.0s - 56.0s
+Scene 7 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_2] Bà Chính (Human) - Female, Early 40s
+  Appearance: Slender, fragile posture, appearing physically weakened by sorrow, Thin, oval face with high forehead and sunken cheeks, Pale, wan complexion. 3D rendered surface with smooth shading, PBR materials, Deep, sorrowful expression with red-rimmed eyes from crying; always clutching a white handkerchief
+  Outfit: Elegant but muted grey silk traditional tunic with simple silver embroidery, White silk trousers, Silver hairpin with a small lotus motif, Embroidered grey silk slippers
+  Position: center frame, Orientation: facing camera, Pose: lying on bed, head back
+  Expression: frightened, in labor
+  Actions: CHAR_2 lies in the center of the chaotic storm-lit room then A flash of lightning illuminates her face -> she gasps and arches her back -> her mouth opens in a silent scream; sweat beads on her forehead then She collapses back, breathing heavily in the dark between flashes
+  Voice: Soft, whispering, filled with grief [TTS: Vindemiatrix | rate=0.9 | pitch=-1.5 | style=Warm]
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: left third background, Orientation: facing bedroom door, Pose: pacing frantically
+  Expression: intense, worried
+  Actions: CHAR_1 paces the dark hallway then He pauses at the door during a thunderclap -> he shouts through the wood -> he resumes pacing with higher intensity; his face is lit by the storm then He stops, leaning his head against the door frame
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Wide shot showing both the hallway and the room
+- Angle: Eye-level
+- Movement: Handheld for chaotic energy
+- Focus: Focus shifts from CHAR_2 during lightning to CHAR_1 in the hall
+
+AUDIO:
+- Ambience: Heavy tropical storm, Crashing thunder, Pouring rain on tiles
+- Sound FX: Loud lightning crack, Heavy footsteps, Door banging
+- Music: Driving, suspenseful orchestral score
+
+DIALOGUE:
+- CHAR_1 [TTS: Alnilam | rate=1.5] (vi-VN): [Ráng lên bà! Thấy đầu đứa nhỏ rồi! Ráng lên!]
+  [delivery: authoritatively and shouting, style: urgent, high-energy shouting to be heard over the storm, timing: during labor]
+
+LIP SYNC: CHAR_1's lip sync should be wide and energetic for the shout. CHAR_2 should be syncing heavy breathing.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 8] 56.0s - 64.0s
+Scene 8 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: center frame, Orientation: facing baby in arms, Pose: kneeling on the floor
+  Expression: ecstatic, laughing and crying
+  Actions: CHAR_1 receives the baby from the midwife then He looks at the baby's face -> he lets out a tearful laugh -> he lifts the baby slightly toward the golden light; he kisses the baby's forehead then He pulls the infant close to his chest, closing his eyes
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium shot
+- Angle: Low angle looking up at CHAR_1
+- Movement: Slow zoom in on CHAR_1 and baby
+- Focus: CHAR_1 and the swaddled infant in sharp focus
+
+AUDIO:
+- Ambience: Morning birds, Soft breeze, Peaceful domestic room
+- Sound FX: Soft baby fussing, Cloth rustle, Deep tearful laughter
+- Music: Hopeful, warm orchestral melody
+
+DIALOGUE:
+- CHAR_1 [TTS: Alnilam | rate=1.2] (vi-VN): [Có con trai rồi! Nhà họ Chính có người nối dõi rồi! Tên con sẽ là Đích Tôn!]
+  [delivery: authoritatively but tearfully, style: filled with immense joy and pride, voice cracking with emotion, timing: holding the baby]
+
+LIP SYNC: Sync CHAR_1's mouth to the joyful declaration; ensure his mouth remains slightly open in a smile between phrases.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 9] 64.0s - 72.0s
+Scene 9 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: right third, Orientation: back to camera, leaving room, Pose: walking away
+  Expression: cold, disinterested
+  Actions: CHAR_1 stands briefly by the bed then He glances down at the baby girl -> he speaks without emotion -> he turns his back on CHAR_3; he walks out into the sunlight then He disappears from the frame, leaving the room in shadow
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+- [CHAR_3] Bà Nhỏ (Human) - Female, Early 20s
+  Appearance: Petite and youthful, graceful and light on her feet, Heart-shaped face with a sharp chin and full lips, Fair skin, glowing and healthy. 3D rendered surface with smooth shading, PBR materials, A slightly mocking, confident smile; sharp, ambitious eyes
+  Outfit: Vibrant pink silk bà ba outfit with a form-fitting cut, Wide-leg white silk trousers, Small white jasmine flowers tucked behind her ear, Beaded wooden clogs (guốc mộc)
+  Position: left center, Orientation: facing right toward CHAR_1, Pose: lying in bed, exhausted
+  Expression: heartbroken, hollow
+  Actions: CHAR_3 lies holding her daughter then She watches CHAR_1 with desperate hope -> her expression shatters as he speaks -> she watches him leave; a single tear falls then She pulls her baby closer, staring at the empty doorway
+  Voice: Clear, high-pitched, often laced with sarcasm [TTS: Autonoe | rate=1.15 | pitch=2.0 | style=Energetic]
+
+CAMERA:
+- Framing: Medium shot showing both
+- Angle: Eye-level
+- Movement: Static
+- Focus: CHAR_3's face remains the focus as CHAR_1 walks out
+
+AUDIO:
+- Ambience: Humid afternoon quiet, Distant river sounds
+- Sound FX: Soft baby coo, Heavy footstep, Silk sheets rustle
+- Music: Low, lonely cello solo
+
+DIALOGUE:
+- CHAR_1 [TTS: Alnilam] (vi-VN): [Sanh con gái thì thôi, cứ nuôi cho khéo. Tôi sang thăm thằng Đích Tôn.]
+  [delivery: clearly and coldly, style: measured, emotionless tone that highlights the rejection, timing: before leaving room]
+
+LIP SYNC: Sync CHAR_1's mouth to the cold rejection. CHAR_3 remains silent with her mouth slightly parted in shock.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 10] 72.0s - 80.0s
+Scene 10 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Reed Banks (Bờ sậy)
+  Layout: Isolation within a dense marshland; a small clearing for the hut near the water's edge
+  Objects: Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Vengeful, secretive, humid, and wild
+  Visual Style: Naturalistic 3D with realistic foliage and murky, silt-heavy river water
+  Lighting: Dappled moonlight or harsh, direct midday sun depending on time
+
+CHARACTERS:
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: center frame, Orientation: facing right toward the distant mansion, Pose: sitting on a small boat
+  Expression: furious, determined hatred
+  Actions: CHAR_4 sits among the thick reeds in silence then She carves a sharp line into the wood -> she looks up at the mansion -> she mutters her vow; she tightens her grip on the knife then She returns to carving with intense focus
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Wide shot moving into a medium close-up
+- Angle: Low angle looking up from the water
+- Movement: Dolly forward through the reeds
+- Focus: CHAR_4 and the woodworking knife in focus
+
+AUDIO:
+- Ambience: Swamp sounds, Thick reeds rustling, Murky water lapping
+- Sound FX: Sharp wood carving sounds, Knife scraping, Water ripples
+- Music: Dark, rhythmic, vengeful drums
+
+DIALOGUE:
+- CHAR_4 [TTS: Gacrux | rate=0.8] (vi-VN): [Cười đi... rồi tụi bây sẽ thấy... quân cờ này sẽ lấy mạng từng người một.]
+  [delivery: seriously and muttering low, style: raspy, gravelly voice with a venomous, measured pacing, timing: while carving]
+
+LIP SYNC: Sync CHAR_4's mouth to the muttering; her lips should barely move, reflecting her secretive and intense nature.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 11] 80.0s - 88.0s
+Scene 11 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: right third, Orientation: 45° left toward CHAR_4, Pose: standing tall, hands behind back
+  Expression: delighted, impressed
+  Actions: CHAR_1 walks down the hallway with an air of importance then He stops before the carpenter -> leans in to inspect the red wood -> lets out a hearty, genuine laugh; his eyes sparkle then He stands with a wide smile, admiring the craftsmanship
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: left third, Orientation: 45° right toward CHAR_1, Pose: bowing slightly, subservient
+  Expression: cautious, humble
+  Actions: CHAR_4 stands waiting in the shadows of a pillar then She steps forward into the light -> slowly lifts the board for inspection -> gestures toward the deep red grain; she keeps her gaze low then She remains in a slight bow, holding the board steady
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium wide shot including mansion pillars
+- Angle: Eye-level
+- Movement: Slow pan left to right as CHAR_1 approaches
+- Focus: The blood-red chess set in the center
+
+AUDIO:
+- Ambience: Distant river water flowing, Cicadas in the garden, Mansion echo
+- Sound FX: Footsteps on polished wood, Rustle of silk, Wooden chess pieces clicking
+- Music: Light, curious woodwind melody
+
+DIALOGUE:
+- CHAR_4 [TTS: Gacrux] (vi-VN): [Gia chủ có quý tử, tui có khúc gỗ sưa đỏ quý hiếm, muốn lộng tặng cậu một bộ cờ tướng để sau này cậu làm tướng làm soái. Ông thấy sao?]
+  [delivery: seriously with a raspy texture, style: low-pitched, measured gravelly tone, timing: at scene start]
+- CHAR_1 [TTS: Alnilam | rate=1.2] (vi-VN): [Được! Ngươi khéo tay, làm cho đẹp, ta sẽ thưởng thêm hậu hĩnh.]
+  [delivery: authoritatively with a laugh, style: boisterous and confident, timing: after 4 seconds]
+
+LIP SYNC: CHAR_4 mouth movements should be minimal and low. CHAR_1 should show wide mouth opening for the laugh and clear articulation.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 12] 88.0s - 96.0s
+Scene 12 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Reed Banks (Bờ sậy)
+  Layout: Isolation within a dense marshland; a small clearing for the hut near the water's edge
+  Objects: Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Vengeful, secretive, humid, and wild
+  Visual Style: Naturalistic 3D with realistic foliage and murky, silt-heavy river water
+  Lighting: Dappled moonlight or harsh, direct midday sun depending on time
+
+CHARACTERS:
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: center frame, Orientation: facing camera, Pose: sitting cross-legged before an altar
+  Expression: intense, vengeful
+  Actions: CHAR_4 sits in a trance-like state as candles flicker then She pricks her thumb with a sharp needle -> a dark drop of blood falls onto the red wood -> she chants with eyes squeezed shut; her body sways slightly then She opens her eyes, which reflect the orange candlelight with a fierce glow
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium close-up
+- Angle: Low angle looking up
+- Movement: Static with subtle zoom into CHAR_4's face
+- Focus: The drop of blood hitting the chess piece
+
+AUDIO:
+- Ambience: Wind howling through reed thatch, Candles crackling, Distant frog croaks
+- Sound FX: Sharp intake of breath, Sizzle of candle wick, Low rhythmic chanting
+- Music: Dissonant, low-frequency drones
+
+DIALOGUE:
+- CHAR_4 [TTS: Gacrux | rate=0.8] (vi-VN): [Máu ta chảy vào gỗ, hồn ta nhập vào cờ. Nhà ngươi có con, ta có hận. Trả nợ đi!]
+  [delivery: firmly with measured cadence, style: rhythmic, ritualistic chanting with heavy emphasis on the final word, timing: during ritual]
+
+LIP SYNC: Mouth should move in a rhythmic, chanting fashion. Final line requires sharp lip closure on 'đi'.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 13] 96.0s - 104.0s
+Scene 13 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: Ancestral Altar Room
+  Layout: Cramped, dim interior room with the altar as the central focus
+  Objects: Dark wood altar, five small memorial tablets, incense burners, flickering candles, rhythmic wooden bell (mõ), The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Mournful, heavy with incense smoke, spiritually charged
+  Visual Style: 3D CGI rendering with octane-style lighting and volumetric smoke
+  Lighting: Flickering orange candlelight against deep dark ebony furniture shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: center background, Orientation: facing altar, Pose: bending over to place the set
+  Expression: proud, solemn
+  Actions: CHAR_1 carries the board into the dim altar room then He lowers the set to the base of the altar -> smooths the surface of the wood -> steps back to admire it; he adjusts his prayer beads then He stands with a satisfied, pious expression
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+- [CHAR_2] Bà Chính (Human) - Female, Early 40s
+  Appearance: Slender, fragile posture, appearing physically weakened by sorrow, Thin, oval face with high forehead and sunken cheeks, Pale, wan complexion. 3D rendered surface with smooth shading, PBR materials, Deep, sorrowful expression with red-rimmed eyes from crying; always clutching a white handkerchief
+  Outfit: Elegant but muted grey silk traditional tunic with simple silver embroidery, White silk trousers, Silver hairpin with a small lotus motif, Embroidered grey silk slippers
+  Position: left foreground, Orientation: 45° right toward the altar, Pose: standing huddled, clutching her handkerchief
+  Expression: fearful, uneasy
+  Actions: CHAR_2 watches from the doorway then She takes a small step into the room -> shivers as her eyes meet the red wood -> she clutches the cloth to her chest; her breath hitches then She remains frozen, unable to look away from the 'blood-colored' pieces
+  Voice: Soft, whispering, filled with grief [TTS: Vindemiatrix | rate=0.9 | pitch=-1.5 | style=Warm]
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: right background, Orientation: facing CHAR_1, Pose: standing still in the shadows
+  Expression: guarded, sharp gaze
+  Actions: CHAR_4 stands motionless near a pillar then She watches CHAR_1's movements -> her eyes shift toward CHAR_2 -> she speaks in a low, gravelly tone; her face remains unreadable then She sinks further into the shadows
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium shot with rule of thirds
+- Angle: High angle looking down at the altar
+- Movement: Static
+- Focus: The shiny red chess board
+
+AUDIO:
+- Ambience: Deep silence of the altar room, Rhythmic ticking of a clock, Soft incense crackling
+- Sound FX: Wood sliding on wood, Quick intake of breath, Cloth rustling
+- Music: High-pitched, unsettling violin note
+
+DIALOGUE:
+- CHAR_4 [TTS: Gacrux] (vi-VN): [Bộ cờ này có linh tính, chỉ người nhà họ Chính mới được chạm vào.]
+  [delivery: clearly with a raspy tone, style: professional but ominous, timing: at scene start]
+- CHAR_2 [TTS: Vindemiatrix | rate=0.8] (vi-VN): [Ông ơi, sao tui thấy bộ cờ này nó cứ... đỏ như màu máu vậy?]
+  [delivery: softly with a trembling voice, style: warm tone laced with deep fear, timing: after 3 seconds]
+
+LIP SYNC: CHAR_2's lip-sync should include a slight pause before 'đỏ' to emphasize her hesitation. CHAR_4's voice should sound like dry wood cracking.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 14] 104.0s - 112.0s
+Scene 14 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: Ancestral Altar Room
+  Layout: Cramped, dim interior room with the altar as the central focus
+  Objects: Dark wood altar, five small memorial tablets, incense burners, flickering candles, rhythmic wooden bell (mõ), The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Mournful, heavy with incense smoke, spiritually charged
+  Visual Style: 3D CGI rendering with octane-style lighting and volumetric smoke
+  Lighting: Flickering orange candlelight against deep dark ebony furniture shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: center frame, Orientation: facing altar, Pose: walking forward, hunched
+  Expression: terrified, alert
+  Actions: CHAR_1 enters the hall in the dead of night then He raises the lamp toward the altar -> stops dead as he sees the pieces moved -> he looks around into the darkness; his hand shakes violently then He stands paralyzed, the lamp light swinging erratically
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium close-up
+- Angle: Eye-level
+- Movement: Handheld jitter to mimic CHAR_1's trembling
+- Focus: CHAR_1's sweat-streaked face, then shifting to the moved pieces
+
+AUDIO:
+- Ambience: Midnight cricket chirping, Wind whistling through gaps, Heavy silence
+- Sound FX: Loud footsteps on tile, Squeaking of metal lamp handle, Rapid breathing
+- Music: Sudden, sharp staccato strings
+
+DIALOGUE:
+- CHAR_1 [TTS: Alnilam | rate=0.8] (vi-VN): [Ai đó? Có ai ở đó không?]
+  [delivery: clearly but trembling, style: professional voice cracking with fear, timing: approaching the altar]
+
+LIP SYNC: Mouth should stay slightly parted after the question. Breath sounds between words should be prominent.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 15] 112.0s - 120.0s
+Scene 15 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CAMERA:
+- Framing: Medium shot of the nursery crib and surroundings
+- Angle: High angle looking down
+- Movement: Slow zoom toward the crib railing
+- Focus: The dark shadows with glowing yellow eyes
+
+AUDIO:
+- Ambience: Wind rattling the window, Soft night sounds
+- Sound FX: Infant fussing softly, Dry scratching on wood, Eerie low hum
+- Music: Dark, atmospheric synthesisers
+
+LIP SYNC: No dialogue. Focus on the timing of the infant's fussing and the movement of the shadows.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 16] 120.0s - 128.0s
+Scene 16 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Reed Banks (Bờ sậy)
+  Layout: Isolation within a dense marshland; a small clearing for the hut near the water's edge
+  Objects: Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Vengeful, secretive, humid, and wild
+  Visual Style: Naturalistic 3D with realistic foliage and murky, silt-heavy river water
+  Lighting: Dappled moonlight or harsh, direct midday sun depending on time
+
+CHARACTERS:
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: center foreground, Orientation: facing the river, Pose: standing tall, looming over a child
+  Expression: looming, dark intensity
+  Actions: CHAR_4 stands at the water's edge with the three-year-old girl then She strikes the surface of the river with her staff -> watches a pale hand submerge into the dark water -> she looks down at the girl with a grim smile; her eyes narrow then She remains in a protective yet terrifying stance over the child
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium shot
+- Angle: Low angle looking up at CHAR_4
+- Movement: Static
+- Focus: CHAR_4's face and the rippling water
+
+AUDIO:
+- Ambience: Heavy river currents, Rustling reeds, Cicada swarm
+- Sound FX: Loud splash on water, Wooden staff hitting mud, Wet squelch
+- Music: Deep, rumbling percussion
+
+DIALOGUE:
+- CHAR_4 [TTS: Gacrux] (vi-VN): [Chưa đâu... chưa tới lúc mày chết dưới tay Ma Da. Mày phải sống để chứng kiến cảnh nhà này lụi bại.]
+  [delivery: firmly with a low whisper, style: professional, serious, and icy cold, timing: at scene start]
+
+LIP SYNC: The delivery should be a stage whisper—clear but low-volume. CHAR_4's mouth shouldn't open wide.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 17] 128.0s - 136.0s
+Scene 17 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: center frame, Orientation: facing downward, Pose: crouching over a wicker basket
+  Expression: softening, melancholy
+  Actions: CHAR_4 walks through the field and hears a soft sound then She looks down at the baby in the basket -> the baby's tiny hand grabs her finger -> she sighs and her eyes soften; she picks up the basket carefully then She stands with the basket held against her chest
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium shot
+- Angle: Eye-level
+- Movement: Slow dolly forward
+- Focus: The contact between the baby's hand and CHAR_4's finger
+
+AUDIO:
+- Ambience: Gentle breeze through long grass, Birds chirping softly, Distant village sounds
+- Sound FX: Grass rustling, Baby cooing, Heavy sigh
+- Music: Soft, mournful acoustic guitar
+
+DIALOGUE:
+- CHAR_4 [TTS: Gacrux | rate=0.8] (vi-VN): [Đã bị bỏ rơi giống ta sao? Thôi thì, ta nuôi mày làm người kế nghiệp.]
+  [delivery: measured with a sigh, style: professional but with a rare hint of weary warmth, timing: picking up baby]
+
+LIP SYNC: A heavy sigh should precede the line. The dialogue should be spoken as if to herself, with soft articulation.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 18] 136.0s - 144.0s
+Scene 18 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: left frame, Orientation: facing CHAR_3, Pose: standing aggressively, leaning forward
+  Expression: furious, shouting
+  Actions: CHAR_1 stands in the smoke-filled hall then He shouts at CHAR_3 -> his face turns a deep red -> he slams a hand onto a nearby table; he gasps for air then He stands trembling with rage as orange light flickers behind him
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+- [CHAR_3] Bà Nhỏ (Human) - Female, Early 20s
+  Appearance: Petite and youthful, graceful and light on her feet, Heart-shaped face with a sharp chin and full lips, Fair skin, glowing and healthy. 3D rendered surface with smooth shading, PBR materials, A slightly mocking, confident smile; sharp, ambitious eyes
+  Outfit: Vibrant pink silk bà ba outfit with a form-fitting cut, Wide-leg white silk trousers, Small white jasmine flowers tucked behind her ear, Beaded wooden clogs (guốc mộc)
+  Position: right frame, Orientation: facing CHAR_1, Pose: standing defiant, shoulders back
+  Expression: mocking, screaming
+  Actions: CHAR_3 stands her ground amidst the chaos then She screams back at CHAR_1 -> she laughs with a mocking, high-pitched tone -> she gestures toward the courtyard fire; she sneers then She remains defiant, eyes blazing with energetic hatred
+  Voice: Clear, high-pitched, often laced with sarcasm [TTS: Autonoe | rate=1.15 | pitch=2.0 | style=Energetic]
+- [CHAR_2] Bà Chính (Human) - Female, Early 40s
+  Appearance: Slender, fragile posture, appearing physically weakened by sorrow, Thin, oval face with high forehead and sunken cheeks, Pale, wan complexion. 3D rendered surface with smooth shading, PBR materials, Deep, sorrowful expression with red-rimmed eyes from crying; always clutching a white handkerchief
+  Outfit: Elegant but muted grey silk traditional tunic with simple silver embroidery, White silk trousers, Silver hairpin with a small lotus motif, Embroidered grey silk slippers
+  Position: center background, Orientation: facing camera, Pose: sitting on a chair, slumped
+  Expression: despairing, hollow
+  Actions: CHAR_2 sits amidst the shouting then She hears the report of the fire -> she slowly lets her hands fall -> she stares blankly at the arguing couple; her eyes are red-rimmed then She remains motionless, a picture of complete loss
+  Voice: Soft, whispering, filled with grief [TTS: Vindemiatrix | rate=0.9 | pitch=-1.5 | style=Warm]
+
+CAMERA:
+- Framing: Wide establishing shot of the hall
+- Angle: Eye-level
+- Movement: Static
+- Focus: Deep focus, all three characters sharp
+
+AUDIO:
+- Ambience: Roar of fire outside, Shouting workers, Crackling wood
+- Sound FX: Loud table slam, Cloth rustling, Sharp screams
+- Music: Tense, chaotic orchestral swell
+
+DIALOGUE:
+- CHAR_3 [TTS: Autonoe | rate=1.5] (vi-VN): [Tại nó! Tại thằng Đích Tôn nhà chị mà con tôi bị hắt hủi!]
+  [delivery: energetically with a scream, style: high-pitched, frantic energetic shouting, timing: at scene start]
+- CHAR_1 [TTS: Alnilam | rate=1.2] (vi-VN): [Im miệng! Đồ đàn bà mang điềm xấu!]
+  [delivery: authoritatively with a shout, style: booming, deep professional voice with extreme anger, timing: after 3 seconds]
+
+LIP SYNC: CHAR_3 should have wide, expressive mouth movements for the scream. CHAR_1's jaw should be tense and square during his shout.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 19] 144.0s - 152.0s
+Scene 19 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_2] Bà Chính (Human) - Female, Early 40s
+  Appearance: Slender, fragile posture, appearing physically weakened by sorrow, Thin, oval face with high forehead and sunken cheeks, Pale, wan complexion. 3D rendered surface with smooth shading, PBR materials, Deep, sorrowful expression with red-rimmed eyes from crying; always clutching a white handkerchief
+  Outfit: Elegant but muted grey silk traditional tunic with simple silver embroidery, White silk trousers, Silver hairpin with a small lotus motif, Embroidered grey silk slippers
+  Position: right background, Orientation: facing child, Pose: running forward
+  Expression: hysterical, terrified
+  Actions: CHAR_2 sees the child step on the piece then She rushes across the courtyard -> her face contorts in a scream -> she reaches for the child just as the smoke rises; her handkerchief falls then She collapses to her knees beside the child
+  Voice: Soft, whispering, filled with grief [TTS: Vindemiatrix | rate=0.9 | pitch=-1.5 | style=Warm]
+
+CAMERA:
+- Framing: Wide shot of the courtyard
+- Angle: High angle looking down
+- Movement: Dolly forward toward the child's leg
+- Focus: The bruised leg and the black smoke from the chess piece
+
+AUDIO:
+- Ambience: Wind blowing through the large tree, Distant crackle of fire
+- Sound FX: Quick footsteps on grass, Sizzling smoke sound, Heart-wrenching scream
+- Music: High-pitched, dissonant string screech
+
+DIALOGUE:
+- CHAR_2 [TTS: Vindemiatrix | rate=1.2] (vi-VN): [Con ơi! Ai đem bộ cờ này ra đây? Ai?!]
+  [delivery: softly but with hysterical screaming, style: warm tone shattered by frantic despair, timing: rushing to child]
+
+LIP SYNC: The word 'Ai?!' should be a sharp, high-pitched cry. Mouth should remain open in a gasp at the end.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 20] 152.0s - 160.0s
+Scene 20 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Reed Banks (Bờ sậy)
+  Layout: Isolation within a dense marshland; a small clearing for the hut near the water's edge
+  Objects: Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Vengeful, secretive, humid, and wild
+  Visual Style: Naturalistic 3D with realistic foliage and murky, silt-heavy river water
+  Lighting: Dappled moonlight or harsh, direct midday sun depending on time
+
+CHARACTERS:
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: center frame, Orientation: facing the mansion, Pose: standing tall, hair flying in wind
+  Expression: terrifyingly satisfied, calm
+  Actions: CHAR_4 stands in the thick reeds overlooking the mansion then She removes her brown turban -> lets her long gray-streaked hair fall loose -> watches the smoke rise from the mansion; a slow, dark smile forms then She stands as a silhouette against the burning orange glow
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium close-up profile
+- Angle: Eye-level
+- Movement: Slow zoom out to reveal the burning mansion in the distance
+- Focus: CHAR_4's profile, specifically her intense eye
+
+AUDIO:
+- Ambience: Reeds rustling loudly, Wind whistling, Distant roar of the fire
+- Sound FX: Fabric snapping in the wind, Soft laugh, Intake of breath
+- Music: Triumphant but dark orchestral finale
+
+DIALOGUE:
+- CHAR_4 [TTS: Gacrux] (vi-VN): [Chính ơi... Đây chỉ mới là bắt đầu. Quân cờ đã đi, không bao giờ rút lại được.]
+  [delivery: firmly with a low whisper into the wind, style: professional, calm, and utterly vengeful, timing: at scene start]
+
+LIP SYNC: Mouth should move slowly, matching the measured pace of the dialogue. The final word 'được' should have a lingering 'u' sound as the wind blows.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 21] 160.0s - 168.0s
+Scene 21 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: Modern Descendant's Home
+  Layout: Comfortable, airy living room with a mix of traditional and modern Vietnamese elements
+  Objects: Polished wooden platform (phản), modern furniture, dusty wooden chest, old handwritten diary, framed family photos
+  Atmosphere: Quiet, reflective, searching for truth
+  Visual Style: Clean, high-detail 3D animation with soft, naturalistic lighting
+  Lighting: Soft morning sunlight through open windows
+
+CHARACTERS:
+- [CHAR_6] Kỳ (Human) - Male, Mid-20s
+  Appearance: Fit, modern build with an athletic posture, Square jaw, friendly features, and bright, curious eyes, Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials, Always carrying either a modern smartphone or a weathered, old yellowed diary
+  Outfit: Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles, Dark blue denim jeans with natural fade patterns, None (bare head), Modern brown leather casual shoes
+  Position: center frame, crouching, Orientation: facing downward toward chest, Pose: crouching low among storage crates
+  Expression: curious, focused
+  Actions: CHAR_6 navigates the dark storage room using his phone light then he accidentally kicks a rotted wooden chest -> the lid shatters to reveal black chess pieces -> he leans in to shine the bright LED light on ancient notebooks; he gasps softly then he remains motionless, light fixed on the discovery with wide eyes
+  Voice: Clear, resonant, youthful, and determined [TTS: Iapetus | rate=1.05 | style=Casual]
+
+CAMERA:
+- Framing: Medium shot transitioning to a close-up on the chest
+- Angle: High angle looking down at the chest
+- Movement: Slow handheld tilt down
+- Focus: Sharp focus on the light beam and the wooden chest; background lost in shadow
+
+AUDIO:
+- Ambience: Dust motes in silence, Distant cricket chirp, Muffled wind outside
+- Sound FX: Wood cracking and splintering, Thud of chest hitting floor, Electronic tap on phone screen
+- Music: Eerie, low-frequency atmospheric drone
+
+DIALOGUE:
+- CHAR_6 [TTS: Iapetus] (vi-VN): [Cờ tướng sao lại cất kỹ thế này? Còn mấy cuốn sổ này là của ai?]
+  [delivery: casually muttering with a hint of confusion, style: casual conversational flow with a slight echo, timing: discovering chest]
+
+LIP SYNC: Ensure the jaw moves slightly for muttering while his eyes stay fixed on the chest. The 'Cờ tướng' visemes should be clear despite the low volume.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 22] 168.0s - 176.0s
+Scene 22 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: Modern Descendant's Home
+  Layout: Comfortable, airy living room with a mix of traditional and modern Vietnamese elements
+  Objects: Polished wooden platform (phản), modern furniture, dusty wooden chest, old handwritten diary, framed family photos
+  Atmosphere: Quiet, reflective, searching for truth
+  Visual Style: Clean, high-detail 3D animation with soft, naturalistic lighting
+  Lighting: Soft morning sunlight through open windows
+
+CHARACTERS:
+- [CHAR_6] Kỳ (Human) - Male, Mid-20s
+  Appearance: Fit, modern build with an athletic posture, Square jaw, friendly features, and bright, curious eyes, Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials, Always carrying either a modern smartphone or a weathered, old yellowed diary
+  Outfit: Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles, Dark blue denim jeans with natural fade patterns, None (bare head), Modern brown leather casual shoes
+  Position: left third of frame, Orientation: facing CHAR_1, Pose: standing, leaning slightly forward
+  Expression: cautious, inquiring
+  Actions: CHAR_6 presents the black wooden pieces to CHAR_1 then he watches his father's reaction -> his eyes track CHAR_1's trembling hands -> he pulls the pieces back slightly as the tension rises; he waits for an answer then he stands perfectly still, sensing the gravity of the secret
+  Voice: Clear, resonant, youthful, and determined [TTS: Iapetus | rate=1.05 | style=Casual]
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: right third of frame, Orientation: facing CHAR_6, Pose: sitting stiffly in an armchair
+  Expression: terrified, pained
+  Actions: CHAR_1 looks at the chess pieces in CHAR_6's hands then his eyes widen with recognition -> his fingers twitch violently on his knees -> he looks up at CHAR_6 with raw fear; he speaks with a shaky breath then he slumps back, eyes darting toward the rain-slicked window
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium two-shot
+- Angle: Eye-level
+- Movement: Static
+- Focus: Deep focus keeping both characters sharp
+
+AUDIO:
+- Ambience: Heavy rain drumming on window glass, Low hum of a refrigerator, Quiet room tone
+- Sound FX: Rattle of wooden pieces, Quick, shallow breathing, Squeak of leather armchair
+- Music: Tense, melancholic piano melody in a minor key
+
+DIALOGUE:
+- CHAR_1 [TTS: Alnilam | rate=0.8] (vi-VN): [Cất đi con! Đừng chạm vào chúng. Ngày xưa ông nội con cũng vì bộ cờ này mà đôi mắt mới mờ dần rồi mù hẳn... Đó là nghiệp của nhà mình.]
+  [delivery: authoritatively but trembling with fear, style: firm with clarity, but voice breaks slightly at 'mù hẳn', timing: at scene start]
+
+LIP SYNC: CHAR_1's mouth should tremble before and after the line. Ensure the 'nghiệp' (karma) viseme is articulated with a heavy, final emphasis.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 23] 176.0s - 184.0s
+Scene 23 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Grand Mekong Mansion (1920s)
+  Layout: Expansive outdoor estate overlooking a wide, brown river; mansion dominates the background
+  Objects: Massive colonial-style mansion, red roof tiles, polished black wooden pillars, Mekong River with floating water lilies, rice boats, bustling dock
+  Atmosphere: Opulent yet eerie, with long shadows cast by the sunset
+  Visual Style: Vintage Retro Cinematic 3D with high-detail wood textures and water reflections
+  Lighting: Golden hour sunset, high contrast with long, dramatic shadows
+
+CHARACTERS:
+- [CHAR_5] Ông Nội (Human) - Male, Elderly (70+)
+  Appearance: Aged and slightly hunched, frail but serene, Deeply wrinkled, kind face with a wispy white beard, Wrinkled, pale, paper-thin skin. 3D rendered surface with smooth shading, PBR materials, Clouded, milky white blind eyes that seem to gaze into another world
+  Outfit: Simple, clean white cotton bà ba shirt, Matching white cotton trousers, None (bare head), Simple black cloth slippers
+  Position: center foreground, Orientation: facing the chess board on the stone table, Pose: sitting hunched over the board
+  Expression: panicked, confused
+  Actions: CHAR_5 (younger) is deep in a chess match then he rubs his eyes vigorously -> he leans closer until his nose almost touches the board -> he drops the piece and looks up toward CHAR_4; his milky eyes begin to cloud then he remains reaching out into the blur, gasping for sight
+  Voice: Gravelly, slow, otherworldly, and calm [TTS: Algenib | pitch=-2.5 | style=Professional]
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: right background, shadow, Orientation: facing CHAR_5, Pose: standing motionless against a pillar
+  Expression: sorrowful, regretful
+  Actions: CHAR_4 watches CHAR_5 play in the 1960 courtyard then she sees him stumble -> her face collapses into a mask of grief -> she whispers a confession to the air; she doesn't move to help then she turns her face into the shadows of the pillar
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Close-up of CHAR_5's face, transitioning to a wide shot of the courtyard
+- Angle: Eye-level
+- Movement: Slow zoom in on CHAR_5's eyes; handheld shake
+- Focus: Focus starts on CHAR_5, then background blurs heavily to mimic his vision loss
+
+AUDIO:
+- Ambience: Distant temple bell, Cicadas, Wind through the mansion pillars
+- Sound FX: Clack of wooden chess piece, Fabric rustling, Sobbing breath
+- Music: None (reliance on heavy film grain hiss and wind)
+
+DIALOGUE:
+- CHAR_5 [TTS: Algenib | rate=0.8] (vi-VN): [Má ơi... sao con không thấy đường đi nữa? Quân cờ... sao nó tối thui vậy?]
+  [delivery: authoritatively panicked and desperate, style: measured but rising pitch of panic, timing: as vision blurs]
+- CHAR_4 [TTS: Gacrux | rate=0.8] (vi-VN): [Nghiệp ta gieo... sao con lại gánh...]
+  [delivery: measured and sobbing silently, style: raspy with cracking dry wood tone, timing: after 4 seconds]
+
+LIP SYNC: CHAR_5's lip sync should be frantic and wide. CHAR_4's line should be barely whispered with minimal mouth movement, as if speaking to her own conscience.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 24] 184.0s - 192.0s
+Scene 24 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: Modern Descendant's Home
+  Layout: Comfortable, airy living room with a mix of traditional and modern Vietnamese elements
+  Objects: Polished wooden platform (phản), modern furniture, dusty wooden chest, old handwritten diary, framed family photos
+  Atmosphere: Quiet, reflective, searching for truth
+  Visual Style: Clean, high-detail 3D animation with soft, naturalistic lighting
+  Lighting: Soft morning sunlight through open windows
+
+CHARACTERS:
+- [CHAR_6] Kỳ (Human) - Male, Mid-20s
+  Appearance: Fit, modern build with an athletic posture, Square jaw, friendly features, and bright, curious eyes, Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials, Always carrying either a modern smartphone or a weathered, old yellowed diary
+  Outfit: Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles, Dark blue denim jeans with natural fade patterns, None (bare head), Modern brown leather casual shoes
+  Position: center frame, at desk, Orientation: facing PROP_DIARY_01 on the desk, Pose: sitting, elbows on desk, head in hands
+  Expression: subdued, determined
+  Actions: CHAR_6 reads the diary under a cool desk lamp then he finds the passage about the carpenter's disguise -> he pauses and takes a deep breath -> he looks up at the camera with a firm resolve; his jaw sets then he closes the diary with a decisive thud
+  Voice: Clear, resonant, youthful, and determined [TTS: Iapetus | rate=1.05 | style=Casual]
+
+CAMERA:
+- Framing: Close-up on CHAR_6's face
+- Angle: Low angle looking up from the desk
+- Movement: Static
+- Focus: Sharp focus on eyes; desk lamp creates high contrast shadows
+
+AUDIO:
+- Ambience: Quiet night sounds, Hum of a desk lamp, Clock ticking
+- Sound FX: Page turning, Heavy breathing, Soft thud of book closing
+- Music: Hopeful, low strings building slowly
+
+DIALOGUE:
+- CHAR_6 [TTS: Iapetus] (vi-VN): [Oán thù không thể giải bằng oán thù... Ta gởi lại bộ cờ cho đất lạnh, mong đời sau bình an.]
+  [delivery: casually and quietly reading to himself, style: casual conversational flow with a serious tone, timing: reading text]
+
+LIP SYNC: Sync mouth movements to the internal-monologue reading style. Minimal jaw movement, focus on the lips shaping the words 'bình an'.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 25] 192.0s - 200.0s
+Scene 25 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Reed Banks (Bờ sậy)
+  Layout: Isolation within a dense marshland; a small clearing for the hut near the water's edge
+  Objects: Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Vengeful, secretive, humid, and wild
+  Visual Style: Naturalistic 3D with realistic foliage and murky, silt-heavy river water
+  Lighting: Dappled moonlight or harsh, direct midday sun depending on time
+
+CHARACTERS:
+- [CHAR_6] Kỳ (Human) - Male, Mid-20s
+  Appearance: Fit, modern build with an athletic posture, Square jaw, friendly features, and bright, curious eyes, Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials, Always carrying either a modern smartphone or a weathered, old yellowed diary
+  Outfit: Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles, Dark blue denim jeans with natural fade patterns, None (bare head), Modern brown leather casual shoes
+  Position: center of boat, Orientation: facing the direction of travel, Pose: sitting, rowing a small sampan
+  Expression: calm, focused
+  Actions: CHAR_6 rows the boat through the murky river water then he pulls the oars through the thick silt -> he glances at the ruined mansion pillars rising from the weeds -> he continues rowing with steady rhythm; the water ripples behind him then he disappears into the grey morning mist toward the ruins
+  Voice: Clear, resonant, youthful, and determined [TTS: Iapetus | rate=1.05 | style=Casual]
+
+CAMERA:
+- Framing: Wide shot including the boat and the distant mansion ruins
+- Angle: Eye-level from the water surface
+- Movement: Slow tracking shot following the boat's side profile
+- Focus: Deep focus keeping the boat and the ruins clear
+
+AUDIO:
+- Ambience: River water lapping, Overcast wind, Distant bird calls
+- Sound FX: Oars dipping into water, Creaking of boat wood, Water splashing
+- Music: Somber, rhythmic percussion mimicking rowing
+
+LIP SYNC: No dialogue in this scene. Focus on breathing rhythm matching rowing effort.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 26] 200.0s - 208.0s
+Scene 26 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Reed Banks (Bờ sậy)
+  Layout: Isolation within a dense marshland; a small clearing for the hut near the water's edge
+  Objects: Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Vengeful, secretive, humid, and wild
+  Visual Style: Naturalistic 3D with realistic foliage and murky, silt-heavy river water
+  Lighting: Dappled moonlight or harsh, direct midday sun depending on time
+
+CHARACTERS:
+- [CHAR_6] Kỳ (Human) - Male, Mid-20s
+  Appearance: Fit, modern build with an athletic posture, Square jaw, friendly features, and bright, curious eyes, Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials, Always carrying either a modern smartphone or a weathered, old yellowed diary
+  Outfit: Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles, Dark blue denim jeans with natural fade patterns, None (bare head), Modern brown leather casual shoes
+  Position: center foreground, Orientation: facing the riverbank stone, Pose: bowing deeply from a kneeling position
+  Expression: pious, sincere
+  Actions: CHAR_6 places the chessboard on the stone and lights incense then he bows his head three times -> he speaks his prayer to the ancestors -> he looks up and sees a faint silhouette; his expression remains peaceful then he stands slowly, watching the smoke rise
+  Voice: Clear, resonant, youthful, and determined [TTS: Iapetus | rate=1.05 | style=Casual]
+- [CHAR_4] Bà Cố (Human) - Female, Late 50s
+  Appearance: Thin, wiry frame with surprisingly strong, steady hands, Sharp, angular face with deep lines of hardship and intensity, Dark, sun-weathered, and leathery skin. 3D rendered surface with smooth shading, PBR materials, Piercing, intense eyes that seem to see through objects; facial scars partially hidden by the shadow of her turban
+  Outfit: Rough-spun brown male carpenter’s tunic, worn and stained with wood dust, Matching rough-spun brown trousers tied at the waist, A simple dark brown fabric turban (khăn đóng) wrapped tightly, Barefoot or simple straw sandals
+  Position: right background, under banyan tree, Orientation: facing CHAR_6, Pose: standing as a translucent silhouette
+  Expression: melancholy, content
+  Actions: CHAR_4's silhouette fades into view behind CHAR_6 then she watches the young man bow -> she gives a slow, barely perceptible nod -> her form begins to glow with a soft light; she watches in silence then she remains a guardian figure in the background
+  Voice: Raspy, low, sounding like cracking dry wood [TTS: Gacrux | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium shot with CHAR_6 in the foreground and CHAR_4 in the soft bokeh background
+- Angle: Low angle looking up at the banyan tree
+- Movement: Slow pan left to right
+- Focus: Focus shifts from CHAR_6 to the silhouette of CHAR_4
+
+AUDIO:
+- Ambience: Wind through reeds, River water flowing, Distant thunder
+- Sound FX: Sizzling of incense, Soft rustle of fabric, Whispering wind
+- Music: Ethereal, light orchestral with flute
+
+DIALOGUE:
+- CHAR_6 [TTS: Iapetus] (vi-VN): [Con là cháu đời thứ tư. Hôm nay con mang oán hận trả lại cho đất. Xin bà cố và tổ tiên hãy buông bỏ để tất cả được siêu sinh.]
+  [delivery: casually and sincerely, style: casual conversational flow with deep emotional resonance, timing: at scene start]
+
+LIP SYNC: Sync mouth movements to a prayerful, rhythmic delivery. The word 'buông bỏ' (let go) should have a slight breathy trail.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 27] 208.0s - 216.0s
+Scene 27 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Reed Banks (Bờ sậy)
+  Layout: Isolation within a dense marshland; a small clearing for the hut near the water's edge
+  Objects: Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Vengeful, secretive, humid, and wild
+  Visual Style: Naturalistic 3D with realistic foliage and murky, silt-heavy river water
+  Lighting: Dappled moonlight or harsh, direct midday sun depending on time
+
+CHARACTERS:
+- [CHAR_6] Kỳ (Human) - Male, Mid-20s
+  Appearance: Fit, modern build with an athletic posture, Square jaw, friendly features, and bright, curious eyes, Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials, Always carrying either a modern smartphone or a weathered, old yellowed diary
+  Outfit: Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles, Dark blue denim jeans with natural fade patterns, None (bare head), Modern brown leather casual shoes
+  Position: left foreground, Orientation: facing the river, Pose: standing at the edge of the bank
+  Expression: relieved, hopeful
+  Actions: CHAR_6 stands by the clear-flowing water then he drops each chess piece into the river -> tiny glowing sparks rise from the splashes -> he watches the overcast sky break into sunlight; he smiles for the first time then he stands in the warm sun, looking at the clear water
+  Voice: Clear, resonant, youthful, and determined [TTS: Iapetus | rate=1.05 | style=Casual]
+
+CAMERA:
+- Framing: Extreme close-up on the chess piece hitting the water
+- Angle: Low angle from the water's surface looking up
+- Movement: Slow zoom out as the light breaks
+- Focus: Sharp focus on the splashing water and the floating sparks
+
+AUDIO:
+- Ambience: Sound of rushing water turning clear, Birds singing loudly, Wind through trees
+- Sound FX: Plop of wood hitting water, Sparkling chime sound, Loud sun-break sound effect
+- Music: Crescendo of uplifting strings
+
+LIP SYNC: No dialogue. Ensure a gentle exhale as he releases the final piece.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 28] 216.0s - 224.0s
+Scene 28 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: Modern Descendant's Home
+  Layout: Comfortable, airy living room with a mix of traditional and modern Vietnamese elements
+  Objects: Polished wooden platform (phản), modern furniture, dusty wooden chest, old handwritten diary, framed family photos
+  Atmosphere: Quiet, reflective, searching for truth
+  Visual Style: Clean, high-detail 3D animation with soft, naturalistic lighting
+  Lighting: Soft morning sunlight through open windows
+
+CHARACTERS:
+- [CHAR_5] Ông Nội (Human) - Male, Elderly (70+)
+  Appearance: Aged and slightly hunched, frail but serene, Deeply wrinkled, kind face with a wispy white beard, Wrinkled, pale, paper-thin skin. 3D rendered surface with smooth shading, PBR materials, Clouded, milky white blind eyes that seem to gaze into another world
+  Outfit: Simple, clean white cotton bà ba shirt, Matching white cotton trousers, None (bare head), Simple black cloth slippers
+  Position: center frame, in wooden chair, Orientation: facing the morning sun on the porch, Pose: sitting back, head resting against the chair
+  Expression: serene, peaceful
+  Actions: CHAR_5 wakes up to the bright morning sun on the porch then he smiles at the warmth on his face -> he whispers his final words -> his eyes close as he takes a long, slow breath; his body goes limp with grace then he remains in the sunlight, motionless and at peace
+  Voice: Gravelly, slow, otherworldly, and calm [TTS: Algenib | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Close-up of CHAR_5's face, transitioning to a wide shot of the garden
+- Angle: Eye-level
+- Movement: Slow dolly back
+- Focus: Focus on CHAR_5's face until the very end, then everything is bathed in soft glow
+
+AUDIO:
+- Ambience: Morning garden sounds, Birds chirping, Soft breeze
+- Sound FX: Slow, final exhale, Wooden chair creak, Distant sob
+- Music: Peaceful, fading orchestral theme
+
+DIALOGUE:
+- CHAR_5 [TTS: Algenib | rate=0.8] (vi-VN): [Đi rồi... đi hết rồi...]
+  [delivery: authoritatively and whispering with otherworldly calm, style: measured slow pace with a fading trail, timing: at scene start]
+
+LIP SYNC: CHAR_5's mouth should slowly close after the whisper. Visemes for 'đi rồi' should be very soft, almost formed by the breath alone.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 29] 224.0s - 232.0s
+Scene 29 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: The Reed Banks (Bờ sậy)
+  Layout: Isolation within a dense marshland; a small clearing for the hut near the water's edge
+  Objects: Tall, thick green and yellow reeds, a small dilapidated thatched hut, a narrow wooden sampan (xuồng), woodworking tools, The Cursed Chess Set (Bộ cờ tướng gỗ sưa đỏ)
+  Atmosphere: Vengeful, secretive, humid, and wild
+  Visual Style: Naturalistic 3D with realistic foliage and murky, silt-heavy river water
+  Lighting: Dappled moonlight or harsh, direct midday sun depending on time
+
+CHARACTERS:
+- [CHAR_6] Kỳ (Human) - Male, Mid-20s
+  Appearance: Fit, modern build with an athletic posture, Square jaw, friendly features, and bright, curious eyes, Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials, Always carrying either a modern smartphone or a weathered, old yellowed diary
+  Outfit: Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles, Dark blue denim jeans with natural fade patterns, None (bare head), Modern brown leather casual shoes
+  Position: center of boat, Orientation: facing the sunset, Pose: sitting, rowing gently
+  Expression: content, reflective
+  Actions: CHAR_6 rows back during a warm sunset then he looks down at his reflection in the water -> he sees himself clearly without shadows -> he looks up at the golden horizon; he takes a deep, clean breath then he rows out of frame into the golden light
+  Voice: Clear, resonant, youthful, and determined [TTS: Iapetus | rate=1.05 | style=Casual]
+
+CAMERA:
+- Framing: Medium shot of CHAR_6 reflecting in the water
+- Angle: High angle looking into the water reflection
+- Movement: Pan up from reflection to CHAR_6's face
+- Focus: Focus on reflection first, then sharp focus on CHAR_6
+
+AUDIO:
+- Ambience: Evening river sounds, Water lapping, Distant village sounds
+- Sound FX: Oars moving through water, Soft breathing, Water rippling
+- Music: Warm, resonant cello melody
+
+DIALOGUE:
+- CHAR_6 [TTS: Iapetus] (vi-VN): [Nhân quả không sai biệt một li. Nhưng lòng trắc ẩn và sự buông bỏ có thể xóa nhòa cả trăm năm oán hận.]
+  [delivery: casually and conversationally as a voice-over, style: casual conversational flow with a reflective, wise tone, timing: at scene start]
+
+LIP SYNC: This is a voice-over, but CHAR_6's mouth can be seen moving slightly as if repeating the thought internally while looking at the water.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+
+
+[Segment 30] 232.0s - 240.0s
+Scene 30 (8 seconds):
+
+VISUAL STYLE: Vintage retro film look, filmed with real actors and authentic environments. Warm faded color grading, slight film grain, dust, scratches, and subtle vignette to mimic old film reels. Natural skin tones with a nostalgic hue, softer focus, and reduced contrast. Lighting styled after classic cinema: tungsten indoor lights, warm sunlight, or neon retro glow. Camera movement may include zooms, pans, or slight jitter typical of analog film. Style reference: 70s–90s cinema, old home movies, retro commercials. Aspect ratio 16:9 full frame, no top or bottom borders, no black bars. NOT CGI, NOT animated, NOT cartoon, NOT stylized, NOT 3D, NOT render.
+
+LOCATION:
+- Location: Modern Descendant's Home
+  Layout: Comfortable, airy living room with a mix of traditional and modern Vietnamese elements
+  Objects: Polished wooden platform (phản), modern furniture, dusty wooden chest, old handwritten diary, framed family photos
+  Atmosphere: Quiet, reflective, searching for truth
+  Visual Style: Clean, high-detail 3D animation with soft, naturalistic lighting
+  Lighting: Soft morning sunlight through open windows
+
+CHARACTERS:
+- [CHAR_6] Kỳ (Human) - Male, Mid-20s
+  Appearance: Fit, modern build with an athletic posture, Square jaw, friendly features, and bright, curious eyes, Healthy tan, smooth modern skin. 3D rendered surface with smooth shading, PBR materials, Always carrying either a modern smartphone or a weathered, old yellowed diary
+  Outfit: Clean white cotton T-shirt. Fabric shows natural weave and slight wrinkles, Dark blue denim jeans with natural fade patterns, None (bare head), Modern brown leather casual shoes
+  Position: left foreground, Orientation: facing CHAR_1 across the table, Pose: sitting, leaning over a new wooden chess set
+  Expression: happy, delighted
+  Actions: CHAR_6 and CHAR_1 sit in the sunlit courtyard playing chess then CHAR_6 makes a bold move -> he looks up and laughs at CHAR_1 -> he gestures to the new set; he leans back and relaxes then he laughs heartily as the camera ascends
+  Voice: Clear, resonant, youthful, and determined [TTS: Iapetus | rate=1.05 | style=Casual]
+- [CHAR_1] Ông Chính (Human) - Male, Mid-40s
+  Appearance: Tall, authoritative build, commanding presence, Square jawline with high cheekbones and a furrowed brow, Tanned complexion, weathered by river sun. 3D rendered surface with smooth shading, PBR materials, Always holding a string of prayer beads (tràng hạt) in his hand, fingers constantly moving
+  Outfit: High-quality traditional black silk tunic with subtle embroidered patterns. PBR materials with realistic silk sheen, Matching black silk loose-fitting trousers, None (bare head), Traditional black cloth slippers
+  Position: right foreground, Orientation: facing CHAR_6, Pose: sitting relaxed, hand on his chin
+  Expression: delighted, happy
+  Actions: CHAR_1 ponders his next move then he sees CHAR_6's move -> he lets out a hearty laugh -> he nods in respect to his son; his eyes are bright then he continues laughing as the scene fades to a wide aerial shot
+  Voice: Deep, authoritative yet trembling with underlying worry [TTS: Alnilam | pitch=-2.5 | style=Professional]
+
+CAMERA:
+- Framing: Medium two-shot transitioning to an extreme wide aerial shot
+- Angle: Eye-level transitioning to high bird's-eye view
+- Movement: Flycam ascent starting from the table rising high above the village
+- Focus: Deep focus everything sharp
+
+AUDIO:
+- Ambience: Village sounds, Wind through palms, Children playing in distance
+- Sound FX: Clack of new wood pieces, Hearty laughter, Wind rushing by the camera
+- Music: Grand, soaring orchestral finale
+
+DIALOGUE:
+- CHAR_6 [TTS: Iapetus | rate=1.2] (vi-VN): [Chiếu tướng! Cha thua ván này rồi nhé!]
+  [delivery: energetically and laughing, style: casual conversational flow with bright energy, timing: at scene start]
+- CHAR_1 [TTS: Alnilam | rate=1.2] (vi-VN): [Hà hà, hậu sinh khả úy!]
+  [delivery: authoritatively and laughing, style: professional but with a warm, joyful tone, timing: after 3 seconds]
+
+LIP SYNC: Sync the laughter clearly. CHAR_1's 'Hà hà' should match his chest-shaking laugh visually.
+
+
+======================================================================
+CRITICAL VEO GENERATION CONSTRAINT - SUBTITLE PREVENTION
+======================================================================
+
+**ABSOLUTELY FORBIDDEN - NEVER GENERATE:**
+   - Subtitles, captions, or text overlays of ANY kind
+   - Burnt-in text or visual dialogue transcription
+   - On-screen text boxes, closed captions, or title cards
+   - Visual rendering of spoken dialogue as text elements
+   - Text overlays in ANY language (Vietnamese, English, etc.)
+
+**REQUIRED - AUDIO-ONLY DELIVERY:**
+   - ALL dialogue delivered EXCLUSIVELY through audio track
+   - Character lip-sync for on-screen speakers (NO visible text)
+   - Narrator voice-over for off-screen voices (NO text display)
+   - Viewer HEARS dialogue, does NOT READ it
+
+**DIALOGUE ARRAY DISCLAIMER:**
+The dialogue lines above specify LIP-SYNC TIMING and AUDIO CONTENT ONLY.
+These lines MUST NEVER be rendered as visible on-screen text or subtitles.
+Dialogue exists for:
+   1. Character mouth movement synchronization (lip-sync)
+   2. Voice generation audio track
+   3. NOT for visual text rendering
+
+**VEO-SPECIFIC WARNING:**
+When generating this scene with Veo:
+   - Veo MUST NOT auto-generate subtitles or captions
+   - Veo MUST NOT render dialogue as visual text
+   - Final video output MUST contain ZERO text overlays
+
+======================================================================
+

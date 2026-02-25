@@ -3,7 +3,15 @@ import { aiManager } from './ai/AIServiceManager.js'
 import config from './config.js'
 import { configService } from './configService.js'
 import { uploadToS3 } from './s3.js'
-import { buildCharacterSheetPrompt, buildScenePrompt, buildVeoVideoPrompt } from './PromptBuilder.js'
+import { 
+    buildCharacterSheetPrompt, 
+    buildScenePrompt, 
+    buildVeoVideoPrompt,
+    buildStoryboardPrompt,
+    buildHighlightsPrompt,
+    buildSocialMetaPrompt,
+    buildTranslationPrompt
+} from './PromptBuilder.js'
 import { VTuberService } from '../services/VTuberService.js'
 
 /**
@@ -19,20 +27,112 @@ export const generateText = async (prompt: string, modelName?: string, options: 
     return await aiManager.generateText(prompt, modelName, undefined, options)
 }
 
-export const generateJSON = async <T = any>(prompt: string, modelName?: string): Promise<T> => {
-    const fullPrompt = `${prompt}\n\nRespond ONLY with valid JSON. Do not include explanations.`
-    const text = await generateText(fullPrompt, modelName)
-    let cleanedText = text.trim()
-    const startIdx = Math.min(cleanedText.indexOf('{') === -1 ? Infinity : cleanedText.indexOf('{'), cleanedText.indexOf('[') === -1 ? Infinity : cleanedText.indexOf('['))
-    const endIdx = Math.max(cleanedText.lastIndexOf('}'), cleanedText.lastIndexOf(']'))
+export const generateJSON = async <T = any>(prompt: string, modelName?: string, options: any = {}): Promise<T> => {
+    // If responseMimeType is already application/json, don't append the "Respond ONLY with valid JSON" footer if prompt already looks solid
+    const text = await generateText(prompt, modelName, options);
+    let cleanedText = text.trim();
     
-    if (startIdx !== Infinity && endIdx !== -1) {
-        cleanedText = cleanedText.substring(startIdx, endIdx + 1)
+    // Resilient JSON extraction: Strip markdown code blocks if present
+    if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText.replace(/^```(json)?\n?/, '').replace(/\n?```$/, '');
     }
 
+    const startIdx = Math.min(
+        cleanedText.indexOf('{') === -1 ? Infinity : cleanedText.indexOf('{'),
+        cleanedText.indexOf('[') === -1 ? Infinity : cleanedText.indexOf('[')
+    );
+    
+    // Resilience: Try to find the matching closing brace if we have extra garbage attached
+    let endIdx = -1;
+    if (startIdx !== Infinity) {
+        const startChar = cleanedText[startIdx];
+        const endChar = startChar === '{' ? '}' : ']';
+        
+        let depth = 0;
+        let inString = false;
+        let escaped = false;
+        
+        for (let i = startIdx; i < cleanedText.length; i++) {
+            const char = cleanedText[i];
+            
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            
+            if (char === '\\') {
+                escaped = true;
+                continue;
+            }
+            
+            if (char === '"') {
+                inString = !inString;
+                continue;
+            }
+            
+            if (!inString) {
+                if (char === startChar) depth++;
+                else if (char === endChar) {
+                    depth--;
+                    if (depth === 0) {
+                        endIdx = i;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Fallback to last index if manual scan failed to find a balanced pair
+        if (endIdx === -1) {
+            endIdx = Math.max(cleanedText.lastIndexOf('}'), cleanedText.lastIndexOf(']'));
+        }
+    }
+
+    if (startIdx !== Infinity) {
+        if (endIdx === -1 || endIdx < startIdx) {
+            console.warn(`[AIGenerator] JSON appears truncated (no closing brace found). Attempting to repair...`);
+            
+            let repairText = cleanedText.substring(startIdx);
+            let depthStack: string[] = [];
+            let inString = false;
+            let escaped = false;
+
+            for (let i = 0; i < repairText.length; i++) {
+                const char = repairText[i];
+                if (escaped) { escaped = false; continue; }
+                if (char === '\\') { escaped = true; continue; }
+                if (char === '"') { inString = !inString; continue; }
+                if (!inString) {
+                    if (char === '{') depthStack.push('}');
+                    else if (char === '[') depthStack.push(']');
+                    else if (char === '}' || char === ']') {
+                        if (depthStack.length > 0 && depthStack[depthStack.length - 1] === char) {
+                            depthStack.pop();
+                        }
+                    }
+                }
+            }
+
+            if (inString) repairText += '"';
+            while (depthStack.length > 0) {
+                repairText += depthStack.pop();
+            }
+            cleanedText = repairText;
+        } else {
+            cleanedText = cleanedText.substring(startIdx, endIdx + 1);
+        }
+    }
+
+    // Safety: Replace Pythonic 'None' with 'null' if it slipped through the prompt
+    cleanedText = cleanedText.replace(/:\s*None\s*([,}])/g, ': null$1');
+
+    // Safety: Strip trailing commas which break JSON.parse in strict mode
+    cleanedText = cleanedText.replace(/,\s*([}\]])/g, '$1');
+
     try {
-        return JSON.parse(cleanedText)
+        return JSON.parse(cleanedText);
     } catch (error: any) {
+        // ... (existing error logging)
         console.error(`[AIGenerator] JSON Parsing Failed. Error: ${error.message}`)
         console.error(`[AIGenerator] Malformed text preview (first 500 chars): ${cleanedText.substring(0, 500)}`)
         console.error(`[AIGenerator] Malformed text preview (last 500 chars): ${cleanedText.substring(cleanedText.length - 500)}`)
@@ -48,6 +148,44 @@ export const generateJSON = async <T = any>(prompt: string, modelName?: string):
         
         throw new Error(`AI generated invalid JSON: ${error.message}`)
     }
+}
+
+/**
+ * High-level generation of a cinematic storyboard.
+ */
+export const generateStoryboard = async (
+    scriptOrTopic: string,
+    projectAnalysis: any,
+    targetDuration: number = 60,
+    language: string = 'English'
+): Promise<any> => {
+    const translator = async (p: string) => await generateText(p, 'gemini-2.5-flash');
+    const prompt = await buildStoryboardPrompt(scriptOrTopic, projectAnalysis, targetDuration, language, translator);
+    return await generateJSON(prompt, 'gemini-2.5-flash');
+}
+
+/**
+ * Extracts highlights/viral clips from context.
+ */
+export const extractHighlights = async (context: string): Promise<any> => {
+    const prompt = buildHighlightsPrompt(context);
+    return await generateJSON(prompt, 'gemini-2.5-flash');
+}
+
+/**
+ * Generates social media metadata.
+ */
+export const generateSocialMeta = async (contentSummary: string): Promise<any> => {
+    const prompt = buildSocialMetaPrompt(contentSummary);
+    return await generateJSON(prompt, 'gemini-2.5-flash');
+}
+
+/**
+ * Translates and localizes content.
+ */
+export const translateContent = async (text: string, targetLanguage: string): Promise<string> => {
+    const prompt = buildTranslationPrompt(text, targetLanguage);
+    return await generateText(prompt, 'gemini-2.5-flash');
 }
 
 // ============================================================================

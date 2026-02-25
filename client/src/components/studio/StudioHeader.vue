@@ -213,21 +213,22 @@ const formatLogTime = (ts: number) => {
 
 <style scoped lang="scss">
 .studio-header {
-    height: 72px; /* Increased height for better metadata visibility */
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 24px;
+    padding: 0 32px;
+    background: rgba(10, 10, 10, 0.4);
+    backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    z-index: 1000; /* Ensure it stays above other studio elements */
+    z-index: 1000;
 
     .header-left,
     .header-right {
-        min-width: 250px;
-        width: auto;
+        min-width: 280px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 16px;
     }
 
     .header-right {
@@ -237,24 +238,28 @@ const formatLogTime = (ts: number) => {
     .live-indicator {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 4px 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
+        gap: 10px;
+        padding: 6px 16px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 100px;
         font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 1px;
+        font-weight: 950;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
 
         .orb {
-            width: 6px;
-            height: 6px;
-            background: #666;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             transition: all 0.3s;
         }
 
         &.active {
             color: #ff4d4f;
+            background: rgba(255, 77, 79, 0.05);
+            border-color: rgba(255, 77, 79, 0.2);
 
             .orb {
                 background: #ff4d4f;
@@ -266,29 +271,33 @@ const formatLogTime = (ts: number) => {
 
     .timer {
         font-family: 'Fira Code', monospace;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 700;
-        opacity: 0.6;
+        opacity: 0.4;
+        letter-spacing: -0.5px;
     }
 
     .metadata-container {
-        padding: 4px;
-        border-radius: 12px;
-        transition: all 0.3s;
+        padding: 6px 16px;
+        border-radius: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
         
         &:hover {
             background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
         }
     }
 
     .stream-title {
-        font-size: 13px;
-        font-weight: 900;
+        font-size: 14px;
+        font-weight: 950;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        opacity: 0.8;
+        letter-spacing: 0.2em;
+        color: rgba(255, 255, 255, 0.9);
         text-align: center;
-        max-width: 400px;
+        max-width: 500px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
     .description-section {

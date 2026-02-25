@@ -246,6 +246,24 @@ export const useAdminStore = defineStore('admin', () => {
         }
     }
 
+    async function fetchComponentHealth() {
+        try {
+            const res : any = await api.get('/admin/monitoring/components/health')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
+    async function fetchDbCluster() {
+        try {
+            const res : any = await api.get('/admin/monitoring/db-cluster')
+            return res.data
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
     async function fetchMonitoringHistory(limit = 60) {
         try {
             const res : any = await api.get(`/admin/monitoring/history?limit=${limit}`)
@@ -494,6 +512,8 @@ export const useAdminStore = defineStore('admin', () => {
         fetchMonitoringStats,
         fetchMonitoringHealth,
         fetchMonitoringHeartbeat,
+        fetchComponentHealth,
+        fetchDbCluster,
         fetchMonitoringHistory,
         fetchMonitoringLogs,
         fetchClientLogs,

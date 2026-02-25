@@ -11,7 +11,7 @@
             :enable-asl-assist="enableAslAssist" :is-streaming="isStreaming" :stream-stats="streamStats"
             :active-captions="activeCaptions" :current-caption="currentCaption" :translated-caption="translatedCaption"
             :audio-levels="audioLevels" :current-db="currentDb" 
-            :selected-avatar="selectedAvatar" :autopilot-data="autopilotData"
+            :selected-avatar="selectedAvatar" 
             :isVTuberActive="isVTuberActive" :is-whiteboard-launchpad-active="isWhiteboardLaunchpadActive"
             @vtuber-stream-ready="handleVTuberStreamReady" @whiteboard-screen-share="handleWhiteboardScreenShare"
             @whiteboard-file-import="handleWhiteboardFileImport" />
@@ -81,13 +81,27 @@
         </div>
 
         <!-- Bottom Controls -->
-        <RecorderControls :mode="mode" :is-recording="isRecording" :mic-enabled="micEnabled"
-            :enable-beauty="enableBeauty" :is-streaming="isStreaming" :active-sidebar="activeSidebar"
-            :is-screen-share-ended="isScreenShareEnded" :is-annotation-active="isAnnotationActive"
-            :layout-preset="layoutPreset" :is-teleprompter-active="isTeleprompterActive" @toggle-sidebar="toggleSidebar"
-            @toggle-mic="toggleMic" @toggle-ai="toggleAI" @toggle-recording="toggleRecording"
-            @toggle-live="toggleLiveStream" @trigger-upload="triggerFileUpload" @initialize-stream="initializeStream"
-            @update:is-annotation-active="v => isAnnotationActive = v" />
+        <RecorderControls
+            :mode="mode"
+            :is-recording="isRecording"
+            :mic-enabled="micEnabled"
+            :enable-beauty="enableBeauty"
+            :is-streaming="isStreaming"
+            :active-sidebar="activeSidebar"
+            :is-screen-share-ended="isScreenShareEnded"
+            :is-annotation-active="isAnnotationActive"
+            :layout-preset="layoutPreset"
+            :is-teleprompter-active="isTeleprompterActive"
+            @toggle-sidebar="toggleSidebar"
+            @toggle-mic="toggleMic"
+            @toggle-ai="toggleAI"
+            @toggle-recording="toggleRecording"
+            @toggle-share="toggleScreenShare"
+            @toggle-live="toggleLiveStream"
+            @trigger-upload="triggerFileUpload"
+            @initialize-stream="initializeStream"
+            @update:is-annotation-active="v => isAnnotationActive = v"
+        />
 
         <!-- Side Panel -->
         <RecorderSidePanel v-if="activeSidebar" :mode="mode" :active-sidebar="activeSidebar"
@@ -95,14 +109,17 @@
             :enable-asl-assist="enableAslAssist" :asl-mode="aslMode" :enable-beauty="enableBeauty"
             :beauty-settings="beautySettings" :active-captions="activeCaptions" :target-language="targetLanguage"
             :resource-pool="resourcePool" :active-overlays="activeOverlays" :stream-config="streamConfig"
-            :autopilot-data="autopilotData" :is-recording="isRecording" :current-slide-index="currentSlideIndex"
-            :podcast-settings="podcastSettings" :avatar-presets="avatarPresets" :selected-avatar="selectedAvatar"
+            :selected-platforms="selectedPlatforms" :available-accounts="availableAccounts"
+            :is-recording="isRecording" :current-slide-index="currentSlideIndex"
+            :podcast-settings="podcastSettings" :selected-avatar="selectedAvatar"
             :selected-voice="selectedVoice" :video-devices="videoDevices" :audio-devices="audioDevices"
             :selected-camera-id="selectedCameraId" :selected-mic-id="selectedMicId" :mic-volume="micVolume"
             :isVTuberActive="isVTuberActive" :is-whiteboard-launchpad-active="isWhiteboardLaunchpadActive"
             :whiteboard-content-type="typeof whiteboardContent === 'object' && whiteboardContent !== null && 'getTracks' in (whiteboardContent as any) ? 'stream' : (whiteboardPages.length > 0 ? 'pdf' : null)"
             :current-whiteboard-page="currentWhiteboardPage" :whiteboard-pages-count="whiteboardPages.length"
             :whiteboard-scripts="whiteboardScripts"
+            :is-a-i-presenting="isAIPresenting"
+            :is-synthesizing="isSynthesizing"
             :bgm-volume="bgmVolume" :is-ducking-enabled="isDuckingEnabled" :bgm-url="bgmUrl" :bgm-library="bgmLibrary"
             @close="activeSidebar = null" @update:applied-filter="v => appliedFilter = v"
             @update:enable-asl-assist="v => enableAslAssist = v" @update:asl-mode="v => aslMode = v"
@@ -111,16 +128,21 @@
             @trigger-presentation-upload="triggerPresentationUpload" @trigger-resource-upload="triggerResourceUpload"
             @toggle-overlay="toggleOverlay" @update:current-slide-index="v => currentSlideIndex = v"
             @update:selected-avatar="v => selectedAvatar = v" @update:selected-voice="v => selectedVoice = v"
+            @select-vtuber-entity="handleSelectVTuberEntity"
             @update:isVTuberActive="val => isVTuberActive = val"
             @reset-whiteboard="isWhiteboardLaunchpadActive = true; whiteboardContent = null"
-            @prev-whiteboard-page="currentWhiteboardPage = Math.max(0, currentWhiteboardPage - 1)"
-            @next-whiteboard-page="currentWhiteboardPage = Math.min(whiteboardPages.length - 1, currentWhiteboardPage + 1)"
-            @whiteboard-file-import="handleWhiteboardFileImport" @whiteboard-screen-share="handleWhiteboardScreenShare"
-            @generate-whiteboard-scripts="generateWhiteboardAIScripts" @start-whiteboard-autopilot="startAIAutopilot"
+            @next-whiteboard-page="nextPresentationPage"
+            @prev-whiteboard-page="prevPresentationPage"
+            @go-to-whiteboard-page="goToPresentationPage"
+            @whiteboard-file-import="handleWhiteboardFileImport"
+            @whiteboard-screen-share="handleWhiteboardScreenShare"
+            @generate-whiteboard-scripts="generateWhiteboardAIScripts" @start-ai-presentation="startAIPresentation"
+            @stop-ai-presentation="stopAIPresentation"
+            @toggle-platform="togglePlatform"
             @update:bgm-volume="v => bgmVolume = v" @update:is-ducking-enabled="v => isDuckingEnabled = v"
             @update:bgm-url="v => bgmUrl = v" @toggle-bgm="toggleBGM"
             @update:selected-mic-id="v => { if (isRecording) { toast.error('Cannot change mic while recording'); return; }; selectedMicId = v; initializeStream() }"
-            @update:mic-volume="v => micVolume = v" @start-autopilot="startAutopilotSession"
+            @update:mic-volume="v => micVolume = v" 
             @update:podcast-settings="v => podcastSettings = { ...podcastSettings, ...v }"
             @update:audio-advanced="v => podcastSettings = { ...podcastSettings, ...v }"
             @update:cam-settings="v => camSettings = { ...camSettings, ...v }" :layout-preset="layoutPreset"
@@ -138,11 +160,12 @@
             @update:annotation-color="v => annotationColor = v" @update:annotation-size="v => annotationSize = v"
             @clear-annotations="clearAnnotations" 
             :recording-quality="recordingQuality"
-            @update:recording-quality="v => recordingQuality = { ...recordingQuality, ...v }" />
+            @update:recording-quality="v => recordingQuality = { ...recordingQuality, ...v }"
+            :processing-canvas="processingCanvas" />
 
         <!-- Hidden Inputs -->
         <input ref="fileInput" type="file" class="hidden" accept="image/*,video/*" @change="handleFileUpload" />
-        <input ref="presentationInput" type="file" class="hidden" accept=".pdf,.pptx"
+        <input ref="presentationInput" type="file" class="hidden" accept=".pdf,.ppt,.pptx"
             @change="handlePresentationUpload" />
 
         <!-- Finish Dialog -->
@@ -181,7 +204,7 @@ import { onMounted, ref } from 'vue'
 import { ElDialog } from 'element-plus'
 import { toast } from 'vue-sonner'
 import { HandleRound, FileAddition } from '@icon-park/vue-next'
-import { useRecorder, videoFilters } from '@/composables/useRecorder'
+import { useRecorder, videoFilters, type RecordingMode } from '@/composables/useRecorder'
 
 // Components
 import RecorderHeader from '@/components/recorder/RecorderHeader.vue'
@@ -190,30 +213,49 @@ import RecorderControls from '@/components/recorder/RecorderControls.vue'
 import RecorderSidePanel from '@/components/recorder/RecorderSidePanel.vue'
 import UserGuide from '@/components/common/UserGuide.vue'
 import { recorderGuide } from '@/config/userGuides'
+import { useRouter, useRoute } from 'vue-router'
+
+const route = useRoute();
 
 const {
     mode, isRecording, recordingTime, maxDuration, micEnabled, activeSidebar,
     appliedFilter, showFinishDialog, enableAslAssist, aslMode, enableBeauty, beautySettings, currentDb,
     isAiActive, processingCanvas, displayCanvas, activeCaptions, currentCaption,
-    translatedCaption, targetLanguage, isStreaming, streamConfig, streamStats,
-    fileInput, presentationInput, resourcePool, activeOverlays, autopilotData, currentSlideIndex,
+    translatedCaption, targetLanguage, isStreaming, streamConfig, streamStats, publisher,
+    selectedPlatforms, availableAccounts, togglePlatform,
+    fileInput, presentationInput, resourcePool, activeOverlays, currentSlideIndex,
     audioLevels, isScreenShareEnded, tabs, camSettings, podcastSettings,
-    avatarPresets, selectedAvatar, selectedVoice,
+    avatarPresets: _unused, selectedAvatar, selectedVoice,
     videoDevices, audioDevices, selectedCameraId, selectedMicId, micVolume, recordedVideoUrl,
     isCountdownActive, countdownValue, showMiniPreview, webcamVideo,
     triggerResourceUpload, toggleOverlay, enumerateDevices,
     layoutPreset, isTeleprompterActive, isTeleprompterScrolling, teleprompterScript, teleprompterSpeed, teleprompterFontSize, teleprompterScrollPos,
     isAnnotationActive, annotationTool, annotationColor, annotationSize, recordingQuality,
     isVTuberActive, isWhiteboardLaunchpadActive, whiteboardContent, currentWhiteboardPage, whiteboardPages, whiteboardScripts,
+    isAIPresenting, isSynthesizing,
     bgmVolume, isDuckingEnabled, bgmUrl, bgmLibrary, toggleBGM,
-    handleVTuberStreamReady, handleWhiteboardScreenShare, handleWhiteboardFileImport, generateWhiteboardAIScripts, startAIAutopilot,
+    handleVTuberStreamReady, handleWhiteboardScreenShare, handleWhiteboardFileImport, generateWhiteboardAIScripts, startAIPresentation,
+    stopAIPresentation, nextPresentationPage, prevPresentationPage, goToPresentationPage,
     toggleAI, switchMode, initializeStream, toggleRecording, stopRecording, startRecording, startCountdown,
     startDrawing, draw, stopDrawing, clearAnnotations,
-    handleFileUpload, handlePresentationUpload, startAutopilotSession, downloadRecording, saveToProject, toggleAIFilter, toggleCaptions, toggleLiveStream, toggleMic, triggerFileUpload, triggerPresentationUpload
+    handleFileUpload, handlePresentationUpload, downloadRecording, saveToProject, toggleAIFilter, toggleCaptions, toggleLiveStream, toggleMic, triggerFileUpload, triggerPresentationUpload
 } = useRecorder()
+
+const handleSelectVTuberEntity = (vt: any) => {
+    selectedAvatar.value = vt.entityId ?? vt._id
+}
 
 const toggleSidebar = (name: string) => {
     activeSidebar.value = activeSidebar.value === name ? null : (name as any)
+}
+
+const toggleScreenShare = () => {
+    const screenModes = ['screen', 'camera-screen'];
+    if (screenModes.includes(mode.value)) {
+        switchMode('camera')
+    } else {
+        switchMode('camera-screen')
+    }
 }
 
 // Draggability Logic
@@ -261,9 +303,14 @@ const handleCanvasMouseUp = () => {
     stopDrawing()
 }
 
-onMounted(() => {
-    enumerateDevices()
-    initializeStream()
+onMounted(async () => {
+    await enumerateDevices()
+    const targetMode = route.query.mode as RecordingMode
+    if (targetMode && targetMode !== mode.value) {
+        await switchMode(targetMode)
+    } else {
+        await initializeStream()
+    }
 })
 </script>
 

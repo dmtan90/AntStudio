@@ -6,12 +6,12 @@
                  <span class="text-[10px] font-black text-orange-400 uppercase tracking-[0.2em]">Whiteboard Engine</span>
              </div>
              <h2 class="text-4xl font-black text-white mb-4 tracking-tighter">Collaborative Workspace</h2>
-             <p class="text-white/40 text-sm max-w-md mx-auto">Share your screen, share photos, videos, PDF, PPT and more to collaborate with your audience.</p>
+             <p class="text-white/40 text-sm max-w-md mx-auto">Share your slides to collaborate with your audience.</p>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-4xl">
+        <div class="text-center">
             <!-- Screen Share -->
-            <button @click="$emit('share-screen')" class="launch-card group">
+            <!-- <button @click="$emit('share-screen')" class="launch-card group">
                 <div class="icon-box">
                     <monitor theme="outline" size="32" class="group-hover:scale-110 transition-transform" />
                 </div>
@@ -19,21 +19,21 @@
                     <span class="label">Screen Share</span>
                     <span class="sub-label">Window Capture</span>
                 </div>
-            </button>
+            </button> -->
 
             <!-- Import PDF -->
-            <button @click="$emit('import-file', 'pdf')" class="launch-card group">
+            <button @click="$emit('import-file', 'pdf')" class="launch-card group text-center flex flex-row justify-center">
                 <div class="icon-box">
                     <file-pdf theme="outline" size="32" class="group-hover:scale-110 transition-transform" />
                 </div>
-                <div class="flex flex-col gap-0.5">
-                    <span class="label">Import PDF</span>
+                <div class="flex flex-col gap-0.5 justify-center">
+                    <span class="label">Import PPT/PDF</span>
                     <span class="sub-label">Slides & Docs</span>
                 </div>
             </button>
 
             <!-- Import PPT -->
-            <button @click="$emit('import-file', 'ppt')" class="launch-card group">
+            <!-- <button @click="$emit('import-file', 'ppt')" class="launch-card group">
                 <div class="icon-box">
                     <file-ppt theme="outline" size="32" class="group-hover:scale-110 transition-transform" />
                 </div>
@@ -41,36 +41,36 @@
                     <span class="label">Import PPT</span>
                     <span class="sub-label">Presentation</span>
                 </div>
-            </button>
+            </button> -->
 
             <!-- Import Video -->
-            <button @click="$emit('import-file', 'video')" class="launch-card group">
+            <!-- <button @click="$emit('import-file', 'video')" class="launch-card group">
                 <div class="icon-box">
-            <video-two theme="outline" size="32" class="group-hover:scale-110 transition-transform" />
+                    <video-two theme="outline" size="32" class="group-hover:scale-110 transition-transform" />
+                </div>
+                <div class="flex flex-col gap-0.5">
+                    <span class="label">Import Video</span>
+                    <span class="sub-label">Media & Reels</span>
+                </div>
+            </button> -->
         </div>
-        <div class="flex flex-col gap-0.5">
-            <span class="label">Import Video</span>
-            <span class="sub-label">Media & Reels</span>
-        </div>
-    </button>
-</div>
 
-<!-- Hint -->
-<div class="mt-16 flex items-center gap-6 opacity-20 hover:opacity-100 transition-opacity">
-    <div class="flex items-center gap-2">
-        <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-        <span class="text-[8px] font-bold text-white uppercase tracking-widest">Collaborative</span>
+        <!-- Hint -->
+        <div class="mt-16 flex items-center gap-6 opacity-20 hover:opacity-100 transition-opacity">
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                <span class="text-[8px] font-bold text-white uppercase tracking-widest">Collaborative</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                <span class="text-[8px] font-bold text-white uppercase tracking-widest">Interactive</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                <span class="text-[8px] font-bold text-white uppercase tracking-widest">AI Powered</span>
+            </div>
+        </div>
     </div>
-    <div class="flex items-center gap-2">
-        <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-        <span class="text-[8px] font-bold text-white uppercase tracking-widest">Interactive</span>
-    </div>
-    <div class="flex items-center gap-2">
-        <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-        <span class="text-[8px] font-bold text-white uppercase tracking-widest">AI Powered</span>
-    </div>
-</div>
-</div>
 </template>
 
 <script setup lang="ts">
@@ -93,7 +93,7 @@ defineEmits<{
     border-radius: 2rem;
     padding: 2rem 1.5rem;
     display: flex;
-    flex-col: items-center;
+    flex-direction: column;
     justify-content: center;
     gap: 1.5rem;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -121,7 +121,7 @@ defineEmits<{
         border-radius: 1.25rem;
         background: rgba(255, 255, 255, 0.05);
         display: flex;
-        items-center: center;
+        align-items: center;
         justify-content: center;
         color: rgba(255, 255, 255, 0.4);
         transition: all 0.4s ease;

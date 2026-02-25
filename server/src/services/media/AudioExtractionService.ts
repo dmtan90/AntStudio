@@ -1,20 +1,19 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { uploadToS3 } from '../../utils/s3.js';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import { getAdminSettings } from '../../models/AdminSettings.js';
+import { config } from '../../utils/config.js';
+import { fileURLToPath } from 'url';
 
-// const ffmpegPath = ffmpegInstaller.path;
-// In some ESM environments, the default export might be different. 
-// Let's assume standard behavior or use require if needed.
-// Actually, let's use a safe approach for ESM/CJS interop if unsure.
-// But mostly 'import' works if allowed.
-
-console.log('[AudioExtractionService] >>> MODULE LOADED AT ' + new Date().toISOString());
-const ABS_LOG_PATH = path.join('D:', 'Workspace', 'Gits', 'CamHub', 'ams', 'AntFlow', 'server', 'eval_log.txt');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class AudioExtractionService {
     private static tempDir = path.join(process.cwd(), 'tmp/audio-extraction');
+    private static ytDlpPathCache: string | null = null;
 
     // youtube and other props removed
 
@@ -25,15 +24,69 @@ export class AudioExtractionService {
     }
 
     private static getYtDlpPath(): string {
-        const isWindows = process.platform === 'win32';
-        const binaryName = isWindows ? 'yt-dlp.exe' : 'yt-dlp';
-        const localPath = path.join(process.cwd(), 'bin', binaryName);
+        if (this.ytDlpPathCache) return this.ytDlpPathCache;
 
-        if (fs.existsSync(localPath)) {
-            return localPath;
+        const platformMap: Record<string, string> = {
+            'win32': 'yt-dlp-win.exe',
+            'linux': 'yt-dlp-linux',
+            'darwin': 'yt-dlp-macos'
+        };
+
+        const binaryName = platformMap[process.platform] || (process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp');
+        const cwd = process.cwd();
+        
+        // check if running as pkg standalone
+        const isPkg = (process as any).pkg !== undefined;
+        
+        if (isPkg) {
+            // In pkg, assets are in /snapshot/... 
+            // We can't execute them directly, so we must extract to tmp
+            const pkgCandidates = [
+                path.join(__dirname, 'bin', binaryName),
+                path.join(__dirname, '..', 'bin', binaryName),
+                path.join(__dirname, '..', '..', 'bin', binaryName),
+                // Check youtube-dl-exec path inside snapshot
+                path.join(__dirname, '..', 'node_modules', 'youtube-dl-exec', 'bin', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'),
+                path.join(__dirname, '..', '..', 'node_modules', 'youtube-dl-exec', 'bin', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'),
+                path.join(process.cwd(), 'bin', binaryName)
+            ];
+
+            const tmpPath = path.join(os.tmpdir(), `antflow_${binaryName}`);
+            
+            for (const pkgPath of pkgCandidates) {
+                try {
+                    if (fs.existsSync(pkgPath)) {
+                        console.log(`[AudioExtractionService] Extracting ${binaryName} from pkg snapshot ${pkgPath} to ${tmpPath}...`);
+                        const binaryBuffer = fs.readFileSync(pkgPath);
+                        fs.writeFileSync(tmpPath, binaryBuffer);
+                        fs.chmodSync(tmpPath, '755');
+                        this.ytDlpPathCache = tmpPath;
+                        return tmpPath;
+                    }
+                } catch {}
+            }
+            console.warn(`[AudioExtractionService] Failed to find ${binaryName} in pkg snapshot. Falling back to system PATH.`);
         }
 
-        // Fallback to system PATH
+        const candidates = [
+            path.join(cwd, 'bin', binaryName),
+            path.join(cwd, 'bin', process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'), // Legacy fallback
+            path.join(cwd, binaryName),
+        ];
+
+        for (const p of candidates) {
+            try {
+                if (fs.existsSync(p)) {
+                    console.log(`[AudioExtractionService] Using yt-dlp at ${p}`);
+                    this.ytDlpPathCache = p;
+                    return p;
+                }
+            } catch {
+            }
+        }
+
+        console.warn(`[AudioExtractionService] yt-dlp binary not found in local bin paths, falling back to ${binaryName} on PATH`);
+        this.ytDlpPathCache = binaryName;
         return binaryName;
     }
 
@@ -50,8 +103,8 @@ export class AudioExtractionService {
 
         return new Promise((resolve, reject) => {
             
-            // Fix for ffmpeg path in ESM if usually problematic
-            const ffmpegPath = ffmpegInstaller.path;
+            // Use centralized ffmpeg path from config
+            const ffmpegPath = config.ffmpegPath;
 
             const args = [
                 '-x',
@@ -65,6 +118,11 @@ export class AudioExtractionService {
             console.log(`[AudioExtractionService] Spawning: ${ytDlpPath} ${args.join(' ')}`);
 
             const child = spawn(ytDlpPath, args);
+
+            child.on('error', (err: any) => {
+                console.error('[AudioExtractionService] Failed to start yt-dlp process', err);
+                reject(err);
+            });
 
             child.stdout.on('data', (data: any) => {
                 console.log(`[yt-dlp] ${data.toString().trim()}`);
@@ -162,6 +220,14 @@ export class AudioExtractionService {
         
         const child = spawn(ytDlpPath, args);
 
+        child.on('error', (err: any) => {
+            console.error('[AudioExtractionService] Failed to start yt-dlp stream process', err);
+            if (!res.headersSent) {
+                res.statusCode = 500;
+            }
+            res.end();
+        });
+
         child.stdout.pipe(res);
 
         child.stderr.on('data', (data: any) => {
@@ -196,6 +262,21 @@ export class AudioExtractionService {
         
         console.log(`[AudioExtractionService] Fetching lyrics for ${videoId} (lang: ${preferredLanguage})...`);
 
+        // Load proxy config from AdminSettings
+        let proxyArgs: string[] = [];
+        try {
+            const settings = await getAdminSettings();
+            const proxyConfig = settings?.apiConfigs?.proxy;
+            if (proxyConfig?.enabled && proxyConfig?.webshare?.proxyUsername && proxyConfig?.webshare?.proxyPassword) {
+                const { proxyUsername, proxyPassword, domainName = 'p.webshare.io', proxyPort = 80 } = proxyConfig.webshare;
+                const proxyUrl = `http://${proxyUsername}:${proxyPassword}@${domainName}:${proxyPort}`;
+                proxyArgs = ['--proxy', proxyUrl];
+                console.log(`[AudioExtractionService] getLyrics: Using Webshare proxy via ${domainName}:${proxyPort}`);
+            }
+        } catch (e) {
+            console.warn('[AudioExtractionService] getLyrics: Failed to load proxy config, skipping proxy.');
+        }
+
         return new Promise((resolve) => {
 
             // Fetch subtitles (manual or auto)
@@ -209,6 +290,7 @@ export class AudioExtractionService {
                 '--convert-subs', 'vtt',
                 '-f', 'bestaudio/best', // Ensure a format is valid even if skipping download
                 '--extractor-args', 'youtube:player_client=android', // Broaden player clients
+                ...proxyArgs,  // Inject Webshare proxy if configured
                 '-o', path.join(this.tempDir, baseFilename),
                 `https://www.youtube.com/watch?v=${videoId}`
             ];
@@ -289,6 +371,116 @@ export class AudioExtractionService {
             });
         });
     }
+
+    /**
+     * Fetch YouTube captions using @playzone/youtube-transcript with Invidious fallback.
+     * Much faster and more reliable than yt-dlp for caption extraction.
+     * Avoids YouTube IP blocking via Invidious instance fallover.
+     *
+     * @param videoId YouTube video ID
+     * @param preferredLanguages Preferred subtitle language codes (e.g. 'vi', 'en')
+     * @returns VTT-formatted lyrics string or null if unavailable
+     */
+    static async getLyricsV2(videoId: string, preferredLanguages: string[] = ['vi', 'en']): Promise<string | null> {
+        // Public Invidious instances for fallback
+        const invidiousInstances = [
+            'https://invidious.projectsegfau.lt',
+            'https://invidious.slipfox.xyz',
+            'https://invidious.privacyredirect.com',
+            'https://inv.tux.pizza',
+            'https://yt.artemislena.eu',
+        ];
+
+        try {
+            // Import directly from sub-paths to avoid dist/index.js which re-exports dist/cli
+            // dist/cli triggers commander.js which prints help and crashes the process
+            const { YouTubeTranscriptApi } = await import('@playzone/youtube-transcript/dist/api/index.js');
+            const { WebshareProxyConfig } = await import('@playzone/youtube-transcript/dist/proxies/index.js');
+            const { WebVTTFormatter } = await import('@playzone/youtube-transcript/dist/formatters/index.js');
+
+            // 1. Try with Webshare Proxy via the library first
+            let proxyConfig: any = undefined;
+            try {
+                const settings = await getAdminSettings();
+                const proxy = settings?.apiConfigs?.proxy;
+                if (proxy?.enabled && proxy?.webshare?.proxyUsername && proxy?.webshare?.proxyPassword) {
+                    const { proxyUsername, proxyPassword, domainName, proxyPort } = proxy.webshare;
+                    proxyConfig = new WebshareProxyConfig(
+                        proxyUsername,
+                        proxyPassword,
+                        [],           // no IP filter
+                        3,            // retries when blocked
+                        domainName || 'p.webshare.io',
+                        proxyPort || 80
+                    );
+                    console.log(`[AudioExtractionService] getLyricsV2: Using Webshare proxy for ${videoId}`);
+                }
+            } catch (e) {
+                console.warn('[AudioExtractionService] getLyricsV2: Failed to load proxy config.');
+            }
+
+            const api = new YouTubeTranscriptApi(proxyConfig);
+            console.log(`[AudioExtractionService] getLyricsV2: Attempting YouTube fetch for ${videoId} (langs: ${preferredLanguages.join(', ')})`);
+            
+            let transcript = null;
+            try {
+                transcript = await api.fetch(videoId, preferredLanguages, false);
+            } catch (ytError: any) {
+                console.warn(`[AudioExtractionService] getLyricsV2: YouTube fetch failed: ${ytError.message}`);
+            }
+
+            if (transcript) {
+                const formatter = new WebVTTFormatter();
+                const vttContent = formatter.formatTranscript(transcript);
+                if (vttContent && vttContent.trim().startsWith('WEBVTT')) {
+                    console.log(`[AudioExtractionService] getLyricsV2: Successfully fetched from YouTube (${vttContent.length} chars)`);
+                    return vttContent.trim();
+                }
+            }
+
+            // 2. Fallback: Manual Invidious fetch if YouTube fails or is blocked
+            console.log(`[AudioExtractionService] getLyricsV2: YouTube failed, trying Invidious fallback for ${videoId}...`);
+            const axios = (await import('axios')).default;
+
+            for (const instance of invidiousInstances) {
+                try {
+                    console.log(`[AudioExtractionService] getLyricsV2: Trying Invidious instance: ${instance}`);
+                    // Fetch available captions from Invidious
+                    const captionsResp = await axios.get(`${instance}/api/v1/videos/${videoId}`, { timeout: 5000 });
+                    const captions = captionsResp.data?.captions;
+                    
+                    if (captions && captions.length > 0) {
+                        // Find best matching language
+                        let bestCaption = null;
+                        for (const lang of preferredLanguages) {
+                            bestCaption = captions.find((c: any) => c.languageCode === lang);
+                            if (bestCaption) break;
+                        }
+                        
+                        if (!bestCaption) bestCaption = captions[0]; // fallback to first available
+
+                        // Fetch the actual caption content in VTT format
+                        // Invidious API: /api/v1/captions/{videoId}?label={label}
+                        const vttResp = await axios.get(`${instance}/api/v1/captions/${videoId}`, {
+                            params: { label: bestCaption.label, format: 'vtt' },
+                            timeout: 5000
+                        });
+
+                        if (vttResp.data && vttResp.data.trim().startsWith('WEBVTT')) {
+                            console.log(`[AudioExtractionService] getLyricsV2: Successfully fetched from Invidious (${instance})`);
+                            return vttResp.data.trim();
+                        }
+                    }
+                } catch (invError: any) {
+                    console.warn(`[AudioExtractionService] getLyricsV2: Invidious instance ${instance} failed: ${invError.message}`);
+                    continue; // try next instance
+                }
+            }
+
+            return null;
+        } catch (err: any) {
+            console.error(`[AudioExtractionService] getLyricsV2: Fatal error:`, err.message);
+            return null;
+        }
+    }
 }
-
-

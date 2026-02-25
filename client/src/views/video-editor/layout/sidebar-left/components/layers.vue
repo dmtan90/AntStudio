@@ -111,14 +111,14 @@ onUnmounted(() => {
 
 <template>
   <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]">
-    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5">
+    <div class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 shrink-0">
       <h2 class="font-bold text-sm tracking-wider uppercase text-white/90">Layers</h2>
       <button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors" @click="editor.setActiveSidebarLeft(null)">
         <X :size="16" />
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-3">
+    <div class="flex-1 overflow-y-auto custom-scrollbar sidebar-container p-3">
       <VueDraggable
         v-model="layers"
         class="flex flex-col gap-1"

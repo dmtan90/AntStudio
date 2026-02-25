@@ -55,7 +55,7 @@ const uploadTemplate = useMutation({
   mutationFn: async () => {
     const pages = await editor.exportTemplate();
     console.log("uploadTemplate", editor.name, editor.id, pages)
-    const template = { name: editor.name, id: editor.id, pages, is_pubished: false } as unknown as EditorTemplate;
+    const template = { name: editor.name, id: editor.id, pages, is_published: false } as unknown as EditorTemplate;
     createBase64Download(template, "text/json", `template-${editor.name}-${Date.now()}.json`);
     return template;
   },
@@ -123,6 +123,10 @@ const fileName = computed({
   }
 });
 
+const templateLoaded = computed(() => {
+  return editor.canvas && editor.canvas.template && editor.canvas.template?.status == "completed";
+});
+
 const resize = (size: Dimension) => {
   if (size?.width != dimension.value?.width || size?.height != dimension.value?.height) {
     editor.resize(size);
@@ -149,7 +153,7 @@ const isFormat = (format) => {
     </div>
 
     <section id="left" class="flex items-center gap-3 relative z-10">
-      <el-button @click="$router.push('/projects')"
+      <el-button @click="$router.go(-1)"
         class="cinematic-button !h-9 !w-9 !p-0 !rounded-xl border-white/5 bg-white/5 hover:bg-white/10 group">
         <ChevronLeft :size="18" class="text-white/40 group-hover:text-white transition-colors" />
       </el-button>
@@ -294,6 +298,7 @@ const isFormat = (format) => {
       </el-button>
 
       <el-button
+        :loading="!templateLoaded"
         class="cinematic-button is-primary !h-9 !px-5 !rounded-xl !border-none !shadow-lg !shadow-brand-primary/20 flex items-center gap-2 transition-transform active:scale-95"
         @click="editor.onTogglePreviewModal('open')">
         <Image :size="14" />

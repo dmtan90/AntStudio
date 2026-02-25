@@ -63,11 +63,81 @@ export class CanvasTrimmer {
   async split() {
     const object = this.selection.active;
     if (!object) return;
-    if (FabricUtils.isVideoElement(object)) {
-      const video = this.canvas.getItemByName(object.name) as any;
 
-      const clone: any = await this._canvas.cloner.clone(video as fabric.Object);
-      return clone;
+    const seek = this._canvas.timeline.seek;
+    const isAudio = FabricUtils.isAudioElement(object) || object.type === 'audio';
+    const isVideo = FabricUtils.isVideoElement(object);
+
+    if (isAudio && (object as any).id) {
+        const audio = this._canvas.audio.elements.find(e => e.id === (object as any).id);
+        if (!audio) return;
+
+        // Convert offset to ms if stored in seconds (based on play logic it's seconds, but let's check)
+        // Actually, EditorAudioElement.offset is usually seconds in this codebase.
+        // Let's assume seconds for EditorAudioElement properties as seen in audio.ts play().
+        const clipStartMs = audio.offset * 1000;
+        const clipDurationMs = audio.timeline * 1000;
+        const relativeSeekMs = seek - clipStartMs;
+
+        if (relativeSeekMs <= 100 || relativeSeekMs >= clipDurationMs - 100) {
+            return; // Too close to edges
+        }
+
+        // Create second clip
+        const newAudio: EditorAudioElement = {
+            ...JSON.parse(JSON.stringify(audio)), // Deep clone properties
+            id: FabricUtils.elementID("audio"),
+            offset: seek / 1000,
+            timeline: (clipDurationMs - relativeSeekMs) / 1000,
+            trim: audio.trim + (relativeSeekMs / 1000),
+            source: undefined as any, // Will be re-initialized on play
+            playing: false
+        };
+
+        // Truncate first clip
+        audio.timeline = relativeSeekMs / 1000;
+
+        this._canvas.audio.elements.push(newAudio);
+        this._canvas.editor.onModified?.();
+        return newAudio;
+    }
+
+    if (isVideo) {
+        const video = this.canvas.getItemByName(object.name) as any;
+        if (!video || !video.meta) return;
+
+        const clipStartMs = video.meta.offset;
+        const clipDurationMs = video.meta.duration;
+        const relativeSeekMs = seek - clipStartMs;
+
+        if (relativeSeekMs <= 100 || relativeSeekMs >= clipDurationMs - 100) {
+            return;
+        }
+
+        // Create second clip
+        const clone: any = await this._canvas.cloner.clone(video as fabric.Object);
+        clone.set({
+            name: FabricUtils.elementID("video"),
+            left: video.left, // Keep same position
+            top: video.top
+        });
+        
+        clone.meta = {
+            ...video.meta,
+            offset: seek,
+            duration: clipDurationMs - relativeSeekMs
+        };
+
+        // Update second clip trim
+        clone.set('trimStart', (video.trimStart || 0) + (relativeSeekMs / 1000));
+
+        // Truncate first clip
+        video.meta.duration = relativeSeekMs;
+
+        this.canvas.add(clone);
+        this.canvas.requestRenderAll();
+        this._canvas.editor.onModified?.();
+        return clone;
     }
   }
 

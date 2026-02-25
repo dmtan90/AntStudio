@@ -208,6 +208,19 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         }
     }
 
+    async function extractProduct(url: string) {
+        loading.value = true
+        try {
+            const res: any = await api.post('/commerce/extract-product', { url })
+            return res.data
+        } catch (error: any) {
+            console.error('Failed to extract product', error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
     return {
         assets,
         templates,
@@ -226,6 +239,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
         importPptx,
         fetchOrders,
         fetchCommerceStats,
-        fetchAnalyticsReport
+        fetchAnalyticsReport,
+        extractProduct
     }
 })

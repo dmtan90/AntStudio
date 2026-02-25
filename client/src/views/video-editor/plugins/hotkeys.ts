@@ -10,10 +10,17 @@ export class CanvasHotkeys {
   }
 
   private _keyDownEvent(event: KeyboardEvent) {
+    // Ignore hotkeys if user is typing in an input or textarea
+    if (document.activeElement?.tagName === "INPUT" || 
+        document.activeElement?.tagName === "TEXTAREA" || 
+        document.activeElement?.tagName === "SELECT" ||
+        (document.activeElement as HTMLElement)?.isContentEditable) {
+      return;
+    }
+
     switch (event.key) {
       case "Delete":
       case "Backspace":
-        if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA" || document.activeElement?.tagName === "SELECT") return;
         this._canvas.onDeleteActiveObject();
         break;
       case "z":
@@ -36,6 +43,7 @@ export class CanvasHotkeys {
         if (event.ctrlKey || event.metaKey) {
           this._canvas.cloner.paste();
         }
+        break;
       case "s":
         if (event.ctrlKey || event.metaKey) {
           event.preventDefault();

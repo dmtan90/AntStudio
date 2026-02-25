@@ -74,7 +74,7 @@ const selectTransition = (id: string) => {
     <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
         <!-- Header -->
         <div
-            class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group">
+            class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group shrink-0">
             <div
                 class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700">
             </div>
@@ -156,7 +156,7 @@ const selectTransition = (id: string) => {
             <div
                 class="fixed bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0a] to-transparent pointer-events-none opacity-80">
             </div>
-        </section> section
+        </section>
     </div>
 </template>
 

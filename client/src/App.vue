@@ -1,18 +1,20 @@
 <template>
-  <div id="app">
-    <component :is="layout">
-      <router-view />
-    </component>
-    <Toaster position="top-right" theme="dark" richColors />
-  </div>
+  <el-config-provider size="small">
+    <div id="app">
+      <component :is="layout">
+        <router-view />
+      </component>
+      <Toaster position="top-right" theme="dark" richColors />
+    </div>
+  </el-config-provider>
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
-import { Toaster } from 'vue-sonner'
-import 'vue-sonner/style.css'
-import { useUIStore } from '@/stores/ui'
+import { computed, defineAsyncComponent, watchEffect } from 'vue';
+import { useRoute } from 'vue-router';
+import { Toaster } from 'vue-sonner';
+import 'vue-sonner/style.css';
+import { useUIStore } from '@/stores/ui';
 
 const route = useRoute()
 

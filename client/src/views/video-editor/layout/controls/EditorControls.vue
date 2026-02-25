@@ -63,7 +63,7 @@ const handleReplaceObject = () => {
     canvas.value.replacer.mark(null);
   } else {
     const replace = canvas.value.replacer.mark(instance.value.getActiveObject());
-    if (replace) editor.setActiveSidebarLeft(`${replace.type == 'gif' ? 'element' : replace.type}s`);
+    if (replace) editor.setActiveSidebarLeft(`${replace.type == 'gif' ? 'element' : replace.type}`);
   }
 };
 

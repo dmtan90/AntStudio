@@ -5,7 +5,7 @@ This directory contains the official branding assets for AntStudio by AntMedia.
 ## Logo Files
 
 ### 1. logo.png
-**Full horizontal logo** with "AntFlow by AntMedia" branding
+**Full horizontal logo** with "AntStudio by AntMedia" branding
 - **Usage**: Website header, email signatures, presentations
 - **Format**: PNG with transparency
 - **Colors**: Purple gradient (#6366f1 → #8b5cf6) with orange accents (#ff6b35)
@@ -29,7 +29,7 @@ This directory contains the official branding assets for AntStudio by AntMedia.
 **Splash screen** for app loading
 - **Usage**: Application launch screen
 - **Format**: PNG
-- **Content**: Centered logo with "AntFlow by AntMedia" and tagline
+- **Content**: Centered logo with "AntStudio by AntMedia" and tagline
 - **Aspect Ratio**: 16:9
 
 ## Brand Colors
@@ -59,7 +59,7 @@ This directory contains the official branding assets for AntStudio by AntMedia.
 
 ### Logo Usage
 1. **Minimum Size**: Don't scale logo below 120px width
-2. **Clear Space**: Maintain minimum padding equal to height of "A" in AntFlow
+2. **Clear Space**: Maintain minimum padding equal to height of "A" in AntStudio
 3. **Background**: Works best on dark backgrounds
 4. **Variations**: Use icon.png for square/small spaces, logo.png for horizontal layouts
 
@@ -73,7 +73,7 @@ This directory contains the official branding assets for AntStudio by AntMedia.
 - ❌ Don't distort or skew the logo
 - ❌ Don't add effects (shadows, outlines) to the logo
 - ❌ Don't place logo on busy backgrounds
-- ❌ Don't separate "AntFlow" from "by AntMedia" tagline
+- ❌ Don't separate "AntStudio" from "by AntMedia" tagline
 
 ## File Locations
 
@@ -97,13 +97,5 @@ client/public/
 ### Vue Components
 ```vue
 <img src="/logo.png" alt="AntStudio by AntMedia" />
-<img src="/icon.png" alt="AntFlow Icon" />
+<img src="/icon.png" alt="AntStudio Icon" />
 ```
-
-## Updates
-
-**Last Updated**: January 2026
-**Version**: 1.0.0
-**Designer**: AntMedia Design Team
-
-For questions about branding, contact: branding@antmedia.io

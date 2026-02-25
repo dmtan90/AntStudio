@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { VolumeUp, VolumeMute, Close as X, PreviewOpen as Eye, PreviewCloseOne as EyeOff } from '@icon-park/vue-next';
+import { VolumeUp, VolumeMute, Close as X, PreviewOpen as Eye, PreviewCloseOne as EyeOff, MusicOne } from '@icon-park/vue-next';
 import { useEditorStore } from 'video-editor/store/editor';
 import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
@@ -46,7 +46,7 @@ const isMuted = computed({
     <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
         <!-- Header -->
         <div
-            class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header">
+            class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header shrink-0">
             <div
                 class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700">
             </div>
@@ -121,6 +121,31 @@ const isMuted = computed({
                             Name</span>
                         <span class="text-[11px] font-medium text-white/80 truncate">{{ selected?.name }}</span>
                     </div>
+                </div>
+
+                <!-- AI Utilities Section -->
+                <div class="flex flex-col gap-4 p-4 rounded-2xl bg-gradient-to-br from-brand-primary/10 to-transparent border border-brand-primary/20 relative overflow-hidden group/ai">
+                    <div class="absolute inset-0 bg-white/[0.03] pointer-events-none"></div>
+                    <div class="flex items-center gap-2 relative z-10">
+                        <div class="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></div>
+                        <h4 class="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em]">AI Utilities</h4>
+                    </div>
+                    
+                    <button 
+                        @click="editor.setActiveSidebarLeft('ai'); (editor as any)._match_override = 'voice'"
+                        class="relative h-10 w-full rounded-xl overflow-hidden group/btn transition-all duration-300 active:scale-95"
+                    >
+                        <div class="absolute inset-0 bg-brand-primary transition-transform duration-500 group-hover/btn:scale-110"></div>
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                        <div class="relative h-full w-full flex items-center justify-center gap-2 px-4">
+                            <MusicOne :size="14" class="text-white" />
+                            <span class="text-[10px] font-black text-white uppercase tracking-[0.1em]">Generate AI Voiceover</span>
+                        </div>
+                    </button>
+                    
+                    <p class="text-[9px] text-white/30 leading-relaxed relative z-10 italic">
+                        Transform text into studio-quality narration for this clip.
+                    </p>
                 </div>
             </div>
 

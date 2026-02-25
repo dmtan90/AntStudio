@@ -98,7 +98,7 @@ router.post('/start', async (req: AuthRequest, res) => {
                     const liveInfo = await PlatformAuthService.getLiveStreamInfo(
                         acc.platform as any,
                         credentials,
-                        { title: project?.title || 'AntFlow Live', description: project?.description || '' }
+                        { title: project?.title || 'AntStudio Live', description: project?.description || '' }
                     );
                     url = liveInfo.rtmpUrl;
                     key = liveInfo.streamKey;

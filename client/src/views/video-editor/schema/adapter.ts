@@ -34,7 +34,7 @@ export const EditorBrandSchema = z.object({
 });
 
 export const EditorTemplateSchema = z.object({
-  id: z.string(),
+  id: z.string().nullish(),
   name: z.string(),
   description: z.string(),
   category: z.string(),
@@ -45,8 +45,8 @@ export const EditorTemplateSchema = z.object({
     thumbnail: z.string(),
     preview: z.string().optional(),
     duration: z.number(),
-    transition: z.string().optional(),
-    transitionDirection: z.string().optional(),
+    transition: z.enum(['none', 'fade', 'wipe', 'slide', 'zoom-in', 'zoom-out', 'dip-to-black', 'dip-to-white', 'blur', 'glitch', 'morph', 'light-leak', 'zoom-blur', 'cube', 'flip', 'circle']).optional(),
+    transitionDirection: z.enum(['left', 'right', 'up', 'down']).optional(),
     transitionDuration: z.number().optional(),
     transitionEasing: z.string().optional(),
     data: z.object({

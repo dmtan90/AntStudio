@@ -81,7 +81,7 @@ const predefineColors = ref(['#E63415', '#FF6600', '#FFDE0A', '#1EC79D', '#14CCC
   <div class="h-full w-full flex flex-col cinematic-panel bg-[#0a0a0a]/95 backdrop-blur-xl">
     <!-- Header -->
     <div
-      class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header">
+      class="flex items-center justify-between h-14 border-b border-white/5 px-5 bg-white/5 relative overflow-hidden group/header shrink-0">
       <div
         class="absolute inset-0 bg-gradient-to-r from-brand-primary/5 to-transparent opacity-0 group-hover/header:opacity-100 transition-opacity duration-700">
       </div>

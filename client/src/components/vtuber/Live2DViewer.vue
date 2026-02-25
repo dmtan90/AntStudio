@@ -661,11 +661,11 @@ const loadModel = async () => {
             const vol = props.speakingVol || 0;
             const isSpeakingRaw = vol > 0.01;
             
-            // Centralized Smart Sync Logic
-            const isSinging = isSingingAtTime(props.lyrics, props.currentTime);
+            const hasLyrics = props.lyrics && props.lyrics.length > 0;
+            const isSinging = hasLyrics ? isSingingAtTime(props.lyrics, props.currentTime) : false;
 
-            const isSpeaking = isSpeakingRaw && isSinging;
-            const syncVol = isSinging ? vol : 0;
+            const isSpeaking = isSpeakingRaw && (hasLyrics ? isSinging : true);
+            const syncVol = (hasLyrics ? (isSinging ? vol : 0) : vol) || 0;
             
             const pitch = props.pitchFactor || 0;
             const emp = props.emphasis || 0;

@@ -6,7 +6,7 @@
     </main>
     <!-- <footer class="app-footer">
       <div class="footer-container">
-        <p>&copy; 2026 AntFlow - Advanced AI Video Generation Platform</p>
+        <p>&copy; 2026 AntStudio - Advanced AI Video Generation Platform</p>
       </div>
     </footer> -->
   </div>

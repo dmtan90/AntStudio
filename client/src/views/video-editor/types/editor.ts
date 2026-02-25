@@ -4,12 +4,13 @@ export type EditorReplace = EditorReplaceVideo | EditorReplaceImage | EditorRepl
 export type EditorPlaceholder = "main-image" | "brand-image" | "cta-text" | "headline-text" | "description-text";
 
 export interface EditorTemplate {
-  id: string;
+  id: string | null;
   name: string;
   description: string;
   category: string;
-  is_pubished: boolean;
+  is_published: boolean;
   pages: EditorTemplatePage[];
+  _id?: string;
 }
 
 export interface EditorTemplateBlock {

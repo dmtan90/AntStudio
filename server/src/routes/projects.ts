@@ -21,8 +21,7 @@ import { uploadToS3, S3KeyGenerator, getS3Client } from '../utils/s3.js';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { AnalyticsService } from '../services/AnalyticsService.js';
 import ffmpeg from 'fluent-ffmpeg';
-import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg';
-import { path as ffprobePath } from '@ffprobe-installer/ffprobe';
+import { config } from '../utils/config.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -33,8 +32,8 @@ import { projectContext } from '../utils/ProjectContext.js';
 import { buildCharacterSheetPrompt } from '../utils/PromptBuilder.js';
 import { configService } from '../utils/configService.js';
 
-ffmpeg.setFfmpegPath(ffmpegPath);
-ffmpeg.setFfprobePath(ffprobePath);
+ffmpeg.setFfmpegPath(config.ffmpegPath);
+ffmpeg.setFfprobePath(config.ffprobePath);
 const writeFile = promisify(fs.writeFile);
 const mkdir = promisify(fs.mkdir);
 
@@ -156,7 +155,7 @@ router.get('/',
 router.post('/', checkLicenseStatus, checkProjectLimit, licenseGating('trial'), rbacMiddleware(Permission.PROJECT_CREATE), async (req: any, res: Response) => {
     try {
         await connectDB();
-        const { title, description, mode, aspectRatio, videoStyle, targetDuration, metadata, advancedEditorState, scriptAnalysis, storyboard } = req.body;
+        const { title, description, mode, aspectRatio, videoStyle, targetDuration, metadata, pages, scriptAnalysis, storyboard } = req.body;
         if (!title) return res.status(400).json({ success: false, error: 'Title is required' });
 
         const user = await User.findById(req.user!.userId);
@@ -172,7 +171,7 @@ router.post('/', checkLicenseStatus, checkProjectLimit, licenseGating('trial'), 
             status: 'draft',
             input: {},
             metadata: metadata || {},
-            advancedEditorState: advancedEditorState || null,
+            pages: pages || null,
             scriptAnalysis: scriptAnalysis || null,
             storyboard: storyboard || null,
             scripts: req.body.scripts || null,
@@ -697,7 +696,7 @@ router.post('/:id/stream', rbacMiddleware(Permission.STREAM_START), async (req: 
 
         const videoUrl = await getSignedS3Url(project.publish.s3Key);
         const broadcast = await antMediaService.createBroadcast({
-            name: project.title || 'AntFlow Stream',
+            name: project.title || 'AntStudio Stream',
             streamId: streamId || `antflow-${project._id}`,
             type: 'streamSource',
             streamUrl: videoUrl
@@ -785,7 +784,8 @@ router.post('/:id/publish', rbacMiddleware(Permission.PROJECT_EDIT), upload.fiel
             success: true,
             data: {
                 message: 'Project published successfully with processed assets',
-                publish: project.publish
+                publish: project.publish,
+                project: project
             }
         });
 

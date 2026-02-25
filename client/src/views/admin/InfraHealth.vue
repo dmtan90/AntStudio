@@ -180,10 +180,7 @@ const adminStore = useAdminStore();
 const appSlug = computed(() => uiStore.appName.toLowerCase().replace(/\s+/g, '-'));
 
 const regions = ref<any[]>([]);
-const dbNodes = ref([
-   { id: 'master', host: `db-master-01.${appSlug.value}.internal`, role: 'WRITER', uptime: 'Active' },
-   { id: 'read1', host: `db-replica-01.${appSlug.value}.internal`, role: 'READER', uptime: 'Active' },
-]);
+const dbNodes = ref<any[]>([]);
 
 const heartbeats = ref<any[]>([]);
 const systemHealth = ref<any>(null);
@@ -192,9 +189,10 @@ let pollInterval: any = null;
 
 const fetchMetrics = async () => {
    try {
-      const [healthData, heartbeatData] = await Promise.all([
+      const [healthData, heartbeatData, clusterData] = await Promise.all([
          adminStore.fetchMonitoringHealth(),
-         adminStore.fetchMonitoringHeartbeat()
+         adminStore.fetchMonitoringHeartbeat(),
+         adminStore.fetchDbCluster()
       ]);
 
       if (healthData) {
@@ -205,9 +203,15 @@ const fetchMetrics = async () => {
          regions.value = heartbeatData;
          const now = new Date().toLocaleTimeString();
          heartbeatData.forEach((r: any) => {
-            heartbeats.value.unshift({ t: now, region: r.name, load: r.load });
+            if (r.load > 10) { // Only log pulses for "active" looking regions
+               heartbeats.value.unshift({ t: now, region: r.name, load: r.load });
+            }
          });
          if (heartbeats.value.length > 50) heartbeats.value = heartbeats.value.slice(0, 50);
+      }
+
+      if (clusterData) {
+         dbNodes.value = clusterData;
       }
    } catch (e) {
       console.error("Failed to fetch infra metrics", e);

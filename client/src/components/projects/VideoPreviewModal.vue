@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="Live Stream Recording"
+    title="Project video"
     width="800px"
     class="preview-dialog"
     destroy-on-close

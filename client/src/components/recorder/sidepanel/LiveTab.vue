@@ -1,7 +1,32 @@
 <template>
     <div class="flex flex-col gap-6">
+        <!-- Platform Selection -->
         <div class="panel-section space-y-4">
-            <span class="text-[10px] font-bold text-blue-400 uppercase block">Live Configuration</span>
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-blue-400 uppercase">Destinations</span>
+                <button @click="showPlatforms = true" class="text-[9px] font-black text-white/40 hover:text-blue-400 uppercase tracking-widest transition-colors">
+                    Manage
+                </button>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <div v-for="acc in availableAccounts" :key="acc._id"
+                     @click="$emit('toggle-platform', acc._id)"
+                     class="platform-tag flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/5 bg-white/5 cursor-pointer transition-all"
+                     :class="[{ 'active': selectedPlatforms.includes(acc._id) }]">
+                    <youtube v-if="acc.platform === 'youtube'" theme="filled" class="text-[10px]" :class="selectedPlatforms.includes(acc._id) ? 'text-red-500' : 'text-white/40'" />
+                    <facebook v-else-if="acc.platform === 'facebook'" theme="filled" class="text-[10px]" :class="selectedPlatforms.includes(acc._id) ? 'text-blue-500' : 'text-white/40'" />
+                    <tiktok v-else-if="acc.platform === 'tiktok'" theme="filled" class="text-[10px]" :class="selectedPlatforms.includes(acc._id) ? 'text-white' : 'text-white/40'" />
+                    <broadcast v-else theme="filled" class="text-[10px]" :class="selectedPlatforms.includes(acc._id) ? 'text-blue-400' : 'text-white/40'" />
+                    <span class="text-[9px] font-bold uppercase tracking-wider" :class="selectedPlatforms.includes(acc._id) ? 'text-white' : 'text-white/40'">
+                        {{ acc.accountName }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-section space-y-4">
+            <span class="text-[10px] font-bold text-blue-400 uppercase block">RTMP / Custom Configuration</span>
 
             <div class="toggle-card flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5">
                 <span class="text-xs font-bold text-white">Use Ant Media</span>
@@ -39,14 +64,34 @@
                 </div>
             </div>
         </div>
+
+        <PlatformSelector v-model="showPlatforms" :available-accounts="availableAccounts" :selected-platforms="selectedPlatforms" @toggle-platform="$emit('toggle-platform', $event)" />
     </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { ElSwitch } from 'element-plus'
+import { Youtube, Facebook, Tiktok, Broadcast } from '@icon-park/vue-next'
+import PlatformSelector from '@/components/studio/modals/PlatformSelector.vue'
 
 defineProps<{
     streamConfig: { serverUrl: string, streamKey: string, useAntMedia: boolean }
     streamStats?: any
+    selectedPlatforms: string[]
+    availableAccounts: any[]
 }>()
+
+defineEmits(['toggle-platform'])
+
+const showPlatforms = ref(false)
 </script>
+
+<style scoped lang="postcss">
+.platform-tag.active {
+    @apply border-blue-500/30 bg-blue-500/10;
+}
+.stat-card {
+    @apply flex flex-col gap-1;
+}
+</style>

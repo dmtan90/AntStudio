@@ -19,7 +19,7 @@ const fileFilter = (req: AuthRequest, file: any, callback: any) => {
 const router = Router();
 const upload = multer({
     fileFilter, storage: multer.memoryStorage(),
-    limits: { fileSize: 2000 * 1024 * 1024 }
+    limits: { fileSize: 2048 * 1024 * 1024 }
 }); // 2GB limit
 
 // All media routes require authentication
@@ -984,32 +984,33 @@ router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) =
 
         if (fetchLyrics) {
             try {
-                // 1. Try fetching official lyrics from YouTube first (most accurate)
-                const preferredLang = lyricsLanguage || 'en';  // Default to en if not specified
-                if(songTitle){
+                const preferredLang = lyricsLanguage || 'en';
+                const preferredLangs = preferredLang ? preferredLang.split(',').map((l: string) => l.trim()) : ['vi', 'en'];
+
+                // 1. Primary: getLyricsV2 via @playzone/youtube-transcript + Invidious (fastest, exact captions)
+                lyrics = await AudioExtractionService.getLyricsV2(videoId, preferredLangs) || '';
+                if (lyrics) {
+                    console.log(`[MediaRoute] Found getLyricsV2 captions for ${videoId}`);
+                }
+
+                // 2. Fallback: Gemini AI with Google Search grounding (best for songs without official captions)
+                if (!lyrics && (songTitle || metadata.title)) {
+                    console.log(`[MediaRoute] getLyricsV2 failed for ${videoId}, trying Gemini...`);
                     const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-                    lyrics = await LyricsService.searchLyrics(songTitle, metadata.channelTitle, youtubeUrl, preferredLang);
-                    if(lyrics){
-                        console.log(`[MediaRoute] Found Gemini lyrics for ${videoId}`);
+                    lyrics = await LyricsService.searchLyrics(songTitle || metadata.title, metadata.channelTitle, youtubeUrl, preferredLang);
+                    if (lyrics) {
+                        console.log(`[MediaRoute] Found Gemini grounded lyrics for ${videoId}`);
                     }
                 }
-                else{
-                    const officialLyrics = await AudioExtractionService.getLyrics(videoId, preferredLang);
-                    if (officialLyrics) {
-                        lyrics = officialLyrics;
-                        console.log(`[MediaRoute] Found official lyrics for ${videoId}`);
+
+                // 3. Last resort: yt-dlp subprocess (slowest, but works when others fail)
+                if (!lyrics) {
+                    console.log(`[MediaRoute] Gemini failed for ${videoId}, falling back to yt-dlp...`);
+                    lyrics = await AudioExtractionService.getLyrics(videoId, preferredLangs.join(',')) || '';
+                    if (lyrics) {
+                        console.log(`[MediaRoute] Found yt-dlp fallback lyrics for ${videoId}`);
                     }
                 }
-                
-                // if (officialLyrics) {
-                //     lyrics = officialLyrics;
-                //     console.log(`[MediaRoute] Found official lyrics for ${videoId}`);
-                // } else if (songTitle) {
-                //     // 2. Fallback to AI generation if no official lyrics found
-                //     console.log(`[MediaRoute] No official lyrics, attempting AI generation for ${songTitle}`);
-                //     const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-                //     lyrics = await LyricsService.searchLyrics(songTitle, metadata.channelTitle, youtubeUrl, preferredLang);
-                // }
 
                 if (lyrics) {
                     lyricsLines = await LyricsService.syncLyrics(lyrics, metadata.duration);

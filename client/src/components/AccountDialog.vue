@@ -560,8 +560,8 @@ const updatePassword = async () => {
   updatingPassword.value = true
   try {
     await userStore.changePassword({
-      current: passwordForm.currentPassword,
-      new: passwordForm.newPassword
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword
     })
 
     toast.success(t('password.success'))

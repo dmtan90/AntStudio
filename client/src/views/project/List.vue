@@ -64,11 +64,11 @@
           v-for="project in filteredProjects" 
           :key="project._id" 
           class="project-card group relative bg-black rounded-3xl overflow-hidden cursor-pointer border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20"
-          @click="handleProjectClick(project)"
+          @click="handleProjectPreview(project)"
         >
           <!-- Thumbnail -->
           <div class="aspect-video relative overflow-hidden">
-             <el-image :src="getFileUrl(project.publish?.thumbnailKey || project.storyboard?.segments?.[0]?.sceneImage || '/placeholder-project.png')"
+             <el-image :src="getFileUrl(project.publish?.thumbnailKey || project.pages?.[0]?.thumbnail || project.storyboard?.segments?.[0]?.sceneImage || '/placeholder-project.png')"
               class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105" fit="cover">
               <template #error>
                 <div class="w-full h-full flex items-center justify-center">
@@ -147,8 +147,8 @@
           :total="pagination.total"
           :page-sizes="[12, 24, 48, 96]"
           layout="total, sizes, prev, pager, next"
-          @current-change="handlePageChange"
-          @size-change="handleSizeChange"
+          @update:current-page="handlePageChange"
+          @update:page-size="handleSizeChange"
           class="cinematic-pagination"
         />
       </div>
@@ -164,7 +164,9 @@
       </div>
     </div>
 
-    <ProjectCreationDialog v-model="showCreationDialog" />
+    <ProjectCreationDialog v-model="showCreationDialog" @create-ad="adDialogVisible = true; showCreationDialog = false" @create-avatar="avatarDialogVisible = true; showCreationDialog = false" />
+    <ProductAdDialog v-model="adDialogVisible" />
+    <AIAvatarDialog v-model="avatarDialogVisible" />
     <VideoPreviewModal v-model="showPreviewModal" :project="selectedProject" />
   </div>
 </template>
@@ -186,6 +188,8 @@ import { ElMessageBox } from 'element-plus'
 import { ref, computed, onMounted } from 'vue'
 import AppTour from '@/components/ui/AppTour.vue'
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue'
+import ProductAdDialog from '@/components/studio/dialogs/ProductAdDialog.vue'
+import AIAvatarDialog from '@/components/projects/AIAvatarDialog.vue'
 import { useProjectStore } from '@/stores/project'
 import VideoPreviewModal from '@/components/projects/VideoPreviewModal.vue'
 import { useUIStore } from '@/stores/ui'
@@ -203,7 +207,8 @@ const currentStatus = ref('all')
 const showCreationDialog = ref(false)
 const showPreviewModal = ref(false)
 const selectedProject = ref<any>(null)
-
+const adDialogVisible = ref(false)
+const avatarDialogVisible = ref(false)
 const showTour = ref(false)
 const tourSteps = [
   {
@@ -224,12 +229,20 @@ const onTourFinish = () => {
   localStorage.setItem(`${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_projects_tour_completed`, 'true')
 }
 
-const handleProjectClick = (project: any) => {
+const handleProjectPreview = (project: any) => {
+  selectedProject.value = project
+  showPreviewModal.value = true
+}
+
+const handleProjectEditor = (project: any) => {
   if (project.mode === 'livestream') {
     selectedProject.value = project
     showPreviewModal.value = true
   } else if(project.mode === 'topic' || project.mode === 'upload') {
     router.push({name: 'project-editor', params: {id: project._id}})
+  }
+  else if(project.mode === 'livestream') {
+    router.push({name: 'project-studio', params: {id: project._id}})
   }
   else{
     router.push({name: 'project-studio', params: {id: project._id}})
@@ -262,7 +275,8 @@ const filteredProjects = computed(() => {
 
 const handleAction = async (command: string, project: any) => {
   if (command === 'edit') {
-    router.push(`/projects/${project._id}/editor`)
+    // router.push(`/projects/${project._id}/editor`)
+    handleProjectEditor(project);
   } else if (command === 'duplicate') {
     await duplicateProject(project)
   } else if (command === 'delete') {

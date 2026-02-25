@@ -101,7 +101,7 @@
 
             <!-- Pagination (Mocked for now as VTuber store pagination might differ) -->
             <div v-if="activeTab === 'my-vtubers' && vtubers.length > 0 && pagination.total > filters.limit" class="mt-12 w-full flex justify-center glass-pagination">
-                <el-pagination v-model:current-page="filters.page" v-model:page-size="filters.limit" :total="pagination.total" :page-sizes="[12, 24, 48]" layout="total, prev, pager, next, sizes" @current-change="handlePageChange" @size-change="handleSizeChange" />
+                <el-pagination v-model:current-page="filters.page" v-model:page-size="filters.limit" :total="pagination.total" :page-sizes="[12, 24, 48]" layout="total, prev, pager, next, sizes" @update:current-page="handlePageChange" @update:page-size="handleSizeChange" />
             </div>
         </main>
 

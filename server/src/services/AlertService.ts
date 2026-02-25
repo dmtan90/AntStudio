@@ -19,7 +19,7 @@ export class AlertService {
      * Send a critical alert to configured channels.
      */
     async sendCriticalAlert(message: string, metadata: any = {}): Promise<void> {
-        const fullMessage = `🚨 *CRITICAL ALERT: AntFlow Industrial Watchdog*\n\n*Message:* ${message}\n*Time:* ${new Date().toISOString()}\n*Environment:* ${process.env.NODE_ENV || 'development'}\n\n*Metadata:* \`\`\`${JSON.stringify(metadata, null, 2)}\`\`\``;
+        const fullMessage = `🚨 *CRITICAL ALERT: AntStudio Industrial Watchdog*\n\n*Message:* ${message}\n*Time:* ${new Date().toISOString()}\n*Environment:* ${process.env.NODE_ENV || 'development'}\n\n*Metadata:* \`\`\`${JSON.stringify(metadata, null, 2)}\`\`\``;
 
         console.error(`[ALERT] ${message}`, metadata);
 
@@ -38,7 +38,7 @@ export class AlertService {
      * Send a warning alert.
      */
     async sendWarningAlert(message: string, metadata: any = {}): Promise<void> {
-        const fullMessage = `⚠️ *WARNING: AntFlow Watchdog*\n\n*Message:* ${message}\n*Metadata:* \`\`\`${JSON.stringify(metadata, null, 2)}\`\`\``;
+        const fullMessage = `⚠️ *WARNING: AntStudio Watchdog*\n\n*Message:* ${message}\n*Metadata:* \`\`\`${JSON.stringify(metadata, null, 2)}\`\`\``;
 
         console.warn(`[WARNING] ${message}`, metadata);
 

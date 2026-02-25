@@ -7,7 +7,7 @@ import { Loading } from '@element-plus/icons-vue';
 import { getFileUrl } from '@/utils/api';
 import { generateImage, generateVoice, generateVideo, generateCaptions, detectScenes, detectBeats, detectSilence, extractTextFromImage, generateImageCaption, detectObjects, detectFaces, detectLandmarks } from 'video-editor/api/ai';
 import { useUserMediaStore } from 'video-editor/hooks/use-user-media';
-import { Magic, MovieBoard, CheckOne, MusicOne, Pic, Transform, DistributeVertically, Focus } from '@icon-park/vue-next';
+import { Magic, MovieBoard, CheckOne, MusicOne, Pic, Transform, DistributeVertically, Focus, MagicWand } from '@icon-park/vue-next';
 import { rmbgAI } from 'video-editor/models/rmbgAI';
 import { autoReframeService } from 'video-editor/services/AutoReframeService';
 import { objectDetectionService, type DetectedObject } from 'video-editor/services/ObjectDetectionService';
@@ -16,10 +16,37 @@ import { textRecognitionService, type DetectedText } from 'video-editor/services
 import { colorAnalysisService } from 'video-editor/services/ColorAnalysisService';
 import { motionAnalysisService, type MotionData } from 'video-editor/services/MotionAnalysisService';
 import { Scan, FaceRecognition, TextRecognition, Platte, Analysis } from '@icon-park/vue-next';
+import StoryboardPlugin from 'video-editor/components/ai/storyboard.vue';
+import AvatarsPlugin from 'video-editor/components/ai/avatars.vue';
+import DubbingPlugin from 'video-editor/components/ai/dubbing.vue';
+import HighlightsPlugin from 'video-editor/components/ai/highlights.vue';
+import TypographyPlugin from 'video-editor/components/ai/typography.vue';
+import EnrichmentPlugin from 'video-editor/components/ai/enrichment.vue';
+import AnalyticsPlugin from 'video-editor/components/ai/analytics.vue';
+import BrandPlugin from 'video-editor/components/ai/brand.vue';
+import SocialMetaPlugin from 'video-editor/components/ai/social-meta.vue';
+import VisionAnalysisPlugin from 'video-editor/components/ai/vision-analysis.vue';
 const props = defineProps<{ match: string }>();
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();
 import { useMediaStore } from '@/stores/media';
+import { computed, onMounted, onUnmounted } from 'vue';
+import { AutoEditorService } from 'video-editor/services/AutoEditorService';
+
+const effectiveMatch = computed(() => {
+  if ((editor as any)._match_override) {
+    const override = (editor as any)._match_override;
+    return override;
+  }
+  return props.match;
+});
+
+onMounted(() => {
+  // Clear override when viewing
+  setTimeout(() => {
+    if ((editor as any)._match_override) (editor as any)._match_override = null;
+  }, 500);
+});
 
 const isGenerating = ref(false);
 
@@ -33,6 +60,13 @@ const voices = [
   { value: 'en-US-News-N', label: 'Male (News)' },
 ];
 
+// Multi-speaker State
+const isMultiSpeaker = ref(false);
+const speakerSegments = ref([
+  { label: 'Speaker 1', start: 0, end: 5 },
+  { label: 'Speaker 2', start: 5, end: 10 }
+]);
+
 // Image State
 const imagePrompt = ref('');
 const imageStyle = ref('Cinematic');
@@ -44,6 +78,7 @@ const videoDuration = ref(5);
 
 // Caption State
 const captionLanguage = ref('en');
+const selectedCaptionMediaId = ref('');
 const generatedCaption = ref(''); 
 
 // Scene Detection State
@@ -74,6 +109,7 @@ const selectedReframeVideoId = ref('');
 const reframeAspectRatio = ref(9 / 16);
 const isAnalyzingReframe = ref(false);
 const reframeProgress = ref(0);
+const reframeKeyframes = ref<any[]>([]);
 
 // Background Removal State
 const backgroundRemovalType = ref<'image' | 'video'>('image');
@@ -86,6 +122,7 @@ const selectedObjectVideoId = ref('');
 const detectedObjects = ref<any[]>([]); // Changed to any[] to match new API
 const isDetectingObjects = ref(false);
 const objectAnalysisProgress = ref(0);
+const selectedObjectLabel = ref('');
 
 // Face Detection State
 const selectedFaceVideoId = ref('');
@@ -122,7 +159,19 @@ const handleGenerate = async (type: string) => {
 
     switch (type) {
       case 'voice': {
-        const res = await generateVoice({ text: voiceText.value, voice: selectedVoice.value });
+        const params: any = {
+          text: voiceText.value,
+          voice: selectedVoice.value
+        };
+
+        if (isMultiSpeaker.value) {
+          params.multiSpeaker = {
+            enabled: true,
+            speakers: speakerSegments.value
+          };
+        }
+
+        const res = await generateVoice(params);
         if (res && (res as any).media) {
           const media = (res as any).media;
           toast.success("Voice generated successfully!");
@@ -163,7 +212,10 @@ const handleGenerate = async (type: string) => {
         break;
       }
       case 'caption': {
-        const res = await generateCaptions({ language: captionLanguage.value });
+        const res = await generateCaptions({ 
+          language: captionLanguage.value,
+          mediaId: selectedCaptionMediaId.value 
+        });
         if (res && res.segments) {
           toast.success("Captions generated!");
 
@@ -426,10 +478,9 @@ const handleGenerate = async (type: string) => {
             reframeProgress.value = p;
           });
 
-          // Apply keyframes to the timeline element
-          // This is a placeholder for actual timeline integration
+          reframeKeyframes.value = keyframes;
           console.log("Auto-reframe keyframes generated:", keyframes);
-          toast.success("Auto-reframe complete! View the console for keyframes.");
+          toast.success("Auto-reframe complete! You can now apply it to the timeline.");
 
           // Logic to apply keyframes would go here
         } catch (err: any) {
@@ -725,14 +776,135 @@ const visualizeText = () => {
   canvasStore.canvas?.aiOverlays.drawTextDetections(detectedTexts.value);
   toast.success("Text bounding boxes drawn!");
 }
+
+const applyReframeToTimeline = async () => {
+  if (reframeKeyframes.value.length === 0) {
+    toast.error("Analyze the video first!");
+    return;
+  }
+  
+  // Find the video element on the current canvas
+  const element = canvasStore.canvas?.instance.getObjects().find(obj => (obj as any)._id === selectedReframeVideoId.value || (obj as any).id === selectedReframeVideoId.value);
+  
+  if (!element) {
+    toast.error("Please add the source video to the canvas first to apply reframe.");
+    return;
+  }
+
+  await AutoEditorService.applyReframeToTimeline(element.name || (element as any).id, reframeKeyframes.value);
+}
+
+const extractObjectsToTimeline = async () => {
+  if (!selectedObjectLabel.value) {
+    toast.error("Select an object to extract!");
+    return;
+  }
+  
+  await AutoEditorService.extractObjectSegments(selectedObjectVideoId.value, selectedObjectLabel.value, detectedObjects.value);
+}
+
+const availableObjectLabels = computed(() => {
+  const labels = new Set(detectedObjects.value.map(obj => obj.label));
+  return Array.from(labels).sort();
+});
+
+const applyColorSync = async () => {
+  if (detectedColors.value.length === 0) {
+    toast.error("Analyze the video colors first!");
+    return;
+  }
+  
+  // Use the last detected palette as reference
+  const palette = detectedColors.value[detectedColors.value.length - 1].palette;
+  
+  // Find all video element IDs in the project
+  const allVideoIds: string[] = [];
+  editor.pages.forEach(page => {
+    page.elements.forEach((el: any) => {
+      if (el.type === 'video') allVideoIds.push(el.id);
+    });
+  });
+
+  if (allVideoIds.length === 0) {
+    toast.error("No videos found in project to sync.");
+    return;
+  }
+
+  await AutoEditorService.syncColorGrade(allVideoIds, palette);
+}
 </script>
 
 <template>
   <div class="h-full flex flex-col p-5 gap-6">
 
+    <!-- STORYBOARD / CREATIVE DIRECTOR -->
+    <template v-if="effectiveMatch === 'storyboard'">
+      <StoryboardPlugin />
+    </template>
+
+    <!-- AI AVATARS / TALKING HEADS -->
+    <template v-else-if="effectiveMatch === 'avatars'">
+      <AvatarsPlugin />
+    </template>
+
+    <!-- AI DUBBING / LOCALIZATION -->
+    <template v-else-if="effectiveMatch === 'dubbing'">
+      <div class="cinematic-scrollable">
+        <DubbingPlugin />
+      </div>
+    </template>
+
+    <template v-else-if="effectiveMatch === 'highlights'">
+      <div class="cinematic-scrollable">
+        <HighlightsPlugin />
+      </div>
+    </template>
+
+    <template v-else-if="effectiveMatch === 'typography'">
+      <div class="cinematic-scrollable">
+        <TypographyPlugin />
+      </div>
+    </template>
+
+    <template v-else-if="effectiveMatch === 'enrichment'">
+      <div class="cinematic-scrollable">
+        <EnrichmentPlugin />
+      </div>
+    </template>
+
+    <template v-else-if="effectiveMatch === 'analytics'">
+      <div class="cinematic-scrollable">
+        <AnalyticsPlugin />
+      </div>
+    </template>
+
+    <template v-else-if="effectiveMatch === 'brand'">
+      <div class="cinematic-scrollable">
+        <BrandPlugin />
+      </div>
+    </template>
+    
+    <template v-else-if="effectiveMatch === 'social-meta'">
+      <div class="cinematic-scrollable">
+        <SocialMetaPlugin />
+      </div>
+    </template>
+
+    <template v-else-if="effectiveMatch === 'face-detection'">
+      <div class="cinematic-scrollable">
+        <VisionAnalysisPlugin type="face" />
+      </div>
+    </template>
+
+    <template v-else-if="effectiveMatch === 'text-extraction'">
+      <div class="cinematic-scrollable">
+        <VisionAnalysisPlugin type="ocr" />
+      </div>
+    </template>
+
     <!-- VOICE GENERATION -->
-    <template v-if="match === 'voice'">
-      <div class="flex flex-col gap-4">
+    <template v-else-if="effectiveMatch === 'voice'">
+      <div class="flex flex-col gap-4 p-4">
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Script</label>
         <el-input v-model="voiceText" type="textarea" :rows="6" placeholder="Enter text to speak..."
           class="cinematic-input" resize="none" />
@@ -742,6 +914,21 @@ const visualizeText = () => {
           <el-option v-for="v in voices" :key="v.value" :label="v.label" :value="v.value" />
         </el-select>
 
+        <div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 mt-2">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[10px] font-bold text-white/80 uppercase tracking-wider">Multi-Speaker</span>
+            <span class="text-[8px] text-white/30 italic">Assign voices to different script segments</span>
+          </div>
+          <el-switch v-model="isMultiSpeaker" active-color="#10b981" />
+        </div>
+
+        <div v-if="isMultiSpeaker" class="flex flex-col gap-2 p-2 bg-white/5 rounded-lg border border-white/5">
+          <div v-for="(seg, idx) in speakerSegments" :key="idx" class="flex items-center gap-2">
+            <el-input v-model="seg.label" class="cinematic-input !h-8" size="small" />
+            <el-input-number v-model="seg.end" class="cinematic-number-input" :precision="1" :step="0.5" size="small" style="width: 80px" />
+          </div>
+        </div>
+
         <el-button class="cinematic-button is-primary !h-11 !rounded-xl !border-none mt-4" :loading="isGenerating"
           @click="handleGenerate('voice')">
           <span class="text-xs font-bold uppercase tracking-widest">Generate Voice</span>
@@ -750,7 +937,7 @@ const visualizeText = () => {
     </template>
 
     <!-- IMAGE GENERATION -->
-    <template v-else-if="match === 'image'">
+    <template v-else-if="effectiveMatch === 'image'">
       <div class="flex flex-col gap-4">
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Prompt</label>
         <el-input v-model="imagePrompt" type="textarea" :rows="4" placeholder="Describe the image..."
@@ -784,7 +971,7 @@ const visualizeText = () => {
     </template>
 
     <!-- VIDEO GENERATION -->
-    <template v-else-if="match === 'video'">
+    <template v-else-if="effectiveMatch === 'video'">
       <div class="flex flex-col gap-4">
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Prompt</label>
         <el-input v-model="videoPrompt" type="textarea" :rows="4" placeholder="Describe the video movement and scene..."
@@ -804,7 +991,7 @@ const visualizeText = () => {
     </template>
 
     <!-- CAPTION GENERATION -->
-    <template v-else-if="match === 'caption'">
+    <template v-else-if="effectiveMatch === 'caption'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 text-[11px] leading-relaxed shadow-lg">
@@ -812,9 +999,19 @@ const visualizeText = () => {
             <MagicWand size="14" />
             <span class="font-bold uppercase tracking-widest">Experimental</span>
           </div>
-          <p>Analyzing audio tracks and generating scene-by-scene captions. Please ensure your timeline has audio
-            content.</p>
+          <p>Analyzing audio tracks and generating scene-by-scene captions. Please ensure your timeline has audio content or select a source media.</p>
         </div>
+
+        <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Select Source (Optional)</label>
+        <el-select v-model="selectedCaptionMediaId" class="cinematic-select" placeholder="Auto-detect all audio" clearable>
+          <el-option label="Auto-detect (All Scene Audio)" value="" />
+          <el-option-group label="Videos">
+             <el-option v-for="v in useUserMediaStore().videos.items" :key="v._id" :label="v.fileName" :value="v._id" />
+          </el-option-group>
+          <el-option-group label="Audios">
+             <el-option v-for="a in useUserMediaStore().audios.items" :key="a._id" :label="a.fileName" :value="a._id" />
+          </el-option-group>
+        </el-select>
 
         <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Source Language</label>
         <el-select v-model="captionLanguage" class="cinematic-select">
@@ -831,7 +1028,7 @@ const visualizeText = () => {
     </template>
 
     <!-- SCENE DETECTION -->
-    <template v-else-if="match === 'scene-detection'">
+    <template v-else-if="effectiveMatch === 'scene-detection'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-indigo-400/10 border border-indigo-400/20 text-indigo-400 text-[11px] leading-relaxed shadow-lg">
@@ -886,7 +1083,7 @@ const visualizeText = () => {
     </template>
 
     <!-- AUTO-CUT TO BEAT -->
-    <template v-else-if="match === 'auto-cut'">
+    <template v-else-if="effectiveMatch === 'auto-cut'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[11px] leading-relaxed shadow-lg">
@@ -932,7 +1129,7 @@ const visualizeText = () => {
     </template>
 
     <!-- SMART TRIM -->
-    <template v-else-if="match === 'smart-trim'">
+    <template v-else-if="effectiveMatch === 'smart-trim'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[11px] leading-relaxed shadow-lg">
@@ -990,7 +1187,7 @@ const visualizeText = () => {
     </template>
 
     <!-- BACKGROUND REMOVAL -->
-    <template v-else-if="match === 'background-removal'">
+    <template v-else-if="effectiveMatch === 'background-removal'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-indigo-400/10 border border-indigo-400/20 text-indigo-400 text-[11px] leading-relaxed shadow-lg">
@@ -1018,7 +1215,7 @@ const visualizeText = () => {
     </template>
 
     <!-- OBJECT DETECTION -->
-    <template v-else-if="match === 'object-detection'">
+    <template v-else-if="effectiveMatch === 'object-detection'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-orange-400/10 border border-orange-400/20 text-orange-400 text-[11px] leading-relaxed shadow-lg">
@@ -1073,8 +1270,19 @@ const visualizeText = () => {
               </div>
             </div>
 
-            <el-button class="cinematic-button is-primary !h-11 !rounded-xl !border-none" @click="visualizeObjects">
-              <span class="text-xs font-bold uppercase tracking-widest">Visualize</span>
+            <div class="flex flex-col gap-2">
+              <label class="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-2">Extract Object</label>
+              <el-select v-model="selectedObjectLabel" class="cinematic-select" placeholder="Select object to extract">
+                <el-option v-for="label in availableObjectLabels" :key="label" :label="label" :value="label" />
+              </el-select>
+              
+              <el-button class="cinematic-button is-primary !h-11 !rounded-xl !border-none mt-2" @click="extractObjectsToTimeline">
+                <span class="text-xs font-bold uppercase tracking-widest">Extract Segments to Timeline</span>
+              </el-button>
+            </div>
+
+            <el-button class="cinematic-button !h-11 !rounded-xl !border-white/10 !bg-white/5 mt-2" @click="visualizeObjects">
+              <span class="text-xs font-bold uppercase tracking-widest text-white/60">Visualize Bounding Boxes</span>
             </el-button>
             <button
               class="text-[10px] font-bold uppercase tracking-widest text-white/20 hover:text-white/60 transition-colors mt-2"
@@ -1087,7 +1295,7 @@ const visualizeText = () => {
     </template>
 
     <!-- FACE DETECTION -->
-    <template v-else-if="match === 'face-detection'">
+    <template v-else-if="effectiveMatch === 'face-detection'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-pink-400/10 border border-pink-400/20 text-pink-400 text-[11px] leading-relaxed shadow-lg">
@@ -1145,7 +1353,7 @@ const visualizeText = () => {
     </template>
 
     <!-- UPSCALE & DENOISE -->
-    <template v-else-if="match === 'upscale' || match === 'denoise'">
+    <template v-else-if="effectiveMatch === 'upscale' || effectiveMatch === 'denoise'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-violet-400/10 border border-violet-400/20 text-violet-400 text-[11px] leading-relaxed shadow-lg">
@@ -1196,7 +1404,7 @@ const visualizeText = () => {
     </template>
 
     <!-- VECTORIZER -->
-    <template v-else-if="match === 'vectorizer'">
+    <template v-else-if="effectiveMatch === 'vectorizer'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-orange-400/10 border border-orange-400/20 text-orange-400 text-[11px] leading-relaxed shadow-lg">
@@ -1237,7 +1445,7 @@ const visualizeText = () => {
     </template>
 
     <!-- AUTO-REFRAME -->
-    <template v-else-if="match === 'auto-reframe'">
+    <template v-else-if="effectiveMatch === 'auto-reframe'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[11px] leading-relaxed shadow-lg">
@@ -1261,8 +1469,20 @@ const visualizeText = () => {
 
         <el-button class="cinematic-button is-primary !h-11 !rounded-xl !border-none mt-4" :loading="isAnalyzingReframe"
           @click="handleGenerate('auto-reframe')">
-          <span class="text-xs font-bold uppercase tracking-widest">Apply Reframe</span>
+          <span class="text-xs font-bold uppercase tracking-widest">Analyze Movement</span>
         </el-button>
+
+        <template v-if="reframeKeyframes.length > 0">
+          <el-button class="cinematic-button is-primary !h-11 !rounded-xl !border-none mt-2" @click="applyReframeToTimeline">
+            <span class="text-xs font-bold uppercase tracking-widest">Apply Reframe to Timeline</span>
+          </el-button>
+          
+          <button
+            class="text-[10px] font-bold uppercase tracking-widest text-white/20 hover:text-white/60 transition-colors mt-2"
+            @click="reframeKeyframes = []">
+            Reset Analysis
+          </button>
+        </template>
 
         <div v-if="isAnalyzingReframe" class="mt-4">
           <div class="flex justify-between mb-1">
@@ -1278,7 +1498,7 @@ const visualizeText = () => {
     </template>
 
     <!-- TEXT RECOGNITION -->
-    <template v-else-if="match === 'text-recognition'">
+    <template v-else-if="effectiveMatch === 'text-recognition'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-blue-400/10 border border-blue-400/20 text-blue-400 text-[11px] leading-relaxed shadow-lg">
@@ -1336,7 +1556,7 @@ const visualizeText = () => {
     </template>
 
     <!-- COLOR ANALYSIS -->
-    <template v-else-if="match === 'color-analysis'">
+    <template v-else-if="effectiveMatch === 'color-analysis'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-purple-400/10 border border-purple-400/20 text-purple-400 text-[11px] leading-relaxed shadow-lg">
@@ -1373,6 +1593,10 @@ const visualizeText = () => {
               </div>
             </div>
 
+            <el-button class="cinematic-button is-primary !h-11 !rounded-xl !border-none mt-2" @click="applyColorSync">
+              <span class="text-xs font-bold uppercase tracking-widest">Sync Project Colors</span>
+            </el-button>
+
             <button
               class="text-[10px] font-bold uppercase tracking-widest text-white/20 hover:text-white/60 transition-colors mt-2"
               @click="detectedColors = []">
@@ -1384,7 +1608,7 @@ const visualizeText = () => {
     </template>
 
     <!-- MOTION ANALYSIS -->
-    <template v-else-if="match === 'motion-analysis'">
+    <template v-else-if="effectiveMatch === 'motion-analysis'">
       <div class="flex flex-col gap-4">
         <div
           class="p-4 rounded-lg bg-red-400/10 border border-red-400/20 text-red-400 text-[11px] leading-relaxed shadow-lg">

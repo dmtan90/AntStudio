@@ -1,5 +1,7 @@
 # AntStudio - Autonomous AI Entertainment Platform
 
+![Landing Page](./docs/images/landing-page.png)
+
 > Transform your ideas into cinematic videos with AI. The world's first fully autonomous entertainment and commerce engine.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -7,6 +9,12 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](https://github.com/yourusername/antflow)
+
+## 📸 Platform Overview
+
+![Dashboard](./docs/images/dashboard.png)
+
+![Admin Dashboard](./docs/images/admin-dashboard.png)
 
 ## 🎬 Overview
 
@@ -51,6 +59,9 @@ AntStudio is the world's first **fully autonomous AI-powered entertainment platf
   - **AI Avatars**: Generate realistic talking avatars using **Google Veo 3**
   - **Presentation to Video**: Convert PDF/PPTX slides into video scenes
 
+![Product Ads Wizard](./docs/images/product-ads-wizard.png)
+*AI-driven Product Ads Wizard*
+
 - 🎬 **Live Studio**:
   - Real-time AI processing (face detection, segmentation, AR)
   - Virtual production (chromakey, 3D stages)
@@ -58,11 +69,17 @@ AntStudio is the world's first **fully autonomous AI-powered entertainment platf
   - Mobile camera ingest
   - WebRTC guest integration
 
+![VTubers & Live Studio](./docs/images/vtubers.png)
+*Live Studio & Virtual Production Management*
+
 - 🎨 **Advanced Video Editor**:
   - Professional timeline with magnetic snapping
   - Multi-track support and drag-and-drop
   - 50+ editing tools and effects
   - Export to disk for unlimited duration
+
+![Templates](./docs/images/templates.png)
+*Professional Video Templates & Editor*
 
 - 🎤 **Voice Intelligence**:
   - **Voice Lab**: Manage and clone voices
@@ -75,12 +92,18 @@ AntStudio is the world's first **fully autonomous AI-powered entertainment platf
   - **Smart Subscriptions**: Automated recurring billing, trial management, and webhook callbacks.
   - **Usage Tracking**: Granular credit tracking for AI generation features.
 
+![Licensing & Subscription](./docs/images/subscription.png)
+*Monetization and Subscription Management*
+
 - 🏢 **Enterprise Features**:
   - White-label multi-tenant architecture
   - Global CDN delivery
   - Multi-region deployment
   - Real-time monitoring and alerting
   - Perpetual and subscription licensing
+
+![System Monitoring](./docs/images/system-monitoring.png)
+*Enterprise System Monitoring Dashboard*
 
 ## 🏗️ Architecture
 

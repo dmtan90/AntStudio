@@ -155,7 +155,7 @@
                  <!-- Sponsorship Settings -->
                  <div v-if="studioStore.visualSettings.specialOverlays.showSponsorship" class="form-group animate-in slide-in-from-top-2 ml-4 pl-4 border-l border-white/10">
                      <label class="text-[8px] opacity-40 uppercase font-black mb-1 block">Sponsor Name / Text</label>
-                     <el-input v-model="studioStore.visualSettings.specialOverlays.sponsorName" size="small" class="glass-input" placeholder="e.g. AntFlow Energy" />
+                     <el-input v-model="studioStore.visualSettings.specialOverlays.sponsorName" size="small" class="glass-input" placeholder="e.g. AntStudio Energy" />
                  </div>
              </div>
          </section>

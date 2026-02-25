@@ -16,6 +16,8 @@ import { analyticsService } from './analytics/AnalyticsService.js';
 import { autoDirectorService } from './ai/AutoDirectorService.js';
 import { systemLogger } from '~/utils/systemLogger.js';
 
+const SOCKET_PORT = process.env.SOCKET_PORT || 4001;
+
 /**
  * Unified Socket.io Server Manager for collaboration, gaming, and engagement.
  * Merged from legacy SocketService and SocketServer.
@@ -52,14 +54,14 @@ export class SocketServer {
                 credentials: true
             }
         });
-		this.io.listen(4001);
+		this.io.listen(Number(SOCKET_PORT));
 
         this.setupAuthentication();
         this.setupHandlers();
         this.setupServiceListeners();
         // Chat and engagement sync workers will be started on-demand when sessions go live
 
-        console.log("🚀 [SocketServer] Unified Socket.io running at /socket.io");
+        console.log(`🚀 [SocketServer] Unified Socket.io running at /socket.io port ${SOCKET_PORT}`);
     }
 
     /**
@@ -543,7 +545,7 @@ export class SocketServer {
                                     const liveInfo = await PlatformAuthService.getLiveStreamInfo(
                                         'youtube' as any,
                                         credentials,
-                                        { title: project?.title || 'AntFlow Live', description: project?.description || '' }
+                                        { title: project?.title || 'AntStudio Live', description: project?.description || '' }
                                     );
                                     if (liveInfo.externalChatId && liveInfo.externalChatId !== target.externalChatId) {
                                         systemLogger.info(`[ChatSync] Found NEW YouTube Chat ID: ${liveInfo.externalChatId}`, 'SocketServer');

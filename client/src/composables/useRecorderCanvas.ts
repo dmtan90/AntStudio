@@ -22,14 +22,17 @@ export function useRecorderCanvas(
     }
 ) {
     const frameCount = ref(0);
-    const lastAIProcessTime = 0;
-    const AI_PROCESS_INTERVAL = 40;
+    const isTransferred = ref(false);
+    let lastAIProcessTime = 0;
+    const AI_PROCESS_INTERVAL = 120;
 
     // Worker State
     let worker: Worker | null = null;
     let isWorkerEnabled = false;
-    const bridgedStreams = new Set<string>();
     let animationFrameId: number | null = null;
+    let isAnnotationDirty = false;
+    let lastBridgedWhiteboardContent: any = null;
+    const bridgedStreams = new Set<string>();
     let forceFirstMask = true;
 
     // AI Processing State
@@ -38,7 +41,7 @@ export function useRecorderCanvas(
     let cachedMaskImageData: ImageData | null = null;
 
     const initWorker = () => {
-        if (!outputCanvas.value) return false;
+        if (!outputCanvas.value || isTransferred.value) return false;
 
         // Check for OffscreenCanvas support (required for this performance optimization)
         if (typeof OffscreenCanvas === 'undefined' || typeof VideoFrame === 'undefined' || typeof MediaStreamTrackProcessor === 'undefined') {
@@ -48,6 +51,7 @@ export function useRecorderCanvas(
         try {
             const canvas = outputCanvas.value;
             const offscreen = canvas.transferControlToOffscreen();
+            isTransferred.value = true;
 
             worker = new StudioWorker();
             if (worker) {
@@ -59,6 +63,9 @@ export function useRecorderCanvas(
                 worker.postMessage({ type: 'resize', payload: { width: canvas.width, height: canvas.height } });
 
                 isWorkerEnabled = true;
+
+                // Sync bridged streams tracking
+                bridgedStreams.clear();
 
                 // Set initial scene based on recorder mode and layout
                 updateWorkerScene();
@@ -97,35 +104,72 @@ export function useRecorderCanvas(
                     source: 'screen',
                     x: 0, y: 0, width: 100, height: 100
                 });
-                // Small cam overlay
+                // Small cam overlay - use position preset to compute x/y
                 const s = options.camSettings.value;
+                const pipSize = Math.max(10, Math.min(50, s.size ?? 25));
+                // const pipH = (pipSize * 9) / 16;
+                const pipH = pipSize;
+                const margin = 10;
+                const offset = 0;
+                console.log(s, pipSize, pipH, margin);
+
+                const rawPos = (s.position ?? 'BR').toUpperCase();
+                let pos = 'BR';
+                if (rawPos.includes('TL') || rawPos.includes('TOP-LEFT')) pos = 'TL';
+                else if (rawPos.includes('TR') || rawPos.includes('TOP-RIGHT')) pos = 'TR';
+                else if (rawPos.includes('BL') || rawPos.includes('BOTTOM-LEFT')) pos = 'BL';
+                else if (rawPos.includes('BR') || rawPos.includes('BOTTOM-RIGHT')) pos = 'BR';
+
+                let pipX = margin;
+                let pipY = offset - pipH - margin;
+                if (pos === 'TL') { pipX = margin; pipY = margin; }
+                else if (pos === 'TR') { pipX = offset - pipSize - margin; pipY = margin; }
+                else if (pos === 'BL') { pipX = margin; pipY = offset - pipH - margin; }
+                else if (pos === 'BR') { pipX = offset - pipSize - margin; pipY = offset - pipH - margin; }
+
                 scene.layout.regions.push({
                     source: 'host',
-                    x: s.x / 10, // Approximate conversion if needed, or assume normalized
-                    y: s.y / 10,
-                    width: s.size,
-                    height: (s.size * 9) / 16,
-                    shape: s.shape,
-                    borderRadius: s.shape === 'circle' ? 999 : 20,
-                    border: { color: s.borderColor, width: s.borderWidth }
+                    x: pipX,
+                    y: pipY,
+                    width: pipSize,
+                    height: pipH,
+                    shape: s.shape ?? 'circle',
+                    borderRadius: (s.shape ?? 'circle') === 'circle' ? 999 : 20,
+                    border: { color: s.borderColor ?? '#ffffff', width: s.borderWidth ?? 2 }
                 });
             } else if (options.layoutPreset.value === 'split') {
+                scene.layout.regions.push({
+                    source: 'screen',
+                    x: 0, y: 0, width: 50, height: 100
+                });
                 scene.layout.regions.push({
                     source: 'host',
                     x: 50, y: 0, width: 50, height: 100
                 });
+            } else if (options.layoutPreset.value === 'cam-full') {
+                scene.layout.regions.push({
+                    source: 'host',
+                    x: 0, y: 0, width: 100, height: 100
+                });
+            } else if (options.layoutPreset.value === 'screen-full') {
+                scene.layout.regions.push({
+                    source: 'screen',
+                    x: 0, y: 0, width: 100, height: 100
+                });
             }
         } else if (options.mode.value === 'whiteboard') {
-            // Presentation layout: Content 75%, Host 25% (PiP or Side)
             scene.layout.regions.push({
-                source: 'screen', // Mapping whiteboard content to screen source for worker
+                source: 'screen',
                 x: 0, y: 0, width: 100, height: 100
             });
             
-            if (options.isVTuberActive.value || (options.camSettings.value.enableCamInWhiteboard !== false)) {
+            if (options.isVTuberActive.value || options.camSettings.value.enableCamInWhiteboard === true) {
                 scene.layout.regions.push({
                     source: 'host',
-                    x: 75, y: 70, width: 22, height: 25,
+                    x: 75, 
+                    y: 70, 
+                    width: 22, 
+                    height: 25,
                     shape: 'circle',
                     border: { color: '#ffffff', width: 2 }
                 });
@@ -193,7 +237,10 @@ export function useRecorderCanvas(
         } else if (sourceVideo.value && sourceVideo.value.srcObject && options.mode.value === 'camera') {
             currentActiveIds.add('host');
             bridgeStream('host', sourceVideo.value);
-        } else if (webcamVideo.value && webcamVideo.value.srcObject) {
+        } else if (webcamVideo.value && webcamVideo.value.srcObject && options.mode.value === 'camera-screen') {
+            currentActiveIds.add('host');
+            bridgeStream('host', webcamVideo.value);
+        } else if (webcamVideo.value && webcamVideo.value.srcObject && options.mode.value === 'whiteboard' && options.camSettings.value.enableCamInWhiteboard) {
             currentActiveIds.add('host');
             bridgeStream('host', webcamVideo.value);
         }
@@ -214,7 +261,10 @@ export function useRecorderCanvas(
                 }
             } else if (options.whiteboardContent.value instanceof ImageBitmap) {
                 // Transfer image bitmap to worker (imported slide)
-                worker.postMessage({ type: 'update-background', payload: { backgroundData: options.whiteboardContent.value } }, [options.whiteboardContent.value]);
+                if (options.whiteboardContent.value !== lastBridgedWhiteboardContent) {
+                    lastBridgedWhiteboardContent = options.whiteboardContent.value;
+                    worker.postMessage({ type: 'update-background', payload: { backgroundData: options.whiteboardContent.value } }, [options.whiteboardContent.value]);
+                }
             }
         } else if (sourceVideo.value && sourceVideo.value.srcObject && (options.mode.value === 'screen' || options.mode.value === 'camera-screen')) {
             currentActiveIds.add('screen');
@@ -224,6 +274,7 @@ export function useRecorderCanvas(
         // Cleanup stale streams
         bridgedStreams.forEach(id => {
             if (!currentActiveIds.has(id)) {
+                console.log(`[useRecorderCanvas] Cleaning up stream: ${id}`);
                 worker?.postMessage({ type: 'remove-stream', payload: { id } });
                 bridgedStreams.delete(id);
             }
@@ -231,6 +282,14 @@ export function useRecorderCanvas(
     };
 
     const startRendering = () => {
+        // If already transferred, just ensure the loop is running
+        if (isTransferred.value) {
+            if (!animationFrameId && options.mode.value !== 'audio') {
+                renderLoop();
+            }
+            return;
+        }
+        
         if (initWorker()) {
             renderLoop();
         }
@@ -238,29 +297,48 @@ export function useRecorderCanvas(
 
     const renderLoop = () => {
         const loop = (time: number) => {
-            checkStreams();
+            // CPU Optimization: Kill loop if in audio mode and no special streams are active
+            if (options.mode.value === 'audio') {
+                // IMPORTANT: Before idling, we must ensure the worker is clear
+                if (bridgedStreams.size > 0) {
+                    bridgedStreams.forEach(id => {
+                        worker?.postMessage({ type: 'remove-stream', payload: { id } });
+                    });
+                    bridgedStreams.clear();
+                }
+                animationFrameId = null;
+                return;
+            }
 
-            // Bridge annotations if active
-            if (worker && annotationCanvas) {
+            frameCount.value++;
+
+            // Throttled: check active streams only every 60 frames (~1s) or on demand via watchers
+            if (frameCount.value % 60 === 0) {
+                checkStreams();
+            }
+            
+            // Throttled & Conditional: send annotations only when potentially changed
+            if (worker && annotationCanvas && frameCount.value % 10 === 0 && isAnnotationDirty) {
                 createImageBitmap(annotationCanvas).then(bitmap => {
                     worker?.postMessage({
                         type: 'update-overlay',
                         payload: { overlayData: bitmap }
                     }, [bitmap]);
+                    isAnnotationDirty = false;
                 });
             }
 
-            // Process AI segmentation if needed (for background blur)
-            const needsSegmentation = options.camSettings.value.enableBlur;
+            const modeValue = options.mode.value;
+            const needsSegmentation = options.camSettings.value.enableBlur && (modeValue === 'camera' || modeValue === 'camera-screen');
             if (needsSegmentation && (webcamVideo.value || sourceVideo.value)) {
                 const aiSource = (options.mode.value === 'camera' ? sourceVideo.value : webcamVideo.value) as HTMLVideoElement;
                 if (aiSource && aiSource.videoWidth > 0 && (forceFirstMask || time - lastAIProcessTime > AI_PROCESS_INTERVAL)) {
                     processAISegmentation(aiSource, time);
                     forceFirstMask = false;
+                    lastAIProcessTime = time;
                 }
             }
 
-            frameCount.value++;
             animationFrameId = requestAnimationFrame(loop);
         };
         animationFrameId = requestAnimationFrame(loop);
@@ -269,7 +347,10 @@ export function useRecorderCanvas(
     const processAISegmentation = async (video: HTMLVideoElement, timestamp: number) => {
         if (!worker || !video.videoWidth) return;
 
-        const results = await liveAIEngine.processFrame(video, timestamp, { enableSegmentation: true });
+        const results = await liveAIEngine.processFrame(video, timestamp, { 
+            enableSegmentation: true,
+            enableFace: true 
+        });
         if (results.segmentationMask) {
             const maskData = results.segmentationMask;
             if (maskData) {
@@ -287,9 +368,16 @@ export function useRecorderCanvas(
 
     const stopRendering = () => {
         if (worker) {
-            worker.terminate();
-            worker = null;
-            isWorkerEnabled = false;
+            // NEVER terminate the worker if we want to keep the transition to OffscreenCanvas alive
+            // Instead, remove all streams and stop the loop
+            bridgedStreams.forEach(id => {
+                worker?.postMessage({ type: 'remove-stream', payload: { id } });
+            });
+            bridgedStreams.clear();
+            lastBridgedWhiteboardContent = null;
+            
+            // Clear visual state in the worker
+            worker.postMessage({ type: 'update-scene', payload: { scene: null } });
         }
         if (animationFrameId !== null) {
             cancelAnimationFrame(animationFrameId);
@@ -298,10 +386,23 @@ export function useRecorderCanvas(
     };
 
     // Watchers for reactive updates
-    watch([() => options.mode.value, () => options.layoutPreset.value, () => options.camSettings.value], () => {
+    watch(() => options.mode.value, (newMode) => {
+        if (newMode === 'audio') {
+            stopRendering();
+        } else {
+            // For all other modes, ensure the loop is running
+            if (!animationFrameId) {
+                startRendering();
+            }
+        }
+        // Always update scene structure even if not rendering video (e.g. for branding/overlays)
+        updateWorkerScene();
+    });
+
+    watch([options.layoutPreset, options.camSettings], () => {
         updateWorkerScene();
         updateWorkerSettings();
-    }, { deep: true });
+    }, { deep: true, immediate: true });
 
     watch([() => options.enableBeauty.value, () => options.beautySettings.value], () => {
         updateWorkerSettings();
@@ -310,8 +411,9 @@ export function useRecorderCanvas(
     onUnmounted(stopRendering);
 
     return {
-        frameCount,
         startRendering,
-        stopRendering
+        stopRendering,
+        isTransferred,
+        markAnnotationDirty: () => { isAnnotationDirty = true; }
     };
 }

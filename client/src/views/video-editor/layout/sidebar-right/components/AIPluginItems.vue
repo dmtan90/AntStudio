@@ -22,7 +22,19 @@ const pluginElementMap: Record<string, AIPluginItem[]> = {
       title: "Background Removal",
       value: "bg-removal",
       label: "BG Removal",
-      thumbnail: "https://static.canva.com/web/images/555bf52f35233c8cc5de27c132755e4b.png",
+      thumbnail: "/ai/bg-removal.png",
+    },
+    {
+      title: "AI Upscale",
+      value: "upscale",
+      label: "Upscale & Denoise",
+      thumbnail: "/ai/upscale.png",
+    },
+    {
+      title: "Image Vectorizer",
+      value: "vectorize",
+      label: "SVG Vectorizer",
+      thumbnail: "/ai/vectorize.png",
     },
   ],
   video: [
@@ -30,13 +42,31 @@ const pluginElementMap: Record<string, AIPluginItem[]> = {
       title: "Background Removal",
       value: "video-bg-removal",
       label: "BG Removal",
-      thumbnail: "https://static.canva.com/web/images/555bf52f35233c8cc5de27c132755e4b.png",
+      thumbnail: "/ai/bg-removal.png",
     },
     {
       title: "Magic Write",
-      value: "magic-write",
+      value: "magic-caption",
       label: "Magic Caption",
-      thumbnail: "https://cdn.dribbble.com/userupload/11988346/file/original-051279240ec4c2b4b644c51121e6afa4.jpg?resize=400x0",
+      thumbnail: "/ai/magic-caption.png",
+    },
+    {
+      title: "Smart Trim",
+      value: "smart-trim",
+      label: "Trim Silence",
+      thumbnail: "/ai/smart-trim.png",
+    },
+    {
+      title: "Auto Reframe",
+      value: "auto-reframe",
+      label: "9:16 Reframe",
+      thumbnail: "/ai/auto-reframe.png",
+    },
+    {
+      title: "Beat Sync",
+      value: "beat-sync",
+      label: "Beat Sync",
+      thumbnail: "/ai/beat-sync.png",
     },
   ],
   textbox: [
@@ -44,9 +74,61 @@ const pluginElementMap: Record<string, AIPluginItem[]> = {
       title: "Magic Write",
       value: "magic-write",
       label: "Magic Write",
-      thumbnail: "https://cdn.dribbble.com/userupload/11988346/file/original-051279240ec4c2b4b644c51121e6afa4.jpg?resize=400x0",
+      thumbnail: "/ai/magic-caption.png",
+    },
+    {
+      title: "Bulk AI Replace",
+      value: "bulk-replace",
+      label: "Bulk Artifacts",
+      thumbnail: "/ai/beat-sync.png",
     },
   ],
+  audio: [
+    {
+      title: "Beat Sync",
+      value: "beat-sync",
+      label: "Extract Beats",
+      thumbnail: "/ai/beat-sync.png",
+    }
+  ],
+  global: [
+    {
+      title: "AI Creative Director",
+      value: "storyboard",
+      label: "Generate Storyboard",
+      thumbnail: "/ai/storyboard.png",
+    },
+    {
+      title: "Viral Highlights",
+      value: "highlights",
+      label: "Extract Highlights",
+      thumbnail: "/ai/highlights.png",
+    },
+    {
+      title: "Social Media Meta",
+      value: "social-meta",
+      label: "Viral Metadata",
+      thumbnail: "/ai/social-meta.png",
+    },
+    {
+      title: "Content Translation",
+      value: "translation",
+      label: "Localize Project",
+      thumbnail: "/ai/translation.png",
+    },
+    {
+      title: "Vision: Face Detect",
+      value: "face-detect",
+      label: "Face Analysis",
+      thumbnail: "/ai/vision-detect.png",
+    },
+    {
+      title: "Vision: OCR",
+      value: "ocr",
+      label: "Extract Text",
+      thumbnail: "/ai/vision-detect.png",
+    }
+  ]
 };
 
 const props = defineProps<{ onSelectPlugin: (plugin: string, label: string) => void }>();
@@ -58,7 +140,7 @@ const plugins = computed(() => {
   if (selected.value && selected.value.type && pluginElementMap[selected.value.type]) {
     return pluginElementMap[selected.value.type];
   }
-  return [];
+  return pluginElementMap.global || [];
 });
 </script>
 

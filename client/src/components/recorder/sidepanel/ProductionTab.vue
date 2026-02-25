@@ -1,6 +1,5 @@
 <template>
     <div class="production-tab flex flex-col gap-6 h-full overflow-y-auto pr-2 custom-scrollbar">
-        <!-- Layout Presets -->
         <div class="panel-section">
             <h3 class="section-title">Recording Layout</h3>
             <div class="grid grid-cols-2 gap-3 mt-4">
@@ -59,6 +58,67 @@
                     </div>
                     <el-slider v-model="localFontSize" :min="16" :max="48" :step="2" 
                         @input="v => emit('update:teleprompter-font-size', v as number)" />
+                </div>
+            </div>
+        </div>
+
+        <div v-if="props.camSettings && layoutPreset === 'pip'" class="panel-section">
+            <h3 class="section-title">PiP Camera</h3>
+            <div class="mt-4 space-y-4">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Shape</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="layout-btn"
+                            :class="{ active: props.camSettings.shape === 'circle' }"
+                            @click="updateCam({ shape: 'circle' })">
+                            <span>Circle</span>
+                        </button>
+                        <button class="layout-btn"
+                            :class="{ active: props.camSettings.shape === 'square' }"
+                            @click="updateCam({ shape: 'square' })">
+                            <span>Square</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Size</label>
+                    <el-slider :model-value="props.camSettings.size"
+                        :min="10"
+                        :max="40"
+                        :step="1"
+                        @update:model-value="v => updateCam({ size: v })" />
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Position</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button class="tool-btn" :class="{ active: props.camSettings.position === 'top-left' }"
+                            @click="updateCam({ position: 'top-left', x: 5, y: 5 })">
+                            <span>TL</span>
+                        </button>
+                        <button class="tool-btn" :class="{ active: props.camSettings.position === 'top-right' }"
+                            @click="updateCam({ position: 'top-right', x: 75, y: 5 })">
+                            <span>TR</span>
+                        </button>
+                        <button class="tool-btn" :class="{ active: props.camSettings.position === 'bottom-left' }"
+                            @click="updateCam({ position: 'bottom-left', x: 5, y: 70 })">
+                            <span>BL</span>
+                        </button>
+                        <button class="tool-btn" :class="{ active: props.camSettings.position === 'bottom-right' }"
+                            @click="updateCam({ position: 'bottom-right', x: 75, y: 70 })">
+                            <span>BR</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Border Width</label>
+                    <el-slider :model-value="props.camSettings.borderWidth"
+                        :min="0"
+                        :max="8"
+                        :step="1"
+                        @update:model-value="v => updateCam({ borderWidth: v })" />
                 </div>
             </div>
         </div>
@@ -153,6 +213,7 @@ const props = defineProps<{
     annotationColor: string
     annotationSize: number
     recordingQuality: { resolution: string; fps: number }
+    camSettings?: any
 }>()
 
 const emit = defineEmits<{
@@ -169,6 +230,7 @@ const emit = defineEmits<{
     (e: 'update:annotation-size', val: number): void
     (e: 'clear-annotations'): void
     (e: 'update:recording-quality', val: any): void
+    (e: 'update:cam-settings', val: any): void
 }>()
 
 const colors = ['#3b82f6', '#22c55e', '#ef4444', '#eab308', '#ec4899', '#ffffff']
@@ -186,6 +248,11 @@ const localSpeed = ref(props.teleprompterSpeed)
 const localFontSize = ref(props.teleprompterFontSize)
 const localIsAnnotationActive = ref(props.isAnnotationActive)
 const localSize = ref(props.annotationSize)
+
+const updateCam = (patch: any) => {
+    if (!props.camSettings) return
+    emit('update:cam-settings', { ...props.camSettings, ...patch })
+}
 
 watch(() => props.isTeleprompterActive, (v) => localIsTeleprompterActive.value = v)
 watch(() => props.teleprompterScript, (v) => localScript.value = v)

@@ -5,7 +5,7 @@
         </button>
 
         <div class="recorder-tabs">
-            <button v-for="tab in tabs" :key="tab.value" class="tab-btn" :class="{ active: mode === tab.value }"
+            <button v-for="tab in tabs" :key="tab.value" class="tab-btn text-black-50" :class="{ active: mode === tab.value }"
                 @click="emit('switch-mode', tab.value as RecordingMode)">
                 <component :is="tab.icon" theme="outline" size="18" />
                 <span>{{ tab.label }}</span>

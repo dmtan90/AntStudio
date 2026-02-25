@@ -89,7 +89,7 @@ function init3DGuest(id: string, modelUrl: string, textureUrl: string) {
                         child.material.needsUpdate = true;
                     }
                 });
-                sceneDirty = true;
+                requestRender();
             });
         }
 
@@ -99,29 +99,106 @@ function init3DGuest(id: string, modelUrl: string, textureUrl: string) {
         threeGuests.set(id, { scene, camera, renderer, renderTarget: null as any, model, mixer });
 
         console.log(`[Worker] 3D Guest ${id} loaded successfully`);
-        sceneDirty = true;
+        requestRender();
     }, undefined, (err) => {
         console.error(`[Worker] Failed to load 3D model: ${err}`);
     });
 }
 
+const blendShapeMapping: Record<string, string[]> = {
+    'browInnerUp': ['Surprise'],
+    'browDownLeft': ['Angry'],
+    'browDownRight': ['Angry'],
+    'browOuterUpLeft': ['Surprise'],
+    'browOuterUpRight': ['Surprise'],
+    'eyeBlinkLeft': ['Blink', 'Blink_L'],
+    'eyeBlinkRight': ['Blink', 'Blink_R'],
+    'eyeWideLeft': ['Surprise'],
+    'eyeWideRight': ['Surprise'],
+    'jawOpen': ['A', 'jawOpen', 'mouthOpen'],
+    'mouthFunnel': ['U', 'O'],
+    'mouthPucker': ['U'],
+    'mouthSmileLeft': ['Joy', 'Fun'],
+    'mouthSmileRight': ['Joy', 'Fun'],
+    'mouthFrownLeft': ['Sorrow', 'Angry'],
+    'mouthFrownRight': ['Sorrow', 'Angry'],
+    'mouthDimpleLeft': ['Joy'],
+    'mouthDimpleRight': ['Joy'],
+    'mouthStretchLeft': ['I'],
+    'mouthStretchRight': ['I'],
+    'eyeLookInLeft': ['eyeLookInLeft', 'eyeIn_L'],
+    'eyeLookInRight': ['eyeLookInRight', 'eyeIn_R'],
+    'eyeLookOutLeft': ['eyeLookOutLeft', 'eyeOut_L'],
+    'eyeLookOutRight': ['eyeLookOutRight', 'eyeOut_R'],
+    'eyeLookUpLeft': ['eyeLookUpLeft', 'eyeUp_L'],
+    'eyeLookUpRight': ['eyeLookUpRight', 'eyeUp_R'],
+    'eyeLookDownLeft': ['eyeLookDownLeft', 'eyeDown_L'],
+    'eyeLookDownRight': ['eyeLookDownRight', 'eyeDown_R'],
+};
+
 function update3DAnimations(id: string, audioLevel: number) {
     const guest = threeGuests.get(id);
     if (!guest || !guest.model) return;
 
-    // Micro-expression: Scale jaw or move mouth targets
+    // Use latest MoCap data if available and for the right guest
+    const isHost = id === 'host' || (slotMap.get('host')?.id === id);
+    if (isHost && latestFaceData && latestFaceData.blendshapes) {
+        applyMoCapToAvatar(guest, latestFaceData);
+        return;
+    }
+
+    // Fallback: Micro-expression (Audio-driven)
     guest.model.traverse((child: any) => {
         if (child.isMesh && child.morphTargetInfluences) {
             const targets = child.morphTargetDictionary;
-            if (targets && targets['jawOpen']) {
-                child.morphTargetInfluences[targets['jawOpen']] = audioLevel * 1.5;
-            } else if (targets && targets['mouthOpen']) {
-                child.morphTargetInfluences[targets['mouthOpen']] = audioLevel * 1.5;
+            if (targets) {
+                if (targets['jawOpen']) child.morphTargetInfluences[targets['jawOpen']] = audioLevel * 1.5;
+                else if (targets['mouthOpen']) child.morphTargetInfluences[targets['mouthOpen']] = audioLevel * 1.5;
+                else if (targets['A']) child.morphTargetInfluences[targets['A']] = audioLevel * 1.5;
             }
         }
     });
 
     sceneDirty = true;
+}
+
+function applyMoCapToAvatar(guest: any, faceData: any) {
+    if (!guest.model || !faceData.blendshapes) return;
+
+    const blendshapes = faceData.blendshapes;
+    
+    guest.model.traverse((child: any) => {
+        if (child.isMesh && child.morphTargetInfluences && child.morphTargetDictionary) {
+            const targets = child.morphTargetDictionary;
+            
+            // Map MediaPipe categories to model morph targets
+            blendshapes.forEach((category: any) => {
+                const targetNames = blendShapeMapping[category.categoryName];
+                if (targetNames) {
+                    targetNames.forEach(name => {
+                        if (targets[name] !== undefined) {
+                            // Apply smoothing/interpolation if needed, but here we just set it
+                            child.morphTargetInfluences[targets[name]] = category.score;
+                        }
+                    });
+                }
+            });
+        }
+
+        // Apply head rotation if matrix is available
+        if (child.name.toLowerCase().includes('head') || child.name.toLowerCase().includes('neck')) {
+            if (faceData.matrix) {
+                const m = new THREE.Matrix4().fromArray(faceData.matrix.array);
+                const rotation = new THREE.Euler().setFromRotationMatrix(m);
+                
+                // Fine-tune Euler rotation for typical face orientation
+                // MediaPipe matrix is in camera space
+                child.rotation.x = rotation.x;
+                child.rotation.y = rotation.y;
+                child.rotation.z = rotation.z;
+            }
+        }
+    });
 }
 
 /**
@@ -133,6 +210,9 @@ function applyIdleState(guest: any, time: number) {
     // Subtle breathing (slight vertical scale oscillation)
     const breathing = Math.sin(time / 2000) * 0.005;
     guest.model.scale.set(1 + breathing, 1 + breathing, 1 + breathing);
+
+    // Skip idle rotation if active MoCap is driving the head
+    const hasMoCap = latestFaceData && latestFaceData.matrix;
 
     // Random micro-movements on head/neck if found
     guest.model.traverse((child: any) => {
@@ -149,7 +229,7 @@ function applyIdleState(guest: any, time: number) {
                 child.material.emissive.setRGB(0, 0, 0);
             }
 
-            if (child.name.toLowerCase().includes('head') || child.name.toLowerCase().includes('neck')) {
+            if (!hasMoCap && (child.name.toLowerCase().includes('head') || child.name.toLowerCase().includes('neck'))) {
                 // If thinking, faster oscillation to signal "calculating"
                 if (guest.isThinking) {
                     child.rotation.z = Math.sin(time / 200) * 0.05;
@@ -206,6 +286,11 @@ let faceTracking = {
     targetX: 0.5,
     targetY: 0.5
 };
+let latestFaceData: {
+    blendshapes: any[],
+    matrix: any,
+    landmarks: any[]
+} | null = null;
 let hostTexScale = [1.0, 1.0];
 let hostTexOffset = [0.0, 0.0];
 let authToken: string | null = null;
@@ -216,6 +301,7 @@ const frameMap = new Map<string, VideoFrame>();
 const streamReaders = new Map<string, ReadableStreamDefaultReader<VideoFrame>>();
 const videoMetadata = new Map<string, { width: number, height: number }>();
 const textureDirtyMap = new Map<string, boolean>();
+const backgroundMetadata = { width: 0, height: 0 };
 interface GuestData {
     id: string;
     name: string;
@@ -254,7 +340,18 @@ let tickerOffset: number = 0;
 let logoImage: ImageBitmap | null = null;
 
 let sceneDirty = true;
+let isRendering = false;
 let lastTime = 0;
+
+function requestRender() {
+    if (sceneDirty && isRendering) return; // Already dirty or rendering
+    sceneDirty = true;
+    if (!isRendering && gl && canvas) {
+        isRendering = true;
+        // console.log('[Worker] Render loop starting...');
+        requestAnimationFrame(renderLoop);
+    }
+}
 let subtitleCanvas: OffscreenCanvas | null = null;
 let subtitleCtx: any = null;
 let subtitleTexture: WebGLTexture | null = null;
@@ -272,10 +369,10 @@ uniform bool u_flipHorizontal;
 uniform bool u_flipVertical;
 uniform bool u_flipY;
 varying vec2 v_texCoord;
+varying vec2 v_localCoord;
 void main() {
-    // Current layout math: 0 is top, 1 is bottom
+    v_localCoord = a_position;
     vec2 pos = a_position * u_scale + u_translation;
-    // Map [0,1] to clip space [-1,1], flipping Y so 0 is top IF u_flipY is true
     float yPos = u_flipY ? (1.0 - pos.y) : pos.y;
     gl_Position = vec4(pos.x * 2.0 - 1.0, yPos * 2.0 - 1.0, 0.0, 1.0);
     
@@ -289,8 +386,28 @@ void main() {
 const compositeFS = `
 precision mediump float;
 varying vec2 v_texCoord;
+varying vec2 v_localCoord;
 uniform sampler2D u_image;
+uniform int u_shape; // 0: rect, 1: circle, 2: rounded
+uniform float u_aspect; // width / height of the region
+uniform float u_borderRadius;
+
 void main() {
+    if (u_shape == 1) {
+        // Circle clipping: Use the smaller dimension as the radius base
+        vec2 p = v_localCoord - 0.5;
+        p.x *= u_aspect;
+        float radius = min(u_aspect, 1.0) * 0.5;
+        if (length(p) > radius) discard;
+    } else if (u_shape == 2) {
+        // Simple rounded rect clipping (approximate)
+        vec2 p = v_localCoord;
+        float r = u_borderRadius / 100.0;
+        if (p.x < r && p.y < r && length(p - vec2(r)) > r) discard;
+        if (p.x > 1.0-r && p.y < r && length(p - vec2(1.0-r, r)) > r) discard;
+        if (p.x < r && p.y > 1.0-r && length(p - vec2(r, 1.0-r)) > r) discard;
+        if (p.x > 1.0-r && p.y > 1.0-r && length(p - vec2(1.0-r, 1.0-r)) > r) discard;
+    }
     gl_FragColor = texture2D(u_image, v_texCoord);
 }
 `;
@@ -303,6 +420,9 @@ let uTexOffsetLoc: WebGLUniformLocation | null = null;
 let uFlipHorizontalLoc: WebGLUniformLocation | null = null;
 let uFlipVerticalLoc: WebGLUniformLocation | null = null;
 let uFlipYLoc: WebGLUniformLocation | null = null;
+let uShapeLoc: WebGLUniformLocation | null = null;
+let uAspectLoc: WebGLUniformLocation | null = null;
+let uBorderRadiusLoc: WebGLUniformLocation | null = null;
 let uImageLoc: WebGLUniformLocation | null = null;
 
 const getFileUrl = (path: string) => {
@@ -347,7 +467,7 @@ self.onmessage = async (e: MessageEvent) => {
                     authToken = payload.authToken;
                     console.log('[Worker] Auth Token updated');
                 }
-                sceneDirty = true;
+                requestRender();
             }
             break;
         case 'resize':
@@ -369,28 +489,28 @@ self.onmessage = async (e: MessageEvent) => {
             break;
         case 'update-scene':
             activeScene = payload.scene;
-            sceneDirty = true;
+            requestRender();
             break;
 
         case 'update-mask':
             // Receive segmentation mask from main thread
             if (payload.maskData && payload.width && payload.height) {
                 updateMaskTexture(payload.maskData, payload.width, payload.height);
-                sceneDirty = true;
+                requestRender();
             }
             break;
         case 'update-background':
             // Receive background image/video texture
             if (payload.backgroundData) {
                 updateBackgroundTexture(payload.backgroundData);
-                sceneDirty = true;
+                requestRender();
                 console.log('[Worker] Background updated');
             }
             break;
         case 'update-overlay':
             if (payload.overlayData) {
                 updateOverlayTexture(payload.overlayData);
-                sceneDirty = true;
+                requestRender();
             }
             break;
         case 'update-brand-logo':
@@ -404,13 +524,13 @@ self.onmessage = async (e: MessageEvent) => {
                 .then(blob => createImageBitmap(blob))
                 .then(bitmap => {
                     logoImage = bitmap;
-                    sceneDirty = true;
+                    requestRender();
                     console.log('[Worker] Logo image loaded');
                 })
                 .catch(err => console.error('[Worker] Failed to load logo:', err));
             } else {
                 logoImage = null;
-                sceneDirty = true;
+                requestRender();
             }
             break;
         case 'update-guest-slots':
@@ -432,6 +552,8 @@ self.onmessage = async (e: MessageEvent) => {
             init3DGuest(payload.id, payload.modelUrl, payload.textureUrl);
             break;
         case 'update-3d-audio':
+            const gAudio = threeGuests.get(payload.id);
+            if (gAudio) (gAudio as any).audioLevel = payload.audioLevel;
             update3DAnimations(payload.id, payload.audioLevel);
             break;
         case 'update-3d-thinking':
@@ -449,6 +571,15 @@ self.onmessage = async (e: MessageEvent) => {
                     if (aiPayload.maskData && aiPayload.width && aiPayload.height) {
                         updateMaskTexture(aiPayload.maskData, aiPayload.width, aiPayload.height);
                         sceneDirty = true;
+                    }
+                } else if (aiMessageType === 'UPDATE_FACE_FULL') {
+                    latestFaceData = aiPayload;
+                    sceneDirty = true;
+                    
+                    // Update camera framing target too
+                    if (aiPayload.landmarks?.[1]) {
+                        faceTracking.targetX = aiPayload.landmarks[1].x;
+                        faceTracking.targetY = aiPayload.landmarks[1].y;
                     }
                 }
             };
@@ -558,6 +689,9 @@ function initGL() {
                 uFlipHorizontalLoc = gl.getUniformLocation(compositeProgram, 'u_flipHorizontal');
                 uFlipVerticalLoc = gl.getUniformLocation(compositeProgram, 'u_flipVertical');
                 uFlipYLoc = gl.getUniformLocation(compositeProgram, 'u_flipY');
+                uShapeLoc = gl.getUniformLocation(compositeProgram, 'u_shape');
+                uAspectLoc = gl.getUniformLocation(compositeProgram, 'u_aspect');
+                uBorderRadiusLoc = gl.getUniformLocation(compositeProgram, 'u_borderRadius');
                 uImageLoc = gl.getUniformLocation(compositeProgram, 'u_image');
             }
 
@@ -645,6 +779,8 @@ function updateMaskTexture(maskData: Uint8Array, width: number, height: number) 
 
 function updateBackgroundTexture(backgroundData: ImageBitmap | ImageData) {
     if (!gl || !backgroundTexture) return;
+    backgroundMetadata.width = (backgroundData as any).width;
+    backgroundMetadata.height = (backgroundData as any).height;
     gl.bindTexture(gl.TEXTURE_2D, backgroundTexture);
     // Disable Flip Y to match video texture (Top-Down)
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -653,7 +789,7 @@ function updateBackgroundTexture(backgroundData: ImageBitmap | ImageData) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    console.log('[Worker] Background texture size:', (backgroundData as any).width, (backgroundData as any).height);
+    console.log('[Worker] Background texture size:', backgroundMetadata.width, backgroundMetadata.height);
 }
 
 function updateOverlayTexture(overlayData: ImageBitmap | ImageData) {
@@ -686,7 +822,7 @@ function handleStream(id: string, stream: ReadableStream<VideoFrame>) {
                     frameMap.set(id, value);
                     videoMetadata.set(id, { width: value.displayWidth, height: value.displayHeight });
                     textureDirtyMap.set(id, true);
-                    sceneDirty = true;
+                    requestRender();
                 }
             }
         } catch (e) {
@@ -700,6 +836,7 @@ function handleStream(id: string, stream: ReadableStream<VideoFrame>) {
 
 function cleanupStream(id: string) {
     if (streamReaders.has(id)) {
+        console.log(`[Worker] Removing stream: ${id}`);
         streamReaders.get(id)?.cancel();
         streamReaders.delete(id);
     }
@@ -731,18 +868,40 @@ function renderLoop(time: number = 0) {
     lastTime = time;
 
     // 0. Update smoothing (always runs at 60fps if loop active)
-    const smoothingFactor = 0.1; // More aggressive for snappy tracking
+    const smoothingThreshold = 0.0001;
+    const smoothingFactor = 0.15; // Snappier
     const dx = faceTracking.targetX - faceTracking.currentX;
     const dy = faceTracking.targetY - faceTracking.currentY;
     
-    if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001) {
+    if (Math.abs(dx) > smoothingThreshold || Math.abs(dy) > smoothingThreshold) {
         faceTracking.currentX += dx * smoothingFactor;
         faceTracking.currentY += dy * smoothingFactor;
         sceneDirty = true; // Keep loop alive during animation
+    } else {
+        // Snap to target to prevent precision jitter
+        faceTracking.currentX = faceTracking.targetX;
+        faceTracking.currentY = faceTracking.targetY;
     }
 
-    if (!sceneDirty && threeGuests.size === 0 && !overlayTexture && !brandLogoTexture && !visualSettings.breakMode?.enabled) {
-        requestAnimationFrame(renderLoop);
+    // CPU Optimization: Determine if we actually need to draw this frame
+    const hasActiveVideo = textureMap.size > 0;
+    const hasActiveModel = threeGuests.size > 0 && Array.from(threeGuests.values()).some(g => g.model);
+    
+    // The loop should ONLY run if:
+    // 1. There is an active video stream OR an active 3D model
+    // 2. AND something dynamic is happening (ticker, lyrics, scene transition)
+    // 3. OR the scene is simply dirty (new settings, first frame)
+    
+    const hasVisualOutput = hasActiveVideo || hasActiveModel || (activeScene && activeScene.layout);
+    
+    const hasDynamicElements = performanceLyricsVisible || 
+                             visualSettings.showTicker || 
+                             visualSettings.breakMode?.enabled;
+    
+    if (!sceneDirty && (!hasVisualOutput || !hasDynamicElements) && !hasActiveVideo && !hasActiveModel) {
+        // console.log('[Worker] Render loop idling (Total Standby)...');
+        isRendering = false;
+        lastTime = 0;
         return;
     }
 
@@ -775,6 +934,9 @@ function renderLoop(time: number = 0) {
     threeGuests.forEach((guest, id) => {
         if (guest.mixer) guest.mixer.update(delta);
 
+        // Apply MoCap or Audio-based animations
+        update3DAnimations(id, (guest as any).audioLevel || 0);
+
         // Apply Idle animations (breathing/noise)
         applyIdleState(guest, time);
 
@@ -795,6 +957,11 @@ function renderLoop(time: number = 0) {
     });
 
      // 2. Render main scene composition
+     // Draw whole-canvas background if exists (Studio background for presentations)
+     if (backgroundTexture) {
+         renderBackground();
+     }
+
      if (cinematicMode) {
          renderCinematicSource();
      } else if (activeScene && activeScene.layout && activeScene.layout.regions) {
@@ -1292,6 +1459,23 @@ function renderToCanvas(
     if (uFlipVerticalLoc) gl.uniform1i(uFlipVerticalLoc, flipVertical ? 1 : 0); 
     if (uFlipYLoc) gl.uniform1i(uFlipYLoc, 1); // Final pass ALWAYS flips position Y for screen space
 
+    // Shape uniforms
+    let shapeInt = 0;
+    if (region.shape === 'circle') shapeInt = 1;
+    else if (region.shape === 'rounded' || region.shape === 'square') shapeInt = 2; // Square is actually rounded with radius
+    
+    if (uShapeLoc) gl.uniform1i(uShapeLoc, shapeInt);
+    if (uAspectLoc) gl.uniform1f(uAspectLoc, targetAspect);
+    if (uBorderRadiusLoc) {
+        let radius = 0;
+        if (region.shape === 'circle') radius = 50; 
+        else if (region.shape === 'rounded') radius = 8;
+        else if (region.shape === 'square') radius = 0;
+        gl.uniform1f(uBorderRadiusLoc, radius);
+    }
+
+    if (uImageLoc) gl.uniform1i(uImageLoc, 0);
+
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     // Phase 93: Render lyrics on top of the region if this guest is performing
@@ -1588,6 +1772,56 @@ function renderOverlay() {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     gl.disable(gl.BLEND);
+}
+
+function renderBackground() {
+    if (!gl || !backgroundTexture || !unitQuad || !compositeProgram || !canvas) return;
+
+    gl.useProgram(compositeProgram);
+    
+    const positionLoc = gl.getAttribLocation(compositeProgram, 'a_position');
+    const texCoordLoc = gl.getAttribLocation(compositeProgram, 'a_texCoord');
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, unitQuad.positionBuffer);
+    gl.enableVertexAttribArray(positionLoc);
+    gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, unitQuad.texCoordBuffer);
+    gl.enableVertexAttribArray(texCoordLoc);
+    gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, backgroundTexture);
+    if (uImageLoc) gl.uniform1i(uImageLoc, 0);
+
+    // Scaling logic for background (contain mode)
+    const targetAspect = canvas.width / canvas.height;
+    const sourceAspect = (backgroundMetadata.width || canvas.width) / (backgroundMetadata.height || canvas.height);
+
+    let scaleX = 1.0;
+    let scaleY = 1.0;
+    let transX = 0.0;
+    let transY = 0.0;
+
+    if (sourceAspect > targetAspect) {
+        // Source is wider than target
+        scaleY = targetAspect / sourceAspect;
+        transY = (1.0 - scaleY) / 2.0;
+    } else if (sourceAspect < targetAspect) {
+        // Source is taller than target
+        scaleX = sourceAspect / targetAspect;
+        transX = (1.0 - scaleX) / 2.0;
+    }
+
+    gl.uniform2f(uTranslationLoc!, transX, transY);
+    gl.uniform2f(uScaleLoc!, scaleX, scaleY);
+    gl.uniform2f(uTexScaleLoc!, 1, 1);
+    gl.uniform2f(uTexOffsetLoc!, 0, 0);
+    gl.uniform1i(uFlipHorizontalLoc!, 0);
+    gl.uniform1i(uFlipVerticalLoc!, 0);
+    gl.uniform1i(uFlipYLoc!, 1);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
 function updateBrandLogoTexture(logoData: ImageBitmap | ImageData) {

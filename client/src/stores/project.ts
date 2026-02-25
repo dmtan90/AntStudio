@@ -91,6 +91,79 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    async function createFromMoment(moment: any) {
+        isProcessing.value = true
+        try {
+            // Create a vertical 9:16 template for the viral moment
+            const width = 1080
+            const height = 1920
+            const duration = 15000 // 15s default for highlights
+
+            const pageData = {
+                scene: JSON.stringify({
+                    version: "5.3.0",
+                    objects: [
+                        {
+                            type: "video",
+                            originX: "center",
+                            originY: "center",
+                            left: width / 2,
+                            top: height / 2,
+                            width: width,
+                            height: height,
+                            src: moment.s3Key,
+                            id: `video_${moment.id}`,
+                            meta: {
+                                duration: duration,
+                                offset: 0,
+                                name: 'Moment Capture'
+                            }
+                        }
+                    ]
+                }),
+                audios: [],
+                width,
+                height,
+                fill: "#000000"
+            }
+
+            const template = {
+                id: null,
+                name: `Draft: ${moment.reason || 'Viral Moment'}`,
+                description: 'Imported from Live Studio',
+                pages: [
+                    {
+                        id: `page_${moment.id}`,
+                        name: 'Scene 1',
+                        duration: duration,
+                        data: pageData
+                    }
+                ]
+            }
+
+            const res : any = await api.post('/projects', {
+                title: `Draft: ${moment.reason || 'Viral Moment'}`,
+                mode: 'template',
+                aspectRatio: '9:16',
+                pages: template.pages,
+                status: 'editing'
+            })
+
+            const newProject = res.data.project
+            if (newProject) {
+                projects.value.unshift(newProject)
+            }
+            
+            toast.success(t('projects.momentImported') || 'Moment imported to Editor!')
+            return newProject
+        } catch (error) {
+            handleError(error)
+            throw error
+        } finally {
+            isProcessing.value = false
+        }
+    }
+
     async function updateProject(updateData: any, id?: string) {
         const idToUse = id || projectId.value
         if (!idToUse) return
@@ -482,6 +555,7 @@ export const useProjectStore = defineStore('project', () => {
         fetchProjects,
         fetchProject,
         createProject,
+        createFromMoment,
         updateProject,
         deleteProject,
         getPreview,

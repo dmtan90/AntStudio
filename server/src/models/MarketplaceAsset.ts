@@ -16,7 +16,7 @@ export interface IMarketplaceAsset extends Document {
         reviewsCount: number;
     };
     status: 'pending' | 'published' | 'hidden' | 'deleted';
-    isOfficial: boolean; // Verified by AntFlow
+    isOfficial: boolean; // Verified by AntStudio
     createdAt: Date;
     updatedAt: Date;
 }

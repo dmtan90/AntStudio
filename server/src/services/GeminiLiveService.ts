@@ -736,6 +736,25 @@ const AVATAR_TOOLS: FunctionDeclaration[] = [
             },
             required: ['targetAgentId', 'score']
         }
+    },
+    {
+        name: 'set_presentation_page',
+        description: 'Control the presentation/whiteboard slides',
+        parameters: {
+            type: 'object',
+            properties: {
+                page: {
+                    type: 'number',
+                    description: 'The page number to switch to (0-indexed)'
+                },
+                action: {
+                    type: 'string',
+                    enum: ['next', 'prev', 'go_to'],
+                    description: 'The navigation action'
+                }
+            },
+            required: ['action']
+        }
     }
 ];
 

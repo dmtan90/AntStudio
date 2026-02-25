@@ -3,6 +3,8 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { connectDB } from '../utils/db.js';
 import { Project } from '../models/Project.js';
 import { monitoringService } from '../services/monitoringService.js';
+import { GrowthService } from '../services/GrowthService.js';
+import { adminMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -97,6 +99,16 @@ router.get('/audience', async (req: AuthRequest, res) => {
             ]
         };
         res.json({ success: true, data });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/analytics/admin/growth-stats - Global growth metrics (Admin Only)
+router.get('/admin/growth-stats', adminMiddleware, async (req: AuthRequest, res) => {
+    try {
+        const stats = await GrowthService.getGlobalGrowthStats();
+        res.json({ success: true, data: stats });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }

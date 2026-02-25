@@ -10,7 +10,7 @@
            <key theme="outline" size="40" class="text-blue-400" />
         </div>
 
-        <h1 class="text-3xl font-black text-white uppercase tracking-tighter mb-2">Initialize AntFlow</h1>
+        <h1 class="text-3xl font-black text-white uppercase tracking-tighter mb-2">Initialize AntStudio</h1>
         <p class="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-10">VTuber Hub Activation & Compliance</p>
 
         <div v-if="licenseStore.isValid" class="success-state animate-in">
@@ -46,7 +46,7 @@
            </el-button>
 
            <p class="text-[9px] text-white/20 font-bold uppercase tracking-widest leading-relaxed px-8">
-             By activating, you agree to the AntFlow Enterprise EULA and compliance standards.
+             By activating, you agree to the AntStudio Enterprise EULA and compliance standards.
            </p>
         </el-form>
       </div>

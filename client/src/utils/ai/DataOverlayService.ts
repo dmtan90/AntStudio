@@ -38,7 +38,7 @@ export class DataOverlayService {
             if (url.includes('crypto')) {
                 data = { symbol: 'BTC', price: `$${(98000 + Math.random() * 500).toFixed(2)}`, trend: 'up' };
             } else if (url.includes('sports')) {
-                data = { teamA: 'AntFlow-Devs', scoreA: 5, teamB: 'Legacy-Bugs', scoreB: 2, clock: '84:22' };
+                data = { teamA: 'AntStudio-Devs', scoreA: 5, teamB: 'Legacy-Bugs', scoreB: 2, clock: '84:22' };
             } else {
                 const response = await axios.get(url);
                 data = response.data;

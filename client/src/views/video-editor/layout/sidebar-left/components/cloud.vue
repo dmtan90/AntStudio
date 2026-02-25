@@ -1,6 +1,6 @@
 <template>
   <div class="cloud-drive-browser p-4 h-full flex flex-col">
-    <div class="header mb-6 flex justify-between items-center">
+    <div class="header mb-6 flex justify-between items-center shrink-0">
       <div>
         <h3 class="text-white font-black uppercase text-xs tracking-[0.2em]">Cloud Storage Hub</h3>
         <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-1">Direct Asset Injection</p>
@@ -21,7 +21,7 @@
       />
     </div>
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 -mr-2">
+    <div class="flex-1 overflow-y-auto custom-scrollbar sidebar-container pr-2 -mr-2">
       <div v-if="loading" class="grid grid-cols-2 gap-3">
         <div v-for="i in 6" :key="i" class="aspect-square rounded-2xl bg-white/5 animate-pulse"></div>
       </div>

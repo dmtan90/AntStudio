@@ -11,7 +11,7 @@ import { useCanvasStore } from 'video-editor/store/canvas';
 import { storeToRefs } from 'pinia';
 import { drawWaveformFromAudioBuffer } from 'video-editor/lib/media';
 import { formatMediaDuration } from 'video-editor/lib/time';
-import { cn } from '@/utils/ui';
+import { cn } from 'video-editor/lib/utils';
 
 import ElementDescription from './ElementDescription.vue';
 
@@ -24,7 +24,7 @@ const backgroundURL = ref("");
 
 const SEEK_TIME_WIDTH = 42;
 const HANDLE_WIDTH = 16;
-const HANDLE_HEIGHT = 40;
+const HANDLE_HEIGHT = 28;
 
 const offset = ref(0);
 const duration = ref(0);

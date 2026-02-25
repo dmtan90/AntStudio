@@ -1,13 +1,15 @@
-import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-// @ts-ignore - pdf-parse has issues with ES modules
-const pdf = require('pdf-parse')
+// import { createRequire } from 'module'
+// const require = createRequire(import.meta.url)
+import { fileURLToPath } from 'url'
+import path from 'path'
+import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
+import * as pkgPptxtojson from 'pptxtojson'
 // @ts-ignore
-if (typeof window === 'undefined') {
-    (global as any).window = {};
-}
-const pptxParser = require('pptx-parser')
+const parsePptxImport = pkgPptxtojson.parse || (pkgPptxtojson as any).default?.parse
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface ParsedDocument {
     text: string
@@ -31,18 +33,20 @@ export const parseTxt = async (buffer: Buffer): Promise<ParsedDocument> => {
  * Parse PDF file
  */
 export const parsePdf = async (buffer: Buffer): Promise<ParsedDocument> => {
-    const data = await pdf(buffer)
-    // pdf-parse can give us text, but not easily slide-by-slide without more complex logic
-    // For now we'll treat the whole text as one, but we could split by form feeds if available
+    const parser = new PDFParse({ data: buffer })
+    const data = await parser.getText()
+    const infoResult = await parser.getInfo()
+    
+    // Split by form feeds for slides
     const slides = data.text.split(/\f/).filter((s: string) => s.trim().length > 0)
 
     return {
         text: data.text,
         slides: slides.length > 0 ? slides : [data.text],
         metadata: {
-            title: data.info?.Title,
-            author: data.info?.Author,
-            pages: data.numpages
+            title: infoResult.info?.Title,
+            author: infoResult.info?.Author,
+            pages: data.total
         }
     }
 }
@@ -59,11 +63,12 @@ export const parseDocx = async (buffer: Buffer): Promise<ParsedDocument> => {
 }
 
 /**
- * Parse PPTX file (improved extraction)
+ * Parse PPTX file using pptist-import-pptx
  */
 export const parsePptx = async (buffer: Buffer): Promise<ParsedDocument> => {
     try {
-        const result = await pptxParser.parse(buffer)
+        // @ts-ignore
+        const result = await parsePptxImport(buffer)
         const slidesText: string[] = []
 
         if (result && result.slides) {
@@ -71,7 +76,10 @@ export const parsePptx = async (buffer: Buffer): Promise<ParsedDocument> => {
                 let slideText = ''
                 if (slide.elements) {
                     slide.elements.forEach((el: any) => {
-                        if (el.text) slideText += el.text + ' '
+                        // Element structure in pptist-import-pptx might differ
+                        // Usually it has a 'content' or 'text' property for text boxes
+                        if (el.content) slideText += el.content + ' '
+                        else if (el.text) slideText += el.text + ' '
                     })
                 }
                 slidesText.push(slideText.trim())
@@ -87,10 +95,7 @@ export const parsePptx = async (buffer: Buffer): Promise<ParsedDocument> => {
         }
     } catch (error) {
         console.error('PPTX parse error:', error)
-        // Fallback to basic extraction
-        const textContent = buffer.toString('utf-8')
-        const text = textContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-        return { text, slides: [text] }
+        return { text: '', slides: [] }
     }
 }
 

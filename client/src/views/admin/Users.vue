@@ -87,7 +87,7 @@
           layout="prev, pager, next"
           :total="total"
           class="glass-pagination"
-          @current-change="fetchUsers"
+          @update:current-page="fetchUsers"
         />
       </div>
     </div>

@@ -30,7 +30,7 @@ interface AnalyzeProductResponse {
 
 async function generateHeadline(product: EditorProduct, _objective: string) {
   const body: GenerateContentParams = { description: product.description, product_name: product.name };
-  const res = await api.post<GenerateContentResponse>(`/ai/headlines`, body);
+  const res = await api.post<{ success: boolean; data: string[] }>(`/ai/headlines`, body);
   return res.data?.data ?? res.data;
 }
 
@@ -102,6 +102,10 @@ interface GenerateImageParams {
 interface GenerateVoiceParams {
   text: string;
   voice: string;
+  multiSpeaker?: {
+    enabled: boolean;
+    speakers: { label: string, start: number, end: number }[];
+  };
 }
 
 interface GenerateVideoParams {
@@ -150,28 +154,88 @@ async function detectSilence(options: any) {
   return res.data?.data ?? res.data;
 }
 
-export {
-  generateCTA,
-  generateDescription,
-  generateHeadline,
-  analyzeProduct,
-  useGenerateCTASuggestions,
-  useGenerateDescriptionSuggestions,
-  useGenerateHeadlineSuggestions,
-  generateImage,
-  generateVoice,
-  generateVideo,
-  checkVideoStatus,
-  generateCaptions,
-  detectScenes,
-  detectBeats,
-  detectSilence,
-  extractTextFromImage,
-  generateImageCaption,
-  detectObjects,
-  detectFaces,
-  detectLandmarks
-};
+async function translateMedia(options: { mediaId: string, targetLang: string, voiceCloning?: boolean }) {
+  const res = await api.post<{ success: boolean; data: { media: any; url: string } }>(`/ai/translate-media`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function translateProject(options: { projectId: string, targetLang: string, voiceCloning?: boolean }) {
+  const res = await api.post<{ success: boolean; data: { jobId: string } }>(`/ai/translate-project`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function checkTranslationStatus(jobId: string) {
+  const res = await api.get<{ success: boolean; data: { status: string; progress?: number; result?: any } }>(`/ai/translation-status/${jobId}`);
+  return res.data?.data ?? res.data;
+}
+
+async function extractHighlights(options: { mediaId?: string, projectId?: string, sensitivity?: number }) {
+  const res = await api.post<{ success: boolean; data: { highlights: any[] } }>(`/ai/extract-highlights`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function generateSocialMeta(options: { text?: string, context?: any }) {
+  const res = await api.post<{ success: boolean; data: { title: string, description: string, hashtags: string[] } }>(`/ai/generate-social-meta`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function analyzeAudioEmphasis(options: { mediaId: string }) {
+  const res = await api.post<{ success: boolean; data: { emphasisPoints: { timestamp: number, type: string, intensity: number }[] } }>(`/ai/analyze-audio-emphasis`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function suggestMusicMatch(options: { projectId: string }) {
+  const res = await api.post<{ success: boolean; data: { tracks: any[] } }>(`/ai/suggest-music`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function suggestBRoll(options: { sceneId?: string, transcript?: string, context?: any }) {
+  const res = await api.post<{ success: boolean; data: { suggestions: any[] } }>(`/ai/suggest-broll`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function analyzeSceneTransitions(options: { projectId: string }) {
+  const res = await api.post<{ success: boolean; data: { transitions: { fromId: string, toId: string, type: string }[] } }>(`/ai/analyze-transitions`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function scoreEngagement(options: { projectId: string }) {
+  const res = await api.post<{ success: boolean; data: { score: number; hookScore: number; pacingScore: number; ctaScore: number; suggestions: { type: string; message: string; autoFix?: string }[] } }>(`/ai/score-engagement`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function optimizeForPlatform(options: { projectId: string; platform: 'youtube' | 'tiktok' | 'instagram' | 'linkedin' }) {
+  const res = await api.post<{ success: boolean; data: { width: number; height: number; codec: string; bitrate: number; fps: number } }>(`/ai/optimize-platform`, options);
+  return res.data?.data ?? res.data;
+}
+
+export interface BrandKit {
+  primaryColor: string;
+  secondaryColor: string;
+  logoUrl?: string;
+  fontFamily?: string;
+  logoPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+}
+
+async function extractBrandKit(options: { projectId: string; referenceImageUrl?: string }) {
+  const res = await api.post<{ success: boolean; data: BrandKit }>(`/ai/extract-brand-kit`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function applyBrandKit(options: { projectId: string; brandKit: BrandKit }) {
+  const res = await api.post<{ success: boolean; data: { applied: number } }>(`/ai/apply-brand-kit`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function cloneVisualStyle(options: { referenceUrl: string }) {
+  const res = await api.post<{ success: boolean; data: { palette: string[]; filterPreset: string } }>(`/ai/clone-visual-style`, options);
+  return res.data?.data ?? res.data;
+}
+
+async function generateStoryboard(options: { prompt: string, format?: string, duration?: number }) {
+  const res = await api.post<{ success: boolean; data: any }>(`/ai/generate-storyboard`, options);
+  return res.data?.data ?? res.data;
+}
 
 async function extractTextFromImage(options: any) {
   const res = await api.post<{ success: boolean; data: { text: string } }>(`/ai/extract-text`, options);
@@ -197,3 +261,41 @@ async function detectLandmarks(options: any) {
   const res = await api.post<{ success: boolean; data: { landmarks: any } }>(`/ai/detect-landmarks`, options);
   return res.data?.data ?? res.data;
 }
+
+export {
+  generateCTA,
+  generateDescription,
+  generateHeadline,
+  analyzeProduct,
+  useGenerateCTASuggestions,
+  useGenerateDescriptionSuggestions,
+  useGenerateHeadlineSuggestions,
+  generateImage,
+  generateVoice,
+  generateVideo,
+  checkVideoStatus,
+  generateCaptions,
+  detectScenes,
+  detectBeats,
+  detectSilence,
+  extractTextFromImage,
+  generateImageCaption,
+  detectObjects,
+  detectFaces,
+  detectLandmarks,
+  generateStoryboard,
+  translateMedia,
+  translateProject,
+  checkTranslationStatus,
+  extractHighlights,
+  generateSocialMeta,
+  analyzeAudioEmphasis,
+  suggestMusicMatch,
+  suggestBRoll,
+  analyzeSceneTransitions,
+  scoreEngagement,
+  optimizeForPlatform,
+  extractBrandKit,
+  applyBrandKit,
+  cloneVisualStyle
+};

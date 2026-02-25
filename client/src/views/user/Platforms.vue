@@ -342,28 +342,6 @@ onMounted(() => {
   font-family: 'Outfit', sans-serif;
 }
 
-:global(.glass-dialog) {
-    background: rgba(20, 20, 25, 0.95) !important;
-    backdrop-filter: blur(24px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 24px !important;
-    padding: 0 !important;
-
-    .el-dialog__header {
-       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-       margin: 0;
-       padding: 20px 24px;
-    }
-
-    .el-dialog__body {
-       padding: 24px;
-    }
-
-    .el-dialog__footer {
-       padding: 20px 24px;
-       border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-}
 
 :global(.glass-input .el-input__wrapper) {
    background: rgba(255, 255, 255, 0.05) !important;

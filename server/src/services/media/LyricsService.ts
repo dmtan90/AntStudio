@@ -1,3 +1,4 @@
+import { systemLogger } from '~/utils/systemLogger.js';
 import { geminiPool } from '../../utils/gemini.js';
 
 export interface LyricsLine {
@@ -21,6 +22,7 @@ export class LyricsService {
             const modelName = "gemini-2.5-pro";
             const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
 
+            // const songInfo = `Title: ${songTitle}, Artist: ${artist}, YouTube URL: ${youtubeUrl}`;
             const prompt = `
             Search the full lyrics for the song: '${youtubeUrl}' by language: '${preferredLang || 'en'}' and format: 'webvtt'.
 
@@ -32,13 +34,38 @@ export class LyricsService {
             If you can't find the exact lyrics for the song, return empty string.
             `;
 
+            // const prompt =
+            // `Task: Access the video content at the following URL: ${youtubeUrl}.
+            // Requirements:
+            // Extract the lyrics and convert them into a valid WebVTT (.vtt) format with accurate timestamps.
+            // Strict Output Control: Your response must contain ONLY the WebVTT code.
+            // Do NOT include any introductory text, explanations, or closing remarks (e.g., no "Here is the file," no "I have processed the link" and video link).
+            // The output must start with the header WEBVTT at the very first line.
+            // Preserve the original language of the lyrics.
+            // Start the WebVTT output immediately:`
+
+            systemLogger.info(`[LyricsService] Prompt: ${prompt}`);
+
             const result = await (ai as any).models.generateContent({
                 model: modelName,
                 contents: [{
+                    role: "user",
                     parts: [
                         { text: prompt }
                     ]
-                }]
+                }],
+                tools: [
+                    {
+                        googleSearchRetrieval: {}
+                    }
+                ],
+                generationConfig: {
+                    // Temperature = 0 giúp kết quả ổn định và chính xác về kỹ thuật
+                    temperature: 0,
+                    topP: 1,
+                    // Ép trả về text thuần, không bọc trong code block ```
+                    responseMimeType: "text/plain",
+                }
             });
 
             const response = result.response || result;
@@ -48,6 +75,15 @@ export class LyricsService {
             } else if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
                 text = response.candidates[0].content.parts[0].text.trim();
             }
+
+            systemLogger.info(`[LyricsService] Response: ${text}`);
+
+            // Cleanup any markdown code blocks if the AI ignored the "ONLY WebVTT" rule
+            if (text.includes('```')) {
+                text = text.replace(/```[a-z]*\n?/g, '').replace(/```/g, '').trim();
+            }
+
+            systemLogger.info(`[LyricsService] Response (length: ${text.length})`);
 
             // Record usage
             await geminiPool.recordUsage(key, modelName);

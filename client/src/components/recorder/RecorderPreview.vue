@@ -2,7 +2,7 @@
     <div class="preview-container recorder-preview relative flex-1 overflow-hidden flex items-center justify-center">
         <!-- Canvas Elements passed as refs from parent -->
         <!-- Since we want to keep logic in parent/composable, we'll use refs here -->
-        <canvas ref="processingCanvas" v-show="mode !== 'audio' && mode !== 'autopilot'" class="preview-video"
+        <canvas ref="processingCanvas" v-show="mode !== 'audio'" class="preview-video"
             :class="{ 'asl-frame': enableAslAssist }"></canvas>
 
         <!-- Whiteboard Mode Content -->
@@ -14,8 +14,8 @@
                 @import-file="v => emit('whiteboard-file-import', v)"
             />
 
-            <!-- VTuber Host Overlay -->
-            <div v-if="isVTuberActive" class="absolute bottom-8 right-8 w-64 aspect-square z-20 overflow-hidden rounded-full border-4 border-orange-500/30 shadow-2xl">
+            <!-- VTuber Host Overlay - HIDDEN (Only used to generate stream for canvas) -->
+            <div v-if="isVTuberActive" class="absolute bottom-8 right-8 w-64 aspect-square z-20 overflow-hidden rounded-full border-4 border-orange-500/30 shadow-2xl opacity-0 pointer-events-none">
                  <VirtualGuest 
                     v-if="currentVTuberPersona"
                     :persona="currentVTuberPersona"
@@ -27,16 +27,6 @@
             </div>
         </div>
 
-        <!-- Autopilot Avatar Render -->
-        <div v-if="mode === 'autopilot' && currentPersona" class="absolute inset-0 flex items-center justify-center bg-black/80 rounded-[2rem] overflow-hidden pointer-events-none">
-             <VirtualGuest 
-                :persona="currentPersona"
-                :is-host-speaking="false" 
-                :speaking-vol="0"
-                class="w-full h-full object-cover transform scale-110"
-             />
-             <!-- Overlay Script if needed, but sidepanel handles it -->
-        </div> 
 
 
         <!-- ASL Assist Overlay -->
@@ -124,7 +114,6 @@ const props = defineProps<{
     audioLevels: string[]
     currentDb: number
     selectedAvatar?: string
-    autopilotData?: any
     isVTuberActive: boolean
     isWhiteboardLaunchpadActive: boolean
 }>()
@@ -139,55 +128,27 @@ const emit = defineEmits<{
 import VirtualGuest from '@/components/studio/virtual/VirtualGuest.vue'
 import WhiteboardLaunchpad from './whiteboard/WhiteboardLaunchpad.vue'
 import { computed } from 'vue'
+import { useVTuberStore } from '@/stores/vtuber'
 
 const processingCanvas = ref<HTMLCanvasElement | null>(null)
+const vtuberStore = useVTuberStore()
 
-// Avatar Persona Construction
-const currentPersona = computed(() => {
-    // We import presets from useRecorder or define them here to match
-    // Ideally we pass the full preset object prop, but we only got ID.
-    // Let's quickly reconstruct/lookup.
-    const presets = [
-        { id: 'sarah', name: 'Sarah (AI)', image: '/avatars/sarah.jpg' },
-        { id: 'james', name: 'James (AI)', image: '/avatars/james.jpg' },
-        { id: 'eva', name: 'Eva (Digital)', image: '/avatars/eva.jpg' }
-    ];
-    const found = presets.find(p => p.id === props.selectedAvatar);
-    if (!found) return null;
-    
-    return {
-        id: found.id,
-        avatarId: found.id,
-        name: found.name,
-        voiceId: 'en-US-Standard-C',
-        description: 'AI Presenter',
-        traits: ['professional', 'clear'],
-        role: 'guest',
-        visualIdentity: {
-             modelType: 'static',
-             imageUrl: found.image
-        }
-    } as any;
-});
 
-// VTuber Persona Construction (Reuse selectedAvatar for now)
+// VTuber Persona Construction
 const currentVTuberPersona = computed(() => {
-    const presets = [
-        { id: 'sarah', name: 'Sarah (AI)', image: '/avatars/sarah.jpg' },
-        { id: 'james', name: 'James (AI)', image: '/avatars/james.jpg' },
-        { id: 'eva', name: 'Eva (Digital)', image: '/avatars/eva.jpg' }
-    ];
-    const found = presets.find(p => p.id === props.selectedAvatar);
+    if (!props.selectedAvatar) return null;
+    
+    const found = vtuberStore.vtubers.find(p => (p.entityId ?? p._id) === props.selectedAvatar);
     if (!found) return null;
     
     return {
-        id: found.id,
-        avatarId: found.id,
+        id: found.entityId ?? found._id,
+        avatarId: found.entityId ?? found._id,
         name: found.name,
-        voiceId: 'en-US-Standard-C',
+        voiceId: found.voiceId || 'en-US-Standard-C',
         visual: {
-             modelType: 'static',
-             modelUrl: found.image
+             modelType: found.visual?.modelType || 'static',
+             modelUrl: found.visual?.modelUrl || found.visual?.thumbnailUrl || found.image
         }
     } as any;
 });

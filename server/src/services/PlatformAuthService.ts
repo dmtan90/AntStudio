@@ -392,7 +392,7 @@ export class PlatformAuthService {
                     description: item.snippet.description,
                     thumbnail: item.snippet.thumbnails?.medium?.url,
                     publishedAt: item.snippet.publishedAt,
-                    url: `https://www.youtube.com/watch?v=${item.id}`,
+                    url: `https://www.youtube.com/embed/${item.id}?autoplay=1`,
                     views: 0, // Will be populated below
                     platform: 'youtube'
                 }));
@@ -1066,8 +1066,8 @@ export class PlatformAuthService {
                     // 1. Create a live broadcast (If no active one found)
                     const broadcastRes = await axios.post('https://www.googleapis.com/youtube/v3/liveBroadcasts', {
                         snippet: {
-                            title: metadata.title || 'AntFlow Live Stream',
-                            description: metadata.description || 'Streaming via AntFlow',
+                            title: metadata.title || 'AntStudio Live Stream',
+                            description: metadata.description || 'Streaming via AntStudio',
                             scheduledStartTime: new Date().toISOString()
                         },
                         status: {
@@ -1087,7 +1087,7 @@ export class PlatformAuthService {
                     // 2. Create a live stream
                     const streamRes = await axios.post('https://www.googleapis.com/youtube/v3/liveStreams', {
                         snippet: {
-                            title: metadata.title || 'AntFlow Ingest'
+                            title: metadata.title || 'AntStudio Ingest'
                         },
                         cdn: {
                             frameRate: 'variable',
@@ -1157,7 +1157,7 @@ export class PlatformAuthService {
                 const amsApp = appName || 'WebRTCAppEE';
                 // Create a broadcast
                 const amsRes = await axios.post(`${amsBaseUrl}/${amsApp}/rest/v2/broadcasts/create`, {
-                    name: metadata.title || 'AntFlow Live',
+                    name: metadata.title || 'AntStudio Live',
                     type: 'liveStream'
                 }, {
                     headers: { Cookie: amsCookie }

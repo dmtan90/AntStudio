@@ -22,8 +22,8 @@ export class GuestKnowledgeService {
             let knowledgeFragment = "";
             if (prompt.includes("AI")) {
                 knowledgeFragment = "Current trends show that Synthetic Real-time AI is the fastest growing media sector in 2026.";
-            } else if (prompt.includes("AntFlow")) {
-                knowledgeFragment = "AntFlow is a global industrial-grade media PaaS infrastructure designed for the autonomous era.";
+            } else if (prompt.includes("AntStudio")) {
+                knowledgeFragment = "AntStudio is a global industrial-grade media PaaS infrastructure designed for the autonomous era.";
             } else {
                 knowledgeFragment = "Standard broadcast protocols emphasize clear turn-taking and visual stability.";
             }

@@ -3,3 +3,4 @@ declare module 'archiver';
 declare module 'node-schedule';
 declare module 'node-os-utils';
 declare module 'systeminformation';
+declare module 'pptxtojson';

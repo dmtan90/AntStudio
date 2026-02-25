@@ -77,11 +77,12 @@
                 <div class="bg-gradient-to-br from-blue-500/10 to-transparent p-4 rounded-2xl border border-blue-500/20 space-y-4">
                     <div class="flex items-center gap-3">
                          <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-[0_8px_20px_rgba(59,130,246,0.3)]">
-                             <robot theme="outline" size="20" class="text-white" />
+                             <robot v-if="!isSynthesizing" theme="outline" size="20" class="text-white" />
+                             <loading v-else theme="outline" size="20" class="text-white animate-spin" />
                          </div>
                          <div class="flex flex-col">
-                             <span class="text-[11px] font-black text-white uppercase">AI Autopilot</span>
-                             <span class="text-[8px] text-white/40 uppercase font-bold tracking-widest">{{ whiteboardScripts.length > 0 ? 'Scripts Ready' : 'Needs Analysis' }}</span>
+                             <span class="text-[11px] font-black text-white uppercase">{{ isAIPresenting ? 'Autopilot Active' : 'AI Autopilot' }}</span>
+                             <span class="text-[8px] text-white/40 uppercase font-bold tracking-widest">{{ isSynthesizing ? 'AI is thinking...' : whiteboardScripts.length > 0 ? 'Scripts Ready' : 'Needs Analysis' }}</span>
                          </div>
                     </div>
 
@@ -90,16 +91,59 @@
                             class="flex-1 py-2 rounded-lg bg-white/5 border border-white/5 text-[10px] font-bold text-white hover:bg-blue-600 hover:border-blue-500 transition-all uppercase">
                             Analyze Slides
                         </button>
-                        <button v-else @click="$emit('start-autopilot')"
-                            class="flex-1 py-2 rounded-lg bg-blue-600 border border-blue-500 text-[10px] font-bold text-white shadow-[0_8px_25px_rgba(59,130,246,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all uppercase">
-                            Start Autopilot
-                        </button>
+                        <template v-else>
+                            <button v-if="!isAIPresenting" @click="$emit('start-ai-presentation')"
+                                class="flex-1 py-2 rounded-lg bg-blue-600 border border-blue-500 text-[10px] font-bold text-white shadow-[0_8px_25px_rgba(59,130,246,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all uppercase">
+                                Start Autopilot
+                            </button>
+                            <button v-else @click="$emit('stop-ai-presentation')"
+                                class="flex-1 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-[10px] font-bold text-red-500 hover:bg-red-500/30 transition-all uppercase">
+                                Stop Autopilot
+                            </button>
+                        </template>
                     </div>
 
                     <div v-if="whiteboardScripts.length > 0" class="p-2 bg-black/40 rounded-xl border border-white/5">
                         <p class="text-[9px] text-white/60 leading-relaxed line-clamp-2 italic">
                             "{{ whiteboardScripts[currentPage] || 'Script loading...' }}"
                         </p>
+                    </div>
+                </div>
+
+                <!-- VTuber Presenter Selection (Integrated) -->
+                <div class="space-y-4 pt-4 border-t border-white/5">
+                    <span class="text-[10px] font-bold text-blue-400 uppercase block">AI Presenter</span>
+
+                    <!-- Loading state -->
+                    <div v-if="vtuberStore.isLoading" class="flex items-center justify-center py-4 gap-3">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+                    </div>
+
+                    <!-- VTuber selection -->
+                    <div v-else class="grid grid-cols-4 gap-2">
+                        <div v-for="vt in vtuberStore.vtubers.slice(0, 4)" :key="vt.entityId ?? vt._id"
+                            class="av-mini-card p-1 rounded-xl border transition-all cursor-pointer flex flex-col items-center gap-1 group"
+                            :class="selectedAvatar === (vt.entityId ?? vt._id) ? 'bg-blue-500/10 border-blue-500/40' : 'bg-white/5 border-white/5'"
+                            @click="selectVTuber(vt)">
+                            <div class="w-8 h-8 rounded-full overflow-hidden border transition-all"
+                                :class="selectedAvatar === (vt.entityId ?? vt._id) ? 'border-blue-500' : 'border-white/10'">
+                                <img :src="getVTuberThumbnail(vt)" class="w-full h-full object-cover" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Voice selection -->
+                    <div class="space-y-3">
+                         <div class="flex items-center justify-between">
+                             <span class="text-[9px] font-bold text-white/30 uppercase">Voice Persona</span>
+                             <button @click="showVoiceLibrary = true" class="text-[8px] text-blue-400 font-bold hover:text-blue-300 transition-colors uppercase tracking-widest">Browse Library</button>
+                         </div>
+                         <el-select :model-value="selectedVoice" @update:model-value="v => $emit('update:selectedVoice', v)"
+                            size="small" class="w-full custom-select mini-select">
+                            <el-option label="Puck (Google)" value="puck" />
+                            <el-option label="Charon (Google)" value="charon" />
+                            <el-option label="Kore (Google)" value="kore" />
+                        </el-select>
                     </div>
                 </div>
             </div>
@@ -117,23 +161,42 @@
                 </div>
             </div>
         </div>
+
+        <!-- Voice Library Dialog -->
+        <VoiceLibraryDialog 
+            v-model="showVoiceLibrary" 
+            provider="google"
+            :voice-id="selectedVoice"
+            :language="targetLanguage"
+            @update:voice-id="$emit('update:selectedVoice', $event)"
+            @select="handleVoiceSelect"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
-import { Refresh, Monitor, FilePdf, FilePpt, VideoOne, Left, Right, Robot } from '@icon-park/vue-next'
-import { ElSwitch } from 'element-plus'
+import { Refresh, Monitor, FilePdf, FilePpt, VideoOne, Left, Right, Robot, Loading, FileAddition } from '@icon-park/vue-next'
+import { ElSwitch, ElSelect, ElOption } from 'element-plus'
+import { onMounted, ref } from 'vue'
+import { useVTuberStore } from '@/stores/vtuber'
+import { getFileUrl } from '@/utils/api'
+import VoiceLibraryDialog from '@/components/vtuber/VoiceLibraryDialog.vue'
 
-defineProps<{
+const props = defineProps<{
     isLaunchpadActive: boolean
     contentType: 'stream' | 'pdf' | 'ppt' | 'video' | null
     currentPage: number
     totalPages: number
     camSettings: any
     whiteboardScripts: string[]
+    isAIPresenting: boolean
+    isSynthesizing: boolean
+    selectedAvatar: string
+    selectedVoice: string
+    targetLanguage: string
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
     (e: 'reset-whiteboard'): void
     (e: 'prev-page'): void
     (e: 'next-page'): void
@@ -141,8 +204,37 @@ defineEmits<{
     (e: 'trigger-share'): void
     (e: 'update:camSettings', val: any): void
     (e: 'generate-scripts'): void
-    (e: 'start-autopilot'): void
+    (e: 'start-ai-presentation'): void
+    (e: 'stop-ai-presentation'): void
+    (e: 'update:selectedAvatar', id: string): void
+    (e: 'update:selectedVoice', id: string): void
+    (e: 'select-vtuber-entity', vt: any): void
 }>()
+
+const vtuberStore = useVTuberStore()
+const showVoiceLibrary = ref(false)
+
+const handleVoiceSelect = (voice: any) => {
+    emit('update:selectedVoice', voice.id)
+    showVoiceLibrary.value = false
+}
+
+onMounted(async () => {
+    if (vtuberStore.vtubers.length === 0) {
+        await vtuberStore.fetchLibrary(1, 20)
+    }
+})
+
+const getVTuberThumbnail = (vt: any) => {
+    const url = vt.visual?.thumbnailUrl || vt.visual?.modelUrl || vt.thumbnailUrl || '/avatars/default.jpg'
+    return getFileUrl(url)
+}
+
+const selectVTuber = (vt: any) => {
+    const id = vt.entityId ?? vt._id
+    emit('update:selectedAvatar', id)
+    emit('select-vtuber-entity', vt)
+}
 </script>
 
 <style lang="scss" scoped>

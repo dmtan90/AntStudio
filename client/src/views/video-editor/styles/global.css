@@ -112,7 +112,8 @@
   }
 
   .sidebar-container {
-    height: calc(100dvh - 112px);
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
 
@@ -124,18 +125,21 @@
   .stepper-hidden::-webkit-outer-spin-button,
   .stepper-hidden::-webkit-inner-spin-button {
     -webkit-appearance: none;
+    appearance: none;
     margin: 0;
   }
 
   .stepper-hidden {
     -moz-appearance: textfield;
+    appearance: textfield;
   }
 
 
 
   @media screen and (max-width:640px) {
     .sidebar-container {
-      height: calc(100dvh - 164px);
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
     }
   }

@@ -480,7 +480,7 @@ const handleCloneVoice = async () => {
     try {
         const formData = new FormData()
         formData.append('name', cloneName.value)
-        formData.append('description', 'Created via AntFlow User UI')
+        formData.append('description', 'Created via AntStudio User UI')
         cloneFiles.value.forEach(file => formData.append('files', file))
 
         await voiceStore.cloneVoice(formData)

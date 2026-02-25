@@ -32,7 +32,7 @@ const props = defineProps<{
     modelValue: boolean
 }>()
 
-const emit = defineEmits(['update:modelValue', 'select'])
+const emit = defineEmits(['update:modelValue', 'select', 'create-ad', 'create-avatar'])
 const router = useRouter()
 
 const options = [
@@ -110,19 +110,21 @@ const handleSelect = (opt: any) => {
             router.push('/projects/new?mode=blank')
             break
         case 'product-ads':
-            router.push('/projects/new?mode=product-ads')
+            // router.push('/projects/new?mode=product-ads')
+            emit('create-ad');
             break
         case 'avatar':
-            router.push('/projects/new?mode=avatar')
+            // router.push('/projects/new?mode=avatar')
+            emit('create-avatar');
             break
         case 'clone-style':
             router.push('/projects/new?mode=clone')
             break
         case 'presentation':
-            router.push('/projects/new?mode=presentation')
+            router.push({ name: "recorder", query: { mode: "camera-screen" } })
             break
         case 'record':
-            router.push('/recorder')
+            router.push({ name: "recorder", query: { mode: "camera" } })
             break
         case 'live-studio':
             router.push('/live/studio')
@@ -165,6 +167,7 @@ const handleSelect = (opt: any) => {
         margin: 0 0 4px;
         background: linear-gradient(to right, #fff, #999);
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 

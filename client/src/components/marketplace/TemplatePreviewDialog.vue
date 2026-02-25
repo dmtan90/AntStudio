@@ -38,7 +38,7 @@
                             class="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center text-xs font-bold text-white uppercase shadow-lg">
                             {{ template.authorName?.charAt(0) || 'A' }}
                         </div>
-                        <p class="text-gray-400 text-sm font-medium">{{ template.authorName || 'AntFlow Creator' }}</p>
+                        <p class="text-gray-400 text-sm font-medium">{{ template.authorName || 'AntStudio Creator' }}</p>
                     </div>
 
                     <div class="h-px bg-white/5 w-full mb-6"></div>

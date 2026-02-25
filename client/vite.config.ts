@@ -9,7 +9,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [
+    plugins: ([
         vue(),
         basicSsl(),
         AutoImport({
@@ -89,7 +89,7 @@ export default defineConfig({
         //         ]
         //     }
         // })
-    ],
+    ]) as any,
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -128,21 +128,14 @@ export default defineConfig({
                     proxy.on('error', (err: any, _req: any, _res: any) => {
                         console.log('[Proxy] Error:', err.message);
                     });
-                    proxy.on('proxyReq', (proxyReq: any, req: any, _res: any) => {
-                        console.log('[Proxy] Request:', req.method, req.url);
-                        // console.log('[Proxy] Headers:', JSON.stringify(req.headers));
-                    });
-                    proxy.on('proxyReqWs', (proxyReq: any, req: any, socket: any, options: any, head: any) => {
-                        console.log('[Proxy] WS Request:', req.url);
-                        // console.log('[Proxy] WS Headers:', JSON.stringify(req.headers));
-                    });
-                    proxy.on('proxyRes', (proxyRes: any, req: any, _res: any) => {
-                        console.log('[Proxy] Response:', proxyRes.statusCode, req.url);
-                    });
-                     proxy.on('upgrade', (req: any, socket: any, head: any) => {
-                        console.log('[Proxy] Upgrade Event:', req.url);
-                    });
                 }
+            },
+            '/api/socket.io': {
+                target: 'http://127.0.0.1:4001',
+                ws: true,
+                changeOrigin: true,
+                secure: false,
+                rewrite: (path: string) => path.replace(/^\/api\/socket\.io/, '/socket.io')
             },
             '/api': {
                 target: 'http://127.0.0.1:4000',

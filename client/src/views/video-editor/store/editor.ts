@@ -21,6 +21,7 @@ export interface EditorStoreState {
   thumbnailTick: number;
   isHeadless: boolean;
   targetRatio: string | null;
+  beats: number[];
 }
 
 export const useEditorStore = defineStore('editor', {
@@ -30,6 +31,7 @@ export const useEditorStore = defineStore('editor', {
     thumbnailTick: 0,
     isHeadless: false,
     targetRatio: null,
+    beats: [],
   }),
 
   getters: {
@@ -110,7 +112,7 @@ export const useEditorStore = defineStore('editor', {
         case ExportProgress.Completed: return "Completed";
         case ExportProgress.Error: return "Error during export";
         case ExportProgress.UploadVideo: return "Uploading video...";
-        default: return "Idle";
+        default: return "Loading resources...";
       }
     },
     blob(state) {
@@ -132,9 +134,11 @@ export const useEditorStore = defineStore('editor', {
       return (state._editor as any).exports;
     },
     sidebarLeft(state): string | null {
+      const _ = state.tick;
       return (state._editor as any).sidebarLeft;
     },
     sidebarRight(state): string | null {
+      const _ = state.tick;
       return (state._editor as any).sidebarRight;
     },
     timelineOpen(state): boolean {
@@ -199,6 +203,9 @@ export const useEditorStore = defineStore('editor', {
     async initialize(mode: EditorMode = "creator") {
       console.log('initialize editor', mode);
       this._editor.onModified = () => {
+        if (this.isHeadless) {
+          return;
+        }
         console.log("Editor modified, triggering autoSave");
         this.autoSave();
       };
@@ -219,8 +226,8 @@ export const useEditorStore = defineStore('editor', {
       return await this._editor.exportAudio();
     },
 
-    async exportVideo(headless: boolean = false, upload: boolean = true) {
-      return await this._editor.exportVideo(headless);
+    async exportVideo(headless: boolean = false, upload: boolean = false) {
+      return await this._editor.exportVideo(headless, upload);
     },
 
     async autoRenderAndExport() {
@@ -265,10 +272,12 @@ export const useEditorStore = defineStore('editor', {
 
     setActiveSidebarLeft(sidebar: string | null) {
       this._editor.setActiveSidebarLeft(sidebar);
+      this.tick++;
     },
 
     setActiveSidebarRight(sidebar: string | null) {
       this._editor.setActiveSidebarRight(sidebar);
+      this.tick++;
     },
 
     getPageById(id: string) {
@@ -401,27 +410,30 @@ export const useEditorStore = defineStore('editor', {
     },
 
     async saveProject() {
-      if (this.instance.saving) return;
+      if (!this.canvas || !this.canvas.template || this.instance.saving || this.canvas.template.status !== "completed") return;
       const projectStore = useProjectStore();
 
       this.instance.saving = true;
       try {
         const pages = await this.exportTemplate();
         const projectData = {
+          id: this.id,
           name: this.name,
           dimension: this.dimension,
-          pages
+          pages: pages,
+          is_publish: false
         };
 
         const uiStore = useUIStore();
         // 1. Save to LocalStorage for crash recovery
         localStorage.setItem(`${uiStore.appName.toLowerCase().replace(/\s+/g, '_')}_autosave_${this.id}`, JSON.stringify(projectData));
 
-        // 2. Save to Server if it's a real project
-        if (this.id && !this.id.startsWith('preview_')) {
+        // 2. Save to Server if it's a real project (ObjectId)
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(this.id);
+        if (this.id && !this.id.startsWith('preview_') && isObjectId) {
           await projectStore.updateProject({
             name: this.name,
-            data: JSON.stringify(projectData)
+            pages: pages
           }, this.id);
         }
 
@@ -434,6 +446,10 @@ export const useEditorStore = defineStore('editor', {
     },
 
     autoSave: throttle(async function (this: any) {
+      if(this.instance.isRendering){
+        //ignore save when rendering
+        return;
+      }
       await this.saveProject();
     }, 10000, { leading: false, trailing: true }),
 

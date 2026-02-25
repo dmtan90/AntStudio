@@ -26,6 +26,11 @@
                     :total-pages="whiteboardPagesCount"
                     :cam-settings="camSettings"
                     :whiteboard-scripts="whiteboardScripts"
+                    :is-a-i-presenting="isAIPresenting"
+                    :is-synthesizing="isSynthesizing"
+                    :selected-avatar="selectedAvatar"
+                    :selected-voice="selectedVoice"
+                    :target-language="targetLanguage"
                     @reset-whiteboard="$emit('reset-whiteboard')"
                     @prev-page="$emit('prev-whiteboard-page')"
                     @next-page="$emit('next-whiteboard-page')"
@@ -33,14 +38,19 @@
                     @trigger-share="$emit('whiteboard-screen-share')"
                     @update:cam-settings="v => $emit('update:cam-settings', v)"
                     @generate-scripts="$emit('generate-whiteboard-scripts')"
-                    @start-autopilot="$emit('start-whiteboard-autopilot')" />
+                    @start-ai-presentation="$emit('start-ai-presentation')"
+                    @stop-ai-presentation="$emit('stop-ai-presentation')"
+                    @update:selected-avatar="v => $emit('update:selected-avatar', v)"
+                    @update:selected-voice="v => $emit('update:selected-voice', v)"
+                    @select-vtuber-entity="vt => $emit('select-vtuber-entity', vt)" />
 
                 <!-- AI Sidebar -->
                 <AITab v-if="activeSidebar === 'ai' && mode !== 'podcast'" :enable-beauty="enableBeauty"
                     :beauty-settings="beautySettings" :enable-asl-assist="enableAslAssist" :asl-mode="aslMode"
                     :active-captions="activeCaptions" :target-language="targetLanguage" :cam-settings="camSettings"
-                    :resource-pool="resourcePool" :isVTuberActive="isVTuberActive" :avatar-presets="avatarPresets" 
+                    :resource-pool="resourcePool" :isVTuberActive="isVTuberActive" 
                     :selected-avatar="selectedAvatar"
+                    :selected-voice="selectedVoice"
                     @toggle-ai-filter="(id, val) => $emit('toggle-ai-filter', id, val)"
                     @update:enable-asl-assist="v => $emit('update:enable-asl-assist', v)"
                     @update:asl-mode="v => $emit('update:asl-mode', v)"
@@ -49,7 +59,14 @@
                     @update:camSettings="v => $emit('update:cam-settings', v)"
                     @update:isVTuberActive="val => $emit('update:isVTuberActive', val)"
                     @update:selectedAvatar="val => $emit('update:selected-avatar', val)"
-                    @trigger-resource-upload="$emit('trigger-resource-upload')" />
+                    @update:selected-voice="val => $emit('update:selected-voice', val)"
+                    @select-vtuber-entity="vt => $emit('select-vtuber-entity', vt)"
+                    @presentation-next="$emit('next-whiteboard-page')"
+                    @presentation-prev="$emit('prev-whiteboard-page')"
+                    @presentation-go-to="v => $emit('go-to-whiteboard-page', v)"
+                    @trigger-resource-upload="$emit('trigger-resource-upload')"
+                    :processing-canvas="processingCanvas"
+                    :mode="mode" />
 
                 <!-- Podcast Sidebar -->
                 <PodcastTab v-if="activeSidebar === 'podcast' || (activeSidebar === 'ai' && mode === 'podcast')"
@@ -64,17 +81,13 @@
                     @toggle-overlay="id => $emit('toggle-overlay', id)" />
 
                 <!-- Live Sidebar -->
-                <LiveTab v-if="activeSidebar === 'live'" :stream-config="streamConfig" :stream-stats="streamStats" />
+                <LiveTab v-if="activeSidebar === 'live'" 
+                    :stream-config="streamConfig" 
+                    :stream-stats="streamStats"
+                    :selected-platforms="selectedPlatforms"
+                    :available-accounts="availableAccounts"
+                    @toggle-platform="id => $emit('toggle-platform', id)" />
 
-                <!-- Autopilot Sidebar -->
-                <AutopilotTab v-if="activeSidebar === 'autopilot'" :autopilot-data="autopilotData"
-                    :current-slide-index="currentSlideIndex" :is-recording="isRecording" :avatar-presets="avatarPresets"
-                    :selected-avatar="selectedAvatar" :selected-voice="selectedVoice"
-                    @trigger-presentation-upload="$emit('trigger-presentation-upload')"
-                    @update:current-slide-index="v => $emit('update:current-slide-index', v)"
-                    @update:selected-avatar="v => $emit('update:selected-avatar', v)"
-                    @update:selected-voice="v => $emit('update:selected-voice', v)"
-                    @start-autopilot="$emit('start-autopilot')" />
 
                 <!-- Audio Sidebar -->
                 <AudioTab v-if="activeSidebar === 'audio'"
@@ -97,7 +110,6 @@
                     @update:selected-mic-id="id => $emit('update:selected-mic-id', id)"
                     @update:mic-volume="val => $emit('update:mic-volume', val)" />
 
-                <!-- Production Sidebar -->
                 <ProductionTab v-if="activeSidebar === 'production'"
                     :layout-preset="layoutPreset"
                     :is-teleprompter-active="isTeleprompterActive"
@@ -105,6 +117,7 @@
                     :teleprompter-script="teleprompterScript"
                     :teleprompter-speed="teleprompterSpeed"
                     :teleprompter-font-size="teleprompterFontSize"
+                    :cam-settings="camSettings"
                     @update:layout-preset="v => $emit('update:layout-preset', v)"
                     @update:is-teleprompter-active="v => $emit('update:is-teleprompter-active', v)"
                     @update:is-teleprompter-scrolling="v => $emit('update:is-teleprompter-scrolling', v)"
@@ -122,7 +135,8 @@
                     @update:annotation-size="v => $emit('update:annotation-size', v)"
                     @clear-annotations="$emit('clear-annotations')" 
                     :recording-quality="recordingQuality"
-                    @update:recording-quality="v => $emit('update:recording-quality', v)" />
+                    @update:recording-quality="v => $emit('update:recording-quality', v)"
+                    @update:cam-settings="v => $emit('update:cam-settings', v)" />
             </div>
         </div>
     </transition>
@@ -138,7 +152,6 @@ import AITab from './sidepanel/AITab.vue'
 import PodcastTab from './sidepanel/PodcastTab.vue'
 import ResourcesTab from './sidepanel/ResourcesTab.vue'
 import LiveTab from './sidepanel/LiveTab.vue'
-import AutopilotTab from './sidepanel/AutopilotTab.vue'
 import WhiteboardTab from './sidepanel/WhiteboardTab.vue'
 import AudioTab from './sidepanel/AudioTab.vue'
 import HardwareTab from './sidepanel/HardwareTab.vue'
@@ -160,19 +173,19 @@ defineProps<{
     activeOverlays: string[]
     streamConfig: { serverUrl: string, streamKey: string, useAntMedia: boolean }
     streamStats?: any
-    autopilotData: any
     currentSlideIndex: number
     isRecording: boolean
     podcastSettings: any
-    avatarPresets: any[]
     selectedAvatar: string
     selectedVoice: string
-    videoDevices: MediaDeviceInfo[]
+    videoDevices: any[]
     audioDevices: MediaDeviceInfo[]
     selectedCameraId: string | null
     selectedMicId: string | null
     micVolume: number
     layoutPreset: string
+    selectedPlatforms: string[]
+    availableAccounts: any[]
     isTeleprompterActive: boolean
     isTeleprompterScrolling: boolean
     teleprompterScript: string
@@ -189,10 +202,13 @@ defineProps<{
     currentWhiteboardPage: number
     whiteboardPagesCount: number
     whiteboardScripts: string[]
+    isAIPresenting: boolean
+    isSynthesizing: boolean
     bgmVolume: number
     isDuckingEnabled: boolean
     bgmUrl: string | null
     bgmLibrary: any[]
+    processingCanvas: HTMLCanvasElement | null
 }>()
 
 defineEmits<{
@@ -208,12 +224,12 @@ defineEmits<{
     (e: 'trigger-resource-upload'): void
     (e: 'toggle-overlay', id: string): void
     (e: 'update:current-slide-index', idx: number): void
-    (e: 'start-autopilot'): void
     (e: 'update:podcast-settings', settings: any): void
     (e: 'update:audio-advanced', settings: any): void
     (e: 'update:cam-settings', val: any): void
     (e: 'update:selected-avatar', val: string): void
     (e: 'update:selected-voice', val: string): void
+    (e: 'select-vtuber-entity', vt: any): void
     (e: 'update:selected-camera-id', id: string): void
     (e: 'update:selected-mic-id', id: string): void
     (e: 'update:mic-volume', val: number): void
@@ -234,14 +250,17 @@ defineEmits<{
     (e: 'reset-whiteboard'): void
     (e: 'prev-whiteboard-page'): void
     (e: 'next-whiteboard-page'): void
+    (e: 'go-to-whiteboard-page', page: number): void
     (e: 'whiteboard-file-import', type: string): void
     (e: 'whiteboard-screen-share'): void
     (e: 'generate-whiteboard-scripts'): void
-    (e: 'start-whiteboard-autopilot'): void
+    (e: 'start-ai-presentation'): void
+    (e: 'stop-ai-presentation'): void
     (e: 'update:bgm-volume', val: number): void
     (e: 'update:is-ducking-enabled', val: boolean): void
     (e: 'update:bgm-url', val: string | null): void
     (e: 'toggle-bgm'): void
+    (e: 'toggle-platform', id: string): void
 }>()
 </script>
 

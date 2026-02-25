@@ -43,12 +43,6 @@ const handleSave = async () => {
   isSaving.value = true;
   try {
     const pages = await editorStore.exportTemplate();
-    const advancedEditorState = {
-      id: props.project._id,
-      name: props.project.title,
-      is_pubished: false,
-      pages: pages
-    };
 
     // Sync thumbnails back to Storyboard
     const storyboard = JSON.parse(JSON.stringify(props.project.storyboard || { segments: [] }));
@@ -82,7 +76,7 @@ const handleSave = async () => {
     }
 
     await projectStore.updateProject({
-      advancedEditorState,
+      pages,
       storyboard
     });
     toast.success('Project and Thumbnails saved successfully');

@@ -4,7 +4,6 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { Toaster } from 'vue-sonner'
 import VueFlags from '@singleway/vueflags'
-import { useRegisterSW } from 'virtual:pwa-register/vue'
 
 import App from './App.vue'
 import router from './router'
