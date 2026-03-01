@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/utils/api.js'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 const GENERATE_ASSET_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 export const useProjectStore = defineStore('project', () => {
-    const { t } = useTranslations()
+    const { t } = useI18n()
 
     // State
     const projects = ref<any[]>([])
@@ -210,7 +210,7 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
-    async function analyzeProduct(inputData: any) {
+    async function analyzeProduct(inputData: any): Promise<any> {
         isGenerating.value = true
         try {
             const res : any = await api.post('/ai/analyze-product', inputData, {

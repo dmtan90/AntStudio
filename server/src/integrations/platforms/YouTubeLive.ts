@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Logger } from '../../utils/Logger.js';
 
 interface YouTubeLiveConfig {
     apiKey: string;
@@ -111,7 +112,7 @@ class YouTubeLiveService {
                 status: broadcast.status.lifeCycleStatus,
             };
         } catch (error) {
-            console.error('Failed to create YouTube broadcast:', error);
+            Logger.error('Failed to create YouTube broadcast:', 'YouTubeLiveService', error);
             throw new Error('Failed to create YouTube live broadcast');
         }
     }
@@ -135,7 +136,7 @@ class YouTubeLiveService {
                 }
             );
         } catch (error) {
-            console.error('Failed to update broadcast status:', error);
+            Logger.error('Failed to update broadcast status:', 'YouTubeLiveService', error);
             throw new Error('Failed to update YouTube broadcast status');
         }
     }
@@ -163,7 +164,7 @@ class YouTubeLiveService {
                 concurrentViewers: parseInt(video.liveStreamingDetails?.concurrentViewers || '0'),
             };
         } catch (error) {
-            console.error('Failed to get broadcast analytics:', error);
+            Logger.error('Failed to get broadcast analytics:', 'YouTubeLiveService', error);
             return null;
         }
     }
@@ -209,7 +210,7 @@ class YouTubeLiveService {
                 id: response.data.id,
             };
         } catch (error: any) {
-            console.error('Failed to upload video to YouTube:', error.response?.data || error);
+            Logger.error('Failed to upload video to YouTube:', 'YouTubeLiveService', error.response?.data || error);
             throw new Error(error.response?.data?.error?.message || 'Failed to upload video to YouTube');
         }
     }
@@ -227,7 +228,7 @@ class YouTubeLiveService {
                 },
             });
         } catch (error) {
-            console.error('Failed to delete broadcast:', error);
+            Logger.error('Failed to delete broadcast:', 'YouTubeLiveService', error);
             throw new Error('Failed to delete YouTube broadcast');
         }
     }

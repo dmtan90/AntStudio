@@ -1,6 +1,7 @@
 import { flowApiClientV2 } from './FlowApiClientV2.js';
 import { flowApiClient } from './FlowApiClient.js';
 import { AdminSettings } from '../../models/AdminSettings.js';
+import { Logger } from '../../utils/Logger.js';
 
 /**
  * FlowClientV2: Orchestrated client for Google Labs / Antigravity
@@ -51,7 +52,7 @@ export class FlowClientV2 {
      * Generate Video (V2 Antigravity Path)
      */
     async generateVideo(prompt: string): Promise<string> {
-        console.log('[FlowV2] Triggering Video Generation (Unified Path)...');
+        Logger.info('[FlowV2] Triggering Video Generation (Unified Path)...');
         const { at, projectId, stToken, apiKey } = await this.ensureContext();
 
         const startGen = async (rToken: string = "") => {
@@ -71,7 +72,7 @@ export class FlowClientV2 {
                 sceneId = result.sceneId;
             } catch (err: any) {
                 if (err.response?.status === 403 || err.response?.status === 401) {
-                    console.log('[FlowV2] 403/401 Detected. Invoking Background Solver...');
+                    Logger.info('[FlowV2] 403/401 Detected. Invoking Background Solver...');
                     const rToken = await flowApiClient.solveCaptcha(stToken, projectId);
                     const result = await startGen(rToken);
                     operationName = result.operationName;
@@ -81,7 +82,7 @@ export class FlowClientV2 {
                 }
             }
 
-            console.log(`[FlowV2] Generation Started: ${operationName}. Polling...`);
+            Logger.info(`[FlowV2] Generation Started: ${operationName}. Polling...`);
             let attempts = 0;
             while (attempts < 60) {
                 const { status, url } = await flowApiClientV2.checkVideoStatus(operationName, sceneId, at, apiKey);
@@ -91,7 +92,7 @@ export class FlowClientV2 {
             }
             throw new Error('Video generation timed out.');
         } catch (err: any) {
-            console.error('[FlowV2] Video Path Failed:', err.message);
+            Logger.error('[FlowV2] Video Path Failed:', err.message);
             throw err;
         }
     }
@@ -100,7 +101,7 @@ export class FlowClientV2 {
      * Generate Image (V2 Antigravity Path)
      */
     async generateImage(prompt: string): Promise<string> {
-        console.log('[FlowV2] Triggering Image Generation (Unified Path)...');
+        Logger.info('[FlowV2] Triggering Image Generation (Unified Path)...');
         const { at, projectId, stToken, apiKey } = await this.ensureContext();
 
         const startGen = async (rToken: string = "") => {
@@ -115,7 +116,7 @@ export class FlowClientV2 {
                 return await startGen("");
             } catch (err: any) {
                 if (err.response?.status === 403 || err.response?.status === 401) {
-                    console.log('[FlowV2] 403/401 Detected. Solving reCAPTCHA...');
+                    Logger.info('[FlowV2] 403/401 Detected. Solving reCAPTCHA...');
                     const rToken = await flowApiClient.solveCaptcha(stToken, projectId);
                     return await startGen(rToken);
                 } else {
@@ -123,7 +124,7 @@ export class FlowClientV2 {
                 }
             }
         } catch (err: any) {
-            console.error('[FlowV2] Image Path Failed:', err.message);
+            Logger.error('[FlowV2] Image Path Failed:', err.message);
             throw err;
         }
     }

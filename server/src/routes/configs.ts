@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { AdminSettings } from '../models/AdminSettings.js';
 import { connectDB } from '../utils/db.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 /**
@@ -37,7 +39,7 @@ router.get('/plans', async (req, res) => {
             error: null
         });
     } catch (error: any) {
-        console.error('Fetch public plans error:', error);
+        Logger.error('Fetch public plans error:', error);
         res.status(500).json({ success: false, data: null, error: error.message });
     }
 });
@@ -63,7 +65,7 @@ router.get('/public', async (req, res) => {
             }
         });
     } catch (error: any) {
-        console.error('Fetch public config error:', error);
+        Logger.error('Fetch public config error:', error);
         res.status(500).json({ success: false, data: null, error: error.message });
     }
 });

@@ -1,4 +1,4 @@
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 import { StorageFactory } from './storage/StorageFactory.js';
 import path from 'path';
 import fs from 'fs';
@@ -40,7 +40,7 @@ export class HighlightService {
     public async captureHighlight(sessionId: string, durationMs: number = 15000): Promise<{ s3Key: string, id: string } | null> {
         const buffer = this.buffers.get(sessionId);
         if (!buffer || buffer.chunks.length === 0) {
-            systemLogger.warn(`[HighlightService] No buffer found for session ${sessionId}`, 'HighlightService');
+            Logger.warn(`[HighlightService] No buffer found for session ${sessionId}`, 'HighlightService');
             return null;
         }
 
@@ -57,14 +57,14 @@ export class HighlightService {
             const storage = await StorageFactory.getActiveAdapter();
             const result = await storage.uploadFile(fileName, combinedBuffer, 'video/webm');
 
-            systemLogger.info(`[HighlightService] Captured highlight for ${sessionId}: ${result.key}`, 'HighlightService');
+            Logger.info(`[HighlightService] Captured highlight for ${sessionId}: ${result.key}`, 'HighlightService');
 
             return {
                 id: highlightId,
                 s3Key: result.key
             };
         } catch (error: any) {
-            systemLogger.error(`[HighlightService] Failed to upload highlight: ${error.message}`, 'HighlightService');
+            Logger.error(`[HighlightService] Failed to upload highlight: ${error.message}`, 'HighlightService');
             return null;
         }
     }

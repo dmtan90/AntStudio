@@ -274,7 +274,7 @@
         :viewers="viewers"
         :captions="suggestedCaptions"
         @close="showPostStreamSummary = false"
-        @export="() => { showPostStreamSummary = false; toast.success('Analytics exported to Dashboard'); }"
+        @export="() => { showPostStreamSummary = false; toast.success(t('studio.messages.metadataSynced')); }"
       />
 
       <RecordingCompleteDialog
@@ -321,7 +321,7 @@
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { toast } from 'vue-sonner';
-import { useTranslations } from '@/composables/useTranslations';
+import { useI18n } from 'vue-i18n';
 import { usePlatformStore } from '@/stores/platform';
 import { Record, Effects, Magic, GraphicDesign, Translation, Shopping, Handbag, ChartHistogram, User, Comments, LoadingTwo, Play, CheckOne, LinkTwo, Close, Broadcast, Youtube, Facebook, Tiktok, Computer, Movie } from '@icon-park/vue-next';
 import { useGeminiLive } from '@/composables/useGeminiLive';
@@ -403,7 +403,6 @@ import MusicSelectionDialog from '@/components/vtuber/MusicSelectionDialog.vue';
 import VTuberMusicPerformance from '@/components/vtuber/VTuberMusicPerformance.vue';
 import PerformanceOverlay from '@/components/studio/overlays/PerformanceOverlay.vue';
 import StageLyricsOverlay from '@/components/vtuber/StageLyricsOverlay.vue';
-import { useI18n } from 'vue-i18n';
 
 import { useVTuberStore } from '@/stores/vtuber';
 import { useMediaStore } from '@/stores/media';
@@ -424,7 +423,7 @@ const directorNotes = ref('');
 const studioRecorder = useStudioRecorder();
 const showRecordingDialog = ref(false);
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 // ...existing code...
 
@@ -452,17 +451,17 @@ const handleToggleAtmosphere = () => {
         autoAtmosphereEnabled: !current
     });
     if (!current) {
-        toast.success("Auto-Atmosphere Enabled");
+        toast.success(t('studio.messages.autoAtmosphereEnabled'));
         studioStore.updateStudioVibe(studioStore.studioVibe, true);
     } else {
-        toast.info("Auto-Atmosphere Disabled");
+        toast.info(t('studio.messages.autoAtmosphereDisabled'));
     }
 };
 
 const handleDirectorCut = ((e: CustomEvent) => {
    if (studioStore.autoDirectorSettings.enabled || isAutoDirectorEnabled.value) {
       studioStore.setCameraFocus(e.detail.target);
-      addDirectorLog('Camera Switch', `Automated cut to ${e.detail.target} based on voice activity.`);
+      addDirectorLog(t('studio.logs.cameraSwitch'), `Automated cut to ${e.detail.target} based on voice activity.`);
    }
 }) as EventListener;
 
@@ -541,7 +540,7 @@ onUnmounted(() => {
    window.removeEventListener('economy:gift', handleGiftEvent);
    stopAILoop();
 });
-const guestName = computed(() => (route.query.guestName as string) || (route.query.name as string) || 'Guest');
+const guestName = computed(() => (route.query.guestName as string) || (route.query.name as string) || t('studio.guest'));
 const hostId = computed(() => route.query.hostId as string);
 const waitingGuests = computed(() => studioStore.waitingGuests);
 
@@ -555,7 +554,7 @@ const qualityPresets = {
 // State
 const currentProject = ref({ 
     id: 'current', 
-    title: 'Dynamic Studio Session', 
+    title: t('studio.project.defaultTitle'), 
     description: '',
     role: 'host' 
 });
@@ -619,7 +618,7 @@ const guestPersonas = computed(() => {
       isVisionActive: isVisionActive.value
    }));
 });
-const currentVibeName = ref('Techno Chill');
+const currentVibeName = ref(t('studio.vibes.technoChill'));
 const vibeScore = ref(85);
 const autoAtmosphere = ref(true);
 const activeCollaborators = computed(() => studioStore.coHosts);
@@ -811,7 +810,7 @@ const toggleScreenShare = async () => {
          screenStream.value = null;
       }
       studioStore.isScreenSharing = false;
-      toast.info('Screen share stopped');
+      toast.info(t('studio.messages.screenShareStopped'));
 
       // Revert to previous scene if it exists
       if (preScreenShareSceneId.value) {
@@ -828,7 +827,7 @@ const toggleScreenShare = async () => {
          preScreenShareSceneId.value = studioStore.activeScene.id;
          screenStream.value = stream;
          studioStore.isScreenSharing = true;
-         toast.success('Sharing screen');
+         toast.success(t('studio.messages.sharingScreen'));
 
          // Switch to screen focus scene
          studioStore.switchScene('screen_focus');
@@ -1003,7 +1002,7 @@ const handleToggleLiveVoice = async (persona: any) => {
             isVisionActive.value = false;
         }
         if (virtualGuestRefs[persona.uuid]) virtualGuestRefs[persona.uuid].setLiveVoiceState(false);
-        toast.info(`${persona.name} has left the swarm.`);
+        toast.info(t('studio.messages.agentLeftSwarm', { name: persona.name }));
     } else {
         try {
             const agent = useGeminiLive();
@@ -1066,7 +1065,7 @@ const handleToggleLiveVoice = async (persona: any) => {
                         masterId: persona.id
                     };
                     showQuestOverlay.value = true;
-                    toast.success(`Quest Started: ${activeQuest.value.title}`);
+                    toast.success(t('studio.messages.questStarted', { title: activeQuest.value.title }));
                 } else if (event.type === 'quest_updated') {
                     if (activeQuest.value) {
                         activeQuest.value.progress = event.progress || activeQuest.value.progress;
@@ -1075,16 +1074,16 @@ const handleToggleLiveVoice = async (persona: any) => {
                 } else if (event.type === 'quest_floor_assigned') {
                     floorAgentId.value = event.targetAgentId;
                 } else if (event.type === 'quest_evaluated') {
-                    toast.info(`${event.targetAgentId} scored ${event.score} points!`, { description: event.comment });
+                    toast.info(t('studio.messages.agentScored', { name: event.targetAgentId, score: event.score }), { description: event.comment });
                 }
             });
 
             swarmAgents[archiveId] = agent;
             if (virtualGuestRefs[persona.id]) virtualGuestRefs[persona.id].setLiveVoiceState(true);
-            toast.success(`${persona.name} joined the swarm.`);
+            toast.success(t('studio.messages.agentJoinedSwarm', { name: persona.name }));
         } catch (error) {
             console.error('[Swarm] Connection failed:', error);
-            toast.error(`Could not connect ${persona.name}`);
+            toast.error(t('studio.messages.agentConnectionFailed', { name: persona.name }));
         }
     }
 };
@@ -1110,31 +1109,31 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
             showLowerThird.value = true;
         } else if (fn === 'set_production_auto') {
             if (args.mode === 'camera') studioStore.setAutoCamera(args.enabled);
-            toast.info(`AI Production: ${args.mode} auto-${args.enabled ? 'enabled' : 'disabled'}`);
+            toast.info(t('studio.messages.aiProductionMode', { mode: args.mode, status: args.enabled ? 'enabled' : 'disabled' }));
         } else if (fn === 'trigger_production_sequence') {
             handleProductionSequence(args.sequenceName);
         } else if (fn === 'trigger_visual_fx') {
             spawnFX(args.type, args.x, args.y);
-            toast(`AI Director: Visual Effect [${args.type}]`);
+            toast(t('studio.messages.aiDirectorFX', { type: args.type }));
         } else if (fn === 'trigger_sponsorship') {
             studioStore.visualSettings.specialOverlays.sponsorName = args.sponsorName;
             studioStore.visualSettings.specialOverlays.showSponsorship = true;
-            toast.info(`AI Sponsorship: ${args.sponsorName} active`);
+            toast.info(t('studio.messages.aiSponsorshipActive', { name: args.sponsorName }));
             setTimeout(() => studioStore.visualSettings.specialOverlays.showSponsorship = false, 15000);
         } else if (fn === 'assemble_highlights') {
             handleHighlight();
         } else if (fn === 'request_vision') {
             handleVisionRequest(`guest_${persona.id}`);
-            result = { success: true, message: 'Vision snapshot captured and sent to your multimodal bridge.' };
+            result = { success: true, message: t('studio.messages.visionCaptured') };
         } else if (fn === 'set_camera_transform') {
             cameraZoom.value = args.zoom || 1;
             cameraPanX.value = args.panX || 0;
             cameraPanY.value = args.panY || 0;
-            toast.info('AI Director: Camera Focus Adjusted');
+            toast.info(t('studio.messages.cameraFocusAdjusted'));
         } else if (fn === 'capture_moment') {
             if (currentSessionId.value) await studioStore.captureHighlight(currentSessionId.value);
         } else if (fn === 'shoutout_viewer') {
-            toast.success(`Shoutout to ${args.viewerName}!`, { description: args.reason });
+            toast.success(t('studio.messages.shoutout', { name: args.viewerName }), { description: args.reason });
         } else if (fn === 'push_show_note') {
             studioProducer.addNote({
                 title: args.title,
@@ -1142,9 +1141,9 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
                 priority: args.priority || 'medium'
             });
         } else if (fn === 'archive_moment') {
-            toast.info(`${persona.name} archived: ${args.description}`);
+            toast.info(t('studio.messages.agentArchived', { name: persona.name, description: args.description }));
         } else if (fn === 'update_fan_bond') {
-            toast.info(`Social Bond with ${args.viewerName} updated`);
+            toast.info(t('studio.messages.socialBondUpdated', { name: args.viewerName }));
         } else if (fn === 'send_agent_message' || fn === 'broadcast_to_swarm') {
             // Backend relays these
         } else if (fn === 'set_camera_transform') {
@@ -1159,11 +1158,11 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
                 type: args.type,
                 goal: args.goal,
                 progress: 0,
-                statusText: 'Quest Started!',
+                statusText: t('studio.messages.questStartedText'),
                 masterId: persona.id
             };
             showQuestOverlay.value = true;
-            toast.success(`New Quest: ${args.title}`, { description: `Master: ${persona.name}` });
+            toast.success(t('studio.messages.questStarted', { title: args.title }), { description: t('studio.messages.questMaster', { name: persona.name }) });
         } else if (fn === 'update_quest') {
             if (activeQuest.value) {
                 activeQuest.value.progress = args.progress;
@@ -1177,9 +1176,9 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
             if (guestRef) guestRef.setLiveVoicePerformance(args.style, args.intensity);
         } else if (fn === 'assign_floor') {
             floorAgentId.value = args.targetAgentId;
-            toast.info(`The floor is now assigned to ${args.targetAgentId}`);
+            toast.info(t('studio.messages.speakerFocusShift', { name: args.targetAgentId }));
         } else if (fn === 'trigger_hype_event') {
-            toast.success(`HYPE EVENT: ${args.reason}`, { description: `Intensity: ${args.intensity}` });
+            toast.success(t('studio.messages.hypeEvent', { reason: args.reason }), { description: `Intensity: ${args.intensity}` });
             // Spawn constant likes for 5 seconds
             const hypeTimer = setInterval(spawnLike, 100);
             setTimeout(() => clearInterval(hypeTimer), 5000);
@@ -1218,16 +1217,16 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
                 productId: args.productId,
                 discount: args.discount,
                 duration: args.durationSeconds,
-                title: args.reason || 'AI Dynamic Deal'
+                title: args.reason || t('studio.messages.aiDealTriggeredTitle')
             });
-            toast.success(`AI triggered a deal: ${args.reason}`);
+            toast.success(t('studio.messages.aiDealTriggered', { reason: args.reason }));
         } else if (fn === 'showcase_product') {
             const product = studioStore.liveProducts.find(p => p.id === args.productId || p._id === args.productId);
             if (product) {
                 studioStore.showcaseProduct(product);
-                toast.success(`AI Showcase: ${product.name}`);
+                toast.success(t('studio.messages.aiShowcase', { name: product.name }));
             } else {
-                toast.error(`AI tried to showcase product ${args.productId} but it wasn't found.`);
+                toast.error(t('studio.errors.productNotFound', { id: args.productId }));
             }
         } else if (fn === 'update_product_scarcity') {
             studioStore.updateProductScarcity(args.productId, args.remainingStock);
@@ -1237,17 +1236,17 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
             studioStore.setTranslationMode(args.enabled, args.sourceLang, args.targetLang);
         } else if (fn === 'change_mood' || fn === 'set_studio_mood') {
             studioMood.value = args.mood;
-            toast.info(`Studio Atmosphere: ${args.mood}`);
+            toast.info(t('studio.messages.studioAtmosphere', { mood: args.mood }));
         } else if (fn === 'syndicate_montage') {
-            toast.success("Syndicating highlights to social platforms!", {
+            toast.success(t('studio.messages.syndicatingHighlights'), {
                 description: args.caption
             });
         } else if (fn === 'suggest_viral_captions') {
-            toast.info("AI suggested viral metadata for highlights", {
-                description: "Check the production panel for details."
+            toast.info(t('studio.messages.aiViralMetadata'), {
+                description: t('studio.messages.checkProductionPanel')
             });
         } else if (fn === 'assemble_highlights') {
-            toast.info("AI is assembling your final highlights...");
+            toast.info(t('studio.messages.aiAssemblingHighlights'));
             runAssembler({
                 format: 'mp4',
                 codec: 'h264',
@@ -1257,7 +1256,7 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
                 includeAudio: true
             });
         } else if (fn === 'generate_background') {
-            const loadingToast = toast.loading(`Generating background: ${args.prompt}...`);
+            const loadingToast = toast.loading(t('studio.messages.generatingBackground', { prompt: args.prompt }));
             try {
                 // Native AI Image Generation
                 const res = await vtuberStore.generateImage({ prompt: args.prompt });
@@ -1272,13 +1271,13 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
                         isAI: true
                     });
                     toast.dismiss(loadingToast);
-                    toast.success("Studio background updated!");
+                    toast.success(t('studio.messages.backgroundUpdated'));
                 } else {
                     throw new Error("No URL returned");
                 }
             } catch (e) {
                 toast.dismiss(loadingToast);
-                toast.error("Failed to generate background");
+                toast.error(t('studio.messages.backgroundFailed'));
             }
         } else if (fn === 'perform_song') {
             result = await handlePerformSongTool(persona, args);
@@ -1299,7 +1298,7 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
                 }
             }
             performingVTuber.value = null;
-            toast.info(`${persona.name} stopped the performance.`);
+            toast.info(t('studio.messages.agentStoppedPerformance', { name: persona.name }));
             result = { success: true, message: 'Performance stopped' };
         }
     }catch(err){
@@ -1311,7 +1310,7 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
 
 const handlePerformSongTool = async (persona: any, args: any) => {
 	console.log("handlePerformSongTool");
-    const loadingToast = toast.loading(`${persona.name} is preparing to sing: ${args.songName}...`);
+    const loadingToast = toast.loading(t('studio.messages.preparingToSing', { name: persona.name, song: args.songName }));
     try {
         // 1. Search for the song
         const genderSuffix = persona.meta?.voiceConfig?.gender ? ` ${persona.meta.voiceConfig.gender} version` : '';
@@ -1357,12 +1356,12 @@ const handlePerformSongTool = async (persona: any, args: any) => {
         );
 
         toast.dismiss(loadingToast);
-        toast.success(`${persona.name} is now singing: ${topMatch.title}`);
+        toast.success(t('studio.messages.nowSinging', { name: persona.name, song: topMatch.title }));
         return { success: true, song: topMatch.title };
     } catch (e) {
         console.error("[PerformSong] Tool failed", e);
         toast.dismiss(loadingToast);
-        toast.error(`Failed to start singing for ${args.songName}`);
+        toast.error(t('studio.messages.failedToSing', { song: args.songName }));
         if (activeAgent.value) activeAgent.value.isMuted.value = false;
         return { success: false, error: (e as Error).message };
     }
@@ -1371,11 +1370,11 @@ const handlePerformSongTool = async (persona: any, args: any) => {
 const handleToggleRole = (personaId: string) => {
     if (masterAgentId.value === personaId) {
         masterAgentId.value = null;
-        toast.info("Agent role reset to standard.");
+        toast.info(t('studio.messages.agentRoleReset'));
     } else {
         masterAgentId.value = personaId;
         const name = guestPersonas.value.find(p => p.uuid === personaId)?.name || 'Agent';
-        toast.success(`${name} promoted to Game Master!`, {
+        toast.success(t('studio.messages.promotedToGM', { name }), {
             description: "They will now have authority to start quests and coordinate the swarm."
         });
     }
@@ -1416,7 +1415,7 @@ const handleMusicSelected = async (musicData: any) => {
         // Sync to backend via store
         await vtuberStore.updatePerformanceConfig(selectedVTuberId.value, guest.persona.performanceConfig, true);
         
-        toast.success(`Music synced for ${guest.persona.name || 'VTuber'}`);
+        toast.success(t('studio.messages.musicSynced', { name: guest.persona.name || 'VTuber' }));
     }
 };
 
@@ -1431,14 +1430,14 @@ const handleStartPerformance = (id: string) => {
         performanceLyricsPosition.value = guest.persona.performanceConfig.lyricsPosition || 'bottom';
         performanceModalVisible.value = true;
     } else {
-        toast.error('Please select a song first');
+        toast.error(t('studio.messages.selectSongFirst'));
     }
 };
 
 // Attribute Handlers
 const handleSetEmotion = ({ id, emotion }: { id: string; emotion: string }) => {
     syntheticGuestManager.setEmotion(id, emotion);
-    toast.success(`Emotion: ${emotion}`);
+    toast.success(t('studio.messages.emotionSet', { emotion }));
 };
 
 const handleUpdateAnimation = ({ id, config }: { id: string; config: any }) => {
@@ -1454,7 +1453,7 @@ const handleUpdatePerformance = ({ id, config }: { id: string; config: any }) =>
 const handleSetBackground = ({ id, url }: { id: string; url: string }) => {
     syntheticGuestManager.setBackground(id, url);
     vtuberStore.updateVisualConfig(id, { backgroundUrl: url }, true);
-    toast.success('Background updated');
+    toast.success(t('studio.messages.backgroundUpdated'));
 };
 
 
@@ -1462,10 +1461,10 @@ const handleToggleVision = (persona: any) => {
     if (liveVoiceActiveGuestId.value === persona.id) {
         isVisionActive.value = !isVisionActive.value;
         if (isVisionActive.value) {
-            toast.success("Studio Vision enabled for Gemini");
+            toast.success(t('studio.messages.visionEnabled'));
             startVisionBridge();
         } else {
-            toast.info("Vision disabled");
+            toast.info(t('studio.messages.visionDisabled'));
         }
     }
 };
@@ -1517,10 +1516,10 @@ const processGodModeDecisions = async () => {
    const decision = await studioDirector.tick(context as any);
    if (decision.action === 'switch_scene' && decision.payload) {
       studioStore.switchScene(decision.payload);
-      toast.info(`AI Choice: ${decision.payload}`);
+      toast.info(t('studio.messages.aiChoice', { payload: decision.payload }));
     } else if (decision.action === 'show_lower_third') {
         showLowerThird.value = true;
-        toast.info(`AI Director: Showing info card`);
+        toast.info(t('studio.messages.aiShowingInfoCard'));
         setTimeout(() => { showLowerThird.value = false; }, 8000);
     } else if (decision.action === 'trigger_product') {
         let product;
@@ -1536,20 +1535,20 @@ const processGodModeDecisions = async () => {
         
         if (product) {
             studioStore.showcaseProduct(product);
-            toast.info(`AI Director: Showcasing ${product.name}`, {
+            toast.info(t('studio.messages.aiShowcasingProduct', { name: product.name }), {
                 description: "Auto-selected based on engagement context."
             });
         }
     } else if (decision.action === 'trigger_celebration') {
         spawnFX('confetti'); 
-        toast(`AI Director: Triggering celebration!`);
+        toast(t('studio.messages.aiCelebration'));
     } else if (decision.action === 'capture_highlight') {
         handleHighlight();
-        toast(`AI Director: Capturing highlight.`);
+        toast(t('studio.messages.aiHighlight'));
     } else if ((decision.action as string) === 'trigger_visual_fx' || (decision.action === 'show_overlay' && decision.payload?.type === 'particles')) {
         // Trigger generic particle effect
         spawnFX(decision.payload?.type || 'confetti');
-        toast(`AI Director: Visual Effects Active`);
+        toast(t('studio.messages.aiVisualEffectsActive'));
     }
 };
 
@@ -2452,16 +2451,18 @@ const triggerFlashDeal = () => {
          id: 'flash_' + Date.now(),
          discount: 30,
          duration: 300,
-         title: 'LIVE FLASH SALE'
+         title: 'LIVE FLASH SALE',
+         expiresAt: Date.now() + 10 * 60000
       });
    }
 }
 
 const toggleProduct = (productId: string) => {
-   if (activeProductId.value === productId) {
+   const current = activeProductId.value ? String(activeProductId.value) : null;
+   if (current === String(productId)) {
       studioStore.removeProduct(productId);
    } else {
-      const product = studioStore.liveProducts.find((p: any) => p.id === productId || p._id === productId);
+      const product = studioStore.liveProducts.find((p: any) => String(p._id || p.id) === String(productId));
       if (product) {
          studioStore.showcaseProduct(product);
       } else {
@@ -2622,7 +2623,7 @@ onMounted(() => {
                 type: quest.type,
                 goal: quest.metadata?.goal || 'Complete the challenge',
                 progress: 0,
-                statusText: 'Quest Started!',
+                statusText: t('studio.messages.questStartedText'),
                 masterId: quest.masterId || 'AI'
             };
             showQuestOverlay.value = true;
@@ -2954,9 +2955,9 @@ const effectTabs = computed(() => [
    { id: 'graphics', name: t('studio.tabs.graphics'), icon: GraphicDesign },
    { id: 'linguistic', name: t('studio.tabs.linguistic'), icon: Translation },
    { id: 'commerce', name: t('studio.tabs.commerce'), icon: Shopping },
-   { id: 'economy', name: 'Store', icon: Handbag },
-   { id: 'cinematic', name: 'Cinematic', icon: Magic },
-   { id: 'script', name: 'ShowRunner', icon: Movie },
+   { id: 'economy', name: t('studio.tabs.store'), icon: Handbag },
+   { id: 'cinematic', name: t('studio.tabs.cinematic'), icon: Magic },
+   { id: 'script', name: t('studio.tabs.script'), icon: Movie },
    { id: 'engagement', name: t('studio.tabs.engagement'), icon: ChartHistogram }
 ]);
 

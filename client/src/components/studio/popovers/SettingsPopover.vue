@@ -10,8 +10,8 @@
             <!-- Header -->
             <div class="flex items-center justify-between p-6 pb-0">
                 <div class="flex flex-col gap-1">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter">Studio Settings</h2>
-                    <p class="text-[9px] font-bold text-white/20 uppercase tracking-widest">Version 2.5.0-premium</p>
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter">{{ $t('studio.settings.title') || 'Studio Settings' }}</h2>
+                    <p class="text-[9px] font-bold text-white/20 uppercase tracking-widest">{{ $t('studio.settings.version') || 'Version 2.5.0-premium' }}</p>
                 </div>
             </div>
 
@@ -22,13 +22,13 @@
                         <template #label>
                             <div class="tab-item">
                                 <broadcast theme="outline" size="14" />
-                                <span>Broadcasting</span>
+                                <span>{{ $t('studio.settings.tabs.broadcasting') || 'Broadcasting' }}</span>
                             </div>
                         </template>
 
                         <div class="space-y-6 py-2">
                             <div class="space-y-3">
-                                <label class="section-label">Streaming Quality</label>
+                                <label class="section-label">{{ $t('studio.settings.streamingQuality') || 'Streaming Quality' }}</label>
                                 <div class="grid grid-cols-2 gap-2">
                                     <button v-for="(v, k) in qualityPresets" :key="k" @click="localStreamQuality = k"
                                         class="quality-btn" :class="{ 'active': localStreamQuality === k }">
@@ -45,7 +45,7 @@
                         <template #label>
                             <div class="tab-item">
                                 <magic theme="outline" size="14" />
-                                <span>Enhancement</span>
+                                <span>{{ $t('studio.settings.tabs.enhancement') || 'Enhancement' }}</span>
                             </div>
                         </template>
 
@@ -53,8 +53,8 @@
                             <!-- Global AI Toggle -->
                             <div class="flex items-center justify-between p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
                                 <div class="flex flex-col">
-                                    <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Enable AI Features</span>
-                                    <span class="text-[8px] text-white/40">Face Tracking, Reframing & Virtual Backgrounds</span>
+                                    <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest">{{ $t('studio.settings.enableAiFeatures') || 'Enable AI Features' }}</span>
+                                    <span class="text-[8px] text-white/40">{{ $t('studio.settings.aiFeaturesDesc') || 'Face Tracking, Reframing & Virtual Backgrounds' }}</span>
                                 </div>
                                 <el-switch v-model="visualSettings.aiEnabled" size="small" 
                                     style="--el-switch-on-color: #3b82f6;" />
@@ -62,7 +62,7 @@
 
                             <!-- Enhancement Presets -->
                             <div class="space-y-3">
-                                <label class="section-label">Enhancement Presets</label>
+                                <label class="section-label">{{ $t('studio.settings.enhancementPresets') || 'Enhancement Presets' }}</label>
                                 <div class="grid grid-cols-4 gap-2">
                                     <button v-for="(p, k) in enhancementPresets" :key="k" 
                                         @click="applyEnhancementPreset(p)"
@@ -73,14 +73,14 @@
                             </div>
 
                             <div class="flex items-center justify-between py-2 border-t border-white/5">
-                                <label class="section-label !mb-0">Advanced Settings</label>
+                                <label class="section-label !mb-0">{{ $t('studio.settings.advancedSettings') || 'Advanced Settings' }}</label>
                                 <el-switch v-model="showAdvancedEnhance" size="small" />
                             </div>
 
                             <div v-if="showAdvancedEnhance" class="space-y-4 animate-in slide-in-from-top-2">
                                 <div class="slider-group">
                                     <div class="flex justify-between items-center mb-1">
-                                        <label class="slider-label">Skin Smoothing</label>
+                                        <label class="slider-label">{{ $t('studio.settings.skinSmoothing') || 'Skin Smoothing' }}</label>
                                         <span class="value-badge">{{ (visualSettings.beauty.smoothing * 100).toFixed(0)
                                             }}%</span>
                                     </div>
@@ -90,7 +90,7 @@
 
                                 <div class="slider-group">
                                     <div class="flex justify-between items-center mb-1">
-                                        <label class="slider-label">Face Brightening</label>
+                                        <label class="slider-label">{{ $t('studio.settings.faceBrightening') || 'Face Brightening' }}</label>
                                         <span class="value-badge">{{ (visualSettings.beauty.brightness * 100).toFixed(0)
                                             }}%</span>
                                     </div>
@@ -101,7 +101,7 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="slider-group">
                                         <div class="flex justify-between items-center mb-1">
-                                            <label class="slider-label">Sharpen</label>
+                                            <label class="slider-label">{{ $t('studio.settings.sharpen') || 'Sharpen' }}</label>
                                             <span class="value-badge">{{ (visualSettings.beauty.sharpen *
                                                 100).toFixed(0)
                                                 }}%</span>
@@ -111,7 +111,7 @@
                                     </div>
                                     <div class="slider-group">
                                         <div class="flex justify-between items-center mb-1">
-                                            <label class="slider-label">Denoise</label>
+                                            <label class="slider-label">{{ $t('studio.settings.denoise') || 'Denoise' }}</label>
                                             <span class="value-badge">{{ (visualSettings.beauty.denoise *
                                                 100).toFixed(0)
                                                 }}%</span>
@@ -129,7 +129,7 @@
                         <template #label>
                             <div class="tab-item">
                                 <pic theme="outline" size="14" />
-                                <span>Enviro</span>
+                                <span>{{ $t('studio.settings.tabs.background') || 'Enviro' }}</span>
                             </div>
                         </template>
 
@@ -138,24 +138,24 @@
                                 <div class="mode-select-box"
                                     :class="{ 'active': visualSettings.background.mode === 'none' }"
                                     @click="visualSettings.background.mode = 'none'">
-                                    <span class="text-[9px] font-black uppercase">Standard</span>
+                                    <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.bgStandard') || 'Standard' }}</span>
                                 </div>
                                 <div class="mode-select-box"
                                     :class="{ 'active': visualSettings.background.mode === 'blur' }"
                                     @click="visualSettings.background.mode = 'blur'">
-                                    <span class="text-[9px] font-black uppercase">Blur</span>
+                                    <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.bgBlur') || 'Blur' }}</span>
                                 </div>
                                 <div class="mode-select-box"
                                     :class="{ 'active': visualSettings.background.mode === 'virtual' }"
                                     @click="visualSettings.background.mode = 'virtual'">
-                                    <span class="text-[9px] font-black uppercase">Virtual</span>
+                                    <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.bgVirtual') || 'Virtual' }}</span>
                                 </div>
                             </div>
 
                             <!-- Blur Intensities -->
                             <div v-if="visualSettings.background.mode === 'blur'"
                                 class="space-y-3 animate-in slide-in-from-top-2">
-                                <label class="section-label">Intensity</label>
+                                <label class="section-label">{{ $t('studio.settings.intensity') || 'Intensity' }}</label>
                                 <div class="grid grid-cols-3 gap-2">
                                     <button v-for="level in (['low', 'medium', 'high'] as const)" :key="level"
                                         @click="visualSettings.background.blurLevel = level" class="intensity-btn"
@@ -169,7 +169,7 @@
                             <div v-if="visualSettings.background.mode === 'virtual'"
                                 class="space-y-4 animate-in slide-in-from-top-2">
                                 <div class="space-y-2">
-                                    <label class="section-label">Assets</label>
+                                    <label class="section-label">{{ $t('studio.settings.assets') || 'Assets' }}</label>
                                     <div class="grid grid-cols-4 gap-2">
                                         <div class="upload-btn" @click="triggerUpload">
                                             <plus theme="outline" size="14" />
@@ -193,44 +193,44 @@
                         <template #label>
                             <div class="tab-item">
                                 <magic theme="outline" size="14" />
-                                <span>Filters</span>
+                                <span>{{ $t('studio.settings.tabs.filters') || 'Filters' }}</span>
                             </div>
                         </template>
 
                         <div class="space-y-6 py-2">
                             <!-- Lens Profiles -->
                             <div class="space-y-3">
-                                <label class="section-label">Lens Profile</label>
+                                <label class="section-label">{{ $t('studio.settings.lensProfile') || 'Lens Profile' }}</label>
                                 <div class="grid grid-cols-3 gap-2">
                                     <div class="mode-select-box"
                                         :class="{ 'active': visualSettings.lensProfile === 'none' }"
                                         @click="visualSettings.lensProfile = 'none'">
-                                        <span class="text-[9px] font-black uppercase">None</span>
+                                        <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.lensNone') || 'None' }}</span>
                                     </div>
                                     <div class="mode-select-box"
                                         :class="{ 'active': visualSettings.lensProfile === 'noir' }"
                                         @click="visualSettings.lensProfile = 'noir'">
-                                        <span class="text-[9px] font-black uppercase">Noir</span>
+                                        <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.lensNoir') || 'Noir' }}</span>
                                     </div>
                                     <div class="mode-select-box"
                                         :class="{ 'active': visualSettings.lensProfile === 'vintage' }"
                                         @click="visualSettings.lensProfile = 'vintage'">
-                                        <span class="text-[9px] font-black uppercase">Vintage</span>
+                                        <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.lensVintage') || 'Vintage' }}</span>
                                     </div>
                                     <div class="mode-select-box"
                                         :class="{ 'active': visualSettings.lensProfile === 'cool' }"
                                         @click="visualSettings.lensProfile = 'cool'">
-                                        <span class="text-[9px] font-black uppercase">Cool</span>
+                                        <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.lensCool') || 'Cool' }}</span>
                                     </div>
                                      <div class="mode-select-box"
                                         :class="{ 'active': visualSettings.lensProfile === 'warm' }"
                                         @click="visualSettings.lensProfile = 'warm'">
-                                        <span class="text-[9px] font-black uppercase">Warm</span>
+                                        <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.lensWarm') || 'Warm' }}</span>
                                     </div>
                                      <div class="mode-select-box"
                                         :class="{ 'active': visualSettings.lensProfile === 'cinematic' }"
                                         @click="visualSettings.lensProfile = 'cinematic'">
-                                        <span class="text-[9px] font-black uppercase">Cinema</span>
+                                        <span class="text-[9px] font-black uppercase">{{ $t('studio.settings.lensCinema') || 'Cinema' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -238,7 +238,7 @@
                             <!-- Chroma Key -->
                             <div class="space-y-3">
                                 <div class="flex justify-between items-center">
-                                    <label class="section-label">Green Screen</label>
+                                    <label class="section-label">{{ $t('studio.settings.greenScreen') || 'Green Screen' }}</label>
                                     <el-switch v-model="visualSettings.chromaKey.enabled" size="small"
                                         style="--el-switch-on-color: #3b82f6;" />
                                 </div>
@@ -247,7 +247,7 @@
                                     class="space-y-4 animate-in slide-in-from-top-2">
                                     
                                     <div class="flex items-center justify-between">
-                                        <label class="slider-label">Key Color</label>
+                                        <label class="slider-label">{{ $t('studio.settings.keyColor') || 'Key Color' }}</label>
                                         <div class="flex items-center gap-2">
                                             <div class="w-6 h-6 rounded-full border border-white/20" :style="{ backgroundColor: visualSettings.chromaKey.keyColor + ' !important' }"></div>
                                             <input type="color" v-model="visualSettings.chromaKey.keyColor" class="w-8 h-8 opacity-0 absolute cursor-pointer" />
@@ -257,7 +257,7 @@
 
                                     <div class="slider-group">
                                         <div class="flex justify-between items-center mb-1">
-                                            <label class="slider-label">Similarity</label>
+                                            <label class="slider-label">{{ $t('studio.settings.similarity') || 'Similarity' }}</label>
                                             <span class="value-badge">{{ (visualSettings.chromaKey.similarity * 100).toFixed(0) }}%</span>
                                         </div>
                                         <el-slider v-model="visualSettings.chromaKey.similarity" :min="0" :max="1" :step="0.01" size="small" />
@@ -265,7 +265,7 @@
 
                                     <div class="slider-group">
                                         <div class="flex justify-between items-center mb-1">
-                                            <label class="slider-label">Smoothness</label>
+                                            <label class="slider-label">{{ $t('studio.settings.smoothness') || 'Smoothness' }}</label>
                                             <span class="value-badge">{{ (visualSettings.chromaKey.smoothness * 100).toFixed(0) }}%</span>
                                         </div>
                                         <el-slider v-model="visualSettings.chromaKey.smoothness" :min="0" :max="1" :step="0.01" size="small" />
@@ -280,31 +280,31 @@
                         <template #label>
                             <div class="tab-item">
                                 <tag theme="outline" size="14" />
-                                <span>Branding</span>
+                                <span>{{ $t('studio.settings.tabs.branding') || 'Branding' }}</span>
                             </div>
                         </template>
 
                         <div class="space-y-6 py-2">
                             <div class="space-y-3">
-                                <label class="section-label">Studio Identity</label>
+                                <label class="section-label">{{ $t('studio.settings.studioIdentity') || 'Studio Identity' }}</label>
                                 <div class="space-y-4">
                                     <div class="slider-group">
-                                        <label class="slider-label">Studio Name</label>
-                                        <el-input v-model="visualSettings.branding.name" size="small" placeholder="Add Studio Name"
+                                        <label class="slider-label">{{ $t('studio.settings.studioName') || 'Studio Name' }}</label>
+                                        <el-input v-model="visualSettings.branding.name" size="small" :placeholder="$t('studio.settings.addStudioName') || 'Add Studio Name'"
                                             class="!bg-white/5 !border-white/10 !rounded-xl custom-input" />
                                     </div>
                                     <div class="slider-group">
-                                        <label class="slider-label">Sub-Header</label>
-                                        <el-input v-model="visualSettings.branding.title" size="small" placeholder="Add Header Title"
+                                        <label class="slider-label">{{ $t('studio.settings.subHeader') || 'Sub-Header' }}</label>
+                                        <el-input v-model="visualSettings.branding.title" size="small" :placeholder="$t('studio.settings.addHeaderTitle') || 'Add Header Title'"
                                             class="!bg-white/5 !border-white/10 !rounded-xl custom-input" />
                                     </div>
                                 </div>
                             </div>
 
                             <div class="space-y-3">
-                                <label class="section-label">Branding Style</label>
+                                <label class="section-label">{{ $t('studio.settings.brandingStyle') || 'Branding Style' }}</label>
                                 <div class="flex items-center justify-between">
-                                    <label class="slider-label">Accent Color</label>
+                                    <label class="slider-label">{{ $t('studio.settings.accentColor') || 'Accent Color' }}</label>
                                     <div class="flex items-center gap-2">
                                         <div class="w-6 h-6 rounded-full border border-white/20" :style="{ backgroundColor: visualSettings.branding.color }"></div>
                                         <input type="color" v-model="visualSettings.branding.color" class="w-8 h-8 opacity-0 absolute cursor-pointer" />
@@ -320,37 +320,37 @@
                         <template #label>
                             <div class="tab-item">
                                 <layers theme="outline" size="14" />
-                                <span>Overlays</span>
+                                <span>{{ $t('studio.settings.tabs.overlays') || 'Overlays' }}</span>
                             </div>
                         </template>
 
                         <div class="space-y-4 py-2">
                             <div class="flex items-center justify-between">
                                 <div class="flex flex-col">
-                                    <span class="text-[9px] font-black text-white/60 uppercase">Lower Third</span>
-                                    <span class="text-[7px] text-white/30">Display name & title overlay</span>
+                                    <span class="text-[9px] font-black text-white/60 uppercase">{{ $t('studio.settings.lowerThird') || 'Lower Third' }}</span>
+                                    <span class="text-[7px] text-white/30">{{ $t('studio.settings.lowerThirdDesc') || 'Display name & title overlay' }}</span>
                                 </div>
                                 <el-switch v-model="visualSettings.showLowerThird" size="small" />
                             </div>
 
                             <div class="flex items-center justify-between">
                                 <div class="flex flex-col">
-                                    <span class="text-[9px] font-black text-white/60 uppercase">Ticker Bar</span>
-                                    <span class="text-[7px] text-white/30">Scrolling news ticker</span>
+                                    <span class="text-[9px] font-black text-white/60 uppercase">{{ $t('studio.settings.tickerBar') || 'Ticker Bar' }}</span>
+                                    <span class="text-[7px] text-white/30">{{ $t('studio.settings.tickerBarDesc') || 'Scrolling news ticker' }}</span>
                                 </div>
                                 <el-switch v-model="visualSettings.showTicker" size="small" />
                             </div>
 
                             <div v-if="visualSettings.showTicker" class="slider-group animate-in slide-in-from-top-2">
-                                <label class="slider-label">Ticker Content</label>
+                                <label class="slider-label">{{ $t('studio.settings.tickerContent') || 'Ticker Content' }}</label>
                                 <el-input v-model="visualSettings.tickerText" size="small" type="textarea" :rows="2"
                                     class="!bg-white/5 !border-white/10 !rounded-xl custom-input" />
                             </div>
 
                             <div class="flex items-center justify-between pt-2 border-t border-white/5">
                                 <div class="flex flex-col">
-                                    <span class="text-[9px] font-black text-white/60 uppercase">Break Mode</span>
-                                    <span class="text-[7px] text-white/30">Pause stream with message</span>
+                                    <span class="text-[9px] font-black text-white/60 uppercase">{{ $t('studio.settings.breakMode') || 'Break Mode' }}</span>
+                                    <span class="text-[7px] text-white/30">{{ $t('studio.settings.breakModeDesc') || 'Pause stream with message' }}</span>
                                 </div>
                                 <el-switch v-model="visualSettings.breakMode.enabled" size="small" />
                             </div>
@@ -362,22 +362,22 @@
                         <template #label>
                             <div class="tab-item">
                                 <eyes theme="outline" size="14" />
-                                <span>Accessibility</span>
+                                <span>{{ $t('studio.settings.tabs.accessibility') || 'Accessibility' }}</span>
                             </div>
                         </template>
 
                         <div class="space-y-5 py-2">
                             <div class="flex items-center justify-between">
                                 <div class="flex flex-col">
-                                    <span class="text-[9px] font-black text-white/60 uppercase">AI Translations</span>
-                                    <span class="text-[7px] text-white/30">Real-time speech translation</span>
+                                    <span class="text-[9px] font-black text-white/60 uppercase">{{ $t('studio.settings.aiTranslations') || 'AI Translations' }}</span>
+                                    <span class="text-[7px] text-white/30">{{ $t('studio.settings.aiTranslationsDesc') || 'Real-time speech translation' }}</span>
                                 </div>
                                 <el-switch v-model="visualSettings.accessibility.translationEnabled" size="small" />
                             </div>
 
                             <div v-if="visualSettings.accessibility.translationEnabled" class="grid grid-cols-2 gap-3 animate-in slide-in-from-top-2">
                                 <div class="slider-group">
-                                    <label class="slider-label">Source</label>
+                                    <label class="slider-label">{{ $t('studio.settings.sourceLang') || 'Source' }}</label>
                                     <el-select v-model="visualSettings.accessibility.sourceLang" size="small" class="custom-select">
                                         <el-option label="English" value="en-US" />
                                         <el-option label="Vietnamese" value="vi-VN" />
@@ -385,7 +385,7 @@
                                     </el-select>
                                 </div>
                                 <div class="slider-group">
-                                    <label class="slider-label">Target</label>
+                                    <label class="slider-label">{{ $t('studio.settings.targetLang') || 'Target' }}</label>
                                     <el-select v-model="visualSettings.accessibility.targetLang" size="small" class="custom-select">
                                         <el-option label="Vietnamese" value="vi-VN" />
                                         <el-option label="English" value="en-US" />
@@ -396,8 +396,8 @@
 
                             <div class="flex items-center justify-between pt-2 border-t border-white/5">
                                 <div class="flex flex-col">
-                                    <span class="text-[9px] font-black text-white/60 uppercase">Live Captions</span>
-                                    <span class="text-[7px] text-white/30">Show subtitles for all guests</span>
+                                    <span class="text-[9px] font-black text-white/60 uppercase">{{ $t('studio.settings.liveCaptions') || 'Live Captions' }}</span>
+                                    <span class="text-[7px] text-white/30">{{ $t('studio.settings.liveCaptionsDesc') || 'Show subtitles for all guests' }}</span>
                                 </div>
                                 <el-switch v-model="visualSettings.accessibility.captions" size="small" />
                             </div>
@@ -407,7 +407,7 @@
 
                 <div class="flex justify-end gap-2 pt-6 border-t border-white/5">
                     <button @click="resetSettings"
-                        class="px-4 py-2 rounded-xl bg-white/5 text-[9px] font-black uppercase hover:bg-white/10 transition-all text-white/40">Reset</button>
+                        class="px-4 py-2 rounded-xl bg-white/5 text-[9px] font-black uppercase hover:bg-white/10 transition-all text-white/40">{{ $t('studio.settings.resetBtn') || 'Reset' }}</button>
                 </div>
             </div>
             <input type="file" ref="fileInput" class="hidden" accept="image/*,video/*" @change="handleUpload" />

@@ -10,6 +10,8 @@ import { User } from '../models/User.js';
 import config from '../utils/config.js';
 import crypto from 'crypto';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // POST /api/payment/create-checkout - Stripe
@@ -261,7 +263,7 @@ router.get('/stripe/callback', async (req, res) => {
             res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=verification_failed`);
         }
     } catch (e: any) {
-        console.error('Stripe callback error:', e);
+        Logger.error('Stripe callback error:', e);
         res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=error`);
     }
 });
@@ -345,7 +347,7 @@ router.get('/paypal/callback', async (req, res) => {
             res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=capture_failed`);
         }
     } catch (e: any) {
-        console.error('PayPal callback error:', e);
+        Logger.error('PayPal callback error:', e);
         res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=error`);
     }
 });

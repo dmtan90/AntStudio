@@ -94,9 +94,9 @@ export default defineConfig({
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),
             '~': fileURLToPath(new URL('./src', import.meta.url)),
-            'video-editor': fileURLToPath(new URL('./src/views/video-editor', import.meta.url)),
-            'audio-visual': fileURLToPath(new URL('./src/views/video-editor/plugins/audio-visual', import.meta.url)),
-            // 'vidmate': fileURLToPath(new URL('./src/views/video-editor/vidmate', import.meta.url))
+            'video-editor': fileURLToPath(new URL('./src/plugins/video-editor', import.meta.url)),
+            'audio-visual': fileURLToPath(new URL('./src/plugins/video-editor/plugins/audio-visual', import.meta.url)),
+            // 'vidmate': fileURLToPath(new URL('./src/plugins/video-editor/vidmate', import.meta.url))
         }
     },
     css: {

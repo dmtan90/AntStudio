@@ -1,6 +1,8 @@
 import { generateJSON } from '../utils/AIGenerator.js'
 import type { IProject } from '../models/Project.js'
 import { projectContext } from '../utils/ProjectContext.js'
+import { Logger } from '../utils/Logger.js'
+
 
 export interface StoryboardSegment {
     order: number
@@ -149,7 +151,25 @@ export const generateStoryboardIteratively = async (
           ]
         }`
 
-        const result = await generateJSON<{ segments: any[] }>(blockPrompt, 'gemini-2.5-flash')
+        let result: { segments: any[] }
+        try {
+            result = await generateJSON<{ segments: any[] }>(blockPrompt, 'gemini-2.5-flash', {
+                generationConfig: {
+                    responseMimeType: 'application/json',
+                    maxOutputTokens: 32 * 1024
+                }
+            })
+        } catch (jsonError: any) {
+            // If JSON was truncated even at 32K tokens, retry with a smaller batch
+            Logger.warn(`[iterativeStoryboard] Block ${iteration + 1} failed (${jsonError.message}). Retrying with smaller batch (2-3 segments)...`)
+            const smallerPrompt = blockPrompt.replace('GENERATE THE NEXT 4-6 SEGMENTS', 'GENERATE THE NEXT 2-3 SEGMENTS')
+            result = await generateJSON<{ segments: any[] }>(smallerPrompt, 'gemini-2.5-flash', {
+                generationConfig: {
+                    responseMimeType: 'application/json',
+                    maxOutputTokens: 16 * 1024
+                }
+            })
+        }
 
         if (!result.segments || result.segments.length === 0) break
 

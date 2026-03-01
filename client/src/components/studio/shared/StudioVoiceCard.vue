@@ -7,7 +7,7 @@
         </div>
         <div class="text-left">
           <div class="text-[11px] font-black uppercase text-white/90 leading-tight">{{ name }}</div>
-          <div class="text-[9px] opacity-40 uppercase tracking-tighter">{{ gender }} • High Fidelity</div>
+          <div class="text-[9px] opacity-40 uppercase tracking-tighter">{{ gender }} • {{ $t('studio.common.highFidelity') }}</div>
         </div>
       </div>
       <div class="flex gap-2">
@@ -40,7 +40,7 @@ defineProps<{
 defineEmits(['preview']);
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .voice-card {
   @apply p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:border-blue-500/40 hover:bg-white/10 transition-all;
 }

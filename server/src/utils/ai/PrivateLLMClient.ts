@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { systemLogger } from '../systemLogger.js';
+import { Logger } from '../Logger.js';
 
 /**
  * Client for communicating with private/local LLMs via Ollama.
@@ -18,7 +18,7 @@ export class PrivateLLMClient {
     public async chat(prompt: string, options: { model?: string, system?: string } = {}) {
         try {
             const model = options.model || this.defaultModel;
-            systemLogger.info(`🧠 [PrivateAI] Prompting local model: ${model}`, 'PrivateLLMClient');
+            Logger.info(`🧠 [PrivateAI] Prompting local model: ${model}`, 'PrivateLLMClient');
 
             const response = await axios.post(`${this.baseUrl}/api/chat`, {
                 model: model,
@@ -31,7 +31,7 @@ export class PrivateLLMClient {
 
             return response.data.message.content;
         } catch (error: any) {
-            systemLogger.error(`❌ [PrivateAI] Local LLM request failed: ${error.message}`, 'PrivateLLMClient');
+            Logger.error(`❌ [PrivateAI] Local LLM request failed: ${error.message}`, 'PrivateLLMClient');
             return null;
         }
     }

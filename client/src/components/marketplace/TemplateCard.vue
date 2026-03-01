@@ -17,10 +17,9 @@
       <div class="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
         <div class="flex items-center gap-2 mb-1">
           <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-blue-500 text-white"
-            v-if="template.pricing?.type === 'free' || template.is_published">Free</span>
+            v-if="template.pricing?.type === 'free' || template.is_published">{{ $t('marketplace.templateCard.free') }}</span>
           <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-purple-500 text-white"
-            v-else>{{
-              template.pricing?.price || 0 }} Credits</span>
+            v-else>{{ $t('marketplace.templateCard.credits', { price: template.pricing?.price || 0 }) }}</span>
           <span class="text-xs text-white/60">⭐ {{ template.rating?.toFixed(1) || 0 }}</span>
         </div>
         <h3 class="text-sm font-bold text-white line-clamp-1">{{ template.name }}</h3>
@@ -35,7 +34,7 @@
         </button> -->
         <button @click.stop="$emit('view', template)"
           class="w-full py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors">
-          View Detail
+          {{ $t('marketplace.templateCard.viewDetail') }}
         </button>
       </div>
     </div>

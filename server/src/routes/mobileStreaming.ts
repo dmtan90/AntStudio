@@ -2,6 +2,8 @@ import { Router, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // Initialize mobile stream
@@ -32,7 +34,7 @@ router.post('/start', authMiddleware, async (req: AuthRequest, res: Response) =>
         };
 
         // In real implementation, save to database
-        console.log('Creating stream:', streamConfig);
+        Logger.info('Creating stream:', streamConfig);
 
         // Generate WebRTC connection details
         const streamUrl = `wss://${req.get('host')}/signaling/${streamId}`;
@@ -50,7 +52,7 @@ router.post('/start', authMiddleware, async (req: AuthRequest, res: Response) =>
             ],
         });
     } catch (error) {
-        console.error('Failed to start stream:', error);
+        Logger.error('Failed to start stream:', error);
         res.status(500).json({ error: 'Failed to initialize stream' });
     }
 });
@@ -65,7 +67,7 @@ router.post('/stop', authMiddleware, async (req: AuthRequest, res: Response) => 
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        console.log('Stopping stream:', streamId);
+        Logger.info('Stopping stream:', streamId);
 
         // In real implementation:
         // 1. Close WebRTC connection
@@ -89,7 +91,7 @@ router.post('/stop', authMiddleware, async (req: AuthRequest, res: Response) => 
             analytics,
         });
     } catch (error) {
-        console.error('Failed to stop stream:', error);
+        Logger.error('Failed to stop stream:', error);
         res.status(500).json({ error: 'Failed to stop stream' });
     }
 });
@@ -122,7 +124,7 @@ router.get('/analytics', authMiddleware, async (req: AuthRequest, res: Response)
 
         res.json(analytics);
     } catch (error) {
-        console.error('Failed to get analytics:', error);
+        Logger.error('Failed to get analytics:', error);
         res.status(500).json({ error: 'Failed to fetch analytics' });
     }
 });
@@ -138,7 +140,7 @@ router.post('/platforms', authMiddleware, async (req: AuthRequest, res: Response
         }
 
         // In real implementation, save platform credentials securely
-        console.log('Configuring platforms for user:', userId);
+        Logger.info('Configuring platforms for user:', userId);
 
         // Validate platform credentials
         const validation = {
@@ -152,7 +154,7 @@ router.post('/platforms', authMiddleware, async (req: AuthRequest, res: Response
             validation,
         });
     } catch (error) {
-        console.error('Failed to configure platforms:', error);
+        Logger.error('Failed to configure platforms:', error);
         res.status(500).json({ error: 'Failed to configure platforms' });
     }
 });
@@ -188,19 +190,19 @@ async function getPlatformStreamKeys(userId: string, platforms: string[]) {
 
 async function validateYouTubeCredentials(credentials: any): Promise<boolean> {
     // Validate YouTube API credentials
-    console.log('Validating YouTube credentials');
+    Logger.info('Validating YouTube credentials');
     return true;
 }
 
 async function validateFacebookCredentials(credentials: any): Promise<boolean> {
     // Validate Facebook API credentials
-    console.log('Validating Facebook credentials');
+    Logger.info('Validating Facebook credentials');
     return true;
 }
 
 async function validateTikTokCredentials(credentials: any): Promise<boolean> {
     // Validate TikTok API credentials
-    console.log('Validating TikTok credentials');
+    Logger.info('Validating TikTok credentials');
     return true;
 }
 

@@ -1,4 +1,5 @@
 import { puterService } from '../../../services/ai/PuterService.js';
+import { Logger } from '../../Logger.js';
 
 export class PuterProvider {
     constructor() { }
@@ -19,7 +20,7 @@ export class PuterProvider {
             const text = response?.message?.content || response?.toString() || '';
             return { text };
         } catch (error: any) {
-            console.error('[PuterProvider] Text Error:', error.message);
+            Logger.error(`[PuterProvider] Text Error: ${error.message}`, 'PuterProvider');
             throw error;
         }
     }
@@ -37,7 +38,7 @@ export class PuterProvider {
                 }
             };
         } catch (error: any) {
-            console.error('[PuterProvider] Image Error:', error.message);
+            Logger.error(`[PuterProvider] Image Error: ${error.message}`, 'PuterProvider');
             throw error;
         }
     }
@@ -55,7 +56,7 @@ export class PuterProvider {
                 }
             };
         } catch (error: any) {
-            console.error('[PuterProvider] Audio Error:', error.message);
+            Logger.error(`[PuterProvider] Audio Error: ${error.message}`, 'PuterProvider');
             throw error;
         }
     }

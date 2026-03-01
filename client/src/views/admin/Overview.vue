@@ -1,7 +1,7 @@
 <template>
   <div class="admin-dashboard min-h-screen bg-[#0a0a0c] text-white font-outfit p-8 animate-in fade-in duration-700">
     <header class="mb-12 relative z-10">
-      <h1 class="text-5xl font-black uppercase tracking-tighter mb-2">Admin Dashboard</h1>
+      <h1 class="text-5xl font-black uppercase tracking-tighter mb-2">{{ $t('admin.overview.title') }}</h1>
       <div class="flex items-center gap-3">
          <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
          <p class="text-[10px] font-bold opacity-40 uppercase tracking-[0.3em]">{{ uiStore.appName }}</p>
@@ -12,7 +12,7 @@
       <div v-for="card in statCards" :key="card.label" class="premium-stat-card group">
         <div class="card-content relative z-10">
           <div class="flex justify-between items-start mb-4">
-             <span class="label text-[9px] font-black uppercase opacity-40 tracking-widest">{{ card.label }}</span>
+             <span class="label text-[9px] font-black uppercase opacity-40 tracking-widest">{{ $t(`admin.overview.stats.${card.key}`) }}</span>
              <div :class="['w-8 h-8 rounded-lg flex items-center justify-center transition-colors', card.isPositive ? 'bg-green-500/10 text-green-400 group-hover:bg-green-500/20' : 'bg-red-500/10 text-red-400 group-hover:bg-red-500/20']">
                 <trending-up v-if="card.isPositive" theme="outline" size="16" />
                 <trending-down v-else theme="outline" size="16" />
@@ -40,11 +40,11 @@
             
            <div class="flex justify-between items-center mb-8 relative z-10">
               <h3 class="text-xs font-black uppercase tracking-widest opacity-60 text-white flex items-center gap-2">
-                 <chart-line theme="filled" /> Platform Velocity
+                 <chart-line theme="filled" /> {{ $t('admin.overview.charts.velocity') }}
               </h3>
               <div class="flex p-1 bg-white/5 rounded-xl border border-white/5">
-                 <button class="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase bg-white text-black shadow-lg">User Growth</button>
-                 <button class="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase opacity-40 hover:opacity-100 hover:text-white transition-all">Revenue</button>
+                 <button class="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase bg-white text-black shadow-lg">{{ $t('admin.overview.charts.userGrowth') }}</button>
+                 <button class="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase opacity-40 hover:opacity-100 hover:text-white transition-all">{{ $t('admin.overview.charts.revenue') }}</button>
               </div>
            </div>
            <div class="h-[320px] relative z-10 w-full">
@@ -55,8 +55,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
            <div class="glass-panel p-8 rounded-[2.5rem] border border-white/5 hover:border-white/10 transition-colors">
               <div class="flex justify-between items-center mb-6">
-                 <h3 class="text-xs font-black uppercase tracking-widest opacity-50 text-white">Recent Signups</h3>
-                 <button class="text-[9px] font-bold text-blue-400 hover:text-blue-300 uppercase tracking-widest">View All</button>
+                 <h3 class="text-xs font-black uppercase tracking-widest opacity-50 text-white">{{ $t('admin.overview.recent.signups') }}</h3>
+                 <button class="text-[9px] font-bold text-blue-400 hover:text-blue-300 uppercase tracking-widest">{{ $t('admin.overview.recent.viewAll') }}</button>
               </div>
               <div class="space-y-2">
                  <div v-for="user in stats?.recentSignups?.slice(0, 5)" :key="user.email" 
@@ -76,7 +76,7 @@
            </div>
 
            <div class="glass-panel p-8 rounded-[2.5rem] border border-white/5 hover:border-white/10 transition-colors">
-              <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-6 text-white">Tier Migrations</h3>
+              <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-6 text-white">{{ $t('admin.overview.recent.migrations') }}</h3>
                <div class="space-y-4">
                  <div v-for="upgrade in stats?.recentUpgrades?.slice(0, 5)" :key="upgrade.email" class="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5">
                     <div class="flex items-center gap-3">
@@ -85,7 +85,7 @@
                        </div>
                        <div>
                           <p class="text-xs font-bold text-white">{{ upgrade.name }}</p>
-                          <p class="text-[9px] text-gray-500">Upgraded Plan</p>
+                          <p class="text-[9px] text-gray-500">{{ $t('admin.overview.recent.upgradedPlan') }}</p>
                        </div>
                     </div>
                     <span class="text-[9px] font-black bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded text-blue-400 uppercase tracking-widest">
@@ -101,7 +101,7 @@
       <div class="space-y-8">
          <div class="glass-panel p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group">
             <h3 class="text-xs font-black uppercase tracking-widest opacity-60 mb-8 text-white relative z-10 flex items-center gap-2">
-               <activity-source theme="filled" class="text-green-500" /> VTuber Pulse
+               <activity-source theme="filled" class="text-green-500" /> {{ $t('admin.overview.infrastructure.pulse') }}
             </h3>
             
             <div class="space-y-4 relative z-10">
@@ -121,12 +121,12 @@
          </div>
 
          <div class="glass-panel p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden">
-            <h3 class="text-xs font-black uppercase tracking-widest opacity-60 mb-6 text-white">Cluster Load</h3>
+            <h3 class="text-xs font-black uppercase tracking-widest opacity-60 mb-6 text-white">{{ $t('admin.overview.infrastructure.load') }}</h3>
             <div class="p-8 bg-[#0a0a0c] rounded-[2rem] border border-white/10 flex flex-col items-center relative overflow-hidden">
                <div class="absolute inset-0 bg-blue-500/5 animate-pulse"></div>
                <div class="relative z-10 text-center">
                   <div class="text-5xl font-black text-white mb-1 tracking-tighter">{{ systemHealth?.cpuUsage || 0 }}%</div>
-                  <p class="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-6">CPU Fulfillment</p>
+                  <p class="text-[9px] font-black opacity-40 uppercase tracking-[0.2em] mb-6">{{ $t('admin.overview.infrastructure.cpuFulfillment') }}</p>
                   
                   <div class="w-48 h-2 bg-white/10 rounded-full overflow-hidden">
                      <div class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full transition-all duration-1000 ease-out" :style="{ width: (systemHealth?.cpuUsage || 0) + '%' }"></div>
@@ -137,7 +137,7 @@
 
          <button class="w-full py-5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all text-xs font-black uppercase tracking-widest text-gray-400 hover:text-white flex items-center justify-center gap-2 group" @click="$router.push('/admin/infra-health')">
             <setting theme="outline" class="group-hover:rotate-90 transition-transform duration-500" />
-            Manage Infrastructure
+            {{ $t('admin.overview.infrastructure.manage') }}
          </button>
       </div>
     </div>
@@ -148,6 +148,7 @@
 import { onMounted, computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { Line } from 'vue-chartjs'
+import { useI18n } from 'vue-i18n';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -175,19 +176,20 @@ ChartJS.register(
   Filler
 )
 
+const { t } = useI18n()
 const uiStore = useUIStore();
 const adminStore = useAdminStore()
 const { stats } = storeToRefs(adminStore)
 const systemHealth = ref<any>(null);
 const healthItems = ref<any[]>([]);
-const cpuTrend = ref<string>('Stable');
+const cpuTrend = ref<string>(t('admin.overview.stats.stable'));
 const isCpuPositive = ref<boolean>(true);
 
 const statCards = computed(() => [
-   { label: 'Total Command Units', value: stats.value?.totalUsers || 0, trend: '+12%', isPositive: true, color: '#3b82f6' },
-   { label: 'Monthly Delta', value: `$${stats.value?.monthlyRevenue || 0}`, trend: '+8.4%', isPositive: true, color: '#10b981' },
-   { label: 'CPU Dynamics', value: `${systemHealth.value?.cpuUsage || 0}%`, trend: cpuTrend.value, isPositive: isCpuPositive.value, color: '#a855f7' },
-   { label: 'Storage Footprint', value: `${stats.value?.storageUsed || 0} GB`, trend: '+2.1%', isPositive: false, color: '#f59e0b' }
+   { label: t('admin.overview.stats.totalUsers'), key: 'totalUsers', value: stats.value?.totalUsers || 0, trend: '+12%', isPositive: true, color: '#3b82f6' },
+   { label: t('admin.overview.stats.monthlyRevenue'), key: 'monthlyRevenue', value: `$${stats.value?.monthlyRevenue || 0}`, trend: '+8.4%', isPositive: true, color: '#10b981' },
+   { label: t('admin.overview.stats.cpuUsage'), key: 'cpuUsage', value: `${systemHealth.value?.cpuUsage || 0}%`, trend: cpuTrend.value, isPositive: isCpuPositive.value, color: '#a855f7' },
+   { label: t('admin.overview.stats.storageUsed'), key: 'storageUsed', value: `${stats.value?.storageUsed || 0} GB`, trend: '+2.1%', isPositive: false, color: '#f59e0b' }
 ]);
 
 const fetchAllData = async () => {
@@ -212,7 +214,7 @@ const fetchAllData = async () => {
         const previous = history[1].cpuUsage;
         const diff = current - previous;
         if (diff === 0) {
-            cpuTrend.value = 'Stable';
+            cpuTrend.value = t('admin.overview.stats.stable');
             isCpuPositive.value = true;
         } else {
             cpuTrend.value = `${diff > 0 ? '+' : ''}${diff}%`;
@@ -221,7 +223,7 @@ const fetchAllData = async () => {
     }
   } catch (error: any) {
     if (error.status === 403) {
-      toast.error('Access denied: You do not have admin permissions')
+      toast.error(t('admin.overview.toasts.denied'))
       return;
     }
     console.error('Failed to fetch admin stats', error)
@@ -236,7 +238,7 @@ const chartData = computed(() => {
       labels: stats.value?.charts.userGrowth.labels,
       datasets: [
         {
-          label: 'Total Users',
+          label: t('admin.overview.charts.totalUsers'),
           backgroundColor: (context: any) => {
              const ctx = context.chart.ctx;
              const gradient = ctx.createLinearGradient(0, 0, 0, 300);

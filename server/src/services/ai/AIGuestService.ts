@@ -1,6 +1,8 @@
 import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { VTuberService } from '../VTuberService.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 export class AIGuestService {
     private gemini: GeminiClient;
 
@@ -154,7 +156,7 @@ DO NOT say "I'm preparing to use the tool". JUST USE IT IMMEDIATELY.
 `;
 
         // 3. Generate structured response via Gemini
-        console.log(`[AI/Guest] Generating response for ${vtuber.identity.name}. Input: ${input.type}`);
+        Logger.info(`[AI/Guest] Generating response for ${vtuber.identity.name}. Input: ${input.type}`);
         
         try {
             const rawResult = await this.gemini.generateContent(systemInstruction, 'gemini-2.5-flash', { 
@@ -163,7 +165,7 @@ DO NOT say "I'm preparing to use the tool". JUST USE IT IMMEDIATELY.
             });
             let result: any = {};
             try { result = JSON.parse(rawResult.text); } catch (e) {}
-            console.log(`[AI/Guest] RAW JSON Result for ${vtuber.identity.name}:`, JSON.stringify(result));
+            Logger.info(`[AI/Guest] RAW JSON Result for ${vtuber.identity.name}:`, JSON.stringify(result));
             
             // Robust parsing with fallbacks
             let { text, emotion, gesture, action, actionPayload } = result;
@@ -191,7 +193,7 @@ DO NOT say "I'm preparing to use the tool". JUST USE IT IMMEDIATELY.
                     });
                     audioUrl = ttsResult.media.url;
                 } catch (ttsError) {
-                    console.error('[AI/Guest] TTS Synthesis failed during consolidated call:', ttsError);
+                    Logger.error('[AI/Guest] TTS Synthesis failed during consolidated call:', ttsError);
                 }
             }
 
@@ -221,7 +223,7 @@ DO NOT say "I'm preparing to use the tool". JUST USE IT IMMEDIATELY.
 
             return { text, emotion, gesture, audioUrl, action, actionPayload };
         } catch (error: any) {
-            console.error(`[AI/Guest] Generation failed for ${vtuber.identity.name}:`, error.message);
+            Logger.error(`[AI/Guest] Generation failed for ${vtuber.identity.name}:`, error.message);
             throw error;
         }
     }
@@ -259,7 +261,7 @@ DO NOT say "I'm preparing to use the tool". JUST USE IT IMMEDIATELY.
         `;
 
         try {
-            console.log('[AI/Guest] Normalizing Live Response:', text);
+            Logger.info('[AI/Guest] Normalizing Live Response:', text);
             const rawResult = await this.gemini.generateContent(text, 'gemini-2.5-flash', { 
                 systemPrompt,
                 generationConfig: { responseMimeType: "application/json" }
@@ -275,7 +277,7 @@ DO NOT say "I'm preparing to use the tool". JUST USE IT IMMEDIATELY.
                 actionPayload: result.actionPayload
             };
         } catch (error) {
-            console.error('[AI/Guest] Normalization failed, returning defaults:', error);
+            Logger.error('[AI/Guest] Normalization failed, returning defaults:', error);
             return { text, emotion: 'neutral', gesture: 'normal' };
         }
     }

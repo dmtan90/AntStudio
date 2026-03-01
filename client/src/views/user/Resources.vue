@@ -10,21 +10,21 @@
       <div class="max-w-7xl mx-auto relative z-10">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
           <div class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
-          <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">Resource Manager</span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">{{ t('resources.badge') }}</span>
         </div>
         <h1 class="text-6xl font-black mb-6 tracking-tighter leading-[0.9]">
-          Creative <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">Assets</span><br />
-          & Archives
+          {{ t('resources.assets') }}<br />
+          {{ t('resources.archives') }}
         </h1>
         <p class="text-xl text-gray-400 max-w-2xl leading-relaxed mb-10 font-medium">
-          Centralize your media, studio recordings, and production exports in one place. Search, filter, and manage your assets with ease.
+          {{ t('resources.subtitle') }}
         </p>
 
         <div class="flex flex-wrap gap-4 items-center">
           <button @click="showUploadDialog = true" class="group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
             <UploadOne theme="filled" class="text-xl" />
-            Upload Assets
+            {{ t('resources.upload') }}
           </button>
 
           <div class="flex -space-x-4">
@@ -49,14 +49,14 @@
               <FolderOne v-if="scope.item.value === 'assets'" class="text-blue-400" />
               <VideoOne v-if="scope.item.value === 'archives'" class="text-purple-400" />
               <CollectionFiles v-if="scope.item.value === 'gallery'" class="text-pink-400" />
-              <span class="font-black text-sm tracking-tight">{{ scope.item.name }}</span>
+              <span class="font-black text-sm tracking-tight">{{ t('resources.tabs.' + scope.item.value) }}</span>
             </div>
           </template>
         </el-segmented>
 
         <div class="relative group min-w-[320px]">
           <Search class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 text-lg group-focus-within:text-blue-400 transition-colors" />
-          <input v-model="filters.search" placeholder="Search resources..." class="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-500/50 focus:bg-white/[0.08] transition-all outline-none text-base" />
+          <input v-model="filters.search" :placeholder="t('resources.search')" class="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-500/50 focus:bg-white/[0.08] transition-all outline-none text-base" />
         </div>
       </div>
 
@@ -67,7 +67,7 @@
           <button v-for="cat in assetCategories" :key="cat.id" @click="filters.category = cat.id" 
             :class="['px-6 py-3 rounded-2xl text-sm font-black transition-all border outline-none',
             filters.category === cat.id ? 'bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-500/20 scale-105' : 'bg-white/5 border-transparent hover:border-white/10 text-gray-400 hover:text-white']">
-            {{ cat.name }}
+            {{ t('resources.categories.' + cat.id.replace('/', '')) }}
           </button>
         </div>
 
@@ -99,8 +99,8 @@
 
         <div v-else class="empty-placeholder">
            <Ghost class="text-6xl text-gray-600 mb-4 block mx-auto" />
-           <h3 class="text-xl font-black mb-2">No assets found</h3>
-           <p class="text-gray-500">Try uploading some media files to get started.</p>
+           <h3 class="text-xl font-black mb-2">{{ t('resources.empty.noAssets') }}</h3>
+           <p class="text-gray-500">{{ t('resources.empty.uploadDesc') }}</p>
         </div>
       </div>
 
@@ -138,8 +138,8 @@
 
         <div v-else class="empty-placeholder">
            <Ghost class="text-6xl text-gray-600 mb-4 block mx-auto" />
-           <h3 class="text-xl font-black mb-2">Nothing here yet</h3>
-           <p class="text-gray-500">{{ activeTab === 'archives' ? 'Your live stream recordings will appear here.' : 'Exported project videos will be collected here.' }}</p>
+           <h3 class="text-xl font-black mb-2">{{ t('resources.empty.nothingHere') }}</h3>
+           <p class="text-gray-500">{{ activeTab === 'archives' ? t('resources.empty.archivesDesc') : t('resources.empty.galleryDesc') }}</p>
         </div>
       </div>
 
@@ -156,16 +156,16 @@
     </main>
 
     <!-- Dialogs -->
-    <el-dialog v-model="showUploadDialog" title="Upload Resources" width="500px" class="glass-dialog custom-dialog" :show-close="false">
+    <el-dialog v-model="showUploadDialog" :title="t('resources.dialogs.upload.title')" width="500px" class="glass-dialog custom-dialog" :show-close="false">
       <div class="upload-zone" :class="{ 'uploading': isUploading }" @click="triggerUpload">
         <UploadOne theme="outline" size="48" class="text-blue-400 mb-4" />
-        <p class="font-bold text-gray-300">{{ isUploading ? 'Processing upload...' : 'Click or drop files to upload' }}</p>
-        <span class="text-xs text-gray-500 mt-2">Images, Videos, and Audio supported</span>
+        <p class="font-bold text-gray-300">{{ isUploading ? t('resources.dialogs.upload.processing') : t('resources.dialogs.upload.drop') }}</p>
+        <span class="text-xs text-gray-500 mt-2">{{ t('resources.dialogs.upload.supported') }}</span>
         <input ref="fileInput" type="file" multiple hidden @change="handleFileSelect" />
       </div>
       <template #footer>
         <div class="flex gap-4">
-          <button class="flex-1 py-3 bg-white/5 rounded-xl font-bold hover:bg-white/10 transition-all" @click="showUploadDialog = false">Cancel</button>
+          <button class="flex-1 py-3 bg-white/5 rounded-xl font-bold hover:bg-white/10 transition-all" @click="showUploadDialog = false">{{ t('common.cancel') }}</button>
         </div>
       </template>
     </el-dialog>
@@ -186,7 +186,7 @@ import {
   UploadOne, Search, FolderOne, VideoOne, 
 CollectionFiles, Download, Delete, Ghost, FileWord, FilePdf, FileExcel, FilePpt, PlayTwo
 } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { useMediaStore } from '@/stores/media'
 import { storeToRefs } from 'pinia'
 import { getFileUrl } from '@/utils/api'
@@ -196,7 +196,7 @@ import { toast } from 'vue-sonner'
 import GalleryVideoCard from '@/components/projects/GalleryVideoCard.vue'
 import ResourcePreviewDialog from '@/components/studio/shared/ResourcePreviewDialog.vue'
 
-const { t } = useTranslations()
+const { t } = useI18n()
 const mediaStore = useMediaStore()
 const { resources, exportedVideos, loading, pagination } = storeToRefs(mediaStore)
 
@@ -258,7 +258,7 @@ const handleFileSelect = async (event: any) => {
   if (!files.length) return
 
   isUploading.value = true
-  const toastId = toast.loading('Uploading assets...')
+  const toastId = toast.loading(t('resources.toasts.uploading'))
   
   try {
     for (const file of Array.from(files) as File[]) {
@@ -267,11 +267,11 @@ const handleFileSelect = async (event: any) => {
       formData.append('purpose', activeTab.value === 'archives' ? 'recording' : 'project_asset')
       await mediaStore.uploadMedia(formData)
     }
-    toast.success('Assets uploaded successfully', { id: toastId })
+    toast.success(t('resources.toasts.uploadSuccess'), { id: toastId })
     showUploadDialog.value = false
     fetchData()
   } catch (e) {
-    toast.error('Failed to upload assets', { id: toastId })
+    toast.error(t('resources.toasts.uploadFailed'), { id: toastId })
   } finally {
     isUploading.value = false
     if (fileInput.value) fileInput.value.value = ''
@@ -288,7 +288,7 @@ const downloadResource = (item: any) => {
 }
 
 const deleteResource = async (item: any) => {
-  if (confirm('Are you sure you want to delete this resource?')) {
+  if (confirm(t('resources.confirmDelete'))) {
     await mediaStore.deleteMedia(item._id)
     fetchData()
   }
@@ -300,7 +300,7 @@ const formatFileSize = (bytes: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${['B', 'KB', 'MB', 'GB'][i]}`
 }
-const formatDate = (d: any) => new Date(d).toLocaleDateString()
+const formatDate = (d: any) => new Date(d).toLocaleDateString(t('common.locale') === 'vi' ? 'vi-VN' : 'en-US')
 
 watch([activeTab, () => filters.category], () => {
   filters.page = 1

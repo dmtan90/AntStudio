@@ -13,75 +13,79 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import {
     MagicWand, User, Link, Copy, FileText, Monitor, Camera, Plus, Broadcast
 } from '@icon-park/vue-next'
+import { useI18n } from 'vue-i18n';
 
-const options = [
+const { t } = useI18n()
+
+const options = computed(() => [
     {
-        label: 'AI Video',
-        desc: 'Generate from text prompt',
+        label: t('projects.new.options.aiVideo.label'),
+        desc: t('projects.new.options.aiVideo.desc'),
         icon: MagicWand,
         class: 'bg-gradient-purple',
         value: 'ai-video'
     },
     {
-        label: 'AI Avatar',
-        desc: 'Talking head video',
+        label: t('projects.new.options.aiAvatar.label'),
+        desc: t('projects.new.options.aiAvatar.desc'),
         icon: User,
         class: 'bg-gradient-blue',
         value: 'avatar'
     },
     {
-        label: 'URL to Video',
-        desc: 'Convert blog/article',
+        label: t('projects.new.options.urlToVideo.label'),
+        desc: t('projects.new.options.urlToVideo.desc'),
         icon: Link,
         class: 'bg-gradient-green',
         value: 'url-to-video'
     },
     {
-        label: 'Clone Style',
-        desc: 'From reference video',
+        label: t('projects.new.options.cloneStyle.label'),
+        desc: t('projects.new.options.cloneStyle.desc'),
         icon: Copy,
         class: 'bg-gradient-orange',
         value: 'clone-style'
     },
     {
-        label: 'Script to Video',
-        desc: 'From screenplay',
+        label: t('projects.new.options.scriptToVideo.label'),
+        desc: t('projects.new.options.scriptToVideo.desc'),
         icon: FileText,
         class: 'bg-gradient-pink',
         value: 'script-to-video'
     },
     {
-        label: 'Presentation',
-        desc: 'From slides/PPT',
+        label: t('projects.new.options.presentation.label'),
+        desc: t('projects.new.options.presentation.desc'),
         icon: Monitor,
         class: 'bg-gradient-cyan',
         value: 'presentation'
     },
     {
-        label: 'Record',
-        desc: 'Screen & Camera',
+        label: t('projects.new.options.record.label'),
+        desc: t('projects.new.options.record.desc'),
         icon: Camera,
         class: 'bg-gradient-red',
         value: 'record'
     },
     {
-        label: 'Live Stream',
-        desc: 'Broadcast to Socials',
+        label: t('projects.new.options.liveStream.label'),
+        desc: t('projects.new.options.liveStream.desc'),
         icon: Broadcast,
         class: 'bg-gradient-indigo',
         value: 'live-stream'
     },
     {
-        label: 'Blank Project',
-        desc: 'Start from scratch',
+        label: t('projects.new.options.blank.label'),
+        desc: t('projects.new.options.blank.desc'),
         icon: Plus,
         class: 'bg-white-10',
         value: 'blank'
     }
-]
+])
 
 defineEmits(['select'])
 </script>

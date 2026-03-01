@@ -8,14 +8,14 @@
             <shopping theme="outline" size="20" class="text-orange-400" />
           </div>
           <div>
-            <h2 class="text-lg font-black text-white uppercase tracking-tighter">Live Commerce</h2>
-            <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Inventory & Flash Deals</p>
+            <h2 class="text-lg font-black text-white uppercase tracking-tighter">{{ $t('studio.drawers.economy.title') }}</h2>
+            <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">{{ $t('studio.drawers.economy.inventoryDesc') }}</p>
           </div>
         </div>
         <div class="flex items-center gap-4">
           <button
             class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase text-white/60 tracking-widest transition-all">
-            Sync Store
+            {{ $t('studio.drawers.economy.syncStore') }}
           </button>
           <button @click="$emit('update:modelValue', false)" class="close-btn">
             <close theme="outline" size="20" />
@@ -28,10 +28,9 @@
       <!-- Section: Featured Products -->
       <section class="space-y-4">
         <div class="flex justify-between items-end">
-          <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Featured Inventory</h4>
+          <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">{{ $t('studio.drawers.economy.featuredInventory') }}</h4>
           <span
-            class="text-[9px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full uppercase tracking-widest">Ready
-            to Showcase</span>
+            class="text-[9px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{{ $t('studio.drawers.economy.readyToShowcase') }}</span>
         </div>
 
         <div v-if="products.length > 0" class="grid grid-cols-1 gap-3">
@@ -56,33 +55,32 @@
                 <div class="flex items-center gap-1.5">
                   <div class="w-1.5 h-1.5 rounded-full" :class="product.stock > 10 ? 'bg-green-500' : 'bg-red-500'">
                   </div>
-                  <span class="text-[9px] font-black text-white/30 uppercase tracking-widest">{{ product.stock }} IN
-                    STOCK</span>
+                  <span class="text-[9px] font-black text-white/30 uppercase tracking-widest">{{ product.stock }} {{ $t('studio.drawers.economy.inStock') }}</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <Ranking theme="outline" size="12" class="text-white/20" />
                   <span class="text-[9px] font-black text-white/30 uppercase tracking-widest">{{ product.clicks || 0 }}
-                    CLICKS</span>
+                    {{ $t('studio.drawers.economy.clicks') }}</span>
                 </div>
               </div>
             </div>
 
             <button class="px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
               :class="product.isActive ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'">
-              {{ product.isActive ? 'Live' : 'Pin' }}
+              {{ product.isActive ? $t('studio.common.live') : $t('studio.common.pin') }}
             </button>
           </div>
         </div>
         <div v-else
           class="p-12 border border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center opacity-30 gap-4">
           <shopping theme="outline" size="48" />
-          <p class="text-[10px] font-black uppercase tracking-[0.2em]">No products found</p>
+          <p class="text-[10px] font-black uppercase tracking-[0.2em]">{{ $t('studio.drawers.economy.noProducts') }}</p>
         </div>
       </section>
 
       <!-- Section: Flash Sales Engine -->
       <section class="space-y-4">
-        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Flash Sale Engine</h4>
+        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">{{ $t('studio.drawers.economy.flashSaleEngine') }}</h4>
         <div
           class="p-8 rounded-[40px] bg-gradient-to-br from-orange-500/10 to-red-500/5 border border-orange-500/20 relative overflow-hidden group">
           <div
@@ -91,9 +89,8 @@
 
           <div class="relative flex items-center justify-between">
             <div class="space-y-2">
-              <h3 class="text-xl font-black text-white uppercase tracking-tighter">AI-Driven Flash Sale</h3>
-              <p class="text-xs text-white/40 font-medium max-w-[300px]">Triggers a high-urgency countdown with special
-                discounts when chat engagement spikes.</p>
+              <h3 class="text-xl font-black text-white uppercase tracking-tighter">{{ $t('studio.drawers.economy.aiDrivenFlashSale') }}</h3>
+              <p class="text-xs text-white/40 font-medium max-w-[300px]">{{ $t('studio.drawers.economy.flashSaleDesc') }}</p>
             </div>
 
             <div class="flex flex-col items-center gap-4">
@@ -101,12 +98,12 @@
                 <div class="text-3xl font-mono font-black text-orange-500 animate-pulse">{{ flashTimeLeft }}</div>
                 <button @click="stopFlashSale"
                   class="px-8 py-3 bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">
-                  Stop Sale
+                  {{ $t('studio.drawers.economy.stopSale') }}
                 </button>
               </div>
               <button v-else @click="startFlashSale"
                 class="px-10 py-5 bg-orange-500 text-white rounded-[24px] text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all">
-                Trigger Sale
+                {{ $t('studio.drawers.economy.triggerSale') }}
               </button>
             </div>
           </div>
@@ -116,8 +113,7 @@
 
     <template #footer>
       <div class="p-6 text-center border-t border-white/5 bg-white/[0.02]">
-        <p class="text-[10px] text-white/20 font-bold uppercase tracking-widest">Connect your Shopify or WooCommerce
-          store in global settings</p>
+        <p class="text-[10px] text-white/20 font-bold uppercase tracking-widest">{{ $t('studio.drawers.economy.connectStore') }}</p>
       </div>
     </template>
   </el-dialog>
@@ -125,10 +121,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Close, Shopping, Lightning, Flashlamp, ShoppingCart, Share, PreviewOpen, DeleteOne as Trash, Check, Ranking } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
 import { useUIStore } from '@/stores/ui';
 import { toast } from 'vue-sonner';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   modelValue: boolean;
@@ -151,7 +150,12 @@ const flashTimeLeft = ref('00:00');
 const updateFlashTimer = () => {
   if (!studioStore.activeFlashSale) return;
   const now = Date.now();
-  const expires = new Date(studioStore.activeFlashSale.expiresAt).getTime();
+  // Support both numeric epoch and ISO string formats safely
+  const expires = +new Date(studioStore.activeFlashSale.expiresAt);
+  if (isNaN(expires)) {
+    flashTimeLeft.value = '00:00';
+    return;
+  }
   const diff = expires - now;
   if (diff <= 0) {
     flashTimeLeft.value = '00:00';
@@ -186,7 +190,7 @@ const toggleProduct = (product: any) => {
       image: product.image,
       link: 'https://antflow.ai/shop/' + product.id
     });
-    toast.info(`Showcasing ${product.name} on stream`);
+    toast.info(t('studio.drawers.economy.showcasingName', { name: product.name }));
   } else {
     studioStore.removeProduct(product.id);
   }
@@ -195,16 +199,16 @@ const toggleProduct = (product: any) => {
 const startFlashSale = () => {
   studioStore.startFlashSale({
     id: 'flash_' + Date.now(),
-    title: 'HOT DEAL: -30% OFF',
+    title: t('studio.drawers.economy.hotDeal', { n: 30 }),
     discount: 0.3,
-    expiresAt: new Date(Date.now() + 10 * 60000)
+    expiresAt: Date.now() + 10 * 60000
   });
-  toast.success('Flash sale triggered! Urgency overlays active.');
+  toast.success(t('studio.drawers.economy.flashSaleTriggered'));
 };
 
 const stopFlashSale = () => {
   studioStore.endFlashSale();
-  toast.info('Flash sale ended.');
+  toast.info(t('studio.drawers.economy.flashSaleEnded'));
 };
 </script>
 

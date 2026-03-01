@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Tenant, ITenant } from '../models/Tenant.js';
 
+import { Logger } from '../utils/Logger.js';
+
 // Extend Express Request to include tenant context
 declare global {
     namespace Express {
@@ -59,7 +61,7 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
         next();
 
     } catch (error) {
-        console.error('[TenantMiddleware] Resolution failed:', error);
+        Logger.error('[TenantMiddleware] Resolution failed:', error);
         res.status(500).json({ error: 'Tenant resolution error' });
     }
 };

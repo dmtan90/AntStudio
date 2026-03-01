@@ -1,5 +1,5 @@
 <template>
-    <el-dialog v-model="visible" :title="`Configure Neural Engine: ${provider?.name}`" width="1000px" 
+    <el-dialog v-model="visible" :title="t('admin.settings.ai.protocol', { type: provider?.name })" width="1000px" 
         class="cinematic-dialog ai-config-dialog" destroy-on-close @closed="$emit('update:modelValue', false)">
         
         <div class="flex gap-6 h-[600px]" v-if="provider">
@@ -10,7 +10,7 @@
                     :class="['type-item group', activeType === type ? 'active' : '']">
                     <div class="flex items-center gap-3">
                         <component :is="getTypeIcon(type)" theme="outline" size="16" />
-                        <span class="text-[10px] font-black uppercase tracking-widest">{{ type }}</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest">{{ $t(`admin.settings.ai.capabilities.${type}`) }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <div v-if="isConfigured(type)" class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
@@ -19,8 +19,8 @@
                 </div>
 
                 <div class="mt-auto p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10">
-                    <h5 class="text-[8px] font-black uppercase tracking-widest text-blue-400 mb-2">AI Architect</h5>
-                    <p class="text-[9px] opacity-40 leading-relaxed">Enter a documentation URL and let AntG AI generate the optimal configuration template for you.</p>
+                    <h5 class="text-[8px] font-black uppercase tracking-widest text-blue-400 mb-2">{{ t('admin.settings.ai.aiAssist') }}</h5>
+                    <p class="text-[9px] opacity-40 leading-relaxed">{{ t('admin.settings.ai.aiAssistDesc') }}</p>
                 </div>
             </div>
 
@@ -29,12 +29,12 @@
                 <div v-if="activeType" class="space-y-8 animate-in slide-up">
                     <header class="flex justify-between items-start">
                         <div>
-                            <h3 class="text-xl font-black uppercase tracking-tighter">{{ activeType }} Protocol</h3>
-                            <p class="text-[10px] opacity-40">Define how the system interacts with this provider for {{ activeType }} tasks.</p>
+                            <h3 class="text-xl font-black uppercase tracking-tighter">{{ $t('admin.settings.ai.protocol', { type: activeType }) }}</h3>
+                            <p class="text-[10px] opacity-40">{{ $t('admin.settings.ai.protocolDesc', { type: activeType }) }}</p>
                         </div>
                         <el-button plain bg round shadow @click="showAIModal = true">
                             <magic theme="outline" size="14" class="mr-2" />
-                            AI Assist
+                            {{ $t('admin.settings.ai.aiAssist') }}
                         </el-button>
                     </header>
 
@@ -43,14 +43,14 @@
                         <div class="col-span-12 space-y-4">
                             <div class="flex gap-4">
                                 <div class="w-24">
-                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Method</label>
+                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.method') }}</label>
                                     <el-select v-model="config.method" size="default" class="glass-input">
                                         <el-option label="POST" value="POST" />
                                         <el-option label="GET" value="GET" />
                                     </el-select>
                                 </div>
                                 <div class="flex-1">
-                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Endpoint URL</label>
+                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.endpoint') }}</label>
                                     <el-input v-model="config.endpoint" placeholder="https://api.provider.com/v1/..." class="glass-input" />
                                 </div>
                             </div>
@@ -58,20 +58,20 @@
 
                         <!-- Headers -->
                         <div class="col-span-12">
-                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">HTTP Headers (JSON)</label>
+                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.headers') }}</label>
                             <el-input v-model="headersJson" type="textarea" :rows="3" placeholder='{ "Authorization": "Bearer {{apiKey}}" }' class="glass-input code-font" />
                         </div>
 
                         <!-- Payload Template -->
                         <div class="col-span-12">
-                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Payload Template (Liquid/Handlebars Style)</label>
+                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.payload') }}</label>
                             <el-input v-model="config.payloadTemplate" type="textarea" :rows="6" 
                                 placeholder='{ "model": "{{model}}", "prompt": "{{prompt}}" }' class="glass-input code-font" />
                         </div>
 
                          <!-- Available Models -->
                          <div class="col-span-12">
-                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Available Models (Model IDs for this task)</label>
+                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.models') }}</label>
                             <div class="flex flex-wrap gap-2 p-3 bg-white/2 border border-white/5 rounded-2xl">
                                 <el-tag v-for="(m, i) in config.models" :key="i" closable @close="config.models.splice(i, 1)"
                                     class="usage-tag">
@@ -87,22 +87,22 @@
 
                         <!-- Response Mapping -->
                         <div class="col-span-12">
-                            <h4 class="text-[10px] font-black uppercase tracking-widest opacity-60 mb-4 border-b border-white/5 pb-2">Response Mapping (JSON Path)</h4>
+                            <h4 class="text-[10px] font-black uppercase tracking-widest opacity-60 mb-4 border-b border-white/5 pb-2">{{ $t('admin.settings.ai.config.responseMapping') }}</h4>
                             <div class="grid grid-cols-2 gap-4">
                                 <div v-if="activeType === 'text'">
-                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Content Path</label>
+                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.contentPath') }}</label>
                                     <el-input v-model="config.responseMapping.text" placeholder="choices[0].message.content" class="glass-input" />
                                 </div>
                                 <div v-if="activeType !== 'text'">
-                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Media URL Path</label>
+                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.mediaUrlPath') }}</label>
                                     <el-input v-model="config.responseMapping.url" placeholder="data[0].url" class="glass-input" />
                                 </div>
                                 <div v-if="['image', 'video', 'audio'].includes(activeType)">
-                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Base64 Data Path</label>
+                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.base64Path') }}</label>
                                     <el-input v-model="config.responseMapping.b64" placeholder="data[0].b64_json" class="glass-input" />
                                 </div>
                                 <div>
-                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Async Job ID Path</label>
+                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.jobIdPath') }}</label>
                                     <el-input v-model="config.responseMapping.jobId" placeholder="id or task_id" class="glass-input" />
                                 </div>
                             </div>
@@ -113,21 +113,21 @@
                             <div class="p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 space-y-5">
                                 <h4 class="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-1 flex items-center gap-2">
                                     <AlarmClock theme="outline" size="12" />
-                                    Async Poll Configuration
+                                    {{ $t('admin.settings.ai.pollConfig') }}
                                 </h4>
-                                <p class="text-[9px] opacity-40 -mt-3">Since a Job ID is returned, configure how the system should poll for the final result.</p>
+                                <p class="text-[9px] opacity-40 -mt-3">{{ $t('admin.settings.ai.poll.desc') }}</p>
 
                                 <!-- Poll Endpoint -->
                                 <div class="flex gap-4">
                                     <div class="w-24">
-                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Method</label>
+                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.method') }}</label>
                                         <el-select v-model="config.pollConfig.method" size="default" class="glass-input">
                                             <el-option label="GET" value="GET" />
                                             <el-option label="POST" value="POST" />
                                         </el-select>
                                     </div>
                                     <div class="flex-1">
-                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Poll Endpoint (use {<!-- -->{jobId}} placeholder)</label>
+                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.poll.endpoint') }}</label>
                                         <el-input v-model="config.pollConfig.endpoint" placeholder="https://api.provider.com/history/{[jobId]}" class="glass-input" />
                                     </div>
                                 </div>
@@ -135,47 +135,47 @@
                                 <!-- Timing -->
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Poll Interval (ms)</label>
+                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.poll.interval') }}</label>
                                         <el-input-number v-model="config.pollConfig.intervalMs" :min="500" :step="500" size="default" class="w-full" />
                                     </div>
                                     <div>
-                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Total Timeout (ms)</label>
+                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.poll.timeout') }}</label>
                                         <el-input-number v-model="config.pollConfig.timeoutMs" :min="5000" :step="5000" size="default" class="w-full" />
                                     </div>
                                 </div>
 
                                 <!-- Status Path -->
                                 <div>
-                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Status Field Path (JSON dot-path)</label>
+                                    <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.poll.statusPath') }}</label>
                                     <el-input v-model="config.pollConfig.statusPath" placeholder="data.status or status" class="glass-input" />
                                 </div>
 
                                 <!-- Success / Failure Values -->
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Success Values (comma-separated)</label>
+                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.poll.successValues') }}</label>
                                         <el-input v-model="pollSuccessValuesStr" placeholder="SUCCESS, completed, done" class="glass-input" />
                                     </div>
                                     <div>
-                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Failure Values (comma-separated)</label>
+                                        <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.poll.failureValues') }}</label>
                                         <el-input v-model="pollFailureValuesStr" placeholder="FAILED, error" class="glass-input" />
                                     </div>
                                 </div>
 
                                 <!-- Poll Response Mapping -->
                                 <div>
-                                    <h5 class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-3 border-b border-white/5 pb-2">Poll Response Mapping</h5>
+                                    <h5 class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-3 border-b border-white/5 pb-2">{{ $t('admin.settings.ai.poll.responseMapping') }}</h5>
                                     <div class="grid grid-cols-3 gap-3">
                                         <div v-if="activeType !== 'text'">
-                                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">URL Path</label>
+                                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.mediaUrlPath') }}</label>
                                             <el-input v-model="config.pollConfig.responseMapping.url" placeholder="data.output_url" class="glass-input" />
                                         </div>
                                         <div v-if="['image', 'audio'].includes(activeType)">
-                                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Base64 Path</label>
+                                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.base64Path') }}</label>
                                             <el-input v-model="config.pollConfig.responseMapping.b64" placeholder="data.audio_base64" class="glass-input" />
                                         </div>
                                         <div v-if="activeType === 'text'">
-                                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">Text Path</label>
+                                            <label class="block text-[8px] font-black uppercase opacity-30 mb-2">{{ $t('admin.settings.ai.config.contentPath') }}</label>
                                             <el-input v-model="config.pollConfig.responseMapping.text" placeholder="data.text" class="glass-input" />
                                         </div>
                                     </div>
@@ -189,31 +189,31 @@
 
         <template #footer>
             <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
-                <el-button @click="visible = false" plain round bg>Cancel</el-button>
-                <el-button type="primary" @click="handleSave" round shadow>Apply Configuration</el-button>
+                <el-button @click="visible = false" plain round bg>{{ t('common.cancel') }}</el-button>
+                <el-button type="primary" @click="handleSave" round shadow>{{ t('admin.settings.toasts.applyConfig') }}</el-button>
             </div>
         </template>
 
         <!-- AI Assistant Modal -->
-        <el-dialog v-model="showAIModal" title="Neural Architect Assist" width="500px" append-to-body class="cinematic-dialog sub-dialog">
+        <el-dialog v-model="showAIModal" :title="t('admin.settings.ai.aiAssist')" width="500px" append-to-body class="cinematic-dialog sub-dialog">
             <div class="space-y-6">
                 <div class="p-6 bg-blue-500/5 rounded-3xl border border-blue-500/10 text-center">
                     <div class="w-16 h-16 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto mb-4 animate-pulse">
                         <magic theme="outline" size="32" />
                     </div>
-                    <h4 class="text-lg font-black uppercase tracking-tighter mb-2">Flash-Generate Template</h4>
-                    <p class="text-xs opacity-50 px-4">Provide the documentation URL or an API feature description, and I'll build the structural mapping for you.</p>
+                    <h4 class="text-lg font-black uppercase tracking-tighter mb-2">{{ t('admin.settings.ai.aiAssistTitle') }}</h4>
+                    <p class="text-xs opacity-50 px-4">{{ t('admin.settings.ai.aiAssistDesc') }}</p>
                 </div>
 
                 <div class="space-y-4">
-                    <label class="block text-[8px] font-black uppercase opacity-30">Documentation URL / Reference</label>
-                    <el-input v-model="docUrl" type="textarea" :rows="3" placeholder="Paste link or API spec here..." class="glass-input" />
+                    <label class="block text-[8px] font-black uppercase opacity-30">{{ t('admin.settings.ai.docUrl') }}</label>
+                    <el-input v-model="docUrl" type="textarea" :rows="3" :placeholder="t('admin.settings.ai.docUrlPlaceholder')" class="glass-input" />
                 </div>
 
                 <div class="flex justify-end gap-2">
-                    <el-button @click="showAIModal = false" plain round size="small">Abort</el-button>
+                    <el-button @click="showAIModal = false" plain round size="small">{{ t('admin.settings.toasts.abort') }}</el-button>
                     <el-button type="primary" :loading="generating" @click="generateFromAI" round size="small" shadow>
-                        Generate Protocol
+                        {{ t('admin.settings.toasts.generateProtocol') }}
                     </el-button>
                 </div>
             </div>
@@ -223,6 +223,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { 
     Text, Pic, Video, Voice, Music, Right, 
     Magic, SettingTwo, Plus, Delete, AlarmClock
@@ -235,6 +236,7 @@ const props = defineProps<{
     provider: any;
 }>();
 
+const { t } = useI18n();
 const emit = defineEmits(['update:modelValue', 'save']);
 
 const adminStore = useAdminStore();
@@ -376,7 +378,7 @@ const addModel = () => {
 };
 
 const generateFromAI = async () => {
-    if (!docUrl.value.trim()) return toast.error("Please provide documentation context");
+    if (!docUrl.value.trim()) return toast.error(t('admin.settings.toasts.docRequired'));
     generating.value = true;
     try {
         const data = await adminStore.generateTemplate(docUrl.value, activeType.value);
@@ -394,11 +396,11 @@ const generateFromAI = async () => {
             }
             
             headersJson.value = JSON.stringify(config.value.headers, null, 2);
-            toast.success("AI generated a new protocol template");
+            toast.success(t('admin.settings.toasts.aiTemplateSuccess'));
             showAIModal.value = false;
         }
     } catch (e) {
-        toast.error("AI Architech failed to decode the documentation");
+        toast.error(t('admin.settings.toasts.aiTemplateFailed'));
     } finally {
         generating.value = false;
     }
@@ -411,9 +413,9 @@ const handleSave = () => {
             type: activeType.value,
             config: { ...config.value }
         });
-        toast.success(`${activeType.value} configuration staged`);
+        toast.success(t('admin.settings.toasts.configStaged', { type: activeType.value }));
     } catch (e) {
-        toast.error("Invalid JSON format in Headers");
+        toast.error(t('admin.settings.toasts.invalidHeaders'));
     }
 };
 </script>

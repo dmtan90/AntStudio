@@ -8,28 +8,28 @@
     <div class="container legal-content" :class="{ 'is-embedded': embedded }">
       <transition name="fade-up" appear>
         <div class="content-inner">
-          <h1 class="glow-title" v-if="!embedded">Privacy Policy</h1>
-          <p class="last-updated" v-if="!embedded">Last Updated: January 10, 2026</p>
+          <h1 class="glow-title" v-if="!embedded">{{ $t('marketing.privacy.title') }}</h1>
+          <p class="last-updated" v-if="!embedded">{{ $t('marketing.privacy.lastUpdated') }}</p>
 
           <div class="legal-sections card" :class="{ glass: !embedded }">
             <section>
-              <h2>1. Introduction</h2>
-              <p>Your privacy is important to us. This Privacy Policy explains how AntStudio ("we", "us", or "our") collects, uses, and protects your personal information when you use our website and services.</p>
+              <h2>{{ $t('marketing.privacy.sections.introduction.title') }}</h2>
+              <p>{{ $t('marketing.privacy.sections.introduction.content', { appName: uiStore.appName }) }}</p>
             </section>
 
             <section>
-              <h2>2. Information We Collect</h2>
-              <p>We collect information you provide directly to us, such as when you create an account, generate videos, or contact support. This includes your name, email address, and payment information.</p>
+              <h2>{{ $t('marketing.privacy.sections.collection.title') }}</h2>
+              <p>{{ $t('marketing.privacy.sections.collection.content') }}</p>
             </section>
 
             <section>
-              <h2>3. Use of AI Technologies</h2>
-              <p>AntStudio utilizes advanced generative AI models (including Google Veo and Gemini). The content you provide may be processed by these models to generate cinematic video outputs.</p>
+              <h2>{{ $t('marketing.privacy.sections.ai.title') }}</h2>
+              <p>{{ $t('marketing.privacy.sections.ai.content', { appName: uiStore.appName }) }}</p>
             </section>
 
             <section>
-              <h2>4. Data Security</h2>
-              <p>We implement industry-standard security measures to protect your data. However, no method of transmission over the internet is 100% secure.</p>
+              <h2>{{ $t('marketing.privacy.sections.security.title') }}</h2>
+              <p>{{ $t('marketing.privacy.sections.security.content') }}</p>
             </section>
           </div>
         </div>
@@ -39,6 +39,9 @@
 </template>
 
 <script setup lang="ts">
+import { useUIStore } from '@/stores/ui'
+
+const uiStore = useUIStore()
 defineProps<{
   embedded?: boolean
 }>()

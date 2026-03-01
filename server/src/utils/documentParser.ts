@@ -5,6 +5,7 @@ import path from 'path'
 import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import * as pkgPptxtojson from 'pptxtojson'
+import { Logger } from './Logger.js';
 // @ts-ignore
 const parsePptxImport = pkgPptxtojson.parse || (pkgPptxtojson as any).default?.parse
 
@@ -94,7 +95,7 @@ export const parsePptx = async (buffer: Buffer): Promise<ParsedDocument> => {
             }
         }
     } catch (error) {
-        console.error('PPTX parse error:', error)
+        Logger.error(`PPTX parse error: ${error}`, 'DocumentParser');
         return { text: '', slides: [] }
     }
 }

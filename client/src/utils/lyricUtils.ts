@@ -41,12 +41,10 @@ export function isSingingAtTime(
     
     // List of common non-vocal indicators
     const instrumentalMarkers = [
-        'âm nhạc', 
-        'nhạc', 
         'music', 
+        'instrumental',
         'intro', 
         'outro', 
-        'instrumental',
         'solo',
         'break'
     ];

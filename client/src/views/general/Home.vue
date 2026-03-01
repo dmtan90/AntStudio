@@ -16,9 +16,9 @@
         <transition name="fade-up" appear>
           <div class="hero-inner">
             <h1 class="glow-title">{{ uiStore.appName }}</h1>
-            <p class="hero-tagline">Where the next wave of storytelling happens with AI</p>
+            <p class="hero-tagline">{{ $t('marketing.home.hero.tagline') }}</p>
             <div class="action-row">
-              <router-link to="/dashboard" class="hero-btn-primary">Start with {{ uiStore.appName }}</router-link>
+              <router-link to="/dashboard" class="hero-btn-primary">{{ $t('marketing.home.hero.start', { appName: uiStore.appName }) }}</router-link>
             </div>
           </div>
         </transition>
@@ -28,11 +28,8 @@
     <!-- App Intro -->
     <section class="app-intro">
       <div class="container">
-        <h2 class="intro-title">{{ uiStore.appName }} is an AI filmmaking tool built with and for creatives.</h2>
-        <p class="intro-text">
-          Seamlessly create cinematic clips, scenes and stories using <br />
-          next-generation capable generative AI models.
-        </p>
+        <h2 class="intro-title">{{ $t('marketing.home.intro.title', { appName: uiStore.appName }) }}</h2>
+        <p class="intro-text" v-html="$t('marketing.home.intro.desc')"></p>
 
         <div class="app-frame glass">
           <div class="frame-content">
@@ -84,7 +81,7 @@
     <section id="partners" class="partners-section">
       <div class="container">
         <div class="section-top">
-          <h2 class="section-title">Partners</h2>
+          <h2 class="section-title">{{ $t('marketing.home.partners.title') }}</h2>
         </div>
 
         <div class="partners-grid-v2">
@@ -95,8 +92,8 @@
                 type="video/mp4">
             </video>
             <div class="partner-info">
-              <h3>Collaborating with the world's best creators</h3>
-              <p>We work with leading filmmakers and studios to push the boundaries of what is possible with AI.</p>
+              <h3>{{ $t('marketing.home.partners.collab') }}</h3>
+              <p>{{ $t('marketing.home.partners.desc') }}</p>
             </div>
           </div>
         </div>
@@ -107,7 +104,7 @@
     <section id="gallery" class="gallery-cinematic-focus">
       <div class="container-wide">
         <div class="gallery-header">
-          <router-link to="/flow-gallery" class="watch-short-btn">Watch Short Films</router-link>
+          <router-link to="/flow-gallery" class="watch-short-btn">{{ $t('marketing.home.gallery.watchFilms') }}</router-link>
         </div>
 
         <div class="gallery-focus-grid">
@@ -129,8 +126,8 @@
     <!-- Pricing Section -->
     <section id="pricing" class="pricing-minimal">
       <div class="container">
-        <h2 class="pricing-title">Start creating</h2>
-        <p class="pricing-subtitle">Monthly credits reset at no charge or upgrade to one of our plans below.</p>
+        <h2 class="pricing-title">{{ $t('marketing.home.pricing.title') }}</h2>
+        <p class="pricing-subtitle">{{ $t('marketing.home.pricing.subtitle') }}</p>
 
         <div class="pricing-grid">
           <!-- Plans -->
@@ -141,12 +138,12 @@
               <div v-if="plan.yearlyPrice" class="billing-cycle">Billed ${{ plan.yearlyPrice }}/year</div>
             </div>
             <ul class="plan-features">
-              <li>{{ plan.name === 'Free' ? 'Keep it simple' : 'Everything in Free' }}</li>
-              <li>${{ plan.features.monthlyCredits }} credits monthly</li>
-              <li v-if="plan.features.prioritySupport">Priority support</li>
-              <li v-if="plan.name === 'Enterprise'">Full 4K (4096x2304)</li>
+              <li>{{ plan.name === 'Free' ? $t('marketing.home.pricing.keepSimple') : $t('marketing.home.pricing.everythingFree') }}</li>
+              <li>{{ $t('marketing.home.pricing.creditsMonthly', { count: plan.features.monthlyCredits }) }}</li>
+              <li v-if="plan.features.prioritySupport">{{ $t('marketing.home.pricing.prioritySupport') }}</li>
+              <li v-if="plan.name === 'Enterprise'">{{ $t('marketing.home.pricing.full4k') }}</li>
               <!-- <li v-if="plan.name === 'Pro'">Veo 3 Pro cinematic model</li> -->
-              <li v-if="plan.name === 'Pro' || plan.name === 'Enterprise'">Commercial rights</li>
+              <li v-if="plan.name === 'Pro' || plan.name === 'Enterprise'">{{ $t('marketing.home.pricing.commercialRights') }}</li>
             </ul>
           </div>
         </div>
@@ -166,7 +163,7 @@
         </div> -->
 
         <div class="pricing-footer">
-          <router-link to="/register" class="get-started-btn">Get Started</router-link>
+          <router-link to="/register" class="get-started-btn">{{ $t('marketing.home.pricing.getStarted') }}</router-link>
         </div>
       </div>
     </section>
@@ -176,8 +173,8 @@
       <div class="container footer-content">
         <div class="footer-left">{{ uiStore.appName }}</div>
         <div class="footer-right">
-          <router-link to="/privacy">Privacy</router-link>
-          <router-link to="/terms">Terms of Service</router-link>
+          <router-link to="/privacy">{{ $t('marketing.home.footer.privacy') }}</router-link>
+          <router-link to="/terms">{{ $t('marketing.home.footer.terms') }}</router-link>
         </div>
       </div>
     </footer>
@@ -186,6 +183,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '@/stores/config'
 import { useUIStore } from '@/stores/ui'
 import { storeToRefs } from 'pinia'
@@ -209,6 +207,7 @@ const scrolled = ref(false)
 const activeFeature = ref('consistent')
 const activeSection = ref('overview')
 
+const { t } = useI18n()
 const configStore = useConfigStore()
 const uiStore = useUIStore()
 const { plans, creditPackages } = storeToRefs(configStore)
@@ -216,7 +215,7 @@ const { plans, creditPackages } = storeToRefs(configStore)
 const featureTabs = [
   {
     id: 'consistent',
-    name: 'Consistent',
+    name: t('marketing.home.features.consistent.name'),
     content: `Bring your own assets, or generate them in ${uiStore.appName}. Then easily manage and reference them as you start to generate clips.`,
     videos: [
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Consistent/16x9/01_Ingredients_Edit%201%2016x9_250516d.mp4',
@@ -226,7 +225,7 @@ const featureTabs = [
   },
   {
     id: 'seamless',
-    name: 'Seamless',
+    name: t('marketing.home.features.seamless.name'),
     content: 'Transition between scenes with mathematical precision. AI-powered world building that feels organic and immersive.',
     videos: [
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Seamless/16x9/04%20Scene%20Builder_250513c_1.mp4',
@@ -235,7 +234,7 @@ const featureTabs = [
   },
   {
     id: 'cinematic',
-    name: 'Cinematic',
+    name: t('marketing.home.features.cinematic.name'),
     content: 'Elevate your story with world-class camera controls and cinematic models designed for the big screen.',
     videos: [
       'https://storage.googleapis.com/pinhole-about-assets-prod-us/Cinematic/16x9/07_CameraControls_Edit02%2016x9_250516e.mp4',
@@ -251,37 +250,37 @@ const currentFeature = computed(() => {
 const galleryImages = ref([
   {
     src: gallery7,
-    title: 'ZOO BREAK',
+    title: t('marketing.home.gallery.zooBreak'),
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/Animals-in-Random-Places.mp4',
     focal: false
   },
   {
     src: galleryMicroverse,
-    title: 'MICROVERSE',
+    title: t('marketing.home.gallery.microverse'),
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/Under-the-Microscope.mp4',
     focal: true
   },
   {
     src: gallery9,
-    title: 'WINDOW SEAT',
+    title: t('marketing.home.gallery.windowSeat'),
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/View-from-Train.mp4',
     focal: false
   },
   {
     src: galleryRocket,
-    title: 'COTTON SPACE',
+    title: t('marketing.home.gallery.cottonSpace'),
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/It_sAll-Yarn.mp4',
     focal: false
   },
   {
     src: gallery10,
-    title: 'GIRAFFE RUN',
+    title: t('marketing.home.gallery.giraffeRun'),
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/Tiny-Planet-Big-People.mp4',
     focal: false
   },
   {
     src: gallery11,
-    title: 'SAND WAVES',
+    title: t('marketing.home.gallery.sandWaves'),
     video: 'https://storage.googleapis.com/pinhole-about-assets-prod-us/gallery/Queso-Mundo.mp4',
     focal: false
   }

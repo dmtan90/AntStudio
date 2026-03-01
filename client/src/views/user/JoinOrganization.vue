@@ -2,8 +2,8 @@
     <div class="join-org-view p-6 max-w-xl mx-auto py-20 text-center animate-in">
         <div v-if="verifying" class="verifying-state">
             <peoples theme="outline" size="48" class="animate-pulse mb-6 opacity-30" />
-            <h2 class="text-2xl font-black uppercase">Decrypting Invite...</h2>
-            <p class="opacity-40 mt-2">Validating VTuber handshake with tactical headquarters.</p>
+            <h2 class="text-2xl font-black uppercase">{{ t('joinOrg.validating') }}</h2>
+            <p class="opacity-40 mt-2">{{ t('joinOrg.validatingDesc') }}</p>
         </div>
 
         <div v-else-if="invitation" class="invitation-card glass-card p-10 space-y-6">
@@ -11,24 +11,23 @@
                 class="org-badge mx-auto w-20 h-20 rounded-3xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-4">
                 <broadcast theme="outline" size="40" />
             </div>
-            <h2 class="text-3xl font-black tracking-tighter uppercase">Team Commission Received</h2>
+            <h2 class="text-3xl font-black tracking-tighter uppercase">{{ t('joinOrg.invite.title') }}</h2>
             <p class="text-lg">
-                You have been invited to join <span class="text-blue-400 font-bold">{{ orgName }}</span>
-                as a <span class="bg-blue-500/10 px-2 py-1 rounded text-sm font-black">{{ invitation.role.toUpperCase()
+                {{ t('joinOrg.invite.desc1') }} <span class="text-blue-400 font-bold">{{ orgName }}</span>
+                {{ t('joinOrg.invite.desc2') }} <span class="bg-blue-500/10 px-2 py-1 rounded text-sm font-black">{{ t('organization.roles.' + invitation.role.toLowerCase()).toUpperCase()
                     }}</span>.
             </p>
             <div class="actions flex gap-4">
-                <el-button @click="handleDecline" class="glass-btn flex-1">Decline</el-button>
-                <el-button type="primary" @click="handleAccept" :loading="joining" class="accept-btn flex-1">Accept
-                    Commission</el-button>
+                <el-button @click="handleDecline" class="glass-btn flex-1">{{ t('joinOrg.invite.decline') }}</el-button>
+                <el-button type="primary" @click="handleAccept" :loading="joining" class="accept-btn flex-1">{{ t('joinOrg.invite.accept') }}</el-button>
             </div>
         </div>
 
         <div v-else class="error-state space-y-4">
             <close theme="outline" size="48" class="mx-auto text-red-500 opacity-50" />
-            <h2 class="text-xl font-bold">Tactical Handshake Failed</h2>
-            <p class="opacity-40">{{ error || 'This invitation link is invalid or has expired.' }}</p>
-            <el-button @click="$router.push('/dashboard')" class="glass-btn">Return to Base</el-button>
+            <h2 class="text-xl font-bold">{{ t('joinOrg.error.title') }}</h2>
+            <p class="opacity-40">{{ error || t('joinOrg.error.invalidOrExpired') }}</p>
+            <el-button @click="$router.push('/dashboard')" class="glass-btn">{{ t('common.returnDashboard') }}</el-button>
         </div>
     </div>
 </template>
@@ -39,7 +38,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { Peoples, Broadcast, Close } from '@icon-park/vue-next';
 import { useOrganizationStore } from '@/stores/organization';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const route = useRoute();
 const router = useRouter();
 const verifying = ref(true);
@@ -64,7 +65,7 @@ const checkInvitation = async () => {
         invitation.value = { role: 'editor', token };
         orgName.value = 'Tactical Unit';
     } catch (e: any) {
-        error.value = e.response?.data?.error || 'Validation failed';
+        error.value = e.response?.data?.error || t('joinOrg.error.validationFailed');
     } finally {
         verifying.value = false;
     }
@@ -75,17 +76,17 @@ const handleAccept = async () => {
 
     try {
         await orgStore.acceptInviteByToken(invitation.value.token);
-        toast.success("Tactical Link Established! Welcome to the team.");
+        toast.success(t('joinOrg.toasts.success'));
         router.push('/organization');
     } catch (e: any) {
-        toast.error(e.response?.data?.error || "Failed to accept commission");
+        toast.error(e.response?.data?.error || t('joinOrg.toasts.error'));
     } finally {
         joining.value = false;
     }
 };
 
 const handleDecline = () => {
-    toast.info("Commission declined.");
+    toast.info(t('joinOrg.toasts.declined'));
     router.push('/dashboard');
 };
 

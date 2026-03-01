@@ -36,23 +36,23 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Visual Physics & Lighting -->
         <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4 backdrop-blur-md">
-          <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">World Physics & Lighting</label>
+          <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">{{ t('projects.editor.storyboard.worldPhysics') }}</label>
           <div v-if="project.scriptAnalysis?.visuals?.visualWorldRules" class="space-y-4">
             <div>
-              <span class="text-[10px] text-white/40 block mb-1">PHYSICS MODEL</span>
+              <span class="text-[10px] text-white/40 block mb-1">{{ t('projects.editor.storyboard.physicsModel') }}</span>
               <p class="text-xs text-white/80 leading-relaxed">{{ project.scriptAnalysis.visuals.visualWorldRules.physics }}</p>
             </div>
             <div>
-              <span class="text-[10px] text-white/40 block mb-1">LIGHTING MODEL</span>
+              <span class="text-[10px] text-white/40 block mb-1">{{ t('projects.editor.storyboard.lightingModel') }}</span>
               <p class="text-xs text-white/80 leading-relaxed">{{ project.scriptAnalysis.visuals.visualWorldRules.lighting }}</p>
             </div>
           </div>
-          <div v-else class="text-xs text-white/30 italic">No global rules defined.</div>
+          <div v-else class="text-xs text-white/30 italic">{{ t('projects.editor.storyboard.noGlobalRules') }}</div>
         </div>
 
         <!-- Color Harmony -->
         <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4 backdrop-blur-md">
-          <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">Color Harmony (Palette)</label>
+          <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">{{ t('projects.editor.storyboard.colorHarmony') }}</label>
           <div v-if="project.scriptAnalysis?.visuals?.visualWorldRules?.colorHarmony?.length" class="space-y-3">
              <div v-for="color in project.scriptAnalysis.visuals.visualWorldRules.colorHarmony" :key="color.hex" 
                   class="flex items-center gap-3 p-2 rounded-lg bg-black/20 border border-white/5">
@@ -63,19 +63,19 @@
                </div>
              </div>
           </div>
-          <div v-else class="text-xs text-white/30 italic">No palette defined.</div>
+          <div v-else class="text-xs text-white/30 italic">{{ t('projects.editor.storyboard.noPalette') }}</div>
         </div>
 
         <!-- Style Characteristics -->
         <div class="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4 backdrop-blur-md">
-          <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">Core Style</label>
+          <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">{{ t('projects.editor.storyboard.coreStyle') }}</label>
           <div v-if="project.scriptAnalysis?.visuals" class="space-y-4">
             <div>
-              <span class="text-[10px] text-white/40 block mb-1">VISUAL STYLE</span>
+              <span class="text-[10px] text-white/40 block mb-1">{{ t('projects.editor.storyboard.visualStyle') }}</span>
               <p class="text-xs text-white/80 leading-relaxed">{{ project.scriptAnalysis.visuals.visualStyle?.label }} - {{ project.scriptAnalysis.visuals.visualStyle?.description }}</p>
             </div>
             <div>
-              <span class="text-[10px] text-white/40 block mb-1">CHARACTERISTICS</span>
+              <span class="text-[10px] text-white/40 block mb-1">{{ t('projects.editor.storyboard.characteristics') }}</span>
               <p class="text-xs text-white/80 leading-relaxed">{{ project.scriptAnalysis.visuals.characteristics }}</p>
             </div>
           </div>
@@ -102,11 +102,11 @@
           <div v-if="project.scriptAnalysis?.audio?.music" class="space-y-2">
             <p class="text-xs text-white/80 leading-relaxed italic">"{{ project.scriptAnalysis.audio.music }}"</p>
           </div>
-          <div v-else class="text-xs text-white/30 italic">No background music score defined.</div>
+          <div v-else class="text-xs text-white/30 italic">{{ t('projects.editor.storyboard.noGlobalRules') }}</div>
 
           <!-- Existing Music Player -->
           <div v-if="project.musics?.length" class="space-y-3 pt-2 border-t border-white/5">
-            <span class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">Generated BGM</span>
+            <span class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">{{ t('projects.editor.storyboard.generatedBgm') }}</span>
             <div v-for="(music, mi) in project.musics" :key="mi"
               class="flex items-center gap-3 p-3 rounded-xl bg-black/20 border border-white/5">
               <button
@@ -117,7 +117,7 @@
                 <play v-else theme="outline" size="14" fill="currentColor" />
               </button>
               <div class="flex-1 min-w-0">
-                <p class="text-xs text-white/70 truncate">BGM Track {{ Number(mi) + 1 }}</p>
+                <p class="text-xs text-white/70 truncate">{{ t('projects.editor.storyboard.bgmTrack', { n: String(Number(mi) + 1) }) }}</p>
                 <div class="h-1 w-full bg-white/5 rounded-full mt-1">
                   <div class="h-full bg-blue-600/60 rounded-full" style="width: 100%"></div>
                 </div>
@@ -145,18 +145,18 @@
           <!-- Ambience & SFX Info -->
           <div class="space-y-2">
             <div v-if="project.scriptAnalysis?.audio?.ambience">
-              <span class="text-[10px] text-white/40 block mb-1">AMBIENCE</span>
+              <span class="text-[10px] text-white/40 block mb-1">{{ t('projects.editor.storyboard.ambience') }}</span>
               <p class="text-xs text-white/80 leading-relaxed">{{ project.scriptAnalysis.audio.ambience }}</p>
             </div>
             <div v-if="project.scriptAnalysis?.audio?.sfx">
-              <span class="text-[10px] text-white/40 block mb-1">SFX CUES</span>
+              <span class="text-[10px] text-white/40 block mb-1">{{ t('projects.editor.storyboard.sfxCues') }}</span>
               <p class="text-xs text-white/80 leading-relaxed">{{ project.scriptAnalysis.audio.sfx }}</p>
             </div>
           </div>
 
           <!-- Segment Voiceover Status -->
           <div v-if="project.storyboard?.segments?.length" class="space-y-2 pt-2 border-t border-white/5 max-h-48 overflow-y-auto custom-scrollbar">
-            <span class="text-[10px] uppercase text-white/40 font-bold tracking-widest block">SEGMENT STATUS</span>
+            <span class="text-[10px] uppercase text-white/40 font-bold tracking-widest block">{{ t('projects.editor.storyboard.segmentStatus') }}</span>
             <div v-for="seg in project.storyboard.segments" :key="seg._id || seg.order"
               class="flex items-center gap-3 p-2 rounded-lg bg-black/20 border border-white/5">
               <div class="w-2 h-2 rounded-full flex-shrink-0"
@@ -568,11 +568,11 @@
                   </div>
                 </el-tab-pane>
 
-                <el-tab-pane :label="t('projects.editor.storyboard.segDialog.tabs.prompt') || 'AI Prompt'" name="prompt">
+                <el-tab-pane :label="t('projects.editor.storyboard.segDialog.tabs.prompt')" name="prompt">
                   <div class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar" v-loading="promptLoading">
                     <div class="form-group">
                       <div class="flex items-center justify-between mb-2">
-                        <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">English AI Prompt</label>
+                        <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">{{ t('projects.editor.storyboard.englishAiPrompt') }}</label>
                         <div class="flex items-center gap-3">
                           <button
                             class="flex items-center gap-1 text-[10px] text-white/40 hover:text-blue-400 transition-colors"
@@ -797,16 +797,16 @@
                 <!-- Grounding Keywords -->
                 <div class="form-group grid grid-cols-2 gap-4 pb-4 border-b border-white/5">
                   <div>
-                    <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-2">Visual Keywords</label>
+                    <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.visualKeywords') }}</label>
                     <el-select v-model="editingSeg.visualKeywords" multiple filterable allow-create default-first-option
-                      placeholder="Add visual cues..." class="cinematic-select !w-full" :teleported="false">
+                      :placeholder="t('projects.editor.storyboard.addVisualCues')" class="cinematic-select !w-full" :teleported="false">
                       <el-option v-for="kw in editingSeg.visualKeywords" :key="kw" :label="kw" :value="kw" />
                     </el-select>
                   </div>
                   <div>
-                    <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-2">Audio Keywords</label>
+                    <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-2">{{ t('projects.editor.storyboard.audioKeywords') }}</label>
                     <el-select v-model="editingSeg.audioKeywords" multiple filterable allow-create default-first-option
-                      placeholder="Add audio cues..." class="cinematic-select !w-full" :teleported="false">
+                      :placeholder="t('projects.editor.storyboard.addAudioCues')" class="cinematic-select !w-full" :teleported="false">
                       <el-option v-for="kw in editingSeg.audioKeywords" :key="kw" :label="kw" :value="kw" />
                     </el-select>
                   </div>
@@ -887,13 +887,13 @@ import {
   TextMessage
 } from '@icon-park/vue-next'
 import { useProjectStore } from '@/stores/project'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 import GMedia from '@/components/ui/GMedia.vue'
 
 const activeSection = ref('segments')
 const projectStore = useProjectStore()
-const { t } = useTranslations()
+const { t } = useI18n()
 
 const props = defineProps<{
   project: any,
@@ -1050,52 +1050,52 @@ const fetchPrompts = async (type: 'segment' | 'character', payload: any) => {
 }
 
 // Predefined Options
-const speciesOptions = [
+const speciesOptions = computed(() => [
   { key: 'human', value: 'Human' },
   { key: 'robot', value: 'Robot' },
   { key: 'animal', value: 'Animal' },
   { key: 'mystical', value: 'Mystical Creature' },
   { key: 'alien', value: 'Alien' }
-]
-const genderOptions = [
+])
+const genderOptions = computed(() => [
   { key: 'male', value: 'Male' },
   { key: 'female', value: 'Female' },
   { key: 'other', value: 'Other' },
   { key: 'unknown', value: 'Unknown' }
-]
-const bodyBuildOptions = [
+])
+const bodyBuildOptions = computed(() => [
   { key: 'slender', value: 'Slender' },
   { key: 'balanced', value: 'Balanced' },
   { key: 'muscular', value: 'Muscular' },
   { key: 'chubby', value: 'Chubby' },
   { key: 'petite', value: 'Petite' },
   { key: 'athletic', value: 'Athletic' }
-]
-const faceShapeOptions = [
+])
+const faceShapeOptions = computed(() => [
   { key: 'oval', value: 'Oval' },
   { key: 'round', value: 'Round' },
   { key: 'square', value: 'Square' },
   { key: 'long', value: 'Long' },
   { key: 'diamond', value: 'Diamond' },
   { key: 'heart', value: 'Heart' }
-]
-const hairOptions = [
+])
+const hairOptions = computed(() => [
   { key: 'blackShort', value: 'Black, short' },
   { key: 'blondeLong', value: 'Blonde, long' },
   { key: 'brownCurly', value: 'Brown, curly' },
   { key: 'bald', value: 'Bald' },
   { key: 'silverBun', value: 'Silver, high bun' },
   { key: 'shoulder', value: 'Shoulder length' }
-]
-const skinColorOptions = [
+])
+const skinColorOptions = computed(() => [
   { key: 'white', value: 'White' },
   { key: 'yellow', value: 'Yellow (Asian)' },
   { key: 'tan', value: 'Tan' },
   { key: 'black', value: 'Black' },
   { key: 'grey', value: 'Grey (Robot)' },
   { key: 'green', value: 'Green' }
-]
-const framingOptions = [
+])
+const framingOptions = computed(() => [
   { key: 'extremeCloseUp', value: 'Extreme Close-up' },
   { key: 'closeUp', value: 'Close-up' },
   { key: 'mediumShot', value: 'Medium Shot' },
@@ -1103,8 +1103,8 @@ const framingOptions = [
   { key: 'wideShot', value: 'Wide Shot' },
   { key: 'extremeWideShot', value: 'Extreme Wide Shot' },
   { key: 'pov', value: 'Point of View (POV)' }
-]
-const angleOptions = [
+])
+const angleOptions = computed(() => [
   { key: 'eyeLevel', value: 'Eye Level' },
   { key: 'highAngle', value: 'High Angle' },
   { key: 'lowAngle', value: 'Low Angle' },
@@ -1112,8 +1112,8 @@ const angleOptions = [
   { key: 'overShoulder', value: 'Over the Shoulder' },
   { key: 'birdsEye', value: 'Bird\'s Eye View' },
   { key: 'wormsEye', value: 'Worm\'s Eye View' }
-]
-const movementOptions = [
+])
+const movementOptions = computed(() => [
   { key: 'static', value: 'Static' },
   { key: 'pan', value: 'Pan' },
   { key: 'tilt', value: 'Tilt' },
@@ -1123,14 +1123,14 @@ const movementOptions = [
   { key: 'tracking', value: 'Tracking' },
   { key: 'handheld', value: 'Handheld' },
   { key: 'craneFlycam', value: 'Crane/Flycam' }
-]
-const focusOptions = [
+])
+const focusOptions = computed(() => [
   { key: 'deepFocus', value: 'Deep Focus' },
   { key: 'shallowFocus', value: 'Shallow Focus' },
   { key: 'rackFocus', value: 'Rack Focus' },
   { key: 'softFocus', value: 'Soft Focus' }
-]
-const environmentOptions = [
+])
+const environmentOptions = computed(() => [
   { key: 'studio', value: 'Studio' },
   { key: 'indoor', value: 'Indoor' },
   { key: 'outdoor', value: 'Outdoor' },
@@ -1139,7 +1139,7 @@ const environmentOptions = [
   { key: 'scifi', value: 'Sci-fi/Futuristic' },
   { key: 'cyberpunk', value: 'Cyberpunk City' },
   { key: 'cinematicInterior', value: 'Cinematic Interior' }
-]
+])
 
 const googleVoices = [
   // Gemini TTS Voices

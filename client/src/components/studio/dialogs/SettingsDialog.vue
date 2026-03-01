@@ -4,8 +4,8 @@
         <template #header>
             <div class="flex items-center justify-between p-8 pb-0">
                 <div class="flex flex-col gap-1">
-                    <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Studio Settings</h2>
-                    <p class="text-[10px] font-bold text-white/20 uppercase tracking-widest">Version 2.5.0-premium</p>
+                    <h2 class="text-2xl font-black text-white uppercase tracking-tighter">{{ $t('studio.settings.title') }}</h2>
+                    <p class="text-[10px] font-bold text-white/20 uppercase tracking-widest">Version 1.0</p>
                 </div>
                 <button @click="visible = false"
                     class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all group">
@@ -21,13 +21,13 @@
                     <template #label>
                         <div class="tab-item">
                             <broadcast theme="outline" size="16" />
-                            <span>Broadcasting</span>
+                            <span>{{ $t('studio.settings.tabs.stream') }}</span>
                         </div>
                     </template>
 
                     <div class="space-y-8 py-4">
                         <div class="space-y-4">
-                            <label class="section-label">Streaming Quality</label>
+                            <label class="section-label">{{ $t('studio.settings.stream.quality') }}</label>
                             <div class="grid grid-cols-4 gap-3">
                                 <button v-for="(v, k) in qualityPresets" :key="k" @click="localStreamQuality = k"
                                     class="quality-btn" :class="{ 'active': localStreamQuality === k }">
@@ -35,8 +35,7 @@
                                     <span class="text-[8px] opacity-40">{{ v.label }}</span>
                                 </button>
                             </div>
-                            <p class="text-[9px] text-white/20 italic italic">Recommendation: Use 'Low' if network is
-                                unstable.
+                            <p class="text-[9px] text-white/20 italic italic">{{ $t('studio.settings.stream.recommendation') }}
                             </p>
                         </div>
                     </div>
@@ -47,7 +46,7 @@
                     <template #label>
                         <div class="tab-item">
                             <magic theme="outline" size="16" />
-                            <span>Enhancement</span>
+                            <span>{{ $t('studio.settings.tabs.beauty') }}</span>
                         </div>
                     </template>
 
@@ -55,7 +54,7 @@
                         <div class="space-y-6">
                             <div class="slider-group">
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="slider-label">Skin Smoothing (Beauty)</label>
+                                    <label class="slider-label">{{ $t('studio.settings.beauty.smoothing') }}</label>
                                     <span class="value-badge">{{ (visualSettings.beauty.smoothing * 100).toFixed(0)
                                     }}%</span>
                                 </div>
@@ -64,7 +63,7 @@
 
                             <div class="slider-group">
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="slider-label">Face Brightening</label>
+                                    <label class="slider-label">{{ $t('studio.settings.beauty.brightness') }}</label>
                                     <span class="value-badge">{{ (visualSettings.beauty.brightness * 100).toFixed(0)
                                     }}%</span>
                                 </div>
@@ -75,7 +74,7 @@
                         <div class="space-y-6">
                             <div class="slider-group">
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="slider-label">Edge Sharpening</label>
+                                    <label class="slider-label">{{ $t('studio.settings.beauty.sharpen') }}</label>
                                     <span class="value-badge">{{ (visualSettings.beauty.sharpen * 100).toFixed(0)
                                     }}%</span>
                                 </div>
@@ -84,7 +83,7 @@
 
                             <div class="slider-group">
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="slider-label">Noise Reduction</label>
+                                    <label class="slider-label">{{ $t('studio.settings.beauty.denoise') }}</label>
                                     <span class="value-badge">{{ (visualSettings.beauty.denoise * 100).toFixed(0)
                                     }}%</span>
                                 </div>
@@ -94,9 +93,8 @@
                             <div
                                 class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 mt-2">
                                 <div class="flex flex-col">
-                                    <span class="text-[10px] font-black uppercase tracking-wider text-white">Red-Eye
-                                        Removal</span>
-                                    <span class="text-[8px] text-white/30 lowercase">Auto-fix flash reflection</span>
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-white">{{ $t('studio.settings.beauty.redEye') }}</span>
+                                    <span class="text-[8px] text-white/30 lowercase">{{ $t('studio.settings.beauty.redEyeDesc') }}</span>
                                 </div>
                                 <el-switch v-model="visualSettings.beauty.redEye" />
                             </div>
@@ -109,7 +107,7 @@
                     <template #label>
                         <div class="tab-item">
                             <pic theme="outline" size="16" />
-                            <span>Environment</span>
+                            <span>{{ $t('studio.settings.tabs.background') }}</span>
                         </div>
                     </template>
 
@@ -118,27 +116,27 @@
                             <div class="mode-select-box"
                                 :class="{ 'active': visualSettings.background.mode === 'none' }"
                                 @click="visualSettings.background.mode = 'none'">
-                                <span class="text-[10px] font-black uppercase">Standard</span>
-                                <span class="text-[8px] opacity-40">Zero effects</span>
+                                <span class="text-[10px] font-black uppercase">{{ $t('studio.settings.background.standard') }}</span>
+                                <span class="text-[8px] opacity-40">{{ $t('studio.settings.background.standardDesc') }}</span>
                             </div>
                             <div class="mode-select-box"
                                 :class="{ 'active': visualSettings.background.mode === 'blur' }"
                                 @click="visualSettings.background.mode = 'blur'">
-                                <span class="text-[10px] font-black uppercase tracking-tighter">Portrait Blur</span>
-                                <span class="text-[8px] opacity-40">AI Deep Focus</span>
+                                <span class="text-[10px] font-black uppercase tracking-tighter">{{ $t('studio.settings.background.blur') }}</span>
+                                <span class="text-[8px] opacity-40">{{ $t('studio.settings.background.blurDesc') }}</span>
                             </div>
                             <div class="mode-select-box"
                                 :class="{ 'active': visualSettings.background.mode === 'virtual' }"
                                 @click="visualSettings.background.mode = 'virtual'">
-                                <span class="text-[10px] font-black uppercase">Virtual Stage</span>
-                                <span class="text-[8px] opacity-40">Replace BG</span>
+                                <span class="text-[10px] font-black uppercase">{{ $t('studio.settings.background.virtual') }}</span>
+                                <span class="text-[8px] opacity-40">{{ $t('studio.settings.background.virtualDesc') }}</span>
                             </div>
                         </div>
 
                         <!-- Blur Intensities -->
                         <div v-if="visualSettings.background.mode === 'blur'"
                             class="space-y-4 animate-in slide-in-from-top-4">
-                            <label class="section-label">Blur Intensity</label>
+                            <label class="section-label">{{ $t('studio.settings.background.blurIntensity') }}</label>
                             <div class="grid grid-cols-3 gap-3">
                                 <button v-for="level in (['low', 'medium', 'high'] as const)" :key="level"
                                     @click="visualSettings.background.blurLevel = level" class="intensity-btn"
@@ -152,17 +150,17 @@
                         <div v-if="visualSettings.background.mode === 'virtual'"
                             class="space-y-6 animate-in slide-in-from-top-4">
                             <div class="space-y-4">
-                                <label class="section-label">Stage Assets</label>
+                                <label class="section-label">{{ $t('studio.settings.background.stageAssets') }}</label>
                                 <div class="grid grid-cols-4 gap-3">
                                     <div class="upload-btn" @click="triggerUpload">
                                         <plus theme="outline" size="16" />
-                                        <span class="text-[8px] font-bold">UPLOAD</span>
+                                        <span class="text-[8px] font-bold">{{ $t('studio.common.upload') }}</span>
                                     </div>
                                     <div v-for="asset in stockAssets" :key="asset.url" class="asset-thumb"
                                         :class="{ 'active': visualSettings.background.assetUrl === asset.url }"
                                         @click="selectAsset(asset)">
                                         <img :src="asset.thumbnail" class="w-full h-full object-cover">
-                                        <div v-if="asset.isVideo" class="video-badge">VIDEO</div>
+                                        <div v-if="asset.isVideo" class="video-badge">{{ $t('studio.common.video') }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -173,11 +171,9 @@
 
             <div class="flex justify-end gap-3 pt-8 border-t border-white/5">
                 <button @click="resetSettings"
-                    class="px-6 py-3 rounded-2xl bg-white/5 text-[10px] font-black uppercase hover:bg-white/10 transition-all text-white/40">Reset
-                    to Default</button>
+                    class="px-6 py-3 rounded-2xl bg-white/5 text-[10px] font-black uppercase hover:bg-white/10 transition-all text-white/40">{{ $t('studio.settings.actions.reset') }}</button>
                 <button @click="visible = false"
-                    class="px-8 py-3 rounded-2xl bg-blue-600 text-[10px] font-black uppercase hover:bg-blue-500 shadow-xl shadow-blue-500/20 transition-all text-white">Save
-                    Changes</button>
+                    class="px-8 py-3 rounded-2xl bg-blue-600 text-[10px] font-black uppercase hover:bg-blue-500 shadow-xl shadow-blue-500/20 transition-all text-white">{{ $t('studio.settings.actions.save') }}</button>
             </div>
         </div>
         <input type="file" ref="fileInput" class="hidden" accept="image/*,video/*" @change="handleUpload" />
@@ -251,7 +247,7 @@ const resetSettings = () => {
 };
 </script>
 
-<style lang="css">
+<style lang="postcss">
 .studio-settings-dialog {
     --el-dialog-bg-color: transparent;
     --el-dialog-box-shadow: none;

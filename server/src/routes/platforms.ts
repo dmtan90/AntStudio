@@ -13,6 +13,8 @@ import multer from 'multer';
 import os from 'os';
 import fs from 'fs';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // Define the file filter function to update the filename encoding
@@ -92,7 +94,7 @@ router.post('/callback/:platform', async (req: AuthRequest, res) => {
 
         // 2. Get User Profile info (name, id, avatar, email)
         const profile = await PlatformAuthService.getUserProfile(platform as SocialPlatform, tokens.access_token);
-        console.log(`[OAuth Callback] Profile loaded: ${profile.name} (${profile.id}) email: ${profile.email}`);
+        Logger.info(`[OAuth Callback] Profile loaded: ${profile.name} (${profile.id}) email: ${profile.email}`);
 
         // 3. Upsert Account
         const account = await UserPlatformAccount.findOneAndUpdate(
@@ -120,11 +122,11 @@ router.post('/callback/:platform', async (req: AuthRequest, res) => {
             { upsert: true, new: true }
         );
 
-        console.log(`[OAuth Callback] Account persisted: ${account.accountName}, ID: ${account._id}`);
+        Logger.info(`[OAuth Callback] Account persisted: ${account.accountName}, ID: ${account._id}`);
         res.json({ success: true, data: account });
 
     } catch (error: any) {
-        console.error('[OAuth Callback] Error:', error);
+        Logger.error('[OAuth Callback] Error:', error);
         res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
@@ -144,10 +146,10 @@ router.post('/', async (req: AuthRequest, res) => {
 
         // Special handling for Ant Media Server to verify credentials
         if (platform === SocialPlatform.ANT_MEDIA) {
-            console.log('Verifying Ant Media Server credentials', credentials.serverUrl, credentials.email, credentials.password);
+            Logger.info('Verifying Ant Media Server credentials', 'Platforms', { serverUrl: credentials.serverUrl, email: credentials.email, password: credentials.password });
             const isValid = await PlatformAuthService.verifyAMS(credentials.serverUrl, credentials.email, credentials.password);
             if (!isValid) {
-                console.log('Invalid Ant Media Server credentials');
+                Logger.info('Invalid Ant Media Server credentials', 'Platforms', {});
                 return res.status(401).json({ success: false, error: 'Invalid Ant Media Server credentials' });
             }
         }
@@ -191,7 +193,7 @@ router.patch('/:id', async (req: AuthRequest, res) => {
         if (existingAccount.platform === SocialPlatform.ANT_MEDIA && credentials) {
             // Only verify if password is provided (meaning it changed)
             if (credentials.password && credentials.password.length > 0) {
-                console.log('Verifying Ant Media Server credentials on update', credentials.serverUrl, credentials.email);
+                Logger.info('Verifying Ant Media Server credentials on update', credentials.serverUrl, credentials.email);
 
                 // If password isn't hashed, rely on verifyAMS to hash it if we were passing raw, but here we invoke verifyAMS which expects raw.
                 // NOTE: verifyAMS internally hashes now. 
@@ -280,7 +282,7 @@ router.get('/:id/videos', async (req: AuthRequest, res) => {
             return res.status(404).json({ success: false, error: 'Account not found' });
         }
 
-        console.log(`[API] Loading videos for account: ${account.accountName} (${account.platform}), ID: ${account._id}`);
+        Logger.info(`[API] Loading videos for account: ${account.accountName} (${account.platform}), ID: ${account._id}`);
 
         const { page, limit, search, sort } = req.query;
 
@@ -297,7 +299,7 @@ router.get('/:id/videos', async (req: AuthRequest, res) => {
             res.json({ success: true, data: result });
         } catch (error: any) {
             if (error.response?.status === 401) {
-                console.log(`[API] 401 error for ${account.platform} (${account.accountName}), forcing token refresh...`);
+                Logger.info(`[API] 401 error for ${account.platform} (${account.accountName}), forcing token refresh...`);
                 try {
                     // Reload account from database to get the latest credentials
                     const freshAccount = await UserPlatformAccount.findOne({
@@ -309,12 +311,12 @@ router.get('/:id/videos', async (req: AuthRequest, res) => {
                         return res.status(404).json({ success: false, error: 'Account not found' });
                     }
 
-                    console.log(`[API] Reloaded account from DB: ${freshAccount.accountName}`);
+                    Logger.info(`[API] Reloaded account from DB: ${freshAccount.accountName}`);
                     const credentials = await PlatformAuthService.getValidCredentials(freshAccount, true);
                     const result = await PlatformAuthService.getVideos(freshAccount.platform, credentials, options);
                     res.json({ success: true, data: result });
                 } catch (retryError: any) {
-                    console.error(`[API] Retry failed for ${account.platform}:`, retryError.message);
+                    Logger.error(`[API] Retry failed for ${account.platform}:`, retryError.message);
                     throw retryError;
                 }
             } else {
@@ -322,7 +324,7 @@ router.get('/:id/videos', async (req: AuthRequest, res) => {
             }
         }
     } catch (error: any) {
-        console.error('Proxy Error:', error);
+        Logger.error('Proxy Error:', error);
         res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
@@ -460,7 +462,7 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
                         Key: decodeURIComponent(s3Key)
                     });
                     const response = await client.send(command).catch(err => {
-                        console.error('S3 GetObject failed directly, will try signed URL fallback if possible');
+                        Logger.error('S3 GetObject failed directly, will try signed URL fallback if possible');
                         return null;
                     });
                     if (response?.Body) {
@@ -479,7 +481,7 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
                     videoStream = videoRes.data;
                 }
             } catch (err: any) {
-                console.error('Failed to resolve video stream from warehouse:', err);
+                Logger.error('Failed to resolve video stream from warehouse:', err);
                 return res.status(400).json({ success: false, error: 'Failed to retrieve video source' });
             }
         } else {
@@ -491,7 +493,7 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
         const contentType = req.file ? req.file.mimetype : (s3Key ? (s3Key.endsWith('.mp4') ? 'video/mp4' : 'video/quicktime') : 'video/mp4');
 
         try {
-            console.log("Uploading video to platform...", account.platform, metadata, filename, contentType);
+            Logger.info("Uploading video to platform...", 'Platforms', { account: account.platform, metadata, filename, contentType });
             const credentials = await PlatformAuthService.getValidCredentials(account);
             const result = await PlatformAuthService.uploadVideo(account.platform, credentials, videoStream, metadata, filename, contentType);
             cleanup();
@@ -526,7 +528,7 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
             }
         }
     } catch (error: any) {
-        console.error('Upload Error:', error);
+        Logger.error('Upload Error:', error);
         res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
@@ -568,7 +570,7 @@ router.patch('/:id/live-info', async (req: AuthRequest, res) => {
             }
         }
     } catch (error: any) {
-        console.error('Live Metadata Update Error:', error);
+        Logger.error('Live Metadata Update Error:', error);
         res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
@@ -620,7 +622,7 @@ router.get('/:id/live-info', async (req: AuthRequest, res) => {
             }
         }
     } catch (error: any) {
-        console.error('Live Info Error:', error);
+        Logger.error('Live Info Error:', error);
         res.status(error.requiresReauth ? 401 : 500).json({ success: false, error: error.message, requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });

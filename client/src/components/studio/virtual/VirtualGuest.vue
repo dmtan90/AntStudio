@@ -68,14 +68,14 @@
         <div class="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded text-[10px] font-bold text-white z-10 flex items-center gap-1">
             <span class="w-2 h-2 rounded-full" :class="isTalking ? 'bg-green-500 animate-pulse' : 'bg-blue-500'"></span>
             <span v-if="isThinking" class="animate-bounce">...</span>
-            {{ persona.name }} (AI)
+            {{ persona.name }} <span>{{ $t('studio.virtual.aiSuffix') || '(AI)' }}</span>
         </div>
 
         <!-- Global Loading Overlay -->
         <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center bg-[#050505] z-50">
             <div class="flex flex-col items-center gap-4">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white/80"></div>
-                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 animate-pulse">Initializing Entity</span>
+                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 animate-pulse">{{ $t('studio.common.initializingEntity') || 'INITIALIZING ENTITY' }}</span>
             </div>
         </div>
     </div>

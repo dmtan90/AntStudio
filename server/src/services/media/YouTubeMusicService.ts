@@ -2,6 +2,8 @@ import axios from 'axios';
 import { UserPlatformAccount } from '../../models/UserPlatformAccount.js';
 import { PlatformAuthService } from '../PlatformAuthService.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 export interface YouTubeMusicSearchResult {
     videoId: string;
     title: string;
@@ -103,7 +105,7 @@ export class YouTubeMusicService {
                 duration: durationsMap.get(item.id.videoId)
             }));
         } catch (error: any) {
-            console.error('YouTube music search error:', error);
+            Logger.error('YouTube music search error:', error);
             throw error;
         }
     }
@@ -155,7 +157,7 @@ export class YouTubeMusicService {
                 duration: this.parseDuration(item.contentDetails.duration)
             }));
         } catch (error: any) {
-            console.error('YouTube trending music error:', error);
+            Logger.error('YouTube trending music error:', error);
             throw error;
         }
     }
@@ -200,7 +202,7 @@ export class YouTubeMusicService {
                 likeCount: video.statistics.likeCount
             };
         } catch (error: any) {
-            console.error('Metadata fetch error:', error);
+            Logger.error('Metadata fetch error:', error);
             throw error;
         }
     }

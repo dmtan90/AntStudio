@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import path from 'path';
+import { Logger } from '../utils/Logger.js';
 
 class NotificationService {
     private initialized = false;
@@ -20,10 +21,10 @@ class NotificationService {
                     credential: admin.credential.cert(serviceAccountPath)
                 });
                 this.initialized = true;
-                console.log('✅ FCM Initialized');
+                Logger.info('✅ FCM Initialized', 'NotificationService');
             }
         } catch (error) {
-            console.warn('⚠️ FCM Initialization failed (missing credentials?). Push notifications will be disabled.');
+            Logger.warn('⚠️ FCM Initialization failed (missing credentials?). Push notifications will be disabled.', 'NotificationService');
         }
     }
 
@@ -39,9 +40,9 @@ class NotificationService {
                 },
                 data: data ? this.sanitizeData(data) : undefined
             });
-            console.log(`📲 Notification sent to ${token.substring(0, 10)}...`);
+            Logger.info(`📲 Notification sent to ${token.substring(0, 10)}...`, 'NotificationService');
         } catch (error) {
-            console.error('❌ Failed to send notification:', error);
+            Logger.error('❌ Failed to send notification', 'NotificationService', { error });
         }
     }
 
@@ -58,7 +59,7 @@ class NotificationService {
                 data: data ? this.sanitizeData(data) : undefined
             });
         } catch (error) {
-            console.error('❌ Failed to send topic notification:', error);
+            Logger.error('❌ Failed to send topic notification', 'NotificationService', { error });
         }
     }
 

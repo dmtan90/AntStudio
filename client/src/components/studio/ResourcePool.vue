@@ -1,7 +1,7 @@
 <template>
     <div class="resource-pool h-full flex flex-col p-4 animate-in">
         <header class="flex justify-between items-center mb-4">
-            <h3 class="text-xs font-black uppercase tracking-widest opacity-40">Resources</h3>
+            <h3 class="text-xs font-black uppercase tracking-widest opacity-40">{{ $t('studio.resources.title') }}</h3>
             <div class="flex items-center gap-2">
                 <el-segmented v-model="activeTab" :options="tabOptions" size="small" class="studio-segmented" />
                 <el-upload 
@@ -23,7 +23,7 @@
         <div v-if="activeTab === 'library'" class="mb-4">
             <el-input
                 v-model="librarySearch"
-                placeholder="Search Library..."
+                :placeholder="$t('studio.resources.searchLibrary')"
                 size="small"
                 class="studio-search"
                 clearable
@@ -40,8 +40,8 @@
             <template v-if="activeTab === 'pool'">
                 <div v-if="resourcePool.length === 0"
                     class="empty-state py-12 text-center opacity-20 border-2 border-dashed border-white/10 rounded-2xl">
-                    <p class="text-[10px] font-bold uppercase tracking-widest">No assets loaded</p>
-                    <p class="text-[8px] mt-1">Upload images or videos for your show</p>
+                    <p class="text-[10px] font-bold uppercase tracking-widest">{{ $t('studio.resources.noAssets') }}</p>
+                    <p class="text-[8px] mt-1">{{ $t('studio.resources.uploadDesc') }}</p>
                 </div>
 
                 <div v-for="asset in resourcePool" :key="asset.id"
@@ -55,9 +55,9 @@
                         <p class="text-[10px] font-bold truncate mb-2">{{ asset.name }}</p>
                         <div class="actions flex gap-2">
                             <el-button size="small" class="glass-btn flex-1 !text-[8px]"
-                                @click="setAsBackground(asset)">BG</el-button>
+                                @click="setAsBackground(asset)">{{ $t('studio.resources.actions.bg') }}</el-button>
                             <el-button size="small" class="glass-btn flex-1 !text-[8px]"
-                                @click="setAsMedia(asset)">MEDIA</el-button>
+                                @click="setAsMedia(asset)">{{ $t('studio.resources.actions.media') }}</el-button>
                             <el-button size="small" type="danger" circle @click="studioStore.removeResource(asset.id)">
                                 <delete theme="outline" size="12" />
                             </el-button>
@@ -75,10 +75,10 @@
             <template v-else>
                 <div v-if="loading" class="py-12 text-center opacity-40">
                     <el-icon class="is-loading"><loading-icon /></el-icon>
-                    <p class="text-[10px] mt-2 font-bold uppercase">Fetching Hub...</p>
+                    <p class="text-[10px] mt-2 font-bold uppercase">{{ $t('studio.resources.fetchingHub') }}</p>
                 </div>
                 <div v-else-if="libraryResources.length === 0" class="empty-state py-12 text-center opacity-20 border-2 border-dashed border-white/10 rounded-2xl">
-                    <p class="text-[10px] font-bold uppercase tracking-widest">Library Empty</p>
+                    <p class="text-[10px] font-bold uppercase tracking-widest">{{ $t('studio.resources.libraryEmpty') }}</p>
                 </div>
                 <div v-for="item in libraryResources" :key="item._id"
                     class="resource-card group relative aspect-video rounded-xl overflow-hidden border border-white/5 bg-white/5 hover:border-blue-500/50 transition-all">
@@ -93,7 +93,7 @@
                         class="overlay absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center items-center p-3">
                         <p class="text-[10px] font-bold truncate mb-3 w-full text-center">{{ item.fileName }}</p>
                         <el-button size="small" class="primary-studio-btn w-full !text-[10px]" @click="addToPool(item)">
-                            <plus theme="outline" size="12" class="mr-1" /> Add to Session
+                            <plus theme="outline" size="12" class="mr-1" /> {{ $t('studio.resources.addToSession') }}
                         </el-button>
                     </div>
                 </div>
@@ -110,16 +110,17 @@ import { useMediaStore } from '@/stores/media';
 import { storeToRefs } from 'pinia';
 import { toast } from 'vue-sonner';
 import { getFileUrl } from '@/utils/api';
+import { useI18n } from "vue-i18n";
 
 const studioStore = useStudioStore();
 const mediaStore = useMediaStore();
 const { resourcePool } = storeToRefs(studioStore);
 const { resources: libraryResources, loading } = storeToRefs(mediaStore);
-
+const { t } = useI18n();
 const activeTab = ref('pool');
 const tabOptions = [
-    { label: 'Pool', value: 'pool' },
-    { label: 'Library', value: 'library' }
+    { label: t('studio.resources.tabs.pool'), value: 'pool' },
+    { label: t('studio.resources.tabs.library'), value: 'library' }
 ];
 
 const librarySearch = ref('');

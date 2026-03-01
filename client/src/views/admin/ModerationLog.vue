@@ -2,33 +2,33 @@
   <div class="moderation-log p-6 animate-in">
     <header class="page-header mb-10 flex justify-between items-start">
       <div>
-        <h1 class="text-3xl font-black text-white tracking-tight mb-2">Safety & Moderation Hub</h1>
-        <p class="text-gray-400">Review flagged content and enforce enterprise safety policies.</p>
+        <h1 class="text-3xl font-black text-white tracking-tight mb-2">{{ t('admin.moderation.title') }}</h1>
+        <p class="text-gray-400">{{ t('admin.moderation.subtitle') }}</p>
       </div>
       <div class="stats flex gap-8">
          <div class="stat text-right">
-            <p class="text-[8px] font-black opacity-30 uppercase">Flagged Today</p>
+            <p class="text-[8px] font-black opacity-30 uppercase">{{ t('admin.moderation.stats.flaggedToday') }}</p>
             <p class="text-2xl font-black text-orange-500">12</p>
          </div>
          <div class="stat text-right">
-            <p class="text-[8px] font-black opacity-30 uppercase">Blocked</p>
+            <p class="text-[8px] font-black opacity-30 uppercase">{{ t('admin.moderation.stats.blocked') }}</p>
             <p class="text-2xl font-black text-red-500">4</p>
          </div>
       </div>
     </header>
 
     <div class="filters-bar flex gap-4 mb-8">
-       <el-select v-model="filterStatus" placeholder="STATUS" size="small" class="glass-input w-40">
-          <el-option label="ALL" value="" />
-          <el-option label="FLAGGED" value="flagged" />
-          <el-option label="BLOCKED" value="blocked" />
-          <el-option label="APPROVED" value="approved" />
+       <el-select v-model="filterStatus" :placeholder="t('admin.moderation.filters.status')" size="small" class="glass-input w-40">
+          <el-option :label="t('admin.moderation.filters.all')" value="" />
+          <el-option :label="t('admin.moderation.filters.flagged')" value="flagged" />
+          <el-option :label="t('admin.moderation.filters.blocked')" value="blocked" />
+          <el-option :label="t('admin.moderation.filters.approved')" value="approved" />
        </el-select>
-       <el-input v-model="searchQuery" placeholder="SEARCH PROMPTS..." size="small" class="glass-input flex-1" />
+       <el-input v-model="searchQuery" :placeholder="t('admin.moderation.filters.searchPlaceholder')" size="small" class="glass-input flex-1" />
     </div>
 
     <div class="audit-list space-y-4">
-       <div v-if="loading" class="p-20 text-center opacity-30">Analyzing safety records...</div>
+       <div v-if="loading" class="p-20 text-center opacity-30">{{ t('admin.moderation.loading') }}</div>
        
        <div v-for="log in audits" :key="log.id" class="audit-card glass-card p-6 rounded-2xl border border-white/5 group hover:border-blue-500/30 transition-all">
           <div class="flex justify-between items-start mb-6">
@@ -38,18 +38,18 @@
                    <video-file v-else />
                 </div>
                 <div>
-                   <p class="text-xs font-black uppercase tracking-widest opacity-40">{{ log.type }} violation</p>
+                   <p class="text-xs font-black uppercase tracking-widest opacity-40">{{ t('admin.moderation.card.violation', { type: log.type }) }}</p>
                    <p class="text-[10px] font-bold">{{ log.user.name }}</p>
                    <div class="flex items-center gap-2">
                        <span class="text-[10px] font-bold text-brand-primary font-mono">{{ ((log as any).scores.toxicity || (log as any).scores.nsfw || 0).toFixed(2) }}</span>
-                       <span class="text-[8px] opacity-30">RISK</span>
+                       <span class="text-[8px] opacity-30">{{ t('admin.moderation.card.risk') }}</span>
                    </div>
-                   <p class="text-[10px] font-bold"> ({{ (log as any).tenant?.name || 'Unknown' }})</p>
+                   <p class="text-[10px] font-bold"> ({{ (log as any).tenant?.name || t('common.unknown') }})</p>
                 </div>
              </div>
              <div class="flex items-center gap-3">
                 <div class="score-pill px-3 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full text-[8px] font-black uppercase">
-                   Vulnerability: {{ ((log as any).scores.toxicity || (log as any).scores.nsfw || 0).toFixed(2) }}
+                   {{ t('admin.moderation.card.vulnerability', { score: ((log as any).scores.toxicity || (log as any).scores.nsfw || 0).toFixed(2) }) }}
                 </div>
                 <span class="status-badge" :class="log.status">{{ log.status }}</span>
              </div>
@@ -62,8 +62,8 @@
           <div class="card-footer pt-6 border-t border-white/5 flex justify-between items-center">
              <span class="text-[9px] font-black opacity-20 uppercase tracking-widest">{{ log.timestamp }}</span>
              <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button class="secondary-btn text-[10px] px-4 py-1.5" @click="resolve(log.id, 'blocked')">HARD BLOCK</button>
-                <button class="primary-btn text-[10px] px-4 py-1.5" @click="resolve(log.id, 'approved')">FORCE APPROVE</button>
+                <button class="secondary-btn text-[10px] px-4 py-1.5" @click="resolve(log.id, 'blocked')">{{ t('admin.moderation.card.hardBlock') }}</button>
+                <button class="primary-btn text-[10px] px-4 py-1.5" @click="resolve(log.id, 'approved')">{{ t('admin.moderation.card.forceApprove') }}</button>
              </div>
           </div>
        </div>
@@ -73,13 +73,16 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUIStore } from '@/stores/ui';
 import {
     Audit, Search, Filter, Caution, Check, Close,
-    CameraFive, Play, FileText, DeleteOne
+    CameraFive, Play, FileText, DeleteOne,
+    TextMessage, VideoFile
 } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 
+const { t } = useI18n()
 const uiStore = useUIStore();
 const loading = ref(false);
 const filterStatus = ref('');
@@ -92,7 +95,7 @@ const audits = ref([
 ]);
 
 const resolve = (id: string, decision: string) => {
-    toast.success(`Audit ${id} resolved as ${decision.toUpperCase()}`);
+    toast.success(t('admin.moderation.toasts.resolved', { id, decision: decision.toUpperCase() }));
 };
 </script>
 

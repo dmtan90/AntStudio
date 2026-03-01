@@ -11,7 +11,7 @@
         <img v-else-if="isImage" :src="getFileUrl(resource.key)" class="max-w-full max-h-full rounded-lg shadow-2xl object-contain" />
         <div v-else class="flex flex-col items-center gap-6">
             <component :is="getIconComponent(resource.contentType)" size="120" class="text-white/20" />
-           <p class="text-2xl font-black text-white/40">No Preview Available</p>
+           <p class="text-2xl font-black text-white/40">{{ $t('studio.common.noPreview') }}</p>
         </div>
       </div>
 
@@ -24,28 +24,28 @@
 
           <div class="space-y-6">
             <div>
-              <label class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 block">File Info</label>
+              <label class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 block">{{ $t('studio.common.fileInfo') }}</label>
               <div class="grid grid-cols-2 gap-4">
                 <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
                   <div class="text-lg font-bold text-white">{{ formatFileSize(resource.size) }}</div>
-                  <div class="text-[10px] text-gray-500 uppercase font-bold">Size</div>
+                  <div class="text-[10px] text-gray-500 uppercase font-bold">{{ $t('studio.common.size') }}</div>
                 </div>
                 <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
                   <div class="text-lg font-bold text-white">{{ formatDate(resource.createdAt) }}</div>
-                  <div class="text-[10px] text-gray-500 uppercase font-bold">Created</div>
+                  <div class="text-[10px] text-gray-500 uppercase font-bold">{{ $t('studio.common.created') }}</div>
                 </div>
               </div>
             </div>
 
             <div>
-              <label class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 block">Meta Data</label>
+              <label class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 block">{{ $t('studio.common.metaData') }}</label>
               <div class="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
                 <div class="flex justify-between">
-                  <span class="text-xs text-gray-500">Type</span>
+                  <span class="text-xs text-gray-500">{{ $t('studio.common.type') }}</span>
                   <span class="text-xs text-white font-medium">{{ resource.contentType }}</span>
                 </div>
                 <div class="flex justify-between" v-if="resource.purpose">
-                  <span class="text-xs text-gray-500">Purpose</span>
+                  <span class="text-xs text-gray-500">{{ $t('studio.common.purpose') }}</span>
                   <span class="text-xs text-blue-400 font-bold uppercase tracking-tighter">{{ resource.purpose }}</span>
                 </div>
               </div>
@@ -55,10 +55,10 @@
 
         <div class="mt-auto pt-8 border-t border-white/5 space-y-3">
           <button @click="download" class="w-full py-4 bg-white text-black font-black rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3">
-            <Download /> Download File
+            <Download /> {{ $t('studio.common.downloadFile') }}
           </button>
           <button @click="$emit('delete', resource)" class="w-full py-4 bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-500 font-bold rounded-2xl transition-all flex items-center justify-center gap-3">
-            <Delete /> Delete Asset
+            <Delete /> {{ $t('studio.common.deleteAsset') }}
           </button>
         </div>
       </div>

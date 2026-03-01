@@ -29,9 +29,9 @@
 
 <script setup lang="ts">
 import { MagicWand, ArrowRight, Comment } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 defineProps<{
   msg: any

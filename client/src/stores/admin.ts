@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/utils/api.js'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 
 export const useAdminStore = defineStore('admin', () => {
-    const { t } = useTranslations()
+    const { t } = useI18n()
     const users = ref<any[]>([])
     const settings = ref<any>({})
     const stats = ref<any>({})

@@ -21,30 +21,30 @@
                     <button class="status-indicator live" :class="{ active: isLive }" @click="$emit('toggle-live')"
                         data-guide="go-live">
                         <broadcast theme="filled" size="14" class="mr-2" />
-                        {{ isLive ? 'LIVE' : 'GO LIVE' }}
+                        {{ isLive ? $t('studio.stageControls.live') : $t('studio.stageControls.goLive') }}
                     </button>
                     <button v-if="isLive" class="status-indicator highlight" @click="$emit('capture-highlight')">
                         <magic theme="filled" size="14" class="mr-2" />
-                        HIGHLIGHT
+                        {{ $t('studio.stageControls.highlight') }}
                     </button>
                     <button class="status-indicator rec" :class="{ active: isRecording }"
                         @click="$emit('toggle-record')">
                         <div class="rec-dot mr-2"></div>
-                        {{ isRecording ? 'RECORDING' : 'REC' }}
+                        {{ isRecording ? $t('studio.stageControls.recording') : $t('studio.stageControls.rec') }}
                     </button>
                 </div>
             </template>
             <template v-else>
                 <div class="flex items-center gap-3 px-6 py-2 bg-green-500/10 rounded-2xl border border-green-500/20">
                     <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <span class="text-[10px] font-black uppercase text-green-500 tracking-widest">On Air</span>
+                    <span class="text-[10px] font-black uppercase text-green-500 tracking-widest">{{ $t('studio.stageControls.onAir') }}</span>
                 </div>
             </template>
         </div>
 
         <div class="config-controls">
             <template v-if="!isGuest">
-                <button class="ctrl-btn" title="Invite Guest" @click="$emit('invite-guest')">
+                <button class="ctrl-btn" :title="$t('studio.stageControls.inviteGuest')" @click="$emit('invite-guest')">
                     <user theme="outline" />
                     <div v-if="guestCount" class="platform-count">{{ guestCount }}</div>
                 </button>

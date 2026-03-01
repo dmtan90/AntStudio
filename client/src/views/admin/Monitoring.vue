@@ -2,35 +2,35 @@
     <div class="admin-monitoring min-h-screen bg-[#0a0a0c] text-white font-outfit p-8 animate-in fade-in duration-700">
         <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-12 relative z-10">
             <div>
-                <h1 class="text-4xl font-black tracking-tight mb-2 bg-gradient-to-r from-white via-white/80 to-white/40 bg-clip-text text-transparent">System Monitoring</h1>
-                <p class="text-white/40 text-lg font-light tracking-wide max-w-xl">Real-time resource analytics and system health diagnostics.</p>
+                <h1 class="text-4xl font-black tracking-tight mb-2 bg-gradient-to-r from-white via-white/80 to-white/40 bg-clip-text text-transparent">{{ t('admin.monitoring.title') }}</h1>
+                <p class="text-white/40 text-lg font-light tracking-wide max-w-xl">{{ t('admin.monitoring.subtitle') }}</p>
             </div>
             <div class="flex flex-wrap gap-3">
                 <button class="h-10 px-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center gap-2 group backdrop-blur-md" @click="showSupportDialog = true">
                     <help theme="outline" size="18" class="text-white/60 group-hover:text-white transition-colors" />
-                    <span class="text-sm font-medium text-white/80 group-hover:text-white">Support</span>
+                    <span class="text-sm font-medium text-white/80 group-hover:text-white">{{ t('admin.monitoring.support') }}</span>
                 </button>
                 <button class="h-10 px-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center gap-2 group backdrop-blur-md" @click="exportDiagnostics" :disabled="exporting">
                     <terminal theme="outline" size="18" class="text-white/60 group-hover:text-white transition-colors" />
-                    <span class="text-sm font-medium text-white/80 group-hover:text-white">{{ exporting ? 'Exporting...' : 'Export Logs' }}</span>
+                    <span class="text-sm font-medium text-white/80 group-hover:text-white">{{ exporting ? t('admin.monitoring.exporting') : t('admin.monitoring.exportLogs') }}</span>
                 </button>
                 <button class="h-10 px-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 flex items-center gap-2 group backdrop-blur-md" @click="showSettings = !showSettings">
                     <setting-config theme="outline" size="18" class="text-white/60 group-hover:text-white transition-colors" />
-                    <span class="text-sm font-medium text-white/80 group-hover:text-white">Config</span>
+                    <span class="text-sm font-medium text-white/80 group-hover:text-white">{{ t('admin.monitoring.config') }}</span>
                 </button>
                 <button class="h-10 px-5 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30 transition-all duration-300 flex items-center gap-2 group backdrop-blur-md" @click="clearLogs">
                     <delete theme="outline" size="18" class="text-red-400 group-hover:text-red-300 transition-colors" />
-                    <span class="text-sm font-medium text-red-400 group-hover:text-red-300">Clean</span>
+                    <span class="text-sm font-medium text-red-400 group-hover:text-red-300">{{ t('admin.monitoring.clean') }}</span>
                 </button>
             </div>
         </div>
 
         <!-- Settings Panel -->
         <div v-if="showSettings" class="cinematic-card settings-panel animate-in">
-            <h3>Monitoring Configuration</h3>
+            <h3>{{ t('admin.monitoring.settingsTitle') }}</h3>
             <div class="settings-grid">
                 <div class="setting-item">
-                    <label>Email Alerts</label>
+                    <label>{{ t('admin.monitoring.emailAlerts') }}</label>
                     <div class="flex items-center gap-2">
                         <el-switch v-model="settings.emailNotificationsEnabled" @change="saveSettings" />
                         <span class="text-xs opacity-60">{{ settings.emailNotificationsEnabled ? 'ACTIVE' : 'INACTIVE'
@@ -38,23 +38,23 @@
                     </div>
                 </div>
                 <div class="setting-item">
-                    <label>Recipient Email</label>
+                    <label>{{ t('admin.monitoring.recipientEmail') }}</label>
                     <input type="email" v-model="settings.notificationEmail" placeholder="admin@example.com"
                         class="dark-input" @blur="saveSettings" />
                 </div>
                 <div class="setting-item">
-                    <label>Alert Level</label>
+                    <label>{{ t('admin.monitoring.alertLevel') }}</label>
                     <select v-model="settings.minNotificationLevel" class="dark-select" @change="saveSettings">
-                        <option value="error">Error Only</option>
-                        <option value="warn">Warning + Error</option>
+                        <option value="error">{{ t('admin.monitoring.errorOnly') }}</option>
+                        <option value="warn">{{ t('admin.monitoring.warnError') }}</option>
                     </select>
                 </div>
                 <div class="setting-item">
-                    <label>Log Retention</label>
+                    <label>{{ t('admin.monitoring.logRetention') }}</label>
                     <div class="flex items-center gap-2">
                         <input type="number" v-model.number="settings.retentionDays" class="dark-input w-24"
                             @blur="saveSettings" />
-                        <span class="text-xs opacity-60">DAYS</span>
+                        <span class="text-xs opacity-60">{{ t('admin.monitoring.days') }}</span>
                     </div>
                 </div>
             </div>
@@ -64,7 +64,7 @@
         <div class="resource-cards mb-6">
             <div class="cinematic-card stat-card">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="label">CPU USAGE</div>
+                    <div class="label">{{ t('admin.monitoring.cpuUsage') }}</div>
                     <cpu theme="outline" size="18" class="opacity-50" />
                 </div>
                 <div class="value">{{ stats.cpuUsage }}%</div>
@@ -76,7 +76,7 @@
 
             <div class="cinematic-card stat-card">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="label">RAM (ACTIVE)</div>
+                    <div class="label">{{ t('admin.monitoring.ramActive') }}</div>
                     <memory theme="outline" size="18" class="opacity-50" />
                 </div>
                 <div class="value">{{ formatBytes(stats.memory.used) }} / {{ formatBytes(stats.memory.total) }}</div>
@@ -89,7 +89,7 @@
 
             <div class="cinematic-card stat-card">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="label">DISK SPACE</div>
+                    <div class="label">{{ t('admin.monitoring.diskSpace') }}</div>
                     <folder-open theme="outline" size="18" class="opacity-50" />
                 </div>
                 <div class="value">{{ formatBytes(stats.disk.used) }} / {{ formatBytes(stats.disk.total) }}</div>
@@ -101,7 +101,7 @@
 
             <div class="cinematic-card stat-card">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="label">NETWORK (THROUGHPUT)</div>
+                    <div class="label">{{ t('admin.monitoring.networkThroughput') }}</div>
                     <connection theme="outline" size="18" class="opacity-50" />
                 </div>
                 <div class="value">
@@ -110,7 +110,7 @@
                         <span class="text-blue-400">TX: {{ formatBytes(stats.network.tx_sec) }}/s</span>
                     </div>
                 </div>
-                <div class="text-[9px] opacity-40 mt-2">TOTAL: IN {{ formatBytes(stats.network.rx_bytes) }} | OUT {{
+                <div class="text-[9px] opacity-40 mt-2">{{ t('admin.monitoring.total') }}: IN {{ formatBytes(stats.network.rx_bytes) }} | OUT {{
                     formatBytes(stats.network.tx_bytes) }}</div>
             </div>
         </div>
@@ -119,7 +119,7 @@
         <div class="charts-grid mb-6">
             <div class="cinematic-card chart-card">
                 <div class="chart-header">
-                    <h3>CPU & RAM Trends (Last Hour)</h3>
+                    <h3>{{ t('admin.monitoring.cpuRamTrends') }}</h3>
                 </div>
                 <div class="chart-container">
                     <Line v-if="chartData" :data="chartData.resources" :options="chartOptions" />
@@ -127,7 +127,7 @@
             </div>
             <div class="cinematic-card chart-card">
                 <div class="chart-header">
-                    <h3>Network Activity (Last Hour)</h3>
+                    <h3>{{ t('admin.monitoring.networkActivity') }}</h3>
                 </div>
                 <div class="chart-container">
                     <Line v-if="chartData" :data="chartData.network" :options="chartOptions" />
@@ -138,26 +138,24 @@
         <!-- Logs Section -->
         <div class="monitoring-tabs">
             <div class="tabs-header">
-                <button :class="{ active: activeTab === 'logs' }" @click="activeTab = 'logs'">System Logs</button>
-                <button :class="{ active: activeTab === 'realtime' }" @click="activeTab = 'realtime'">Real-time
-                    Stream</button>
-                <button :class="{ active: activeTab === 'client' }" @click="activeTab = 'client'">Client Errors</button>
-                <button :class="{ active: activeTab === 'errors' }" @click="activeTab = 'errors'">Analytics</button>
+                <button :class="{ active: activeTab === 'logs' }" @click="activeTab = 'logs'">{{ t('admin.monitoring.systemLogs') }}</button>
+                <button :class="{ active: activeTab === 'realtime' }" @click="activeTab = 'realtime'">{{ t('admin.monitoring.realtimeStream') }}</button>
+                <button :class="{ active: activeTab === 'client' }" @click="activeTab = 'client'">{{ t('admin.monitoring.clientErrors') }}</button>
+                <button :class="{ active: activeTab === 'errors' }" @click="activeTab = 'errors'">{{ t('admin.monitoring.analytics') }}</button>
             </div>
 
             <div v-if="activeTab === 'realtime'" class="realtime-logs-section animate-in">
                 <div class="cinematic-card p-4">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">Live Engine
-                            Stream</span>
+                        <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">{{ t('admin.monitoring.liveEngineStream') }}</span>
                         <div class="flex items-center gap-2">
                             <div class="status-dot" :class="{ online: socket && socket.connected }"></div>
-                            <span class="text-[9px] opacity-60">{{ socket && socket.connected ? 'CONNECTED' :
-                                'CONNECTING...' }}</span>
+                            <span class="text-[9px] opacity-60">{{ socket && socket.connected ? t('admin.monitoring.connected') :
+                                t('admin.monitoring.connecting') }}</span>
                         </div>
                     </div>
                     <textarea ref="realtimeLogArea" class="realtime-textarea" readonly v-model="realtimeLogs"
-                        placeholder="Waiting for system events..."></textarea>
+                        :placeholder="t('admin.monitoring.waitingEvents')"></textarea>
                 </div>
             </div>
 
@@ -166,20 +164,20 @@
                 <div class="logs-toolbar flex justify-between items-center mb-4">
                     <div class="flex gap-4 items-center">
                         <select v-model="logFilter.level" class="dark-select sm" @change="() => fetchLogs()">
-                            <option value="all">All Levels</option>
-                            <option value="debug">Debug</option>
-                            <option value="info">Normal</option>
-                            <option value="warn">Warning</option>
-                            <option value="error">Error</option>
+                            <option value="all">{{ t('admin.monitoring.allLevels') }}</option>
+                            <option value="debug">{{ t('admin.monitoring.debug') }}</option>
+                            <option value="info">{{ t('admin.monitoring.normal') }}</option>
+                            <option value="warn">{{ t('admin.monitoring.warning') }}</option>
+                            <option value="error">{{ t('admin.monitoring.error') }}</option>
                         </select>
                         <div class="search-box">
-                            <input v-model="logFilter.search" placeholder="Search keywords..."
+                            <input v-model="logFilter.search" :placeholder="t('admin.monitoring.searchKeywords')"
                                 class="dark-input sm w-64" @input="debounceFetchLogs" />
                         </div>
                     </div>
                     <div class="flex gap-4 items-center">
                         <el-switch v-model="autoRefresh" size="small" />
-                        <span class="text-[10px] opacity-40 uppercase font-bold">{{ totalLogs }} Records</span>
+                        <span class="text-[10px] opacity-40 uppercase font-bold">{{ totalLogs }} {{ t('admin.monitoring.records') }}</span>
                     </div>
                 </div>
 
@@ -195,7 +193,7 @@
                         <pre v-if="expandedMeta.has(log._id)"
                             class="meta-block">{{ JSON.stringify(log.metadata, null, 2) }}</pre>
                     </div>
-                    <div v-if="!logs.length" class="empty-state">No records found.</div>
+                    <div v-if="!logs.length" class="empty-state">{{ t('admin.monitoring.noRecords') }}</div>
                 </div>
 
                 <div class="flex justify-center mt-4">
@@ -216,14 +214,14 @@
                         <pre v-if="expandedMeta.has(log._id)"
                             class="meta-block">{{ JSON.stringify(log.details, null, 2) }}</pre>
                     </div>
-                    <div v-if="!clientLogs.length" class="empty-state">No client errors detected.</div>
+                    <div v-if="!clientLogs.length" class="empty-state">{{ t('admin.monitoring.noClientErrors') }}</div>
                 </div>
             </div>
 
             <div v-else class="errors-section animate-in">
                 <div class="cinematic-card p-6">
                     <!-- Simple placeholder for error distribution -->
-                    <p class="opacity-40">Coming soon: Heatmap and HTTP error frequency reports.</p>
+                    <p class="opacity-40">{{ t('admin.monitoring.comingSoon') }}</p>
                 </div>
             </div>
         </div>
@@ -235,6 +233,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, reactive, watch, computed, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { SettingConfig, Delete, Cpu, Memory, FolderOpen, Connection, Loading, Terminal, Help } from '@icon-park/vue-next';
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
@@ -245,6 +244,8 @@ import { toast } from 'vue-sonner';
 import SupportTicketDialog from '@/components/SupportTicketDialog.vue';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+
+const { t } = useI18n()
 
 // State
 const activeTab = ref('logs');
@@ -308,7 +309,7 @@ const fetchLogs = async (silent = false) => {
             clientLogs.value = clientRes.logs;
         }
     } catch (e) {
-        if (!silent) toast.error('Failed to load logs');
+        if (!silent) toast.error(t('admin.monitoring.toasts.loadLogsFailed'));
     }
 };
 
@@ -316,9 +317,9 @@ const exportDiagnostics = async () => {
     exporting.value = true;
     try {
         await adminStore.exportDiagnostics();
-        toast.success('Diagnostic bundle sent to developer (dmtan90@gmail.com)');
+        toast.success(t('admin.monitoring.toasts.exportSuccess'));
     } catch (e) {
-        toast.error('Failed to export diagnostics');
+        toast.error(t('admin.monitoring.toasts.exportFailed'));
     } finally {
         exporting.value = false;
     }
@@ -335,11 +336,11 @@ const saveSettings = async () => {
     try {
         await adminStore.updateMonitoringSettings(settings);
         // toast success managed by store mostly but double check
-    } catch (e) { toast.error('Failed to save settings'); }
+    } catch (e) { toast.error(t('admin.monitoring.toasts.saveSettingsFailed')); }
 };
 
 const clearLogs = async () => {
-    if (!confirm('Clear all system logs?')) return;
+    if (!confirm(t('admin.monitoring.confirmClearLogs'))) return;
     try {
         await adminStore.clearMonitoringLogs();
         logs.value = [];

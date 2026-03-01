@@ -105,11 +105,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import { Check } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 interface LowerThirdData {
     id?: string
@@ -152,24 +152,24 @@ const formData = reactive<LowerThirdData>({
     animation: 'fade'
 })
 
-const styles = [
-    { value: 'default', label: 'Default', description: 'Glassmorphic bar' },
-    { value: 'minimal', label: 'Minimal', description: 'Text with shadow' },
-    { value: 'bold', label: 'Bold', description: 'Solid color bar' },
-    { value: 'gradient', label: 'Gradient', description: 'Gradient background' }
-]
+const styles = computed(() => [
+    { value: 'default', label: t('projects.editor.lowerThird.options.styles.default'), description: t('projects.editor.lowerThird.options.styles.defaultDesc') },
+    { value: 'minimal', label: t('projects.editor.lowerThird.options.styles.minimal'), description: t('projects.editor.lowerThird.options.styles.minimalDesc') },
+    { value: 'bold', label: t('projects.editor.lowerThird.options.styles.bold'), description: t('projects.editor.lowerThird.options.styles.boldDesc') },
+    { value: 'gradient', label: t('projects.editor.lowerThird.options.styles.gradient'), description: t('projects.editor.lowerThird.options.styles.gradientDesc') }
+])
 
-const positions = [
-    { value: 'bottom-left', label: 'Left' },
-    { value: 'bottom-center', label: 'Center' },
-    { value: 'bottom-right', label: 'Right' }
-]
+const positions = computed(() => [
+    { value: 'bottom-left', label: t('projects.editor.lowerThird.options.positions.left') },
+    { value: 'bottom-center', label: t('projects.editor.lowerThird.options.positions.center') },
+    { value: 'bottom-right', label: t('projects.editor.lowerThird.options.positions.right') }
+])
 
-const animations = [
-    { value: 'fade', label: 'Fade' },
-    { value: 'slide', label: 'Slide' },
-    { value: 'none', label: 'None' }
-]
+const animations = computed(() => [
+    { value: 'fade', label: t('projects.editor.lowerThird.options.animations.fade') },
+    { value: 'slide', label: t('projects.editor.lowerThird.options.animations.slide') },
+    { value: 'none', label: t('projects.editor.lowerThird.options.animations.none') }
+])
 
 watch(() => props.modelValue, (val) => {
     visible.value = val

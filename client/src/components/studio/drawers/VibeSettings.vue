@@ -2,13 +2,13 @@
     <div class="vibe-settings flex flex-col gap-8 animate-in">
         <!-- Atmosphere Visualizer -->
         <section>
-            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">ATMOSPHERE_CORE</h4>
+            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">{{ $t('studio.drawers.vibe.atmosphereCore') }}</h4>
             <div
                 class="p-6 rounded-3xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/10 text-center mb-4 relative overflow-hidden">
                 <div class="absolute inset-0 opacity-20 pointer-events-none">
                     <div class="vibe-waves"></div>
                 </div>
-                <p class="text-[10px] font-black opacity-40 uppercase mb-2 relative z-10">Current State</p>
+                <p class="text-[10px] font-black opacity-40 uppercase mb-2 relative z-10">{{ $t('studio.drawers.vibe.currentState') }}</p>
                 <p
                     class="text-4xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 relative z-10">
                     {{ vibeName }}
@@ -17,7 +17,7 @@
 
             <div class="grid grid-cols-2 gap-3">
                 <div class="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <p class="text-[8px] font-black opacity-30 uppercase">Intensity</p>
+                    <p class="text-[8px] font-black opacity-30 uppercase">{{ $t('studio.common.intensity') }}</p>
                     <div class="flex items-end gap-2">
                         <p class="text-xl font-black">{{ Math.round(vibeScore) }}</p>
                         <div class="w-full h-1 bg-white/10 rounded-full mb-2">
@@ -26,7 +26,7 @@
                     </div>
                 </div>
                 <div class="p-4 rounded-2xl bg-white/5 border border-white/5">
-                    <p class="text-[8px] font-black opacity-30 uppercase">Positivity</p>
+                    <p class="text-[8px] font-black opacity-30 uppercase">{{ $t('studio.common.positivity') }}</p>
                     <p class="text-xl font-black text-green-400">84%</p>
                 </div>
             </div>
@@ -35,7 +35,7 @@
         <!-- Adaptive Orchestration -->
         <section>
             <div class="flex justify-between items-center mb-4">
-                <h4 class="text-xs font-black opacity-30 uppercase tracking-widest">NEURAL_ADAPTATION</h4>
+                <h4 class="text-xs font-black opacity-30 uppercase tracking-widest">{{ $t('studio.drawers.vibe.neuralAdaptation') }}</h4>
                 <el-switch v-model="localAutoAtmosphere"
                     @change="$emit('update:autoAtmosphere', localAutoAtmosphere)" />
             </div>
@@ -45,10 +45,8 @@
                     class="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 group hover:border-blue-500/30 cursor-pointer transition-all">
                     <music-list theme="outline" size="16" class="opacity-40 group-hover:text-blue-400" />
                     <div class="flex-1">
-                        <p class="text-[10px] font-bold">Dynamic Music FX</p>
-                        <p class="text-[9px] opacity-40">Syncing beats to chat energy ({{ localAutoAtmosphere ? 'ACTIVE'
-                            :
-                            'PAUSED' }})</p>
+                        <p class="text-[10px] font-bold">{{ $t('studio.drawers.vibe.dynamicMusic') }}</p>
+                        <p class="text-[9px] opacity-40">{{ $t('studio.drawers.vibe.musicSyncDesc', { status: localAutoAtmosphere ? $t('studio.common.active') : $t('studio.common.paused') }) }}</p>
                     </div>
                 </div>
 
@@ -56,33 +54,33 @@
                     <div class="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex items-center gap-3">
                         <div class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
                         <p class="text-[9px] font-black uppercase tracking-widest opacity-60">
-                            SENTIMENT_TRACKING_IN_PROGRESS</p>
+                            {{ $t('studio.drawers.vibe.trackingInProgress') }}</p>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Environment Presets -->
-        <StudioSection title="Studio Scene Presets">
+        <StudioSection :title="$t('studio.drawers.vibe.scenePresets')">
             <div class="flex gap-2 mb-4 bg-white/5 p-1 rounded-xl">
                 <button 
                     class="flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all"
                     :class="activeTab === 'classic' ? 'bg-white/10 text-white' : 'opacity-40 hover:opacity-60'"
                     @click="activeTab = 'classic'"
-                >Classic</button>
+                >{{ $t('studio.drawers.vibe.tabs.classic') }}</button>
                 <button 
                     class="flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all"
                     :class="activeTab === 'pano' ? 'bg-blue-500/20 text-blue-400' : 'opacity-40 hover:opacity-60'"
                     @click="activeTab = 'pano'"
-                >360 Pano</button>
+                >{{ $t('studio.drawers.vibe.tabs.pano') }}</button>
             </div>
 
             <div v-if="activeTab === 'classic'" class="grid grid-cols-2 gap-2">
                 <StudioVibeCard 
                     v-for="p in scenePresets" 
                     :key="p.name"
-                    :name="p.name"
-                    :description="p.mood + ' mood'"
+                    :name="$t(`studio.drawers.vibe.presets.${p.name}`)"
+                    :description="$t('studio.drawers.vibe.moodDesc', { mood: p.mood })"
                     :icon="p.icon"
                     :color="p.color"
                     :active="currentPreset === p.name"
@@ -99,7 +97,7 @@
                 >
                     <img :src="p.bg" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
-                        <span class="text-[8px] font-black uppercase tracking-widest">{{ p.name }}</span>
+                        <span class="text-[8px] font-black uppercase tracking-widest">{{ $t(`studio.drawers.vibe.presets.${p.name}`) }}</span>
                     </div>
                     <div v-if="currentPreset === p.name" class="absolute top-2 right-2">
                         <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>

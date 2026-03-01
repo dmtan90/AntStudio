@@ -1,7 +1,7 @@
 <template>
   <el-dialog 
     v-model="visible" 
-    title="🎵 Select Background Music"
+    :title="t('vtubers.music.title')"
     width="900px"
     class="music-dialog"
   >
@@ -11,7 +11,7 @@
         <div class="flex-1">
           <el-input 
             v-model="searchQuery"
-            placeholder="Search for songs or artists..."
+            :placeholder="t('vtubers.music.searchPlaceholder')"
             size="large"
             clearable
             @keyup.enter="handleSearch"
@@ -29,12 +29,9 @@
         </div>
 
         <div v-if="!searchQuery" class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-          <span class="text-[10px] font-black uppercase tracking-widest text-white/40">Trending:</span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/40">{{ t('vtubers.music.trending') }}</span>
           <el-select v-model="trendingRegion" size="small" @change="fetchTrending" class="w-32">
-            <el-option label="Vietnam" value="VN" />
-            <el-option label="United States" value="US" />
-            <el-option label="Japan" value="JP" />
-            <el-option label="South Korea" value="KR" />
+            <el-option v-for="(name, code) in t('vtubers.music.regions')" :key="code" :label="name" :value="String(code).toUpperCase()" />
           </el-select>
           <el-button size="small" link @click="fetchTrending" :loading="trendingLoading" class="p-0">
             <refresh theme="outline" size="14" />
@@ -44,25 +41,19 @@
 
       <!-- Search Filters (Collapsible or subtle) -->
       <div v-if="searchQuery" class="flex flex-wrap gap-4 mb-6 px-1">
-        <el-checkbox v-model="preferCovers" class="!mr-0">Prefer Cover Songs</el-checkbox>
+        <el-checkbox v-model="preferCovers" class="!mr-0">{{ t('vtubers.music.preferCovers') }}</el-checkbox>
         
         <div class="flex items-center gap-2 ml-auto">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-white/30">Target:</span>
-          <el-select v-model="language" placeholder="Search Language" class="w-32" size="small">
-            <el-option label="Vietnamese" value="vietnamese" />
-            <el-option label="English" value="english" />
-            <el-option label="Korean" value="korean" />
-            <el-option label="Japanese" value="japanese" />
+          <span class="text-[10px] font-bold uppercase tracking-wider text-white/30">{{ t('vtubers.music.target') }}</span>
+          <el-select v-model="language" :placeholder="t('vtubers.music.searchLanguage')" class="w-32" size="small">
+            <el-option v-for="(name, val) in t('vtubers.music.languages')" :key="val" :label="name" :value="val" />
           </el-select>
         </div>
 
         <div class="flex items-center gap-2">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-white/30">Lyrics:</span>
-          <el-select v-model="lyricsLanguage" placeholder="Lyrics Language" class="w-32" size="small">
-            <el-option label="Vietnamese" value="vi" />
-            <el-option label="English" value="en" />
-            <el-option label="Japanese" value="ja" />
-            <el-option label="Korean" value="ko" />
+          <span class="text-[10px] font-bold uppercase tracking-wider text-white/30">{{ t('vtubers.music.lyricsLabel') }}</span>
+          <el-select v-model="lyricsLanguage" :placeholder="t('vtubers.music.lyricsLanguage')" class="w-32" size="small">
+            <el-option v-for="(name, val) in t('vtubers.music.lyricsLanguages')" :key="val" :label="name" :value="val" />
           </el-select>
         </div>
       </div>
@@ -102,15 +93,15 @@
             <music-list theme="outline" size="48" class="opacity-20" />
             <div class="absolute -top-2 -right-2 w-4 h-4 bg-red-500/20 rounded-full animate-ping"></div>
           </div>
-          <span class="text-[10px] font-mono uppercase tracking-[0.3em]">No Music Found</span>
-          <p class="text-[9px] mt-2 opacity-30">Try a different search term or check trending</p>
+          <span class="text-[10px] font-mono uppercase tracking-[0.3em]">{{ t('vtubers.music.noMusicFound') }}</span>
+          <p class="text-[9px] mt-2 opacity-30">{{ t('vtubers.music.tryDifferentSearch') }}</p>
         </div>
       </div>
     </div>
 
     <!-- Selected Video Preview -->
     <div v-if="selectedVideo" class="mt-6 p-4 bg-white/5 rounded-2xl border border-white/10">
-      <h3 class="text-sm font-bold mb-3">Selected Song</h3>
+      <h3 class="text-sm font-bold mb-3">{{ t('vtubers.music.selectedSong') }}</h3>
       <div class="flex items-center gap-4">
         <img :src="selectedVideo.thumbnail" class="w-24 h-24 rounded-xl object-cover" />
         <div class="flex-1">
@@ -122,41 +113,36 @@
           :loading="fetching"
           type="primary"
         >
-          {{ fetching ? 'Fetching...' : 'Fetch & Apply' }}
+          {{ fetching ? t('vtubers.music.fetching') : t('vtubers.music.fetchAndApply') }}
         </el-button>
       </div>
     </div>
 
     <!-- Lyrics Preview -->
     <div v-if="lyricsLines.length > 0" class="mt-6">
-      <h3 class="text-sm font-bold mb-3">Lyrics Preview</h3>
+      <h3 class="text-sm font-bold mb-3">{{ t('vtubers.music.lyricsPreview') }}</h3>
       <div class="lyrics-preview">
         <div v-for="(line, index) in lyricsLines.slice(0, 10)" :key="index" class="lyrics-line">
           <span class="time">{{ formatTime(line.startTime) }}</span>
           <span class="text">{{ line.text }}</span>
         </div>
         <p v-if="lyricsLines.length > 10" class="text-xs text-white/40 mt-2">
-          ... and {{ lyricsLines.length - 10 }} more lines
+          {{ t('vtubers.music.moreLines', { count: lyricsLines.length - 10 }) }}
         </p>
       </div>
       
       <!-- Lyrics Style Options -->
       <div class="mt-4 grid grid-cols-2 gap-4">
         <div>
-          <label class="text-xs text-white/40 mb-2 block">Animation Style</label>
+          <label class="text-xs text-white/40 mb-2 block">{{ t('vtubers.music.animationStyle') }}</label>
           <el-select v-model="lyricsStyle" class="w-full">
-            <el-option label="Bounce (CapCut)" value="bounce" />
-            <el-option label="Slide In" value="slide" />
-            <el-option label="Fade In" value="fade" />
-            <el-option label="Scale Up" value="scale" />
+            <el-option v-for="(name, val) in t('vtubers.music.styles')" :key="val" :label="name" :value="val" />
           </el-select>
         </div>
         <div>
-          <label class="text-xs text-white/40 mb-2 block">Position</label>
+          <label class="text-xs text-white/40 mb-2 block">{{ t('vtubers.music.position') }}</label>
           <el-select v-model="lyricsPosition" class="w-full">
-            <el-option label="Top" value="top" />
-            <el-option label="Center" value="center" />
-            <el-option label="Bottom" value="bottom" />
+            <el-option v-for="(name, val) in t('vtubers.music.positions')" :key="val" :label="name" :value="val" />
           </el-select>
         </div>
       </div>
@@ -177,6 +163,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Check, Search, Refresh, MusicList } from '@icon-park/vue-next';
 import { useMediaStore } from '@/stores/media';
 import { toast } from 'vue-sonner';
@@ -184,6 +171,7 @@ import { getFileUrl } from '@/utils/api';
 
 const visible = defineModel<boolean>();
 const emit = defineEmits(['select']);
+const { t } = useI18n();
 
 const mediaStore = useMediaStore();
 const searchQuery = ref('');
@@ -246,7 +234,7 @@ watch(searchQuery, (newVal) => {
 
 const searchMusic = async () => {
   if (!searchQuery.value) {
-    toast.error('Please enter a search query');
+    toast.error(t('vtubers.music.toasts.enterQuery'));
     return;
   }
   
@@ -261,7 +249,7 @@ const searchMusic = async () => {
     
     searchResults.value = data;
     if (data.length === 0) {
-      toast.info('No results found. Try a different search term.');
+      toast.info(t('vtubers.music.toasts.noResults'));
     }
   } catch (error: any) {
     console.error('Search failed:', error);
@@ -293,16 +281,16 @@ const fetchMetadataAndLyrics = async () => {
     const music = await getFileUrl(`/api/media/youtube/stream/${selectedVideo.value.videoId}`, {cached: true, refresh: false});
     
     if (lyricsLines.value.length > 0) {
-      toast.success('Lyrics fetched! Applying music...');
+      toast.success(t('vtubers.music.toasts.lyricsFetched'));
       // Auto-confirm selection
       confirmSelection();
     } else {
-      toast.warning('No lyrics found for this song, but applying music anyway.');
+      toast.warning(t('vtubers.music.toasts.noLyrics'));
       confirmSelection();
     }
   } catch (error: any) {
     console.error('Fetch failed:', error);
-    toast.error('Failed to fetch details. Please try again.');
+    toast.error(t('vtubers.music.toasts.fetchFailed'));
   } finally {
     fetching.value = false;
   }
@@ -322,7 +310,7 @@ const confirmSelection = () => {
   });
   
   visible.value = false;
-  toast.success('Music applied!');
+  toast.success(t('vtubers.music.toasts.applied'));
 };
 
 const formatDuration = (seconds: number) => {

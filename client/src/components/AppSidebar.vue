@@ -29,7 +29,7 @@
     <div v-if="updateAvailable && !collapsed"
       class="mx-4 mt-4 p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white shadow-lg animate-pulse cursor-pointer">
       <div class="flex justify-between items-center">
-        <span class="text-[10px] font-black uppercase">v{{ latestVersion }} Available</span>
+        <span class="text-[10px] font-black uppercase">{{ t('sidebar.updateAvailable', { version: latestVersion }) }}</span>
         <download theme="outline" size="14" />
       </div>
     </div>
@@ -211,7 +211,8 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/stores/ui'
 import { useUserStore } from '@/stores/user'
-import { useTranslations, type Locale } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n'
+import { type Locale } from '@/i18n'
 import { toast } from 'vue-sonner'
 import AccountDialog from '@/components/AccountDialog.vue'
 import { getFileUrl } from '@/utils/api'
@@ -219,7 +220,7 @@ import { getFileUrl } from '@/utils/api'
 const props = defineProps<{}>()
 
 const route = useRoute()
-const { t, setLocale, currentLocale } = useTranslations()
+const { t, locale } = useI18n()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
 
@@ -254,11 +255,11 @@ const languages = [
 ]
 
 const currentFlag = computed(() => {
-  return languages.find(l => l.code === currentLocale.value)?.flag || 'us'
+  return languages.find(l => l.code === locale.value)?.flag || 'us'
 })
 
 const handleLanguageChange = async (code: string) => {
-  setLocale(code as Locale)
+  locale.value = code as Locale
   if (user.value) {
     try {
       await userStore.updateProfile({ language: code })

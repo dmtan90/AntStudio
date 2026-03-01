@@ -11,7 +11,7 @@
         <!-- Controls Hint -->
         <div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <span class="text-[10px] text-white/50 bg-black/50 px-2 py-1 rounded-full backdrop-blur-sm">
-                Drag to rotate • Scroll to zoom
+                {{ $t('vtuber.head3d.hint') }}
             </span>
         </div>
 
@@ -19,7 +19,7 @@
         <div v-if="calibrationMode" class="absolute top-4 left-4 pointer-events-none">
             <div class="flex items-center gap-2 bg-blue-500/20 border border-blue-500/40 px-2 py-1 rounded-lg backdrop-blur-sm animate-pulse">
                 <div class="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                <span class="text-[8px] font-black uppercase text-blue-400 tracking-tighter">Calibration Active</span>
+                <span class="text-[8px] font-black uppercase text-blue-400 tracking-tighter">{{ $t('vtuber.head3d.calibrationActive') }}</span>
             </div>
         </div>
     </div>
@@ -27,9 +27,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+const { t } = useI18n();
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { getFileUrl } from '@/utils/api';

@@ -8,8 +8,8 @@
       <div class="flex items-center gap-4">
         <div class="h-10 w-1.5 bg-brand-primary rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
         <div class="flex flex-col">
-          <h3 class="text-xl font-black uppercase tracking-[0.2em] text-white/90">Credit Reservoir</h3>
-          <span class="text-[11px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Top up your balance for high-fidelity production</span>
+          <h3 class="text-xl font-black uppercase tracking-[0.2em] text-white/90">{{ t('subscription.dialogs.buyCredits.title') }}</h3>
+          <span class="text-[11px] font-bold text-white/30 uppercase tracking-widest mt-0.5">{{ t('subscription.dialogs.buyCredits.subtitle') }}</span>
         </div>
       </div>
     </template>
@@ -24,19 +24,19 @@
           @click="selectPackage(pkg)"
         >
           <div v-if="(pkg.credits / pkg.price) > 100" class="absolute -top-2 right-4 bg-brand-primary text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg">
-            +{{ Math.round(((pkg.credits / pkg.price) - 100)) }}% Bonus
+            +{{ Math.round(((pkg.credits / pkg.price) - 100)) }}% {{ t('subscription.dialogs.buyCredits.bonus') }}
           </div>
           <div class="flex flex-col items-center">
             <div class="package-credits text-3xl font-black text-white mb-1 tabular-nums">{{ pkg.credits.toLocaleString() }}</div>
-            <div class="package-label text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Credits</div>
+            <div class="package-label text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">{{ t('subscription.dialogs.buyCredits.credits') }}</div>
             <div :class="cn('package-price text-xl font-black tracking-tighter transition-colors', selectedPackage?.credits === pkg.credits ? 'text-white' : 'text-brand-primary group-hover:text-white')">${{ pkg.price }}</div>
           </div>
         </div>
 
         <!-- Custom -->
         <div @click="contactUs" class="credit-package custom relative group flex flex-col items-center justify-center bg-black/40 border border-white/10 rounded-[28px] p-8 cursor-pointer transition-all duration-500 hover:bg-black/60 hover:-translate-y-2 ring-1 ring-white/5">
-          <div class="package-credits text-xl font-black text-white/80 mb-2 uppercase tracking-widest">Custom</div>
-          <div class="package-label text-[9px] font-black text-white/20 uppercase tracking-[0.2em] text-center">High-volume<br>quotation</div>
+          <div class="package-credits text-xl font-black text-white/80 mb-2 uppercase tracking-widest">{{ t('subscription.dialogs.buyCredits.custom') }}</div>
+          <div class="package-label text-[9px] font-black text-white/20 uppercase tracking-[0.2em] text-center" v-html="t('subscription.dialogs.buyCredits.customDesc')"></div>
         </div>
       </div>
 
@@ -45,7 +45,7 @@
           <Attention :size="14" :stroke-width="5" class="text-white/40" />
         </div>
         <p class="text-[11px] font-bold text-white/40 leading-relaxed tracking-tight italic">
-          Reservoir Policy: Purchased credits are valid for twenty-four months from the date of acquisition. Direct top-ups will prioritize existing balances.
+          {{ t('subscription.dialogs.buyCredits.policy') }}
         </p>
       </div>
 
@@ -59,7 +59,7 @@
              <div class="p-1.5 rounded-lg bg-white/20 group-hover:bg-white/30 transition-colors">
                 <Wallet :size="18" :stroke-width="6" />
              </div>
-             <span class="text-xs font-black uppercase tracking-[0.2em]">Purchase Credits</span>
+             <span class="text-xs font-black uppercase tracking-[0.2em]">{{ t('subscription.dialogs.buyCredits.purchase') }}</span>
           </div>
         </el-button>
       </div>
@@ -76,7 +76,9 @@ import { useConfigStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import { cn } from '@/utils/ui'
 import { Wallet, Attention } from '@icon-park/vue-next'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const configStore = useConfigStore()
 const { creditPackages } = storeToRefs(configStore)
@@ -103,7 +105,7 @@ const selectPackage = (pkg: any) => {
 }
 
 const contactUs = () => {
-  toast.info('Please contact support for custom credit packages')
+  toast.info(t('subscription.dialogs.buyCredits.toasts.contactSupport'))
 }
 
 const handlePayment = async () => {
@@ -113,7 +115,7 @@ const handlePayment = async () => {
       const packageId = selectedPackage.value.id || `cp_${selectedPackage.value.credits}`
       await userStore.purchaseCredits(packageId)
     } catch (error: any) {
-      toast.error(error.message || 'Payment failed')
+      toast.error(error.message || t('subscription.dialogs.buyCredits.toasts.paymentFailed'))
     }
   }
 }

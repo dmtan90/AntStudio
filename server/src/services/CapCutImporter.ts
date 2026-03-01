@@ -3,6 +3,8 @@ import { uploadToS3 } from '../utils/s3.js';
 import axios from 'axios';
 import { CapCutToFabricParser } from '../utils/parsers/CapCutToFabricParser.js';
 
+import { Logger } from '../utils/Logger.js';
+
 // Simple CapCut template importer
 export class CapCutImporter {
     async importTemplate(capcutUrl: string): Promise<any> {
@@ -13,14 +15,14 @@ export class CapCutImporter {
 
         // Phase: Playwright Scraping with Network Interception
         // This is the most reliable way as it emulates a real browser and intercepts actual data packets
-        console.log(`[CapCutImporter] 🕵️ Importing template ${templateId} via Playwright interception...`);
+        Logger.info(`[CapCutImporter] 🕵️ Importing template ${templateId} via Playwright interception...`);
 
         // Strategy: If it's an editor-template, it might be private or dynamic. 
         // Try to scrape the public detail page first if we have the ID.
         let targetUrl = capcutUrl;
         if (capcutUrl.includes('editor-template')) {
             targetUrl = `https://www.capcut.com/template-detail/${templateId}`;
-            console.log(`[CapCutImporter] 🔄 Detected editor-template, switching to public detail page: ${targetUrl}`);
+            Logger.info(`[CapCutImporter] 🔄 Detected editor-template, switching to public detail page: ${targetUrl}`);
         }
 
         let scraped: any;
@@ -29,7 +31,7 @@ export class CapCutImporter {
 
             // If we got nothing from the detail page and we weren't already on the original URL, try original URL
             if ((!scraped.internalData || !scraped.metadata.thumbnail) && targetUrl !== capcutUrl) {
-                console.log(`[CapCutImporter] ⚠️ Public detail page gave limited results, trying original URL: ${capcutUrl}`);
+                Logger.info(`[CapCutImporter] ⚠️ Public detail page gave limited results, trying original URL: ${capcutUrl}`);
                 const originalScraped = await this.scrapeViaPlaywright(capcutUrl, templateId);
                 // Merge results or pick better one
                 if (originalScraped.internalData) {
@@ -40,7 +42,7 @@ export class CapCutImporter {
                 }
             }
         } catch (error: any) {
-            console.error(`[CapCutImporter] ❌ Playwright scraping failed: ${error.message}`);
+            Logger.error(`[CapCutImporter] ❌ Playwright scraping failed: ${error.message}`);
             throw new Error(`Failed to scrape CapCut template: ${error.message}`);
         }
 
@@ -61,7 +63,7 @@ export class CapCutImporter {
         //         // localThumbnail = uploadResult.key;
         //         localThumbnail = metadata.thumbnail;
         //     } catch (e) {
-        //         console.error('Failed to proxy thumbnail:', e);
+        //         Logger.error('Failed to proxy thumbnail:', e);
         //     }
         // }
 
@@ -211,17 +213,17 @@ export class CapCutImporter {
 
                 if (status >= 200 && status < 300 && (contentType.includes('json') || url.includes('.json'))) {
                     try {
-                        console.log(`[CapCutImporter] 📦 Intercepted JSON/API: ${url.substring(0, 100)}${url.length > 100 ? '...' : ''}`);
+                        Logger.info(`[CapCutImporter] 📦 Intercepted JSON/API: ${url.substring(0, 100)}${url.length > 100 ? '...' : ''}`);
                         const textSource = await response.text();
 
                         // Look for project data signatures
                         if (textSource.includes('"tracks"') || textSource.includes('"canvas_config"') || textSource.includes('"materials"')) {
-                            console.log(`[CapCutImporter] 🎯 POTENTIAL DATA FOUND in: ${url}`);
+                            Logger.info(`[CapCutImporter] 🎯 POTENTIAL DATA FOUND in: ${url}`);
                             const data = JSON.parse(textSource);
                             // Some APIs wrap data in a 'data' field
                             const extracted = data.data || data;
                             if (extracted.tracks && Array.isArray(extracted.tracks)) {
-                                console.log(`[CapCutImporter] ✅ VALIDated template tracks found in response!`);
+                                Logger.info(`[CapCutImporter] ✅ VALIDated template tracks found in response!`);
                                 interceptedData = extracted;
                             }
                         }
@@ -251,11 +253,11 @@ export class CapCutImporter {
                         });
                     } catch (e) {
                         // If defineProperty fails, try simple assignment if it's not too late
-                        console.log('Stealth: defineProperty failed, attempting bypass');
+                        Logger.info('Stealth: defineProperty failed, attempting bypass');
                         win.JSBridge = win.JSBridge || {};
                     }
                 } catch (e) {
-                    console.error('Stealth: Critical JSBridge failure', e);
+                    Logger.error('Stealth: Critical JSBridge failure', e);
                 }
 
                 // Standard stealth hacks
@@ -266,9 +268,9 @@ export class CapCutImporter {
             });
 
             // Pipe page console
-            page.on('console', msg => console.log(`[CapCutImporter Page] ${msg.text()}`));
+            page.on('console', msg => Logger.info(`[CapCutImporter Page] ${msg.text()}`));
 
-            console.log(`[CapCutImporter] 🌐 Navigating to: ${capcutUrl}`);
+            Logger.info(`[CapCutImporter] 🌐 Navigating to: ${capcutUrl}`);
             try {
                 // Use networkidle to ensure hydration scripts have run and potentially fetched data
                 await page.goto(capcutUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -281,7 +283,7 @@ export class CapCutImporter {
                 try {
                     await page.waitForLoadState('networkidle', { timeout: 10000 });
                 } catch (e) {
-                    console.log('[CapCutImporter] ⏳ Network did not settle, proceeding anyway');
+                    Logger.info('[CapCutImporter] ⏳ Network did not settle, proceeding anyway');
                 }
 
                 // Check for bot detection or landing page redirect
@@ -291,10 +293,10 @@ export class CapCutImporter {
                 });
 
                 if (isGeneric) {
-                    console.warn(`[CapCutImporter] ⚠️ Detected generic landing page, template content might be blocked.`);
+                    Logger.warn(`[CapCutImporter] ⚠️ Detected generic landing page, template content might be blocked.`);
                 }
             } catch (gotoError: any) {
-                console.warn(`[CapCutImporter] ⚠️ Navigation error: ${gotoError.message}`);
+                Logger.warn(`[CapCutImporter] ⚠️ Navigation error: ${gotoError.message}`);
             }
 
             const metadata = await page.evaluate(() => {
@@ -336,7 +338,7 @@ export class CapCutImporter {
             let internalData = null;
 
             // Always run the page search to enrich data and find templateDetail
-            console.log(`[CapCutImporter] 🔍 Searching for internal data in page context...`);
+            Logger.info(`[CapCutImporter] 🔍 Searching for internal data in page context...`);
             const fullData = await page.evaluate(() => {
                 // Re-declare __name in case initScript didn't catch this execution context
                 (window as any).__name = (fn: any) => fn;
@@ -434,9 +436,9 @@ export class CapCutImporter {
             }
 
             if (internalData) {
-                console.log(`[CapCutImporter] ✅ Successfully extracted internalData from ${capcutUrl}`);
+                Logger.info(`[CapCutImporter] ✅ Successfully extracted internalData from ${capcutUrl}`);
             } else {
-                console.log(`[CapCutImporter] ❌ Failed to find internalData on ${capcutUrl}`);
+                Logger.info(`[CapCutImporter] ❌ Failed to find internalData on ${capcutUrl}`);
             }
 
             return { metadata, internalData };

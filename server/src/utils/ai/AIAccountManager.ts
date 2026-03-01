@@ -4,6 +4,8 @@ import { AIAccount, IAIAccount } from '../../models/AIAccount.js';
 import { AdminSettings } from '../../models/AdminSettings.js';
 import { AntigravityClient } from '../../integrations/ai/AntigravityClient.js';
 
+import { Logger } from '../Logger.js';
+
 // Authorization endpoints
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -49,7 +51,7 @@ export class AIAccountManager {
         const creds = settings?.apiConfigs?.oauth?.google;
 
         if (!creds || !creds.clientId) {
-            console.warn('[AIAccountManager] No Google OAuth credentials found in AdminSettings');
+            Logger.warn('[AIAccountManager] No Google OAuth credentials found in AdminSettings');
             return null;
         }
 
@@ -105,7 +107,7 @@ export class AIAccountManager {
         }
 
         try {
-            console.log('[AIAccountManager] Attempting token exchange with:', { redirectUri, isAntigravity: options.isAntigravity });
+            Logger.info('[AIAccountManager] Attempting token exchange with:', { redirectUri, isAntigravity: options.isAntigravity });
             const response = await axios.post(TOKEN_URL, new URLSearchParams({
                 code,
                 client_id: clientId,
@@ -117,14 +119,14 @@ export class AIAccountManager {
             });
 
             const { access_token, refresh_token, expires_in } = response.data;
-            console.log('[AIAccountManager] Token exchange successful, fetching user info...');
+            Logger.info('[AIAccountManager] Token exchange successful, fetching user info...');
 
             // Get user email and picture
             const userResponse = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
                 headers: { Authorization: `Bearer ${access_token}` }
             });
             const { email, picture } = userResponse.data;
-            console.log('[AIAccountManager] User info retrieved:', email);
+            Logger.info('[AIAccountManager] User info retrieved:', email);
 
             // Save or update account
             const accountType = options.isAntigravity ? 'antigravity' : 'standard';
@@ -152,22 +154,22 @@ export class AIAccountManager {
 
             // PROACTIVE DISCOVERY: If Antigravity, discover Project ID immediately
             if (options.isAntigravity) {
-                console.log(`[AIAccountManager] Starting proactive Project ID discovery for ${email}...`);
+                Logger.info(`[AIAccountManager] Starting proactive Project ID discovery for ${email}...`);
                 // Run in background to not block the redirect response, though it's relatively fast
                 this.discoverProjectId(account).catch(err => {
-                    console.error(`[AIAccountManager] Proactive discovery failed for ${email}:`, err.message);
+                    Logger.error(`[AIAccountManager] Proactive discovery failed for ${email}:`, err.message);
                 });
 
                 // PROACTIVE SYNC: Sync quotas and available models immediately
                 this.syncQuotas(account).catch(err => {
-                    console.error(`[AIAccountManager] Proactive sync failed for ${email}:`, err.message);
+                    Logger.error(`[AIAccountManager] Proactive sync failed for ${email}:`, err.message);
                 });
             }
 
             return account;
         } catch (error: any) {
             const errorDetails = error.response?.data || error.message;
-            console.error('[AIAccountManager] Token Exchange Error:', errorDetails);
+            Logger.error('[AIAccountManager] Token Exchange Error:', errorDetails);
             throw new Error(`Failed to exchange authorization code for tokens: ${JSON.stringify(errorDetails)}`);
         }
     }
@@ -178,7 +180,7 @@ export class AIAccountManager {
     public async refreshAccessToken(account: IAIAccount, customCreds?: { clientId: string, clientSecret: string }): Promise<string> {
         // 11labs-direct accounts don't use OAuth tokens, they use license keys
         if (account.accountType === '11labs-direct') {
-            console.log(`[AIAccountManager] Skipping OAuth refresh for 11labs-direct account: ${account.email}`);
+            Logger.info(`[AIAccountManager] Skipping OAuth refresh for 11labs-direct account: ${account.email}`);
             return account.accessToken || '';
         }
 
@@ -202,7 +204,7 @@ export class AIAccountManager {
                 clientSecret = creds.clientSecret;
             }
 
-            console.log(`[AIAccountManager] Refreshing token for ${account.email} (${account.accountType})...`);
+            Logger.info(`[AIAccountManager] Refreshing token for ${account.email} (${account.accountType})...`);
             const searchParams = new URLSearchParams();
             searchParams.append('refresh_token', account.refreshToken || '');
             searchParams.append('client_id', clientId);
@@ -221,7 +223,7 @@ export class AIAccountManager {
 
             return access_token;
         } catch (error: any) {
-            console.error(`[AIAccountManager] Refresh Token Error for ${account.email}:`, error.response?.data || error.message);
+            Logger.error(`[AIAccountManager] Refresh Token Error for ${account.email}:`, error.response?.data || error.message);
             account.status = 'unauthorized';
             account.errorMessage = 'Refresh token expired or invalid';
             await account.save();
@@ -234,7 +236,7 @@ export class AIAccountManager {
      */
     public async onboard11LabsDirectAccount(email: string) {
         try {
-            console.log(`[AIAccountManager] Onboarding 11labs-direct account for ${email}...`);
+            Logger.info(`[AIAccountManager] Onboarding 11labs-direct account for ${email}...`);
 
             // Generate deterministic hardware IDs for this server instance
             const hardware_id = crypto.createHash('md5').update('antflow-server-hw').digest('hex').substring(0, 16);
@@ -249,7 +251,7 @@ export class AIAccountManager {
             ];
 
             for (const { id, brand } of brands) {
-                console.log(`[AIAccountManager] Requesting license for ${brand}...`);
+                Logger.info(`[AIAccountManager] Requesting license for ${brand}...`);
                 try {
                     const response = await axios.post('https://11labs.net/api/license/activate.php', {
                         email,
@@ -261,17 +263,17 @@ export class AIAccountManager {
 
                     if (response.data.success && response.data.license_key) {
                         serviceKeys.set(id, response.data.license_key);
-                        console.log(`[AIAccountManager] Successfully retrieved ${id} key for ${email}`);
+                        Logger.info(`[AIAccountManager] Successfully retrieved ${id} key for ${email}`);
                     } else {
-                        console.warn(`[AIAccountManager] Failed to get ${id} key:`, response.data.message);
+                        Logger.warn(`[AIAccountManager] Failed to get ${id} key:`, response.data.message);
                     }
                 } catch (err: any) {
-                    console.error(`[AIAccountManager] Error activating ${brand}:`, err.message);
+                    Logger.error(`[AIAccountManager] Error activating ${brand}:`, err.message);
                 }
             }
 
             if (serviceKeys.size === 0) {
-                console.warn(`[AIAccountManager] No license keys retrieved from 11labs.net for ${email}. Account will be created but may need manual key configuration.`);
+                Logger.warn(`[AIAccountManager] No license keys retrieved from 11labs.net for ${email}. Account will be created but may need manual key configuration.`);
             }
 
             // Save or update account
@@ -298,7 +300,7 @@ export class AIAccountManager {
 
             return account;
         } catch (error: any) {
-            console.error('[AIAccountManager] 11labs-direct Onboarding Error:', error.message);
+            Logger.error('[AIAccountManager] 11labs-direct Onboarding Error:', error.message);
             throw error;
         }
     }
@@ -308,11 +310,11 @@ export class AIAccountManager {
      */
     public async syncDirectAccountInfo(account: IAIAccount): Promise<void> {
         if (account.accountType !== '11labs-direct' || !account.serviceKeys || account.serviceKeys.size === 0) {
-            console.log(`[AIAccountManager] Skipping sync for ${account.email} - no service keys available`);
+            Logger.info(`[AIAccountManager] Skipping sync for ${account.email} - no service keys available`);
             return;
         }
 
-        console.log(`[AIAccountManager] Syncing direct account info for ${account.email}...`);
+        Logger.info(`[AIAccountManager] Syncing direct account info for ${account.email}...`);
 
         const serviceInfoUrls = [
             { id: 'voice', url: 'https://11labs.net/api/account/info' },
@@ -332,7 +334,7 @@ export class AIAccountManager {
 
                 if (response.data.success) {
                     const info = response.data.data?.account_info || {};
-                    console.log(`[AIAccountManager] Received info for ${id}:`, info.email);
+                    Logger.info(`[AIAccountManager] Received info for ${id}:`, info.email);
 
                     // Update quotas based on received info
                     if (id === 'video') {
@@ -352,7 +354,7 @@ export class AIAccountManager {
                     }
                 }
             } catch (err: any) {
-                console.error(`[AIAccountManager] Error syncing ${id} info:`, err.message);
+                Logger.error(`[AIAccountManager] Error syncing ${id} info:`, err.message);
             }
         }
 
@@ -429,7 +431,7 @@ export class AIAccountManager {
         const projectName = `AntStudio AI - ${account.email.split('@')[0]}`;
 
         try {
-            console.log(`[AIAccountManager] Creating new project: ${projectId} for ${account.email}`);
+            Logger.info(`[AIAccountManager] Creating new project: ${projectId} for ${account.email}`);
 
             await axios.post('https://cloudresourcemanager.googleapis.com/v1/projects', {
                 projectId,
@@ -444,7 +446,7 @@ export class AIAccountManager {
 
             return projectId;
         } catch (error: any) {
-            console.error(`[AIAccountManager] Project Creation Error for ${account.email}:`, error.response?.data || error.message);
+            Logger.error(`[AIAccountManager] Project Creation Error for ${account.email}:`, error.response?.data || error.message);
             const msg = error.response?.data?.error?.message || error.message;
             throw new Error(`Project creation failed: ${msg}`);
         }
@@ -459,7 +461,7 @@ export class AIAccountManager {
     public async discoverProjectId(account: IAIAccount): Promise<string> {
         // 11labs-direct accounts don't use Google Cloud projects
         if (account.accountType === '11labs-direct') {
-            console.log(`[AIAccountManager] Skipping project discovery for 11labs-direct account: ${account.email}`);
+            Logger.info(`[AIAccountManager] Skipping project discovery for 11labs-direct account: ${account.email}`);
             return '';
         }
 
@@ -469,7 +471,7 @@ export class AIAccountManager {
             const isTooShort = !account.projectId.includes('-') && account.projectId.length < 10;
 
             if (isHexId || isTooShort) {
-                console.warn(`[AIAccountManager] Suspicious Project ID (${account.projectId}) found for ${account.email}. Forcing rediscovery...`);
+                Logger.warn(`[AIAccountManager] Suspicious Project ID (${account.projectId}) found for ${account.email}. Forcing rediscovery...`);
                 account.projectId = undefined; // Force rediscovery
             }
         }
@@ -481,7 +483,7 @@ export class AIAccountManager {
             const projectId = await this._discoverAntigravityProject(account);
             if (projectId) return projectId;
         } catch (err) {
-            console.warn(`[AIAccountManager] Specialized discovery failed for ${account.email}, falling back to standard list`);
+            Logger.warn(`[AIAccountManager] Specialized discovery failed for ${account.email}, falling back to standard list`);
         }
 
         const token = await this.refreshAccessToken(account);
@@ -500,7 +502,7 @@ export class AIAccountManager {
 
             return account.projectId!;
         } catch (error: any) {
-            console.error(`[AIAccountManager] Project Discovery Error for ${account.email}:`, error.response?.data || error.message);
+            Logger.error(`[AIAccountManager] Project Discovery Error for ${account.email}:`, error.response?.data || error.message);
             throw new Error(`Metadata discovery failed for ${account.email}`);
         }
     }
@@ -520,7 +522,7 @@ export class AIAccountManager {
         };
 
         try {
-            console.log(`[AIAccountManager] Calling loadCodeAssist for ${account.email}...`);
+            Logger.info(`[AIAccountManager] Calling loadCodeAssist for ${account.email}...`);
             const loadRes = await axios.post(`https://${host}/v1internal:loadCodeAssist`, {
                 metadata: {
                     ideType: 'ANTIGRAVITY'
@@ -529,7 +531,7 @@ export class AIAccountManager {
 
             const data = loadRes.data;
 
-            console.log('[AIAccountManager] loadCodeAssist response:', JSON.stringify(data));
+            Logger.info('[AIAccountManager] loadCodeAssist response:', JSON.stringify(data));
 
             // Extract project ID - plugin repo uses apiResponse.cloudaicompanionProject
             let projectId = data?.cloudaicompanionProject;
@@ -540,7 +542,7 @@ export class AIAccountManager {
             }
 
             if (projectId) {
-                console.log(`[AIAccountManager] Found cloudaicompanionProject: ${projectId}`);
+                Logger.info(`[AIAccountManager] Found cloudaicompanionProject: ${projectId}`);
                 account.projectId = projectId;
 
                 // Track if it's a paid tier
@@ -555,7 +557,7 @@ export class AIAccountManager {
             const tierId = data?.eligibleTiers?.[0] || 'free';
             return await this._onboardAntigravityUser(account, token, tierId);
         } catch (error: any) {
-            console.error(`[AIAccountManager] Antigravity Discovery Failed for ${account.email}:`, error.response?.data || error.message);
+            Logger.error(`[AIAccountManager] Antigravity Discovery Failed for ${account.email}:`, error.response?.data || error.message);
             throw error;
         }
     }
@@ -573,7 +575,7 @@ export class AIAccountManager {
             'Accept-Encoding': 'gzip'
         };
 
-        console.log(`[AIAccountManager] Onboarding user ${account.email} (Tier: ${tierId})...`);
+        Logger.info(`[AIAccountManager] Onboarding user ${account.email} (Tier: ${tierId})...`);
         const onboardRes = await axios.post(`https://${host}/v1internal:onboardUser`, {
             tierId,
             metadata: {
@@ -654,10 +656,10 @@ export class AIAccountManager {
             if (changed) {
                 account.markModified('quotas');
                 await account.save();
-                console.log(`[AIAccountManager] models synced and pruned for ${account.email}. Total: ${models.length}`);
+                Logger.info(`[AIAccountManager] models synced and pruned for ${account.email}. Total: ${models.length}`);
             }
         } catch (error: any) {
-            console.error(`[AIAccountManager] Sync models failed for ${account.email}:`, error.message);
+            Logger.error(`[AIAccountManager] Sync models failed for ${account.email}:`, error.message);
         }
     }
 
@@ -687,7 +689,7 @@ export class AIAccountManager {
             account.markModified('quotas');
             await account.save();
         } catch (error: any) {
-            console.error(`[AIAccountManager] Record usage failed for ${account.email}:`, error);
+            Logger.error(`[AIAccountManager] Record usage failed for ${account.email}:`, error);
         }
     }
 

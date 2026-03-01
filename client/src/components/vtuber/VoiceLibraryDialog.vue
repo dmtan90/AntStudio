@@ -2,7 +2,7 @@
     <el-dialog 
         :model-value="modelValue" 
         @update:model-value="$emit('update:modelValue', $event)"
-        title="VTUBER VOICE LIBRARY" 
+        :title="$t('vtubers.voiceLibrary.title')" 
         width="850px" 
         append-to-body 
         custom-class="glass-dialog voice-picker-dialog"
@@ -13,11 +13,11 @@
                 <div class="flex items-center gap-4">
                     <div class="flex-1 flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-xl border border-white/5">
                         <search theme="outline" class="opacity-40" />
-                        <el-input v-model="searchQuery" placeholder="Filter voice signatures..." class="voice-search-input-inner" />
+                        <el-input v-model="searchQuery" :placeholder="$t('vtubers.voiceLibrary.filterPlaceholder')" class="voice-search-input-inner" />
                     </div>
                     
                     <div class="flex items-center gap-2 px-1">
-                        <span class="text-[8px] font-black opacity-30 uppercase tracking-widest mr-2">Provider</span>
+                        <span class="text-[8px] font-black opacity-30 uppercase tracking-widest mr-2">{{ $t('vtubers.voiceLibrary.provider') }}</span>
                         <el-radio-group :model-value="provider" @update:model-value="$emit('update:provider', $event)" size="small" class="soul-radio-group">
                             <el-radio-button value="gemini">GEMINI</el-radio-button>
                             <el-radio-button value="google">GOOGLE</el-radio-button>
@@ -27,20 +27,20 @@
 
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                         <div class="flex items-center gap-2">
-                            <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">Gender</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">{{ $t('vtubers.voiceLibrary.gender') }}</span>
                             <div class="flex gap-1">
                                 <div v-for="g in ['all', 'female', 'male', 'neutral']" :key="g"
                                      @click="genderFilter = g"
                                      class="trait-tag !py-1 !px-3 !text-[8px]" :class="{'active': genderFilter === g}">
-                                    {{ g.toUpperCase() }}
+                                    {{ $t(`vtubers.voiceLibrary.genders.${g}`).toUpperCase() }}
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div v-if="provider === 'google'" class="flex items-center gap-2">
-                         <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">Language</span>
+                         <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">{{ $t('vtubers.voiceLibrary.language') }}</span>
                          <el-select :model-value="language" @update:model-value="$emit('update:language', $event)" size="small" class="glass-select-mini w-40" filterable>
                               <el-option v-for="lang in SUPPORTED_LANGUAGES" :key="lang.value" :label="lang.label" :value="lang.value" />
                          </el-select>
@@ -73,8 +73,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useVTuberStore } from '@/stores/vtuber';
 import { Search, Loading as LoadingIcon } from '@icon-park/vue-next';
+
+const { t } = useI18n();
 import { SUPPORTED_LANGUAGES } from '@/constants/google_voices';
 import StudioVoiceCard from '../studio/shared/StudioVoiceCard.vue';
 import { getFileUrl } from '@/utils/api';
@@ -143,7 +146,7 @@ const filteredVoices = computed(() => {
     if (genderFilter.value !== 'all') {
         filtered = filtered.filter((v: any) => {
             const g = (v.gender || v.ssmlGender || '').toLowerCase();
-            return g.includes(genderFilter.value.toLowerCase());
+            return g === genderFilter.value.toLowerCase();
         });
     }
 
@@ -191,7 +194,7 @@ const handlePreview = async (voice: any) => {
     if (!srcUrl) {
         previewGenerating.value = voice.id;
         try {
-            const previewText = 'Hello! This is a preview of my voice. I can narrate your video stories.';
+            const previewText = t('vtubers.voiceLibrary.tts.preview');
             const data = await vtuberStore.generateVoicePreview({
                 text: previewText,
                 provider: props.provider || 'gemini',

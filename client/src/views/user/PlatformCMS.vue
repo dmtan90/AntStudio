@@ -16,7 +16,7 @@
                     <component :is="platformIcon" theme="filled" size="24" :class="platformClass" />
                     <h1 class="text-3xl font-black tracking-tight">{{ accountName }}</h1>
                  </div>
-                 <p class="text-gray-400 font-medium">Manage VoDs, Clips, and Live Streams.</p>
+                 <p class="text-gray-400 font-medium">{{ t('platformCMS.header.subtitle') }}</p>
               </div>
            </div>
 
@@ -25,13 +25,13 @@
                  @click="showLiveStreamDialog = true"
                  class="px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-xs uppercase tracking-wide flex items-center gap-2 transition-colors shadow-lg shadow-red-600/20 animate-pulse"
               >
-                 <broadcast theme="outline" size="16" /> Go Live
+                 <broadcast theme="outline" size="16" /> {{ t('platforms.actions.goLive') }}
               </button>
               <button 
                  @click="showUploadDialog = true"
                  class="px-6 py-3 bg-white hover:bg-gray-100 text-black rounded-xl font-bold text-xs uppercase tracking-wide flex items-center gap-2 transition-colors"
               >
-                 <upload-one theme="outline" size="16" /> Upload
+                 <upload-one theme="outline" size="16" /> {{ t('platformCMS.actions.upload') }}
               </button>
               <button 
                  @click="refreshData" 
@@ -50,7 +50,7 @@
            <div class="bg-black rounded-3xl p-1 border border-white/5">
               <div class="bg-[#0f0f12] rounded-[20px] p-6 h-full flex flex-col justify-between relative overflow-hidden">
                  <div class="absolute top-0 right-0 p-4 opacity-10"><user theme="filled" size="48" /></div>
-                 <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Subscriber Count</div>
+                 <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platformCMS.stats.subscribers') }}</div>
                  <div class="text-4xl font-black text-white">{{ formatNumber(stats.followers || stats.subscribers || 0) }}</div>
               </div>
            </div>
@@ -58,7 +58,7 @@
            <div class="bg-black rounded-3xl p-1 border border-white/5">
               <div class="bg-[#0f0f12] rounded-[20px] p-6 h-full flex flex-col justify-between relative overflow-hidden">
                  <div class="absolute top-0 right-0 p-4 opacity-10"><play-one theme="filled" size="48" /></div>
-                 <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Total Views</div>
+                 <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platformCMS.stats.views') }}</div>
                  <div class="text-4xl font-black text-white">{{ formatNumber(stats.views) }}</div>
               </div>
            </div>
@@ -66,7 +66,7 @@
            <div class="bg-black rounded-3xl p-1 border border-white/5">
               <div class="bg-[#0f0f12] rounded-[20px] p-6 h-full flex flex-col justify-between relative overflow-hidden">
                  <div class="absolute top-0 right-0 p-4 opacity-10"><video-one theme="filled" size="48" /></div>
-                 <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Video Library</div>
+                 <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platformCMS.stats.library') }}</div>
                  <div class="text-4xl font-black text-white">{{ formatNumber(stats.videos) }}</div>
               </div>
            </div>
@@ -78,7 +78,7 @@
               class="pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-all"
               :class="activeTab === tab ? 'border-blue-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'"
               @click="activeTab = tab">
-              {{ tab }}
+              {{ t('platformCMS.tabs.' + tab.toLowerCase()) }}
            </button>
         </div>
 
@@ -90,15 +90,15 @@
                  <search class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" size="16" />
                  <input 
                     v-model="filters.search" 
-                    placeholder="Search videos..." 
+                    :placeholder="t('platformCMS.filters.search')" 
                     class="pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-white focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all w-64"
                     @keyup.enter="handleSearch"
                  />
               </div>
               
-              <el-select v-model="filters.sort" placeholder="Sort By" class="glass-select w-40" popper-class="glass-dropdown" @change="loadData">
-                 <el-option label="Newest First" value="newest" />
-                 <el-option label="Most Views" value="views" />
+              <el-select v-model="filters.sort" :placeholder="t('platformCMS.filters.sortBy')" class="glass-select w-40" popper-class="glass-dropdown" @change="loadData">
+                 <el-option :label="t('platformCMS.filters.newest')" value="newest" />
+                 <el-option :label="t('platformCMS.filters.mostViews')" value="views" />
               </el-select>
            </div>
 
@@ -146,14 +146,14 @@
            <!-- Empty State -->
            <div v-else class="text-center py-32 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
               <div class="text-6xl mb-4 grayscale opacity-20">📼</div>
-              <h3 class="text-xl font-bold text-white mb-2">No videos found</h3>
-              <p class="text-gray-500">Upload or sync content to see it here.</p>
+              <h3 class="text-xl font-bold text-white mb-2">{{ t('platformCMS.empty.title') }}</h3>
+              <p class="text-gray-500">{{ t('platformCMS.empty.desc') }}</p>
            </div>
 
            <div class="flex justify-center mt-12">
                <el-pagination 
                   v-model:current-page="filters.page"
-                  :page-size="filters.limit"
+                  v-model:page-size="filters.limit"
                   :total="totalVideos"
                   :page-sizes="[12, 24, 48]"
                   layout="prev, pager, next"
@@ -171,11 +171,11 @@
               <div class="bg-white/5 border border-white/5 rounded-3xl p-8">
                  <h3 class="text-lg font-black uppercase tracking-widest text-gray-500 mb-8 flex items-center gap-3">
                     <play-one theme="filled" size="18" class="text-blue-500" />
-                    Engagement Overview
+                    {{ t('platformCMS.analytics.engagement') }}
                  </h3>
                  <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div class="p-6 bg-black/40 rounded-2xl border border-white/5">
-                       <div class="text-[10px] font-black uppercase text-gray-500 mb-2">Avg Views/Video</div>
+                       <div class="text-[10px] font-black uppercase text-gray-500 mb-2">{{ t('platformCMS.analytics.avgViews') }}</div>
                        <div class="text-3xl font-black text-white">{{ formatNumber(Math.round((stats.views || 0) / (stats.videos || 1))) }}</div>
                     </div>
                     <!-- Add more metrics here if needed -->
@@ -186,7 +186,7 @@
                <div class="bg-white/5 border border-white/5 rounded-3xl p-8">
                  <h3 class="text-lg font-black uppercase tracking-widest text-gray-500 mb-8 flex items-center gap-3">
                     <video-one theme="filled" size="18" class="text-purple-500" />
-                    Top Performing
+                    {{ t('platformCMS.analytics.topPerforming') }}
                  </h3>
                  
                  <div v-if="topVideos.length" class="space-y-4">
@@ -208,11 +208,11 @@
                         </div>
                         <div class="text-right px-4">
                            <div class="text-2xl font-black text-green-400">{{ formatNumber(video.views) }}</div>
-                           <div class="text-[10px] font-black uppercase text-gray-500">Views</div>
+                           <div class="text-[10px] font-black uppercase text-gray-500">{{ t('platformCMS.stats.views') }}</div>
                         </div>
                      </div>
                  </div>
-                 <div v-else class="text-center py-12 text-gray-500">No data available</div>
+                 <div v-else class="text-center py-12 text-gray-500">{{ t('common.noData') }}</div>
                </div>
            </div>
         </div>
@@ -238,24 +238,24 @@
                      class="flex-1 pb-3 text-xs font-black uppercase tracking-widest text-center transition-colors"
                      :class="activeDetailTab === tab ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-500'"
                      @click="activeDetailTab = tab">
-                     {{ tab }}
+                     {{ t('platformCMS.tabs.' + tab.toLowerCase()) }}
                   </button>
                </div>
                
                <div class="flex-1 overflow-y-auto custom-scrollbar">
                   <div v-if="activeDetailTab === 'Overview'" class="space-y-4">
                      <div class="bg-black/20 p-4 rounded-xl">
-                        <div class="text-[10px] text-gray-500 font-black uppercase mb-1">Views</div>
+                        <div class="text-[10px] text-gray-500 font-black uppercase mb-1">{{ t('platformCMS.stats.views') }}</div>
                         <div class="text-2xl font-black">{{ formatNumber(selectedVideo?.stats?.views || selectedVideo?.views || 0) }}</div>
                      </div>
                      <div class="bg-black/20 p-4 rounded-xl">
-                        <div class="text-[10px] text-gray-500 font-black uppercase mb-1">Published</div>
+                        <div class="text-[10px] text-gray-500 font-black uppercase mb-1">{{ t('platformCMS.stats.published') }}</div>
                         <div class="text-sm font-bold">{{ formatDate(selectedVideo?.publishedAt) }}</div>
                      </div>
                   </div>
                   
                   <div v-if="activeDetailTab === 'Comments'" class="space-y-4">
-                     <div v-if="store.comments.length === 0" class="text-center py-8 text-gray-500 text-xs">No comments</div>
+                     <div v-if="store.comments.length === 0" class="text-center py-8 text-gray-500 text-xs">{{ t('platformCMS.comments.empty') }}</div>
                      <div v-for="comment in store.comments" :key="comment.id" class="flex gap-3 text-sm pb-3 border-b border-white/5 last:border-0">
                         <div class="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 overflow-hidden">
                            <el-image :src="comment.avatar" class="w-full h-full" fit="cover">
@@ -277,20 +277,20 @@
 
      <!-- Simple Upload & Live Dialogs Implementation (omitted for brevity but would follow same style) -->
      <!-- Keeping the existing dialog structure but wrapping logic -->
-     <el-dialog v-model="showUploadDialog" title="Upload Video" width="500px" class="glass-dialog" :show-close="false" align-center>
+     <el-dialog v-model="showUploadDialog" :title="t('platformCMS.dialogs.upload.title')" width="500px" class="glass-dialog" :show-close="false" align-center>
          <!-- ... Upload form content with glass inputs ... -->
          <el-form :model="uploadForm" layout="vertical">
             <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Title</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platformCMS.dialogs.upload.fields.title') }}</label>
                <el-input v-model="uploadForm.title" class="glass-input" />
             </div>
             <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Description</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platformCMS.dialogs.upload.fields.description') }}</label>
                <el-input v-model="uploadForm.description" type="textarea" :rows="3" class="glass-input" />
             </div>
             
             <el-tabs v-model="uploadSource" class="glass-tabs">
-               <el-tab-pane label="Local File" name="local">
+               <el-tab-pane :label="t('platformCMS.dialogs.upload.tabs.local')" name="local">
                   <div class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-white/30 transition-colors cursor-pointer relative bg-white/5">
                      <input type="file" ref="fileInput" accept="video/*" class="absolute inset-0 opacity-0 cursor-pointer" @change="handleFileChange">
                      <div v-if="selectedFile">
@@ -299,50 +299,50 @@
                      </div>
                      <div v-else>
                         <upload-one theme="outline" size="24" class="text-gray-500 mb-2 mx-auto" />
-                        <p class="text-xs text-gray-500">Click to upload video</p>
+                        <p class="text-xs text-gray-500">{{ t('platformCMS.dialogs.upload.placeholders.clickToUpload') }}</p>
                      </div>
                   </div>
                </el-tab-pane>
-               <el-tab-pane label="From Projects" name="archive">
-                   <div class="text-center py-4 text-xs text-gray-500">Select previously rendered project</div>
+               <el-tab-pane :label="t('platformCMS.dialogs.upload.tabs.archive')" name="archive">
+                   <div class="text-center py-4 text-xs text-gray-500">{{ t('platformCMS.dialogs.upload.placeholders.selectArchive') }}</div>
                </el-tab-pane>
             </el-tabs>
          </el-form>
          <template #footer>
             <div class="flex gap-3">
-               <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="showUploadDialog = false">Cancel</button>
+               <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="showUploadDialog = false">{{ t('common.cancel') }}</button>
                <button class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-blue-600/20" @click="uploadVideo" :disabled="uploading">
-                  {{ uploading ? 'Uploading...' : 'Upload' }}
+                  {{ uploading ? t('platformCMS.actions.uploading') : t('platformCMS.actions.upload') }}
                </button>
             </div>
          </template>
      </el-dialog>
 
-     <el-dialog v-model="showLiveStreamDialog" title="Live Streaming" width="600px" class="glass-dialog" :show-close="false" align-center>
+     <el-dialog v-model="showLiveStreamDialog" :title="t('platformCMS.dialogs.live.title')" width="600px" class="glass-dialog" :show-close="false" align-center>
         <div class="grid grid-cols-2 gap-6 mb-8">
            <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Stream Title</label>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platformCMS.dialogs.live.fields.title') }}</label>
               <el-input v-model="liveForm.title" class="glass-input" />
            </div>
            <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Privacy</label>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platformCMS.dialogs.live.fields.privacy') }}</label>
               <el-select v-model="liveForm.privacy" class="glass-select w-full" popper-class="glass-dropdown">
-                 <el-option label="Public" value="public" />
-                 <el-option label="Private" value="private" />
+                 <el-option :label="t('platformCMS.dialogs.live.privacy.public')" value="public" />
+                 <el-option :label="t('platformCMS.dialogs.live.privacy.private')" value="private" />
               </el-select>
            </div>
         </div>
 
         <div class="bg-black/40 rounded-xl border border-white/5 p-6 mb-8">
             <div class="flex justify-between items-start mb-4">
-               <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">RTMP URL</span>
+               <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('platforms.dialogs.connect.fields.rtmpUrl') }}</span>
                <div class="flex items-center gap-2">
                   <span class="text-xs font-mono text-blue-400 truncate max-w-[200px]">{{ account?.rtmpUrl || 'N/A' }}</span>
                   <copy theme="outline" size="14" class="text-gray-500 cursor-pointer hover:text-white" @click="copyToClipboard(account?.rtmpUrl)" />
                </div>
             </div>
             <div class="flex justify-between items-start">
-               <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Stream Key</span>
+               <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('platforms.dialogs.connect.fields.streamKey') }}</span>
                <div class="flex items-center gap-2">
                    <span class="text-xs font-mono text-purple-400">•••••••••••••</span>
                    <copy theme="outline" size="14" class="text-gray-500 cursor-pointer hover:text-white" @click="copyToClipboard(account?.streamKey)" />
@@ -352,10 +352,10 @@
 
         <div class="flex gap-4">
            <button class="flex-1 h-12 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="setupLive">
-              Refresh Credentials
+              {{ t('platformCMS.dialogs.live.refresh') }}
            </button>
            <button class="flex-1 h-12 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-red-600/20 flex items-center justify-center gap-2" @click="goLive">
-              <broadcast theme="outline" size="16" /> Launch Studio
+              <broadcast theme="outline" size="16" /> {{ t('platformCMS.dialogs.live.launch') }}
            </button>
         </div>
      </el-dialog>
@@ -376,7 +376,9 @@ import {
 } from '@icon-park/vue-next';
 import { getFileUrl } from '@/utils/api';
 import { cn } from '@/utils/ui';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const route = useRoute();
 const router = useRouter();
 const accountId = route.query.accountId as string;
@@ -446,11 +448,11 @@ const topVideos = computed(() => {
 
 const formatNumber = (num: number) => {
    if (!num) return '0';
-   return new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(num);
+   return new Intl.NumberFormat(t('common.locale') === 'vi' ? 'vi-VN' : 'en-US', { notation: "compact", compactDisplay: "short" }).format(num);
 }
 
 const formatDate = (date: string) => {
-   return new Date(date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+   return new Date(date).toLocaleDateString(t('common.locale') === 'vi' ? 'vi-VN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
 const formatDuration = (val: any) => { return val || ''; }
@@ -463,13 +465,13 @@ const loadData = async () => {
    ]);
 }
 
-const refreshData = async () => { await loadData(); toast.success('Data refreshed'); }
+const refreshData = async () => { await loadData(); toast.success(t('platformCMS.toasts.refreshed')); }
 const handleSearch = () => { filters.page = 1; loadData(); }
 const handlePageChange = (val: number) => { filters.page = val; loadData(); }
 const handleSizeChange = (val: number) => { filters.limit = val; filters.page = 1; loadData(); }
 
 const deleteVideo = async (videoId: string) => {
-   if (!confirm('Are you sure you want to delete this video?')) return;
+   if (!confirm(t('platformCMS.confirmDelete'))) return;
    await store.deleteVideo(accountId, videoId);
 }
 
@@ -507,7 +509,7 @@ const setupLive = async () => {
    loadingLive.value = true;
    try {
       await store.fetchLiveInfo(accountId, liveForm);
-      toast.success('Live stream configured');
+      toast.success(t('platformCMS.toasts.liveConfigured'));
    } catch (e) {} finally { loadingLive.value = false; }
 };
 
@@ -519,7 +521,7 @@ const goLive = () => {
 const copyToClipboard = (text: string) => {
    if (!text) return;
    navigator.clipboard.writeText(text);
-   toast.success('Copied');
+   toast.success(t('common.copySuccess'));
 };
 
 onMounted(async () => {

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { User } from '../models/User.js';
 import { Tenant } from '../models/Tenant.js';
 import { CreditUsage } from '../models/CreditUsage.js';
-import { systemLogger } from './systemLogger.js';
+import { Logger } from './Logger.js';
 
 export type ServiceType = 'streaming' | 'ai_translation' | 'face_swap' | 'storage' | 'image' | 'audio' | 'video' | 'text' | 'marketplace' | 'custom';
 
@@ -29,7 +29,7 @@ export const creditManager = {
             // 0. Fetch User
             const user = await User.findById(userId).session(session);
             if (!user) {
-                console.error(`[CreditManager] User not found: ${userId}`);
+                Logger.error(`[CreditManager] User not found: ${userId}`, 'CreditManager');
                 await session.abortTransaction();
                 return false;
             }
@@ -37,7 +37,7 @@ export const creditManager = {
             // 1. Resolve Tenant Context
             const tenant = await Tenant.findById(user.tenantId).session(session);
             if (!tenant) {
-                console.error(`[CreditManager] Tenant not found: ${user.tenantId}`);
+                Logger.error(`[CreditManager] Tenant not found: ${user.tenantId}`, 'CreditManager');
                 await session.abortTransaction();
                 return false;
             }
@@ -64,21 +64,21 @@ export const creditManager = {
                     }], { session });
 
                     await session.commitTransaction();
-                    console.log(`[CreditManager] Deduced ${amount} from ORG POOL of ${tenant.name}`);
+                    Logger.info(`[CreditManager] Deduced ${amount} from ORG POOL of ${tenant.name}`, 'CreditManager');
                     return true;
                 }
                 // If org pool empty, waterfall to individual user credits? 
                 // As per requirement: "credit này sẽ bị trừ dần khi các tài khoản trong nội bộ sử dụng"
                 // This implies it stops if pool is empty unless master allows individual top-ups.
                 // For now, let's strictly enforce the Org Pool if it's a Sub-Enterprise.
-                console.warn(`[CreditManager] ORG POOL exhausted for ${tenant.name}`);
+                Logger.warn(`[CreditManager] ORG POOL exhausted for ${tenant.name}`, 'CreditManager');
                 await session.abortTransaction();
                 return false;
             }
 
             // 3. Fallback to Individual User Balance (Standard SaaS / Master Users)
             if (user.credits.balance < amount) {
-                console.warn(`[CreditManager] Insufficient credits for user ${userId}. Needed: ${amount}, Have: ${user.credits.balance}`);
+                Logger.warn(`[CreditManager] Insufficient credits for user ${userId}. Needed: ${amount}, Have: ${user.credits.balance}`, 'CreditManager');
                 await session.abortTransaction();
                 return false;
             }
@@ -106,7 +106,7 @@ export const creditManager = {
 
             await session.commitTransaction();
 
-            console.log(`[CreditManager] Deduced ${amount} credits from user ${userId} for ${serviceType}`);
+            Logger.info(`[CreditManager] Deduced ${amount} credits from user ${userId} for ${serviceType}`, 'CreditManager');
             return true;
 
         } catch (error: any) {
@@ -114,12 +114,11 @@ export const creditManager = {
 
             // Handle "Transaction numbers are only allowed on a replica set member"
             if (error.code === 20 || error.message.includes('replica set')) {
-                // systemLogger.warn('Transactions not supported (Standalone MongoDB). Falling back to non-transactional deduction.', 'CreditManager');
+                // Logger.warn('Transactions not supported (Standalone MongoDB). Falling back to non-transactional deduction.', 'CreditManager');
                 return await this.deductCreditsNonTransactional(userId, serviceType, amount, description, metadata);
             }
 
-            console.error('[CreditManager] Deduction failed:', error);
-            systemLogger.error(`Credit deduction failed: ${error.message}`, 'CreditManager');
+            Logger.error(`Credit deduction failed: ${error.message}`, 'CreditManager', error);
             return false;
         } finally {
             session.endSession();
@@ -170,9 +169,9 @@ export const creditManager = {
 
             // We could also add a record to CreditUsage with negative amount if needed for reporting
 
-            console.log(`[CreditManager] Refunded ${amount} credits to user ${userId}`);
+            Logger.info(`[CreditManager] Refunded ${amount} credits to user ${userId}`, 'CreditManager');
         } catch (error: any) {
-            console.error('[CreditManager] Refund failed:', error);
+            Logger.error('[CreditManager] Refund failed:', 'CreditManager', error);
         }
     }
 };

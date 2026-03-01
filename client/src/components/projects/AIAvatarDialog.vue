@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="isVisible"
-    title="AI Avatar Creator"
+    :title="$t('projects.avatarCreator.title')"
     width="1000px"
     class="ai-avatar-dialog glass-dark"
     :align-center="true"
@@ -14,9 +14,11 @@
       <div class="flex justify-between items-center mb-8 px-4">
         <div>
           <h2 class="text-xl font-black text-white tracking-tight uppercase mb-1">
-            {{ stepTitles[step - 1] }}
+            {{ $t(`projects.avatarCreator.steps[${step - 1}]`) }}
           </h2>
-          <p class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">Step {{ step }} of 4</p>
+          <p class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
+            {{ $t('projects.avatarCreator.step', { step }) }}
+          </p>
         </div>
         <div class="flex gap-2">
           <div
@@ -50,13 +52,17 @@
                   </div>
                   <div v-else class="w-full h-full flex flex-col items-center justify-center bg-black/40">
                     <User theme="outline" size="64" class="text-white/20 mb-4" />
-                    <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Select a VTuber Entity</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">
+                      {{ $t('projects.avatarCreator.selectVTuber') }}
+                    </p>
                   </div>
                   
                   <!-- Info Overlay -->
                   <div v-if="selectedAvatarData" class="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/80 to-transparent pt-12">
                     <h3 class="text-lg font-black text-white uppercase tracking-tight">{{ selectedAvatarData.name }}</h3>
-                    <p class="text-xs text-white/60 line-clamp-2 mt-1">{{ selectedAvatarData.description || 'No description available.' }}</p>
+                    <p class="text-xs text-white/60 line-clamp-2 mt-1">
+                      {{ selectedAvatarData.description || $t('projects.avatarCreator.noDescription') }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -64,11 +70,13 @@
               <!-- Right: Selection Grid -->
               <div class="col-span-12 lg:col-span-7 flex flex-col gap-4">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">Available Avatars</span>
+                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                    {{ $t('projects.avatarCreator.availableAvatars') }}
+                  </span>
                   <div class="flex gap-2">
                     <el-input 
                       v-model="searchQuery" 
-                      placeholder="Search..." 
+                      :placeholder="$t('projects.avatarCreator.search')" 
                       size="small" 
                       class="soul-small-input w-40"
                     >
@@ -99,7 +107,7 @@
                         <div class="px-1 pb-1">
                           <div class="text-[10px] font-black text-white uppercase truncate">{{ av.name }}</div>
                           <div class="text-[8px] text-white/40 uppercase tracking-widest border-t border-white/5 mt-1 pt-1">
-                            {{ av.visual?.modelType || 'static' }}
+                            {{ av.visual?.modelType || $t('projects.avatarCreator.static') }}
                           </div>
                         </div>
                       </div>
@@ -151,7 +159,7 @@
                     >
                       <Play v-if="!isPreviewing" theme="outline" class="mr-2" />
                       <PauseOne v-else theme="outline" class="mr-2" />
-                      {{ isPreviewing ? 'Stop Preview' : 'Real-time Preview' }}
+                      {{ isPreviewing ? $t('projects.avatarCreator.stopPreview') : $t('projects.avatarCreator.realTimePreview') }}
                     </el-button>
                   </div>
                 </div>
@@ -161,8 +169,12 @@
                     <Tips theme="outline" class="text-blue-400" />
                   </div>
                   <div>
-                    <h4 class="text-[11px] font-black text-white uppercase tracking-tight">Lip-Sync Preview</h4>
-                    <p class="text-[10px] text-white/40 leading-relaxed mt-0.5">Test how your avatar's mouth moves with the chosen voice profile.</p>
+                    <h4 class="text-[11px] font-black text-white uppercase tracking-tight">
+                      {{ $t('projects.avatarCreator.lipSyncPreview') }}
+                    </h4>
+                    <p class="text-[10px] text-white/40 leading-relaxed mt-0.5">
+                      {{ $t('projects.avatarCreator.lipSyncDesc') }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -172,13 +184,15 @@
                 <!-- Voice Selection Card -->
                 <div class="glass-card p-5 rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent">
                   <div class="flex items-center justify-between mb-4">
-                    <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">Voice Profile</span>
+                    <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                      {{ $t('projects.avatarCreator.voiceProfile') }}
+                    </span>
                     <el-button 
                       link 
                       class="!text-blue-400 !text-[10px] font-black uppercase"
                       @click="voiceLibraryVisible = true"
                     >
-                      <List theme="outline" class="mr-1" /> Open Library
+                      <List theme="outline" class="mr-1" /> {{ $t('projects.avatarCreator.openLibrary') }}
                     </el-button>
                   </div>
 
@@ -188,18 +202,20 @@
                     </div>
                     <div>
                       <div class="text-[10px] text-white/40 uppercase font-black tracking-widest mb-1">{{ voiceConfig.provider }}</div>
-                      <div class="text-base font-black text-white uppercase">{{ voiceConfig.voiceId || 'Select a voice...' }}</div>
+                      <div class="text-base font-black text-white uppercase">
+                        {{ voiceConfig.voiceId || $t('projects.avatarCreator.selectVoice') }}
+                      </div>
                     </div>
                   </div>
 
                   <div class="grid grid-cols-2 gap-6">
                     <StudioSlider 
-                      label="Speech Speed" 
+                      :label="$t('projects.avatarCreator.speechSpeed')" 
                       v-model="voiceConfig.speed" 
                       :min="0.5" :max="2.0" :step="0.1" 
                     />
                     <StudioSlider 
-                      label="Pitch Adjustment" 
+                      :label="$t('projects.avatarCreator.pitchAdjustment')" 
                       v-model="voiceConfig.pitch" 
                       :min="-20" :max="20" :step="1" 
                     />
@@ -209,14 +225,16 @@
                 <!-- Script Input -->
                 <div class="flex flex-col gap-3">
                   <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">Script Content</span>
+                    <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                      {{ $t('projects.avatarCreator.scriptContent') }}
+                    </span>
                     <el-button 
                       link 
                       class="!text-blue-400 !text-[10px] font-black uppercase"
                       @click="generateAiscript"
                       :loading="generatingAiScript"
                     >
-                      <Magic theme="outline" class="mr-1" /> AI Write
+                      <Magic theme="outline" class="mr-1" /> {{ $t('projects.avatarCreator.aiWrite') }}
                     </el-button>
                   </div>
                   <div class="relative">
@@ -224,12 +242,12 @@
                       v-model="script"
                       type="textarea"
                       :rows="10"
-                      placeholder="What should your avatar say?"
+                      :placeholder="$t('projects.avatarCreator.scriptPlaceholder')"
                       class="soul-glass-textarea !p-0"
                       resize="none"
                     />
                     <div class="absolute bottom-3 right-3 text-[9px] font-bold text-white/20 uppercase">
-                      {{ script.length }} chars
+                      {{ $t('projects.avatarCreator.chars', { count: script.length }) }}
                     </div>
                   </div>
                 </div>
@@ -241,8 +259,12 @@
                       <Magic theme="outline" class="text-blue-400" />
                     </div>
                     <div>
-                      <div class="text-[10px] font-black text-white uppercase tracking-widest">Enhanced Sync</div>
-                      <div class="text-[8px] text-white/30 uppercase tracking-tighter">AI Viseme Mapping</div>
+                      <div class="text-[10px] font-black text-white uppercase tracking-widest">
+                        {{ $t('projects.avatarCreator.enhancedSync') }}
+                      </div>
+                      <div class="text-[8px] text-white/30 uppercase tracking-tighter">
+                        {{ $t('projects.avatarCreator.aiVisemeMapping') }}
+                      </div>
                     </div>
                   </div>
                   <el-switch v-model="voiceConfig.enhancedSync" size="small" />
@@ -305,8 +327,12 @@
                     <div class="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mb-4">
                       <CheckOne theme="outline" size="32" class="text-blue-500" />
                     </div>
-                    <h3 class="text-xl font-black text-white uppercase tracking-tight mb-2">Capture Complete!</h3>
-                    <p class="text-xs text-white/60 mb-8 max-w-[200px]">Recording finished. Ready to preview and share.</p>
+                    <h3 class="text-xl font-black text-white uppercase tracking-tight mb-2">
+                      {{ $t('projects.avatarCreator.captureComplete') }}
+                    </h3>
+                    <p class="text-xs text-white/60 mb-8 max-w-[200px]">
+                      {{ $t('projects.avatarCreator.captureCompleteDesc') }}
+                    </p>
                     
                     <div class="flex flex-col w-full gap-3">
                       <el-button 
@@ -314,7 +340,7 @@
                         class="w-full h-12 !rounded-2xl !bg-blue-600 !border-none text-[11px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20"
                         @click="step = 4"
                       >
-                         Continue to Preview
+                         {{ $t('projects.avatarCreator.continueToPreview') }}
                       </el-button>
                     </div>
                   </div>
@@ -324,24 +350,26 @@
               <!-- Right: Info & Controls -->
               <div class="col-span-12 lg:col-span-6 space-y-8">
                 <div>
-                  <h3 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">Ready to Render</h3>
+                  <h3 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">
+                    {{ $t('projects.avatarCreator.readyToRender') }}
+                  </h3>
                   <p class="text-sm text-white/40 leading-relaxed">
-                    We'll now synthesize the audio using your chosen voice profile and record the avatar's performance in real-time directly in your browser.
+                    {{ $t('projects.avatarCreator.renderDesc') }}
                   </p>
                 </div>
 
                 <div class="space-y-4">
                   <div class="p-4 rounded-3xl bg-white/5 border border-white/5 space-y-3">
                     <div class="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-                      <span class="text-white/40">Avatar</span>
+                      <span class="text-white/40">{{ $t('projects.avatarCreator.avatar') }}</span>
                       <span class="text-blue-400">{{ selectedAvatarData?.name }}</span>
                     </div>
                     <div class="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-                      <span class="text-white/40">Voice Profile</span>
+                      <span class="text-white/40">{{ $t('projects.avatarCreator.voiceProfile') }}</span>
                       <span class="text-blue-400">{{ voiceConfig.voiceId }}</span>
                     </div>
                     <div class="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
-                      <span class="text-white/40">Est. Duration</span>
+                      <span class="text-white/40">{{ $t('projects.avatarCreator.estDuration') }}</span>
                       <span class="text-blue-400">{{ estimatedDuration }}s</span>
                     </div>
                   </div>
@@ -353,7 +381,7 @@
                     class="w-full h-16 !rounded-[24px] !bg-blue-500 !border-none !text-lg !font-black !uppercase !tracking-[0.2em] shadow-2xl shadow-blue-500/40 hover:scale-[1.02] transition-transform"
                     @click="startRendering"
                   >
-                    <Video theme="outline" class="mr-4" size="24" /> START RENDERING
+                    <Video theme="outline" class="mr-4" size="24" /> {{ $t('projects.avatarCreator.startRendering') }}
                   </el-button>
                   
                   <el-button 
@@ -361,7 +389,7 @@
                     class="w-full h-16 !rounded-[24px] !bg-red-500/10 !border-red-500/20 !text-red-500 font-black uppercase tracking-widest"
                     @click="abortRendering"
                   >
-                    ABORT RENDERING
+                    {{ $t('projects.avatarCreator.abortRendering') }}
                   </el-button>
                 </div>
               </div>
@@ -379,23 +407,29 @@
 
                 <div class="p-6 rounded-3xl bg-white/5 border border-white/5 flex flex-col gap-4">
                   <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">Metadata</span>
+                    <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                      {{ $t('projects.avatarCreator.metadata') }}
+                    </span>
                     <el-button 
                       link 
                       class="!text-blue-400 !text-[10px] font-black uppercase"
                       @click="generateViralHooks"
                       :loading="loadingHooks"
                     >
-                      <Magic theme="outline" class="mr-1" /> AI HOOK LAB
+                      <Magic theme="outline" class="mr-1" /> {{ $t('projects.avatarCreator.aiHookLab') }}
                     </el-button>
                   </div>
                   
-                  <el-input v-model="publishMetadata.title" placeholder="Video Title" class="soul-small-input" />
+                  <el-input 
+                    v-model="publishMetadata.title" 
+                    :placeholder="$t('projects.avatarCreator.videoTitle')" 
+                    class="soul-small-input" 
+                  />
                   <el-input 
                     v-model="publishMetadata.description" 
                     type="textarea" 
                     :rows="4" 
-                    placeholder="Video Description" 
+                    :placeholder="$t('projects.avatarCreator.videoDescription')" 
                     class="soul-glass-textarea !p-0" 
                   />
                 </div>
@@ -404,15 +438,21 @@
               <!-- Right: Syndication & Export -->
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
                 <div>
-                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-4">Syndicate to Platforms</span>
+                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest block mb-4">
+                    {{ $t('projects.avatarCreator.syndicateToPlatforms') }}
+                  </span>
                   
                   <div v-if="loadingAccounts" class="h-20 flex items-center justify-center">
                     <el-icon class="is-loading text-blue-500"><Loading /></el-icon>
                   </div>
                   
                   <div v-else-if="accounts.length === 0" class="p-8 text-center glass-card rounded-3xl border-dashed border-white/10">
-                    <p class="text-[10px] text-white/30 uppercase font-bold mb-4">No connected accounts found</p>
-                    <el-button size="small" class="soul-glass-btn" @click="openIntegrations">CONNECT ACCOUNTS</el-button>
+                    <p class="text-[10px] text-white/30 uppercase font-bold mb-4">
+                      {{ $t('projects.avatarCreator.noAccounts') }}
+                    </p>
+                    <el-button size="small" class="soul-glass-btn" @click="openIntegrations">
+                      {{ $t('projects.avatarCreator.connectAccounts') }}
+                    </el-button>
                   </div>
 
                   <div v-else class="grid grid-cols-2 gap-3">
@@ -442,14 +482,14 @@
                       class="flex-1 h-14 !rounded-2xl soul-glass-btn !bg-white/5 !text-white font-black uppercase tracking-widest"
                       @click="downloadVideo"
                     >
-                      <Download theme="outline" class="mr-2" /> Download
+                      <Download theme="outline" class="mr-2" /> {{ $t('projects.avatarCreator.download') }}
                     </el-button>
                     <el-button 
                       class="flex-1 h-14 !rounded-2xl soul-glass-btn !bg-white/5 !text-white font-black uppercase tracking-widest"
                       @click="handleExportProject()"
                       :loading="isExporting"
                     >
-                       Save to Projects
+                       {{ $t('projects.avatarCreator.saveToProjects') }}
                     </el-button>
                   </div>
 
@@ -460,7 +500,7 @@
                     :loading="isPublishing"
                     :disabled="selectedAccountIds.length === 0"
                   >
-                    <Send theme="outline" class="mr-3" /> SYNDICATE & FINISH
+                    <Send theme="outline" class="mr-3" /> {{ $t('projects.avatarCreator.syndicateFinish') }}
                   </el-button>
                 </div>
               </div>
@@ -475,7 +515,7 @@
           class="soul-glass-btn text-[11px] font-black uppercase tracking-widest px-8"
           @click="step === 1 ? isVisible = false : step--"
         >
-          {{ step === 1 ? 'Cancel' : 'Back' }}
+          {{ step === 1 ? $t('common.cancel') : $t('projects.avatarCreator.back') }}
         </el-button>
         <el-button 
           v-if="step < 4"
@@ -484,7 +524,7 @@
           :disabled="!isStepValid"
           @click="step++"
         >
-          {{ step === 3 ? 'Preview Results' : step === 2 ? 'Render Preview' : 'Continue' }}
+          {{ step === 3 ? $t('projects.avatarCreator.previewResults') : step === 2 ? $t('projects.avatarCreator.renderPreview') : $t('projects.avatarCreator.continue') }}
         </el-button>
       </div>
     </div>
@@ -503,6 +543,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
 import { useVTuberStore } from '@/stores/vtuber';
 import { useMediaStore } from '@/stores/media';
@@ -516,11 +557,12 @@ import { getFileUrl } from '@/utils/api';
 import { 
   User, Search, Loading, Avatar, Magic, Tips, MusicOne, 
   Play, PauseOne, List, CheckOne, Download, Video,
-  Youtube, Facebook, Send
+  Youtube, Facebook, Send, PlayOne
 } from '@icon-park/vue-next';
 import { storeToRefs } from 'pinia';
 
 const isVisible = defineModel<boolean>('modelValue', { default: false });
+const { t } = useI18n();
 const router = useRouter();
 const vtuberStore = useVTuberStore();
 const mediaStore = useMediaStore();
@@ -531,7 +573,6 @@ const { accounts, loading: loadingAccounts } = storeToRefs(platformStore);
 
 // Wizard State
 const step = ref(1);
-const stepTitles = ['Select Your VTuber', 'Script & Voice', 'Capture Avatar', 'Preview & Share'];
 const searchQuery = ref('');
 
 // Step 1 State
@@ -617,7 +658,7 @@ const loadAvatars = async () => {
     await vtuberStore.fetchLibrary();
     avatars.value = vtuberStore.vtubers;
   } catch (e) {
-    toast.error('Failed to load VTubers');
+    toast.error(t('projects.avatarCreator.toasts.loadFailed'));
   } finally {
     loadingAvatars.value = false;
   }
@@ -644,7 +685,7 @@ const previewVoiceWithSync = async () => {
 
     if (!audioUrl) {
       const data = await vtuberStore.generateVoicePreview({
-        text: "This is a preview of the selected voice profile.",
+        text: t('projects.avatarCreator.toasts.voicePreviewDefault'),
         provider: voiceConfig.value.provider,
         voiceId: voiceConfig.value.voiceId,
         language: voiceConfig.value.language || 'en-US'
@@ -674,7 +715,7 @@ const previewVoiceWithSync = async () => {
       startPreviewSyncLoop();
     }
   } catch (e) {
-    toast.error('Voice preview failed');
+    toast.error(t('projects.avatarCreator.toasts.voicePreviewFailed'));
     stopPreviewSync();
   } finally {
     previewLoading.value = false;
@@ -716,19 +757,18 @@ const stopPreviewSync = () => {
 };
 
 const generateAiscript = async () => {
-    // Logic to generate AI script using project store or separate service
+  try {
     generatingAiScript.value = true;
-    try {
-        // Placeholder for AI script generation
-        setTimeout(() => {
-            script.value ="Hello everyone! I'm thrilled to be here helping you create amazing content with AI Avatars. This client-side rendering technology ensures high quality and low latency for your productions.";
-            generatingAiScript.value = false;
-            toast.success("AI script generated!");
-        }, 1500);
-    } catch(e) {
-        toast.error("AI script generation failed");
-        generatingAiScript.value = false;
-    }
+    // Mock AI script generation
+    await new Promise(r => setTimeout(r, 2000));
+    const hostName = selectedAvatarData.value?.name || t('projects.avatarCreator.defaultScriptFallback');
+    script.value = t('projects.avatarCreator.defaultScript', { name: hostName });
+    toast.success(t('projects.avatarCreator.toasts.scriptGenerated'));
+  } catch (e) {
+    toast.error(t('projects.avatarCreator.toasts.scriptFailed'));
+  } finally {
+    generatingAiScript.value = false;
+  }
 };
 
 const startRendering = async () => {
@@ -804,9 +844,9 @@ const startRendering = async () => {
       const videoBlob = await capturePromise;
       if (videoBlob) {
         exportUrl.value = URL.createObjectURL(videoBlob);
-        publishMetadata.value.title = `AI Avatar - ${selectedAvatarData.value?.name}`;
+        publishMetadata.value.title = t('projects.avatarCreator.defaultTitlePrefix') + (selectedAvatarData.value?.name || '');
         publishMetadata.value.description = script.value;
-        toast.success('Video captured successfully!');
+        toast.success(t('projects.avatarCreator.toasts.videoCaptured'));
       }
     } else {
         throw new Error("Video capture not supported on this viewer");
@@ -814,7 +854,7 @@ const startRendering = async () => {
 
   } catch (e: any) {
     console.error('[AIAvatarDialog] Rendering failed:', e);
-    toast.error('Rendering failed: ' + e.message);
+    toast.error(t('projects.avatarCreator.toasts.renderFailed') + ': ' + e.message);
   } finally {
     isRendering.value = false;
     renderProgress.value = 100;
@@ -824,14 +864,14 @@ const startRendering = async () => {
 const abortRendering = () => {
   renderAudio?.pause();
   isRendering.value = false;
-  toast.warning('Rendering aborted');
+  toast.warning(t('projects.avatarCreator.toasts.renderAborted'));
 };
 
 const handleExportProject = async () => {
     if (isExporting.value) return;
     isExporting.value = true;
     try {
-        toast.info("Saving to project...");
+        toast.info(t('projects.avatarCreator.toasts.saving'));
         const response = await fetch(exportUrl.value);
         const blob = await response.blob();
         const file = new File([blob], `avatar_render_${Date.now()}.webm`, { type: 'video/webm' });
@@ -856,10 +896,10 @@ const handleExportProject = async () => {
 
         data = await projectStore.publishProject(data.project._id, formData);
         
-        toast.success("Project saved successfully!");
+        toast.success(t('projects.avatarCreator.toasts.saveSuccess'));
         return data.project;
     } catch(e) {
-        toast.error("Failed to export project");
+        toast.error(t('projects.avatarCreator.toasts.saveFailed'));
         throw e;
     } finally {
         isExporting.value = false;
@@ -876,7 +916,7 @@ const handleFinalPublish = async () => {
         if (!project) return;
 
         // 2. Syndicate to selected platforms
-        toast.info("Syndicating to platforms...");
+        toast.info(t('projects.avatarCreator.toasts.syndicationStarted'));
         const payload = {
             projectId: project._id,
             s3Key: project.publish.s3Key,
@@ -886,11 +926,11 @@ const handleFinalPublish = async () => {
 
         await platformStore.publishSyndication(payload);
         
-        toast.success("Syndication started!");
+        toast.success(t('projects.avatarCreator.toasts.syndicationSuccess'));
         isVisible.value = false;
         router.push(`/projects`);
     } catch (e: any) {
-        toast.error("Syndication failed: " + e.message);
+        toast.error(t('projects.avatarCreator.toasts.syndicationFailed') + ': ' + e.message);
     } finally {
         isPublishing.value = false;
     }
@@ -907,7 +947,7 @@ const generateViralHooks = async () => {
     try {
         // Placeholder for AI Hook generation logic if needed
         setTimeout(() => {
-            toast.success("AI Hooks generated (Simulated)");
+            toast.success(t('projects.avatarCreator.toasts.hooksGenerated'));
             loadingHooks.value = false;
         }, 1500);
     } catch(e) {

@@ -2,6 +2,8 @@ import { chromium, firefox, Browser, BrowserContext, Page } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 
+import { Logger } from '../../utils/Logger.js';
+
 export class BrowserManager {
     private browser: Browser | null = null;
     private context: BrowserContext | null = null;
@@ -22,7 +24,7 @@ export class BrowserManager {
     }
 
     async init(headless = true) {
-        console.log(`[AIStudio] Launching Browser (Headless: ${headless})...`);
+        Logger.info(`[AIStudio] Launching Browser (Headless: ${headless})...`);
 
         // Use a dedicated persistent profile folder instead of a temporary context
         // This is much harder to detect and saves login state across runs
@@ -48,7 +50,7 @@ export class BrowserManager {
             viewport: { width: 1280, height: 800 },
         });
 
-        console.log('[AIStudio] Context Created (Persistent Profile used).');
+        Logger.info('[AIStudio] Context Created (Persistent Profile used).');
 
         this.page = this.context.pages()[0] || await this.context.newPage();
 
@@ -96,7 +98,7 @@ export class BrowserManager {
                     }
                 } catch (e) {
                     // Context might be closed already if user closed the window
-                    console.debug('[BrowserManager] Could not export cookies (context closed)');
+                    Logger.debug('[BrowserManager] Could not export cookies (context closed)');
                 }
 
                 await this.context.close().catch(() => { });
@@ -105,7 +107,7 @@ export class BrowserManager {
                 await this.browser.close().catch(() => { });
             }
         } catch (error) {
-            console.error('[BrowserManager] error during close:', error);
+            Logger.error('[BrowserManager] error during close:', error);
         } finally {
             this.page = null;
             this.context = null;

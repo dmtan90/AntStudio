@@ -5,6 +5,8 @@ import { SHOW_PROFILES, ShowProfileType, ShowProfile } from '../../constants/Sho
 import { EmotionAnalysisService } from './EmotionAnalysisService.js';
 import { TrendFetchService } from './TrendFetchService.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 export interface ScriptStep {
     id: string;
     timestamp: number;
@@ -135,7 +137,7 @@ class ShowRunnerService extends EventEmitter {
             try {
                 steps = JSON.parse(result.text || '[]');
             } catch (e) {
-                console.warn('[ShowRunner] Failed to parse script JSON:', e);
+                Logger.warn('[ShowRunner] Failed to parse script JSON:', e);
             }
 
             // Validate and sanitized steps while enriching with emotions and visual FX
@@ -148,7 +150,7 @@ class ShowRunnerService extends EventEmitter {
                         emotion = await EmotionAnalysisService.analyzeText(s.dialogue);
                         visualFX = this.detectVisualFX(s.dialogue);
                     } catch (e) {
-                        console.warn('[ShowRunner] Enrichment failed for step:', i);
+                        Logger.warn('[ShowRunner] Enrichment failed for step:', i);
                     }
                 }
 
@@ -220,7 +222,7 @@ class ShowRunnerService extends EventEmitter {
             this.broadcastState();
             return this.activeScript;
         } catch (error) {
-            console.error('[ShowRunner] Script generation failed:', error);
+            Logger.error('[ShowRunner] Script generation failed:', error);
             throw new Error('Failed to generate script');
         }
     }
@@ -248,7 +250,7 @@ class ShowRunnerService extends EventEmitter {
     }
 
     public async handlePollResult(actionType: string, winner: string) {
-        console.log(`[ShowRunner] Handling poll result: ${actionType} -> ${winner}`);
+        Logger.info(`[ShowRunner] Handling poll result: ${actionType} -> ${winner}`);
         
         if (this.activeScript && this.activeScript.isRunning) {
             // Find if there's a placeholder or just append a new step
@@ -276,14 +278,14 @@ class ShowRunnerService extends EventEmitter {
             // Insert after current step (next up)
             if (this.activeScript.currentIndex >= 0) {
                  this.activeScript.steps.splice(this.activeScript.currentIndex + 1, 0, newStep);
-                 console.log('[ShowRunner] Injected new step from poll result');
+                 Logger.info('[ShowRunner] Injected new step from poll result');
                  this.broadcastState();
             }
         }
     }
 
     public injectEvent(type: string, payload: any) {
-        console.log(`[ShowRunner] Injecting event: ${type}`, payload);
+        Logger.info(`[ShowRunner] Injecting event: ${type}`, payload);
         // Emitting event to studio clients for immediate reaction
         socketServer.getIO()?.emit('show:event', { type, payload });
     }

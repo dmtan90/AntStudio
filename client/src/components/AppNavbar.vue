@@ -40,7 +40,7 @@
         <GDropdown trigger="hover" @command="handleLanguageChange" popper-class="lang-dropdown">
           <div class="lang-switcher glass-dark">
             <vue-flag :code="currentFlag" width="18" />
-            <span class="lang-code">{{ currentLocale.toUpperCase() }}</span>
+            <span class="lang-code">{{ locale.toUpperCase() }}</span>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -90,7 +90,7 @@
               <div class="credit-section">
                 <div class="section-title">{{ t('subscription.weekly') }}</div>
                 <div class="credit-item-row">
-                  <span class="reset-info">Resets every Monday at 00:00</span>
+                  <span class="reset-info">{{ t('account.credits.resetInfo') }}</span>
                   <span class="credit-value">{{ user.credits?.weekly || 500 }}</span>
                 </div>
               </div>
@@ -179,16 +179,16 @@
     <GDialog v-model="passwordDialogVisible" :title="t('common.password')" width="420px">
       <div class="g-form">
         <div class="g-form-item">
-          <label>Current Password</label>
-          <GInput v-model="passwordForm.current" type="password" placeholder="••••••••" />
+          <label>{{ t('auth.password.current') }}</label>
+          <GInput v-model="passwordForm.current" type="password" :placeholder="t('auth.password.currentPlaceholder')" />
         </div>
         <div class="g-form-item">
-          <label>New Password</label>
-          <GInput v-model="passwordForm.new" type="password" placeholder="••••••••" />
+          <label>{{ t('auth.password.new') }}</label>
+          <GInput v-model="passwordForm.new" type="password" :placeholder="t('auth.password.newPlaceholder')" />
         </div>
         <div class="g-form-item">
-          <label>Confirm New Password</label>
-          <GInput v-model="passwordForm.confirm" type="password" placeholder="••••••••" />
+          <label>{{ t('auth.password.confirm') }}</label>
+          <GInput v-model="passwordForm.confirm" type="password" :placeholder="t('auth.password.confirmPlaceholder')" />
         </div>
       </div>
       <template #footer>
@@ -212,7 +212,8 @@
 import { useRouter, useRoute } from 'vue-router'
 import { ref, onMounted, computed, reactive, watch, onUnmounted } from 'vue'
 import { User as UserIcon, Key as KeyIcon, Logout as LogoutIcon, Camera, Ticket, Diamond } from '@icon-park/vue-next'
-import { useTranslations, type Locale } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n'
+import { type Locale } from '@/i18n'
 import { Toaster, toast } from 'vue-sonner'
 import 'vue-sonner/style.css'
 import api, { getFileUrl } from '@/utils/api.js'
@@ -230,7 +231,7 @@ import SubscriptionPlansDialog from '@/components/subscription/SubscriptionPlans
 
 const router = useRouter()
 const route = useRoute()
-const { t, setLocale, currentLocale } = useTranslations()
+const { t, locale } = useI18n()
 const userStore = useUserStore()
 const uiStore = useUIStore()
 const { user } = storeToRefs(userStore)
@@ -251,11 +252,11 @@ const languages = [
 ]
 
 const currentFlag = computed(() => {
-  return languages.find(l => l.code === currentLocale.value)?.flag || 'us'
+  return languages.find(l => l.code === locale.value)?.flag || 'us'
 })
 
 const handleLanguageChange = async (code: string) => {
-  setLocale(code as Locale)
+  locale.value = code as Locale
   if (user.value) {
     try {
       await userStore.updateProfile({ language: code })
@@ -336,7 +337,7 @@ const updateProfile = async () => {
       language: profileForm.language
     })
 
-    setLocale(profileForm.language)
+    locale.value = profileForm.language
     toast.success(t('common.updateSuccess'))
     profileDialogVisible.value = false
   } catch (error: any) {
@@ -359,9 +360,9 @@ const handleAvatarUpload = async (e: Event) => {
     const data = await userStore.uploadAvatar(formData)
 
     profileForm.avatar = data.url
-    toast.success('Avatar uploaded')
+    toast.success(t('profile.uploadSuccess'))
   } catch (error) {
-    toast.error('Failed to upload avatar')
+    toast.error(t('profile.uploadFailed'))
   }
 }
 
@@ -371,12 +372,18 @@ const goPricing = () => {
 }
 
 const changePassword = async () => {
-  if (!passwordForm.value.current || !passwordForm.value.new) {
-    toast.error('Please fill in all fields')
+  if (!passwordForm.value.current || !passwordForm.value.new || !passwordForm.value.confirm) {
+    toast.warning(t('auth.password.fillAll'))
     return
   }
+
   if (passwordForm.value.new !== passwordForm.value.confirm) {
-    toast.error('Passwords do not match')
+    toast.warning(t('auth.password.mismatch'))
+    return
+  }
+
+  if (passwordForm.value.new.length < 6) {
+    toast.warning(t('auth.password.tooShort'))
     return
   }
 
@@ -386,10 +393,11 @@ const changePassword = async () => {
       currentPassword: passwordForm.value.current,
       newPassword: passwordForm.value.new
     })
-    toast.success('Password changed successfully')
+    toast.success(t('auth.password.success'))
     passwordDialogVisible.value = false
+    passwordForm.value = { current: '', new: '', confirm: '' }
   } catch (error: any) {
-    toast.error(error.response?.data?.message || 'Failed to change password')
+    toast.error(error.response?.data?.message || t('auth.password.failed'))
   } finally {
     changingPassword.value = false
   }
@@ -461,7 +469,7 @@ watch(isHomePage, (newVal) => {
 onMounted(() => {
   userStore.fetchProfile()
   const savedLang = localStorage.getItem('preferred-language')
-  if (savedLang) setLocale(savedLang as Locale)
+  if (savedLang) locale.value = savedLang as Locale
 })
 
 onUnmounted(() => {

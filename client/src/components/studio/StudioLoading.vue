@@ -14,7 +14,7 @@
                         <div class="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_15px_#3b82f6]"></div>
                     </div>
                 </div>
-                <h2 class="text-2xl font-black uppercase tracking-[0.3em] mb-2">Initializing Studio</h2>
+                <h2 class="text-2xl font-black uppercase tracking-[0.3em] mb-2">{{ $t('studio.loading.initializing') }}</h2>
                 <p class="text-white/40 text-xs uppercase tracking-widest">{{ loadingText }}</p>
             </div>
 
@@ -24,10 +24,9 @@
                     class="error-icon w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 text-red-500 border border-red-500/20">
                     <caution theme="outline" size="40" />
                 </div>
-                <h2 class="text-2xl font-black uppercase tracking-widest mb-4">Hardware Acceleration Required</h2>
+                <h2 class="text-2xl font-black uppercase tracking-widest mb-4">{{ $t('studio.loading.hardwareAccelerationRequired') }}</h2>
                 <p class="text-white/60 text-sm mb-8 leading-relaxed">
-                    WebGL initialization failed. To provide a professional broadcast experience, AntStudio requires GPU
-                    acceleration enabled in your browser.
+                    {{ $t('studio.loading.hardwareAccelerationDesc') }}
                 </p>
 
                 <div class="instructions-tabs glass-dark rounded-2xl overflow-hidden border border-white/5 text-left">
@@ -52,7 +51,7 @@
                             </ol>
                             <div v-if="b.troubleshoot" class="mt-4 pt-4 border-t border-white/5">
                                 <p class="text-[9px] font-bold uppercase tracking-widest opacity-30 mb-2">
-                                    Troubleshooting</p>
+                                    {{ $t('studio.loading.troubleshooting') }}</p>
                                 <p class="text-[10px] text-white/40 italic">{{ b.troubleshoot }}</p>
                             </div>
                         </div>
@@ -62,11 +61,11 @@
                 <div class="mt-8 flex gap-4">
                     <button @click="checkWebGL"
                         class="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold uppercase text-[10px] tracking-[0.2em] transition-all shadow-lg shadow-blue-500/20">
-                        Retry Initialization
+                        {{ $t('studio.loading.retry') }}
                     </button>
                     <button @click="$emit('exit')"
                         class="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 font-bold uppercase text-[10px] tracking-[0.2em] transition-all border border-white/5">
-                        Exit
+                        {{ $t('studio.loading.exit') }}
                     </button>
                 </div>
             </div>
@@ -75,8 +74,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Caution } from '@icon-park/vue-next';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
     visible: boolean;
@@ -86,54 +88,54 @@ const emit = defineEmits(['ready', 'exit']);
 
 const errorMode = ref(false);
 const activeBrowser = ref('chrome');
-const loadingText = ref('Neural engines starting...');
+const loadingText = ref(t('studio.loading.status.starting'));
 
-const browsers = [
+const browsers = computed(() => [
     {
         id: 'chrome',
-        name: 'Chrome',
-        instructionTitle: 'Enable Hardware Acceleration in Chrome',
+        name: t('studio.loading.browsers.chrome.name'),
+        instructionTitle: t('studio.loading.browsers.chrome.title'),
         steps: [
-            'Go to chrome://settings/system',
-            'Toggle on "Use hardware acceleration when available"',
-            'Click "Relaunch" if prompted',
-            'Visit chrome://flags and search for "WebGL"',
-            'Enable "WebGL Draft Extensions" and "WebGL Developer Extensions"',
-            'Relaunch the browser to apply changes'
+            t('studio.loading.browsers.chrome.steps[0]'),
+            t('studio.loading.browsers.chrome.steps[1]'),
+            t('studio.loading.browsers.chrome.steps[2]'),
+            t('studio.loading.browsers.chrome.steps[3]'),
+            t('studio.loading.browsers.chrome.steps[4]'),
+            t('studio.loading.browsers.chrome.steps[5]')
         ],
-        troubleshoot: 'Visit get.webgl.org to verify. Check chrome://gpu for "Hardware accelerated" status.'
+        troubleshoot: t('studio.loading.browsers.chrome.troubleshoot')
     },
     {
         id: 'firefox',
-        name: 'Firefox',
-        instructionTitle: 'Enable WebGL in Firefox',
+        name: t('studio.loading.browsers.firefox.name'),
+        instructionTitle: t('studio.loading.browsers.firefox.title'),
         steps: [
-            'Type about:config in the address bar',
-            'Click "Accept the Risk and Continue"',
-            'Search for webgl.disabled and set to false',
-            'Search for webgl.force-enabled and set to true',
-            'Restart Firefox for settings to apply'
+            t('studio.loading.browsers.firefox.steps[0]'),
+            t('studio.loading.browsers.firefox.steps[1]'),
+            t('studio.loading.browsers.firefox.steps[2]'),
+            t('studio.loading.browsers.firefox.steps[3]'),
+            t('studio.loading.browsers.firefox.steps[4]')
         ],
-        troubleshoot: 'Ensure Hardware Acceleration is checked in Options > General > Performance.'
+        troubleshoot: t('studio.loading.browsers.firefox.troubleshoot')
     },
     {
         id: 'safari',
-        name: 'Safari',
-        instructionTitle: 'Enable WebGL in Safari (macOS/iOS)',
+        name: t('studio.loading.browsers.safari.name'),
+        instructionTitle: t('studio.loading.browsers.safari.title'),
         steps: [
-            'Desktop: Settings > Advanced > Show Develop menu',
-            'Desktop: Develop menu > Enable WebGL',
-            'iOS: Settings > Safari > Advanced > Feature Flags',
-            'Toggle on WebGL 2.0',
-            'Update your macOS/iOS to the latest version if issues persist'
+            t('studio.loading.browsers.safari.steps[0]'),
+            t('studio.loading.browsers.safari.steps[1]'),
+            t('studio.loading.browsers.safari.steps[2]'),
+            t('studio.loading.browsers.safari.steps[3]'),
+            t('studio.loading.browsers.safari.steps[4]')
         ],
-        troubleshoot: 'Restart Safari after making changes.'
+        troubleshoot: t('studio.loading.browsers.safari.troubleshoot')
     }
-];
+]);
 
 const checkWebGL = () => {
     errorMode.value = false;
-    loadingText.value = 'Syncing graphics buffers...';
+    loadingText.value = t('studio.loading.status.syncing');
 
     setTimeout(() => {
         try {

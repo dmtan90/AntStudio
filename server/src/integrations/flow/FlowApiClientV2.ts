@@ -1,6 +1,8 @@
 import axios from 'axios';
 import crypto from 'crypto';
 
+import { Logger } from '../../utils/Logger.js';
+
 /**
  * FlowApiClientV2: Advanced client for Google Labs / Antigravity
  * Refined based on antigravity2api-nodejs:
@@ -73,7 +75,7 @@ export class FlowApiClientV2 {
             requestType: 'image_gen'
         };
 
-        console.log('[FlowV2] Triggering specialized Image generation...');
+        Logger.info('[FlowV2] Triggering specialized Image generation...');
         const res = await axios.post(url, requestBody, { headers: this.getHeaders(at, apiKey) });
 
         // Handle Antigravity-style response nesting
@@ -82,7 +84,7 @@ export class FlowApiClientV2 {
 
         if (!imageUrl) {
             // Fallback to flowMedia structure if agent path is blocked or redirected
-            console.warn('[FlowV2] Agent path returned no direct image. Checking candidates...');
+            Logger.warn('[FlowV2] Agent path returned no direct image. Checking candidates...');
             throw new Error('Image Generation path yielded no media data.');
         }
 

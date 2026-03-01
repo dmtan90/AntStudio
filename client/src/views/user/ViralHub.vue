@@ -4,9 +4,9 @@
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
       <div>
         <h1 class="text-4xl font-black text-white tracking-tighter uppercase mb-2">
-          Viral <span class="text-blue-500">Syndication</span> Hub
+          {{ t('viral.header.viral') }} <span class="text-blue-500">{{ t('viral.header.syndication') }}</span> {{ t('viral.header.hub') }}
         </h1>
-        <p class="text-gray-400 font-medium">Global tracking for your AI-automated viral distributions.</p>
+        <p class="text-gray-400 font-medium">{{ t('viral.subtitle') }}</p>
       </div>
 
       <div class="flex items-center gap-4">
@@ -16,7 +16,7 @@
           :disabled="loading"
         >
           <chart-line :class="{ 'animate-pulse': loading }" theme="outline" size="18" />
-          <span class="text-xs font-bold uppercase tracking-widest">Sync Engagement</span>
+          <span class="text-xs font-bold uppercase tracking-widest">{{ t('viral.sync') }}</span>
         </button>
         <button 
           class="glass-btn h-12 px-6 flex items-center gap-2 group"
@@ -24,7 +24,7 @@
           :disabled="loading"
         >
           <refresh :class="{ 'animate-spin': loading }" theme="outline" size="18" />
-          <span class="text-xs font-bold uppercase tracking-widest">Refresh History</span>
+          <span class="text-xs font-bold uppercase tracking-widest">{{ t('viral.refresh') }}</span>
         </button>
       </div>
     </header>
@@ -35,13 +35,13 @@
         <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <component :is="stat.icon" size="64" />
         </div>
-        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">{{ stat.label }}</p>
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">{{ t('viral.stats.' + stat.key) }}</p>
         <div class="text-3xl font-black text-white mb-1">{{ stat.value }}</div>
         <div class="flex items-center gap-2">
           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
             {{ stat.trend }}
           </span>
-          <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">vs last week</span>
+          <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ t('viral.stats.vsLastWeek') }}</span>
         </div>
       </div>
     </div>
@@ -53,28 +53,28 @@
         :class="activeView === 'overview' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'"
         @click="activeView = 'overview'"
       >
-        History Overview
+        {{ t('viral.views.overview') }}
       </button>
       <button 
         class="px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all"
         :class="activeView === 'analytics' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'"
         @click="activeView = 'analytics'"
       >
-        Visual Analytics
+        {{ t('viral.views.analytics') }}
       </button>
       <button 
         class="px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all"
         :class="activeView === 'calendar' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'"
         @click="activeView = 'calendar'"
       >
-        Distribution Calendar
+        {{ t('viral.views.calendar') }}
       </button>
       <button 
         class="px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all"
         :class="activeView === 'ab_lab' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'"
         @click="activeView = 'ab_lab'"
       >
-        A/B Hook Lab
+        {{ t('viral.views.abLab') }}
       </button>
     </div>
 
@@ -90,45 +90,45 @@
     <!-- Content Area (Overview) -->
     <div v-show="activeView === 'overview'" class="glass-panel overflow-hidden">
       <div class="p-6 border-b border-white/5 flex items-center justify-between">
-        <h2 class="text-sm font-black uppercase tracking-widest text-gray-400">Distribution History</h2>
+        <h2 class="text-sm font-black uppercase tracking-widest text-gray-400">{{ t('viral.history.title') }}</h2>
         <div class="flex items-center gap-2">
-          <div class="filter-chip" :class="{ active: activeFilter === 'all' }" @click="activeFilter = 'all'">All</div>
-          <div class="filter-chip" :class="{ active: activeFilter === 'success' }" @click="activeFilter = 'success'">Success</div>
-          <div class="filter-chip" :class="{ active: activeFilter === 'failed' }" @click="activeFilter = 'failed'">Failed</div>
+          <div class="filter-chip" :class="{ active: activeFilter === 'all' }" @click="activeFilter = 'all'">{{ t('viral.history.filters.all') }}</div>
+          <div class="filter-chip" :class="{ active: activeFilter === 'success' }" @click="activeFilter = 'success'">{{ t('viral.history.filters.success') }}</div>
+          <div class="filter-chip" :class="{ active: activeFilter === 'failed' }" @click="activeFilter = 'failed'">{{ t('viral.history.filters.failed') }}</div>
         </div>
       </div>
 
       <!-- Table Logic -->
       <div v-if="loading && !records.length" class="p-20 text-center">
         <div class="inline-block w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p class="text-gray-500 text-sm font-bold uppercase tracking-widest">Synchronizing records...</p>
+        <p class="text-gray-500 text-sm font-bold uppercase tracking-widest">{{ t('viral.history.syncing') }}</p>
       </div>
 
       <div v-else-if="!records.length" class="p-32 text-center">
         <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
           <share-two theme="outline" size="32" class="text-gray-600" />
         </div>
-        <h3 class="text-xl font-bold text-white mb-2">No Syndication History</h3>
-        <p class="text-gray-500 max-w-sm mx-auto mb-8">Generated clips or final montages will automatically appear here once distributed.</p>
-        <router-link to="/projects" class="primary-btn h-12 px-8 inline-flex items-center">Start a Project</router-link>
+        <h3 class="text-xl font-bold text-white mb-2">{{ t('viral.history.empty.title') }}</h3>
+        <p class="text-gray-500 max-w-sm mx-auto mb-8">{{ t('viral.history.empty.desc') }}</p>
+        <router-link to="/projects" class="primary-btn h-12 px-8 inline-flex items-center">{{ t('viral.history.empty.start') }}</router-link>
       </div>
 
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 bg-white/[0.02]">
-              <th class="px-6 py-4 cursor-pointer hover:text-white transition-colors" @click="handleSort('content')">Content</th>
-              <th class="px-6 py-4">Target Channel</th>
-              <th class="px-6 py-4 font-black">Status</th>
+              <th class="px-6 py-4 cursor-pointer hover:text-white transition-colors" @click="handleSort('content')">{{ t('viral.history.columns.content') }}</th>
+              <th class="px-6 py-4">{{ t('viral.history.columns.channel') }}</th>
+              <th class="px-6 py-4 font-black">{{ t('viral.history.columns.status') }}</th>
               <th class="px-6 py-4 cursor-pointer hover:text-white transition-colors" @click="handleSort('views')">
-                Performance
+                {{ t('viral.history.columns.performance') }}
                 <span v-if="sortBy === 'views'" class="ml-1">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
               </th>
               <th class="px-6 py-4 cursor-pointer hover:text-white transition-colors" @click="handleSort('date')">
-                Date
+                {{ t('viral.history.columns.date') }}
                 <span v-if="sortBy === 'date'" class="ml-1">{{ sortOrder === 'desc' ? '↓' : '↑' }}</span>
               </th>
-              <th class="px-6 py-4">Actions</th>
+              <th class="px-6 py-4">{{ t('viral.history.columns.actions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
@@ -143,7 +143,7 @@
                   </div>
                   <div class="min-w-0">
                     <div class="text-sm font-bold text-white truncate max-w-[200px]">{{ record.metadata.title }}</div>
-                    <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ record.projectId?.title || 'Unknown Project' }}</div>
+                    <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ record.projectId?.title || t('common.unknownProject') }}</div>
                   </div>
                 </div>
               </td>
@@ -159,7 +159,7 @@
                 <div class="flex items-center gap-2">
                   <div class="w-2 h-2 rounded-full" :class="getStatusColor(record.status)"></div>
                   <span class="text-[10px] font-black uppercase tracking-widest" :class="getStatusText(record.status)">
-                    {{ record.status }}
+                    {{ t('viral.status.' + record.status) }}
                   </span>
                 </div>
               </td>
@@ -184,7 +184,7 @@
                 <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     class="p-2 rounded-lg bg-white/5 hover:bg-purple-500/20 hover:text-purple-400 transition-all"
-                    title="Manage Comments"
+                    :title="t('viral.history.actions.manageComments')"
                     @click="openComments(record)"
                   >
                     <communication theme="outline" size="14" />
@@ -194,13 +194,14 @@
                     :href="record.externalUrl" 
                     target="_blank" 
                     class="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 hover:text-blue-400 transition-all"
+                    :title="t('viral.history.actions.viewExternal')"
                   >
                     <external-transmission theme="outline" size="14" />
                   </a>
                   <button 
                     v-if="record.status === 'failed'"
                     class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-all"
-                    title="Retry Syndication"
+                    :title="t('viral.history.actions.retry')"
                     @click="handleRetry(record._id)"
                     :disabled="loading"
                   >
@@ -209,7 +210,7 @@
                   <button 
                     v-if="record.status === 'scheduled'"
                     class="p-2 rounded-lg bg-white/5 hover:bg-orange-500/20 hover:text-orange-400 transition-all"
-                    title="Cancel Schedule"
+                    :title="t('viral.history.actions.cancelSchedule')"
                     @click="store.cancelScheduledSyndication(record._id)"
                   >
                     <close theme="outline" size="14" />
@@ -231,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   Refresh, ShareTwo, Tiktok, Youtube, Facebook, 
   Play, PreviewOpen, Like, ExternalTransmission,
@@ -245,7 +246,9 @@ import PerformanceCharts from '@/components/studio/analytics/PerformanceCharts.v
 import CommentDrawer from '@/components/studio/drawers/CommentDrawer.vue';
 import SyndicationCalendar from '@/components/studio/analytics/SyndicationCalendar.vue';
 import HookPerformance from '@/components/studio/analytics/HookPerformance.vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const store = usePlatformStore();
 const loading = computed(() => store.syndicationLoading);
 const records = computed(() => store.syndicationRecords);
@@ -269,13 +272,13 @@ const openComments = (record: any) => {
 };
 
 const handlePromoteHook = (type: string) => {
-    toast.success(`Hook "${type}" promoted to all global channels!`);
+    toast.success(t('viral.toasts.hookPromoted', { type }));
 };
 
 const handleSelectRecord = (record: any) => {
     if (record.status === 'scheduled') {
         // Option to cancel or reschedule? For now just show info or open comments if success
-        toast.info(`Post scheduled for ${formatDate(record.scheduledAt)}`);
+        toast.info(t('viral.toasts.scheduled', { date: formatDate(record.scheduledAt) }));
     } else {
         openComments(record);
     }
@@ -330,10 +333,10 @@ const handleSort = (field: string) => {
 };
 
 const statsCards = computed(() => [
-    { label: 'Total Reach', value: formatLargeNumber(syndicationStats.value.totalViews), trend: syndicationStats.value.trends?.views || '0%', icon: TrendingUp },
-    { label: 'Engagement', value: formatLargeNumber(syndicationStats.value.totalLikes), trend: syndicationStats.value.trends?.likes || '0%', icon: CheckCorrect },
-    { label: 'Platform Shares', value: formatLargeNumber(syndicationStats.value.totalShares), trend: '+0%', icon: ShareTwo },
-    { label: 'Viral Stability', value: calculateStability(), trend: '+0.4%', icon: ChartLine }
+    { key: 'totalReach', label: 'Total Reach', value: formatLargeNumber(syndicationStats.value.totalViews), trend: syndicationStats.value.trends?.views || '0%', icon: TrendingUp },
+    { key: 'engagement', label: 'Engagement', value: formatLargeNumber(syndicationStats.value.totalLikes), trend: syndicationStats.value.trends?.likes || '0%', icon: CheckCorrect },
+    { key: 'shares', label: 'Platform Shares', value: formatLargeNumber(syndicationStats.value.totalShares), trend: '+0%', icon: ShareTwo },
+    { key: 'stability', label: 'Viral Stability', value: calculateStability(), trend: '+0.4%', icon: ChartLine }
 ]);
 
 const calculateStability = () => {
@@ -408,7 +411,7 @@ const getStatusText = (status: string) => {
 };
 
 const formatDate = (date: string) => {
-    return new Date(date).toLocaleString('en-US', {
+    return new Date(date).toLocaleString(t('common.locale') === 'vi' ? 'vi-VN' : 'en-US', {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
@@ -417,7 +420,7 @@ const formatDate = (date: string) => {
 };
 
 const formatLargeNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(num);
+    return new Intl.NumberFormat(t('common.locale') === 'vi' ? 'vi-VN' : 'en-US', { notation: 'compact', compactDisplay: 'short' }).format(num);
 };
 
 onMounted(fetchRecords);

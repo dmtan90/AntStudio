@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white/5 border border-white/5 rounded-3xl p-6 backdrop-blur-xl">
-     <h3 class="text-sm font-black uppercase tracking-widest text-gray-500 mb-6">Connected Accounts</h3>
+     <h3 class="text-sm font-black uppercase tracking-widest text-gray-500 mb-6">{{ t('dashboard.connectedAccounts.title') }}</h3>
      
      <div class="space-y-4">
         <div v-for="acc in accounts.slice(0, 3)" :key="acc._id" class="flex items-center justify-between group">
@@ -13,14 +13,14 @@
               </div>
               <div>
                  <div class="font-bold text-sm">{{ acc.name || acc.platform }}</div>
-                 <div class="text-[10px] text-gray-500 uppercase tracking-wilder font-bold">Connected</div>
+                 <div class="text-[10px] text-gray-500 uppercase tracking-wilder font-bold">{{ t('dashboard.connectedAccounts.connected') }}</div>
               </div>
            </div>
            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
         </div>
 
         <button @click="router.push('/platforms')" class="w-full py-3 mt-4 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold uppercase tracking-wide text-gray-400 hover:text-white transition-all">
-           Manage Platforms
+           {{ t('dashboard.connectedAccounts.managePlatforms') }}
         </button>
      </div>
   </div>
@@ -29,7 +29,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { Youtube, Facebook, Tiktok, ShareThree } from '@icon-park/vue-next';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 defineProps<{
   accounts: any[];
 }>();

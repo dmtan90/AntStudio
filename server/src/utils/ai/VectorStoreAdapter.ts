@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { Logger } from '../Logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +31,7 @@ export class VectorStoreAdapter {
             createdAt: new Date()
         }));
 
-        console.log(`💾 [VectorStore] Encrypted memory added for project: ${projectId}`);
+        Logger.info(`💾 [VectorStore] Encrypted memory added for project: ${projectId}`, 'VectorStore');
     }
 
     /**

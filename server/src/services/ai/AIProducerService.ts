@@ -3,6 +3,7 @@ import { audiencePredictor } from './AudiencePredictor.js';
 import { aiPerformanceService } from './AIPerformanceService.js';
 import { consensusService } from './ConsensusService.js';
 import { VTuberService } from '../VTuberService.js';
+import { Logger } from '../../utils/Logger.js';
 
 export class AIProducerService {
     private gemini: GeminiClient;
@@ -51,7 +52,7 @@ export class AIProducerService {
                     memoryContext = `HISTORICAL CONTEXT (Relevant memories from past sessions):\n${memories.map(m => `- ${m}`).join('\n')}`;
                 }
             } catch (err) {
-                console.warn('[AIProducer] Failed to fetch memories:', err);
+                Logger.warn(`[AIProducer] Failed to fetch memories: ${err}`, 'AIProducer');
             }
         }
 
@@ -117,7 +118,7 @@ OUTPUT FORMAT (JSON):
 
             return result;
         } catch (error) {
-            console.error('[AIProducer] Suggestion generation failed:', error);
+            Logger.error(`[AIProducer] Suggestion generation failed: ${error}`, 'AIProducer');
             return {
                 title: "Quality Check",
                 description: "Broadcast looks stable. Keep up the energy!",

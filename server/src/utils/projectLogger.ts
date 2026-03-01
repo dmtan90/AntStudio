@@ -1,4 +1,5 @@
 import { Project } from '../models/Project.js'
+import { Logger } from './Logger.js';
 
 export const logProjectEvent = async (
     projectId: string,
@@ -28,6 +29,6 @@ export const logProjectEvent = async (
             $push: { chatHistory: logEntry }
         })
     } catch (error) {
-        console.error('Failed to log project event:', error)
+        Logger.error(`Failed to log project event: ${error}`, 'ProjectLogger');
     }
 }

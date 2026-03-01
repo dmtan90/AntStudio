@@ -3,7 +3,7 @@
         <!-- Balance Header -->
         <div class="p-6 rounded-3xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/20 flex items-center justify-between">
             <div class="flex flex-col">
-                <span class="text-[10px] font-black uppercase tracking-widest opacity-40">Wallet Balance</span>
+                <span class="text-[10px] font-black uppercase tracking-widest opacity-40">{{ $t('studio.drawers.economy.wallet.balance') }}</span>
                 <span class="text-3xl font-black text-yellow-400">₵ {{ wallet?.balance || 0 }}</span>
             </div>
             <button @click="addCredits" class="p-3 rounded-2xl bg-yellow-500 hover:bg-yellow-400 text-black transition-all">
@@ -13,7 +13,7 @@
 
         <!-- Gift Catalog -->
         <section class="space-y-4">
-            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest">GIFT_CATALOG_V1</h4>
+            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest">{{ $t('studio.drawers.economy.giftCatalog') }}</h4>
             <div class="grid grid-cols-2 gap-3">
                 <div v-for="item in catalog" :key="item.id" 
                     @click="buyItem(item)"
@@ -34,7 +34,7 @@
                     <div class="flex items-center justify-between mt-4">
                         <span class="text-xs font-black text-yellow-500">₵ {{ item.cost }}</span>
                         <div class="p-1 px-2 rounded-lg bg-white/5 text-[8px] font-black uppercase opacity-0 group-hover:opacity-100 transition-all">
-                            SEND
+                            {{ $t('studio.common.send') }}
                         </div>
                     </div>
                 </div>
@@ -43,7 +43,7 @@
 
         <!-- Powerups -->
         <section class="space-y-4">
-             <h4 class="text-xs font-black opacity-30 uppercase tracking-widest">DIRECTOR_POWERUPS</h4>
+             <h4 class="text-xs font-black opacity-30 uppercase tracking-widest">{{ $t('studio.drawers.economy.powerups') }}</h4>
              <div v-for="item in powerups" :key="item.id"
                 class="p-4 rounded-2xl bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-white/5 flex items-center gap-4 cursor-pointer hover:border-purple-500/30 transition-all"
              >
@@ -56,7 +56,7 @@
                 </div>
                 <div class="text-right">
                     <p class="text-[10px] font-black text-purple-400">₵ {{ item.cost }}</p>
-                    <p class="text-[7px] font-black uppercase opacity-30">UNLOCK</p>
+                    <p class="text-[7px] font-black uppercase opacity-30">{{ $t('studio.common.unlock') }}</p>
                 </div>
              </div>
         </section>
@@ -67,7 +67,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { Plus } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+
+const { t } = useI18n();
 
 const catalog = ref<any[]>([]);
 const wallet = ref<any>(null);
@@ -90,18 +93,18 @@ const fetchEconomy = async () => {
 
 const buyItem = async (item: any) => {
     if (wallet.value.balance < item.cost) {
-        toast.error('Insufficient Credits!');
+        toast.error(t('studio.drawers.economy.insufficientCredits'));
         return;
     }
 
     try {
         await axios.post('/api/economy/purchase', { itemId: item.id });
         wallet.value.balance -= item.cost;
-        toast.success(`Sent ${item.name}!`, {
-            description: `You've unleashed a ${item.effectId || 'reaction'} on the stage.`
+        toast.success(t('studio.drawers.economy.sentGift', { name: item.name }), {
+            description: t('studio.drawers.economy.effectDescription', { effect: item.effectId || 'reaction' })
         });
     } catch (e: any) {
-        toast.error(e.response?.data?.error || 'Purchase failed');
+        toast.error(e.response?.data?.error || t('studio.drawers.economy.purchaseFailed'));
     }
 };
 
@@ -109,9 +112,9 @@ const addCredits = async () => {
     try {
         const res = await axios.post('/api/economy/add-credits', { amount: 500 });
         wallet.value.balance = res.data.balance;
-        toast.success('Credits Added (Test Mode)');
+        toast.success(t('studio.drawers.economy.creditsAdded'));
     } catch (e) {
-        toast.error('Failed to add credits');
+        toast.error(t('studio.drawers.economy.addCreditsFailed'));
     }
 }
 

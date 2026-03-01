@@ -14,16 +14,15 @@
         <div
           class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
           <div class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
-          <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">Premium Templates</span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">{{ t('marketplace.badge') }}</span>
         </div>
         <h1 class="text-7xl font-black mb-6 tracking-tighter leading-[0.9]">
-          Magic <span
-            class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">Template</span><br />
-          Marketplace
+          {{ t('marketplace.magic') }} <span
+            class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">{{ t('marketplace.template') }}</span><br />
+          {{ t('marketplace.hub') }}
         </h1>
         <p class="text-xl text-gray-400 max-w-2xl leading-relaxed mb-10 font-medium">
-          Unlock your productivity with professional designs. One-click import from your favorite platforms to start
-          editing instantly.
+          {{ t('marketplace.subtitle') }}
         </p>
 
         <div class="flex flex-wrap gap-4">
@@ -33,7 +32,7 @@
               class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity">
             </div>
             <Magic theme="filled" class="text-xl" />
-            Import from URL
+            {{ t('marketplace.importUrl') }}
           </button>
 
           <button @click="triggerPptxUpload" :disabled="isImportingPptx"
@@ -44,7 +43,7 @@
             <component :is="isImportingPptx ? Loading : 'div'" :class="{ 'animate-spin': isImportingPptx }">
               <DocDetail v-if="!isImportingPptx" theme="filled" class="text-xl text-orange-400" />
             </component>
-            {{ isImportingPptx ? 'Importing PPTX...' : 'Import PPTX Slide' }}
+            {{ isImportingPptx ? t('marketplace.importingPptx') : t('marketplace.importPptx') }}
           </button>
 
           <!-- Hidden File Input -->
@@ -62,8 +61,8 @@
             </div>
           </div>
           <div class="flex flex-col justify-center ml-2">
-            <div class="text-[10px] font-black uppercase tracking-widest text-gray-500">Trusted by</div>
-            <div class="text-xs font-bold text-gray-300">Global Creators</div>
+            <div class="text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('marketplace.trustedBy') }}</div>
+            <div class="text-xs font-bold text-gray-300">{{ t('marketplace.globalCreators') }}</div>
           </div>
         </div>
       </div>
@@ -80,7 +79,7 @@
               <VideoOne v-if="scope.item.value === 'capcut'" class="text-[#FF0050]" />
               <Edit v-if="scope.item.value === 'canva'" class="text-[#00C4CC]" />
               <User v-if="scope.item.value === 'private'" class="text-purple-400" />
-              <span class="font-black text-sm tracking-tight">{{ scope.item.name }}</span>
+              <span class="font-black text-sm tracking-tight">{{ t('marketplace.tabs.' + scope.item.value) }}</span>
             </div>
           </template>
         </el-segmented>
@@ -88,7 +87,7 @@
         <div class="relative group min-w-[320px]">
           <Search
             class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 text-lg group-focus-within:text-blue-400 transition-colors" />
-          <input v-model="filters.search" placeholder="Search templates..."
+          <input v-model="filters.search" :placeholder="t('marketplace.search')"
             class="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-500/50 focus:bg-white/[0.08] transition-all outline-none text-base" />
         </div>
       </div>
@@ -102,31 +101,31 @@
                 <div class="w-10 h-10 rounded-xl bg-[#00C4CC]/10 flex items-center justify-center">
                   <Edit theme="filled" class="text-[#00C4CC] text-xl" />
                 </div>
-                <span class="text-sm font-black text-[#00C4CC] uppercase tracking-[0.2em]">Canva Discovery</span>
+                <span class="text-sm font-black text-[#00C4CC] uppercase tracking-[0.2em]">{{ t('marketplace.canva.title') }}</span>
               </div>
-              <h2 class="text-5xl font-black tracking-tight leading-tight">Professional Video <br /> <span
-                  class="text-[#00C4CC]">Templates</span></h2>
+              <h2 class="text-5xl font-black tracking-tight leading-tight">{{ t('marketplace.canva.professionalVideo') }} <br /> <span
+                  class="text-[#00C4CC]">{{ t('marketplace.template') }}s</span></h2>
             </div>
           </div>
 
           <div class="flex flex-wrap items-center gap-4">
             <button
               class="px-6 py-3 bg-white/10 border border-white/10 rounded-2xl text-sm font-black flex items-center gap-3 hover:bg-white/20 hover:scale-105 transition-all text-white">
-              <Equalizer /> All Filters
+              <Equalizer /> {{ t('marketplace.canva.allFilters') }}
             </button>
             <div class="h-10 w-px bg-white/10 mx-2"></div>
-            <button v-for="tag in ['Style', 'Theme', 'Price', 'Color']" :key="tag"
+            <button v-for="tag in ['style', 'theme', 'price', 'color']" :key="tag"
               class="px-6 py-3 bg-white/5 border border-white/5 rounded-2xl text-sm font-bold flex items-center gap-4 hover:border-white/20 transition-all text-gray-300">
-              {{ tag }}
+              {{ t('marketplace.filters.' + tag) }}
               <Down class="text-gray-600" />
             </button>
             <div class="h-10 w-px bg-white/10 mx-2"></div>
-            <button v-for="pill in ['Peace Videos', 'Birthday', 'Education', 'Nature', 'Business']" :key="pill"
-              @click="filters.category = pill.toLowerCase()" :class="['px-6 py-3 rounded-2xl text-sm font-black transition-all border outline-none',
-                filters.category === pill.toLowerCase()
+            <button v-for="pill in ['peaceVideos', 'birthday', 'education', 'nature', 'business']" :key="pill"
+              @click="filters.category = pill" :class="['px-6 py-3 rounded-2xl text-sm font-black transition-all border outline-none',
+                filters.category === pill
                   ? 'bg-[#00C4CC] text-white border-[#00C4CC] shadow-xl shadow-teal-500/20 scale-105'
                   : 'bg-white/5 border-transparent hover:border-white/10 text-gray-400 hover:text-white']">
-              {{ pill }}
+              {{ t('marketplace.categories.' + pill) }}
             </button>
           </div>
         </div>
@@ -141,24 +140,24 @@
                 <div class="w-10 h-10 rounded-xl bg-[#FF0050]/10 flex items-center justify-center">
                   <VideoOne theme="filled" class="text-[#FF0050] text-xl" />
                 </div>
-                <span class="text-sm font-black text-[#FF0050] uppercase tracking-[0.2em]">CapCut Trends</span>
+                <span class="text-sm font-black text-[#FF0050] uppercase tracking-[0.2em]">{{ t('marketplace.capcut.title') }}</span>
               </div>
               <div class="flex items-center gap-10">
                 <button @click="filters.category = 'video'"
-                  :class="['text-5xl font-black transition-all pb-2', (filters.category === 'video' || !filters.category) ? 'text-white border-b-4 border-[#FF0050]' : 'text-gray-600 hover:text-gray-400']">Video</button>
+                  :class="['text-5xl font-black transition-all pb-2', (filters.category === 'video' || !filters.category) ? 'text-white border-b-4 border-[#FF0050]' : 'text-gray-600 hover:text-gray-400']">{{ t('marketplace.types.video') }}</button>
                 <button @click="filters.category = 'image'"
-                  :class="['text-5xl font-black transition-all pb-2', filters.category === 'image' ? 'text-white border-b-4 border-[#FF0050]' : 'text-gray-600 hover:text-gray-400']">Image</button>
+                  :class="['text-5xl font-black transition-all pb-2', filters.category === 'image' ? 'text-white border-b-4 border-[#FF0050]' : 'text-gray-600 hover:text-gray-400']">{{ t('marketplace.types.image') }}</button>
               </div>
             </div>
           </div>
 
           <div class="flex flex-wrap items-center gap-3">
-            <button v-for="cat in ['For You', 'Trending', 'New Year', 'Business', 'TikTok', 'Vlog', 'Student']"
-              :key="cat" @click="filters.category = cat.toLowerCase()" :class="['px-8 py-3.5 rounded-2xl text-sm font-black transition-all border outline-none',
-                (filters.category === cat.toLowerCase() || (cat === 'For You' && !filters.category))
+            <button v-for="cat in ['forYou', 'trending', 'newYear', 'business', 'tiktok', 'vlog', 'student']"
+              :key="cat" @click="filters.category = cat" :class="['px-8 py-3.5 rounded-2xl text-sm font-black transition-all border outline-none',
+                (filters.category === cat || (cat === 'forYou' && !filters.category))
                   ? 'bg-[#FF0050] text-white border-[#FF0050] shadow-xl shadow-pink-500/20 scale-105'
                   : 'bg-white/5 border-transparent hover:border-white/10 text-gray-400 hover:text-white']">
-              {{ cat }}
+              {{ t('marketplace.categories.' + cat) }}
             </button>
           </div>
         </div>
@@ -169,11 +168,11 @@
         <div class="flex items-center gap-4 mb-2">
           <div class="w-8 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
           <span class="text-sm font-black uppercase tracking-widest text-gray-500">
-            {{ activeTab === 'public' ? 'Featured Collections' : 'Personal Assets' }}
+            {{ activeTab === 'public' ? t('marketplace.sections.featured') : t('marketplace.sections.personal') }}
           </span>
         </div>
         <h2 class="text-5xl font-black tracking-tight">
-          {{ activeTab === 'public' ? 'Community Templates' : 'My Library' }}
+          {{ activeTab === 'public' ? t('marketplace.sections.community') : t('marketplace.sections.myLibrary') }}
         </h2>
       </div>
 
@@ -190,12 +189,12 @@
       <!-- Empty State -->
       <div v-else class="text-center py-32 border border-dashed border-white/10 rounded-3xl">
         <Ghost class="text-6xl text-gray-600 mb-4 block" />
-        <h3 class="text-xl font-black mb-2">No templates found</h3>
+        <h3 class="text-xl font-black mb-2">{{ t('marketplace.empty.noTemplates') }}</h3>
         <p class="text-gray-500">
           {{
             activeTab === 'private' ?
-              'Templates you import or export will appear here.' :
-              'Try adjusting your filters or search.' }}
+              t('marketplace.empty.privateDesc') :
+              t('marketplace.empty.publicDesc') }}
         </p>
       </div>
 
@@ -234,10 +233,12 @@ import ImportDialog from '@/components/marketplace/ImportDialog.vue'
 import TemplatePreviewDialog from '@/components/marketplace/TemplatePreviewDialog.vue'
 import { useMarketplaceStore } from '@/stores/marketplace'
 import { useProjectStore } from '@/stores/project'
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter()
 const marketplaceStore = useMarketplaceStore()
 const projectStore = useProjectStore()
+const { t } = useI18n()
 
 const loading = ref(false)
 const templates = ref<any[]>([])

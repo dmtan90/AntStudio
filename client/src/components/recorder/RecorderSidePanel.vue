@@ -13,111 +13,24 @@
 
             <!-- Content Area (Scrollable) -->
             <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
-                <!-- Filters Panel -->
-                <FiltersTab v-if="activeSidebar === 'filters'" :video-filters="videoFilters"
-                    :applied-filter="appliedFilter" :mode="mode" :cam-settings="camSettings"
-                    @update:applied-filter="v => $emit('update:appliedFilter', v)" />
-
-                <!-- Whiteboard Sidebar -->
-                <WhiteboardTab v-if="activeSidebar === 'whiteboard' || mode === 'whiteboard'" 
-                    :is-launchpad-active="isWhiteboardLaunchpadActive"
-                    :content-type="whiteboardContentType"
-                    :current-page="currentWhiteboardPage"
-                    :total-pages="whiteboardPagesCount"
-                    :cam-settings="camSettings"
-                    :whiteboard-scripts="whiteboardScripts"
-                    :is-a-i-presenting="isAIPresenting"
-                    :is-synthesizing="isSynthesizing"
-                    :selected-avatar="selectedAvatar"
-                    :selected-voice="selectedVoice"
-                    :target-language="targetLanguage"
-                    @reset-whiteboard="$emit('reset-whiteboard')"
-                    @prev-page="$emit('prev-whiteboard-page')"
-                    @next-page="$emit('next-whiteboard-page')"
-                    @trigger-import="v => $emit('whiteboard-file-import', v)"
-                    @trigger-share="$emit('whiteboard-screen-share')"
-                    @update:cam-settings="v => $emit('update:cam-settings', v)"
-                    @generate-scripts="$emit('generate-whiteboard-scripts')"
-                    @start-ai-presentation="$emit('start-ai-presentation')"
-                    @stop-ai-presentation="$emit('stop-ai-presentation')"
-                    @update:selected-avatar="v => $emit('update:selected-avatar', v)"
-                    @update:selected-voice="v => $emit('update:selected-voice', v)"
-                    @select-vtuber-entity="vt => $emit('select-vtuber-entity', vt)" />
-
-                <!-- AI Sidebar -->
-                <AITab v-if="activeSidebar === 'ai' && mode !== 'podcast'" :enable-beauty="enableBeauty"
-                    :beauty-settings="beautySettings" :enable-asl-assist="enableAslAssist" :asl-mode="aslMode"
-                    :active-captions="activeCaptions" :target-language="targetLanguage" :cam-settings="camSettings"
-                    :resource-pool="resourcePool" :isVTuberActive="isVTuberActive" 
-                    :selected-avatar="selectedAvatar"
-                    :selected-voice="selectedVoice"
+                <!-- Central Settings Panel (Drill-down) -->
+                <SettingsTab v-if="activeSidebar === 'settings'" 
+                    v-bind="$props"
+                    @update:applied-filter="v => $emit('update:appliedFilter', v)"
                     @toggle-ai-filter="(id, val) => $emit('toggle-ai-filter', id, val)"
                     @update:enable-asl-assist="v => $emit('update:enable-asl-assist', v)"
                     @update:asl-mode="v => $emit('update:asl-mode', v)"
                     @toggle-captions="v => $emit('toggle-captions', v)"
                     @update:targetLanguage="v => $emit('update:targetLanguage', v)"
-                    @update:camSettings="v => $emit('update:cam-settings', v)"
+                    @update:cam-settings="v => $emit('update:cam-settings', v)"
                     @update:isVTuberActive="val => $emit('update:isVTuberActive', val)"
-                    @update:selectedAvatar="val => $emit('update:selected-avatar', val)"
+                    @update:selected-avatar="val => $emit('update:selected-avatar', val)"
                     @update:selected-voice="val => $emit('update:selected-voice', val)"
                     @select-vtuber-entity="vt => $emit('select-vtuber-entity', vt)"
-                    @presentation-next="$emit('next-whiteboard-page')"
-                    @presentation-prev="$emit('prev-whiteboard-page')"
-                    @presentation-go-to="v => $emit('go-to-whiteboard-page', v)"
+                    @next-whiteboard-page="$emit('next-whiteboard-page')"
+                    @prev-whiteboard-page="$emit('prev-whiteboard-page')"
+                    @go-to-whiteboard-page="v => $emit('go-to-whiteboard-page', v)"
                     @trigger-resource-upload="$emit('trigger-resource-upload')"
-                    :processing-canvas="processingCanvas"
-                    :mode="mode" />
-
-                <!-- Podcast Sidebar -->
-                <PodcastTab v-if="activeSidebar === 'podcast' || (activeSidebar === 'ai' && mode === 'podcast')"
-                    :mode="mode" :podcast-settings="podcastSettings" :resource-pool="resourcePool"
-                    @update:podcast-settings="v => $emit('update:podcast-settings', v)"
-                    @update:audio-advanced="v => $emit('update:audio-advanced', v)"
-                    @trigger-resource-upload="$emit('trigger-resource-upload')" />
-
-                <!-- Resources (Pool) -->
-                <ResourcesTab v-if="activeSidebar === 'resources'" :resource-pool="resourcePool"
-                    :active-overlays="activeOverlays" @trigger-resource-upload="$emit('trigger-resource-upload')"
-                    @toggle-overlay="id => $emit('toggle-overlay', id)" />
-
-                <!-- Live Sidebar -->
-                <LiveTab v-if="activeSidebar === 'live'" 
-                    :stream-config="streamConfig" 
-                    :stream-stats="streamStats"
-                    :selected-platforms="selectedPlatforms"
-                    :available-accounts="availableAccounts"
-                    @toggle-platform="id => $emit('toggle-platform', id)" />
-
-
-                <!-- Audio Sidebar -->
-                <AudioTab v-if="activeSidebar === 'audio'"
-                    :mic-volume="micVolume"
-                    :bgm-volume="bgmVolume"
-                    :is-ducking-enabled="isDuckingEnabled"
-                    :bgm-url="bgmUrl"
-                    :bgm-library="bgmLibrary"
-                    @update:mic-volume="v => $emit('update:mic-volume', v)"
-                    @update:bgm-volume="v => $emit('update:bgm-volume', v)"
-                    @update:is-ducking-enabled="v => $emit('update:is-ducking-enabled', v)"
-                    @update:bgm-url="v => $emit('update:bgm-url', v)"
-                    @toggle-bgm="$emit('toggle-bgm')" />
-
-                <!-- Hardware Sidebar -->
-                <HardwareTab v-if="activeSidebar === 'hardware'" :video-devices="videoDevices"
-                    :audio-devices="audioDevices" :selected-camera-id="selectedCameraId"
-                    :selected-mic-id="selectedMicId" :mic-volume="micVolume"
-                    @update:selected-camera-id="id => $emit('update:selected-camera-id', id)"
-                    @update:selected-mic-id="id => $emit('update:selected-mic-id', id)"
-                    @update:mic-volume="val => $emit('update:mic-volume', val)" />
-
-                <ProductionTab v-if="activeSidebar === 'production'"
-                    :layout-preset="layoutPreset"
-                    :is-teleprompter-active="isTeleprompterActive"
-                    :is-teleprompter-scrolling="isTeleprompterScrolling"
-                    :teleprompter-script="teleprompterScript"
-                    :teleprompter-speed="teleprompterSpeed"
-                    :teleprompter-font-size="teleprompterFontSize"
-                    :cam-settings="camSettings"
                     @update:layout-preset="v => $emit('update:layout-preset', v)"
                     @update:is-teleprompter-active="v => $emit('update:is-teleprompter-active', v)"
                     @update:is-teleprompter-scrolling="v => $emit('update:is-teleprompter-scrolling', v)"
@@ -125,18 +38,23 @@
                     @update:teleprompter-speed="v => $emit('update:teleprompter-speed', v)"
                     @update:teleprompter-font-size="v => $emit('update:teleprompter-font-size', v)"
                     @update:teleprompter-scroll-pos="v => $emit('update:teleprompter-scroll-pos', v)"
-                    :is-annotation-active="isAnnotationActive"
-                    :annotation-tool="annotationTool"
-                    :annotation-color="annotationColor"
-                    :annotation-size="annotationSize"
                     @update:is-annotation-active="v => $emit('update:is-annotation-active', v)"
                     @update:annotation-tool="v => $emit('update:annotation-tool', v)"
                     @update:annotation-color="v => $emit('update:annotation-color', v)"
                     @update:annotation-size="v => $emit('update:annotation-size', v)"
                     @clear-annotations="$emit('clear-annotations')" 
-                    :recording-quality="recordingQuality"
                     @update:recording-quality="v => $emit('update:recording-quality', v)"
-                    @update:cam-settings="v => $emit('update:cam-settings', v)" />
+                    @update:selected-camera-id="id => $emit('update:selected-camera-id', id)"
+                    @update:selected-mic-id="id => $emit('update:selected-mic-id', id)"
+                    @update:mic-volume="val => $emit('update:mic-volume', val)"
+                    @update:bgm-volume="v => $emit('update:bgm-volume', v)"
+                    @update:is-ducking-enabled="v => $emit('update:is-ducking-enabled', v)"
+                    @update:bgm-url="v => $emit('update:bgm-url', v)"
+                    @toggle-bgm="$emit('toggle-bgm')"
+                    @toggle-platform="id => $emit('toggle-platform', id)"
+                    :show-platform-selector="showPlatformSelector"
+                    @update:show-platform-selector="v => $emit('update:show-platform-selector', v)"
+                />
             </div>
         </div>
     </transition>
@@ -156,6 +74,7 @@ import WhiteboardTab from './sidepanel/WhiteboardTab.vue'
 import AudioTab from './sidepanel/AudioTab.vue'
 import HardwareTab from './sidepanel/HardwareTab.vue'
 import ProductionTab from './sidepanel/ProductionTab.vue'
+import SettingsTab from './sidepanel/SettingsTab.vue'
 
 defineProps<{
     mode: RecordingMode
@@ -209,6 +128,7 @@ defineProps<{
     bgmUrl: string | null
     bgmLibrary: any[]
     processingCanvas: HTMLCanvasElement | null
+    showPlatformSelector?: boolean
 }>()
 
 defineEmits<{
@@ -261,6 +181,7 @@ defineEmits<{
     (e: 'update:bgm-url', val: string | null): void
     (e: 'toggle-bgm'): void
     (e: 'toggle-platform', id: string): void
+    (e: 'update:show-platform-selector', val: boolean): void
 }>()
 </script>
 

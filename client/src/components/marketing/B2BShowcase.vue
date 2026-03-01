@@ -2,9 +2,9 @@
   <section class="b2b-showcase py-32 relative bg-[#050505]">
     <div class="container mx-auto px-6">
       <header class="text-center max-w-3xl mx-auto mb-20 space-y-4">
-        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500">Commercial Infrastructure</h2>
-        <h3 class="text-4xl lg:text-5xl font-black text-white leading-tight">Built for the <span class="text-gray-500">Enterprise Economy.</span></h3>
-        <p class="text-gray-400 text-lg">Deploy {{ uiStore.appName }} on your own infrastructure and become the provider. Scale your own B2B ecosystem with industrial-grade tools.</p>
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500">{{ $t('marketing.b2b.title') }}</h2>
+        <h3 class="text-4xl lg:text-5xl font-black text-white leading-tight">{{ $t('marketing.b2b.subtitle') }}</h3>
+        <p class="text-gray-400 text-lg">{{ $t('marketing.b2b.desc', { appName: uiStore.appName }) }}</p>
       </header>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -14,11 +14,11 @@
           <div class="icon-box w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-8 group-hover:scale-110 transition-transform">
             <share-two size="32" />
           </div>
-          <h4 class="text-xl font-black text-white mb-4">Total White-Label</h4>
-          <p class="text-gray-500 text-sm leading-relaxed mb-8">Full re-branding capabilities. Your logo, your domain, your CSS. Provide a seamless experience under your own corporate identity.</p>
+          <h4 class="text-xl font-black text-white mb-4">{{ $t('marketing.b2b.whiteLabel.title') }}</h4>
+          <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $t('marketing.b2b.whiteLabel.desc') }}</p>
           <ul class="space-y-3">
-            <li v-for="item in ['Custom Domains', 'Custom SMTP', 'Branded CSS Overrides']" :key="item" class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              <check-one class="text-blue-500" /> {{ item }}
+            <li v-for="item in ['domains', 'smtp', 'css']" :key="item" class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <check-one class="text-blue-500" /> {{ $t(`marketing.b2b.whiteLabel.features.${item}`) }}
             </li>
           </ul>
         </div>
@@ -29,11 +29,11 @@
           <div class="icon-box w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400 mb-8 group-hover:scale-110 transition-transform">
             <peoples size="32" />
           </div>
-          <h4 class="text-xl font-black text-white mb-4">Multi-Tier Hierarchy</h4>
-          <p class="text-gray-500 text-sm leading-relaxed mb-8">The first "Reseller of Resellers" engine. Onboard your own corporate clients and allow them to manage their own internal teams.</p>
+          <h4 class="text-xl font-black text-white mb-4">{{ $t('marketing.b2b.hierarchy.title') }}</h4>
+          <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $t('marketing.b2b.hierarchy.desc') }}</p>
           <ul class="space-y-3">
-            <li v-for="item in ['Parent-Child Tenants', 'Sub-Admin Portals', 'Employee Provisioning']" :key="item" class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              <check-one class="text-purple-500" /> {{ item }}
+            <li v-for="item in ['tenants', 'portals', 'provisioning']" :key="item" class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <check-one class="text-purple-500" /> {{ $t(`marketing.b2b.hierarchy.features.${item}`) }}
             </li>
           </ul>
         </div>
@@ -44,11 +44,11 @@
           <div class="icon-box w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-400 mb-8 group-hover:scale-110 transition-transform">
             <chart-histogram size="32" />
           </div>
-          <h4 class="text-xl font-black text-white mb-4">Collective Credit Pools</h4>
-          <p class="text-gray-500 text-sm leading-relaxed mb-8">Eliminate individual billing friction. Sub-Enterprises share a centralized organization-level quota for AI and Streaming.</p>
+          <h4 class="text-xl font-black text-white mb-4">{{ $t('marketing.b2b.pools.title') }}</h4>
+          <p class="text-gray-500 text-sm leading-relaxed mb-8">{{ $t('marketing.b2b.pools.desc') }}</p>
           <ul class="space-y-3">
-            <li v-for="item in ['Shared Monthly Quotas', 'Auto-Refill Logic', 'Real-time Org Auditing']" :key="item" class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              <check-one class="text-green-500" /> {{ item }}
+            <li v-for="item in ['quotas', 'refill', 'auditing']" :key="item" class="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <check-one class="text-green-500" /> {{ $t(`marketing.b2b.pools.features.${item}`) }}
             </li>
           </ul>
         </div>
@@ -56,9 +56,9 @@
 
       <div class="bottom-cta mt-24 p-12 rounded-[40px] bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-white/10 text-center relative overflow-hidden">
         <div class="relative z-10">
-          <h4 class="text-3xl font-black text-white mb-4">Ready to build your streaming empire?</h4>
-          <p class="text-gray-400 mb-8 max-w-xl mx-auto">Get the Perpetual License today for a one-time payment of $99,000 and own the future of your media infrastructure.</p>
-          <button class="primary-btn px-12 py-5 text-sm font-black rounded-2xl">TALK TO OUR ARCHITECTS</button>
+          <h4 class="text-3xl font-black text-white mb-4">{{ $t('marketing.b2b.cta.title') }}</h4>
+          <p class="text-gray-400 mb-8 max-w-xl mx-auto">{{ $t('marketing.b2b.cta.desc') }}</p>
+          <button class="primary-btn px-12 py-5 text-sm font-black rounded-2xl">{{ $t('marketing.b2b.cta.button') }}</button>
         </div>
       </div>
     </div>
@@ -68,6 +68,7 @@
 <script setup lang="ts">
 import { ShareTwo, Peoples, ChartHistogram, CheckOne } from '@icon-park/vue-next';
 import { useUIStore } from '@/stores/ui';
+import { useI18n } from 'vue-i18n'; // Optional
 
 const uiStore = useUIStore();
 </script>

@@ -4,7 +4,7 @@
         <div class="p-4 border-b border-white/5 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <movie theme="outline" size="18" class="text-purple-400" />
-                <h3 class="font-bold text-sm uppercase tracking-wider">ShowRunner AI</h3>
+                <h3 class="font-bold text-sm uppercase tracking-wider">{{ $t('studio.drawers.showrunner.title') }}</h3>
             </div>
             <button @click="$emit('close')" class="p-2 hover:bg-white/5 rounded-full transition-colors">
                 <close theme="outline" size="18" class="text-white/40" />
@@ -15,7 +15,7 @@
             
             <!-- 1. Select Profile -->
             <div class="space-y-3">
-                <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Select Show Profile</label>
+                <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ $t('studio.drawers.showrunner.selectProfile') }}</label>
                 <div class="grid grid-cols-2 gap-2">
                     <div 
                         v-for="profile in studioStore.showProfiles" 
@@ -41,7 +41,7 @@
                 <div v-if="currentProfile" class="space-y-4 animate-slide-up">
                     <div class="flex items-center gap-2 py-2 border-b border-white/5">
                         <edit theme="outline" size="14" class="text-white/40" />
-                        <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Script Inputs</span>
+                        <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ $t('studio.drawers.showrunner.scriptInputs') }}</span>
                     </div>
 
                     <div v-for="field in currentProfile.requiredInputs" :key="field.key" class="space-y-1">
@@ -76,7 +76,7 @@
                 @click="generateScript"
             >
                 <cpu theme="outline" size="16" />
-                Generate AI Script
+                {{ $t('studio.drawers.showrunner.generateAiScript') }}
             </button>
 
             <button 
@@ -85,21 +85,21 @@
                 disabled
             >
                 <loading-four theme="outline" size="16" class="animate-spin" />
-                Dreaming up the show...
+                {{ $t('studio.drawers.showrunner.dreaming') }}
             </button>
 
              <div v-else class="space-y-2">
                 <div class="px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-2">
                     <check-one theme="filled" size="16" class="text-green-400" />
-                    <span class="text-xs text-green-400 font-bold">Script Ready: {{ studioStore.activeScript.title }}</span>
+                    <span class="text-xs text-green-400 font-bold">{{ $t('studio.drawers.showrunner.scriptReady', { title: studioStore.activeScript.title }) }}</span>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-2">
                     <button class="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold transition-colors" @click="studioStore.activeScript = null">
-                        Discard
+                        {{ $t('studio.common.discard') }}
                     </button>
                     <button class="py-2.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold shadow-lg shadow-purple-900/20 transition-colors" @click="startProduction">
-                        Start Production
+                        {{ $t('studio.drawers.showrunner.startProduction') }}
                     </button>
                 </div>
             </div>
@@ -109,6 +109,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStudioStore } from '@/stores/studio';
 import { toast } from 'vue-sonner';
 import { 
@@ -119,6 +120,7 @@ import {
 defineEmits(['close']);
 
 const studioStore = useStudioStore();
+const { t } = useI18n();
 const selectedProfileId = ref<string | null>(null);
 const inputs = ref<Record<string, string>>({});
 const isGenerating = ref(false);
@@ -138,7 +140,7 @@ onMounted(async () => {
             selectedProfileId.value = studioStore.showProfiles[0].id;
         }
     } catch (e) {
-        toast.error('Failed to load show profiles');
+        toast.error(t('studio.drawers.showrunner.loadProfilesFailed'));
     }
 });
 
@@ -164,10 +166,10 @@ const generateScript = async () => {
     isGenerating.value = true;
     try {
         await studioStore.createShowScript(selectedProfileId.value, inputs.value);
-        toast.success("Script generated successfully!");
+        toast.success(t("studio.drawers.showrunner.generateScriptSuccess"));
     } catch (e) {
         console.error(e);
-        toast.error("Failed to generate script");
+        toast.error(t("studio.drawers.showrunner.generateScriptFailed"));
     } finally {
         isGenerating.value = false;
     }
@@ -176,11 +178,11 @@ const generateScript = async () => {
 const startProduction = async () => {
     try {
         await studioStore.startShow();
-        toast.success("ShowRunner Active! Sit back and relax.");
+        toast.success(t("studio.drawers.showrunner.showrunnerActive"));
         // Close drawer?
         // emit('close');
     } catch (e) {
-        toast.error("Failed to start show");
+        toast.error(t("studio.drawers.showrunner.startShowFailed"));
     }
 };
 </script>

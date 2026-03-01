@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="flex items-center gap-2">
         <magic theme="filled" size="18" class="text-purple-400 animate-pulse" />
-        <span class="text-xs font-black uppercase tracking-widest text-white">AI God Mode</span>
+        <span class="text-xs font-black uppercase tracking-widest text-white">{{ $t('studio.godMode.title') }}</span>
       </div>
       <div class="flex gap-1">
         <button class="icon-btn" @click="isMinimized = !isMinimized">
@@ -17,15 +17,15 @@
         <!-- Status Indicator -->
         <div class="status-indicator">
           <div class="flex justify-between items-center mb-2">
-            <span class="text-[10px] font-bold text-white/40 uppercase">Director Status</span>
-            <span class="text-[10px] font-black text-green-400">ACTIVE</span>
+            <span class="text-[10px] font-bold text-white/40 uppercase">{{ $t('studio.godMode.directorStatus') }}</span>
+            <span class="text-[10px] font-black text-green-400">{{ $t('studio.godMode.active') }}</span>
           </div>
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: `${voiceLevel * 100}%` }"></div>
           </div>
           <div class="flex justify-between text-[9px] mt-1 text-white/30">
-            <span>Silence</span>
-            <span>Speaking</span>
+            <span>{{ $t('studio.godMode.silence') }}</span>
+            <span>{{ $t('studio.godMode.speaking') }}</span>
           </div>
         </div>
 
@@ -33,7 +33,7 @@
         <div class="space-y-4 mt-6">
           <div class="control-group">
             <div class="flex justify-between items-center mb-2">
-              <label class="text-[10px] font-black text-white/60 uppercase">Sensitivity</label>
+              <label class="text-[10px] font-black text-white/60 uppercase">{{ $t('studio.godMode.sensitivity') }}</label>
               <span class="text-xs font-mono text-purple-400">{{ sensitivity.toFixed(2) }}</span>
             </div>
             <input type="range" v-model.number="sensitivity" min="0.01" max="0.30" step="0.01" class="studio-slider" />
@@ -41,7 +41,7 @@
 
           <div class="control-group">
             <div class="flex justify-between items-center mb-2">
-              <label class="text-[10px] font-black text-white/60 uppercase">Switch Delay</label>
+              <label class="text-[10px] font-black text-white/60 uppercase">{{ $t('studio.godMode.switchDelay') }}</label>
               <span class="text-xs font-mono text-purple-400">{{ (cooldown / 1000).toFixed(1) }}s</span>
             </div>
             <input type="range" v-model.number="cooldown" min="2000" max="20000" step="500" class="studio-slider" />
@@ -51,41 +51,41 @@
 
           <div class="toggle-group">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-black text-white/60 uppercase">Auto-Effects</span>
+              <span class="text-[10px] font-black text-white/60 uppercase">{{ $t('studio.godMode.autoEffects') }}</span>
               <button @click="autoEffects = !autoEffects" class="studio-toggle" :class="{ active: autoEffects }">
                 <div class="toggle-inner"></div>
               </button>
             </div>
-            <p class="text-[9px] text-white/30 mt-1">Trigger confetti/particles on chat spikes</p>
+            <p class="text-[9px] text-white/30 mt-1">{{ $t('studio.godMode.autoEffectsDesc') }}</p>
           </div>
 
           <div class="toggle-group">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-black text-white/60 uppercase">Auto-Cam</span>
+              <span class="text-[10px] font-black text-white/60 uppercase">{{ $t('studio.godMode.autoCam') }}</span>
               <button @click="studioStore.autoDirectorSettings.autoSwitchOnSpeaker = !studioStore.autoDirectorSettings.autoSwitchOnSpeaker" 
                 class="studio-toggle" :class="{ active: studioStore.autoDirectorSettings.autoSwitchOnSpeaker }">
                 <div class="toggle-inner"></div>
               </button>
             </div>
-            <p class="text-[9px] text-white/30 mt-1">Switch camera focus to active speaker</p>
+            <p class="text-[9px] text-white/30 mt-1">{{ $t('studio.godMode.autoCamDesc') }}</p>
           </div>
 
           <div class="toggle-group">
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-black text-white/60 uppercase">Auto-Pilot</span>
+              <span class="text-[10px] font-black text-white/60 uppercase">{{ $t('studio.godMode.autoPilot') }}</span>
               <button @click="studioStore.autoDirectorSettings.autoPivotEnabled = !studioStore.autoDirectorSettings.autoPivotEnabled" 
                 class="studio-toggle" :class="{ active: studioStore.autoDirectorSettings.autoPivotEnabled }">
                 <div class="toggle-inner"></div>
               </button>
             </div>
-            <p class="text-[9px] text-white/30 mt-1">Let Gemini autonomously manage the show</p>
+            <p class="text-[9px] text-white/30 mt-1">{{ $t('studio.godMode.autoPilotDesc') }}</p>
           </div>
         </div>
 
         <!-- Board Consensus (Collective Intelligence) -->
         <div class="mini-log mt-6">
           <div class="flex justify-between items-center mb-2">
-            <div class="text-[9px] font-black text-white/20 uppercase tracking-widest">AI Board Consensus</div>
+            <div class="text-[9px] font-black text-white/20 uppercase tracking-widest">{{ $t('studio.godMode.boardConsensus') }}</div>
             <div v-if="lastConsensus" class="flex gap-1">
               <div v-for="vote in lastConsensus.votes" :key="vote.agentId" 
                 class="w-1.5 h-1.5 rounded-full"
@@ -97,12 +97,12 @@
           <div v-if="lastConsensus" class="text-[8px] text-white/40 italic leading-tight p-2 bg-white/5 rounded-lg border border-white/5">
             {{ lastConsensus.debrief.split('\n')[0] }}...
           </div>
-          <div v-else class="text-[8px] text-white/20 italic">Awaiting board evaluation...</div>
+          <div v-else class="text-[8px] text-white/20 italic">{{ $t('studio.godMode.awaitingEvaluation') }}</div>
         </div>
 
         <!-- Log/History (Mini) -->
         <div class="mini-log mt-6">
-          <div class="text-[9px] font-black text-white/20 uppercase mb-2">Decision Log</div>
+          <div class="text-[9px] font-black text-white/20 uppercase mb-2">{{ $t('studio.godMode.decisionLog') }}</div>
           <div class="log-entries">
             <div v-for="(log, i) in decisionLogs" :key="i" class="log-entry">
               <span class="time">{{ log.time }}</span>
@@ -255,12 +255,14 @@ watch(() => studioStore.activeScene.id, (newSceneId) => {
   width: 100%;
   height: 4px;
   -webkit-appearance: none;
+  appearance: none;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
   outline: none;
 
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
     width: 12px;
     height: 12px;
     background: #a855f7;

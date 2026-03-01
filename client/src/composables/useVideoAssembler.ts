@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { useProjectStore } from '@/stores/project';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
 
 export interface ExportOptions {
     format: 'mp4' | 'webm';
@@ -13,6 +14,7 @@ export interface ExportOptions {
 
 export function useVideoAssembler() {
     const projectStore = useProjectStore();
+    const { t } = useI18n()
     const isAssembling = ref(false);
     const progress = ref(0);
     const status = ref('');
@@ -25,13 +27,13 @@ export function useVideoAssembler() {
         const projectData = projectOverride || projectStore.currentProject;
 
         if (!projectData) {
-            toast.error('No active project found');
+            toast.error(t('projects.editor.video.noProject'));
             return;
         }
 
         isAssembling.value = true;
         progress.value = 0;
-        status.value = 'Initializing...';
+        status.value = t('projects.editor.video.initializing');
         error.value = null;
         result.value = null;
 
@@ -46,7 +48,7 @@ export function useVideoAssembler() {
 
                 if (data.type === 'progress') {
                     progress.value = data.progress * 100;
-                    status.value = data.status || 'Processing...';
+                    status.value = data.status || t('projects.editor.video.processing');
                 } else if (data.type === 'error') {
                     handleError(data.error);
                 } else if (data.type === 'complete') {
@@ -102,7 +104,7 @@ export function useVideoAssembler() {
         console.error('[Assembler] Error:', msg);
         error.value = msg;
         isAssembling.value = false;
-        toast.error(`Assembly failed: ${msg}`);
+        toast.error(t('projects.editor.video.errorTitle', { msg }));
         if (worker) {
             worker.terminate();
             worker = null;
@@ -110,7 +112,7 @@ export function useVideoAssembler() {
     };
 
     const handleComplete = async (data: any, options: ExportOptions) => {
-        status.value = 'Assembly complete! Finalizing project...';
+        status.value = t('projects.editor.video.complete');
         progress.value = 95;
         result.value = {
             blob: data.blob,
@@ -120,28 +122,28 @@ export function useVideoAssembler() {
 
         try {
             const projectId = projectStore.currentProject?._id;
-            if (!projectId) throw new Error('Project ID missing');
+            if (!projectId) throw new Error(t('projects.editor.video.noProject'));
 
             // Use FormData for direct multipart upload
             const formData = new FormData();
-            formData.append('video', data.blob, `${projectStore.currentProject?.title ?? 'Untitled'}.${options.format || 'mp4'}`);
+            formData.append('video', data.blob, `${projectStore.currentProject?.title ?? t('projects.editor.header.untitled')}.${options.format || 'mp4'}`);
 
             // Upload directly to project endpoint via store
             await projectStore.publishProject(projectId, formData, (percent) => {
                 progress.value = 95 + (percent * 0.05); // Last 5% for upload
-                status.value = `Uploading: ${percent}%`;
+                status.value = t('projects.editor.video.uploading', { percent: percent.toString() });
             });
 
-            status.value = 'All done!';
+            status.value = t('projects.editor.video.done');
             progress.value = 100;
             isAssembling.value = false;
-            toast.success('Video exported and saved successfully!');
+            toast.success(t('projects.editor.video.success'));
 
             // Refresh project data
             await projectStore.fetchProject(projectId);
 
         } catch (e: any) {
-            handleError(`Upload failed: ${e.message}`);
+            handleError(`${t('projects.editor.video.error')}: ${e.message}`);
         } finally {
             if (worker) {
                 worker.terminate();
@@ -156,7 +158,7 @@ export function useVideoAssembler() {
             worker = null;
         }
         isAssembling.value = false;
-        status.value = 'Cancelled';
+        status.value = t('projects.editor.video.cancelled');
     };
 
     return {

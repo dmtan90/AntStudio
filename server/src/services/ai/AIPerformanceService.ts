@@ -1,5 +1,5 @@
 import { Project } from '../../models/Project.js';
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
 import { musicFXService } from './MusicFXService.js';
 import { styleABTestingEngine } from './StyleABTestingEngine.js';
 import { markerService } from './MarkerService.js';

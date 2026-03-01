@@ -38,54 +38,11 @@
             </button>
 
             <!-- Overflow / Advanced Controls -->
-            <el-popover placement="top" trigger="click" popper-class="cinematic-popover !p-0" :width="260">
-                <template #reference>
-                    <button class="ctrl-btn flex-col gap-0.5" title="More tools">
-                        <MoreFour theme="outline" size="22" />
-                        <!-- <span class="text-[8px] font-black opacity-30 tracking-tight">More</span> -->
-                    </button>
-                </template>
-
-                <div class="bg-[#050507]/95 backdrop-blur-2xl rounded-2xl border border-white/10 p-3 space-y-2">
-                    <div class="grid grid-cols-3 gap-2">
-                        <button class="ctrl-btn" :class="{ 'active': activeSidebar === 'filters' }"
-                            @click="emit('toggle-sidebar', 'filters')" title="Filters">
-                            <effects theme="outline" size="20" />
-                        </button>
-
-                        <button class="ctrl-btn" :class="{ 'text-indigo-400 active': activeSidebar === 'ai' }"
-                            @click="emit('toggle-sidebar', 'ai')" title="Beauty & AI">
-                            <magic theme="outline" size="20" />
-                        </button>
-
-                        <button class="ctrl-btn" :class="{ 'active': activeSidebar === 'hardware' }"
-                            @click="emit('toggle-sidebar', 'hardware')" title="Hardware Settings">
-                            <Cpu theme="outline" size="20" />
-                        </button>
-
-                        <button class="ctrl-btn" :class="{ 'active': activeSidebar === 'resources' }"
-                            @click="emit('toggle-sidebar', 'resources')" title="Resource Pool">
-                            <file-addition theme="outline" size="20" />
-                        </button>
-
-                        <!-- Annotation Toggle -->
-                        <button class="ctrl-btn flex-col gap-0.5" :class="{ 'active': isAnnotationActive }"
-                            @click="$emit('update:is-annotation-active', !isAnnotationActive)" title="Annotate (P)">
-                            <pencil v-if="isAnnotationActive" theme="filled" size="20" />
-                            <pencil v-else theme="outline" size="20" />
-                            <span class="text-[8px] font-black opacity-30 tracking-tight">[P]</span>
-                        </button>
-
-                        <!-- Production Toggle -->
-                        <button class="ctrl-btn flex-col gap-0.5" :class="{ 'active': activeSidebar === 'production' }"
-                            @click="emit('toggle-sidebar', 'production')" title="Production (T)">
-                            <setting-config v-if="activeSidebar === 'production'" theme="filled" size="20" />
-                            <setting-config v-else theme="outline" size="20" />
-                            <span class="text-[8px] font-black opacity-30 tracking-tight">[T]</span>
-                        </button>
-                    </div>
-                </div>
-            </el-popover>
+            <!-- Settings Button -->
+            <button class="ctrl-btn flex-col gap-0.5" :class="{ 'active': activeSidebar === 'settings' }"
+                @click="emit('toggle-sidebar', 'settings')" title="Settings">
+                <setting-config theme="outline" size="22" />
+            </button>
 
             <!-- Reshare Screen Button (If Stopped) -->
             <button v-if="isScreenShareEnded && (mode === 'screen' || mode === 'camera-screen')"

@@ -4,8 +4,8 @@
         align-center>
         <template #header>
             <div class="dialog-header">
-                <h2>Start New Project</h2>
-                <p>Choose how you want to begin your creative journey</p>
+                <h2>{{ t('projects.new.title') }}</h2>
+                <p>{{ t('projects.new.subtitle') }}</p>
             </div>
         </template>
 
@@ -24,8 +24,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import {
-    MagicWand, User, Link, Copy, FileText, Monitor, Camera, Plus
+    MagicWand, User, Link, Copy, Monitor, Camera, Plus
 } from '@icon-park/vue-next'
 
 const props = defineProps<{
@@ -35,69 +38,66 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue', 'select', 'create-ad', 'create-avatar'])
 const router = useRouter()
 
-const options = [
+const { t } = useI18n()
+
+const options = computed(() => [
     {
-        label: 'AI Video',
-        desc: 'Generate from text/script',
+        label: t('projects.new.options.aiVideo.label'),
+        desc: t('projects.new.options.aiVideo.desc'),
         icon: MagicWand,
         class: 'bg-gradient-purple',
         value: 'ai-video'
     },
     {
-        label: 'AI Avatar',
-        desc: 'Talking head video',
+        label: t('projects.new.options.aiAvatar.label'),
+        desc: t('projects.new.options.aiAvatar.desc'),
         icon: User,
         class: 'bg-gradient-blue',
         value: 'avatar'
     },
     {
-        label: 'Product Ads',
-        desc: 'From Product URL',
+        label: t('projects.new.options.productAds.label'),
+        desc: t('projects.new.options.productAds.desc'),
         icon: Link,
         class: 'bg-gradient-green',
         value: 'product-ads'
     },
     {
-        label: 'Clone Style',
-        desc: 'Clone from video URL',
+        label: t('projects.new.options.cloneStyle.label'),
+        desc: t('projects.new.options.cloneStyle.desc'),
         icon: Copy,
         class: 'bg-gradient-orange',
         value: 'clone-style'
     },
     {
-        label: 'Live Studio',
-        desc: 'Live streaming',
+        label: t('projects.new.options.liveStudio.label'),
+        desc: t('projects.new.options.liveStudio.desc'),
         icon: Monitor,
         class: 'bg-gradient-pink',
         value: 'live-studio'
     },
     {
-        label: 'Presentation',
-        desc: 'From slides/PPT',
+        label: t('projects.new.options.presentation.label'),
+        desc: t('projects.new.options.presentation.desc'),
         icon: Monitor,
         class: 'bg-gradient-cyan',
         value: 'presentation'
     },
     {
-        label: 'Record',
-        desc: 'Screen & Camera',
+        label: t('projects.new.options.record.label'),
+        desc: t('projects.new.options.record.desc'),
         icon: Camera,
         class: 'bg-gradient-red',
         value: 'record'
     },
     {
-        label: 'Blank Project',
-        desc: 'Start from scratch',
+        label: t('projects.new.options.blank.label'),
+        desc: t('projects.new.options.blank.desc'),
         icon: Plus,
         class: 'bg-white-10',
         value: 'blank'
     }
-]
-
-// const handleSelect = (opt: any) => {
-//     emit('select', opt.value)
-//     emit('update:modelValue', false)
-// }
+])
 
 const handleSelect = (opt: any) => {
     emit('update:modelValue', false)
@@ -110,11 +110,9 @@ const handleSelect = (opt: any) => {
             router.push('/projects/new?mode=blank')
             break
         case 'product-ads':
-            // router.push('/projects/new?mode=product-ads')
             emit('create-ad');
             break
         case 'avatar':
-            // router.push('/projects/new?mode=avatar')
             emit('create-avatar');
             break
         case 'clone-style':

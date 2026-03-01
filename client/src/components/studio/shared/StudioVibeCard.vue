@@ -36,7 +36,7 @@ defineProps<{
 defineEmits(['select']);
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .vibe-card {
   @apply p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:border-white/20 transition-all;
 }

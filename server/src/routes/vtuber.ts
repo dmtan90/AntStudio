@@ -104,7 +104,7 @@ router.post('/:entityId/digital-double', upload.single('photo'), async (req: Aut
 
         res.json({ success: true, data: visual, message: 'VTuber Digital Double initialized.' });
     } catch (e: any) {
-        console.error('[VTuberRoute] Digital Double Failed:', e);
+        Logger.error('[VTuberRoute] Digital Double Failed:', e);
         res.status(500).json({ success: false, error: e.message });
     }
 });
@@ -254,7 +254,7 @@ router.post('/:entityId/model', upload.single('model'), async (req: AuthRequest,
 
         res.json({ success: true, data: { modelUrl }, message: 'VTuber model uploaded successfully.' });
     } catch (e: any) {
-        console.error('[VTuberRoute] Model Upload Failed:', e);
+        Logger.error('[VTuberRoute] Model Upload Failed:', e);
         res.status(500).json({ success: false, error: e.message });
     }
 });
@@ -266,6 +266,8 @@ import { getAdminSettings } from '../models/AdminSettings.js';
 import { GoogleTTSProvider } from '../utils/ai/providers/GoogleTTSProvider.js';
 import { ElevenLabsProvider } from '../utils/ai/providers/ElevenLabsProvider.js';
 import { GeminiClient } from '../integrations/ai/GeminiClient.js';
+
+import { Logger } from '../utils/Logger.js';
 
 router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
     try {
@@ -361,7 +363,7 @@ router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ success: false, error: 'Unsupported provider.' });
         }
     } catch (e: any) {
-        console.error('[VTuberRoute] Voice List Fetch Failed:', e.message);
+        Logger.error('[VTuberRoute] Voice List Fetch Failed:', e.message);
         res.status(500).json({ success: false, error: e.message });
     }
 });
@@ -422,7 +424,7 @@ router.post('/voice-preview', async (req: AuthRequest, res: Response) => {
             }
         });
     } catch (e: any) {
-        console.error('[VTuber] Voice preview generation failed:', e.message);
+        Logger.error('[VTuber] Voice preview generation failed:', e.message);
         res.status(500).json({ success: false, error: e.message });
     }
 });

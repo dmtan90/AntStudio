@@ -1,5 +1,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 
+import { Logger } from '../utils/Logger.js';
+
 interface SignalingMessage {
     type: 'offer' | 'answer' | 'ice-candidate';
     data: any;
@@ -17,11 +19,11 @@ class SignalingService {
 
     private setupSignalingHandlers() {
         this.io.on('connection', (socket: Socket) => {
-            console.log('Signaling client connected:', socket.id);
+            Logger.info('Signaling client connected:', socket.id);
 
             // Handle SDP offer from mobile
             socket.on('stream:offer', async (data: SignalingMessage) => {
-                console.log('Received offer for stream:', data.streamId);
+                Logger.info('Received offer for stream:', data.streamId);
 
                 // Store peer connection
                 this.activePeers.set(socket.id, {
@@ -42,7 +44,7 @@ class SignalingService {
 
             // Handle ICE candidates
             socket.on('stream:ice-candidate', (data: SignalingMessage) => {
-                console.log('Received ICE candidate for stream:', data.streamId);
+                Logger.info('Received ICE candidate for stream:', data.streamId);
 
                 // In a real implementation, relay to peer or process
                 this.processIceCandidate(data.data, data.streamId);
@@ -50,7 +52,7 @@ class SignalingService {
 
             // Handle disconnection
             socket.on('disconnect', () => {
-                console.log('Signaling client disconnected:', socket.id);
+                Logger.info('Signaling client disconnected:', socket.id);
 
                 const peer = this.activePeers.get(socket.id);
                 if (peer) {
@@ -64,7 +66,7 @@ class SignalingService {
     private async processOffer(offer: RTCSessionDescriptionInit, streamId: string): Promise<RTCSessionDescriptionInit> {
         // In a real implementation, create RTCPeerConnection and process offer
         // For now, return a mock answer
-        console.log('Processing offer for stream:', streamId);
+        Logger.info('Processing offer for stream:', streamId);
 
         return {
             type: 'answer',
@@ -74,13 +76,13 @@ class SignalingService {
 
     private processIceCandidate(candidate: RTCIceCandidateInit, streamId: string) {
         // Process ICE candidate
-        console.log('Processing ICE candidate for stream:', streamId);
+        Logger.info('Processing ICE candidate for stream:', streamId);
 
         // In real implementation, add to peer connection
     }
 
     private cleanupPeer(streamId: string) {
-        console.log('Cleaning up peer for stream:', streamId);
+        Logger.info('Cleaning up peer for stream:', streamId);
 
         // Clean up resources, close connections, etc.
     }

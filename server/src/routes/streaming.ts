@@ -78,7 +78,7 @@ router.post('/start', async (req: AuthRequest, res) => {
             });
 
             if (fallbackAMS) {
-                console.log(`[Streaming] Auto-selecting fallback AMS for WebRTC: ${fallbackAMS.accountName}`);
+                Logger.info(`[Streaming] Auto-selecting fallback AMS for WebRTC: ${fallbackAMS.accountName}`);
                 accounts.push(fallbackAMS);
                 amsAccount = fallbackAMS;
             }
@@ -93,7 +93,7 @@ router.post('/start', async (req: AuthRequest, res) => {
 
             if (acc.platform === 'youtube' || acc.platform === 'facebook') {
                 try {
-                    console.log(`[Streaming] Fetching dynamic live info for ${acc.platform} (${acc.accountName})`);
+                    Logger.info(`[Streaming] Fetching dynamic live info for ${acc.platform} (${acc.accountName})`);
                     const credentials = await PlatformAuthService.getValidCredentials(acc);
                     const liveInfo = await PlatformAuthService.getLiveStreamInfo(
                         acc.platform as any,
@@ -110,7 +110,7 @@ router.post('/start', async (req: AuthRequest, res) => {
                     acc.streamKey = key;
                     await acc.save();
                 } catch (e: any) {
-                    console.error(`[Streaming] Dynamic info fetch failed for ${acc.platform}:`, e.message);
+                    Logger.error(`[Streaming] Dynamic info fetch failed for ${acc.platform}:`, e.message);
                 }
             }
 
@@ -190,6 +190,8 @@ router.get('/status/:id', (req: AuthRequest, res) => {
 import { highlightService } from '../services/HighlightService.js';
 import { socketServer } from '../services/SocketServer.js';
 
+import { Logger } from '../utils/Logger.js';
+
 /**
  * POST /api/streaming/:id/highlight
  * Trigger a manual highlight capture (last 15s)
@@ -225,7 +227,7 @@ router.post('/status/:id/highlight', async (req: AuthRequest, res) => {
                     }
                 }
             });
-            console.log(`[Streaming] Highlight attached to project ${session.projectId}`);
+            Logger.info(`[Streaming] Highlight attached to project ${session.projectId}`);
 
             // Notify user via Socket.IO
             socketServer.emitProjectUpdate(req.user!.userId, session.projectId, {

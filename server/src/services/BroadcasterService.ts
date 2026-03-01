@@ -1,6 +1,6 @@
 import { Project } from '../models/Project.js';
 import { streamingService } from './StreamingService.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 
 export interface BroadcastSchedule {
     id: string;
@@ -25,7 +25,7 @@ export class BroadcasterService {
     public async startAutonomousChannel(projectId: string) {
         if (this.activeCycles.has(projectId)) return;
 
-        systemLogger.info(`🌌 [Broadcaster] Autonomous 24/7 loop engaged for project: ${projectId}`, 'BroadcasterService');
+        Logger.info(`🌌 [Broadcaster] Autonomous 24/7 loop engaged for project: ${projectId}`, 'BroadcasterService');
 
         // Start the infinite loop
         this.runNextCycle(projectId);
@@ -41,7 +41,7 @@ export class BroadcasterService {
             const viralClips = project.visualAssets?.filter(a => a.metadata?.isViralClip) || [];
             const nextItem = viralClips[Math.floor(Math.random() * viralClips.length)] || { name: 'fallback_placeholder' };
 
-            systemLogger.info(`📺 [Broadcaster] Transitioning to content: ${nextItem.name}`, 'BroadcasterService');
+            Logger.info(`📺 [Broadcaster] Transitioning to content: ${nextItem.name}`, 'BroadcasterService');
 
             // 2. Trigger Studio Auto-Transition (via Socket/Direct call)
             // This would inform the LiveStudio instance to switch layers/source.
@@ -51,7 +51,7 @@ export class BroadcasterService {
             this.activeCycles.set(projectId, timer);
 
         } catch (error: any) {
-            systemLogger.error(`❌ [Broadcaster] Cycle failed for ${projectId}: ${error.message}`, 'BroadcasterService');
+            Logger.error(`❌ [Broadcaster] Cycle failed for ${projectId}: ${error.message}`, 'BroadcasterService');
             this.stopAutonomousChannel(projectId);
         }
     }
@@ -60,7 +60,7 @@ export class BroadcasterService {
         const timer = this.activeCycles.get(projectId);
         if (timer) clearTimeout(timer);
         this.activeCycles.delete(projectId);
-        systemLogger.info(`🌌 [Broadcaster] Autonomous loop disengaged for ${projectId}`, 'BroadcasterService');
+        Logger.info(`🌌 [Broadcaster] Autonomous loop disengaged for ${projectId}`, 'BroadcasterService');
     }
 
     public isProjectRunning(projectId: string): boolean {

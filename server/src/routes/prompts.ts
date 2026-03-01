@@ -6,7 +6,9 @@ import { buildCharacterSheetPrompt, buildScenePrompt, buildVeoVideoPrompt } from
 import { AIServiceManager } from '../utils/ai/AIServiceManager.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
-import { checkLicenseStatus } from '../middleware/license.js';
+import { licenseGating } from '../middleware/licenseGating.js';
+
+import { Logger } from '../utils/Logger.js';
 
 const router = Router();
 
@@ -53,7 +55,7 @@ router.get('/character/:projectId/:charIndex', async (req: any, res: Response) =
             }
         });
     } catch (error: any) {
-        console.error('Get character prompt error:', error);
+        Logger.error('Get character prompt error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to generate character prompt' });
     }
 });
@@ -103,7 +105,7 @@ router.get('/scene/:projectId/:segmentId', async (req: any, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error('Get scene prompt error:', error);
+        Logger.error('Get scene prompt error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to generate scene prompt' });
     }
 });
@@ -150,13 +152,13 @@ router.get('/video/:projectId/:segmentId', async (req: any, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error('Get video prompt error:', error);
+        Logger.error('Get video prompt error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to generate video prompt' });
     }
 });
 
 // POST /api/prompts/generate - Generate optimized AI prompts for preview
-router.post('/generate', checkLicenseStatus, rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/generate', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { type, payload } = req.body;
@@ -172,7 +174,7 @@ router.post('/generate', checkLicenseStatus, rbacMiddleware(Permission.AI_GENERA
 
         res.json({ success: true, data: prompts });
     } catch (error: any) {
-        console.error('[generate-prompts] Error:', error.message);
+        Logger.error('[generate-prompts] Error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });

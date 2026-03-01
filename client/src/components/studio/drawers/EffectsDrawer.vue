@@ -119,13 +119,13 @@
       <div v-else-if="activeTab === 'script'" class="p-4 space-y-4">
         <div class="p-4 rounded-xl border border-white/10 bg-white/5 text-center">
           <movie-board theme="outline" size="32" class="text-purple-400 mb-2 mx-auto" />
-          <h3 class="font-bold text-sm mb-1">AI ShowRunner Logic</h3>
-          <p class="text-[10px] text-white/60 mb-4">Generate autonomous run-of-show scripts.</p>
+          <h3 class="font-bold text-sm mb-1">{{ $t('studio.drawers.vibe.script.title') }}</h3>
+          <p class="text-[10px] text-white/60 mb-4">{{ $t('studio.drawers.vibe.script.desc') }}</p>
           <button class="w-full py-2 bg-purple-600 rounded-lg text-xs font-bold" @click="$emit('open-script-generator')">
-            Open Script Generator
+            {{ $t('studio.drawers.vibe.script.openGenerator') }}
           </button>
           <div v-if="activeScript" class="mt-4 pt-4 border-t border-white/10 text-left">
-            <span class="text-[10px] font-bold text-green-400 block mb-1">ACTIVE SCRIPT</span>
+            <span class="text-[10px] font-bold text-green-400 block mb-1">{{ $t('studio.drawers.vibe.script.activeScript') }}</span>
             <p class="text-xs truncate">{{ activeScript.title }}</p>
           </div>
         </div>

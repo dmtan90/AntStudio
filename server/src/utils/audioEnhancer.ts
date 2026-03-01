@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { geminiPool } from './gemini.js';
 import { uploadToS3 } from './s3.js';
 import axios from 'axios';
+import { Logger } from './Logger.js';
 
 /**
  * Service for AI-powered audio enhancement (denoising, clarity).
@@ -42,7 +43,7 @@ export const enhanceAudioFile = async (buffer: Buffer, mimeType: string, userId:
             key: upload.key
         };
     } catch (error: any) {
-        console.error('[AudioEnhancer] Enhancement failed:', error);
+        Logger.error('[AudioEnhancer] Enhancement failed', 'AudioEnhancer', { error });
         throw error;
     }
 };

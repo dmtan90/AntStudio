@@ -5,6 +5,8 @@ import { User } from '../models/User.js';
 import { Project } from '../models/Project.js';
 import { connectDB } from '../utils/db.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // Retrieve active collaborators for a project
@@ -47,7 +49,7 @@ router.get('/:projectId/users', authMiddleware, async (req: AuthRequest, res: Re
             }
         });
     } catch (error: any) {
-        console.error('Failed to get collaborators:', error);
+        Logger.error('Failed to get collaborators:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to get users' });
     }
 });
@@ -97,7 +99,7 @@ router.post('/comments', authMiddleware, async (req: AuthRequest, res: Response)
             }
         });
     } catch (error: any) {
-        console.error('Failed to post comment:', error);
+        Logger.error('Failed to post comment:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to post comment' });
     }
 });
@@ -147,7 +149,7 @@ router.get('/:projectId/comments', authMiddleware, async (req: AuthRequest, res:
             }
         });
     } catch (error: any) {
-        console.error('Failed to get comments:', error);
+        Logger.error('Failed to get comments:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to get comments' });
     }
 });
@@ -175,7 +177,7 @@ router.delete('/comments/:commentId', authMiddleware, async (req: AuthRequest, r
         
         res.json({ success: true, message: 'Comment deleted' });
     } catch (error: any) {
-        console.error('Failed to delete comment:', error);
+        Logger.error('Failed to delete comment:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to delete comment' });
     }
 });

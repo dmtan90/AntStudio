@@ -3,6 +3,8 @@ import { uploadToS3 } from '../../utils/s3.js';
 import { VTuberService } from '../VTuberService.js';
 import config from '../../utils/config.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 export class DigitalDoubleService {
     private gemini: GeminiClient;
 
@@ -14,7 +16,7 @@ export class DigitalDoubleService {
      * Orchestrates the generation of a Digital Double (3D Texture) from a photo.
      */
     async generateDigitalDouble(userId: string, entityId: string, imageBuffer: Buffer, mimeType: string): Promise<any> {
-        console.log(`[DigitalDoubleService] Starting generation for entity: ${entityId}`);
+        Logger.info(`[DigitalDoubleService] Starting generation for entity: ${entityId}`);
 
         // 1. Upload source photo to S3 for persistence
         const sourcePath = `vtuber/${userId}/${entityId}/source_${Date.now()}.png`;
@@ -48,7 +50,7 @@ export class DigitalDoubleService {
 
         const response = await this.gemini.generateContent(analysisPrompt, 'gemini-2.5-flash');
         const imagenPrompt = response.text;
-        console.log(`[DigitalDoubleService] Synthesized Imagen Prompt: ${imagenPrompt}`);
+        Logger.info(`[DigitalDoubleService] Synthesized Imagen Prompt: ${imagenPrompt}`);
 
         // 3. Call Imagen to generate the actual texture map
         const visualPrompt = `(3D Texture Map, Albedo, Flat Lighting, Delit, UV Unwrapped) ${imagenPrompt}`;

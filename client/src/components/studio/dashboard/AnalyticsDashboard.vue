@@ -4,11 +4,11 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <analysis theme="filled" size="24" class="text-blue-400" />
-                <h2 class="text-xl font-black uppercase tracking-wider">Live Analytics</h2>
+                <h2 class="text-xl font-black uppercase tracking-wider">{{ $t('studio.analytics.liveAnalyticsTitle') || 'Live Analytics' }}</h2>
             </div>
             <div class="flex items-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span class="text-xs font-bold text-green-400">CONNECT</span>
+                <span class="text-xs font-bold text-green-400">{{ $t('common.connect') || 'CONNECT' }}</span>
             </div>
         </div>
 
@@ -16,7 +16,7 @@
         <div class="grid grid-cols-2 gap-3">
             <!-- CCU -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col shadow-lg">
-                <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Audience</span>
+                <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{{ $t('studio.analytics.audience') || 'Audience' }}</span>
                 <div class="flex items-end justify-between">
                     <span class="text-2xl font-black text-white leading-none">{{ metrics.ccu }}</span>
                     <peoples theme="filled" size="16" class="text-blue-400 mb-1" />
@@ -25,7 +25,7 @@
 
             <!-- Credits -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col shadow-lg">
-                 <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Economy</span>
+                 <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{{ $t('studio.analytics.economy') || 'Economy' }}</span>
                  <div class="flex items-end justify-between">
                      <span class="text-2xl font-black text-yellow-400 leading-none">{{ formatNumber(metrics.creditsSpent) }}</span>
                      <currency theme="filled" size="16" class="text-yellow-600 mb-1" />
@@ -34,7 +34,7 @@
 
             <!-- Chat Velocity -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col shadow-lg">
-                 <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Chat Vel</span>
+                 <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{{ $t('studio.analytics.chatVel') || 'Chat Vel' }}</span>
                  <div class="flex items-end justify-between">
                      <span class="text-2xl font-black text-white leading-none">{{ metrics.messagesPerMinute }}</span>
                      <span class="text-[10px] font-bold text-white/30 mb-1">msg/m</span>
@@ -43,7 +43,7 @@
             
             <!-- Vibe Score -->
             <div class="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col shadow-lg relative overflow-hidden">
-                 <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Vibe</span>
+                 <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{{ $t('studio.rail.vibe') || 'Vibe' }}</span>
                  <div class="flex items-end justify-between relative z-10">
                      <span class="text-2xl font-black leading-none" :class="getSentimentColor(metrics.avgSentiment)">{{ metrics.avgSentiment }}</span>
                      <heart theme="filled" size="16" :class="getSentimentColor(metrics.avgSentiment) + ' mb-1'" />
@@ -57,7 +57,7 @@
 
         <!-- Hype Meter (Gauge) -->
         <div class="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col items-center relative overflow-hidden">
-             <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 z-10">Hype Meter</span>
+             <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 z-10">{{ $t('studio.analytics.hypeMeter') || 'Hype Meter' }}</span>
              
              <!-- Circular Gauge (CSS) -->
              <div class="relative w-32 h-16 overflow-hidden z-10">
@@ -73,7 +73,7 @@
 
         <!-- Recent Events Log -->
         <div class="flex-1 bg-black/20 rounded-xl border border-white/5 p-3 overflow-hidden flex flex-col">
-             <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">Live Feed</span>
+             <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">{{ $t('studio.analytics.liveFeed') || 'Live Feed' }}</span>
              <div class="flex-1 overflow-y-auto space-y-2 custom-scrollbar pr-1">
                  <transition-group name="list">
                      <div v-for="event in recentEvents" :key="event.id" class="flex gap-2 items-start text-xs border-b border-white/5 pb-2 last:border-0 last:pb-0">

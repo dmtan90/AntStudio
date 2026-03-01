@@ -13,29 +13,29 @@
       <transition name="fade-up" appear>
         <GCard class="auth-card" :hoverable="false">
           <div class="logo">
-            <h1 class="brand">Reset Password</h1>
-            <p>Enter your new password below</p>
+            <h1 class="brand">{{ t('auth.resetPassword.title') }}</h1>
+            <p>{{ t('auth.resetPassword.subtitle') }}</p>
           </div>
 
           <form @submit.prevent="handleResetPassword" class="ant-form">
             <div class="form-item">
-              <GInput v-model="form.password" placeholder="New Password" type="password" class="login-input" />
+              <GInput v-model="form.password" :placeholder="t('auth.resetPassword.newPasswordPlaceholder')" type="password" class="login-input" />
             </div>
 
             <div class="form-item">
-              <GInput v-model="form.confirmPassword" placeholder="Confirm New Password" type="password"
+              <GInput v-model="form.confirmPassword" :placeholder="t('auth.resetPassword.confirmPasswordPlaceholder')" type="password"
                 class="login-input" />
             </div>
 
             <div class="form-item">
               <GButton type="primary" size="lg" :loading="loading" native-type="submit" class="login-btn">
-                Reset Password
+                {{ t('auth.resetPassword.resetButton') }}
               </GButton>
             </div>
           </form>
 
           <div class="auth-footer">
-            <router-link to="/login" class="back-home">Back to Login</router-link>
+            <router-link to="/login" class="back-home">{{ t('auth.resetPassword.backToLogin') }}</router-link>
           </div>
         </GCard>
       </transition>
@@ -52,7 +52,9 @@ import { ref, reactive } from 'vue'
 import { toast } from 'vue-sonner'
 import { useUserStore } from '@/stores/user'
 import { getFileUrl } from '@/utils/api'
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
@@ -65,23 +67,23 @@ const form = reactive({
 
 const handleResetPassword = async () => {
   if (!form.password || !form.confirmPassword) {
-    toast.error('Please fill in all fields')
+    toast.error(t('auth.resetPassword.toasts.fillAll'))
     return
   }
 
   if (form.password !== form.confirmPassword) {
-    toast.error('Passwords do not match')
+    toast.error(t('auth.resetPassword.toasts.mismatch'))
     return
   }
 
   if (form.password.length < 6) {
-    toast.error('Password must be at least 6 characters')
+    toast.error(t('auth.resetPassword.toasts.tooShort'))
     return
   }
 
   const token = route.query.token as string
   if (!token) {
-    toast.error('Invalid reset token')
+    toast.error(t('auth.resetPassword.toasts.invalidToken'))
     return
   }
 

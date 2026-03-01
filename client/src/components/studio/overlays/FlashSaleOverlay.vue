@@ -11,7 +11,12 @@ const updateTimer = () => {
     if (!studioStore.activeFlashSale) return;
     
     const now = Date.now();
-    const expires = new Date(studioStore.activeFlashSale.expiresAt).getTime();
+    // Support both numeric epoch and ISO string formats safely
+    const expires = +new Date(studioStore.activeFlashSale.expiresAt);
+    if (isNaN(expires)) {
+        timeLeft.value = '00:00';
+        return;
+    }
     const diff = expires - now;
     
     if (diff <= 0) {
@@ -53,7 +58,7 @@ const isUrgent = computed(() => {
                 <div class="flex items-center gap-3">
                     <Lightning theme="filled" size="24" class="text-yellow-300 animate-bounce" />
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-black uppercase tracking-widest text-white/60 leading-none">Flash Sale Active</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-white/60 leading-none">{{ $t('studio.drawers.economy.flashSaleActive') || 'Flash Sale Active' }}</span>
                         <h2 class="text-lg font-black text-white uppercase tracking-tighter leading-none">{{ studioStore.activeFlashSale.title }}</h2>
                     </div>
                 </div>
@@ -61,7 +66,7 @@ const isUrgent = computed(() => {
                 <div class="h-10 w-px bg-white/20"></div>
 
                 <div class="flex flex-col items-center">
-                    <span class="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Ending In</span>
+                    <span class="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">{{ $t('studio.drawers.economy.endingIn') || 'Ending In' }}</span>
                     <span class="text-2xl font-mono font-black text-white tabular-nums drop-shadow-md">{{ timeLeft }}</span>
                 </div>
             </div>

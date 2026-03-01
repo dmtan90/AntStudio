@@ -3,7 +3,7 @@
     <el-container style="height: 100vh">
       <el-aside width="240px" class="admin-aside">
         <div class="logo">
-          <h2>AntStudio Admin</h2>
+          <h2>{{ $t('studio.layouts.adminTitle') || 'AntStudio Admin' }}</h2>
         </div>
         <el-menu
           router
@@ -15,24 +15,24 @@
         >
           <el-menu-item index="/admin">
             <el-icon><dashboard-icon theme="outline" size="18" /></el-icon>
-            <span>Dashboard</span>
+            <span>{{ $t('studio.layouts.dashboard') || 'Dashboard' }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/users">
             <el-icon><people-icon theme="outline" size="18" /></el-icon>
-            <span>Users</span>
+            <span>{{ $t('studio.layouts.users') || 'Users' }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/payments">
             <el-icon><payment-icon theme="outline" size="18" /></el-icon>
-            <span>Payments</span>
+            <span>{{ $t('studio.layouts.payments') || 'Payments' }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/settings">
             <el-icon><setting-icon theme="outline" size="18" /></el-icon>
-            <span>System Settings</span>
+            <span>{{ $t('studio.layouts.systemSettings') || 'System Settings' }}</span>
           </el-menu-item>
           <div class="menu-divider"></div>
           <el-menu-item index="/">
             <el-icon><back-icon theme="outline" size="18" /></el-icon>
-            <span>Back to Site</span>
+            <span>{{ $t('studio.layouts.backToSite') || 'Back to Site' }}</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -41,7 +41,7 @@
         <el-header class="admin-header">
           <div class="header-left">
             <breadcrumb-icon theme="outline" size="20" />
-            <span class="current-page">Admin Control Panel</span>
+            <span class="current-page">{{ $t('studio.layouts.adminControlPanel') || 'Admin Control Panel' }}</span>
           </div>
           <div class="header-right">
             <el-avatar :size="32" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
@@ -94,6 +94,7 @@ const uiStore = useUIStore()
   font-weight: 700;
   background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

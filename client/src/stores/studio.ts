@@ -1075,7 +1075,10 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function removeProduct(productId: string) {
-        if (activeProductId.value === productId) {
+        if (!productId) return;
+        // Compare against both string forms to handle MongoDB _id vs synthetic id
+        const current = activeProductId.value ? String(activeProductId.value) : null;
+        if (current === String(productId)) {
             activeProductId.value = null;
             if (!isRemoteUpdate.value) {
                 broadcastCurrentState();

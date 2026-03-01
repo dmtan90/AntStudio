@@ -21,7 +21,7 @@ export const useLicenseStore = defineStore('license', () => {
     async function fetchLicenseStatus() {
         try {
             const res: any = await api.get('/admin/settings');
-            if (res.success && res.data.license) {
+            if (res && res.data.license) {
                 const lic = res.data.license;
                 key.value = lic.key;
                 status.value = lic.info?.status || 'none';
@@ -57,7 +57,7 @@ export const useLicenseStore = defineStore('license', () => {
 
     async function deleteLicense(id: string) {
         try {
-            await api.delete(`/licenses/${id}`)
+            await api.delete(`/license/${id}`)
             licenses.value = licenses.value.filter(l => l._id !== id)
             toast.success('License deleted successfully')
         } catch (error) {
@@ -70,6 +70,8 @@ export const useLicenseStore = defineStore('license', () => {
         loading.value = true
         try {
             const res: any = await api.get('/license/all')
+            licenses.value = res?.data?.licenses || [];
+            console.log(res)
             return res.data
         } catch (error) {
             console.error(error)
@@ -84,7 +86,7 @@ export const useLicenseStore = defineStore('license', () => {
             const res: any = await api.get('/license/my-licenses');
             return res.data;
         } catch (error: any) {
-            console.error('Failed to fetch licenses', error);
+            console.error('Failed to fetch license', error);
         }
     }
 
@@ -109,7 +111,7 @@ export const useLicenseStore = defineStore('license', () => {
 
     async function addLicense(payload: any) {
         try {
-            const res: any = await api.post('/licenses', payload);
+            const res: any = await api.post('/license/generate', payload);
             await fetchAllLicenses();
             return res.data;
         } catch (error) {
@@ -119,7 +121,7 @@ export const useLicenseStore = defineStore('license', () => {
 
     async function updateLicense(id: string, payload: any) {
         try {
-            const res: any = await api.put(`/licenses/${id}`, payload);
+            const res: any = await api.put(`/license/${id}`, payload);
             await fetchAllLicenses();
             return res.data;
         } catch (error) {

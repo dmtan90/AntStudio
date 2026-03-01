@@ -1,5 +1,6 @@
 import { getAdminSettings } from '../models/AdminSettings.js';
 import config from './config.js'; // Fallback to env vars
+import { Logger } from './Logger.js';
 import { StorageFactory } from '../services/storage/StorageFactory.js';
 
 export class ConfigService {
@@ -21,9 +22,9 @@ export class ConfigService {
     public async initialize() {
         try {
             this.settings = await getAdminSettings();
-            console.log('✅ ConfigService initialized from Database');
-        } catch (error) {
-            console.error('❌ Failed to initialize ConfigService:', error);
+            Logger.info('✅ ConfigService initialized from Database', 'ConfigService');
+        } catch (error: any) {
+            Logger.error('❌ Failed to initialize ConfigService:', 'ConfigService', error);
             // Fallback to null settings, getters will handle defaults
         }
     }

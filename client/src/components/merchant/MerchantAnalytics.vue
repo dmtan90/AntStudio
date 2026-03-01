@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement, ArcElement } from 'chart.js';
 import { Line, Bar, Doughnut } from 'vue-chartjs';
 import { useMarketplaceStore } from '@/stores/marketplace';
@@ -7,6 +8,7 @@ import { Info, Calendar, Download } from '@icon-park/vue-next';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, PointElement, LineElement, ArcElement);
 
+const { t } = useI18n();
 const marketplaceStore = useMarketplaceStore();
 const loading = ref(true);
 
@@ -50,7 +52,7 @@ const fetchData = async () => {
             labels: days.map(d => d.split('-').slice(1).join('/')),
             datasets: [
                 {
-                    label: 'Landing Views',
+                    label: t('merchant.analytics.landingViews'),
                     backgroundColor: 'rgba(59, 130, 246, 0.2)',
                     borderColor: '#3b82f6',
                     data: days.map(d => data.byDay[d].views),
@@ -58,7 +60,7 @@ const fetchData = async () => {
                     fill: true
                 },
                 {
-                    label: 'Order Clicks',
+                    label: t('merchant.analytics.orderClicks'),
                     backgroundColor: 'rgba(168, 85, 247, 0.2)',
                     borderColor: '#a855f7',
                     data: days.map(d => data.byDay[d].clicks),
@@ -73,7 +75,7 @@ const fetchData = async () => {
             labels: Object.keys(data.demographics.age),
             datasets: [
                 {
-                    label: 'User Age Groups',
+                    label: t('merchant.analytics.userAgeGroups'),
                     backgroundColor: ['#3b82f6', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e'],
                     data: Object.values(data.demographics.age)
                 }
@@ -82,7 +84,7 @@ const fetchData = async () => {
 
         // Process Doughnut Chart (Gender)
         doughnutData.value = {
-            labels: Object.keys(data.demographics.gender),
+            labels: Object.keys(data.demographics.gender).map(g => t(`merchant.analytics.gender.${g.toLowerCase()}`)),
             datasets: [
                 {
                     backgroundColor: ['#3b82f6', '#ec4899', '#94a3b8'],
@@ -97,7 +99,7 @@ const fetchData = async () => {
             labels: topRegions,
             datasets: [
                 {
-                    label: 'Top Regions',
+                    label: t('merchant.analytics.topRegions'),
                     backgroundColor: 'rgba(59, 130, 246, 0.5)',
                     data: topRegions.map(r => data.geo[r])
                 }
@@ -106,7 +108,7 @@ const fetchData = async () => {
 
         // Process Device Chart
         deviceData.value = {
-            labels: Object.keys(data.devices || {}),
+            labels: Object.keys(data.devices || {}).map(d => t(`merchant.analytics.device.${d.toLowerCase()}`)),
             datasets: [
                 {
                     backgroundColor: ['#6366f1', '#f43f5e', '#10b981'],
@@ -129,10 +131,10 @@ onMounted(fetchData);
     <!-- Top Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div v-for="stat in [
-            { label: 'Total Views', value: report.totalViews, color: 'text-blue-400', sub: 'Cumulative engagement' },
-            { label: 'Total Clicks', value: report.totalClicks, color: 'text-purple-400', sub: 'Interest conversion' },
-            { label: 'Conversion Rate', value: ((report.totalClicks / (report.totalViews || 1)) * 100).toFixed(1) + '%', color: 'text-green-400', sub: 'Healthy performance' },
-            { label: 'Total Orders', value: marketplaceStore.commerceStats.pendingOrders, color: 'text-orange-400', sub: 'Orders pending fulfillment' }
+            { label: $t('merchant.analytics.stats.totalViews'), value: report.totalViews, color: 'text-blue-400', sub: $t('merchant.analytics.stats.viewsSub') },
+            { label: $t('merchant.analytics.stats.totalClicks'), value: report.totalClicks, color: 'text-purple-400', sub: $t('merchant.analytics.stats.clicksSub') },
+            { label: $t('merchant.analytics.stats.conversionRate'), value: ((report.totalClicks / (report.totalViews || 1)) * 100).toFixed(1) + '%', color: 'text-green-400', sub: $t('merchant.analytics.stats.conversionSub') },
+            { label: $t('merchant.analytics.stats.totalOrders'), value: marketplaceStore.commerceStats.pendingOrders, color: 'text-orange-400', sub: $t('merchant.analytics.stats.ordersSub') }
         ]" :key="stat.label" class="p-8 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-md relative overflow-hidden group">
             <div class="relative z-10">
                 <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ stat.label }}</div>
@@ -151,8 +153,8 @@ onMounted(fetchData);
         <div class="lg:col-span-8 p-8 rounded-[40px] bg-white/5 border border-white/5 backdrop-blur-xl">
             <div class="flex justify-between items-center mb-8">
                 <div>
-                    <h3 class="text-xl font-black uppercase tracking-tight">Engagement Flow</h3>
-                    <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">Views vs Click Intent (Last 7 Days)</p>
+                    <h3 class="text-xl font-black uppercase tracking-tight">{{ $t('merchant.analytics.engagementFlow') }}</h3>
+                    <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">{{ $t('merchant.analytics.viewsVsClicks') }}</p>
                 </div>
                 <button class="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
                     <download size="16" class="text-blue-400" />
@@ -167,7 +169,7 @@ onMounted(fetchData);
         <div class="lg:col-span-4 space-y-8">
             <!-- Audience Profile (Age/Gender) -->
             <div class="p-8 rounded-[40px] bg-white/5 border border-white/5 backdrop-blur-xl">
-                <h3 class="text-xl font-black uppercase tracking-tight mb-8">Audience profile</h3>
+                <h3 class="text-xl font-black uppercase tracking-tight mb-8">{{ $t('merchant.analytics.audienceProfile') }}</h3>
                 <div class="space-y-8">
                     <div class="h-[150px]">
                         <Bar :data="barData" :options="chartOptions" />
@@ -191,7 +193,7 @@ onMounted(fetchData);
 
             <!-- Device Distribution -->
             <div class="p-8 rounded-[40px] bg-white/5 border border-white/5 backdrop-blur-xl">
-                <h3 class="text-sm font-black uppercase tracking-widest text-gray-500 mb-6">Device Distribution</h3>
+                <h3 class="text-sm font-black uppercase tracking-widest text-gray-500 mb-6">{{ $t('merchant.analytics.deviceDistribution') }}</h3>
                 <div class="flex items-center gap-6">
                     <div class="w-24 h-24">
                         <Doughnut :data="deviceData" :options="{ ...chartOptions, plugins: { legend: { display: false } } }" />
@@ -211,7 +213,7 @@ onMounted(fetchData);
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <!-- Top Regions -->
         <div class="lg:col-span-5 p-8 rounded-[40px] bg-white/5 border border-white/5 backdrop-blur-xl">
-            <h3 class="text-xl font-black uppercase tracking-tight mb-8">Geographic reach</h3>
+            <h3 class="text-xl font-black uppercase tracking-tight mb-8">{{ $t('merchant.analytics.geographicReach') }}</h3>
             <div class="h-[250px]">
                 <Bar :data="geoData" :options="{ ...chartOptions, indexAxis: 'y' as const }" />
             </div>
@@ -224,18 +226,18 @@ onMounted(fetchData);
                     <info size="18" />
                 </div>
                 <div>
-                    <h3 class="text-xl font-black uppercase tracking-tight">Product performance</h3>
-                    <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">Conversion by product</p>
+                    <h3 class="text-xl font-black uppercase tracking-tight">{{ $t('merchant.analytics.productPerformance') }}</h3>
+                    <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">{{ $t('merchant.analytics.conversionByProduct') }}</p>
                 </div>
             </div>
 
             <table class="w-full text-left border-collapse">
                 <thead class="text-[10px] font-black uppercase text-gray-500 tracking-wider">
                 <tr class="border-b border-white/5">
-                    <th class="pb-4 font-black">Product Name</th>
-                    <th class="pb-4 font-black text-center">Views</th>
-                    <th class="pb-4 font-black text-center">Clicks</th>
-                    <th class="pb-4 font-black text-right">Conversion</th>
+                    <th class="pb-4 font-black">{{ $t('merchant.analytics.table.productName') }}</th>
+                    <th class="pb-4 font-black text-center">{{ $t('merchant.analytics.table.views') }}</th>
+                    <th class="pb-4 font-black text-center">{{ $t('merchant.analytics.table.clicks') }}</th>
+                    <th class="pb-4 font-black text-right">{{ $t('merchant.analytics.table.conversion') }}</th>
                 </tr>
                 </thead>
                 <tbody class="text-xs">

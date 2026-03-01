@@ -3,6 +3,8 @@ import { AdminSettings } from '../../models/AdminSettings.js';
 import { browserManager } from '../aistudio/BrowserManager.js';
 import crypto from 'crypto';
 
+import { Logger } from '../../utils/Logger.js';
+
 /**
  * FlowApiClient: Direct API-based interaction with Google Labs Flow (Veo & Imagen)
  * Reverse engineered from internal labs endpoints for higher stability.
@@ -17,7 +19,7 @@ export class FlowApiClient {
      * Call https://labs.google/fx/api/auth/session
      */
     async getAccessToken(stToken: string): Promise<{ at: string; expires: string; email: string; raw: any }> {
-        console.log('[FlowAPI] Step 1: Validating Session & Obtaining Access Token...');
+        Logger.info('[FlowAPI] Step 1: Validating Session & Obtaining Access Token...');
 
         // Check if stToken is a full cookie string or just the session token
         const cookieHeader = stToken.includes('__Secure-next-auth.session-token')
@@ -51,7 +53,7 @@ export class FlowApiClient {
      * Call POST https://labs.google/fx/api/trpc/project.createProject
      */
     async createProject(stToken: string, name: string): Promise<string> {
-        console.log(`[FlowAPI] Step 2: Creating new project via tRPC: ${name}...`);
+        Logger.info(`[FlowAPI] Step 2: Creating new project via tRPC: ${name}...`);
 
         const payload = {
             json: {
@@ -78,7 +80,7 @@ export class FlowApiClient {
         const projectId = res.data?.result?.data?.json?.result?.projectId || res.data?.result?.data?.json?.id;
         if (!projectId) throw new Error('Failed to create project: Response missing Project ID');
 
-        console.log(`[FlowAPI] New Project Created: ${projectId}`);
+        Logger.info(`[FlowAPI] New Project Created: ${projectId}`);
         return projectId;
     }
 
@@ -87,7 +89,7 @@ export class FlowApiClient {
      * Call GET https://labs.google/fx/api/trpc/project.getProject?input=...
      */
     async validateProject(stToken: string, projectId: string): Promise<boolean> {
-        console.log(`[FlowAPI] Step 2: Validating existing project: ${projectId}...`);
+        Logger.info(`[FlowAPI] Step 2: Validating existing project: ${projectId}...`);
         try {
             const input = JSON.stringify({ json: { projectId, toolName: "PINHOLE" } });
             const encodedInput = encodeURIComponent(input);
@@ -109,7 +111,7 @@ export class FlowApiClient {
             const confirmedId = res.data?.result?.data?.json?.result?.projectId;
             return !!confirmedId;
         } catch (e: any) {
-            console.warn(`[FlowAPI] Project validation failed for ${projectId}:`, e.message);
+            Logger.warn(`[FlowAPI] Project validation failed for ${projectId}:`, e.message);
             return false;
         }
     }
@@ -119,14 +121,14 @@ export class FlowApiClient {
      * This injects the grecaptcha.execute script into the Flow project page.
      */
     async solveCaptcha(stToken: string, projectId: string): Promise<string> {
-        console.log('[FlowAPI] Solving reCAPTCHA via Headless Browser Bridge...');
+        Logger.info('[FlowAPI] Solving reCAPTCHA via Headless Browser Bridge...');
         const page = await browserManager.getPage();
 
         // 0. Enable Browser Console Pipe for Debugging
         page.on('console', msg => {
             const txt = msg.text();
             if (txt.includes('[Browser]') || txt.includes('captcha') || txt.includes('error')) {
-                console.log(`[FlowBrowser] ${txt}`);
+                Logger.info(`[FlowBrowser] ${txt}`);
             }
         });
 
@@ -168,7 +170,7 @@ export class FlowApiClient {
         // 2. Ensure we are on the project page
         const projectUrl = `https://labs.google/fx/tools/flow/project/${projectId}`;
         if (!page.url().includes(projectId)) {
-            console.log(`[FlowAPI] Browser navigating to project: ${projectId}`);
+            Logger.info(`[FlowAPI] Browser navigating to project: ${projectId}`);
             // Use 'domcontentloaded' to start captcha polling as early as possible
             await page.goto(projectUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
         }
@@ -176,17 +178,17 @@ export class FlowApiClient {
         // 3. Poll for grecaptcha readiness, Inject if missing, and execute
         const token = await page.evaluate(`
             async (siteKey) => {
-                console.log('[Browser] Starting reCAPTCHA solve for siteKey:', siteKey);
+                Logger.info('[Browser] Starting reCAPTCHA solve for siteKey:', siteKey);
                 
                 return new Promise((resolve, reject) => {
                     const timeout = setTimeout(() => {
-                        console.warn('[Browser] reCAPTCHA solve timed out after 35s');
+                        Logger.warn('[Browser] reCAPTCHA solve timed out after 35s');
                         resolve(null);
                     }, 35000);
                     
                     const injectScript = () => {
                         if (document.querySelector('script[src*="recaptcha"]')) return;
-                        console.log('[Browser] Injecting reCAPTCHA script...');
+                        Logger.info('[Browser] Injecting reCAPTCHA script...');
                         const script = document.createElement('script');
                         script.src = 'https://www.google.com/recaptcha/api.js?render=' + siteKey;
                         script.async = true;
@@ -199,22 +201,22 @@ export class FlowApiClient {
                             const g = window.grecaptcha;
                             // Prefer Enterprise if available
                             if (g.enterprise && typeof g.enterprise.execute === 'function') {
-                                console.log('[Browser] Executing grecaptcha.enterprise.execute...');
+                                Logger.info('[Browser] Executing grecaptcha.enterprise.execute...');
                                 g.enterprise.ready(async () => {
                                     const t = await g.enterprise.execute(siteKey, { action: 'FLOW_GENERATION' });
-                                    console.log('[Browser] Enterprise Token obtained');
+                                    Logger.info('[Browser] Enterprise Token obtained');
                                     clearTimeout(timeout);
                                     resolve(t);
                                 });
                             } else {
-                                console.log('[Browser] Executing standard grecaptcha.execute...');
+                                Logger.info('[Browser] Executing standard grecaptcha.execute...');
                                 const t = await g.execute(siteKey, { action: 'FLOW_GENERATION' });
-                                console.log('[Browser] Standard Token obtained');
+                                Logger.info('[Browser] Standard Token obtained');
                                 clearTimeout(timeout);
                                 resolve(t);
                             }
                         } catch (e) {
-                            console.error('[Browser] execution error:', e);
+                            Logger.error('[Browser] execution error:', e);
                             reject(e);
                         }
                     };
@@ -224,15 +226,15 @@ export class FlowApiClient {
                         const isReady = g && (typeof g.execute === 'function' || (g.enterprise && typeof g.enterprise.execute === 'function'));
                         
                         if (isReady) {
-                            console.log('[Browser] grecaptcha is ready.');
+                            Logger.info('[Browser] grecaptcha is ready.');
                             execute();
                         } else {
                             if (attempts > 10) injectScript(); // Inject if still not ready after 5s
                             if (attempts < 60) {
-                                console.log('[Browser] Waiting for grecaptcha (attempt ' + attempts + ')...');
+                                Logger.info('[Browser] Waiting for grecaptcha (attempt ' + attempts + ')...');
                                 setTimeout(() => checkReady(attempts + 1), 500);
                             } else {
-                                console.warn('[Browser] reCAPTCHA never became ready');
+                                Logger.warn('[Browser] reCAPTCHA never became ready');
                                 resolve(null);
                             }
                         }
@@ -244,7 +246,7 @@ export class FlowApiClient {
         `, this.RECAPTCHA_SITE_KEY);
 
         if (!token) throw new Error('reCAPTCHA solving timed out or failed (Enterprise fallback attempt failed)');
-        console.log('[FlowAPI] Captcha Token Obtained Successfully.');
+        Logger.info('[FlowAPI] Captcha Token Obtained Successfully.');
         return token as string;
     }
 
@@ -290,13 +292,13 @@ export class FlowApiClient {
             headers['Authorization'] = `Bearer ${at}`;
         }
 
-        console.log(`[FlowAPI] Triggering Video Gen (${apiKey ? 'API-Key Path' : 'OAuth Path'})...`);
+        Logger.info(`[FlowAPI] Triggering Video Gen (${apiKey ? 'API-Key Path' : 'OAuth Path'})...`);
         const res = await axios.post(`${this.API_BASE_URL}/video:batchAsyncGenerateVideoText`, payload, { headers });
 
         const operationName = res.data.operations?.[0]?.operation?.name;
         if (!operationName) throw new Error('Failed to trigger generation: Operation name missing');
 
-        console.log(`[FlowAPI] Generation Started. OperationID: ${operationName}`);
+        Logger.info(`[FlowAPI] Generation Started. OperationID: ${operationName}`);
         return operationName;
     }
 
@@ -345,7 +347,7 @@ export class FlowApiClient {
         const imageUrl = res.data.media?.[0]?.image?.generatedImage?.fifeUrl;
         if (!imageUrl) throw new Error('Failed to generate image: URL missing in response');
 
-        console.log('[FlowAPI] Image Generated Successfully.');
+        Logger.info('[FlowAPI] Image Generated Successfully.');
         return imageUrl;
     }
 

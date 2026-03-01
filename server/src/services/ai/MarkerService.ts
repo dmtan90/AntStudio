@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
 import { PerformanceSnapshot } from './AIPerformanceService.js';
 import { socketServer } from '../SocketServer.js';
 import { highlightService } from '../HighlightService.js';
@@ -56,7 +56,7 @@ export class MarkerService extends EventEmitter {
     public async triggerViralPeak(projectId: string, snapshot: PerformanceSnapshot, reason: string) {
         this.cooldowns.set(projectId, Date.now());
 
-        systemLogger.info(`🚀 [MarkerService] VIRAL PEAK DETECTED for ${projectId}: ${reason}`, 'MarkerService');
+        Logger.info(`🚀 [MarkerService] VIRAL PEAK DETECTED for ${projectId}: ${reason}`, 'MarkerService');
 
         // 1. Notify Studio via Socket
         socketServer.getIO()?.to(projectId).emit('studio:viral_peak', {
@@ -71,7 +71,7 @@ export class MarkerService extends EventEmitter {
             // Find active session for this project
             const session = await StreamSessionModel.findOne({ projectId, status: 'live' });
             if (!session) {
-                systemLogger.warn(`[MarkerService] No active live session found for project ${projectId}. Skipping clip.`, 'MarkerService');
+                Logger.warn(`[MarkerService] No active live session found for project ${projectId}. Skipping clip.`, 'MarkerService');
                 return;
             }
 
@@ -100,7 +100,7 @@ export class MarkerService extends EventEmitter {
 
                 const newAsset = updatedProject?.visualAssets?.find(a => a.name === asset.name);
 
-                systemLogger.info(`✅ [MarkerService] Successfully captured and registered viral clip for ${projectId}`, 'MarkerService');
+                Logger.info(`✅ [MarkerService] Successfully captured and registered viral clip for ${projectId}`, 'MarkerService');
                 
                 // 3. Auto-Draft Social Posts (Phase 90)
                 if (newAsset && newAsset._id) {
@@ -109,7 +109,7 @@ export class MarkerService extends EventEmitter {
                         newAsset._id.toString(), 
                         asset.name, 
                         `Segment captured because: ${reason}`
-                    ).catch(e => systemLogger.error(`[MarkerService] Draft failed: ${e.message}`, 'MarkerService'));
+                    ).catch(e => Logger.error(`[MarkerService] Draft failed: ${e.message}`, 'MarkerService'));
                 }
 
                 // Notify frontend about the new asset
@@ -119,7 +119,7 @@ export class MarkerService extends EventEmitter {
                 });
             }
         } catch (error: any) {
-            systemLogger.error(`❌ [MarkerService] Clipping failed: ${error.message}`, 'MarkerService');
+            Logger.error(`❌ [MarkerService] Clipping failed: ${error.message}`, 'MarkerService');
         }
 
         this.emit('marker:created', { projectId, reason, snapshot });

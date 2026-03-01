@@ -1,6 +1,6 @@
 import { Project } from '../../models/Project.js';
 import { broadcasterService } from '../BroadcasterService.js';
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
 
 export interface NetworkHealthSnapshot {
     projectId: string;
@@ -42,7 +42,7 @@ export class NetworkOrchestrator {
      * Triggers a global hype event across all network channels.
      */
     public async triggerGlobalEvent(eventType: string, payload: any) {
-        systemLogger.info(`🌎 [Network] Triggering GLOBAL EVENT: ${eventType}`, 'NetworkOrchestrator');
+        Logger.info(`🌎 [Network] Triggering GLOBAL EVENT: ${eventType}`, 'NetworkOrchestrator');
         // Logic to emit socket event to all active rooms
     }
 }

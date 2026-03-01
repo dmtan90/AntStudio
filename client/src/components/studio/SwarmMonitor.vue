@@ -3,7 +3,7 @@
     <div class="monitor-header">
       <div class="flex items-center gap-2">
         <connection-point theme="outline" size="14" class="text-blue-400 animate-pulse" />
-        <span class="header-text">AI HIVE COORDINATION LOG</span>
+        <span class="header-text">{{ $t('studio.swarm.header') }}</span>
       </div>
       <div class="header-actions">
         <div class="pulse-ring"></div>
@@ -47,25 +47,25 @@
       </div>
       <div v-if="messages.length === 0" class="empty-state">
         <div class="terminal-cursor"></div>
-        <p>AWAITING INTER-AGENT COORDINATION...</p>
+        <p>{{ $t('studio.swarm.emptyState') }}</p>
       </div>
     </div>
 
     <div class="monitor-footer">
       <div class="swarm-stats">
         <div class="stat-item">
-          <span class="label">DENSITY</span>
-          <span class="value">{{ activeAgents.length }} NODES</span>
+          <span class="label">{{ $t('studio.swarm.density') }}</span>
+          <span class="value">{{ $t('studio.swarm.nodes', { n: activeAgents.length }) }}</span>
         </div>
         <div class="stat-item">
-          <span class="label">LATENCY</span>
+          <span class="label">{{ $t('studio.swarm.latency') }}</span>
           <span class="value">24MS</span>
         </div>
         <div class="vibe-scanner" :style="{ background: `linear-gradient(90deg, transparent, ${vibeColor}, transparent)` }">
             <div class="scanner-line"></div>
         </div>
         <div class="vibe-label absolute right-4 bottom-2 text-[7px] font-black uppercase tracking-widest text-white/30">
-            HIVE_MOOD: <span :style="{ color: vibeColor }">{{ currentVibe }}</span>
+            {{ $t('studio.swarm.hiveMood') }}: <span :style="{ color: vibeColor }">{{ currentVibe }}</span>
         </div>
       </div>
     </div>

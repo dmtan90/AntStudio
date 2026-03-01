@@ -10,21 +10,21 @@
             <div class="max-w-7xl mx-auto relative z-10">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
                     <div class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></div>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-purple-400">VTuber Libraries</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-purple-400">{{ t('vtubers.badge') }}</span>
                 </div>
                 <h1 class="text-6xl font-black mb-6 tracking-tighter leading-[0.9]">
-                    VTuber <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-500">Avatars</span><br />
-                    Collection
+                    VTuber <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-500">{{ t('vtubers.avatars') }}</span><br />
+                    {{ t('vtubers.collection') }}
                 </h1>
                 <p class="text-xl text-gray-400 max-w-2xl leading-relaxed mb-10 font-medium">
-                    Manage your persistent VTuber personalities with visual identities, voice configurations, and performance settings. Start with pre-configured templates or create custom avatars.
+                    {{ t('vtubers.subtitle') }}
                 </p>
 
                 <div class="flex flex-wrap gap-4 items-center">
                     <button @click="showCreate = true" class="group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden">
                         <div class="absolute inset-0 bg-gradient-to-r from-purple-400 to-blue-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
                         <User theme="filled" class="text-xl" />
-                        Create New VTuber
+                        {{ t('vtubers.newVTuber') }}
                     </button>
 
                     <button @click="() => fetchLibrary()" :disabled="isLoading" class="group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3 relative overflow-hidden disabled:opacity-50">
@@ -32,7 +32,7 @@
                         <component :is="isLoading ? Loading : 'div'" :class="{ 'animate-spin': isLoading }">
                             <Refresh v-if="!isLoading" theme="outline" class="text-xl" />
                         </component>
-                        {{ isLoading ? 'Syncing...' : 'Sync Library' }}
+                        {{ isLoading ? t('vtubers.syncing') : t('vtubers.sync') }}
                     </button>
                 </div>
             </div>
@@ -47,14 +47,14 @@
                             <User v-if="scope.item.value === 'my-vtubers'" class="text-purple-400" />
                             <VideoOne v-if="scope.item.value === 'live2d-presets'" class="text-pink-400" />
                             <Avatar v-if="scope.item.value === 'static-presets'" class="text-blue-400" />
-                            <span class="font-black text-sm tracking-tight">{{ scope.item.name }}</span>
+                            <span class="font-black text-sm tracking-tight">{{ t('vtubers.tabs.' + (scope.item.value === 'my-vtubers' ? 'myVtubers' : (scope.item.value === 'live2d-presets' ? 'live2d' : 'static'))) }}</span>
                         </div>
                     </template>
                 </el-segmented>
 
                 <div class="relative group min-w-[320px]">
                     <Search class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 text-lg group-focus-within:text-purple-400 transition-colors" />
-                    <input v-model="filters.search" placeholder="Search VTubers..." class="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:bg-white/[0.08] transition-all outline-none text-base" />
+                    <input v-model="filters.search" :placeholder="t('vtubers.search')" class="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:bg-white/[0.08] transition-all outline-none text-base" />
                 </div>
             </div>
 
@@ -62,7 +62,7 @@
             <div v-if="activeTab !== 'my-vtubers'" class="mb-12 flex flex-wrap items-center gap-3">
                 <button @click="filters.category = ''" :class="['px-6 py-3 rounded-2xl text-sm font-black transition-all border outline-none',
                     filters.category === '' ? 'bg-purple-600 text-white border-purple-600 shadow-xl shadow-purple-500/20 scale-105' : 'bg-white/5 border-transparent hover:border-white/10 text-gray-400 hover:text-white']">
-                    All
+                    {{ t('vtubers.all') }}
                 </button>
                 <button v-for="cat in categories" :key="cat.id" @click="filters.category = cat.id" :class="['px-6 py-3 rounded-2xl text-sm font-black transition-all border outline-none',
                     filters.category === cat.id ? `text-white border-[${cat.color}] shadow-xl scale-105` : 'bg-white/5 border-transparent hover:border-white/10 text-gray-400 hover:text-white']" :style="filters.category === cat.id ? { backgroundColor: cat.color } : {}">
@@ -93,9 +93,9 @@
             <!-- Empty State -->
             <div v-else class="text-center py-32 border border-dashed border-white/10 rounded-3xl text-center">
                 <Brain class="text-6xl text-gray-600 mb-4 block w-fit mx-auto" />
-                <h3 class="text-xl font-black mb-2">No VTubers found</h3>
+                <h3 class="text-xl font-black mb-2">{{ t('vtubers.empty.noVtubers') }}</h3>
                 <p class="text-gray-500">
-                    {{ activeTab === 'my-vtubers' ? 'Create your first VTuber to get started.' : 'Try adjusting your filters or search.' }}
+                    {{ activeTab === 'my-vtubers' ? t('vtubers.empty.myVtubersDesc') : t('vtubers.empty.presetsDesc') }}
                 </p>
             </div>
 
@@ -117,6 +117,7 @@ import { Brain, Refresh, User, Search, VideoOne, Avatar, Loading } from '@icon-p
 import { useVTuberStore } from '@/stores/vtuber';
 import { storeToRefs } from 'pinia';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
 
 // Components
 import VTuberCard from '@/components/vtuber/VTuberCard.vue';
@@ -129,6 +130,7 @@ import vtuberPresetsData from '@/data/vtuber-presets.json';
 
 const vtuberStore = useVTuberStore();
 const { vtubers, isLoading } = storeToRefs(vtuberStore);
+const { t } = useI18n()
 
 // Mock pagination if store doesn't have it yet, but keep reactive
 const pagination = ref({ total: 0 });
@@ -198,29 +200,29 @@ const selectVTuber = (vtuber: any) => {
 };
 
 const confirmDelete = async (vtuber: any) => {
-    if (confirm(`Are you sure you want to permanently delete ${vtuber.identity.name}? This cannot be undone.`)) {
+    if (confirm(t('vtubers.confirmDelete', { name: vtuber.identity.name }))) {
         await vtuberStore.deleteVTuber(vtuber.entityId);
     }
 };
 
 const usePreset = async (preset: any) => {
     try {
-        toast.loading('Cloning preset template...');
+        toast.loading(t('vtubers.toasts.cloning'));
         // await vtuberStore.clonePreset(preset); // If cloned preset exists in vtuberStore
         // For now, if clonePreset is still in vtuberStore, we might need a bridge or move it
         // Assuming it's moved or vtuberStore handles it
-        toast.success('Template cloned successfully!');
+        toast.success(t('vtubers.toasts.cloneSuccess'));
         activeTab.value = 'my-vtubers';
         fetchLibrary(1);
     } catch (e: any) {
         console.error('Failed to clone preset:', e);
-        toast.error('Failed to clone template');
+        toast.error(t('vtubers.toasts.cloneFailed'));
     }
 };
 
 const previewPreset = (preset: any) => {
     console.log('Preview preset:', preset);
-    toast.info('Preview feature coming soon!');
+    toast.info(t('vtubers.toasts.previewSoon'));
 };
 
 watch(activeTab, () => {
@@ -255,11 +257,12 @@ onMounted(() => fetchLibrary(1));
 }
 
 :deep(.premium-segmented .el-segmented__item) {
-    @apply px-0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 :deep(.premium-segmented .el-segmented__item-selected) {
-    @apply shadow-xl shadow-black/20;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 

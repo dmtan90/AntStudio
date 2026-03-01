@@ -1,6 +1,8 @@
 import { Server as SocketServer, Socket } from 'socket.io';
 import { verifyToken } from '../utils/jwt.js';
 
+import { Logger } from '../utils/Logger.js';
+
 interface UserPresence {
     userId: string;
     userName: string;
@@ -41,7 +43,7 @@ export class CollaborationService {
     }
 
     private handleConnection(socket: Socket) {
-        console.log(`✅ Collaboration: User ${socket.data.userName} connected`);
+        Logger.info(`✅ Collaboration: User ${socket.data.userName} connected`);
 
         // Join project room
         socket.on('project:join', (projectId: string) => {
@@ -112,7 +114,7 @@ export class CollaborationService {
             activeUsers: Array.from(this.projectRooms.get(projectId)!.values())
         });
 
-        console.log(`👥 ${socket.data.userName} joined project ${projectId}`);
+        Logger.info(`👥 ${socket.data.userName} joined project ${projectId}`);
     }
 
     private leaveProject(socket: Socket, projectId: string) {
@@ -133,7 +135,7 @@ export class CollaborationService {
             }
         }
 
-        console.log(`👋 ${socket.data.userName} left project ${projectId}`);
+        Logger.info(`👋 ${socket.data.userName} left project ${projectId}`);
     }
 
     private broadcastEdit(socket: Socket, data: { projectId: string; changes: any }) {
@@ -195,7 +197,7 @@ export class CollaborationService {
             }
         });
 
-        console.log(`❌ Collaboration: User ${socket.data.userName} disconnected`);
+        Logger.info(`❌ Collaboration: User ${socket.data.userName} disconnected`);
     }
 
     // Admin method to get active users in a project

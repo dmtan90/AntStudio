@@ -1,7 +1,7 @@
 <template>
   <el-drawer
     v-model="visible"
-    title="Comment Management"
+    :title="$t('drawers.comments.title')"
     direction="rtl"
     size="500px"
     class="comment-drawer"
@@ -10,23 +10,23 @@
     <template #header>
       <div class="flex items-center justify-between w-full pr-8">
         <div>
-          <h2 class="text-lg font-black text-white tracking-tight uppercase">Platform Engagement</h2>
-          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Sentiment-aware AI Moderation</p>
+          <h2 class="text-lg font-black text-white tracking-tight uppercase">{{ $t('drawers.comments.platformEngagement') }}</h2>
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{{ $t('drawers.comments.moderation') }}</p>
         </div>
       </div>
     </template>
 
     <div v-if="loading" class="p-20 text-center">
       <div class="inline-block w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Analyzing Conversations...</p>
+      <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{{ $t('drawers.comments.analyzing') }}</p>
     </div>
 
     <div v-else-if="!comments.length" class="p-20 text-center">
       <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
         <communication theme="outline" size="32" class="text-gray-700" />
       </div>
-      <h3 class="text-lg font-bold text-white mb-2">No Comments Yet</h3>
-      <p class="text-gray-500 text-sm">Waiting for the viral spark! Comments will appear here once your audience starts engaging.</p>
+      <h3 class="text-lg font-bold text-white mb-2">{{ $t('drawers.comments.noComments') }}</h3>
+      <p class="text-gray-500 text-sm">{{ $t('drawers.comments.waiting') }}</p>
     </div>
 
     <div v-else class="flex flex-col h-full">
@@ -59,7 +59,7 @@
                       class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest transition-all"
                       :class="(selectedTones[comment.id] || 'friendly') === tone ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-600 hover:text-gray-400'"
                     >
-                      {{ tone }}
+                      {{ $t(`drawers.comments.tones.${tone}`) }}
                     </button>
                   </div>
                   <button 
@@ -68,14 +68,14 @@
                     :disabled="generating === comment.id"
                   >
                     <magic theme="outline" size="12" :class="{ 'animate-pulse': generating === comment.id }" />
-                    AI Suggest
+                    {{ $t('drawers.comments.aiSuggest') }}
                   </button>
                   <button 
                     class="text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-gray-400 flex items-center gap-1"
                     @click="activeReplyId = activeReplyId === comment.id ? null : comment.id"
                   >
                     <corner-down-left theme="outline" size="12" />
-                    Reply
+                    {{ $t('drawers.comments.reply') }}
                   </button>
                 </div>
                 
@@ -90,7 +90,7 @@
                   <textarea 
                     v-model="replyTexts[comment.id]"
                     class="w-full bg-black/40 border border-white/5 rounded-xl p-3 text-xs text-white placeholder-gray-700 focus:border-blue-500/50 outline-none transition-all resize-none h-20"
-                    placeholder="Type your reply..."
+                    :placeholder="$t('drawers.comments.replyPlaceholder')"
                   ></textarea>
                   <div class="absolute bottom-2 right-2 flex items-center gap-2">
                     <button 
@@ -98,7 +98,7 @@
                       @click="postReply(comment)"
                       :disabled="!replyTexts[comment.id] || replying === comment.id"
                     >
-                      {{ replying === comment.id ? 'Sending...' : 'Post Reply' }}
+                      {{ replying === comment.id ? $t('drawers.comments.sending') : $t('drawers.comments.postReply') }}
                     </button>
                   </div>
                 </div>
@@ -115,6 +115,9 @@
 import { ref, watch } from 'vue';
 import { usePlatformStore } from '@/stores/platform';
 import { Communication, Magic, CornerDownLeft, Like } from '@icon-park/vue-next';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   recordId: string | null;
@@ -174,7 +177,7 @@ const suggestReply = async (comment: any) => {
   generating.value = comment.id;
   try {
     const tone = selectedTones.value[comment.id] || 'friendly';
-    const context = `${props.videoTitle ? `Video title: ${props.videoTitle}. ` : ''}Tone: ${tone}.`;
+    const context = `${props.videoTitle ? t('drawers.comments.aiContext.videoTitle', { title: props.videoTitle }) : ''} ${t('drawers.comments.aiContext.tone', { tone: tone })}.`;
     const suggestion = await store.getAiReplySuggestion(comment.text, context);
     if (suggestion) {
       replyTexts.value[comment.id] = suggestion;

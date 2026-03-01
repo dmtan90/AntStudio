@@ -15,32 +15,32 @@
             <transition name="fade-slide" mode="out-in">
                 <div v-if="currentStep === 1" class="step-content">
                     <div class="header-section">
-                        <h2>Product Source</h2>
-                        <p>Enter your product page URL or upload marketing assets.</p>
+                        <h2>{{ t('projects.new.setup.productAds.source') }}</h2>
+                        <p>{{ t('projects.new.setup.productAds.sourceDesc') }}</p>
                     </div>
 
                     <div class="source-options">
                         <div class="option-card" :class="{ active: sourceType === 'url' }" @click="sourceType = 'url'">
                             <link-one theme="outline" size="24" />
-                            <span>Product URL</span>
+                            <span>{{ t('projects.new.setup.productAds.productUrl') }}</span>
                         </div>
                         <div class="option-card" :class="{ active: sourceType === 'upload' }"
                             @click="sourceType = 'upload'">
                             <upload-one theme="outline" size="24" />
-                            <span>Upload Assets</span>
+                            <span>{{ t('projects.new.setup.productAds.uploadAssets') }}</span>
                         </div>
                     </div>
 
                     <div v-if="sourceType === 'url'" class="input-form">
-                        <label>Product Page URL</label>
-                        <input v-model="productUrl" type="text" placeholder="https://shopee.vn/product/..."
+                        <label>{{ t('projects.new.setup.productAds.urlLabel') }}</label>
+                        <input v-model="productUrl" type="text" :placeholder="t('projects.new.setup.productAds.urlPlaceholder')"
                             class="glow-input" />
                     </div>
 
                     <div v-else class="upload-area" @click="($refs.fileInput as HTMLInputElement).click()">
                         <div class="dropzone">
                             <plus theme="outline" size="32" />
-                            <p v-if="!selectedFile">Drag images here or click to upload</p>
+                            <p v-if="!selectedFile">{{ t('projects.new.setup.productAds.uploadPrompt') }}</p>
                             <p v-else class="text-brand-accent">{{ selectedFile.name }}</p>
                         </div>
                         <input type="file" ref="fileInput" hidden @change="onFileSelected"
@@ -51,37 +51,37 @@
                 <!-- Step 2: Analysis & Review -->
                 <div v-else-if="currentStep === 2" class="step-content">
                     <div class="header-section">
-                        <h2>Product Analysis</h2>
-                        <p>AI has extracted the following details. Review before creating.</p>
+                        <h2>{{ t('projects.new.setup.productAds.analysis') }}</h2>
+                        <p>{{ t('projects.new.setup.productAds.analysisDesc') }}</p>
                     </div>
 
                     <div class="analysis-form">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Product Name</label>
+                                <label>{{ t('projects.new.setup.productAds.productName') }}</label>
                                 <input v-model="analysisData.name" class="glow-input" />
                             </div>
                             <div class="form-group">
-                                <label>Price</label>
+                                <label>{{ t('projects.new.setup.productAds.price') }}</label>
                                 <input v-model="analysisData.price" class="glow-input" />
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>Key Selling Points</label>
+                            <label>{{ t('projects.new.setup.productAds.sellingPoints') }}</label>
                             <textarea v-model="analysisData.description" class="glow-input" rows="3"></textarea>
                         </div>
 
                         <div class="form-group">
-                            <label>Brand Vibe</label>
+                            <label>{{ t('projects.new.setup.productAds.brandVibe') }}</label>
                             <div class="tags">
                                 <span v-for="tag in analysisData.vibe" :key="tag" class="tag">{{ tag }}</span>
-                                <span v-if="analysisData.vibe.length === 0" class="text-muted">No vibes detected</span>
+                                <span v-if="analysisData.vibe.length === 0" class="text-muted">{{ t('projects.new.setup.productAds.noVibes') }}</span>
                             </div>
                         </div>
 
                         <div v-if="analysisData.images && analysisData.images.length > 0" class="form-group">
-                            <label>Product Images</label>
+                            <label>{{ t('projects.new.setup.productAds.productImages') }}</label>
                             <div class="extracted-images">
                                 <div v-for="(img, idx) in analysisData.images" :key="idx" class="extracted-image">
                                     <img :src="getFileUrl(img.url)" alt="Product Image" />
@@ -94,8 +94,8 @@
                 <!-- Step 3: Template -->
                 <div v-else-if="currentStep === 3" class="step-content">
                     <div class="header-section">
-                        <h2>Select Template</h2>
-                        <p>Choose a style for your product ad.</p>
+                        <h2>{{ t('projects.new.setup.productAds.selectTemplate') }}</h2>
+                        <p>{{ t('projects.new.setup.productAds.selectTemplateDesc') }}</p>
                     </div>
 
                     <div class="templates-grid">
@@ -110,12 +110,12 @@
 
             <!-- Footer Actions -->
             <div class="setup-footer">
-                <button v-if="currentStep > 1" class="btn-back" @click="currentStep--">Back</button>
-                <button v-else class="btn-cancel" @click="$router.push('/dashboard')">Cancel</button>
+                <button v-if="currentStep > 1" class="btn-back" @click="currentStep--">{{ t('projects.new.back') }}</button>
+                <button v-else class="btn-cancel" @click="$router.push('/dashboard')">{{ t('common.cancel') }}</button>
 
                 <button class="btn-next" :disabled="loading" @click="handleNext">
-                    <span v-if="loading">Processing...</span>
-                    <span v-else>{{ currentStep === 3 ? 'Create Project' : 'Next' }}</span>
+                    <span v-if="loading">{{ t('common.processing') }}</span>
+                    <span v-else>{{ currentStep === 3 ? t('projects.new.create') : t('projects.new.next') }}</span>
                 </button>
             </div>
         </div>
@@ -123,19 +123,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
 import { LinkOne, UploadOne, Plus } from '@icon-park/vue-next'
 import { getFileUrl } from '@/utils/api'
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter()
 const projectStore = useProjectStore()
 const { isGenerating: loading } = storeToRefs(projectStore)
+const { t } = useI18n()
 
-const steps = ['Source', 'Analysis', 'Template']
+const steps = computed(() => t('projects.new.setup.productAds.steps', { returnObjects: true } as any) as unknown as string[])
 const currentStep = ref(1)
 const sourceType = ref('url')
 const productUrl = ref('')

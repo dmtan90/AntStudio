@@ -26,18 +26,18 @@
           <GDropdown placement="bottom-start">
             <div class="tool-badge">
               <magic-wand theme="outline" size="14" />
-              <span>{{ form.videoStyle }}</span>
+              <span>{{ t('projects.new.flow.' + form.videoStyle.toLowerCase().replace(' ', '')) }}</span>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item :disabled="form.videoStyle === 'Cinematic'"
-                  @click="handleStyleChange('Cinematic')">Cinematic</el-dropdown-item>
+                  @click="handleStyleChange('Cinematic')">{{ t('projects.new.flow.cinematic') }}</el-dropdown-item>
                 <el-dropdown-item :disabled="form.videoStyle === 'Realistic'"
-                  @click="handleStyleChange('Realistic')">Realistic</el-dropdown-item>
+                  @click="handleStyleChange('Realistic')">{{ t('projects.new.flow.realistic') }}</el-dropdown-item>
                 <el-dropdown-item :disabled="form.videoStyle === 'Anime'"
-                  @click="handleStyleChange('Anime')">Anime</el-dropdown-item>
-                <el-dropdown-item :disabled="form.videoStyle === '3D Render'" @click="handleStyleChange('3D Render')">3D
-                  Render</el-dropdown-item>
+                  @click="handleStyleChange('Anime')">{{ t('projects.new.flow.anime') }}</el-dropdown-item>
+                <el-dropdown-item :disabled="form.videoStyle === '3D Render'" @click="handleStyleChange('3D Render')">{{ t('projects.new.flow.threeDRender') }}
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </GDropdown>
@@ -50,16 +50,16 @@
               </div>
             </template>
             <div class="tuning-panel">
-              <label>Target Duration</label>
+              <label>{{ t('projects.new.flow.targetDuration') }}</label>
               <GSlider v-model="form.targetDuration" :min="15" :max="7200" :step="5" />
               <div class="slider-val">{{ formatDuration(form.targetDuration) }}</div>
             </div>
           </GPopover>
         </div>
         <div class="toolbar-right">
-          <button class="reset-btn-tool" @click="$emit('reset-flow')" title="Reset Project & Clear Memory">
+          <button class="reset-btn-tool" @click="$emit('reset-flow')" :title="t('projects.new.flow.resetTitle')">
             <refresh theme="outline" size="12" />
-            <span>Reset Flow</span>
+            <span>{{ t('projects.new.flow.resetFlow') }}</span>
           </button>
         </div>
       </div>
@@ -74,7 +74,7 @@
       <!-- Actions -->
       <div class="input-footer">
         <div class="footer-left">
-          <div class="attach-trigger" @click="triggerFileUpload" title="Attach files">
+          <div class="attach-trigger" @click="triggerFileUpload" :title="t('projects.new.flow.attachFiles')">
             <paperclip theme="outline" size="20" />
             <input type="file" ref="fileInput" style="display: none" multiple
               @change="$emit('on-file-selected', $event)" />
@@ -105,12 +105,9 @@
         }}</button>
       </div>
 
-      <!-- Rich Creation Options (Google Vids style) -->
-      <!-- <ProjectCreationOptions v-if="!hasResults && !loading" @select="(opt) => $emit('apply-suggestion', opt.label)" /> -->
-
       <!-- Mentions -->
       <div v-if="showMentions" class="mention-list-glass">
-        <div class="mention-header">Mention Files</div>
+        <div class="mention-header">{{ t('projects.new.flow.mentionHeader') }}</div>
         <div v-for="file in selectedFiles" :key="file.name" @click="$emit('insert-mention', file.name)"
           class="mention-item">
           <file-text theme="outline" size="14" />
@@ -131,9 +128,9 @@ import GDropdown from '@/components/ui/GDropdown.vue'
 import GPopover from '@/components/ui/GPopover.vue'
 import GSlider from '@/components/ui/GSlider.vue'
 import ProjectCreationOptions from './ProjectCreationOptions.vue'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: string

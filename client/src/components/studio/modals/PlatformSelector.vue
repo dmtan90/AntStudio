@@ -29,9 +29,9 @@
 
 <script setup lang="ts">
 import { Youtube, Facebook, Tiktok, Broadcast } from '@icon-park/vue-next';
-import { useTranslations } from '@/composables/useTranslations';
+import { useI18n } from 'vue-i18n';
 
-const { t } = useTranslations();
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean;
@@ -46,7 +46,7 @@ const togglePlatform = (id: string) => {
 };
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .platform-list {
   @apply space-y-2;
 }

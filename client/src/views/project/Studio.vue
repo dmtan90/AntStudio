@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { provide, onMounted, watch, ref, toRaw } from 'vue';
+import { provide, onMounted, watch, ref, toRaw, type Ref } from 'vue';
+import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { EditorMode, EditorTemplate, useEditorStore } from 'video-editor/store/editor';
 import { useThemeProvider, type ThemeProviderState } from 'video-editor/context/theme';
 import { convertFlowToStudio, convertStudioToFlow, type StudioProject } from '@/utils/StudioAdapter';
@@ -20,6 +22,7 @@ const props = defineProps<{
   headless?: boolean;
 }>();
 
+const { t } = useI18n();
 const route = useRoute()
 const projectId = ref<string>('');
 const userStore = useUserStore();
@@ -71,7 +74,7 @@ onMounted(async () => {
   }
   else{
       const data = await projectStore.createProject({
-          title: template.value?.name || 'Untitled',
+          title: template.value?.name || t('projects.studio.untitled'),
           description: template.value?.description || '',
           mode: "blank",
           aspectRatio: ratio == 'square' ? '1:1' : (ratio == 'portrait' ? '9:16' : '16:9')
@@ -203,10 +206,10 @@ const handleSave = async () => {
       pages,
       ...(project.value ? convertStudioToFlow({ id: projectId.value, name: project.value.title, is_published: false, pages } as any, project.value as StudioProject) : {})
     });
-    toast.success('Project and Thumbnails saved successfully');
+    toast.success(t('projects.studio.toasts.saveSuccess'));
   } catch (error) {
     console.error('Failed to save project:', error);
-    toast.error('Failed to save project');
+    toast.error(t('projects.studio.toasts.saveFailed'));
   } finally {
     isSaving.value = false;
   }
@@ -214,7 +217,7 @@ const handleSave = async () => {
 
 const handleExport = async () => {
   try {
-    toast.info('Exporting video... This may take a few minutes.');
+    toast.info(t('projects.studio.toasts.exporting'));
     const blob = await editorStore.exportVideo();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -222,10 +225,10 @@ const handleExport = async () => {
     a.download = `${project.value?.title || 'video'}.mp4`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Video exported successfully');
+    toast.success(t('projects.studio.toasts.exportSuccess'));
   } catch (error) {
     console.error('Export failed:', error);
-    toast.error('Export failed');
+    toast.error(t('projects.studio.toasts.exportFailed'));
   }
 };
 

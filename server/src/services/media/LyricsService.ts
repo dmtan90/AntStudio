@@ -1,5 +1,6 @@
-import { systemLogger } from '~/utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
 import { geminiPool } from '../../utils/gemini.js';
+
 
 export interface LyricsLine {
     text: string;
@@ -44,7 +45,7 @@ export class LyricsService {
             // Preserve the original language of the lyrics.
             // Start the WebVTT output immediately:`
 
-            systemLogger.info(`[LyricsService] Prompt: ${prompt}`);
+            Logger.info(`[LyricsService] Prompt: ${prompt}`);
 
             const result = await (ai as any).models.generateContent({
                 model: modelName,
@@ -76,21 +77,21 @@ export class LyricsService {
                 text = response.candidates[0].content.parts[0].text.trim();
             }
 
-            systemLogger.info(`[LyricsService] Response: ${text}`);
+            Logger.info(`[LyricsService] Response: ${text}`);
 
             // Cleanup any markdown code blocks if the AI ignored the "ONLY WebVTT" rule
             if (text.includes('```')) {
                 text = text.replace(/```[a-z]*\n?/g, '').replace(/```/g, '').trim();
             }
 
-            systemLogger.info(`[LyricsService] Response (length: ${text.length})`);
+            Logger.info(`[LyricsService] Response (length: ${text.length})`);
 
             // Record usage
             await geminiPool.recordUsage(key, modelName);
 
             return text;
         } catch (error: any) {
-            console.error('Lyrics generation error:', error);
+            Logger.error('Lyrics generation error:', error);
             // Return empty string instead of throwing to allow graceful degradation
             return '';
         }
@@ -105,20 +106,20 @@ export class LyricsService {
 
         // If it looks like a VTT file, use the VTT parser for high precision
         if (lyrics.trim().startsWith('WEBVTT')) {
-            console.log('[LyricsService] Detected VTT format, using precise parser');
+            Logger.info('[LyricsService] Detected VTT format, using precise parser');
             return this.parseVTT(lyrics);
         }
 
         // If it looks like LRC, use LRC parser
         if (lyrics.trim().startsWith('[00:')) {
-            console.log('[LyricsService] Detected LRC format, using LRC parser');
+            Logger.info('[LyricsService] Detected LRC format, using LRC parser');
             return this.parseLRC(lyrics);
         }
 
         const lines = lyrics.split('\n').filter(line => line.trim());
         const timePerLine = audioDuration / lines.length;
 
-        console.log(`[LyricsService] Basic sync: ${lines.length} lines for ${audioDuration}s`);
+        Logger.info(`[LyricsService] Basic sync: ${lines.length} lines for ${audioDuration}s`);
 
         return lines.map((text, index) => ({
             text: text.trim(),

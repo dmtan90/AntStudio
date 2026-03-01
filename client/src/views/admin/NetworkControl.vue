@@ -9,19 +9,19 @@
             <div>
                 <div class="flex items-center gap-3 mb-2">
                     <div class="w-1 h-8 rounded-full bg-gradient-to-b from-blue-400 to-indigo-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
-                    <h1 class="text-3xl font-black tracking-tight text-white">Network Command</h1>
+                    <h1 class="text-3xl font-black tracking-tight text-white">{{ t('admin.network.title') }}</h1>
                 </div>
-                <p class="text-sm text-white/30 ml-4 pl-3">Omni-channel orchestration across the autonomous empire.</p>
+                <p class="text-sm text-white/30 ml-4 pl-3">{{ t('admin.network.subtitle') }}</p>
             </div>
             <!-- Stats -->
             <div class="flex gap-6">
                 <div class="glass-stat text-right">
-                    <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1">Total Nodes</p>
+                    <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1">{{ t('admin.network.totalNodes') }}</p>
                     <p class="text-2xl font-black text-blue-400 tabular-nums">{{ snapshots.length }}</p>
                 </div>
                 <div class="w-px h-10 bg-white/5 self-center" />
                 <div class="glass-stat text-right">
-                    <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1">Live Viewers</p>
+                    <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1">{{ t('admin.network.liveViewers') }}</p>
                     <p class="text-2xl font-black text-indigo-400 tabular-nums">{{ formatNumber(totalViewers) }}</p>
                 </div>
             </div>
@@ -35,18 +35,18 @@
                         <earth theme="outline" size="20" class="text-blue-400" />
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-white">Global Hype Synchronization</h3>
-                        <p class="text-[11px] text-white/30">Trigger network-wide effects across all active studios.</p>
+                        <h3 class="text-sm font-bold text-white">{{ t('admin.network.globalHype') }}</h3>
+                        <p class="text-[11px] text-white/30">{{ t('admin.network.triggerEffects') }}</p>
                     </div>
                 </div>
                 <div class="flex gap-3">
                     <el-button @click="triggerGlobalEvent('celebration')" round size="small"
                         class="!bg-blue-600 !border-blue-600 !text-white !font-bold !text-[11px] shadow-[0_4px_15px_rgba(59,130,246,0.25)] hover:brightness-110 transition-all">
-                        🎉 Global Celebration
+                        {{ t('admin.network.celebration') }}
                     </el-button>
                     <el-button @click="triggerGlobalEvent('breaking_news')" round size="small"
                         class="!bg-white/5 !border-white/10 !text-white/70 !font-bold !text-[11px] hover:!bg-white/10 transition-all">
-                        🗞️ Breaking News
+                        {{ t('admin.network.breakingNews') }}
                     </el-button>
                 </div>
             </div>
@@ -92,12 +92,12 @@
                             </div>
                             <div class="absolute inset-0 rounded-full border border-blue-400/20 animate-ping" />
                         </div>
-                        <span class="text-[9px] font-bold text-white/20 uppercase tracking-[4px]">Active VTuber Pipeline</span>
+                        <span class="text-[9px] font-bold text-white/20 uppercase tracking-[4px]">{{ t('admin.network.activePipeline') }}</span>
                     </div>
                     <!-- Offline State -->
                     <div v-else class="flex flex-col items-center gap-2">
                         <Terminal theme="outline" size="24" class="text-white/10" />
-                        <span class="text-[10px] font-bold text-white/10 uppercase tracking-widest italic">Synchronizing...</span>
+                        <span class="text-[10px] font-bold text-white/10 uppercase tracking-widest italic">{{ t('admin.network.synchronizing') }}</span>
                     </div>
 
                     <!-- Overlay Stats -->
@@ -117,7 +117,7 @@
                     <!-- Autonomy Bar -->
                     <div>
                         <div class="flex justify-between mb-2">
-                            <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Autonomy Depth</span>
+                            <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">{{ t('admin.network.autonomyDepth') }}</span>
                             <span class="text-[10px] font-bold text-blue-400">{{ node.autonomyLevel }}%</span>
                         </div>
                         <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
@@ -129,12 +129,12 @@
                     <!-- Stat Cards -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="p-3 rounded-xl bg-white/3 border border-white/5 text-center hover:bg-white/5 transition-colors">
-                            <p class="text-[9px] font-bold text-white/25 uppercase tracking-widest mb-1">Uptime</p>
+                            <p class="text-[9px] font-bold text-white/25 uppercase tracking-widest mb-1">{{ t('admin.network.uptime') }}</p>
                             <p class="text-sm font-black text-white/80">{{ formatUptime(node.uptime) }}</p>
                         </div>
                         <div class="p-3 rounded-xl bg-white/3 border border-white/5 text-center hover:bg-white/5 transition-colors">
-                            <p class="text-[9px] font-bold text-white/25 uppercase tracking-widest mb-1">Stability</p>
-                            <p class="text-sm font-black text-green-400">NOMINAL</p>
+                            <p class="text-[9px] font-bold text-white/25 uppercase tracking-widest mb-1">{{ t('admin.network.stability') }}</p>
+                            <p class="text-sm font-black text-green-400">{{ t('admin.network.statusNominal') }}</p>
                         </div>
                     </div>
                 </div>
@@ -146,8 +146,8 @@
                 <div class="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-2">
                     <Terminal theme="outline" size="28" class="text-blue-400/50" />
                 </div>
-                <p class="text-sm font-bold text-white/20 uppercase tracking-widest">No Nodes Online</p>
-                <p class="text-[12px] text-white/10">Network nodes will appear here when active.</p>
+                <p class="text-sm font-bold text-white/20 uppercase tracking-widest">{{ t('admin.network.noNodes') }}</p>
+                <p class="text-[12px] text-white/10">{{ t('admin.network.noNodesDesc') }}</p>
             </div>
         </div>
     </div>
@@ -158,8 +158,10 @@ import { ref, onMounted, computed } from 'vue';
 import { Earth, Peoples, More, Terminal } from '@icon-park/vue-next';
 
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
 import { useAdminStore } from '@/stores/admin';
 
+const { t } = useI18n();
 const adminStore = useAdminStore();
 const snapshots = ref<any[]>([]);
 
@@ -180,7 +182,7 @@ const triggerGlobalEvent = async (type: string) => {
     try {
         await adminStore.triggerNetworkEvent(type);
     } catch (e) {
-        toast.error("Global pulse failed to propagate.");
+        toast.error(t('admin.network.toasts.pulseFailed'));
     }
 };
 

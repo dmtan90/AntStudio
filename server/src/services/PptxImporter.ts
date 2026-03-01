@@ -6,6 +6,8 @@ import { uploadToS3 } from '../utils/s3.js';
 import { Template } from '../models/Template.js';
 import mongoose from 'mongoose';
 
+import { Logger } from '../utils/Logger.js';
+
 export class PptxImporter {
     private parser: PptxToFabricParser;
 
@@ -14,7 +16,7 @@ export class PptxImporter {
     }
 
     async importPptx(file: Express.Multer.File, userId: string): Promise<any> {
-        console.log(`[PptxImporter] 📦 Importing PPTX with pptist: ${file.originalname}`);
+        Logger.info(`[PptxImporter] 📦 Importing PPTX with pptist: ${file.originalname}`);
 
         // @ts-ignore
         const result = await parsePptx(file.buffer);
@@ -44,7 +46,7 @@ export class PptxImporter {
                             const fabricObj = scene.objects.find((obj: any) => obj.id === el.id);
                             if (fabricObj) fabricObj.src = upload.url || upload.key;
                         } catch (e) {
-                            console.error(`[PptxImporter] Failed to upload image for slide ${i + 1}`, e);
+                            Logger.error(`[PptxImporter] Failed to upload image for slide ${i + 1}`, e);
                         }
                     }
                 }

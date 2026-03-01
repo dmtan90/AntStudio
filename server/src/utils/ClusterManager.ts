@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { Logger } from './Logger.js';
 
 /**
  * Service to manage multi-region database clusters.
@@ -24,7 +25,7 @@ export class ClusterManager {
             mongoose.set('bufferCommands', true);
             await mongoose.connect(primaryUri);
             this.primaryConnection = mongoose.connection;
-            console.log(`[ClusterManager] 🟢 Primary DB Connected (Default): ${this.getHost(primaryUri)}`);
+            Logger.info(`[ClusterManager] 🟢 Primary DB Connected (Default): ${this.getHost(primaryUri)}`, 'ClusterManager');
 
             // 2. Connect Read Replicas (Optional Readers)
             const replicaUris = process.env.MONGODB_READ_REPLICAS?.split(',') || [];
@@ -32,15 +33,15 @@ export class ClusterManager {
                 if (!uri) continue;
                 const conn = await mongoose.createConnection(uri.trim()).asPromise();
                 this.readReplicas.push(conn);
-                console.log(`[ClusterManager] 🟢 Read Replica Connected: ${this.getHost(uri)}`);
+                Logger.info(`[ClusterManager] 🟢 Read Replica Connected: ${this.getHost(uri)}`, 'ClusterManager');
             }
 
             if (this.readReplicas.length === 0) {
-                console.warn("[ClusterManager] ⚠️ No read replicas defined. All traffic routed to Primary.");
+                Logger.warn("[ClusterManager] ⚠️ No read replicas defined. All traffic routed to Primary.", 'ClusterManager');
             }
 
-        } catch (error) {
-            console.error("[ClusterManager] ❌ Connection failed:", error);
+        } catch (error: any) {
+            Logger.error("[ClusterManager] ❌ Connection failed:", 'ClusterManager', error);
             throw error;
         }
     }

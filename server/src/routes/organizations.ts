@@ -76,6 +76,16 @@ router.get('/:id/invitations', authMiddleware, async (req: Request, res: Respons
     }
 });
 
+// Revoke Invitation
+router.delete('/invitations/:id', authMiddleware, rbacMiddleware(Permission.ORG_INVITE), async (req: Request, res: Response) => {
+    try {
+        await OrganizationService.revokeInvitation(req.params.id);
+        res.json({ success: true, message: 'Invitation revoked' });
+    } catch (e: any) {
+        res.status(400).json({ success: false, error: e.message });
+    }
+});
+
 // Accept Invitation
 router.post('/accept-invite', authMiddleware, async (req: any, res: Response) => {
     try {

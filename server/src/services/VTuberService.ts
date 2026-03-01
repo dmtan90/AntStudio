@@ -1,6 +1,8 @@
 import { VTuber, IVTuber } from '../models/VTuber.js';
 import { Types } from 'mongoose';
 
+import { Logger } from '../utils/Logger.js';
+
 export class VTuberService {
     /**
      * Retrieve or initialize a VTuber for an entity.
@@ -45,7 +47,7 @@ export class VTuberService {
         performanceConfig?: IVTuber['performanceConfig'];
         animationConfig?: IVTuber['animationConfig'];
     }): Promise<void> {
-        console.log("VTuber meta update", JSON.stringify(data.meta), JSON.stringify(data.visual));
+        Logger.info("VTuber meta update", JSON.stringify(data.meta), JSON.stringify(data.visual));
         const update: any = { lastUpdated: new Date() };
         if (data.identity) update['identity'] = data.identity;
         if (data.meta?.loras) update['meta.loras'] = data.meta.loras;

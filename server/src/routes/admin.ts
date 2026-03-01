@@ -7,6 +7,8 @@ import { AdminSettings } from '../models/AdminSettings.js';
 import { configService } from '../utils/configService.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // All admin routes require authentication and admin role
@@ -43,7 +45,7 @@ router.get('/users', async (req: AuthRequest, res) => {
             error: null
         });
     } catch (error: any) {
-        console.error('Admin list users error:', error);
+        Logger.error('Admin list users error:', error);
         res.status(500).json({ success: false, data: null, error: error.message });
     }
 });
@@ -60,7 +62,7 @@ router.get('/users/:id', async (req, res) => {
 
         res.json({ success: true, data: { user }, error: null });
     } catch (error: any) {
-        console.error('Admin get user error:', error);
+        Logger.error('Admin get user error:', error);
         res.status(500).json({ success: false, data: null, error: error.message });
     }
 });
@@ -82,7 +84,7 @@ router.put('/users/:id', async (req, res) => {
 
         res.json({ success: true, data: { user }, error: null });
     } catch (error: any) {
-        console.error('Admin update user error:', error);
+        Logger.error('Admin update user error:', error);
         res.status(500).json({ success: false, data: null, error: error.message });
     }
 });
@@ -99,7 +101,7 @@ router.delete('/users/:id', async (req, res) => {
 
         res.json({ success: true, data: { message: 'User deleted' }, error: null });
     } catch (error: any) {
-        console.error('Admin delete user error:', error);
+        Logger.error('Admin delete user error:', error);
         res.status(500).json({ success: false, data: null, error: error.message });
     }
 });
@@ -180,7 +182,7 @@ router.get('/stats', async (req: AuthRequest, res) => {
             error: null
         });
     } catch (error: any) {
-        console.error('Admin stats error:', error);
+        Logger.error('Admin stats error:', error);
         res.status(500).json({ success: false, data: null, error: error.message });
     }
 });
@@ -217,8 +219,9 @@ router.put('/settings', async (req: AuthRequest, res) => {
         if (req.body.license && req.body.license.key) {
             // Import dynamically to avoid circular dependency if any, or just import at top if fine.
             // But we can just use the service.
-            const { licenseService } = await import('../services/licenseScheduler.js');
-            await licenseService.checkLicense();
+            const { LicenseWorker } = await import('../services/LicenseWorker.js');
+            await LicenseWorker.checkStatus();
+
 
             // Re-fetch settings to get updated license info
             const updatedSettings = await AdminSettings.findOne();

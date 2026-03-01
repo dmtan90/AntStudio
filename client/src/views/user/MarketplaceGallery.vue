@@ -4,29 +4,29 @@
       <div>
         <div class="flex items-center gap-2 mb-2">
            <shopping class="text-blue-500" size="24" />
-           <h1 class="text-3xl font-black text-white tracking-tight uppercase">Asset Marketplace</h1>
+           <h1 class="text-3xl font-black text-white tracking-tight uppercase">{{ t('marketplace.title') }}</h1>
         </div>
-        <p class="text-gray-400">Upgrade your production with community-driven premium assets.</p>
+        <p class="text-gray-400">{{ t('marketplace.subtitle') }}</p>
       </div>
       
       <div class="flex items-center gap-4">
          <div class="wallet-pill px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center gap-2">
-            <span class="text-[10px] font-black opacity-40 uppercase">Your Balance</span>
+            <span class="text-[10px] font-black opacity-40 uppercase">{{ t('marketplace.balance') }}</span>
             <span class="text-sm font-black text-blue-400">1,240 CRT</span>
          </div>
-         <button class="action-btn px-6 py-2 text-[10px] font-black bg-white/5">+ LIST ASSET</button>
+         <button class="action-btn px-6 py-2 text-[10px] font-black bg-white/5">{{ t('marketplace.listAsset') }}</button>
       </div>
     </header>
 
     <div class="filters-row flex justify-between items-center mb-10 pb-6 border-b border-white/5">
        <div class="categories flex gap-4">
           <button v-for="cat in categories" :key="cat" class="category-btn px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all" :class="activeCategory === cat ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-gray-500 hover:text-white'" @click="activeCategory = cat">
-             {{ cat }}
+             {{ t('marketplace.categories.' + cat.toLowerCase()) }}
           </button>
        </div>
        <div class="search-box w-64 relative">
           <search class="absolute left-4 top-1/2 -translate-y-1/2 opacity-30" size="14" />
-          <input type="text" placeholder="SEARCH ASSETS..." class="w-full bg-white/5 border border-white/5 rounded-full py-2 pl-10 pr-4 text-[10px] font-black focus:border-blue-500/50 outline-none" />
+          <input type="text" :placeholder="t('marketplace.search')" class="w-full bg-white/5 border border-white/5 rounded-full py-2 pl-10 pr-4 text-[10px] font-black focus:border-blue-500/50 outline-none" />
        </div>
     </div>
 
@@ -42,12 +42,12 @@
              
              <!-- Badges -->
              <div class="absolute top-3 left-3 flex gap-2">
-                <span class="px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[8px] font-black uppercase border border-white/10">{{ asset.type }}</span>
-                <span v-if="asset.isOfficial" class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-[8px] font-black uppercase border border-blue-500/20">Official</span>
+                <span class="px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[8px] font-black uppercase border border-white/10">{{ t('marketplace.categories.' + asset.type.toLowerCase()) }}</span>
+                <span v-if="asset.isOfficial" class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-[8px] font-black uppercase border border-blue-500/20">{{ t('marketplace.badges.official') }}</span>
              </div>
              
              <div class="buy-overlay absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <button class="primary-btn px-6 py-3 rounded-xl text-[10px] font-black" @click.stop="confirmPurchase(asset)">GET NOW</button>
+                <button class="primary-btn px-6 py-3 rounded-xl text-[10px] font-black" @click.stop="confirmPurchase(asset)">{{ t('marketplace.actions.getNow') }}</button>
              </div>
           </div>
 
@@ -70,31 +70,31 @@
     </div>
 
     <!-- Purchase Dialog -->
-    <el-dialog v-model="showPurchase" title="CONFIRM TRANSACTION" width="400px" custom-class="glass-dialog">
+    <el-dialog v-model="showPurchase" :title="t('marketplace.dialogs.purchase.title')" width="400px" custom-class="glass-dialog">
        <div v-if="selectedAsset" class="text-center py-6">
           <div class="mb-6 w-20 h-20 bg-blue-500/10 rounded-2xl border border-blue-500/20 mx-auto flex items-center justify-center text-blue-400">
              <hand-down size="40" />
           </div>
           <h2 class="text-xl font-black mb-2">{{ selectedAsset.title }}</h2>
-          <p class="text-gray-400 text-xs mb-8">This asset will be permanently added to your personal library and available in all projects.</p>
+          <p class="text-gray-400 text-xs mb-8">{{ t('marketplace.dialogs.purchase.desc') }}</p>
           
           <div class="p-6 bg-black/40 rounded-2xl border border-white/5 flex justify-between items-center mb-8">
              <div class="text-left">
-                <p class="text-[8px] font-black opacity-30 uppercase">PURCHASE PRICE</p>
+                <p class="text-[8px] font-black opacity-30 uppercase">{{ t('marketplace.dialogs.purchase.priceLabel') }}</p>
                 <div class="text-2xl font-black text-blue-400">{{ selectedAsset.price }} CRT</div>
              </div>
              <div class="text-right">
-                <p class="text-[8px] font-black opacity-30 uppercase">SYSTEM FEE</p>
+                <p class="text-[8px] font-black opacity-30 uppercase">{{ t('marketplace.dialogs.purchase.feeLabel') }}</p>
                 <div class="text-[10px] font-black">0 CRT</div>
              </div>
           </div>
        </div>
        <template #footer>
           <div class="flex justify-between items-center px-4 pb-4">
-             <div class="text-left text-[8px] font-black uppercase opacity-20">Secured via AntStudio Economy</div>
+             <div class="text-left text-[8px] font-black uppercase opacity-20">{{ t('marketplace.dialogs.purchase.securityNote') }}</div>
              <div class="flex gap-2">
-                <button class="secondary-btn text-[10px] px-6 py-2" @click="showPurchase = false">CANCEL</button>
-                <button class="primary-btn text-[10px] px-8 py-3" @click="processPurchase">CONFIRM & BUY</button>
+                <button class="secondary-btn text-[10px] px-6 py-2" @click="showPurchase = false">{{ t('marketplace.actions.cancel') }}</button>
+                <button class="primary-btn text-[10px] px-8 py-3" @click="processPurchase">{{ t('marketplace.actions.confirm') }}</button>
              </div>
           </div>
        </template>
@@ -106,6 +106,9 @@
 import { ref, computed } from 'vue';
 import { Shopping, Search, Star, HandDown, CheckOne } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n()
 
 const categories = ['ALL', 'OVERLAYS', 'PERSONAS', 'TEMPLATES', 'SCENES', 'AUDIO'];
 const activeCategory = ref('ALL');
@@ -133,7 +136,7 @@ const confirmPurchase = (asset: any) => {
 };
 
 const processPurchase = () => {
- toast.success(`Deployment complete! ${selectedAsset.value.title} is now in your Studio library.`);
+ toast.success(t('marketplace.toasts.purchaseSuccess', { title: selectedAsset.value.title }));
  showPurchase.value = false;
 };
 </script>

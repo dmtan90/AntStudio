@@ -1,6 +1,8 @@
 import { AIPerformanceService, PerformanceSnapshot } from './AIPerformanceService.js';
 import { geminiPool } from '../../utils/gemini.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 /**
  * Service for predictive audience intelligence and engagement forecasting.
  */
@@ -41,7 +43,7 @@ export class AudiencePredictor {
             return JSON.parse(text);
 
         } catch (error: any) {
-            console.error('[AudiencePredictor] Forecast failed:', error.message);
+            Logger.error('[AudiencePredictor] Forecast failed:', error.message);
             return { trend: 'error', confidence: 0 };
         }
     }

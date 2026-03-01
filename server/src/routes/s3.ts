@@ -5,6 +5,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import config from '../utils/config.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // GET /api/s3/* - Proxy S3 files with authentication
@@ -20,7 +22,7 @@ router.get('/*', async (req: AuthRequest, res: Response) => {
         });
 
         const response = await client.send(command).catch(err => {
-            console.error('S3 Client error:', err);
+            Logger.error('S3 Client error:', err);
             return null;
         });
 
@@ -37,7 +39,7 @@ router.get('/*', async (req: AuthRequest, res: Response) => {
             res.status(404).json({ success: false, data: null, error: 'File not found' });
         }
     } catch (error: any) {
-        console.error('S3 Proxy Error:', error);
+        Logger.error('S3 Proxy Error:', error);
         res.status(404).json({ success: false, data: null, error: 'File not found' });
     }
 });
@@ -69,7 +71,7 @@ router.post('/presigned-upload', authMiddleware, async (req: AuthRequest, res: R
             }
         });
     } catch (error: any) {
-        console.error('Presigned Upload Error:', error);
+        Logger.error('Presigned Upload Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

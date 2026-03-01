@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import config from '../utils/config.js';
 import { Template } from '../models/Template.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const TEMPLATES = [
     {
         id: 'tpl_organic_1',
@@ -49,22 +51,22 @@ const TEMPLATES = [
 const seed = async () => {
     try {
         await mongoose.connect(config.mongodbUri || '');
-        console.log('Connected to DB');
+        Logger.info('Connected to DB');
 
         for (const t of TEMPLATES) {
             const exists = await Template.findOne({ id: t.id });
             if (!exists) {
                 await Template.create(t);
-                console.log(`Created template: ${t.name}`);
+                Logger.info(`Created template: ${t.name}`);
             } else {
-                console.log(`Template exists: ${t.name}`);
+                Logger.info(`Template exists: ${t.name}`);
             }
         }
 
-        console.log('Seeding complete');
+        Logger.info('Seeding complete');
         process.exit(0);
     } catch (error) {
-        console.error('Seeding failed:', error);
+        Logger.error('Seeding failed:', error);
         process.exit(1);
     }
 };

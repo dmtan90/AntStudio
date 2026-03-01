@@ -3,7 +3,7 @@ import mongoose, { Types } from 'mongoose';
 import { UserPlatformAccount, SocialPlatform } from '../models/UserPlatformAccount.js';
 import { GoogleGenAI } from '@google/genai';
 import { geminiPool } from '../utils/gemini.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 import { PlatformAuthService } from './PlatformAuthService.js';
 import { SyndicationRecord, ISyndicationRecord } from '../models/SyndicationRecord.js';
 import configService from '../utils/config.js';
@@ -31,20 +31,20 @@ export class SocialSyndicationService {
                 });
 
                 if (scheduled.length > 0) {
-                    systemLogger.info(`[Syndication] Background processor found ${scheduled.length} tasks to trigger.`, 'SocialSyndicationService');
+                    Logger.info(`[Syndication] Background processor found ${scheduled.length} tasks to trigger.`, 'SocialSyndicationService');
                     for (const record of scheduled) {
                         this.processScheduledRecord(record);
                     }
                 }
             } catch (err) {
-                systemLogger.error(`[Syndication] Background processor failed: ${err instanceof Error ? err.message : String(err)}`, 'SocialSyndicationService');
+                Logger.error(`[Syndication] Background processor failed: ${err instanceof Error ? err.message : String(err)}`, 'SocialSyndicationService');
             }
         }, 60000);
     }
 
     private async processScheduledRecord(record: ISyndicationRecord) {
         try {
-            systemLogger.info(`[Syndication] Triggering scheduled post: ${record._id}`, 'SocialSyndicationService');
+            Logger.info(`[Syndication] Triggering scheduled post: ${record._id}`, 'SocialSyndicationService');
             
             // Re-fetch project to get latest video key
             const project = await Project.findById(record.projectId);
@@ -93,11 +93,11 @@ export class SocialSyndicationService {
         try {
             const project = await Project.findById(projectId);
             if (!project || !project.publish?.s3Key) {
-                systemLogger.warn(`[Syndication] Aborted: Final video not ready for project ${projectId}`, 'SocialSyndicationService');
+                Logger.warn(`[Syndication] Aborted: Final video not ready for project ${projectId}`, 'SocialSyndicationService');
                 return;
             }
 
-            systemLogger.info(`[Syndication] Starting final video syndication for Project: ${project.title}`, 'SocialSyndicationService');
+            Logger.info(`[Syndication] Starting final video syndication for Project: ${project.title}`, 'SocialSyndicationService');
 
             // 1. Find enabled syndication accounts for the user
             const accounts = await UserPlatformAccount.find({
@@ -108,7 +108,7 @@ export class SocialSyndicationService {
 
             const results = await Promise.all(accounts.map(async (acc) => {
                 // Simulate Platform API Upload
-                console.log(`Uploading Final Video to ${acc.platform} (${acc.accountName})...`);
+                Logger.info(`Uploading Final Video to ${acc.platform} (${acc.accountName})...`, 'SocialSyndicationService');
                 
                 const record = await SyndicationRecord.create({
                     userId: project.userId,
@@ -137,11 +137,11 @@ export class SocialSyndicationService {
                 }
             });
 
-            systemLogger.info(`[Syndication] Final video distributed to ${results.length} channels.`, 'SocialSyndicationService');
+            Logger.info(`[Syndication] Final video distributed to ${results.length} channels.`, 'SocialSyndicationService');
             return { success: true, count: results.length };
 
         } catch (error: any) {
-            systemLogger.error(`[Syndication] Final video failed: ${error.message}`, 'SocialSyndicationService');
+            Logger.error(`[Syndication] Final video failed: ${error.message}`, 'SocialSyndicationService');
             throw error;
         }
     }
@@ -156,11 +156,11 @@ export class SocialSyndicationService {
 
             const asset = project.visualAssets?.find(a => a._id?.toString() === assetId);
             if (!asset || !asset.s3Key) {
-                systemLogger.warn(`[Syndication] Asset ${assetId} not found or missing s3Key`, 'SocialSyndicationService');
+                Logger.warn(`[Syndication] Asset ${assetId} not found or missing s3Key`, 'SocialSyndicationService');
                 return;
             }
 
-            systemLogger.info(`🚀 [Syndication] Syndicating clip: ${asset.name}`, 'SocialSyndicationService');
+            Logger.info(`🚀 [Syndication] Syndicating clip: ${asset.name}`, 'SocialSyndicationService');
             
             // Find enabled platform accounts
             const accounts = await UserPlatformAccount.find({
@@ -170,7 +170,7 @@ export class SocialSyndicationService {
             });
 
             if (accounts.length === 0) {
-                systemLogger.warn(`[Syndication] No active platform accounts for user ${project.userId}`, 'SocialSyndicationService');
+                Logger.warn(`[Syndication] No active platform accounts for user ${project.userId}`, 'SocialSyndicationService');
                 return;
             }
 
@@ -186,7 +186,7 @@ export class SocialSyndicationService {
                 { id: assetId, type: 'visualAsset' }
             );
         } catch (error: any) {
-            systemLogger.error(`❌ [Syndication] Clip syndication failed: ${error.message}`, 'SocialSyndicationService');
+            Logger.error(`❌ [Syndication] Clip syndication failed: ${error.message}`, 'SocialSyndicationService');
         }
     }
 
@@ -201,7 +201,7 @@ export class SocialSyndicationService {
         hookInfo?: { id: string, type: string }
     ) {
         try {
-            systemLogger.info(`🚀 [Syndication] Starting publish for Project: ${projectId}`, 'SocialSyndicationService');
+            Logger.info(`🚀 [Syndication] Starting publish for Project: ${projectId}`, 'SocialSyndicationService');
 
             // 1. Validate Project & Asset
             const project = await Project.findById(projectId);
@@ -273,7 +273,7 @@ export class SocialSyndicationService {
                     };
 
                 } catch (e: any) {
-                    systemLogger.error(`❌ [Syndication] Upload failed for ${acc.platform}: ${e.message}`, 'SocialSyndicationService');
+                    Logger.error(`❌ [Syndication] Upload failed for ${acc.platform}: ${e.message}`, 'SocialSyndicationService');
                     if (record) {
                         record.status = 'failed';
                         record.error = e.message;
@@ -299,7 +299,7 @@ export class SocialSyndicationService {
             return results;
             
         } catch (error: any) {
-            systemLogger.error(`❌ [Syndication] Publish failed: ${error.message}`, 'SocialSyndicationService');
+            Logger.error(`❌ [Syndication] Publish failed: ${error.message}`, 'SocialSyndicationService');
             throw error;
         }
     }
@@ -322,7 +322,7 @@ export class SocialSyndicationService {
             const records = await SyndicationRecord.find(query).limit(50);
             if (records.length === 0) return;
 
-            systemLogger.info(`[Syndication] Syncing engagement for ${records.length} records...`, 'SocialSyndicationService');
+            Logger.info(`[Syndication] Syncing engagement for ${records.length} records...`, 'SocialSyndicationService');
 
             await Promise.all(records.map(async (record) => {
                 try {
@@ -346,13 +346,13 @@ export class SocialSyndicationService {
                         await this.checkMilestones(record);
                     }
                 } catch (e: any) {
-                    systemLogger.error(`[Syndication] Sync failed for record ${record._id}: ${e.message}`, 'SocialSyndicationService');
+                    Logger.error(`[Syndication] Sync failed for record ${record._id}: ${e.message}`, 'SocialSyndicationService');
                 }
             }));
 
-            systemLogger.info(`[Syndication] Engagement sync complete.`, 'SocialSyndicationService');
+            Logger.info(`[Syndication] Engagement sync complete.`, 'SocialSyndicationService');
         } catch (error: any) {
-            systemLogger.error(`[Syndication] Global sync failed: ${error.message}`, 'SocialSyndicationService');
+            Logger.error(`[Syndication] Global sync failed: ${error.message}`, 'SocialSyndicationService');
         }
     }
 
@@ -363,7 +363,7 @@ export class SocialSyndicationService {
         const record = await SyndicationRecord.findById(recordId);
         if (!record || record.status !== 'failed') throw new Error('Invalid record for retry');
 
-        systemLogger.info(`[Syndication] Retrying record: ${recordId}`, 'SocialSyndicationService');
+        Logger.info(`[Syndication] Retrying record: ${recordId}`, 'SocialSyndicationService');
         
         const project = await Project.findById(record.projectId);
         if (!project) throw new Error('Project missing for retry');
@@ -425,7 +425,7 @@ ${commentsText}`;
                 sentiment: sentiments[i] || 'NEUTRAL'
             }));
         } catch (error) {
-            systemLogger.warn(`[Syndication] Sentiment analysis failed: ${error instanceof Error ? error.message : String(error)}`, 'SocialSyndicationService');
+            Logger.warn(`[Syndication] Sentiment analysis failed: ${error instanceof Error ? error.message : String(error)}`, 'SocialSyndicationService');
             return rawComments.map(c => ({ ...c, sentiment: 'NEUTRAL' }));
         }
     }
@@ -495,7 +495,7 @@ Return only the reply text.`;
                         { type: 'milestone', recordId: record._id.toString() }
                     );
                 } catch (err) {
-                    systemLogger.warn(`[Syndication] FCM failed for milestone: ${err instanceof Error ? err.message : String(err)}`, 'SocialSyndicationService');
+                    Logger.warn(`[Syndication] FCM failed for milestone: ${err instanceof Error ? err.message : String(err)}`, 'SocialSyndicationService');
                 }
             }
         }
@@ -503,7 +503,7 @@ Return only the reply text.`;
         if (newMilestones.length > 0) {
             record.milestonesReached = [...reached, ...newMilestones];
             await record.save();
-            systemLogger.info(`[Syndication] New milestones for ${record._id}: ${newMilestones.join(', ')}`, 'SocialSyndicationService');
+            Logger.info(`[Syndication] New milestones for ${record._id}: ${newMilestones.join(', ')}`, 'SocialSyndicationService');
         }
     }
 
@@ -590,7 +590,7 @@ Return ONLY a JSON array of objects with the following format:
             
             return JSON.parse(jsonMatch[0]);
         } catch (error) {
-            systemLogger.error(`[Syndication] Hook generation failed: ${error}`, 'SocialSyndicationService');
+            Logger.error(`[Syndication] Hook generation failed: ${error}`, 'SocialSyndicationService');
             return [];
         }
     }
@@ -621,8 +621,8 @@ Return ONLY a JSON array of objects with the following format:
                 { $sort: { avgViews: -1 } }
             ]);
             return stats;
-        } catch (error) {
-            console.error('[Syndication] Hook stats error:', error);
+        } catch (error: any) {
+            Logger.error('[Syndication] Hook stats error:', 'SocialSyndicationService', error);
             return [];
         }
     }
@@ -687,11 +687,11 @@ Return ONLY a JSON array of objects with the following format:
                 }
             })));
 
-            systemLogger.info(`📂 [Syndication] Created ${records.length} autonomous drafts for clip: ${clipTitle}`, 'SocialSyndicationService');
+            Logger.info(`📂 [Syndication] Created ${records.length} autonomous drafts for clip: ${clipTitle}`, 'SocialSyndicationService');
             return records;
 
         } catch (error: any) {
-            systemLogger.error(`❌ [Syndication] Draft creation failed: ${error.message}`, 'SocialSyndicationService');
+            Logger.error(`❌ [Syndication] Draft creation failed: ${error.message}`, 'SocialSyndicationService');
         }
     }
 }

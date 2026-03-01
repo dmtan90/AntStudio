@@ -14,7 +14,7 @@ import { gamificationService } from './gamification/GamificationService.js';
 import { virtualEconomyService } from './economy/VirtualEconomyService.js';
 import { analyticsService } from './analytics/AnalyticsService.js';
 import { autoDirectorService } from './ai/AutoDirectorService.js';
-import { systemLogger } from '~/utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 
 const SOCKET_PORT = process.env.SOCKET_PORT || 4001;
 
@@ -41,7 +41,7 @@ export class SocketServer {
      */
     public initialize(httpServer: HTTPServer) {
         if (this.io) {
-            console.warn('⚠️ [SocketServer] Already initialized');
+            Logger.warn('⚠️ [SocketServer] Already initialized', 'SocketServer');
             return;
         }
 
@@ -61,7 +61,7 @@ export class SocketServer {
         this.setupServiceListeners();
         // Chat and engagement sync workers will be started on-demand when sessions go live
 
-        console.log(`🚀 [SocketServer] Unified Socket.io running at /socket.io port ${SOCKET_PORT}`);
+        Logger.info(`🚀 [SocketServer] Unified Socket.io running at /socket.io port ${SOCKET_PORT}`);
     }
 
     /**
@@ -106,7 +106,7 @@ export class SocketServer {
 
                         // Phase 90: Clear any pending disconnect grace period
                         if (this.disconnectGracePeriods.has(userId)) {
-                            console.log(`♻️ [SocketServer] Host ${user.name} resumed before grace period expiry.`);
+                            Logger.info(`♻️ [SocketServer] Host ${user.name} resumed before grace period expiry.`, 'SocketServer');
                             clearTimeout(this.disconnectGracePeriods.get(userId)!);
                             this.disconnectGracePeriods.delete(userId);
                         }
@@ -134,18 +134,18 @@ export class SocketServer {
 
                     // Phase 90: Clear any pending disconnect grace period
                     if (this.disconnectGracePeriods.has(socket.data.user.id)) {
-                        console.log(`♻️ [SocketServer] Guest ${displayName} resumed before grace period expiry.`);
+                        Logger.info(`♻️ [SocketServer] Guest ${displayName} resumed before grace period expiry.`, 'SocketServer');
                         clearTimeout(this.disconnectGracePeriods.get(socket.data.user.id)!);
                         this.disconnectGracePeriods.delete(socket.data.user.id);
                     }
 
-                    console.log(`📡 [SocketServer] Anonymous Guest "${displayName}" joined Room: ${sessionId}`);
+                    Logger.info(`📡 [SocketServer] Anonymous Guest "${displayName}" joined Room: ${sessionId}`, 'SocketServer');
                     return next();
                 }
 
                 return next(new Error('Authentication error: Invalid token'));
-            } catch (err) {
-                console.error('❌ [SocketServer] Auth error:', err);
+            } catch (err: any) {
+                Logger.error('❌ [SocketServer] Auth error:', 'SocketServer', err);
                 next(new Error('Authentication error'));
             }
         });
@@ -159,17 +159,17 @@ export class SocketServer {
 
         this.io.on('connection', (socket: Socket) => {
             const transportName = socket.conn.transport.name;
-            console.log(`🔌 [SocketServer] New connection: ${socket.id} (${transportName})`);
+            Logger.info(`🔌 [SocketServer] New connection: ${socket.id} (${transportName})`, 'SocketServer');
 
             socket.conn.on('upgrade', () => {
-                console.log(`🚀 [SocketServer] Upgraded to ${socket.conn.transport.name} for ${socket.id}`);
+                Logger.info(`🚀 [SocketServer] Upgraded to ${socket.conn.transport.name} for ${socket.id}`, 'SocketServer');
             });
 
             const roomId = socket.data.roomId;
             const user = socket.data.user;
 
             if (roomId && user) {
-                console.log(`👤 User ${user.name} joined Room: ${roomId} with ID: ${user.id}`);
+                Logger.info(`👤 User ${user.name} joined Room: ${roomId} with ID: ${user.id}`, 'SocketServer');
                 
                 // Phase 90: Clear any pending disconnect grace period (redundant but safe)
                 if (this.disconnectGracePeriods.has(user.id)) {
@@ -361,7 +361,7 @@ export class SocketServer {
             // Lifecycle
             socket.on('disconnect', (reason) => {
                 if (user?.id) {
-                    console.log(`❌ [SocketServer] User disconnected: ${user.name} (${socket.id}). Reason: ${reason}`);
+                    Logger.info(`❌ [SocketServer] User disconnected: ${user.name} (${socket.id}). Reason: ${reason}`, 'SocketServer');
                     
                     // Tracking cleanup
                     const userSocketSet = this.userSockets.get(user.id);
@@ -376,9 +376,9 @@ export class SocketServer {
                         const isFullyDisconnected = !this.userSockets.has(user.id);
                         
                         if (isFullyDisconnected) {
-                            console.log(`⏳ [SocketServer] Starting 60s grace period for user ${user.name} (${user.id})`);
+                            Logger.info(`⏳ [SocketServer] Starting 60s grace period for user ${user.name} (${user.id})`, 'SocketServer');
                             const timer = setTimeout(() => {
-                                console.log(`💀 [SocketServer] Grace period expired for user ${user.name}. Cleaning up...`);
+                                Logger.info(`💀 [SocketServer] Grace period expired for user ${user.name}. Cleaning up...`, 'SocketServer');
                                 this.io?.to(roomId).emit('guest:leave', { guestId: user.id });
                                 this.broadcastRoomUsers(roomId);
                                 this.disconnectGracePeriods.delete(user.id);
@@ -386,7 +386,7 @@ export class SocketServer {
                             
                             this.disconnectGracePeriods.set(user.id, timer);
                         } else {
-                            console.log(`ℹ️ [SocketServer] User ${user.name} still has other active sockets. Skipping grace period.`);
+                            Logger.info(`ℹ️ [SocketServer] User ${user.name} still has other active sockets. Skipping grace period.`, 'SocketServer');
                             this.broadcastRoomUsers(roomId);
                         }
                     }
@@ -405,8 +405,8 @@ export class SocketServer {
             const users = sockets.map(s => s.data.user).filter(u => u);
             const uniqueUsers = Array.from(new Map(users.map(u => [u.id, u])).values());
             this.io.to(roomId).emit('users:update', uniqueUsers);
-        } catch (error) {
-            console.error('[SocketServer] Error broadcasting room users:', error);
+        } catch (error: any) {
+            Logger.error('[SocketServer] Error broadcasting room users:', 'SocketServer', error);
         }
     }
 
@@ -488,11 +488,11 @@ export class SocketServer {
     private startChatSyncWorker() {
         // Prevent multiple intervals
         if (this.chatSyncInterval) {
-            systemLogger.debug('[ChatSync] Worker already running', 'SocketServer');
+            Logger.debug('[ChatSync] Worker already running', 'SocketServer');
             return;
         }
 
-        systemLogger.info('[ChatSync] Starting chat sync worker', 'SocketServer');
+        Logger.info('[ChatSync] Starting chat sync worker', 'SocketServer');
         this.chatSyncInterval = setInterval(async () => {
             if (!this.io) return;
             try {
@@ -503,7 +503,7 @@ export class SocketServer {
 
                 // If no active sessions, stop the worker
                 if (activeSessions.length === 0) {
-                    systemLogger.info('[ChatSync] No active sessions, stopping worker', 'SocketServer');
+                    Logger.info('[ChatSync] No active sessions, stopping worker', 'SocketServer');
                     this.stopChatSyncWorker();
                     return;
                 }
@@ -539,7 +539,7 @@ export class SocketServer {
 
                             // Detect Offline/Stale Chat for YouTube
                             if (account.platform === 'youtube' && (isOffline || (messages.length === 0 && !nextPageToken))) {
-                                systemLogger.info(`[ChatSync] Refreshing YouTube chat ID for session ${session.sessionId}`, 'SocketServer');
+                                Logger.info(`[ChatSync] Refreshing YouTube chat ID for session ${session.sessionId}`, 'SocketServer');
                                 try {
                                     const project = await (await import('../models/Project.js')).Project.findById((session as any).projectId);
                                     const liveInfo = await PlatformAuthService.getLiveStreamInfo(
@@ -548,7 +548,7 @@ export class SocketServer {
                                         { title: project?.title || 'AntStudio Live', description: project?.description || '' }
                                     );
                                     if (liveInfo.externalChatId && liveInfo.externalChatId !== target.externalChatId) {
-                                        systemLogger.info(`[ChatSync] Found NEW YouTube Chat ID: ${liveInfo.externalChatId}`, 'SocketServer');
+                                        Logger.info(`[ChatSync] Found NEW YouTube Chat ID: ${liveInfo.externalChatId}`, 'SocketServer');
                                         target.externalChatId = liveInfo.externalChatId;
                                         // Clear token for new ID
                                         this.chatPageTokens.delete(tokenKey);
@@ -559,7 +559,7 @@ export class SocketServer {
                                         );
                                     }
                                 } catch (refreshErr: any) {
-                                    systemLogger.warn(`[ChatSync] Failed to refresh YouTube chat ID: ${refreshErr.message}`, 'SocketServer');
+                                    Logger.warn(`[ChatSync] Failed to refresh YouTube chat ID: ${refreshErr.message}`, 'SocketServer');
                                 }
                             }
 
@@ -574,12 +574,12 @@ export class SocketServer {
                                 });
                             }
                         } catch (err: any) {
-                            systemLogger.error(`[ChatSync] Error fetching chat for ${target.platform}: ${err.message}`, 'SocketServer');
+                            Logger.error(`[ChatSync] Error fetching chat for ${target.platform}: ${err.message}`, 'SocketServer', err);
                         }
                     }
                 }
-            } catch (error) {
-                console.error('[ChatSync] Global worker error:', error);
+            } catch (error: any) {
+                Logger.error('[ChatSync] Global worker error:', 'SocketServer', error);
             }
         }, 8000);
     }
@@ -591,7 +591,7 @@ export class SocketServer {
         if (this.chatSyncInterval) {
             clearInterval(this.chatSyncInterval);
             this.chatSyncInterval = null;
-            systemLogger.info('[ChatSync] Chat sync worker stopped', 'SocketServer');
+            Logger.info('[ChatSync] Chat sync worker stopped', 'SocketServer');
         }
     }
 
@@ -601,18 +601,18 @@ export class SocketServer {
     private startEngagementSyncWorker() {
         // Prevent multiple intervals
         if (this.engagementSyncInterval) {
-            systemLogger.debug('[EngagementSync] Worker already running', 'SocketServer');
+            Logger.debug('[EngagementSync] Worker already running', 'SocketServer');
             return;
         }
 
-        systemLogger.info('[EngagementSync] Starting engagement sync worker', 'SocketServer');
+        Logger.info('[EngagementSync] Starting engagement sync worker', 'SocketServer');
         this.engagementSyncInterval = setInterval(async () => {
             try {
                 const liveSessions = await StreamSessionModel.find({ status: 'live' });
                 
                 // If no active sessions, stop the worker
                 if (liveSessions.length === 0) {
-                    systemLogger.info('[EngagementSync] No active sessions, stopping worker', 'SocketServer');
+                    Logger.info('[EngagementSync] No active sessions, stopping worker', 'SocketServer');
                     this.stopEngagementSyncWorker();
                     return;
                 }
@@ -644,7 +644,7 @@ export class SocketServer {
                                     hasExternalStats = true;
                                 }
                             } catch (err: any) {
-                                systemLogger.warn(`[EngagementSync] Failed to fetch stats for ${target.platform}: ${err.message}`, 'SocketServer');
+                                Logger.warn(`[EngagementSync] Failed to fetch stats for ${target.platform}: ${err.message}`, 'SocketServer');
                             }
                         }
                     }
@@ -662,7 +662,7 @@ export class SocketServer {
                     }
                 }
             } catch (error: any) {
-                systemLogger.error(`[EngagementSync] Worker error: ${error.message}`, 'SocketServer');
+                Logger.error(`[EngagementSync] Worker error: ${error.message}`, 'SocketServer');
             }
         }, 60000); // Poll every 60 seconds
     }
@@ -674,7 +674,7 @@ export class SocketServer {
         if (this.engagementSyncInterval) {
             clearInterval(this.engagementSyncInterval);
             this.engagementSyncInterval = null;
-            systemLogger.info('[EngagementSync] Engagement sync worker stopped', 'SocketServer');
+            Logger.info('[EngagementSync] Engagement sync worker stopped', 'SocketServer');
         }
     }
 

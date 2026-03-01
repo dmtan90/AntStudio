@@ -6,6 +6,8 @@ import { aiAccountManager } from '../utils/ai/AIAccountManager.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
 import { connectDB } from '../utils/db.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // All routes require admin authentication
@@ -58,7 +60,7 @@ router.get('/auth-url', async (req: AuthRequest, res) => {
         const redirectUri = (req.query.redirectUri as string) || await getRedirectUri(req);
         const isAntigravity = req.query.isAntigravity === 'true';
 
-        console.log(`[AIAccount API] Generating Auth URL (Antigravity: ${isAntigravity}) with redirect_uri: ${redirectUri}`);
+        Logger.info(`[AIAccount API] Generating Auth URL (Antigravity: ${isAntigravity}) with redirect_uri: ${redirectUri}`);
 
         // Encode state to pass through OAuth flow
         const stateObj = {
@@ -95,17 +97,17 @@ router.get('/callback', async (req: any, res) => {
                 const decoded = JSON.parse(Buffer.from(state as string, 'base64').toString('utf8'));
                 isAntigravity = !!decoded.ag;
             } catch (e) {
-                console.warn('[AIAccount API] State decoding failed:', e);
+                Logger.warn('[AIAccount API] State decoding failed:', e);
             }
         }
 
-        console.log(`[AIAccount API] Callback received (Antigravity: ${isAntigravity}). Exchanging code with redirect_uri: ${redirectUri}`);
+        Logger.info(`[AIAccount API] Callback received (Antigravity: ${isAntigravity}). Exchanging code with redirect_uri: ${redirectUri}`);
 
         const account = await aiAccountManager.exchangeCodeForTokens(code as string, redirectUri, { isAntigravity });
 
         // Trigger background discovery of Project ID
         aiAccountManager.discoverProjectId(account).catch(async err => {
-            console.error(`[AIAccount API] Deferred discovery failed for ${account.email}:`, err.message);
+            Logger.error(`[AIAccount API] Deferred discovery failed for ${account.email}:`, err.message);
             account.errorMessage = err.message;
             await account.save();
         });
@@ -114,7 +116,7 @@ router.get('/callback', async (req: any, res) => {
         const config = (await import('../utils/config.js')).default;
         res.redirect(`${config.public.baseUrl}/admin/ai-accounts?success=true`);
     } catch (error: any) {
-        console.error('OAuth Callback Error:', error.message);
+        Logger.error('OAuth Callback Error:', error.message);
         // res.status(500).send(`Authentication failed: ${error.message}`);
         // Redirect back to frontend admin panel
         const config = (await import('../utils/config.js')).default;
@@ -138,7 +140,7 @@ router.post('/auth-callback', async (req: AuthRequest, res) => {
 
         // Trigger background discovery of Project ID
         aiAccountManager.discoverProjectId(account).catch(err => {
-            console.error(`[AIAccount API] Deferred discovery failed for ${account.email}:`, err.message);
+            Logger.error(`[AIAccount API] Deferred discovery failed for ${account.email}:`, err.message);
         });
 
         res.json({ success: true, data: account, error: null });

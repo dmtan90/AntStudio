@@ -3,9 +3,9 @@
         <div class="header mb-4 flex justify-between items-center">
             <h3 class="text-xs font-black uppercase tracking-widest flex items-center gap-2">
                 <peoples theme="outline" size="14" fill="#3b82f6" />
-                Neural Presence Grid
+                {{ $t('studio.audience.presenceGrid') }}
             </h3>
-            <span class="text-[10px] font-bold opacity-30">{{ vips.length }} VIPs Present</span>
+            <span class="text-[10px] font-bold opacity-30">{{ $t('studio.audience.vipsPresent', { count: vips.length }) }}</span>
         </div>
 
         <!-- 3D Seating Grid -->

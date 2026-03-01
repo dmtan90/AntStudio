@@ -1,6 +1,6 @@
 import { aiAccountManager } from '../utils/ai/AIAccountManager.js';
 import { privateLLMClient } from '../utils/ai/PrivateLLMClient.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 
 export interface HealthStatus {
     providerId: string;
@@ -20,7 +20,7 @@ export class HealerService {
      * Reports an error from an AI provider to trigger healing logic.
      */
     public async reportError(providerId: string, error: any) {
-        systemLogger.warn(`🔥 [Healer] Error reported for ${providerId}: ${error.message || 'Unknown error'}`, 'HealerService');
+        Logger.warn(`🔥 [Healer] Error reported for ${providerId}: ${error.message || 'Unknown error'}`, 'HealerService');
 
         let status = this.healthCache.get(providerId) || { providerId, status: 'healthy', latencyMs: 0, errorCount: 0 };
         status.errorCount++;
@@ -37,17 +37,17 @@ export class HealerService {
      * Attempts to heal a broken AI pipe.
      */
     private async performSelfHealing(providerId: string) {
-        systemLogger.info(`🩹 [Healer] Initiating self-healing for ${providerId}...`, 'HealerService');
+        Logger.info(`🩹 [Healer] Initiating self-healing for ${providerId}...`, 'HealerService');
 
         if (providerId === 'google' || providerId === 'aistudio') {
             // Heal Action 1: Rotate Accounts
-            console.log(`[Healer] Rotating API accounts for ${providerId}...`);
+            Logger.info(`[Healer] Rotating API accounts for ${providerId}...`, 'HealerService');
             // In a real scenario, we might mark the current account as 'cooldown' or similar
 
             // Heal Action 2: Verify Private Fallback
             const isLocalReady = await privateLLMClient.testConnection();
             if (isLocalReady) {
-                systemLogger.info(`✅ [Healer] Private AI Fallback verified and ready.`, 'HealerService');
+                Logger.info(`✅ [Healer] Private AI Fallback verified and ready.`, 'HealerService');
             }
         }
 

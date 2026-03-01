@@ -3,18 +3,22 @@
         <!-- Providers Registry -->
         <div class="settings-section cinematic-panel p-6">
             <div class="panel-header flex justify-between items-center mb-6">
-                <span class="text-xs font-black uppercase tracking-widest opacity-60">Neural Provider Registry</span>
+                <span class="text-xs font-black uppercase tracking-widest opacity-60">
+                    {{ $t('admin.settings.ai.providerRegistry') }}
+                </span>
                 <div class="flex gap-2">
                     <el-button v-if="geminiApiKeys" plain bg round size="small" type="primary" @click="showGeminiPool = true">
-                        Gemini Pool Manager
+                        {{ $t('admin.settings.ai.geminiPoolManager') }}
                     </el-button>
                     <el-dropdown @command="handleProviderCommand">
-                        <el-button plain bg round size="small">Add Intelligence Core</el-button>
+                        <el-button plain bg round size="small">
+                            {{ $t('admin.settings.ai.addIntelligenceCore') }}
+                        </el-button>
                         <template #dropdown>
                             <el-dropdown-menu>
                                 <el-dropdown-item v-for="p in knownProviders" :key="p.id" :command="p"
                                     :disabled="providers.some(pr => pr.id === p.id)">{{ p.name }}</el-dropdown-item>
-                                <el-dropdown-item command="custom">Custom Provider</el-dropdown-item>
+                                <el-dropdown-item command="custom">{{ $t('admin.settings.ai.customProvider') }}</el-dropdown-item>
                             </el-dropdown-menu>
                         </template>
                     </el-dropdown>
@@ -23,34 +27,34 @@
             <div class="cinematic-table-container">
                 <div
                     class="cinematic-table-header grid grid-cols-12 gap-4 p-4 border-b border-white/5 opacity-30 text-[8px] font-black uppercase">
-                    <div class="col-span-2">Identity</div>
-                    <div class="col-span-4">Security / Endpoint</div>
-                    <div class="col-span-3">Capabilities</div>
-                    <div class="col-span-1 text-center">Status</div>
-                    <div class="col-span-2 text-right">Actions</div>
+                    <div class="col-span-2">{{ $t('admin.settings.table.identity') }}</div>
+                    <div class="col-span-4">{{ $t('admin.settings.table.security') }}</div>
+                    <div class="col-span-3">{{ $t('admin.settings.table.capabilities') }}</div>
+                    <div class="col-span-1 text-center">{{ $t('admin.settings.table.status') }}</div>
+                    <div class="col-span-2 text-right">{{ $t('admin.settings.table.actions') }}</div>
                 </div>
                 <div class="cinematic-table-body">
                     <div v-for="(provider, idx) in providers" :key="idx"
                         class="cinematic-row grid grid-cols-12 gap-4 p-4 items-center border-b border-white/5 hover:bg-white/2 transition-all">
                         <div class="col-span-2">
                             <el-input v-model="provider.name" size="small" class="glass-input mb-1"
-                                placeholder="Name" />
+                                :placeholder="t('admin.common.label')" />
                             <p class="text-[8px] font-mono opacity-30 px-2 uppercase">{{ provider.id }}</p>
                         </div>
                         <div class="col-span-4 space-y-2">
                             <el-input v-model="provider.apiKey" type="password" show-password size="small"
-                                class="glass-input" placeholder="API Key" />
+                                class="glass-input" :placeholder="t('admin.settings.table.apiKey')" />
                             <el-input v-model="provider.baseUrl" size="small" class="glass-input"
-                                placeholder="Base URL (Optional)" />
+                                :placeholder="t('admin.settings.table.baseUrl')" />
                         </div>
                         <div class="col-span-3">
                             <el-select v-model="provider.supportedTypes" multiple collapse-tags size="small"
-                                class="glass-input w-full" placeholder="Protocols">
-                                <el-option label="Text/LLM" value="text" />
-                                <el-option label="Image" value="image" />
-                                <el-option label="Video" value="video" />
-                                <el-option label="Audio/TTS" value="audio" />
-                                <el-option label="Music" value="music" />
+                                class="glass-input w-full" :placeholder="t('admin.settings.table.protocols')">
+                                <el-option :label="t('admin.settings.ai.config.models')" value="text" />
+                                <el-option :label="t('admin.settings.ai.capabilities.image')" value="image" />
+                                <el-option :label="t('admin.settings.ai.capabilities.video')" value="video" />
+                                <el-option :label="t('admin.settings.ai.capabilities.audio')" value="audio" />
+                                <el-option :label="t('admin.settings.ai.capabilities.music')" value="music" />
                             </el-select>
                         </div>
                         <div class="col-span-1 flex justify-center">
@@ -70,14 +74,14 @@
         </div>
 
         <!-- Gemini Pool Management Dialog -->
-        <el-dialog v-model="showGeminiPool" title="Gemini API Key Pool" width="800px" class="cinematic-dialog">
+        <el-dialog v-model="showGeminiPool" :title="t('admin.settings.ai.geminiPoolManager')" width="800px" class="cinematic-dialog">
             <div class="space-y-6">
                 <!-- Bulk Add -->
                 <div class="bulk-add-section p-4 bg-white/5 rounded-2xl border border-white/10">
-                    <h5 class="text-[10px] font-black uppercase tracking-widest opacity-60 mb-3">Bulk Add Keys (Comma Separated)</h5>
+                    <h5 class="text-[10px] font-black uppercase tracking-widest opacity-60 mb-3">{{ $t('admin.settings.ai.bulkAddKeys') }}</h5>
                     <div class="flex gap-3">
-                        <el-input v-model="bulkKeys" type="textarea" :rows="2" placeholder="Paste multiple keys here..." class="glass-input" />
-                        <el-button type="primary" class="h-auto" @click="handleBulkAdd">Import</el-button>
+                        <el-input v-model="bulkKeys" type="textarea" :rows="2" :placeholder="t('admin.settings.ai.pasteKeys')" class="glass-input" />
+                        <el-button type="primary" class="h-auto" @click="handleBulkAdd">{{ $t('admin.common.import') }}</el-button>
                     </div>
                 </div>
 
@@ -91,9 +95,9 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <el-input v-model="k.label" size="small" class="label-input" placeholder="Label" />
+                                    <el-input v-model="k.label" size="small" class="label-input" :placeholder="t('admin.common.label')" />
                                     <el-tag v-if="k.usageCount > 0" size="small" effect="plain" round class="usage-tag">
-                                        {{ k.usageCount }} calls
+                                        {{ k.usageCount }} {{ $t('admin.common.calls') }}
                                     </el-tag>
                                 </div>
                                 <code class="text-[10px] font-mono opacity-40 block truncate">{{ k.key }}</code>
@@ -189,7 +193,10 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { SettingTwo, Delete, User, Refresh, Key } from '@icon-park/vue-next';
+
+const { t } = useI18n();
 
 const props = defineProps<{
     providers: any[];

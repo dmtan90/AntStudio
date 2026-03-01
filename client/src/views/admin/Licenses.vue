@@ -1,22 +1,22 @@
 <template>
   <div class="admin-licenses">
     <div class="page-header">
-      <h1>License Management</h1>
+      <h1>{{ $t('admin.licenses.title') }}</h1>
       <button class="primary-btn" @click="showGenerateDialog = true">
          <plus theme="outline" size="20" />
-         {{ t('common.generate') }}
+         {{ $t('admin.licenses.generate') }}
       </button>
     </div>
 
     <div class="licenses-content">
       <div class="cinematic-table-container">
         <div class="cinematic-table-header">
-          <div class="col key">KEY</div>
-          <div class="col type">TYPE</div>
-          <div class="col status">STATUS</div>
-          <div class="col limits">LIMITS</div>
-          <div class="col expiry">EXPIRY</div>
-          <div class="col actions">ACTIONS</div>
+          <div class="col key">{{ $t('admin.licenses.table.key') }}</div>
+          <div class="col type">{{ $t('admin.licenses.table.type') }}</div>
+          <div class="col status">{{ $t('admin.licenses.table.status') }}</div>
+          <div class="col limits">{{ $t('admin.licenses.table.limits') }}</div>
+          <div class="col expiry">{{ $t('admin.licenses.table.expiry') }}</div>
+          <div class="col actions">{{ $t('admin.licenses.table.actions') }}</div>
         </div>
 
         <div v-if="loading" class="loading-state">
@@ -36,26 +36,26 @@
               <span class="type-badge">{{ license.type.toUpperCase() }}</span>
             </div>
             <div class="col status">
-               <span :class="['status-badge', license.status]">{{ license.status.toUpperCase() }}</span>
+               <span :class="['status-badge', license.status]">{{ t(`admin.licenses.status.${license.status}`).toUpperCase() }}</span>
             </div>
             <div class="col limits">
               <div class="limit-info">
-                 <span><user theme="outline" size="12" /> {{ license.maxUsers == -1 ? 'Unlimited' : license.maxUsers }}</span>
-                 <span><folder-open theme="outline" size="12" /> {{ license.maxProjects == -1 ? 'Unlimited' : license.maxProjects }}</span>
+                 <span><user theme="outline" size="12" /> {{ license.maxUsers == -1 ? t('admin.licenses.limits.unlimited') : license.maxUsers }}</span>
+                 <span><folder-open theme="outline" size="12" /> {{ license.maxProjects == -1 ? t('admin.licenses.limits.unlimited') : license.maxProjects }}</span>
               </div>
             </div>
             <div class="col expiry">
-              {{ license.expiresAt ? new Date(license.expiresAt).toLocaleDateString() : 'Never' }}
+              {{ license.expiresAt ? new Date(license.expiresAt).toLocaleDateString() : t('admin.licenses.limits.never') }}
             </div>
             <div class="col actions">
-               <button class="icon-btn delete" @click="handleDelete(license._id)" title="Revoke License">
+               <button class="icon-btn delete" @click="handleDelete(license._id)" :title="t('admin.licenses.actions.revoke')">
                   <delete theme="outline" size="16" />
                </button>
             </div>
           </div>
           
           <div v-if="licenses.length === 0 && !loading" class="empty-state">
-            No licenses found
+            {{ $t('admin.licenses.empty') }}
           </div>
         </div>
       </div>
@@ -64,37 +64,37 @@
     <!-- Generate License Dialog -->
     <el-dialog
       v-model="showGenerateDialog"
-      title="Generate License"
+      :title="t('admin.licenses.generate')"
       width="500px"
       class="cinematic-dialog"
     >
       <div class="form-container">
         <div class="form-item">
-           <label>License Type</label>
-           <el-select v-model="form.type" placeholder="Select type">
-             <el-option label="Trial" value="trial" />
-             <el-option label="Free" value="free" />
-             <el-option label="Enterprise" value="enterprise" />
+           <label>{{ $t('admin.licenses.form.type') }}</label>
+           <el-select v-model="form.type" :placeholder="t('admin.licenses.form.selectType')">
+             <el-option :label="t('admin.licenses.planTypes.trial')" value="trial" />
+             <el-option :label="t('admin.licenses.planTypes.free')" value="free" />
+             <el-option :label="t('admin.licenses.planTypes.enterprise')" value="enterprise" />
            </el-select>
         </div>
         
         <div class="form-row">
             <div class="form-item">
-               <label>Max Users</label>
+               <label>{{ $t('admin.licenses.form.maxUsers') }}</label>
                <el-input-number v-model="form.maxUsers" :min="1" />
             </div>
             <div class="form-item">
-               <label>Max Projects</label>
+               <label>{{ $t('admin.licenses.form.maxProjects') }}</label>
                <el-input-number v-model="form.maxProjects" :min="1" />
             </div>
         </div>
 
         <div class="form-item">
-           <label>Expiration Date</label>
+           <label>{{ $t('admin.licenses.form.expiry') }}</label>
            <el-date-picker
              v-model="form.expiresAt"
              type="date"
-             placeholder="Pick a date"
+             :placeholder="t('admin.licenses.form.pickDate')"
              style="width: 100%"
            />
         </div>
@@ -102,8 +102,8 @@
       
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="showGenerateDialog = false">Cancel</el-button>
-          <el-button type="primary" :loading="generating" @click="handleGenerate">Generate</el-button>
+          <el-button @click="showGenerateDialog = false">{{ $t('admin.licenses.form.cancel') }}</el-button>
+          <el-button type="primary" :loading="generating" @click="handleGenerate">{{ $t('admin.licenses.form.generate') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -112,14 +112,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n';
 import { Plus, Key, Copy, User, FolderOpen, Delete, Loading } from '@icon-park/vue-next'
 import { ElMessageBox } from 'element-plus'
 import { toast } from 'vue-sonner'
 import { useAdminStore } from '@/stores/admin'
 import { storeToRefs } from 'pinia'
-import { useTranslations } from '@/composables/useTranslations'
 
-const { t } = useTranslations()
+const { t } = useI18n()
 const adminStore = useAdminStore()
 const { licenses, loading } = storeToRefs(adminStore)
 
@@ -144,7 +144,7 @@ const truncateKey = (key: string) => {
 
 const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard')
+    toast.success(t('common.copySuccess'))
 }
 
 const handleGenerate = async () => {
@@ -170,13 +170,13 @@ const handleGenerate = async () => {
 }
 
 const handleDelete = (id: string) => {
-    ElMessageBox.confirm('Are you sure you want to revoke this license?', 'Warning', {
-        confirmButtonText: 'Revoke',
-        cancelButtonText: 'Cancel',
-        type: 'warning'
-    }).then(async () => {
-        await adminStore.deleteLicense(id)
-    }).catch(() => {})
+  ElMessageBox.confirm(t('admin.licenses.deleteConfirm.message'), t('admin.licenses.deleteConfirm.title'), {
+    confirmButtonText: t('admin.licenses.deleteConfirm.confirm'),
+    cancelButtonText: t('admin.licenses.deleteConfirm.cancel'),
+    type: 'warning'
+  }).then(async () => {
+    await adminStore.deleteLicense(id)
+  }).catch(() => {})
 }
 </script>
 

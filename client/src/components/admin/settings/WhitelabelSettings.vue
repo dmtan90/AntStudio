@@ -2,22 +2,22 @@
     <el-card class="settings-section">
         <template #header>
             <div class="flex items-center justify-between">
-                <span>Branding Configuration</span>
-                <el-tag type="info" size="small" class="opacity-50">WHITELABEL CORE</el-tag>
+                <span>{{ $t('admin.settings.whitelabel.title') }}</span>
+                <el-tag type="info" size="small" class="opacity-50">{{ $t('admin.settings.whitelabel.core') }}</el-tag>
             </div>
         </template>
 
         <el-form label-position="top" v-if="whitelabel" class="space-y-6">
-            <el-form-item label="Application Name">
-                <el-input v-model="whitelabel.appName" placeholder="AntStudio" class="glass-input" />
+            <el-form-item :label="t('admin.settings.whitelabel.appName')">
+                <el-input v-model="whitelabel.appName" :placeholder="t('admin.settings.whitelabel.placeholders.appName')" class="glass-input" />
             </el-form-item>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Logo Upload -->
-                <el-form-item label="Application Logo">
+                <el-form-item :label="t('admin.settings.whitelabel.appLogo')">
                     <div class="flex flex-col gap-3">
                         <div class="flex gap-2">
-                            <el-input v-model="whitelabel.logo" placeholder="/logo.png or https://..."
+                            <el-input v-model="whitelabel.logo" :placeholder="t('admin.settings.whitelabel.placeholders.logo')"
                                 class="glass-input flex-grow" />
                             <el-button @click="triggerUpload('logo')" :loading="uploadingLogo" class="action-btn">
                                 <upload theme="outline" size="16" />
@@ -25,7 +25,7 @@
                         </div>
 
                         <div v-if="whitelabel.logo" class="preview-container">
-                            <p class="preview-label">Logo Preview</p>
+                            <p class="preview-label">{{ $t('admin.settings.whitelabel.logoPreview') }}</p>
                             <div class="preview-box">
                                 <img :src="getFileUrl(whitelabel.logo)" class="logo-preview" />
                             </div>
@@ -34,10 +34,10 @@
                 </el-form-item>
 
                 <!-- Favicon Upload -->
-                <el-form-item label="Browser Favicon">
+                <el-form-item :label="t('admin.settings.whitelabel.favicon')">
                     <div class="flex flex-col gap-3">
                         <div class="flex gap-2">
-                            <el-input v-model="whitelabel.favicon" placeholder="/favicon.ico or https://..."
+                            <el-input v-model="whitelabel.favicon" :placeholder="t('admin.settings.whitelabel.placeholders.favicon')"
                                 class="glass-input flex-grow" />
                             <el-button @click="triggerUpload('favicon')" :loading="uploadingFavicon" class="action-btn">
                                 <upload theme="outline" size="16" />
@@ -45,7 +45,7 @@
                         </div>
 
                         <div v-if="whitelabel.favicon" class="preview-container">
-                            <p class="preview-label">Favicon Preview</p>
+                            <p class="preview-label">{{ $t('admin.settings.whitelabel.faviconPreview') }}</p>
                             <div class="preview-box compact">
                                 <img :src="getFileUrl(whitelabel.favicon)" class="favicon-preview" />
                             </div>
@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Upload } from '@icon-park/vue-next';
 import { useProjectStore } from '@/stores/project';
 import { toast } from 'vue-sonner';
@@ -74,6 +75,7 @@ const props = defineProps<{
     whitelabel: any;
 }>();
 
+const { t } = useI18n();
 const projectStore = useProjectStore();
 const logoInput = ref<HTMLInputElement | null>(null);
 const faviconInput = ref<HTMLInputElement | null>(null);
@@ -101,10 +103,10 @@ const handleFileChange = async (event: Event, type: 'logo' | 'favicon') => {
         const res = await projectStore.uploadMedia(formData);
         if (res?.url) {
             props.whitelabel[type] = res.url;
-            toast.success(`Successfully uploaded whitelabel ${type}`);
+            toast.success(t('admin.settings.whitelabel.toasts.uploadSuccess', { type }));
         }
     } catch (e) {
-        toast.error(`Failed to upload ${type}`);
+        toast.error(t('admin.settings.whitelabel.toasts.uploadFailed', { type }));
         console.error(e);
     } finally {
         if (type === 'logo') uploadingLogo.value = false;

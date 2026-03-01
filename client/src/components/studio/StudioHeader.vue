@@ -3,13 +3,13 @@
         <div class="header-left">
             <div class="live-indicator" :class="{ 'active': isLive }">
                 <div class="orb"></div>
-                <span>{{ isLive ? 'LIVE' : 'READY' }}</span>
+                <span>{{ isLive ? $t('studio.header.live') : $t('studio.header.ready') }}</span>
             </div>
             <div class="timer" v-if="isLive">{{ formatTime(liveTime) }}</div>
         </div>
         <div class="header-center">
             <div class="flex flex-col items-center max-w-[500px] w-full">
-                <span class="text-[9px] font-black uppercase tracking-widest opacity-20 mb-1">Professional Studio</span>
+                <span class="text-[9px] font-black uppercase tracking-widest opacity-20 mb-1">{{ $t('studio.header.professionalStudio') }}</span>
                 
                 <div class="metadata-container relative w-full flex flex-col items-center">
                     <!-- Title Editing -->
@@ -29,10 +29,10 @@
                         <div class="description-section mt-1 w-full overflow-hidden h-auto opacity-100 transition-all duration-300" >
                             <textarea v-if="editingDescription" ref="descriptionInput" v-model="localDescription" @blur="saveDescription"
                                 class="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-white/80 outline-none focus:border-blue-500/50 w-full resize-none h-20"
-                                placeholder="Add stream description..."></textarea>
+                                :placeholder="$t('studio.header.addDescription')"></textarea>
                             <p v-else @click="startEditingDescription"
                                 class="text-center italic cursor-pointer hover:text-blue-400 truncate px-8">
-                                {{ description || 'No description provided' }}
+                                {{ description || $t('studio.header.noDescription') }}
                             </p>
                         </div>
                     </el-popover>
@@ -43,7 +43,7 @@
             <!-- Swarm Button -->
             <div class="god-mode-indicator mr-2" :class="{ active: showSwarmMonitor, 'pulse': showSwarmMonitor }" @click="$emit('toggle-swarm')">
                 <connection-point theme="outline" size="14" />
-                <span class="text-[9px] font-black uppercase">Swarm</span>
+                <span class="text-[9px] font-black uppercase">{{ $t('studio.header.swarm') }}</span>
             </div>
 
             <!-- God Mode Button with Log Popover -->
@@ -51,15 +51,15 @@
                 <template #reference>
                     <div class="god-mode-indicator" :class="{ active: isGodMode }" @click="$emit('toggle-god-mode')">
                         <robot theme="outline" size="14" />
-                        <span class="text-[9px] font-black uppercase">God Mode: {{ isGodMode ? 'ENGAGED' : 'OFF' }}</span>
+                        <span class="text-[9px] font-black uppercase">{{ $t('studio.header.godMode') }}: {{ isGodMode ? $t('studio.header.engaged') : $t('studio.header.off') }}</span>
                         <div v-if="isGodMode" class="scanline"></div>
                     </div>
                 </template>
                 <div class="popover-content">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-blue-400">Director's Log</h3>
+                        <h3 class="text-xs font-black uppercase tracking-widest text-blue-400">{{ $t('studio.header.directorsLog') }}</h3>
                         <div class="flex items-center gap-2">
-                             <span class="text-[8px] text-white/40">Throttling</span>
+                             <span class="text-[8px] text-white/40">{{ $t('studio.header.throttling') }}</span>
                              <div class="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
                                 <div class="h-full bg-blue-500" style="width: 60%"></div>
                              </div>
@@ -74,7 +74,7 @@
                             <p class="text-[9px] text-white/50 leading-tight">{{ log.reason }}</p>
                         </div>
                         <div v-if="!directorLog.length" class="py-4 text-center opacity-30">
-                            <span class="text-[10px]">Awaiting AI decisions...</span>
+                            <span class="text-[10px]">{{ $t('studio.header.awaitingAi') }}</span>
                         </div>
                     </div>
                 </div>
@@ -83,40 +83,40 @@
             <button class="exit-btn" 
                 :class="{ 'text-yellow-400 border-yellow-400/50 bg-yellow-500/10': autoEmotionEnabled }"
                 @click="$emit('toggle-auto-emotion')"
-                title="Auto-Emotion">
+                :title="$t('studio.header.autoEmotion')">
                 <face-recognition theme="outline" size="18" />
             </button>
 
             <!-- Demo Mode with Popover -->
             <el-popover placement="bottom" :width="200" trigger="hover" popper-class="studio-popover" :disabled="!demoMode">
                 <template #reference>
-                    <button class="exit-btn" title="Demo Mode"
+                    <button class="exit-btn" :title="$t('studio.header.demoMode')"
                         :class="{ 'text-purple-400 border-purple-400/50 bg-purple-500/10': demoMode }"
                         @click="$emit('toggle-demo')">
                         <magic theme="outline" size="18" />
                     </button>
                 </template>
                 <div class="popover-content">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-purple-400 mb-2">Demo Statistics</h3>
+                    <h3 class="text-xs font-black uppercase tracking-widest text-purple-400 mb-2">{{ $t('studio.header.demoStats') }}</h3>
                     <div class="flex flex-col gap-2">
                         <div class="flex justify-between text-[10px]">
-                            <span class="opacity-50">Mock Viewers</span>
+                            <span class="opacity-50">{{ $t('studio.header.mockViewers') }}</span>
                             <span class="font-mono text-purple-300">1.2K</span>
                         </div>
                         <div class="flex justify-between text-[10px]">
-                            <span class="opacity-50">Heartbeat</span>
-                            <span class="text-green-400">OPTIMAL</span>
+                            <span class="opacity-50">{{ $t('studio.header.heartbeat') }}</span>
+                            <span class="text-green-400">{{ $t('studio.header.optimal') }}</span>
                         </div>
                         <div class="mt-2 pt-2 border-t border-white/5">
                             <p class="text-[9px] text-white/40 leading-tight italic">
-                                * Streaming is simulated in Demo Mode. External platforms are not receiving data.
+                                {{ $t('studio.header.simulatedMsg') }}
                             </p>
                         </div>
                     </div>
                 </div>
             </el-popover>
 
-            <button class="exit-btn" title="Auto-Atmosphere"
+            <button class="exit-btn" :title="$t('studio.header.autoAtmosphere')"
                 :class="{ 'text-orange-400 border-orange-400/50 bg-orange-500/10': autoAtmosphereEnabled }"
                 @click="$emit('toggle-auto-atmosphere')">
                 <sun-one theme="outline" size="18" />

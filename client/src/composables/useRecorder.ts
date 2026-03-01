@@ -3,7 +3,7 @@ import { DocumentProcessor } from '@/utils/recorder/DocumentProcessor'
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import { useUserStore } from '@/stores/user'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { usePlatformStore } from '@/stores/platform'
 import { toast } from 'vue-sonner'
 import { useVTuberStore } from '@/stores/vtuber'
@@ -55,7 +55,7 @@ export const videoFilters = [
 export function useRecorder() {
     const router = useRouter()
     const projectStore = useProjectStore()
-    const { t } = useTranslations()
+    const { t } = useI18n()
 
     // --- Sub-Composables ---
     const media = useRecorderMedia()
@@ -94,6 +94,7 @@ export function useRecorder() {
         useAntMedia: false 
     })
     const selectedPlatforms = ref<string[]>([])
+    const showPlatformSelector = ref(false)
     const availableAccounts = computed(() => platformStore.accounts)
     const streamStats = ref<any>({ bitrate: 0, fps: 0, rtt: 0 })
     const publisher = ref<WebRTCPublisher | null>(null)
@@ -116,6 +117,7 @@ export function useRecorder() {
     const currentWhiteboardPage = ref(0)
     const presentationViseme = ref(0)
     const isWhiteboardLaunchpadActive = ref(true)
+    const showVTuberSelectDialog = ref(false)
 
     // Teleprompter
     const isTeleprompterActive = ref(false)
@@ -448,8 +450,22 @@ export function useRecorder() {
     })
     onUnmounted(() => { 
         window.removeEventListener('keydown', handleKeyDown)
-        media.stopAllTracks(media.currentStream.value)
-        media.stopAllTracks(media.secondaryStream.value)
+        
+        // Hard stop all active hardware streams when the user leaves the Recorder view
+        if (media.currentStream.value) {
+            media.stopAllTracks(media.currentStream.value)
+            media.currentStream.value = null
+        }
+        if (media.secondaryStream.value) {
+            media.stopAllTracks(media.secondaryStream.value)
+            media.secondaryStream.value = null
+        }
+        if (vtuberStream.value) {
+            media.stopAllTracks(vtuberStream.value)
+            vtuberStream.value = null
+        }
+        
+        canvasResults.destroy()
         audio.cleanupAudio()
         stopCanvasRendering()
         clearInterval(teleprompterInterval)
@@ -472,6 +488,7 @@ export function useRecorder() {
         isTeleprompterActive, isTeleprompterScrolling, teleprompterScript, teleprompterSpeed, teleprompterFontSize, teleprompterScrollPos,
         isAnnotationActive, annotationTool, annotationColor, annotationSize, podcastSettings, camSettings, avatarPresets, tabs,
         selectedAvatar, selectedVoice, showMiniPreview,
+        showPlatformSelector,
         enableVoiceSwap: computed(() => camSettings.value.enableVoiceSwap),
 
         // Media Module
@@ -547,13 +564,7 @@ export function useRecorder() {
             const oldMode = mode.value; mode.value = newMode
             if (newMode === 'whiteboard') {
                 isWhiteboardLaunchpadActive.value = true
-                isVTuberActive.value = true // Auto-enable VTuber
-                
-                // Auto-select first VTuber if mockup or none
-                if (vtuberStore.vtubers.length > 0 && (selectedAvatar.value === 'sarah' || !selectedAvatar.value)) {
-                    const first = vtuberStore.vtubers[0];
-                    selectedAvatar.value = first.entityId ?? first._id;
-                }
+                showVTuberSelectDialog.value = true // Prompt user to select VTuber
             }
             await initializeStream(oldMode)
         },
@@ -623,7 +634,14 @@ export function useRecorder() {
             }
             else {
                 if (selectedPlatforms.value.length === 0 && (!streamConfig.value.serverUrl || !streamConfig.value.streamKey)) {
-                    toast.error('Please select a platform or configure custom server'); activeSidebar.value = 'live'; return
+                    if (availableAccounts.value.length > 0) {
+                        toast.error('Please select a platform to start streaming');
+                    } else {
+                        toast.error('Connect a platform to go live!');
+                        showPlatformSelector.value = true;
+                    }
+                    activeSidebar.value = 'live'; 
+                    return
                 }
 
                 try {
@@ -678,6 +696,8 @@ export function useRecorder() {
         whiteboardScripts: ai.whiteboardScripts,
         isAIPresenting: presentation.isAIPresenting,
         isSynthesizing: presentation.isSynthesizing,
+        showVTuberSelectDialog,
+        vtuberStore,
         formatTime: (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`,
         t, router, projectStore
     }

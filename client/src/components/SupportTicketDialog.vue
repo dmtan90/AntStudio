@@ -10,10 +10,9 @@
                 <div>
                     <h2 class="text-2xl font-black text-white tracking-tight flex items-center gap-3">
                         <help theme="outline" size="24" class="text-blue-400" />
-                        TACTICAL SUPPORT
+                        {{ t('support.ticket.title') }}
                     </h2>
-                    <p class="text-[10px] uppercase font-bold text-gray-500 mt-2 tracking-widest">Direct Line to Master
-                        Command</p>
+                    <p class="text-[10px] uppercase font-bold text-gray-500 mt-2 tracking-widest">{{ t('support.ticket.subtitle') }}</p>
                 </div>
                 <button @click="$emit('update:modelValue', false)"
                     class="text-gray-500 hover:text-white transition-colors">
@@ -27,36 +26,34 @@
                 <!-- Subject & Priority -->
                 <div class="grid grid-cols-3 gap-6">
                     <div class="col-span-2 space-y-2">
-                        <label class="text-[10px] font-black uppercase text-gray-500">Mission Objective
-                            (Subject)</label>
-                        <input v-model="form.subject" type="text" placeholder="e.g., Render Engine Latency"
+                        <label class="text-[10px] font-black uppercase text-gray-500">{{ t('support.ticket.objective') }} ({{ t('common.subject') }})</label>
+                        <input v-model="form.subject" type="text" :placeholder="t('support.ticket.subjectPlaceholder')"
                             class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 focus:outline-none transition-colors" />
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[10px] font-black uppercase text-gray-500">Urgency Level</label>
+                        <label class="text-[10px] font-black uppercase text-gray-500">{{ t('support.ticket.urgency') }}</label>
                         <select v-model="form.priority"
                             class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 focus:outline-none transition-colors">
-                            <option value="low">Low (Query)</option>
-                            <option value="medium">Medium (Standard)</option>
-                            <option value="high">High (Urgent)</option>
-                            <option value="critical">Critical (Outage)</option>
+                            <option value="low">{{ t('support.ticket.priorities.low') }}</option>
+                            <option value="medium">{{ t('support.ticket.priorities.medium') }}</option>
+                            <option value="high">{{ t('support.ticket.priorities.high') }}</option>
+                            <option value="critical">{{ t('support.ticket.priorities.critical') }}</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- Description -->
                 <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase text-gray-500">Sitrep (Description)</label>
-                    <textarea v-model="form.description" rows="5" placeholder="Describe the anomaly in detail..."
+                    <label class="text-[10px] font-black uppercase text-gray-500">{{ t('support.ticket.sitrep') }}</label>
+                    <textarea v-model="form.description" rows="5" :placeholder="t('support.ticket.sitrepPlaceholder')"
                         class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 focus:outline-none transition-colors resize-none"></textarea>
                 </div>
 
                 <!-- Attachment Zone -->
                 <div class="space-y-2">
                     <label class="text-[10px] font-black uppercase text-gray-500 flex justify-between">
-                        <span>Tactical Data Attachments</span>
-                        <span class="text-blue-400 cursor-pointer hover:underline" @click="generateLogBundle">Extract
-                            Local Logs</span>
+                        <span>{{ t('support.ticket.attachments') }}</span>
+                        <span class="text-blue-400 cursor-pointer hover:underline" @click="generateLogBundle">{{ t('support.ticket.extractLogs') }}</span>
                     </label>
 
                     <div
@@ -65,8 +62,8 @@
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         <div v-if="attachments.length === 0">
                             <upload-one theme="outline" size="32" class="text-gray-600 mb-2 mx-auto" />
-                            <p class="text-xs text-gray-400">Drag files or click to upload</p>
-                            <p class="text-[10px] text-gray-600 mt-1 uppercase">Supports: Logs, PNG, JPG, JSON</p>
+                            <p class="text-xs text-gray-400">{{ t('support.ticket.dragDrop') }}</p>
+                            <p class="text-[10px] text-gray-600 mt-1 uppercase">{{ t('support.ticket.supports') }}</p>
                         </div>
                         <div v-else class="space-y-2 relative z-10 pointer-events-none">
                             <div v-for="(file, idx) in attachments" :key="idx"
@@ -84,9 +81,7 @@
                 <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-4 items-start">
                     <input type="checkbox" v-model="form.dataConsent" id="consent" class="mt-1" />
                     <label for="consent" class="text-xs text-blue-200 leading-relaxed cursor-pointer select-none">
-                        <strong>Explicit Data Authorization:</strong> I authorize the transfer of the provided
-                        information (including attached logs and system telemetry) to the AntStudio Master Command for
-                        diagnostic purposes. I understand this data effectively leaves my private Enclave.
+                        <strong>{{ t('support.ticket.dataAuth') }}:</strong> {{ t('support.ticket.dataAuthDesc') }}
                     </label>
                 </div>
 
@@ -95,11 +90,11 @@
             <!-- Footer -->
             <div class="p-8 border-t border-white/5 flex justify-end gap-4 bg-black/20">
                 <button @click="$emit('update:modelValue', false)"
-                    class="px-6 py-3 rounded-xl text-xs font-bold uppercase text-gray-500 hover:text-white hover:bg-white/5 transition-all">Cancel</button>
+                    class="px-6 py-3 rounded-xl text-xs font-bold uppercase text-gray-500 hover:text-white hover:bg-white/5 transition-all">{{ t('support.ticket.cancel') }}</button>
                 <button @click="submitTicket" :disabled="!isValid || submitting"
                     class="px-8 py-3 rounded-xl text-xs font-black uppercase bg-blue-600 text-white hover:bg-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/20 flex items-center gap-2">
                     <loading v-if="submitting" theme="outline" class="animate-spin" />
-                    {{ submitting ? 'Transmitting...' : 'Submit Ticket' }}
+                    {{ submitting ? t('support.ticket.transmitting') : t('support.ticket.submit') }}
                 </button>
             </div>
 
@@ -109,10 +104,13 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Help, Close, UploadOne, Delete, Loading } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 import { useSupportStore } from '@/stores/support';
 import { useAdminStore } from '@/stores/admin';
+
+const { t } = useI18n();
 
 const props = defineProps<{
     modelValue: boolean;
@@ -152,12 +150,11 @@ const removeAttachment = (idx: number) => {
 
 const generateLogBundle = async () => {
     try {
-        toast.info('Compiling local telemetry...');
+        toast.info(t('support.ticket.compiling'));
         const res = await adminStore.exportDiagnostics();
-        // adminStore.exportDiagnostics returns the Axios response with blob
         const file = new File([res.data], 'tactical_logs_bundle.zip', { type: 'application/zip' });
         attachments.value.push(file);
-        toast.success('Log bundle attached successfully.');
+        toast.success(t('support.ticket.attached'));
     } catch (e) {
         // Error handling already in store, but we can add specific user feedback here if needed
     }

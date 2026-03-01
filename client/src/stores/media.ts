@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/utils/api.js'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 
 export const useMediaStore = defineStore('media', () => {
-    const { t } = useTranslations()
+    const { t } = useI18n()
     const resources = ref<any[]>([])
     const videos = ref<any[]>([])
     const exportedVideos = ref<any[]>([])
@@ -92,7 +92,7 @@ export const useMediaStore = defineStore('media', () => {
         }
     }
 
-    async function uploadMedia(formData: FormData) {
+    async function uploadMedia(formData: FormData): Promise<any> {
         try {
             const res: any = await api.post('/media/upload', formData, {
                 headers: {

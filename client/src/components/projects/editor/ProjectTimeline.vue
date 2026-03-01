@@ -22,26 +22,26 @@
           <el-popover placement="left" :width="280" trigger="click" popper-class="cinematic-popper">
             <template #reference>
               <button class="tool-btn bg-blue-600/10 border-blue-500/20 text-blue-400 shadow-[0_4px_15px_rgba(59,130,246,0.1)]">
-                <magic theme="outline" size="18" /> <span>GENERATE</span>
+                <magic theme="outline" size="18" /> <span>{{ t('projects.editor.timeline.generateAction') }}</span>
               </button>
             </template>
             <div class="p-4 space-y-4">
               <div class="flex flex-col gap-3">
-                <div class="text-[11px] uppercase font-bold text-white/40 mb-1">Manual Generation</div>
+                <div class="text-[11px] uppercase font-bold text-white/40 mb-1">{{ t('projects.editor.timeline.manualGeneration') }}</div>
                 
                 <el-button class="!w-full !justify-start !bg-blue-600/10 !text-blue-400 !border-blue-500/20 !text-[11px] !font-bold hover:!bg-blue-600 hover:!text-white transition-all shadow-lg"
                   @click="handleGenerateAllVoiceovers">
-                  <voice theme="outline" size="14" class="mr-2" /> CREATE ALL VOICEOVERS
+                  <voice theme="outline" size="14" class="mr-2" /> {{ t('projects.editor.timeline.createAllVoiceovers') }}
                 </el-button>
 
                 <el-button class="!w-full !justify-start !bg-yellow-500/10 !text-yellow-500 !border-yellow-500/20 !text-[11px] !font-bold"
                   @click="handleGenerateAllCaptions">
-                  <text-message theme="outline" size="14" class="mr-2" /> CREATE ALL SUBTITLES
+                  <text-message theme="outline" size="14" class="mr-2" /> {{ t('projects.editor.timeline.createAllSubtitles') }}
                 </el-button>
 
                 <el-button class="!w-full !justify-start !bg-blue-500/10 !text-blue-400 !border-blue-500/20 !text-[11px] !font-bold"
                   @click="handleGenerateMusic">
-                  <music-one theme="outline" size="14" class="mr-2" /> REGEN BACKGROUND MUSIC
+                  <music-one theme="outline" size="14" class="mr-2" /> {{ t('projects.editor.timeline.regenBgm') }}
                 </el-button>
               </div>
             </div>
@@ -56,7 +56,7 @@
               <div class="flex flex-col gap-4">
                 <!-- Music Volume (Always visible) -->
                 <div class="flex flex-col gap-2">
-                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Music Volume</div>
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.musicVolume') }}</div>
                   <div class="flex items-center gap-3">
                     <el-slider v-model="musicVolume" :min="0" :max="1" :step="0.01" class="flex-1"
                       @change="updateMusicVolume" />
@@ -66,9 +66,9 @@
 
                 <!-- Segment Volume (Only if segment selected and is not BGM) -->
                 <div v-if="selectedAssetId && !selectedAssetId.startsWith('bgm')" class="flex flex-col gap-4 pt-4 border-t border-white/5">
-                   <div class="text-[10px] uppercase font-bold text-blue-400 px-1">Selected: #{{ selectedAssetId }}</div>
+                   <div class="text-[10px] uppercase font-bold text-blue-400 px-1">{{ t('projects.editor.timeline.selectedSegment', { id: selectedAssetId }) }}</div>
                    <div class="flex flex-col gap-2">
-                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">Video Volume</div>
+                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.videoVolume') }}</div>
                     <div class="flex items-center gap-3">
                       <el-slider v-model="currentVolume" :min="0" :max="1" :step="0.01" class="flex-1"
                         @change="updateVolume" />
@@ -196,7 +196,7 @@
               class="px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 flex items-center gap-2 cursor-pointer hover:bg-green-500/20 transition-all shadow-[0_4px_15px_rgba(34,197,94,0.1)] active:scale-95 translate-x-1"
               @click="showPublishDialog = true">
               <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span class="text-[10px] font-black text-green-400 uppercase tracking-[0.15em]">Live</span>
+              <span class="text-[10px] font-black text-green-400 uppercase tracking-[0.15em]">{{ t('projects.editor.timeline.live') }}</span>
             </div>
           </div>
         </div>
@@ -335,7 +335,7 @@
                 <WaveformDisplay v-if="seg.voiceUrl" :audio-url="seg.voiceUrl"
                   :width="Math.floor((seg.duration / (seg.speed || 1)) * pxPerSec)" :height="40"
                   color="rgba(59, 130, 246, 0.6)" :bar-width="2" :bar-gap="1" class="absolute inset-0" />
-                <span class="absolute left-2 text-[9px] text-blue-400 font-bold uppercase z-10">AI Voice</span>
+                <span class="absolute left-2 text-[9px] text-blue-400 font-bold uppercase z-10">{{ t('projects.editor.timeline.aiVoice') }}</span>
 
                 <!-- Voice Clip Status Icon -->
                 <div v-if="seg.generatedAudio?.status === 'completed'" class="absolute bottom-1 right-1">
@@ -429,11 +429,11 @@
                 @click.stop="handleGenerateMusic">
                 <div v-if="isGeneratingMusic" class="flex items-center gap-2 text-blue-400">
                   <div class="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                  <span class="text-[9px] font-bold uppercase tracking-widest">Generating AI Music...</span>
+                  <span class="text-[9px] font-bold uppercase tracking-widest">{{ t('projects.editor.timeline.generatingAiMusic') }}</span>
                 </div>
                 <div v-else class="flex items-center gap-2 text-blue-500/50 group-hover:text-blue-400 transition-colors">
                   <music-one theme="outline" size="12" />
-                  <span class="text-[9px] font-bold uppercase tracking-widest">Generate AI Background Music</span>
+                  <span class="text-[9px] font-bold uppercase tracking-widest">{{ t('projects.editor.timeline.generateAiBgm') }}</span>
                 </div>
               </div>
             </div>
@@ -459,7 +459,7 @@ import {
 } from '@icon-park/vue-next'
 import { cn } from '@/utils/ui'
 import { useProjectStore } from '@/stores/project'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { useTimelinePlayer } from '@/composables/useTimelinePlayer'
 import { toast } from 'vue-sonner'
 import ExportSettingsDialog from './ExportSettingsDialog.vue'
@@ -473,7 +473,7 @@ const props = defineProps<{
 }>()
 
 const projectStore = useProjectStore()
-const { t } = useTranslations()
+const { t } = useI18n()
 
 // Canvas Ref
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -630,9 +630,9 @@ const updateMusicVolume = async () => {
     props.project.musics[0].volume = musicVolume.value
     player.setMusicVolume(musicVolume.value)
     await saveProjectUpdate()
-    toast.success("Music volume updated")
+    toast.success(t('projects.editor.timeline.volumeUpdated'))
   } catch (e) {
-    toast.error("Failed to update music volume")
+    toast.error(t('projects.editor.timeline.failedUpdateVolume'))
   }
 }
 
@@ -702,7 +702,7 @@ const handleGenerateVoiceover = async (seg: any) => {
   if (!sourceSeg) return;
 
   if (sourceSeg.data) {
-    toast.error("Voice generation not supported for template pages yet")
+    toast.error(t('projects.editor.timeline.notSupportedForTemplate'))
     return
   }
 
@@ -732,7 +732,7 @@ const handleGenerateCaptions = async (seg: any) => {
   if (!sourceSeg) return
 
   if (sourceSeg.data) {
-    toast.error("Caption generation not supported for template pages yet")
+    toast.error(t('projects.editor.timeline.notSupportedForTemplate'))
     return
   }
 
@@ -749,7 +749,7 @@ const handleGenerateCaptions = async (seg: any) => {
 }
 
 const handleGenerateAllVoiceovers = async () => {
-  toast.info("Generating all voiceovers...")
+  toast.info(t('projects.editor.timeline.voiceoverGenerating'))
   for (const seg of timelineSegments.value) {
     if (!seg.voiceUrl) {
       await handleGenerateVoiceover(seg)
@@ -758,7 +758,7 @@ const handleGenerateAllVoiceovers = async () => {
 }
 
 const handleGenerateAllCaptions = async () => {
-  toast.info("Generating all captions...")
+  toast.info(t('projects.editor.timeline.captionsGenerated'))
   for (const seg of timelineSegments.value) {
     if (!seg.captions || seg.captions.length === 0) {
       await handleGenerateCaptions(seg)
@@ -774,7 +774,7 @@ const handleGenerateMusic = async () => {
     const mood = props.project?.scriptAnalysis?.analysis?.overview?.mood || props.project?.scriptAnalysis?.audio?.music || 'cinematic'
     const prompt = `Background music for: ${props.project?.title || 'a video'}. Mood: ${mood}`
     await projectStore.generateMusic(props.project._id, { prompt })
-    toast.success(t('projects.editor.timeline.backgroundMusic') + ' generated!')
+    toast.success(t('projects.editor.timeline.bgmGenerated'))
   } catch (error) {
     console.error('Music generation error:', error)
     toast.error(t('common.failed'))

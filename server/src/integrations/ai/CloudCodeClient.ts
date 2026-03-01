@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import { IAIAccount } from '../../models/AIAccount.js';
 import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 /**
  * Client for interacting with Google Cloud Code Assist API.
  * This is a more stable alternative to browser-based scraping.
@@ -64,7 +66,9 @@ export class CloudCodeClient {
                 generationConfig: {
                     temperature: 0.7,
                     topP: 0.95,
-                    maxOutputTokens: 8192,
+                    maxOutputTokens: 65536,//fix truncate JSON string
+                    // Merge caller-provided overrides (e.g. responseMimeType, maxOutputTokens from generateJSON)
+                    ...options.generationConfig,
                 }
             },
             model: modelId,
@@ -91,7 +95,7 @@ export class CloudCodeClient {
                 usage: response.data.response?.usageMetadata
             };
         } catch (error: any) {
-            console.error(`[CloudCodeClient] Agent API Error:`, error.response?.data || error.message);
+            Logger.error(`[CloudCodeClient] Agent API Error:`, error.response?.data || error.message);
             throw new Error(`Cloud Code Agent failed: ${error.message}`);
         }
     }
@@ -139,7 +143,7 @@ export class CloudCodeClient {
                 }
             };
         } catch (error: any) {
-            console.error(`[CloudCodeClient] Agent Image API Error:`, error.response?.data || error.message);
+            Logger.error(`[CloudCodeClient] Agent Image API Error:`, error.response?.data || error.message);
             throw new Error(`Agent Image Gen failed: ${error.message}`);
         }
     }
@@ -188,7 +192,7 @@ export class CloudCodeClient {
                 statusUrl: `${CloudCodeClient.AGENT_ENDPOINT}/video:batchCheckAsyncVideoGenerationStatus`
             };
         } catch (error: any) {
-            console.error(`[CloudCodeClient] Agent Video API Error:`, error.response?.data || error.message);
+            Logger.error(`[CloudCodeClient] Agent Video API Error:`, error.response?.data || error.message);
             throw new Error(`Agent Video Gen failed: ${error.message}`);
         }
     }
@@ -242,7 +246,7 @@ export class CloudCodeClient {
                 mimeType: part.inlineData.mimeType || 'audio/wav'
             };
         } catch (error: any) {
-            console.error(`[CloudCodeClient] Agent Audio API Error:`, error.response?.data || error.message);
+            Logger.error(`[CloudCodeClient] Agent Audio API Error:`, error.response?.data || error.message);
             throw new Error(`Agent Audio Gen failed: ${error.message}`);
         }
     }
@@ -289,7 +293,7 @@ export class CloudCodeClient {
                 mimeType: part.inlineData.mimeType || 'audio/mpeg'
             };
         } catch (error: any) {
-            console.error(`[CloudCodeClient] Agent Music API Error:`, error.response?.data || error.message);
+            Logger.error(`[CloudCodeClient] Agent Music API Error:`, error.response?.data || error.message);
         }
     }
 
@@ -299,7 +303,7 @@ export class CloudCodeClient {
     public async uploadFile(filePath: string, mimeType: string, displayName?: string) {
         // Internal Agentic API usually handles files via inlineData or a specific blob store.
         // For now, we return a local reference or throw if too large.
-        // systemLogger.warn(`[CloudCodeClient] uploadFile not fully implemented for internal API, using fallback.`, 'CloudCodeClient');
+        // Logger.warn(`[CloudCodeClient] uploadFile not fully implemented for internal API, using fallback.`, 'CloudCodeClient');
         throw new Error('File API not yet natively supported in CloudCodeClient. Fallback to API Key recommended.');
     }
 

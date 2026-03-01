@@ -21,24 +21,24 @@
               </el-image>
             </div>
             <h1 class="brand">{{ uiStore.appName }}</h1>
-            <p>Everyone can be a director with AI</p>
+            <p>{{ t('auth.login.subtitle') }}</p>
           </div>
 
           <form @submit.prevent="handleLogin" class="ant-form">
             <div class="form-item">
-              <GInput v-model="form.email" placeholder="Email address" type="email" class="login-input" />
+              <GInput v-model="form.email" :placeholder="t('auth.login.emailPlaceholder')" type="email" class="login-input" />
             </div>
 
             <div class="form-item">
-              <GInput v-model="form.password" placeholder="Password" type="password" class="login-input" />
+              <GInput v-model="form.password" :placeholder="t('auth.login.passwordPlaceholder')" type="password" class="login-input" />
               <div class="forgot-password-link mt-4">
-                <a href="#" @click.prevent="showForgotDialog = true">Forgot Password?</a>
+                <a href="#" @click.prevent="showForgotDialog = true">{{ t('auth.login.forgotPassword') }}</a>
               </div>
             </div>
 
             <div class="form-item">
               <GButton type="primary" size="lg" :loading="loading" native-type="submit" class="login-btn">
-                Sign In
+                {{ t('auth.login.signIn') }}
               </GButton>
             </div>
           </form>
@@ -46,7 +46,7 @@
           <!-- OAuth Login Buttons -->
           <div v-if="oauthConfig.google || oauthConfig.facebook" class="oauth-section">
             <div class="divider">
-              <span>or continue with</span>
+              <span>{{ t('auth.login.orContinue') }}</span>
             </div>
 
             <div class="oauth-buttons">
@@ -66,7 +66,7 @@
                     d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z"
                     fill="#EA4335" />
                 </svg>
-                Google
+                {{ t('common.platforms.google') }}
               </button>
 
               <button v-if="oauthConfig.facebook" @click="handleOAuthLogin('facebook')" class="oauth-btn facebook-btn"
@@ -75,34 +75,34 @@
                   <path
                     d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
-                Facebook
+                {{ t('common.platforms.facebook') }}
               </button>
             </div>
           </div>
 
           <div class="auth-footer">
             <p>
-              New to {{ uiStore.appName }}?
-              <router-link to="/register" class="link">Create an account</router-link>
+              {{ t('auth.login.newTo', { appName: uiStore.appName }) }}
+              <router-link to="/register" class="link">{{ t('auth.login.createAccount') }}</router-link>
             </p>
-            <router-link to="/" class="back-home">Back to Home</router-link>
+            <router-link to="/" class="back-home">{{ t('auth.login.backHome') }}</router-link>
           </div>
         </GCard>
       </transition>
     </div>
 
     <!-- Forgot Password Dialog -->
-    <el-dialog v-model="showForgotDialog" title="Reset Password" width="400px" class="glass-dialog"
+    <el-dialog v-model="showForgotDialog" :title="t('auth.forgot.title')" width="400px" class="glass-dialog"
       :close-on-click-modal="false" align-center>
       <div class="forgot-content">
-        <p class="description">Enter your email address and we'll send you a link to reset your password.</p>
+        <p class="description">{{ t('auth.forgot.description') }}</p>
 
         <form @submit.prevent="handleForgotPassword">
-          <GInput v-model="forgotEmail" placeholder="Enter your email" type="email" class="mb-4" />
+          <GInput v-model="forgotEmail" :placeholder="t('auth.forgot.emailPlaceholder')" type="email" class="mb-4" />
 
           <div class="dialog-footer text-center justify-center">
-            <GButton @click="showForgotDialog = false" class="mr-2">Cancel</GButton>
-            <GButton type="primary" native-type="submit" :loading="forgotLoading">Reset Password</GButton>
+            <GButton @click="showForgotDialog = false" class="mr-2">{{ t('auth.forgot.cancel') }}</GButton>
+            <GButton type="primary" native-type="submit" :loading="forgotLoading">{{ t('auth.forgot.reset') }}</GButton>
           </div>
         </form>
       </div>
@@ -120,7 +120,9 @@ import { toast } from 'vue-sonner'
 import { useUserStore } from '@/stores/user'
 import { useUIStore } from '@/stores/ui'
 import { getFileUrl } from '@/utils/api'
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
@@ -134,7 +136,7 @@ const form = reactive({
 
 const handleLogin = async () => {
   if (!form.email || !form.password) {
-    toast.error('Please fill in all fields')
+    toast.error(t('auth.login.toasts.fillAll'))
     return
   }
 
@@ -145,13 +147,13 @@ const handleLogin = async () => {
       password: form.password
     })
 
-    toast.success('Login successful!')
+    toast.success(t('auth.login.toasts.success'))
 
     // Redirect to intended page or dashboard
     const redirectPath = route.query.redirect as string
     router.push(redirectPath || '/dashboard')
   } catch (error: any) {
-    toast.error(error.response?.data?.error || error.response?.data?.message || 'Login failed')
+    toast.error(error.response?.data?.error || error.response?.data?.message || t('auth.login.toasts.failed'))
   } finally {
     loading.value = false
   }
@@ -164,7 +166,7 @@ const forgotLoading = ref(false)
 
 const handleForgotPassword = async () => {
   if (!forgotEmail.value) {
-    toast.error('Please enter your email address')
+    toast.error(t('auth.forgot.toasts.enterEmail'))
     return
   }
 
@@ -204,7 +206,7 @@ onMounted(() => {
 
   // Check for OAuth error
   if (route.query.error === 'oauth_failed') {
-    toast.error('Social login failed. Please try again.')
+    toast.error(t('auth.login.toasts.oauthFailed'))
   }
 })
 </script>

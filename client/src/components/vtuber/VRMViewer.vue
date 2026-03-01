@@ -2,9 +2,9 @@
     <div ref="container" class="w-full h-full rounded-xl overflow-hidden relative group bg-[#050505]">
         <!-- Loading State -->
         <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md z-10">
-            <div class="flex flex-col items-center gap-4">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Initializing Neural Link</span>
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+                <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <span class="text-[10px] text-white/70 font-medium tracking-wider uppercase">{{ $t('vtubers.neuralLinkEstablishing') }}</span>
             </div>
         </div>
         
@@ -36,6 +36,10 @@ import { VRMLightingManager } from '@/utils/vrm/VRMLightingManager';
 import { VRMCameraManager } from '@/utils/vrm/VRMCameraManager';
 import { VRMDirector } from '@/utils/vrm/VRMDirector';
 import StageLyricsOverlay from './StageLyricsOverlay.vue';
+
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
     modelUrl: string;

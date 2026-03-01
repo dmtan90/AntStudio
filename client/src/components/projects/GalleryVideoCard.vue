@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { PlayOne, Time as TimeOne, Download } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { ref, watch, onMounted } from 'vue'
 import GCard from '@/components/ui/GCard.vue'
 import GButton from '@/components/ui/GButton.vue'
@@ -49,7 +49,7 @@ const props = defineProps<{
 
 defineEmits(['click', 'download'])
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 const formatDuration = (seconds: number) => {
   if (!seconds) return '0:00'

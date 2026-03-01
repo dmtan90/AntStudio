@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth.js';
 import { redisService } from '../services/RedisService.js';
+import { Logger } from '../utils/Logger.js';
 
 export const cacheMiddleware = (options: {
     ttl?: number;
@@ -28,7 +29,7 @@ export const cacheMiddleware = (options: {
         res.json = (data: any) => {
             // Only cache successful responses
             if (res.statusCode === 200) {
-                redisService.set(key, data, ttl).catch(console.error);
+                redisService.set(key, data, ttl).catch(err => Logger.error('Redis cache set failed:', 'CacheMiddleware', err));
             }
             return originalJson(data);
         };

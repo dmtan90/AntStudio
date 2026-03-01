@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { geminiPool } from '../../utils/gemini.js';
+import { Logger } from '../../utils/Logger.js';
 
 /**
  * Service for analyzing audio characteristics like rhythm, beats, and energy peaks.
@@ -75,7 +76,7 @@ export class AudioAnalysisService {
                 .sort((a: number, b: number) => a - b);
 
         } catch (error: any) {
-            console.error('[AudioAnalysisService] Analysis failed:', error.message);
+            Logger.error(`[AudioAnalysisService] Analysis failed: ${error.message}`, 'AudioAnalysisService');
             throw new Error(`Beat detection failed: ${error.message}`);
         }
     }

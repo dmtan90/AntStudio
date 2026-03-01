@@ -29,10 +29,10 @@
         "src/*"
       ],
       "video-editor/*": [
-        "src/views/video-editor/*"
+        "src/plugins/video-editor/*"
       ],
       "audio-visual": [
-        "src/views/video-editor/plugins/audio-visual/index.ts"
+        "src/plugins/video-editor/plugins/audio-visual/index.ts"
       ]
     },
     "types": [

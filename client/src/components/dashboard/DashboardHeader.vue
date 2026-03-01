@@ -11,17 +11,17 @@
         <div>
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
             <div class="w-2 h-2 rounded-full bg-green-500 animate-ping"></div>
-            <span class="text-[10px] font-black uppercase tracking-widest text-green-400">System Operational</span>
+            <span class="text-[10px] font-black uppercase tracking-widest text-green-400">{{ t('dashboard.header.systemOperational') }}</span>
           </div>
           
           <h1 id="tour-welcome" class="text-6xl font-black mb-4 tracking-tighter leading-[0.9] text-white">
-            Welcome back, <br/>
+            {{ t('dashboard.header.welcomeBack') }} <br/>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">
-              {{ user?.name || 'Creator' }}
+              {{ user?.name || t('common.creator') }}
             </span>
           </h1>
           <p class="text-xl text-gray-400 max-w-xl leading-relaxed font-medium">
-            Your creative command center. Manage projects, track performance, and scale your content empire.
+            {{ t('dashboard.header.subtitle') }}
           </p>
         </div>
 
@@ -30,11 +30,11 @@
             <button @click="$emit('create')" class="whitespace-nowrap group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden">
               <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
               <plus theme="outline" size="20" />
-              New Project
+              {{ t('dashboard.header.newProject') }}
             </button>
             <button @click="router.push('/live/studio')" class="whitespace-nowrap group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3">
               <broadcast theme="outline" size="20" class="text-red-500" />
-              Go Live
+              {{ t('dashboard.header.goLive') }}
             </button>
         </div>
       </div>
@@ -45,7 +45,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { Plus, Broadcast } from '@icon-park/vue-next';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const props = defineProps<{
   user: any;
 }>();

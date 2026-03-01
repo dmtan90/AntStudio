@@ -44,34 +44,34 @@
                              {{ studioStore.visualSettings.breakMode.message }}
                          </h2>
                          <div class="flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-                             <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                             <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Live session paused</span>
-                         </div>
- 
-                         <!-- Decorative background text -->
-                         <div class="absolute -bottom-10 -right-10 text-[120px] font-black opacity-[0.03] rotate-12 pointer-events-none whitespace-nowrap">
-                             BE RIGHT BACK • BE RIGHT BACK 
-                         </div>
-                     </div>
-                 </transition>
- 
-                 <!-- Sponsorship Badge (Phase 18) -->
-                 <transition name="slide-up">
-                     <div v-if="studioStore.visualSettings.specialOverlays.showSponsorship"
-                         class="absolute bottom-8 left-8 z-[15] animate-in slide-in-from-left-4 duration-500">
-                         <div class="flex items-center gap-4 p-1.5 pr-6 rounded-2xl bg-black/60 backdrop-blur-xl border border-yellow-500/30">
-                             <div class="w-10 h-10 rounded-xl bg-yellow-500 flex items-center justify-center animate-pulse">
-                                 <ChartLine theme="filled" size="20" class="text-black" />
-                             </div>
-                             <div class="flex flex-col">
-                                 <span class="text-[8px] font-black uppercase tracking-widest text-yellow-500">Sponsor</span>
-                                 <span class="text-[14px] font-bold text-white leading-tight">
-                                     {{ studioStore.visualSettings.specialOverlays.sponsorName }}
-                                 </span>
-                             </div>
-                         </div>
-                     </div>
-                 </transition>
+                            <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                            <span class="text-[10px] font-black uppercase tracking-widest opacity-60">{{ $t('studio.stage.sessionPaused') }}</span>
+                        </div>
+
+                        <!-- Decorative background text -->
+                        <div class="absolute -bottom-10 -right-10 text-[120px] font-black opacity-[0.03] rotate-12 pointer-events-none whitespace-nowrap">
+                            {{ $t('studio.stage.beRightBack') }}
+                        </div>
+                    </div>
+                </transition>
+
+                <!-- Sponsorship Badge (Phase 18) -->
+                <transition name="slide-up">
+                    <div v-if="studioStore.visualSettings.specialOverlays.showSponsorship"
+                        class="absolute bottom-8 left-8 z-[15] animate-in slide-in-from-left-4 duration-500">
+                        <div class="flex items-center gap-4 p-1.5 pr-6 rounded-2xl bg-black/60 backdrop-blur-xl border border-yellow-500/30">
+                            <div class="w-10 h-10 rounded-xl bg-yellow-500 flex items-center justify-center animate-pulse">
+                                <ChartLine theme="filled" size="20" class="text-black" />
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-black uppercase tracking-widest text-yellow-500">{{ $t('studio.stage.sponsor') }}</span>
+                                <span class="text-[14px] font-bold text-white leading-tight">
+                                    {{ studioStore.visualSettings.specialOverlays.sponsorName }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
              </div>
         </div>
 

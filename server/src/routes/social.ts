@@ -6,6 +6,8 @@ import { connectDB } from '../utils/db.js';
 import YouTubeLiveService from '../integrations/platforms/YouTubeLive.js';
 import axios from 'axios';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // Upload to YouTube
@@ -56,7 +58,7 @@ router.post('/youtube/upload', authMiddleware, async (req: AuthRequest, res: Res
             platform: 'youtube'
         });
     } catch (error: any) {
-        console.error('YouTube upload failed:', error);
+        Logger.error('YouTube upload failed:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message || 'Failed to upload to YouTube' 
@@ -118,7 +120,7 @@ router.post('/tiktok/upload', authMiddleware, async (req: AuthRequest, res: Resp
             platform: 'tiktok'
         });
     } catch (error: any) {
-        console.error('TikTok upload failed:', error);
+        Logger.error('TikTok upload failed:', error);
         res.status(500).json({ 
             success: false, 
             error: error.response?.data?.message || error.message || 'Failed to upload to TikTok' 
@@ -198,7 +200,7 @@ router.post('/instagram/upload', authMiddleware, async (req: AuthRequest, res: R
             platform: 'instagram'
         });
     } catch (error: any) {
-        console.error('Instagram upload failed:', error);
+        Logger.error('Instagram upload failed:', error);
         res.status(500).json({ 
             success: false, 
             error: error.response?.data?.error?.message || error.message || 'Failed to upload to Instagram' 
@@ -228,7 +230,7 @@ router.get('/:platform/status', authMiddleware, async (req: AuthRequest, res: Re
             expiresAt: platformAccount?.credentials.expiresAt || null
         });
     } catch (error: any) {
-        console.error('Status check failed:', error);
+        Logger.error('Status check failed:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message || 'Failed to check platform status' 

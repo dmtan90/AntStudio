@@ -82,7 +82,7 @@ export class LiveAIEngine {
      * Process a single video frame asynchronously.
      * NOW THROTTLED: Returns immediately if worker is busy.
      */
-    async processFrame(input: HTMLVideoElement | HTMLCanvasElement | MediaStreamTrack, timestamp: number, options: AIProcessingOptions = { enableFace: true, enableHands: true, enablePose: true }): Promise<AIProcessingResults> {
+    async processFrame(input: HTMLVideoElement | HTMLCanvasElement | MediaStreamTrack, timestamp: number, options: AIProcessingOptions = { enableFace: true, enableHands: false, enablePose: false }): Promise<AIProcessingResults> {
         if (!this.isInitialized || !this.worker) return this.lastResults;
 
         // 1. Throttling: If worker is busy, skip this frame entirely

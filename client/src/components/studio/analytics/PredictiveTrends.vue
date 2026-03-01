@@ -3,7 +3,7 @@
     <div class="flex justify-between items-center">
       <div class="flex items-center gap-2">
         <div class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-        <h4 class="text-xs font-black text-white/60 uppercase tracking-widest">Audience Forecast</h4>
+        <h4 class="text-xs font-black text-white/60 uppercase tracking-widest">{{ $t('studio.analytics.audienceForecast') }}</h4>
       </div>
       <span v-if="prediction" class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase" :class="trendClass">
         {{ prediction.trend }} ({{ Math.round(prediction.confidence * 100) }}%)
@@ -24,8 +24,8 @@
         <magic-wand theme="outline" size="14" class="text-purple-400" />
       </div>
       <div>
-        <p class="text-[10px] font-bold text-white/80 leading-relaxed">{{ prediction.reasoning }}</p>
-        <p class="text-[8px] font-black text-white/20 uppercase tracking-[0.1em] mt-1">AI Recommendation Insight</p>
+        <p class="text-[10px] font-bold text-white/80 leading-relaxed">{{ $t(`studio.analytics.${prediction.reasoning}`) }}</p>
+        <p class="text-[8px] font-black text-white/20 uppercase tracking-[0.1em] mt-1">{{ $t('studio.analytics.aiRecommendation') }}</p>
       </div>
     </div>
   </div>
@@ -79,6 +79,12 @@ const getBarClass = (index: number) => {
 
 let pollInterval: any = null;
 
+const reasoningPool = [
+  'reasoningFollowers',
+  'reasoningRevenue',
+  'reasoningDefault'
+];
+
 onMounted(() => {
   // Simulate fetching prediction from store or backend
   pollInterval = setInterval(async () => {
@@ -89,7 +95,7 @@ onMounted(() => {
         prediction.value = {
           trend: Math.random() > 0.5 ? 'rise' : 'drop',
           confidence: 0.6 + Math.random() * 0.3,
-          reasoning: "Chat velocity is deviating from historic baseline. Retention risk detected."
+          reasoning: reasoningPool[Math.floor(Math.random() * reasoningPool.length)]
         };
      }
   }, 10000);

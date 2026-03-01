@@ -4,7 +4,7 @@
     <template #header>
       <div class="flex items-center gap-3">
         <div class="h-8 w-1.5 bg-blue-500 rounded-full shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
-        <h3 class="text-sm font-black uppercase tracking-[0.2em] text-white/90">Export Settings</h3>
+        <h3 class="text-sm font-black uppercase tracking-[0.2em] text-white/90">{{ t('projects.editor.video.exportSettings') }}</h3>
       </div>
     </template>
 
@@ -13,16 +13,16 @@
         <div class="grid grid-cols-2 gap-6">
           <el-form-item>
             <template #label><span
-                class="text-[10px] font-black uppercase tracking-widest text-white/30">Format</span></template>
+                class="text-[10px] font-black uppercase tracking-widest text-white/30">{{ t('projects.editor.video.format') }}</span></template>
             <el-select v-model="form.format" class="w-full high-contrast-select" popper-class="cinematic-dropdown">
-              <el-option label="MP4 (Recommended)" value="mp4" />
+              <el-option :label="`MP4 (${t('projects.editor.video.recommended')})`" value="mp4" />
               <el-option label="WebM" value="webm" />
             </el-select>
           </el-form-item>
 
           <el-form-item>
             <template #label><span
-                class="text-[10px] font-black uppercase tracking-widest text-white/30">Codec</span></template>
+                class="text-[10px] font-black uppercase tracking-widest text-white/30">{{ t('projects.editor.video.codec') }}</span></template>
             <el-select v-model="form.codec" class="w-full high-contrast-select" popper-class="cinematic-dropdown">
               <el-option v-for="c in availableCodecs" :key="c.val" :label="c.label" :value="c.val" />
             </el-select>
@@ -32,7 +32,7 @@
         <div class="grid grid-cols-2 gap-6 mt-2">
           <el-form-item>
             <template #label><span
-                class="text-[10px] font-black uppercase tracking-widest text-white/30">Resolution</span></template>
+                class="text-[10px] font-black uppercase tracking-widest text-white/30">{{ t('projects.editor.video.resolution') }}</span></template>
             <el-select v-model="form.resolution" class="w-full high-contrast-select" popper-class="cinematic-dropdown">
               <el-option v-for="opt in resolutionOptions" :key="opt.val" :label="opt.label" :value="opt.val" />
             </el-select>
@@ -40,31 +40,29 @@
 
           <el-form-item>
             <template #label><span
-                class="text-[10px] font-black uppercase tracking-widest text-white/30">FPS</span></template>
+                class="text-[10px] font-black uppercase tracking-widest text-white/30">{{ t('projects.editor.video.fps') }}</span></template>
             <el-select v-model="form.fps" class="w-full high-contrast-select" popper-class="cinematic-dropdown">
-              <el-option label="24 FPS" :value="24" />
-              <el-option label="30 FPS" :value="30" />
-              <el-option label="60 FPS" :value="60" />
+              <el-option :label="t('projects.editor.video.fpsLabel', { fps: '24' })" :value="24" />
+              <el-option :label="t('projects.editor.video.fpsLabel', { fps: '30' })" :value="30" />
+              <el-option :label="t('projects.editor.video.fpsLabel', { fps: '60' })" :value="60" />
             </el-select>
           </el-form-item>
         </div>
 
         <el-form-item class="mt-2">
-          <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/30">Quality
-              Preset</span></template>
+          <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/30">{{ t('projects.editor.video.quality') }}</span></template>
           <el-select v-model="form.bitrate" class="w-full high-contrast-select" popper-class="cinematic-dropdown">
-            <el-option label="Low (Faster)" value="low" />
-            <el-option label="Medium (Balanced)" value="medium" />
-            <el-option label="High (Production)" value="high" />
+            <el-option :label="t('projects.editor.video.low')" value="low" />
+            <el-option :label="t('projects.editor.video.medium')" value="medium" />
+            <el-option :label="t('projects.editor.video.high')" value="high" />
           </el-select>
         </el-form-item>
 
         <div class="mt-8 border-t border-white/5 pt-6">
           <div class="flex items-center justify-between mb-6">
             <div class="flex flex-col gap-0.5">
-              <span class="text-[11px] font-black text-white/80 uppercase tracking-widest">Global Audio</span>
-              <span class="text-[10px] font-bold text-white/30 uppercase tracking-tighter">Include all active
-                tracks</span>
+              <span class="text-[11px] font-black text-white/80 uppercase tracking-widest">{{ t('projects.editor.video.globalAudio') }}</span>
+              <span class="text-[10px] font-bold text-white/30 uppercase tracking-tighter">{{ t('projects.editor.video.includeAllTracks') }}</span>
             </div>
             <el-switch v-model="form.includeAudio" active-color="#3b82f6" />
           </div>
@@ -72,8 +70,7 @@
           <transition name="fade">
             <div v-if="form.includeAudio" class="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
               <el-form-item>
-                <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/40">Audio
-                    Codec</span></template>
+                <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/40">{{ t('projects.editor.video.audioCodec') }}</span></template>
                 <el-select v-model="form.audioCodec" class="w-full high-contrast-select"
                   popper-class="cinematic-dropdown">
                   <el-option label="AAC" value="aac" />
@@ -81,12 +78,11 @@
                 </el-select>
               </el-form-item>
               <el-form-item>
-                <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/40">Sample
-                    Rate</span></template>
+                <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/40">{{ t('projects.editor.video.sampleRate') }}</span></template>
                 <el-select v-model="form.sampleRate" class="w-full high-contrast-select"
                   popper-class="cinematic-dropdown">
-                  <el-option label="44100 Hz" :value="44100" />
-                  <el-option label="48000 Hz" :value="48000" />
+                  <el-option :label="t('projects.editor.video.hzLabel', { hz: '44100' })" :value="44100" />
+                  <el-option :label="t('projects.editor.video.hzLabel', { hz: '48000' })" :value="48000" />
                 </el-select>
               </el-form-item>
             </div>
@@ -105,9 +101,7 @@
       </el-progress>
       <div class="mt-8 px-6">
         <h3 class="text-lg font-black uppercase tracking-[0.2em] text-white mb-2">{{ status }}</h3>
-        <p v-if="progress < 100" class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Optimizing
-          segments
-          in browser worker...</p>
+        <p v-if="progress < 100" class="text-[10px] font-bold text-white/30 uppercase tracking-widest">{{ t('projects.editor.video.optimizing') }}</p>
       </div>
     </div>
 
@@ -115,19 +109,18 @@
       <div class="flex gap-3 justify-end px-2 pb-2">
         <template v-if="!isAssembling">
           <el-button @click="visible = false"
-            class="cinematic-button !h-10 !px-6 !rounded-xl !bg-white/5 !border-white/10 !text-white/60 hover:!text-white hover:!bg-white/10">CANCEL</el-button>
+            class="cinematic-button !h-10 !px-6 !rounded-xl !bg-white/5 !border-white/10 !text-white/60 hover:!text-white hover:!bg-white/10">{{ t('common.cancel') }}</el-button>
           <el-button type="primary" @click="handleConfirm"
             class="cinematic-button !h-10 !px-10 !rounded-xl !bg-blue-600 !text-white border-transparent shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:!scale-[1.02] active:!scale-95 !transition-all">
-            <span class="text-[11px] font-black uppercase tracking-[0.2em]">Start Export</span>
+            <span class="text-[11px] font-black uppercase tracking-[0.2em]">{{ t('projects.editor.video.startExport') }}</span>
           </el-button>
         </template>
         <template v-else>
           <el-button v-if="progress < 100" @click="cancel"
-            class="cinematic-button !h-10 !px-8 !rounded-xl !bg-red-500/10 !border-red-500/20 !text-red-500 hover:!bg-red-500/20">ABORT
-            PROCESS</el-button>
+            class="cinematic-button !h-10 !px-8 !rounded-xl !bg-red-500/10 !border-red-500/20 !text-red-500 hover:!bg-red-500/20">{{ t('projects.editor.video.abortProcess') }}</el-button>
           <el-button v-else type="success" @click="handleFinish"
             class="cinematic-button !h-10 !px-10 !rounded-xl !bg-green-500 !text-white border-transparent shadow-[0_4px_15px_rgba(34,197,94,0.3)]">
-            <span class="text-[11px] font-black uppercase tracking-[0.2em]">View Result</span>
+            <span class="text-[11px] font-black uppercase tracking-[0.2em]">{{ t('projects.editor.video.viewResult') }}</span>
           </el-button>
         </template>
       </div>
@@ -138,8 +131,9 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useVideoAssemblerStore } from '@/views/video-editor/store/assembler'
+import { useVideoAssemblerStore } from 'video-editor/store/assembler'
 import { type ExportOptions } from '@/composables/useVideoAssembler'
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -148,6 +142,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue', 'complete'])
 
+const { t } = useI18n()
 const visible = ref(props.modelValue)
 
 watch(() => props.modelValue, (val) => {
@@ -201,10 +196,10 @@ const resolutionOptions = computed(() => {
   return Object.entries(baseHeights).map(([key, h]) => {
     const w = Math.round(h * (rw / rh));
     let label = '';
-    if (key === '720p') label = `HD (${w}x${h})`;
-    else if (key === '1080p') label = `Full HD (${w}x${h})`;
-    else if (key === '2k') label = `2K (${w}x${h})`;
-    else if (key === '4k') label = `4K (${w}x${h})`;
+    if (key === '720p') label = `${t('projects.editor.video.hd')} (${w}x${h})`;
+    else if (key === '1080p') label = `${t('projects.editor.video.fullHd')} (${w}x${h})`;
+    else if (key === '2k') label = `${t('projects.editor.video.2k')} (${w}x${h})`;
+    else if (key === '4k') label = `${t('projects.editor.video.4k')} (${w}x${h})`;
     
     return { label, val: key };
   });

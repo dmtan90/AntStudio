@@ -10,13 +10,13 @@
           </div>
         </div>
         <div class="space-y-2">
-          <h2 class="text-xl font-black uppercase tracking-widest text-blue-400">AI Production In Progress</h2>
-          <p class="text-sm text-white/60">Gemini is stitching your viral moments into a professional recap reel.</p>
+          <h2 class="text-xl font-black uppercase tracking-widest text-blue-400">{{ $t('studio.overlays.aiProduction.title') }}</h2>
+          <p class="text-sm text-white/60">{{ $t('common.aiProductionDesc') }}</p>
         </div>
         <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
           <div class="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 transition-all duration-300" :style="{ width: `${progress}%` }"></div>
         </div>
-        <p class="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] animate-pulse">Running Client-Side Render Engine</p>
+        <p class="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] animate-pulse">{{ $t('studio.overlays.aiProduction.rendering') }}</p>
       </div>
     </div>
   </transition>

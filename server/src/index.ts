@@ -6,7 +6,6 @@ import cors from 'cors';
 import config from './utils/config.js';
 import { configService } from './utils/configService.js';
 import { connectDB } from './utils/db.js';
-import { licenseService } from './services/licenseScheduler.js';
 import authRouter from './routes/auth.js';
 import s3Router from './routes/s3.js';
 import projectsRouter from './routes/projects.js';
@@ -41,7 +40,7 @@ import aiAuthRouter from './routes/aiAuth.js';
 import commerceRouter from './routes/commerce.js';
 import monitoringRouter from './routes/monitoring.js';
 import { monitoringService } from './services/monitoringService.js';
-import { systemLogger } from './utils/systemLogger.js';
+import { Logger } from './utils/Logger.js';
 import { authMiddleware } from './middleware/auth.js';
 import { apiKeyAuthMiddleware } from './middleware/apiKeyAuth.js';
 import { tenantMiddleware } from './middleware/tenant.js';
@@ -69,6 +68,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeLiveWebSocket } from './routes/live.js';
 import { streamingService } from './services/StreamingService.js';
+import envRouter from './routes/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -182,7 +182,6 @@ app.use('/api/collaboration', collaborationRouter);
 app.use('/api/versions', versionsRouter);
 app.use('/api/syndication', syndicationRouter);
 app.use('/api/live', liveRouter);
-import envRouter from './routes/env.js';
 app.use('/api/admin/env', envRouter);
 app.use('/api/economy', economyRouter);
 app.use('/api/gamification', gamificationRouter);
@@ -233,7 +232,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     const message = err.message || 'Internal Server Error';
 
     // Log error to system monitoring
-    systemLogger.error(`${req.method} ${req.originalUrl} - ${status}: ${message}`, 'HttpErrorHandler', {
+    Logger.error(`${req.method} ${req.originalUrl} - ${status}: ${message}`, 'HttpErrorHandler', {
         stack: err.stack,
         ip: req.ip,
         userAgent: req.get('User-Agent')
@@ -264,9 +263,6 @@ const startServer = async () => {
         // Start Monitoring Service
         monitoringService.startMonitoring();
 
-        // Start License Scheduler
-        licenseService.startScheduler();
-
         // Start Credit Refresh Scheduler (B2B Resale Economy)
         creditRefreshService.startScheduler();
 
@@ -283,7 +279,7 @@ const startServer = async () => {
         initializeLiveWebSocket(httpServer);
 
         // Connect SocketServer to SystemLogger for real-time streaming
-        systemLogger.setSocketServer(socketServer.getIO()!);
+        Logger.setSocketServer(socketServer.getIO()!);
 
         // Initialize collaboration service
         collaborationService.initialize(socketServer.getIO()!);
@@ -297,24 +293,24 @@ const startServer = async () => {
         styleABTestingEngine.setSocketServer(socketServer.getIO()!);
 
         httpServer.listen(PORT, () => {
-            console.log(`🚀 AntStudio Engine is running on port ${PORT}`);
+            Logger.info(`🚀 AntStudio Engine is running on port ${PORT}`);
             // Start Industrial Watchdog (Phase 25)
             // recoveryService.startMonitoring();
-            console.log(`📡 API available at http://localhost:${PORT}/api`);
-            console.log(`🎙️ Live Studio WebSocket available at ws://localhost:${PORT}/api/live`);
+            Logger.info(`📡 API available at http://localhost:${PORT}/api`);
+            Logger.info(`🎙️ Live Studio WebSocket available at ws://localhost:${PORT}/api/live`);
         });
     } catch (error) {
-        console.error('Failed to start server:', error);
+        Logger.error('Failed to start server:', 'System', error);
         process.exit(1);
     }
 };
 
 process.on('unhandledRejection', (reason, promise) => {
-    systemLogger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`, 'GlobalErrorHandler');
+    Logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`, 'GlobalErrorHandler');
 });
 
 process.on('uncaughtException', (error) => {
-    systemLogger.error(`Uncaught Exception: ${error.message}`, 'GlobalErrorHandler', {
+    Logger.error(`Uncaught Exception: ${error.message}`, 'GlobalErrorHandler', {
         stack: error.stack
     });
     // Give some time for logging before exiting

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import config from '../utils/config.js';
+import { Logger } from '../utils/Logger.js';
 
 /**
  * Service for sending intelligent alerts to Slack, Telegram, or Email.
@@ -21,7 +22,7 @@ export class AlertService {
     async sendCriticalAlert(message: string, metadata: any = {}): Promise<void> {
         const fullMessage = `🚨 *CRITICAL ALERT: AntStudio Industrial Watchdog*\n\n*Message:* ${message}\n*Time:* ${new Date().toISOString()}\n*Environment:* ${process.env.NODE_ENV || 'development'}\n\n*Metadata:* \`\`\`${JSON.stringify(metadata, null, 2)}\`\`\``;
 
-        console.error(`[ALERT] ${message}`, metadata);
+        Logger.error(`[ALERT] ${message}`, 'AlertService', { metadata });
 
         const promises = [];
         if (this.slackWebhook) promises.push(this.sendToSlack(fullMessage));
@@ -30,7 +31,7 @@ export class AlertService {
         try {
             await Promise.all(promises);
         } catch (error) {
-            console.error('Failed to send alerts:', error);
+            Logger.error('Failed to send alerts', 'AlertService', { error });
         }
     }
 
@@ -40,7 +41,7 @@ export class AlertService {
     async sendWarningAlert(message: string, metadata: any = {}): Promise<void> {
         const fullMessage = `⚠️ *WARNING: AntStudio Watchdog*\n\n*Message:* ${message}\n*Metadata:* \`\`\`${JSON.stringify(metadata, null, 2)}\`\`\``;
 
-        console.warn(`[WARNING] ${message}`, metadata);
+        Logger.warn(`[WARNING] ${message}`, 'AlertService', { metadata });
 
         if (this.slackWebhook) await this.sendToSlack(fullMessage);
         // Only send critical warnings to Telegram to avoid noise
@@ -51,7 +52,7 @@ export class AlertService {
         try {
             await axios.post(this.slackWebhook, { text });
         } catch (error) {
-            console.error('Slack alert failed:', error);
+            Logger.error('Slack alert failed', 'AlertService', { error });
         }
     }
 
@@ -64,7 +65,7 @@ export class AlertService {
                 parse_mode: 'Markdown'
             });
         } catch (error) {
-            console.error('Telegram alert failed:', error);
+            Logger.error('Telegram alert failed', 'AlertService', { error });
         }
     }
 }

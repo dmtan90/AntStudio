@@ -1,6 +1,6 @@
 import { Tenant } from '../models/Tenant.js';
 import { User } from '../models/User.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 
 /**
  * Service to handle automated monthly credit refreshes and usage resets.
@@ -25,7 +25,7 @@ export const creditRefreshService = {
 
             if (tenantsToRefresh.length === 0) return;
 
-            console.log(`[CreditService] Processing refreshes for ${tenantsToRefresh.length} tenants...`);
+            Logger.info(`[CreditService] Processing refreshes for ${tenantsToRefresh.length} tenants...`, 'CreditService');
 
             for (const tenant of tenantsToRefresh) {
                 // Check if already reset this month
@@ -36,13 +36,13 @@ export const creditRefreshService = {
                     continue;
                 }
 
-                console.log(`[CreditService] Refreshing Tenant: ${tenant.name} (${tenant.subdomain})`);
+                Logger.info(`[CreditService] Refreshing Tenant: ${tenant.name} (${tenant.subdomain})`, 'CreditService');
 
                 // 2. Refresh Tenant-level Usage & Org Pool
                 (tenant as any).resetMonthlyUsage?.();
 
                 if (tenant.tenantType === 'sub' && tenant.organizationPool) {
-                    console.log(`[CreditService] Resetting Org Pool for ${tenant.name}`);
+                    Logger.info(`[CreditService] Resetting Org Pool for ${tenant.name}`, 'CreditService');
                     tenant.organizationPool.used = 0;
                     // Note: total is the hard cap, monthlyAllocation is what they get every month.
                     // We can either set total = monthlyAllocation or total += monthlyAllocation.
@@ -81,17 +81,17 @@ export const creditRefreshService = {
                 tenant.usage.lastReset = new Date();
                 await tenant.save();
 
-                systemLogger.info(`Completed monthly credit refresh for tenant: ${tenant.name}`, 'CreditService');
+                Logger.info(`Completed monthly credit refresh for tenant: ${tenant.name}`, 'CreditService');
             }
 
         } catch (error: any) {
-            console.error('[CreditService] Error processing refreshes:', error);
-            systemLogger.error(`Credit refresh failed: ${error.message}`, 'CreditService');
+            Logger.error('[CreditService] Error processing refreshes', 'CreditService', { error });
+            Logger.error(`Credit refresh failed: ${error.message}`, 'CreditService');
         }
     },
 
     startScheduler() {
-        console.log('[CreditService] Starting allotment scheduler (Hourly check)...');
+        Logger.info('[CreditService] Starting allotment scheduler (Hourly check)...', 'CreditService');
 
         // Run immediately on startup
         this.processRefreshes();

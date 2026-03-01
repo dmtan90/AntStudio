@@ -1,6 +1,6 @@
 import { ModerationAudit } from '../models/ModerationAudit.js';
 import { Tenant } from '../models/Tenant.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 import { GoogleGenAI } from '@google/genai';
 import { geminiPool } from '../utils/gemini.js';
 import axios from 'axios';
@@ -20,7 +20,7 @@ export const moderationService = {
      */
     async vetPrompt(userId: string, tenantId: string | undefined, prompt: string): Promise<{ allowed: boolean; reason?: string }> {
         try {
-            console.log(`[Moderation] Vetting prompt for user ${userId}...`);
+            Logger.info(`[Moderation] Vetting prompt for user ${userId}...`, 'ModerationService');
 
             // 1. Enterprise Custom Blacklist
             if (tenantId) {
@@ -67,7 +67,7 @@ export const moderationService = {
             return { allowed: true };
 
         } catch (error: any) {
-            console.error('[Moderation] Prompt vetting failed:', error);
+            Logger.error(`[Moderation] Prompt vetting failed: ${error}`, 'ModerationService');
             // Fallback to basic keyword check if AI fails
             const toxicKeywords = ['hate speech', 'extremism', 'violence'];
             if (toxicKeywords.some(k => prompt.toLowerCase().includes(k))) {
@@ -82,7 +82,7 @@ export const moderationService = {
      */
     async vetMedia(userId: string, tenantId: string | undefined, mediaUrl: string): Promise<{ allowed: boolean; status: 'ready' | 'flagged' | 'blocked' }> {
         try {
-            console.log(`[Moderation] Scanning media content: ${mediaUrl}`);
+            Logger.info(`[Moderation] Scanning media content: ${mediaUrl}`, 'ModerationService');
 
             // Only analyze if it's an accessible HTTP/HTTPS image
             if (!mediaUrl.startsWith('http') || mediaUrl.match(/\.(mp4|webm|mov)$/i)) {
@@ -120,7 +120,7 @@ export const moderationService = {
                 }
 
             } catch (fetchErr) {
-                console.warn('[Moderation] Could not fetch/analyze media for vetting:', fetchErr);
+                Logger.warn(`[Moderation] Could not fetch/analyze media for vetting: ${fetchErr}`, 'ModerationService');
             }
 
             return { allowed: true, status: 'ready' };
@@ -139,9 +139,9 @@ export const moderationService = {
                 scores,
                 status
             });
-            systemLogger.warn(`Moderation Alert [${status}]: User ${userId} triggered safety filter for ${type}`, 'ModerationService');
+            Logger.warn(`Moderation Alert [${status}]: User ${userId} triggered safety filter for ${type}`, 'ModerationService');
         } catch (e) {
-            console.error('Failed to log moderation audit:', e);
+            Logger.error(`Failed to log moderation audit: ${e}`, 'ModerationService');
         }
     }
 };

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Logger } from '../../Logger.js';
 
 export class ElevenLabsProvider {
     private apiKey: string;
@@ -50,7 +51,7 @@ export class ElevenLabsProvider {
             };
 
         } catch (error: any) {
-            console.error('ElevenLabs TTS Error:', error.response?.data || error.message);
+            Logger.error(`ElevenLabs TTS Error: ${error.response?.data || error.message}`, 'ElevenLabsProvider');
             throw new Error(`ElevenLabs TTS Failed: ${error.message}`);
         }
     }
@@ -119,7 +120,7 @@ export class ElevenLabsProvider {
             return data.voice_id;
 
         } catch (error: any) {
-            console.error('ElevenLabs Cloning Error:', error);
+            Logger.error(`ElevenLabs Cloning Error: ${error}`, 'ElevenLabsProvider');
             throw error;
         }
     }
@@ -134,7 +135,7 @@ export class ElevenLabsProvider {
             });
             return response.data.voices || [];
         } catch (error: any) {
-            console.error('ElevenLabs List Voices Error:', error.message);
+            Logger.error(`ElevenLabs List Voices Error: ${error.message}`, 'ElevenLabsProvider');
             return []; // Return empty array on error for resilience
         }
     }

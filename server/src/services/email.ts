@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer'
 import { configService } from '../utils/configService.js'
 import config from '../utils/config.js'
 
+import { Logger } from '../utils/Logger.js';
+
 export class EmailService {
     private static instance: EmailService
     private transporter: nodemailer.Transporter | null = null
@@ -22,7 +24,7 @@ export class EmailService {
         const smtp = configService.smtp
 
         if (!smtp.host || !smtp.user) {
-            console.warn('SMTP not fully configured, email sending disabled.')
+            Logger.warn('SMTP not fully configured, email sending disabled.')
             return null
         }
 
@@ -59,10 +61,10 @@ export class EmailService {
 
             const info = await transporter.sendMail(mailOptions)
 
-            console.log('Message sent: %s', info.messageId)
+            Logger.info('Message sent: %s', info.messageId)
             return info
         } catch (error) {
-            console.error('Error sending email:', error)
+            Logger.error('Error sending email:', error)
             throw error
         }
     }

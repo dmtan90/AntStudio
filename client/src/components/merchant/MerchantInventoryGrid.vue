@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { Edit, Delete, Magic } from '@icon-park/vue-next';
+
+const { t } = useI18n();
 
 defineProps<{
     products: any[];
@@ -47,7 +50,7 @@ const emit = defineEmits(['edit', 'delete', 'create-ad', 'preview']);
                      {{ p.currency }} {{ p.price }}
                   </div>
                   <div class="text-[10px] font-bold uppercase tracking-widest text-gray-500" :class="{ 'text-red-500': p.stock < 5 }">
-                     {{ p.stock }} in stock
+                     {{ $t('merchant.inventory.inStock', { count: p.stock }) }}
                   </div>
                </div>
 
@@ -56,7 +59,7 @@ const emit = defineEmits(['edit', 'delete', 'create-ad', 'preview']);
                   class="w-full py-3 rounded-xl bg-white/5 hover:bg-blue-600 text-gray-300 hover:text-white text-xs font-black uppercase tracking-wide transition-all flex items-center justify-center gap-2 group-btn"
                >
                   <magic class="group-btn-hover:animate-pulse" size="14" />
-                  Generate Ad
+                  {{ $t('merchant.inventory.generateAd') }}
                </button>
             </div>
          </div>

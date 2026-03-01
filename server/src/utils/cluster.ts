@@ -1,5 +1,5 @@
 import { AdminSettings } from '../models/AdminSettings.js';
-import { systemLogger } from './systemLogger.js';
+import { Logger } from './Logger.js';
 
 /**
  * Cluster Orchestration Service.
@@ -23,10 +23,10 @@ export class ClusterService {
             const settings = await AdminSettings.findOne().lean();
             this.cachedSettings = settings;
             this.lastUpdate = now;
-            systemLogger.info('📡 Cluster Sync: Configuration registry refreshed.');
+            Logger.info('📡 Cluster Sync: Configuration registry refreshed.');
             return settings;
         } catch (error: any) {
-            systemLogger.error('📡 Cluster Handshake Failed: Registry unreachable.');
+            Logger.error('📡 Cluster Handshake Failed: Registry unreachable.');
             return this.cachedSettings;
         }
     }

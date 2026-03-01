@@ -1,11 +1,11 @@
 import { ref, nextTick } from 'vue'
 import { toast } from 'vue-sonner'
 import { useProjectStore } from '@/stores/project'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
 export function useProjectChat(projectId: string, chatContainerRef: any) {
     const projectStore = useProjectStore()
-    const { t } = useTranslations()
+    const { t } = useI18n()
 
     const processing = ref(false)
     const statusMessage = ref(t('projects.new.flow.analyzing'))
@@ -122,10 +122,16 @@ export function useProjectChat(projectId: string, chatContainerRef: any) {
             const lowerMsg = msgContent.toLowerCase()
 
             // Command detection (Language agnostic keywords)
-            const keywords = ['start', 'ok', 'yes', 'bắt đầu', 'được', 'triển', 'tiếp']
+            const keywords = ['start', 'ok', 'yes', 'approve', 'confirm', 'go']
             const isStartCommand = keywords.some(k => lowerMsg.includes(k)) && lastMsg?.type == "visual-guide"
 
-            if (isStartCommand || lowerMsg.includes('visual plan') || lowerMsg.includes('generate plan')) {
+            const visualKeywords = [
+                'visual plan', 'generate plan', 
+                t('projects.editor.chat.keywords.visualPlan').toLowerCase(), 
+                t('projects.editor.chat.keywords.generatePlan').toLowerCase()
+            ]
+
+            if (isStartCommand || visualKeywords.some(k => lowerMsg.includes(k))) {
                 if (currentStage.value === 'planning_confirmed' || isStartCommand) {
                     await generateVisualStrategy()
                     return

@@ -10,24 +10,24 @@
            <key theme="outline" size="40" class="text-blue-400" />
         </div>
 
-        <h1 class="text-3xl font-black text-white uppercase tracking-tighter mb-2">Initialize AntStudio</h1>
-        <p class="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-10">VTuber Hub Activation & Compliance</p>
+        <h1 class="text-3xl font-black text-white uppercase tracking-tighter mb-2">{{ t('admin.activation.title') }}</h1>
+        <p class="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-10">{{ t('admin.activation.subtitle') }}</p>
 
         <div v-if="licenseStore.isValid" class="success-state animate-in">
            <div class="p-6 bg-green-500/10 border border-green-500/20 rounded-3xl mb-8">
-              <p class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-2">Core Status: ACTIVE</p>
-              <h2 class="text-xl font-black text-white uppercase">Welcome, {{ licenseStore.tier }} Partner</h2>
-              <p class="text-xs text-white/40 mt-2 font-medium">Full system capabilities have been unlocked.</p>
+              <p class="text-[10px] font-black text-green-500 uppercase tracking-widest mb-2">{{ t('admin.activation.coreStatus') }}</p>
+              <h2 class="text-xl font-black text-white uppercase">{{ t('admin.activation.welcome', { tier: licenseStore.tier }) }}</h2>
+              <p class="text-xs text-white/40 mt-2 font-medium">{{ t('admin.activation.unlocked') }}</p>
            </div>
            
            <el-button class="glass-btn w-full py-6 uppercase font-black tracking-widest" @click="$router.push('/admin/overview')">
-             Go to Dashboard
+             {{ t('admin.activation.goDashboard') }}
            </el-button>
         </div>
 
         <el-form v-else class="space-y-6" @submit.prevent="handleActivate">
            <div class="form-item text-left">
-              <label class="text-[10px] font-black text-white/30 uppercase tracking-widest ml-4 mb-2 block">License Key</label>
+              <label class="text-[10px] font-black text-white/30 uppercase tracking-widest ml-4 mb-2 block">{{ t('admin.activation.licenseKey') }}</label>
               <el-input 
                 v-model="keyInput" 
                 placeholder="XXXX-XXXX-XXXX-XXXX" 
@@ -42,11 +42,11 @@
              :loading="activating"
              @click="handleActivate"
            >
-             Connect to Hub
+             {{ t('admin.activation.connectHub') }}
            </el-button>
 
            <p class="text-[9px] text-white/20 font-bold uppercase tracking-widest leading-relaxed px-8">
-             By activating, you agree to the AntStudio Enterprise EULA and compliance standards.
+             {{ t('admin.activation.eula') }}
            </p>
         </el-form>
       </div>
@@ -56,11 +56,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Key } from '@icon-park/vue-next';
 import { useLicenseStore } from '@/stores/license';
 import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
 
+const { t } = useI18n();
 const licenseStore = useLicenseStore();
 const adminStore = useAdminStore();
 const keyInput = ref('');
@@ -72,7 +74,7 @@ onMounted(() => {
 
 const handleActivate = async () => {
     if (!keyInput.value) {
-        toast.error("Please enter a valid license key");
+        toast.error(t('admin.activation.toasts.enterKey'));
         return;
     }
 
@@ -86,12 +88,12 @@ const handleActivate = async () => {
         await licenseStore.fetchLicenseStatus();
         
         if (licenseStore.isValid) {
-            toast.success("System activated successfully!");
+            toast.success(t('admin.activation.toasts.success'));
         } else {
-            toast.error("Activation failed. Port blocked or key invalid.");
+            toast.error(t('admin.activation.toasts.failed'));
         }
     } catch (e: any) {
-        toast.error(e.response?.data?.error || "VTuber Handshake Failure");
+        toast.error(e.response?.data?.error || t('admin.activation.toasts.handshakeFailure'));
     } finally {
         activating.value = false;
     }

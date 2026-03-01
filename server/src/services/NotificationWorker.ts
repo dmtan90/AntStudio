@@ -2,7 +2,7 @@ import schedule from 'node-schedule';
 import { License } from '../models/License.js';
 import { emailService } from './email.js';
 import config from '../utils/config.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 
 export class NotificationWorker {
     /**
@@ -13,7 +13,7 @@ export class NotificationWorker {
 
         // Run daily at 09:00 AM
         schedule.scheduleJob('0 9 * * *', async () => {
-            systemLogger.info('📧 NotificationWorker: Scanning for expiring licenses...');
+            Logger.info('📧 NotificationWorker: Scanning for expiring licenses...');
             await this.processExpiryAlerts();
         });
     }
@@ -43,10 +43,10 @@ export class NotificationWorker {
                         </div>
                     `
                 });
-                systemLogger.info(`📧 Alert dispatched to ${lic.owner}`);
+                Logger.info(`📧 Alert dispatched to ${lic.owner}`);
             }
         } catch (error: any) {
-            systemLogger.error(`📧 NotificationWorker Failure: ${error.message}`);
+            Logger.error(`📧 NotificationWorker Failure: ${error.message}`);
         }
     }
 }

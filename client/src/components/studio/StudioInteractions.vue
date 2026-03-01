@@ -2,15 +2,15 @@
     <aside class="interaction-panel glass-dark">
         <div class="section-tabs">
             <button v-if="!isGuest" class="tab-btn" :class="{ active: localActiveTab === 'layout' }"
-                @click="localActiveTab = 'layout'">Layout</button>
+                @click="localActiveTab = 'layout'">{{ $t('studio.interactions.tabs.layout') }}</button>
             <button v-if="!isGuest" class="tab-btn" :class="{ active: localActiveTab === 'scene' }"
-                @click="localActiveTab = 'scene'">Guests</button>
+                @click="localActiveTab = 'scene'">{{ $t('studio.interactions.tabs.guests') }}</button>
             <button class="tab-btn" :class="{ active: localActiveTab === 'chat' }"
-                @click="localActiveTab = 'chat'">Chat</button>
+                @click="localActiveTab = 'chat'">{{ $t('studio.interactions.tabs.chat') }}</button>
             <button class="tab-btn" :class="{ active: localActiveTab === 'moments' }"
-                @click="localActiveTab = 'moments'">Moments</button>
+                @click="localActiveTab = 'moments'">{{ $t('studio.interactions.tabs.moments') }}</button>
             <button class="tab-btn" :class="{ active: localActiveTab === 'stats' }"
-                @click="localActiveTab = 'stats'">Stats</button>
+                @click="localActiveTab = 'stats'">{{ $t('studio.interactions.tabs.stats') }}</button>
         </div>
 
         <div v-if="localActiveTab === 'layout'"
@@ -45,7 +45,7 @@
                             @click="handleVTuberReply(msg)"
                             class="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded hover:bg-purple-500/40"
                             :disabled="isProcessingReply">
-                            Reply as {{ activeVTuberName }}
+                            {{ $t('studio.interactions.replyAs') }} {{ activeVTuberName }}
                         </button>
                     </div>
                     <span class="text">
@@ -63,12 +63,12 @@
             </template>
             <div v-else class="empty-chat flex flex-col items-center justify-center h-full opacity-20 gap-4">
                 <broadcast theme="outline" size="48" />
-                <p class="text-[10px] uppercase font-black tracking-[0.2em] text-center">Waiting for engagement...</p>
+                <p class="text-[10px] uppercase font-black tracking-[0.2em] text-center">{{ $t('studio.interactions.waitingEngagement') }}</p>
             </div>
         </div>
 
         <div v-else-if="localActiveTab === 'moments'" class="moments-flow p-4 animate-in">
-            <h4 class="text-[9px] font-black opacity-30 uppercase tracking-[0.2em] mb-4">Viral Peaks</h4>
+            <h4 class="text-[9px] font-black opacity-30 uppercase tracking-[0.2em] mb-4">{{ $t('studio.interactions.viralPeaks') }}</h4>
             <div v-if="studioStore.viralMoments.length > 0" class="flex flex-col gap-3">
                 <div v-for="moment in studioStore.viralMoments" :key="moment.id" 
                     class="moment-card glass-light p-3 rounded-xl border border-white/10 hover:border-blue-500/30 transition-all group">
@@ -83,18 +83,18 @@
                     <div class="flex gap-2">
                         <button @click="studioStore.draftMoment(moment.id)" 
                             class="flex-1 py-1 text-[8px] font-black uppercase tracking-widest bg-white/5 hover:bg-white/10 rounded-md border border-white/5">
-                            Draft Post
+                            {{ $t('studio.interactions.draftPost') }}
                         </button>
                         <button @click="studioStore.publishMoment(moment.id)"
                             class="flex-1 py-1 text-[8px] font-black uppercase tracking-widest bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-md border border-blue-500/10">
-                            Share Now
+                            {{ $t('studio.interactions.shareNow') }}
                         </button>
                     </div>
                 </div>
             </div>
             <div v-else class="empty-moments flex flex-col items-center justify-center py-12 opacity-20 gap-4 text-center">
                 <magic theme="outline" size="32" />
-                <p class="text-[9px] uppercase font-black tracking-[0.1em]">No viral moments<br/>captured yet</p>
+                <p class="text-[9px] uppercase font-black tracking-[0.1em]">{{ $t('studio.interactions.noViralMoments') }}</p>
             </div>
         </div>
 
@@ -102,11 +102,11 @@
             <!-- Stats content -->
             <div class="stat-item flex justify-between items-end mb-6">
                 <div class="flex flex-col">
-                    <span class="opacity-30 text-[9px] uppercase font-black tracking-widest mb-1">Live Audience</span>
+                    <span class="opacity-30 text-[9px] uppercase font-black tracking-widest mb-1">{{ $t('studio.interactions.liveAudience') }}</span>
                     <span class="text-3xl font-black tracking-tighter">{{ viewers || 0 }}</span>
                 </div>
                 <div class="flex flex-col items-end">
-                    <span class="opacity-30 text-[9px] uppercase font-black tracking-widest mb-1 text-right">Peak</span>
+                    <span class="opacity-30 text-[9px] uppercase font-black tracking-widest mb-1 text-right">{{ $t('studio.interactions.peak') }}</span>
                     <span class="text-xs font-mono opacity-60">{{ engagement?.peakViewers || viewers || 0 }}</span>
                 </div>
             </div>
@@ -114,7 +114,7 @@
             <div class="space-y-4">
                 <div class="p-4 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-3">
                     <div class="flex justify-between items-center">
-                        <span class="text-[9px] font-black opacity-30 uppercase">Uplink Stability</span>
+                        <span class="text-[9px] font-black opacity-30 uppercase">{{ $t('studio.interactions.uplinkStability') }}</span>
                         <div class="flex items-center gap-1.5">
                             <div class="w-1.5 h-1.5 rounded-full"
                                 :class="health?.status === 'good' ? 'bg-green-400' : 'bg-yellow-400'"></div>
@@ -124,7 +124,7 @@
                         </div>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-[9px] font-black opacity-30 uppercase">Bitrate</span>
+                        <span class="text-[9px] font-black opacity-30 uppercase">{{ $t('studio.interactions.bitrate') }}</span>
                         <div class="flex items-center gap-2">
                            <span v-if="effectiveQuality" class="text-[8px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded uppercase font-black">{{ effectiveQuality }}</span>
                            <span class="text-xs font-mono">{{ Math.round(health?.bitrate || 0) }} kbps</span>
@@ -134,7 +134,7 @@
 
                 <div class="p-4 rounded-2xl bg-white/5 border border-white/5">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-[9px] font-black opacity-30 uppercase">Latency (RTT)</span>
+                        <span class="text-[9px] font-black opacity-30 uppercase">{{ $t('studio.interactions.latency') }}</span>
                         <span class="text-xs font-mono">{{ health?.rtt ? Math.round(health.rtt) + 'ms' : '--' }}</span>
                     </div>
                     <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
@@ -144,17 +144,17 @@
             </div>
 
             <div class="mt-8">
-                <h5 class="text-[9px] font-black opacity-30 uppercase tracking-[0.2em] mb-4">Engagement Index</h5>
+                <h5 class="text-[9px] font-black opacity-30 uppercase tracking-[0.2em] mb-4">{{ $t('studio.interactions.engagementIndex') }}</h5>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 text-center">
                         <p class="text-lg font-black text-blue-400">{{ (engagement?.likes || 0) > 1000 ?
                             (engagement.likes / 1000).toFixed(1) + 'k' : engagement?.likes || 0 }}</p>
-                        <p class="text-[8px] opacity-30 uppercase font-black">Likes</p>
+                        <p class="text-[8px] opacity-30 uppercase font-black">{{ $t('studio.interactions.likes') }}</p>
                     </div>
                     <div class="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10 text-center">
                         <p class="text-lg font-black text-purple-400">{{ (engagement?.shares || 0) > 1000 ?
                             (engagement.shares / 1000).toFixed(1) + 'k' : engagement?.shares || 0 }}</p>
-                        <p class="text-[8px] opacity-30 uppercase font-black">Shares</p>
+                        <p class="text-[8px] opacity-30 uppercase font-black">{{ $t('studio.interactions.shares') }}</p>
                     </div>
                 </div>
             </div>
@@ -165,7 +165,7 @@
                 <input 
                     v-model="chatInput" 
                     type="text" 
-                    placeholder="Send a message..." 
+                    :placeholder="$t('studio.interactions.sendMessagePlaceholder')" 
                     class="chat-input"
                     @keyup.enter="handleSendChat"
                 />
@@ -184,7 +184,7 @@
             
             <!-- Dev/Simulate Tools -->
             <div v-if="!isGuest && activeVTuber" class="mt-2 pt-2 border-t border-white/5">
-                <p class="text-[9px] uppercase opacity-40 font-black mb-2">Simulate Interaction</p>
+                <p class="text-[9px] uppercase opacity-40 font-black mb-2">{{ $t('studio.interactions.simulateInteraction') }}</p>
                 <div class="grid grid-cols-3 gap-2">
                     <button @click="simulateGift('Rocket', 500)" class="gift-btn">
                         🚀 Rocket
@@ -216,7 +216,9 @@ import { storeToRefs } from 'pinia';
 import { useStudioStore } from '@/stores/studio';
 import { toast } from 'vue-sonner';
 import { getFileUrl } from '@/utils/api';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const studioStore = useStudioStore();
 
 const projectStore = useProjectStore();
@@ -298,9 +300,9 @@ const handleVTuberReply = async (msg: any) => {
         
         // Optimistically update UI
         msg.vtuberResponse = result.text;
-        toast.success(`Replied as ${activeVTuberName.value}`);
+        toast.success(`${t('studio.interactions.toast.repliedAs')} ${activeVTuberName.value}`);
     } catch (e) {
-        toast.error('Failed to generate reply');
+        toast.error(t('studio.interactions.toast.replyFailed'));
     } finally {
         isProcessingReply.value = false;
     }
@@ -316,7 +318,7 @@ const simulateGift = async (giftName: string, amount: number) => {
             amount
         );
     } catch (e) {
-        toast.error('Gift reaction failed');
+        toast.error(t('studio.interactions.toast.giftFailed'));
     }
 };
 
@@ -328,9 +330,9 @@ const simulatePoll = async () => {
             'Best Pizza Topping?',
             'Pineapple 🍍'
         );
-        toast.success('Triggered Poll Reaction');
+        toast.success(t('studio.interactions.toast.pollTriggered'));
     } catch (e) {
-        toast.error('Poll reaction failed');
+        toast.error(t('studio.interactions.toast.pollFailed'));
     }
 };
 

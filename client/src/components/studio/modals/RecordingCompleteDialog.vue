@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="Recording Complete"
+    :title="$t('studio.modals.recordingComplete.title')"
     width="600px"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
@@ -29,7 +29,7 @@
             class="action-btn"
           >
             <download theme="outline" size="18" class="mr-2" />
-            Download
+            {{ $t('studio.common.download') }}
           </GButton>
 
           <GButton 
@@ -40,23 +40,23 @@
             :disabled="isSaved"
           >
             <save theme="outline" size="18" class="mr-2" />
-            {{ isSaved ? 'Saved to Gallery' : 'Save to Gallery' }}
+            {{ isSaved ? $t('studio.modals.recordingComplete.saved') : $t('studio.modals.recordingComplete.save') }}
           </GButton>
         </div>
 
         <!-- Step 2: Publish Actions (Visible after save) -->
         <div v-if="isSaved" class="publish-section">
           <div class="divider">
-            <span>Publish to Platforms</span>
+            <span>{{ $t('studio.modals.recordingComplete.publish') }}</span>
           </div>
 
           <div v-if="loadingAccounts" class="loading-state">
-            Loading connected accounts...
+            {{ $t('studio.modals.recordingComplete.loadingAccounts') }}
           </div>
           
           <div v-else-if="accounts.length === 0" class="empty-accounts">
-            <p>No connected social accounts found.</p>
-            <GButton size="sm" @click="openIntegrations">Connect Accounts</GButton>
+            <p>{{ $t('studio.modals.recordingComplete.noAccounts') }}</p>
+            <GButton size="sm" @click="openIntegrations">{{ $t('studio.modals.recordingComplete.connectAccounts') }}</GButton>
           </div>
 
           <div v-else class="publish-form">
@@ -82,8 +82,8 @@
 
             <!-- Metadata -->
             <div class="metadata-form">
-              <GInput v-model="publishMetadata.title" placeholder="Video Title" label="Title" />
-              <GInput v-model="publishMetadata.description" placeholder="Description" type="textarea" label="Description" />
+              <GInput v-model="publishMetadata.title" :placeholder="$t('studio.modals.recordingComplete.videoTitle')" :label="$t('studio.common.title')" />
+              <GInput v-model="publishMetadata.description" :placeholder="$t('studio.common.description')" type="textarea" :label="$t('studio.common.description')" />
             </div>
 
             <GButton 
@@ -94,7 +94,7 @@
               :disabled="selectedAccountIds.length === 0"
             >
               <send theme="outline" size="18" class="mr-2" />
-              Publish to Selected
+              {{ $t('studio.modals.recordingComplete.publishSelected') }}
             </GButton>
           </div>
         </div>

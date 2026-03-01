@@ -2,7 +2,7 @@
   <div
     class="preset-card group bg-black/40 border border-white/10 rounded-2xl overflow-hidden hover:border-blue-500/50 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
     @click="$emit('use', preset)">
-    <div class="relative aspect-[9/16] overflow-hidden">
+    <div class="relative aspect-[1/1] overflow-hidden">
       <!-- Thumbnail Image -->
       <img 
         :src="preset.thumbnail" 
@@ -23,7 +23,7 @@
       <!-- Model Type Badge -->
       <div class="absolute top-3 right-3 z-10">
         <span class="px-2 py-1 text-[8px] font-black uppercase tracking-wider rounded-md bg-black/60 text-white/80 backdrop-blur-sm border border-white/20">
-          {{ preset.visualIdentity.modelType === 'live2d' ? 'Live2D' : 'Static' }}
+          {{ preset.visualIdentity.modelType === 'live2d' ? $t('vtubers.preset.live2d') : $t('vtubers.preset.static') }}
         </span>
       </div>
       
@@ -37,12 +37,12 @@
           @click.stop="$emit('use', preset)"
           class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wide rounded-xl transition-colors shadow-lg">
           <Plus theme="outline" size="14" class="inline mr-1" />
-          Use Template
+          {{ $t('vtubers.preset.useTemplate') }}
         </button>
         <button 
           @click.stop="$emit('preview', preset)"
           class="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-wide rounded-xl transition-colors border border-white/20">
-          Preview
+          {{ $t('vtubers.preset.preview') }}
         </button>
       </div>
     </div>

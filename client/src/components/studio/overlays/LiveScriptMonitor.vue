@@ -8,12 +8,12 @@
                 <div class="px-4 py-2 border-b border-white/10 flex items-center justify-between bg-white/5">
                     <div class="flex items-center gap-2">
                         <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-red-400">Live ShowRunner</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-red-400">{{ $t('studio.common.showrunnerTitle') }}</span>
                         <span class="text-[10px] text-white/40">| {{ studioStore.activeScript.title }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                          <span class="text-[10px] font-mono text-white/60">
-                            STEP {{ studioStore.scriptIndex + 1 }} / {{ studioStore.activeScript.steps.length }}
+                            {{ $t('studio.common.showrunnerStep', { current: studioStore.scriptIndex + 1, total: studioStore.activeScript.steps.length }) }}
                          </span>
                          <button @click="nextStep" class="p-1 hover:bg-white/10 rounded transition-colors group">
                             <go-start theme="filled" size="14" class="text-white/60 group-hover:text-white" />
@@ -32,14 +32,14 @@
                     <div v-if="currentStep?.dialogue" class="bg-white/5 rounded-lg p-4 mt-4 border border-white/5 text-left">
                         <div class="flex items-center gap-2 mb-2">
                              <avatar theme="outline" size="16" class="text-blue-400" />
-                             <span class="text-xs font-bold text-blue-400 uppercase">{{ currentStep.agentId || 'Reviewer' }} SAYS:</span>
+                             <span class="text-xs font-bold text-blue-400 uppercase">{{ $t('studio.common.showrunnerSays', { agent: currentStep.agentId || 'Reviewer' }) }}</span>
                         </div>
                         <p class="text-lg text-white/90 font-serif italic leading-relaxed">"{{ currentStep.dialogue }}"</p>
                     </div>
 
                      <div v-if="currentStep?.action" class="mt-4 flex items-center justify-center gap-2 text-xs font-mono text-purple-400 uppercase tracking-widest">
                         <lightning theme="filled" size="12" />
-                        <span>Action Trigger: {{ currentStep.action }}</span>
+                        <span>{{ $t('studio.common.showrunnerAction', { action: currentStep.action }) }}</span>
                     </div>
                 </div>
 
@@ -50,7 +50,7 @@
 
                 <!-- Next Up -->
                 <div v-if="nextStepData" class="px-4 py-2 bg-black/40 border-t border-white/5 flex items-center justify-between text-xs text-white/40">
-                    <span class="uppercase font-bold">Up Next:</span>
+                    <span class="uppercase font-bold">{{ $t('studio.common.showrunnerUpNext') }}</span>
                     <span class="truncate max-w-[300px]">{{ nextStepData.description }}</span>
                     <span class="font-mono">{{ nextStepData.durationSeconds }}s</span>
                 </div>

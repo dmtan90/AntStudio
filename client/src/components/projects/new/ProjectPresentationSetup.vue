@@ -5,13 +5,13 @@
                 <div class="icon-wrapper">
                     <monitor theme="filled" size="32" fill="#fff" />
                 </div>
-                <h2>Presentation to Video</h2>
-                <p>Convert your slides into an engaging video instantly.</p>
+                <h2>{{ t('projects.new.setup.presentation.title') }}</h2>
+                <p>{{ t('projects.new.setup.presentation.desc') }}</p>
             </div>
 
             <div class="section-title">
                 <user theme="outline" size="18" fill="currentColor" />
-                <span>Presenter Avatar (Optional)</span>
+                <span>{{ t('projects.new.setup.presentation.presenterAvatar') }}</span>
             </div>
 
             <div class="avatars-grid">
@@ -24,28 +24,28 @@
                     </div>
                 </div>
                 <div v-if="mediaStore.resources.length === 0" class="no-avatars">
-                    No avatars found. Upload one in Avatar setup.
+                    {{ t('projects.new.setup.presentation.noAvatars') }}
                 </div>
             </div>
 
             <div class="section-title">
                 <upload-one theme="outline" size="18" fill="currentColor" />
-                <span>Upload Slides</span>
+                <span>{{ t('projects.new.setup.presentation.uploadSlides') }}</span>
             </div>
 
             <div class="upload-area" @click="triggerUpload" @dragover.prevent @drop.prevent="handleDrop">
                 <div class="upload-content">
                     <upload-one theme="outline" size="48" fill="#6366f1" />
-                    <h3>Upload Presentation</h3>
-                    <p>Support PDF, PPTX (Max 50MB)</p>
-                    <button class="btn-select">Select File</button>
+                    <h3>{{ t('projects.new.setup.presentation.uploadPresentation') }}</h3>
+                    <p>{{ t('projects.new.setup.presentation.support') }}</p>
+                    <button class="btn-select">{{ t('projects.new.setup.presentation.selectFile') }}</button>
                 </div>
                 <input type="file" ref="fileInput" accept=".pdf,.pptx" style="display: none"
                     @change="handleFileSelect" />
             </div>
 
             <div class="actions">
-                <button class="btn-cancel" @click="$router.push('/dashboard')">Cancel</button>
+                <button class="btn-cancel" @click="$router.push('/dashboard')">{{ t('common.cancel') }}</button>
             </div>
         </div>
     </div>
@@ -58,10 +58,14 @@ import { Monitor, UploadOne, User, Check, Close } from '@icon-park/vue-next'
 import { toast } from 'vue-sonner'
 import { useProjectStore } from '@/stores/project'
 import { useMediaStore } from '@/stores/media'
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter()
 const projectStore = useProjectStore()
 const mediaStore = useMediaStore()
+const { t } = useI18n()
+
+const loading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedAvatarId = ref<string | null>(null)
 
@@ -90,7 +94,7 @@ const processFile = async (file: File) => {
         // Basic type check
     }
 
-    const toastId = toast.loading('Uploading and processing slides...')
+    const toastId = toast.loading(t('projects.new.setup.presentation.toasts.processing'))
 
     try {
         // Simulate uploading/processing delay
@@ -107,10 +111,10 @@ const processFile = async (file: File) => {
             }
         })
 
-        toast.success('Presentation converted!', { id: toastId })
+        toast.success(t('projects.new.setup.presentation.toasts.success'), { id: toastId })
         router.push(`/projects/${res.project._id}/editor`)
     } catch (error) {
-        toast.error('Failed to convert presentation', { id: toastId })
+        toast.error(t('projects.new.setup.presentation.toasts.failed'), { id: toastId })
     }
 }
 </script>

@@ -1,6 +1,7 @@
 import { flowApiClient } from '../../../integrations/flow/FlowApiClient.js';
 import { AdminSettings } from '../../../models/AdminSettings.js';
 import { configService } from '../../configService.js';
+import { Logger } from '../../Logger.js';
 
 export class FlowProvider {
     constructor() { }
@@ -70,7 +71,7 @@ export class FlowProvider {
      * Generate Video with Retry & Captcha Logic
      */
     async generateVideo(prompt: string, modelId: string, options: any = {}) {
-        console.log(`[FlowProvider] Generating video via Flow API: ${prompt.substring(0, 30)}...`);
+        Logger.info(`[FlowProvider] Generating video via Flow API: ${prompt.substring(0, 30)}...`, 'FlowProvider');
 
         const { at, projectId, stToken, apiKey } = await this.ensureContext();
 
@@ -101,7 +102,7 @@ export class FlowProvider {
                 operationName = await startGen("");
             } catch (err: any) {
                 if (err.response?.status === 403 || err.response?.status === 401) {
-                    console.log('[FlowProvider] 403/401 Detected. Invoking Background Solver...');
+                    Logger.warn('[FlowProvider] 403/401 Detected. Invoking Background Solver...', 'FlowProvider');
                     // Solve it to unblock the session
                     await flowApiClient.solveCaptcha(stToken, projectId);
                     // Retry
@@ -111,7 +112,7 @@ export class FlowProvider {
                 }
             }
 
-            console.log(`[FlowProvider] Generation Started: ${operationName}. Polling...`);
+            Logger.info(`[FlowProvider] Generation Started: ${operationName}. Polling...`, 'FlowProvider');
 
             // Poll for completion
             let attempts = 0;
@@ -137,7 +138,7 @@ export class FlowProvider {
             throw new Error('Video generation timed out.');
 
         } catch (error: any) {
-            console.error('Flow Provider Video Error:', error.message);
+            Logger.error(`Flow Provider Video Error: ${error.message}`, 'FlowProvider');
             throw new Error(`Flow Video Failed: ${error.message}`);
         }
     }
@@ -146,7 +147,7 @@ export class FlowProvider {
      * Generate Image with Retry & Captcha Logic
      */
     async generateImage(prompt: string, modelId: string, options: any = {}) {
-        console.log(`[FlowProvider] Generating image via Flow API: ${prompt.substring(0, 30)}...`);
+        Logger.info(`[FlowProvider] Generating image via Flow API: ${prompt.substring(0, 30)}...`, 'FlowProvider');
 
         const { at, projectId, stToken, apiKey } = await this.ensureContext();
 
@@ -165,7 +166,7 @@ export class FlowProvider {
                 imageUrl = await startGen();
             } catch (err: any) {
                 if (err.response?.status === 403 || err.response?.status === 401) {
-                    console.log('[FlowProvider] 403/401 Detected. Solving reCAPTCHA...');
+                    Logger.warn('[FlowProvider] 403/401 Detected. Solving reCAPTCHA...', 'FlowProvider');
                     await flowApiClient.solveCaptcha(stToken, projectId);
                     imageUrl = await startGen();
                 } else {
@@ -181,7 +182,7 @@ export class FlowProvider {
             };
 
         } catch (error: any) {
-            console.error('Flow Provider Image Error:', error);
+            Logger.error(`Flow Provider Image Error: ${error}`, 'FlowProvider');
             throw new Error(`Flow Image Failed: ${error.message}`);
         }
     }

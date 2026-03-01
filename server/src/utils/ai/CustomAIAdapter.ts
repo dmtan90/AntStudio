@@ -1,6 +1,8 @@
 import axios from 'axios';
 
 
+import { Logger } from '../Logger.js';
+
 // Simple helper to resolve object paths if lodash is not available or desired
 const resolvePath = (obj: any, path: string) => {
     return path.split('.').reduce((prev, curr) => {
@@ -102,7 +104,7 @@ export class CustomAIAdapter {
                     try {
                         rawHeaders = JSON.parse(config.headers);
                     } catch (e) {
-                        console.error(`Failed to parse headers JSON for ${taskType}:`, e);
+                        Logger.error(`Failed to parse headers JSON for ${taskType}:`, e);
                         rawHeaders = {};
                     }
                 } else {
@@ -161,7 +163,7 @@ export class CustomAIAdapter {
                                 const { FormData: NodeFormData } = await import('formdata-node');
                                 FormClass = NodeFormData;
                             } catch (e) {
-                                console.error('[CustomAdapter] formdata-node not found and global FormData missing');
+                                Logger.error('[CustomAdapter] formdata-node not found and global FormData missing');
                             }
                         }
 
@@ -175,7 +177,7 @@ export class CustomAIAdapter {
                                 delete headers['Content-Type'];
                                 delete headers['content-type'];
                             } catch (e: any) {
-                                console.error(`[CustomAdapter] Failed to parse multipart template as JSON for ${taskType}:`, e.message);
+                                Logger.error(`[CustomAdapter] Failed to parse multipart template as JSON for ${taskType}:`, e.message);
                                 throw new Error(`Invalid JSON in multipart template for ${taskType}: ${e.message}. Template: ${populatedString.substring(0, 100)}...`);
                             }
                         } else {
@@ -185,7 +187,7 @@ export class CustomAIAdapter {
                         data = populatedString;
                     }
                 } catch (e: any) {
-                    console.error(`Failed to parse payload template for ${taskType}:`, e);
+                    Logger.error(`Failed to parse payload template for ${taskType}:`, e);
                     throw new Error(`Invalid payload template configuration for ${taskType}`);
                 }
             }
@@ -194,7 +196,7 @@ export class CustomAIAdapter {
         if (!url) throw new Error(`No endpoint configured for ${taskType}`);
 
         try {
-            console.debug(`[CustomAdapter] ${method} ${url}`, typeof data === 'string' ? data.substring(0, 100) : '[Object Data]');
+            Logger.debug(`[CustomAdapter] ${method} ${url}`, typeof data === 'string' ? data.substring(0, 100) : '[Object Data]');
 
             const response = await axios({
                 method,
@@ -220,7 +222,7 @@ export class CustomAIAdapter {
 
             // === ASYNC POLLING: if we got a jobId and pollConfig is set, poll for the real result ===
             if (initialResult.jobId && config?.pollConfig) {
-                console.log(`[CustomAdapter] Async job detected: ${initialResult.jobId}. Starting poll...`);
+                Logger.info(`[CustomAdapter] Async job detected: ${initialResult.jobId}. Starting poll...`);
                 return await this.pollForResult(String(initialResult.jobId), config.pollConfig, headers);
             }
 
@@ -230,7 +232,7 @@ export class CustomAIAdapter {
             const errorMsg = error.response?.data?.error?.message
                 || error.response?.data?.detail
                 || error.message;
-            console.error(`CustomAIAdapter Error (${taskType}):`, errorMsg);
+            Logger.error(`CustomAIAdapter Error (${taskType}):`, errorMsg);
             throw new Error(errorMsg);
         }
     }
@@ -268,7 +270,7 @@ export class CustomAIAdapter {
         const deadline = Date.now() + timeoutMs;
         let attempts = 0;
 
-        console.log(`[CustomAdapter] Starting poll for jobId=${jobId} → ${pollUrl}`);
+        Logger.info(`[CustomAdapter] Starting poll for jobId=${jobId} → ${pollUrl}`);
 
         while (Date.now() < deadline) {
             attempts++;
@@ -281,7 +283,7 @@ export class CustomAIAdapter {
                 // Resolve status if a path is configured
                 const status = statusPath ? resolvePath(data, statusPath) : null;
 
-                console.debug(`[CustomAdapter] Poll attempt ${attempts}: jobId=${jobId} status=${status}`);
+                Logger.debug(`[CustomAdapter] Poll attempt ${attempts}: jobId=${jobId} status=${status}`);
 
                 // Check for failure
                 if (status && failureValues.includes(String(status))) {
@@ -292,7 +294,7 @@ export class CustomAIAdapter {
                 const isDone = !statusPath || (status && successValues.includes(String(status)));
 
                 if (isDone) {
-                    console.log(`[CustomAdapter] Job ${jobId} completed after ${attempts} attempts.`);
+                    Logger.info(`[CustomAdapter] Job ${jobId} completed after ${attempts} attempts.`);
                     // Extract final result using poll responseMapping
                     if (responseMapping) {
                         return {
@@ -308,7 +310,7 @@ export class CustomAIAdapter {
             } catch (pollErr: any) {
                 // Re-throw explicit failure errors
                 if (pollErr.message?.includes('failed with status')) throw pollErr;
-                console.warn(`[CustomAdapter] Poll attempt ${attempts} error:`, pollErr.message);
+                Logger.warn(`[CustomAdapter] Poll attempt ${attempts} error:`, pollErr.message);
             }
         }
 

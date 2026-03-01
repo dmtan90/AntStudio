@@ -1,6 +1,6 @@
 <template>
     <el-dialog :model-value="modelValue" v-if="localVTuber" @update:model-value="$emit('update:modelValue', $event)"
-        :title="`UPDATE VTUBER: ${localVTuber?.identity?.name}`" width="1050px" custom-class="glass-dialog tuning-wizard-v2" @close="onClose">
+        :title="$t('vtubers.create.title', { name: localVTuber?.identity?.name })" width="1050px" custom-class="glass-dialog tuning-wizard-v2" @close="onClose">
         
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 p-1 pt-0" v-if="localVTuber">
             <!-- Left: Preview & Utilities (5 Cols) -->
@@ -48,11 +48,11 @@
                             <div class="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full"></div>
                             <magic theme="outline" size="64" class="relative text-blue-400/60" />
                         </div>
-                        <p class="text-xs font-black uppercase tracking-[0.3em] opacity-40">VTuber Projection Pending</p>
+                        <p class="text-xs font-black uppercase tracking-[0.3em] opacity-40">{{ $t('vtubers.create.projectionPending') }}</p>
                     </div>
 
                     <div v-if="hasVisualContent" class="absolute top-4 right-4 z-20">
-                        <el-tooltip content="VTuber Live Link (Webcam Tracking)" placement="left">
+                        <el-tooltip :content="$t('vtubers.create.liveLinkTooltip')" placement="left">
                             <el-button 
                                 :type="enableTracking ? 'primary' : 'info'" 
                                 circle 
@@ -71,7 +71,7 @@
                     <div v-if="generatingPreview || uploading" class="absolute inset-x-2 bottom-2 h-24 bg-black/60 backdrop-blur-md rounded-[28px] z-20 flex items-center justify-center gap-4 border border-white/5 mx-2">
                         <el-icon class="is-loading text-blue-400 text-2xl"><loading /></el-icon>
                         <span class="text-[11px] font-black uppercase tracking-widest text-white/80">
-                            {{ uploading ? 'Uploading VTuber Data...' : 'Synthesizing Visuals...' }}
+                            {{ uploading ? $t('vtubers.create.uploadingData') : $t('vtubers.create.synthesizingVisuals') }}
                         </span>
                     </div>
                 </div>
@@ -80,7 +80,7 @@
                 <div class="px-2">
                     <el-button v-if="hasVisualContent"
                                size="large" class="w-full soul-action-btn" @click="generatePreview">
-                        <camera theme="outline" class="mr-2"/> GENERATE SNAPSHOT
+                        <camera theme="outline" class="mr-2"/> {{ $t('vtubers.create.generateSnapshot') }}
                     </el-button>
                 </div>
             </div>
@@ -89,20 +89,20 @@
             <div class="lg:col-span-7 space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 
                 <!-- Section 1: Vision Source -->
-                <StudioSection title="1. Vision Source">
+                <StudioSection :title="$t('vtubers.create.visionSource')">
                     <div class="flex items-center justify-between mb-3 px-1">
-                        <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">Projection Type</span>
+                        <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">{{ $t('vtubers.create.projectionType') }}</span>
                         <el-radio-group v-model="localVTuber.visual.modelType" size="small" class="soul-radio-group">
-                            <el-radio-button value="vrm">VRM/3D</el-radio-button>
-                            <el-radio-button value="live2d">LIVE2D</el-radio-button>
-                            <el-radio-button value="static">IMAGE</el-radio-button>
+                            <el-radio-button value="vrm">{{ $t('vtubers.create.vrm3d') }}</el-radio-button>
+                            <el-radio-button value="live2d">{{ $t('vtubers.create.live2d') }}</el-radio-button>
+                            <el-radio-button value="static">{{ $t('vtubers.create.image') }}</el-radio-button>
                         </el-radio-group>
                     </div>
                     <StudioUploadZone
-                        title="Update Entity File"
-                        subtitle="Accepts Photos (VTuber) or Live2D ZIP Packages"
-                        activeTitle="File Synchronized"
-                        :activeSubtitle="localVTuber.visual.modelType === 'live2d' ? 'Live2D Asset Connected' : 'VTuber Profile Synchronized'"
+                        :title="$t('vtubers.create.updateEntityFile')"
+                        :subtitle="$t('vtubers.create.acceptsPhotos')"
+                        :activeTitle="$t('vtubers.create.fileSynchronized')"
+                        :activeSubtitle="localVTuber.visual.modelType === 'live2d' ? $t('vtubers.create.live2dAssetConnected') : $t('vtubers.create.vtuberProfileSynchronized')"
                         :hasFile="!!hasVisualContent"
                         :loading="uploading"
                         accept="image/*,.zip,.rar,.vrm"
@@ -114,14 +114,14 @@
                 <div class="grid grid-cols-2 gap-4 items-start">
                     <!-- Section 2: Persona -->
                     <div class="space-y-2">
-                        <label class="section-label">2. Persona Identity</label>
-                        <el-input v-model="localVTuber.identity.name" placeholder="VTuber Name..." class="soul-glass-input" />
+                        <label class="section-label">{{ $t('vtubers.create.personaIdentity') }}</label>
+                        <el-input v-model="localVTuber.identity.name" :placeholder="$t('vtubers.create.namePlaceholder')" class="soul-glass-input" />
                     </div>
 
                     <!-- Section 3: Vocal Signature -->
                     <div class="space-y-2">
                         <label class="section-label">
-                            3. Vocal Signature
+                            {{ $t('vtubers.create.vocalSignature') }}
                             <span v-if="localVTuber.meta.voiceConfig.voiceId" class="text-[8px] font-bold opacity-40 uppercase"> {{ localVTuber.meta.voiceConfig.provider }} • {{ localVTuber.meta.voiceConfig.voiceId }}</span>
                         </label>
                         <div class="flex flex-col gap-2">
@@ -131,7 +131,7 @@
                                     <div class="flex items-center gap-2">
                                         <music-one theme="outline" class="text-blue-400" />
                                         <span class="text-[10px] font-black uppercase tracking-widest truncate">
-                                            {{ localVTuber.meta.voiceConfig.voiceId ? 'Synchronized' : 'Open Library' }}
+                                            {{ localVTuber.meta.voiceConfig.voiceId ? $t('vtubers.create.synchronized') : $t('vtubers.create.openLibrary') }}
                                         </span>
                                     </div>
                                     <div v-if="localVTuber.meta.voiceConfig.voiceId" class="absolute right-3 top-1/2 -translate-y-1/2">
@@ -153,14 +153,14 @@
 
                 <!-- Objective -->
                 <div class="space-y-2">
-                    <label class="section-label">4. VTuber Prompt (Description)</label>
+                    <label class="section-label">{{ $t('vtubers.create.promptDescription') }}</label>
                     <el-input v-model="localVTuber.identity.description" type="textarea" :rows="2"
-                        placeholder="Core personality definition..." class="soul-glass-input" />
+                        :placeholder="$t('vtubers.create.corePersonalityPlaceholder')" class="soul-glass-input" />
                 </div>
 
                 <!-- Performance testing -->
                 <div class="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-4">
-                    <label class="section-label">Performance Test</label>
+                    <label class="section-label">{{ $t('vtubers.create.performanceTest') }}</label>
                     <div class="grid grid-cols-5 gap-2">
                          <el-button 
                             v-for="e in ['neutral', 'happy', 'surprised', 'thinking', 'sad']" 
@@ -170,14 +170,14 @@
                             :class="{'!border-blue-500/50 !bg-blue-500/10': testEmotion === e}"
                             @click="testEmotion = e"
                         >
-                            {{ e }}
+                            {{ $t(`vtubers.create.emotions.${e}`) }}
                         </el-button>
                     </div>
                 </div>
 
                 <!-- Section 4: Environment -->
                 <div class="space-y-3 pt-2">
-                    <label class="section-label">5. Environment (Background)</label>
+                    <label class="section-label">{{ $t('vtubers.create.environment') }}</label>
                     <div class="grid grid-cols-6 gap-2">
                         <div v-for="preset in backgroundPresets" :key="preset.name"
                             @click="localVTuber.visual.backgroundUrl = preset.url"
@@ -199,42 +199,42 @@
                 <div class="pt-4 border-t border-white/5">
                     <div @click="advancedSettingsVisible = !advancedSettingsVisible" 
                          class="flex items-center justify-center gap-2 cursor-pointer opacity-40 hover:opacity-100 transition-all mb-4">
-                        <span class="text-[9px] font-black tracking-[0.2em] uppercase">{{ advancedSettingsVisible ? 'Hide Specialized Parameters' : 'Refine VTuber Intelligence' }}</span>
+                        <span class="text-[9px] font-black tracking-[0.2em] uppercase">{{ advancedSettingsVisible ? $t('vtubers.create.hideSpecialized') : $t('vtubers.create.refineIntelligence') }}</span>
                         <down :class="{'rotate-180': advancedSettingsVisible}" class="transition-transform" />
                     </div>
 
                     <el-collapse-transition>
                         <div v-show="advancedSettingsVisible" class="space-y-6 pb-4">
                             <div class="space-y-4">
-                                <label class="section-label">VTuber History (Backstory)</label>
+                                <label class="section-label">{{ $t('vtubers.create.history') }}</label>
                                 <el-input v-model="localVTuber.identity.backstory" type="textarea" :rows="3" class="soul-glass-input" />
                             </div>
 
                             <!-- Knowledge entries -->
                             <div class="space-y-4">
                                 <div class="flex justify-between items-center">
-                                    <label class="section-label">Knowledge Bank</label>
+                                    <label class="section-label">{{ $t('vtubers.create.knowledgeBank') }}</label>
                                     <el-button type="primary" size="small" circle @click="addKnowledge">+</el-button>
                                 </div>
                                 <div class="space-y-3">
                                     <div v-for="(k, idx) in localVTuber.memory.knowledgeEntries" :key="idx" class="p-4 bg-white/3 border border-white/5 rounded-2xl relative group">
                                          <el-button @click="localVTuber.memory.knowledgeEntries.splice(idx,1)" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100" size="small" link type="danger"><close /></el-button>
-                                         <el-input v-model="k.title" placeholder="Title..." class="soul-glass-input mb-2" />
-                                         <el-input v-model="k.content" type="textarea" :rows="2" placeholder="Content..." class="soul-glass-input" />
+                                         <el-input v-model="k.title" :placeholder="$t('vtubers.create.titlePlaceholder')" class="soul-glass-input mb-2" />
+                                         <el-input v-model="k.content" type="textarea" :rows="2" :placeholder="$t('vtubers.create.contentPlaceholder')" class="soul-glass-input" />
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Sliders -->
                             <div class="grid grid-cols-2 gap-x-8 gap-y-4">
-                                <StudioSlider label="Gesture Intensity" v-model="localVTuber.animationConfig.gestureIntensity" :min="0" :max="2" :step="0.1" />
-                                <StudioSlider label="Tilt Factor" v-model="localVTuber.animationConfig.headTiltRange" :min="0" :max="2" :step="0.1" />
-                                <StudioSlider label="Emphasis Power" v-model="localVTuber.animationConfig.nodIntensity" :min="0" :max="2" :step="0.1" />
+                                <StudioSlider :label="$t('vtubers.create.gestureIntensity')" v-model="localVTuber.animationConfig.gestureIntensity" :min="0" :max="2" :step="0.1" />
+                                <StudioSlider :label="$t('vtubers.create.tiltFactor')" v-model="localVTuber.animationConfig.headTiltRange" :min="0" :max="2" :step="0.1" />
+                                <StudioSlider :label="$t('vtubers.create.emphasisPower')" v-model="localVTuber.animationConfig.nodIntensity" :min="0" :max="2" :step="0.1" />
                                 
                                 <div class="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/5">
                                     <div class="flex flex-col">
-                                        <span class="text-[9px] font-bold uppercase tracking-widest text-blue-400">Cinematic Mode</span>
-                                        <span class="text-[8px] opacity-30 italic">Dynamic framing</span>
+                                        <span class="text-[9px] font-bold uppercase tracking-widest text-blue-400">{{ $t('vtubers.create.cinematicMode') }}</span>
+                                        <span class="text-[8px] opacity-30 italic">{{ $t('vtubers.create.dynamicFraming') }}</span>
                                     </div>
                                     <el-switch v-model="cinematicMode" size="small" />
                                 </div>
@@ -243,16 +243,16 @@
                             <!-- LoRAs -->
                             <div class="space-y-4 pt-4 border-t border-white/5">
                                 <div class="flex justify-between items-center">
-                                    <label class="section-label">Stylistic Weights (LoRAs)</label>
+                                    <label class="section-label">{{ $t('vtubers.create.stylisticWeights') }}</label>
                                     <el-button type="primary" size="small" circle @click="addLora">+</el-button>
                                 </div>
                                 <div class="grid grid-cols-1 gap-3">
                                     <div v-for="(lora, idx) in localVTuber.meta.loras" :key="idx"
                                         class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl relative group">
                                         <el-button @click="localVTuber.meta.loras.splice(idx, 1)" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100" size="small" link type="danger"><close /></el-button>
-                                        <el-input v-model="lora.id" placeholder="LoRA ID (e.g. anime_v3)" class="soul-glass-input mb-3" />
+                                        <el-input v-model="lora.id" :placeholder="$t('vtubers.create.loraPlaceholder')" class="soul-glass-input mb-3" />
                                         <div class="flex gap-4 items-center px-1">
-                                            <span class="text-[9px] font-black uppercase w-20">Weight: {{ lora.weight }}</span>
+                                            <span class="text-[9px] font-black uppercase w-20">{{ $t('vtubers.create.weight', { weight: lora.weight }) }}</span>
                                             <el-slider v-model="lora.weight" :min="0" :max="2" :step="0.1" class="flex-1" />
                                         </div>
                                     </div>
@@ -261,7 +261,7 @@
 
                             <div class="space-y-4 pt-4 border-t border-white/5">
                                 <div class="flex justify-between items-center">
-                                    <label class="section-label">Social Connectivity</label>
+                                    <label class="section-label">{{ $t('vtubers.create.socialConnectivity') }}</label>
                                     <el-button type="primary" size="small" circle @click="addRelationship">+</el-button>
                                 </div>
                                 <div class="grid grid-cols-1 gap-3">
@@ -269,12 +269,12 @@
                                         class="p-4 bg-purple-500/5 border border-purple-500/10 rounded-2xl space-y-3 relative group">
                                         <el-button @click="localVTuber.social.relationships.splice(idx, 1)" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100" size="small" link type="danger"><close /></el-button>
                                         <div class="grid grid-cols-2 gap-3">
-                                            <el-input v-model="rel.targetName" placeholder="Target..." class="soul-glass-input" />
+                                            <el-input v-model="rel.targetName" :placeholder="$t('vtubers.create.targetPlaceholder')" class="soul-glass-input" />
                                             <el-select v-model="rel.type" class="soul-glass-input">
-                                                <el-option label="Friend" value="friend" />
-                                                <el-option label="Rival" value="rival" />
-                                                <el-option label="Mentor" value="mentor" />
-                                                <el-option label="Stranger" value="stranger" />
+                                                <el-option :label="$t('vtubers.create.relationships.friend')" value="friend" />
+                                                <el-option :label="$t('vtubers.create.relationships.rival')" value="rival" />
+                                                <el-option :label="$t('vtubers.create.relationships.mentor')" value="mentor" />
+                                                <el-option :label="$t('vtubers.create.relationships.stranger')" value="stranger" />
                                             </el-select>
                                         </div>
                                     </div>
@@ -283,13 +283,13 @@
 
                             <!-- Stage Effects (Phase 83) -->
                             <div class="space-y-4 pt-4 border-t border-white/5">
-                                <label class="section-label">✨ Stage Effects (Phase 83)</label>
+                                <label class="section-label">{{ $t('vtubers.create.stageEffects') }}</label>
 
                                 <!-- AI Auto-Director Master Toggle -->
                                 <div class="flex items-center justify-between mb-4 bg-blue-500/10 p-4 rounded-3xl border border-blue-500/20">
                                     <div class="flex flex-col">
-                                        <span class="text-[10px] font-black uppercase text-blue-400">AI Auto-Director</span>
-                                        <span class="text-[8px] opacity-40 italic">Autonomous stage production</span>
+                                        <span class="text-[10px] font-black uppercase text-blue-400">{{ $t('vtubers.create.autoDirector') }}</span>
+                                        <span class="text-[8px] opacity-40 italic">{{ $t('vtubers.create.autonomousProduction') }}</span>
                                     </div>
                                     <el-switch v-model="localVTuber.performanceConfig.autoDirectorEnabled" size="small" />
                                 </div>
@@ -297,8 +297,8 @@
                                 <div :class="{'opacity-30 pointer-events-none': localVTuber.performanceConfig.autoDirectorEnabled}">
                                     <div class="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/5 mb-3">
                                     <div class="flex flex-col">
-                                        <span class="text-[9px] font-bold uppercase tracking-widest text-cyan-400">Vocal Aura</span>
-                                        <span class="text-[8px] opacity-30 italic">Reactive pulse glow</span>
+                                        <span class="text-[9px] font-bold uppercase tracking-widest text-cyan-400">{{ $t('vtubers.create.vocalAura') }}</span>
+                                        <span class="text-[8px] opacity-30 italic">{{ $t('vtubers.create.reactivePulse') }}</span>
                                     </div>
                                     <div class="flex items-center gap-4">
                                         <el-color-picker v-model="localVTuber.performanceConfig.auraColor" size="small" />
@@ -307,69 +307,69 @@
                                 </div>
 
                                 <div class="space-y-3">
-                                    <label class="section-label !text-[7px]">Atmospheric Atmosphere</label>
+                                    <label class="section-label !text-[7px]">{{ $t('vtubers.create.atmosphericAtmosphere') }}</label>
                                     <div class="flex flex-wrap gap-2">
                                         <div v-for="type in ['sakura', 'snow', 'glitter']" :key="type"
                                              @click="localVTuber.performanceConfig.particleType = localVTuber.performanceConfig.particleType === type ? null : type"
                                              class="trait-tag !py-1 !px-3 font-black uppercase text-[8px]"
                                              :class="{'active': localVTuber.performanceConfig.particleType === type}">
-                                            {{ type }}
+                                            {{ $t(`vtubers.create.particles.${type}`) }}
                                         </div>
                                     </div>
                                     <div v-if="localVTuber.performanceConfig.particleType" class="flex gap-4 items-center px-1">
-                                        <span class="text-[8px] font-black uppercase w-20">Density: {{ Math.round(localVTuber.performanceConfig.particleDensity * 100) }}%</span>
+                                        <span class="text-[8px] font-black uppercase w-20">{{ $t('vtubers.create.densityLabel', { density: Math.round(localVTuber.performanceConfig.particleDensity * 100) }) }}</span>
                                         <el-slider v-model="localVTuber.performanceConfig.particleDensity" :min="0" :max="1" :step="0.1" class="flex-1" />
                                     </div>
                                 </div>
 
                                 <div class="space-y-4 pt-2">
-                                    <label class="section-label !text-[7px]">⚡ Stage Lighting</label>
+                                    <label class="section-label !text-[7px]">{{ $t('vtubers.create.stageLighting') }}</label>
                                     <div class="grid grid-cols-2 gap-3">
                                         <div v-for="preset in ['studio', 'neon', 'dramatic', 'vocal_orange']" :key="preset"
                                              @click="localVTuber.performanceConfig.lightingPreset = preset"
                                              class="cursor-pointer p-3 rounded-xl border transition-all flex items-center justify-between bg-white/5 border-white/5"
                                              :class="{'!border-blue-500 !bg-blue-500/10': localVTuber.performanceConfig.lightingPreset === preset}">
-                                            <span class="text-[9px] font-black uppercase tracking-wider">{{ preset.replace('_', ' ') }}</span>
+                                            <span class="text-[9px] font-black uppercase tracking-wider">{{ $t(`vtubers.create.lightingPresets.${preset}`) }}</span>
                                             <div class="w-2 h-2 rounded-full" :style="{ background: preset === 'neon' ? '#ff00ff' : (preset === 'dramatic' ? '#fff' : '#ff6a00') }"></div>
                                         </div>
                                     </div>
                                     
                                     <div class="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
                                         <div class="flex flex-col">
-                                            <span class="text-[8px] font-bold uppercase text-purple-400">Voice Reactivity</span>
-                                            <span class="text-[7px] opacity-30">Pulsing with VTuber volume</span>
+                                            <span class="text-[8px] font-bold uppercase text-purple-400">{{ $t('vtubers.create.voiceReactivity') }}</span>
+                                            <span class="text-[7px] opacity-30">{{ $t('vtubers.create.pulsingVolume') }}</span>
                                         </div>
                                         <el-switch v-model="localVTuber.performanceConfig.dynamicLighting" size="small" />
                                     </div>
 
                                     <div v-if="localVTuber.performanceConfig.dynamicLighting" class="flex gap-4 items-center px-1">
-                                        <span class="text-[8px] font-black uppercase w-20">Intensity: {{ Math.round(localVTuber.performanceConfig.lightingIntensity * 100) }}%</span>
+                                        <span class="text-[8px] font-black uppercase w-20">{{ $t('vtubers.create.intensity', { intensity: Math.round(localVTuber.performanceConfig.lightingIntensity * 100) }) }}</span>
                                         <el-slider v-model="localVTuber.performanceConfig.lightingIntensity" :min="0.1" :max="3" :step="0.1" class="flex-1" />
                                     </div>
                                 </div>
 
                                 <div class="space-y-4 pt-2">
-                                    <label class="section-label !text-[7px]">🎥 Stage Camera (Cinematic)</label>
+                                    <label class="section-label !text-[7px]">{{ $t('vtubers.create.stageCamera') }}</label>
                                     <div class="flex flex-wrap gap-2">
                                         <div v-for="path in ['orbit', 'slow_zoom', 'side_sweep', 'dramatic_low']" :key="path"
                                              @click="localVTuber.performanceConfig.activeCameraPath = localVTuber.performanceConfig.activeCameraPath === path ? null : path"
                                              class="trait-tag !py-1 !px-3 font-black uppercase text-[8px]"
                                              :class="{'active': localVTuber.performanceConfig.activeCameraPath === path}">
-                                            {{ path.replace('_', ' ') }}
+                                            {{ $t(`vtubers.create.cameraPaths.${path}`) }}
                                         </div>
                                     </div>
                                     <div v-if="localVTuber.performanceConfig.activeCameraPath" class="flex gap-4 items-center px-1">
-                                        <span class="text-[8px] font-black uppercase w-20">Motion: {{ Math.round(localVTuber.performanceConfig.cameraIntensity * 100) }}%</span>
+                                        <span class="text-[8px] font-black uppercase w-20">{{ $t('vtubers.create.motionLabel', { intensity: Math.round(localVTuber.performanceConfig.cameraIntensity * 100) }) }}</span>
                                         <el-slider v-model="localVTuber.performanceConfig.cameraIntensity" :min="0.1" :max="2" :step="0.1" class="flex-1" />
                                     </div>
                                 </div>
 
                                 <div class="space-y-4 pt-2">
-                                    <label class="section-label !text-[7px]">💬 Stage Lyrics</label>
+                                    <label class="section-label !text-[7px]">{{ $t('vtubers.create.stageLyrics') }}</label>
                                     <div class="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/5 mb-3">
                                         <div class="flex flex-col">
-                                            <span class="text-[9px] font-bold uppercase tracking-widest text-pink-400">Show Lyrics</span>
-                                            <span class="text-[8px] opacity-30 italic">Synchronized stage text</span>
+                                            <span class="text-[9px] font-bold uppercase tracking-widest text-pink-400">{{ $t('vtubers.create.showLyrics') }}</span>
+                                            <span class="text-[8px] opacity-30 italic">{{ $t('vtubers.create.synchronizedText') }}</span>
                                         </div>
                                         <el-switch v-model="localVTuber.performanceConfig.lyricsEnabled" size="small" />
                                     </div>
@@ -380,14 +380,14 @@
                                                  @click="localVTuber.performanceConfig.lyricsStyle = style"
                                                  class="trait-tag !py-1 !px-3 font-black uppercase text-[8px]"
                                                  :class="{'active': localVTuber.performanceConfig.lyricsStyle === style}">
-                                                {{ style }}
+                                                {{ $t(`vtubers.create.lyricsStyles.${style}`) }}
                                             </div>
                                         </div>
 
                                         <div class="pt-2 flex gap-2">
                                             <el-button @click="musicSelectionVisible = true" size="small" class="flex-1 soul-glass-btn !text-[8px] !h-10">
                                                 <music theme="outline" class="mr-2" /> 
-                                                {{ localVTuber.performanceConfig.backgroundMusic ? 'CHANGE STAGE MUSIC' : 'SELECT STAGE MUSIC' }}
+                                                {{ localVTuber.performanceConfig.backgroundMusic ? $t('vtubers.create.changeMusic') : $t('vtubers.create.selectStageMusic') }}
                                             </el-button>
 
                                             <el-button v-if="localVTuber.performanceConfig.backgroundMusic" 
@@ -413,7 +413,7 @@
 
                             <!-- Digital Instruments (Phase 82) -->
                             <div class="space-y-4 pt-4 border-t border-white/5">
-                                <label class="section-label">🎸 Digital Instruments (Phase 82)</label>
+                                <label class="section-label">{{ $t('vtubers.create.digitalInstruments') }}</label>
                                 <div class="grid grid-cols-5 gap-2">
                                      <div v-for="p in propPresets" :key="p.id"
                                           @click="localVTuber.visual.activePropId = localVTuber.visual.activePropId === p.id ? null : p.id"
@@ -438,7 +438,7 @@
             <div class="gap-4 p-4 pt-0 text-center">
                 <!-- <el-button @click="$emit('update:modelValue', false)" class="soul-glass-btn flex-1 h-[50px] !rounded-[20px]">ABORT TUNING</el-button> -->
                 <el-button type="primary" @click="handleUpdateStyle" :loading="updating"
-                    class="soul-initialize-btn flex-2 h-[50px] !rounded-[20px]">SYNCHRONIZE VTUBER</el-button>
+                    class="soul-initialize-btn flex-2 h-[50px] !rounded-[20px]">{{ $t('vtubers.create.synchronizeVTuber') }}</el-button>
             </div>
         </template>
 
@@ -465,9 +465,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
 import { useVTuberStore } from '@/stores/vtuber';
 import { useMediaStore } from '@/stores/media';
+import { useBackgroundRemoval } from '@/services/BackgroundRemovalService';
+
+
 // import Live2DViewer from './Live2DViewer.vue'; // Wrapped
 // import VRMViewer from './VRMViewer.vue'; // Wrapped
 // import StaticPhotoViewer from './StaticPhotoViewer.vue'; // Wrapped
@@ -485,6 +489,7 @@ import StudioSlider from '../studio/shared/StudioSlider.vue';
 import StudioUploadZone from '../studio/shared/StudioUploadZone.vue';
 import StudioVoiceCard from '../studio/shared/StudioVoiceCard.vue';
 
+const { t } = useI18n();
 const props = defineProps<{
     modelValue: boolean;
     vtuber: any;
@@ -541,9 +546,9 @@ const toggleTracking = async () => {
             await liveAIEngine.initialize();
             enableTracking.value = true;
             startTrackingLoop();
-            toast.success('VTuber link established.');
+            toast.success(t('vtubers.create.toasts.linkEstablished'));
         } catch (e) {
-            toast.error('Failed to access camera.');
+            toast.error(t('vtubers.create.toasts.cameraAccessFailed'));
         }
     }
 };
@@ -568,11 +573,11 @@ const startTrackingLoop = () => {
 };
 
 const backgroundPresets = [
-    { name: 'Studio', url: '/bg/pro-studio.jpg' },
-    { name: 'Cyberpunk', url: '/bg/cyberpunk_penthouse.jpg' },
-    { name: 'Nature', url: '/bg/zen_garden.jpg' },
-    { name: 'Abstract', url: '/bg/neon.jpg' },
-    { name: 'Solid Black', url: '/bg/solid-black.jpg' }
+    { name: t('vtubers.create.backgrounds.studio'), url: '/bg/pro-studio.jpg' },
+    { name: t('vtubers.create.backgrounds.cyberpunk'), url: '/bg/cyberpunk_penthouse.jpg' },
+    { name: t('vtubers.create.backgrounds.nature'), url: '/bg/zen_garden.jpg' },
+    { name: t('vtubers.create.backgrounds.abstract'), url: '/bg/neon.jpg' },
+    { name: t('vtubers.create.backgrounds.solidBlack'), url: '/bg/solid-black.jpg' }
 ];
 
 // Preview state
@@ -646,7 +651,7 @@ const handleVoicePreview = async (vid?: string) => {
         } else {
             const provider = localVTuber.value.meta.voiceConfig.provider;
             const data = await vtuberStore.generateVoicePreview({
-                text: "Testing VTuber synchronization. Voice profile established.",
+                text: t('vtubers.create.tts.updatedPreview'),
                 provider,
                 voiceId,
                 language: localVTuber.value.meta.voiceConfig.language || 'en-US'
@@ -670,7 +675,7 @@ const handleVoicePreview = async (vid?: string) => {
             startPlaybackTracking();
         }
     } catch (e) {
-        toast.error('Voice preview failed');
+        toast.error(t('vtubers.create.toasts.voicePreviewFailed'));
     } finally {
         previewingVoice.value = false;
     }
@@ -799,7 +804,7 @@ const handleGenericUpload = async (file: File) => {
         const res = await mediaStore.uploadMedia(formData);
         return res.key || res.url;
     } catch (e) {
-        toast.error('Upload failed');
+        toast.error(t('vtubers.create.toasts.uploadFailed'));
         return null;
     } finally {
         uploading.value = false;
@@ -821,25 +826,25 @@ const handleFileUpload = async (e: Event | File) => {
             const url = await handleGenericUpload(file);
             if (url) {
                 localVTuber.value.visual.modelUrl = url;
-                toast.success('VRM model updated.');
+                toast.success(t('vtubers.create.toasts.vrmUpdated'));
             }
         } else if (isArchive) {
             localVTuber.value.visual.modelType = 'live2d';
             const url = await handleGenericUpload(file);
             if (url) {
                 localVTuber.value.visual.modelUrl = url;
-                toast.success('Live2D model updated.');
+                toast.success(t('vtubers.create.toasts.live2dUpdated'));
             }
         } else if (isImage) {
             localVTuber.value.visual.modelType = 'static';
             const url = await handleGenericUpload(file);
             if (url) {
                 localVTuber.value.visual.modelUrl = url;
-                toast.success('Avatar image updated.');
+                toast.success(t('vtubers.create.toasts.avatarUpdated'));
             }
         }
     } catch (e) {
-        toast.error('File upload failed');
+        toast.error(t('vtubers.create.toasts.fileUploadFailed'));
     } finally {
         uploading.value = false;
     }
@@ -851,7 +856,7 @@ const handleBackgroundUpload = async (e: Event | File) => {
     const url = await handleGenericUpload(file);
     if (url) {
         localVTuber.value.visual.backgroundUrl = url;
-        toast.success('Background updated.');
+        toast.success(t('vtubers.create.toasts.backgroundUpdated'));
     }
 };
 
@@ -861,9 +866,9 @@ const handleUpdateStyle = async () => {
         await vtuberStore.updateVTuber(localVTuber.value.entityId, localVTuber.value);
         emit('update', localVTuber.value);
         emit('update:modelValue', false);
-        toast.success('VTuber profile synchronized');
+        toast.success(t('vtubers.create.toasts.profileSynced'));
     } catch (e: any) {
-        toast.error(e.message || 'Failed to synchronize VTuber profile.');
+        toast.error(e.message || t('vtubers.create.toasts.syncFailed'));
     } finally {
         updating.value = false;
     }
@@ -895,7 +900,7 @@ const generatePreview = async () => {
     try {
         if (!vtuberViewer.value) {
             console.warn('[VTuberUpdate] No active viewer to capture from.');
-            toast.warning('Please load a model first before generating preview.');
+            toast.warning(t('vtubers.create.toasts.loadModelFirst'));
             return;
         }
 
@@ -915,7 +920,7 @@ const generatePreview = async () => {
                 const res = await mediaStore.uploadMedia(formData);
                 if (res.key || res.url) {
                     localVTuber.value.visual.thumbnailUrl = res.key || res.url;
-                    toast.success('Thumbnail generated.');
+                    toast.success(t('vtubers.create.toasts.thumbnailGenerated'));
                 }
             }
         }
@@ -930,7 +935,7 @@ const generatePreview = async () => {
             
             if (!audioUrl && vId) {
                  const voiceData = await vtuberStore.generateVoicePreview({
-                    text: "Hello, this is my updated voice preview.",
+                    text: t('vtubers.create.tts.updatedPreview'),
                     provider: localVTuber.value.meta.voiceConfig.provider || 'gemini',
                     voiceId: vId,
                     language: localVTuber.value.meta.voiceConfig.language || 'en-US'
@@ -1002,7 +1007,7 @@ const generatePreview = async () => {
                         const res = await mediaStore.uploadMedia(formData);
                         if (res.key || res.url) {
                             localVTuber.value.visual.previewVideoUrl = res.key || res.url;
-                            toast.success('Preview video generated.');
+                            toast.success(t('vtubers.create.toasts.videoGenerated'));
                         }
                     }
                 } catch (e) {
@@ -1020,14 +1025,14 @@ const generatePreview = async () => {
                     const res = await mediaStore.uploadMedia(formData);
                     if (res.key || res.url) {
                         localVTuber.value.visual.previewVideoUrl = res.key || res.url;
-                        toast.success('Preview video (silent) generated.');
+                        toast.success(t('vtubers.create.toasts.videoSilentGenerated'));
                     }
                 }
             }
         }
     } catch (e) {
         console.error('Preview generation failed:', e);
-        toast.error('Failed to generate preview assets.');
+        toast.error(t('vtubers.create.toasts.previewFailed'));
     } finally {
         generatingPreview.value = false;
     }
@@ -1056,7 +1061,7 @@ const handleMusicSelection = (musicData: any) => {
         localVTuber.value.performanceConfig.lyrics = [];
     }
     
-    toast.success('Background music configured!');
+    toast.success(t('vtubers.create.toasts.musicConfigured'));
 };
 
 const onClose = () => {

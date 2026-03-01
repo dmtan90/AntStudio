@@ -1,6 +1,6 @@
 import si from 'systeminformation';
 import { SystemMetric } from '../models/SystemMetric.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 import { ClientLog } from '../models/ClientLog.js';
 import { SystemLog } from '../models/SystemLog.js';
 import { NodeHeartbeat } from '../models/NodeHeartbeat.js';
@@ -13,6 +13,7 @@ import { emailService } from './email.js';
 import mongoose from 'mongoose';
 import { clusterManager } from '../utils/ClusterManager.js';
 import { getS3Client } from '../utils/s3.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,7 +37,7 @@ export class MonitoringService {
     public startMonitoring(intervalMs: number = 60000) {
         if (this.collectionInterval) return;
 
-        console.log(`[Monitoring] Starting metric collection every ${intervalMs / 1000}s...`);
+        Logger.info(`[Monitoring] Starting metric collection every ${intervalMs / 1000}s...`);
         this.collectionInterval = setInterval(() => this.collectAndSaveMetrics(), intervalMs);
 
         // Immediate first run
@@ -91,7 +92,7 @@ export class MonitoringService {
                 timestamp: new Date()
             };
         } catch (error: any) {
-            console.error('[Monitoring] Failed to get realtime stats:', error.message);
+            Logger.error('[Monitoring] Failed to get realtime stats:', error.message);
             return null;
         }
     }
@@ -216,7 +217,7 @@ export class MonitoringService {
                 await SystemMetric.create(stats);
             }
         } catch (error: any) {
-            systemLogger.error(`Metric collection failed: ${error.message}`, 'MonitoringService');
+            Logger.error(`Metric collection failed: ${error.message}`, 'MonitoringService');
         }
     }
 

@@ -4,6 +4,8 @@ import { ApiKey } from '../models/ApiKey.js';
 import { User } from '../models/User.js';
 import { Tenant } from '../models/Tenant.js';
 
+import { Logger } from '../utils/Logger.js';
+
 /**
  * Middleware to authenticate requests using an API Key.
  * Look for 'x-api-key' header.
@@ -51,10 +53,10 @@ export const apiKeyMiddleware = async (req: Request, res: Response, next: NextFu
             }
         }
 
-        console.log(`[Headless] Authenticated via API Key: ${keyDoc.name} for user ${user.email}`);
+        Logger.info(`[Headless] Authenticated via API Key: ${keyDoc.name} for user ${user.email}`);
         next();
     } catch (error) {
-        console.error('[ApiKeyMiddleware] Authentication failed:', error);
+        Logger.error('[ApiKeyMiddleware] Authentication failed:', error);
         res.status(500).json({ success: false, error: 'Internal API security error' });
     }
 };

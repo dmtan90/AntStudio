@@ -8,6 +8,7 @@ import EditorView from 'video-editor/views/Editor.vue';
 import { Save, Download } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 import api from '@/utils/api'; // Keep existing API import as the provided snippet for `api` seems to be for a different context (upload.ts)
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   project: StudioProject;
@@ -16,6 +17,7 @@ const props = defineProps<{
 
 const editorStore = useEditorStore();
 const projectStore = useProjectStore();
+const { t } = useI18n()
 const themeProvider = useThemeProvider() as ThemeProviderState;
 provide('theme', themeProvider);
 
@@ -79,10 +81,10 @@ const handleSave = async () => {
       pages,
       storyboard
     });
-    toast.success('Project and Thumbnails saved successfully');
+    toast.success(t('projects.studio.toasts.saveSuccess'));
   } catch (error) {
     console.error('Failed to save project:', error);
-    toast.error('Failed to save project');
+    toast.error(t('projects.studio.toasts.saveFailed'));
   } finally {
     isSaving.value = false;
   }
@@ -90,18 +92,18 @@ const handleSave = async () => {
 
 const handleExport = async () => {
   try {
-    toast.info('Exporting video... This may take a few minutes.');
+    toast.info(t('projects.studio.toasts.exporting'));
     const blob = await editorStore.exportVideo();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${props.project.title || 'video'}.mp4`;
+    a.download = `${props.project.title || t('projects.studio.untitled')}.mp4`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Video exported successfully');
+    toast.success(t('projects.studio.toasts.exportSuccess'));
   } catch (error) {
     console.error('Export failed:', error);
-    toast.error('Export failed');
+    toast.error(t('projects.studio.toasts.exportFailed'));
   }
 };
 

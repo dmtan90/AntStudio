@@ -72,7 +72,7 @@
             <div class="credit-section">
               <div class="section-title">{{ t('subscription.weekly') }}</div>
               <div class="credit-item-row">
-                <span class="reset-info">Resets every Monday at 00:00</span>
+                <span class="reset-info">{{ t('subscription.resetInfo') }}</span>
                 <span class="credit-value">{{ user.credits?.weekly || 0 }}</span>
               </div>
             </div>
@@ -138,7 +138,7 @@ import {
 } from '@icon-park/vue-next'
 import { useProjectStore } from '@/stores/project'
 import { useUserStore } from '@/stores/user'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 
 import GPopover from '@/components/ui/GPopover.vue'
@@ -146,7 +146,7 @@ import SubscriptionPlansDialog from '@/components/subscription/SubscriptionPlans
 import { getFileUrl } from '@/utils/api'
 
 const router = useRouter()
-const { t } = useTranslations()
+const { t } = useI18n()
 
 const props = defineProps<{
   leftVisible: boolean

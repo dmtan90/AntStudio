@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { connectDB } from '../utils/db.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // In-memory session store for pairing (Production should use Redis)
@@ -64,7 +66,7 @@ router.get('/pairing/verify', async (req, res) => {
  */
 router.post('/command', authMiddleware, async (req: AuthRequest, res) => {
     const { action, payload } = req.body;
-    console.log(`[MobileBridge] Dispatching remote command: ${action} to user mobile devices`);
+    Logger.info(`[MobileBridge] Dispatching remote command: ${action} to user mobile devices`);
     // Logic to emit via Socket.io to the specific mobile session
     res.json({ success: true, message: 'Command queued' });
 });

@@ -6,7 +6,7 @@ import { geminiPool } from '~/utils/gemini.js';
 import { aiAccountManager } from '~/utils/ai/AIAccountManager.js';
 import { CloudCodeClient } from './CloudCodeClient.js';
 import { AntigravityClient } from './AntigravityClient.js';
-import { systemLogger } from '~/utils/systemLogger.js';
+import { Logger } from '~/utils/Logger.js';
 import { getFromS3 } from '~/utils/s3.js';
 import { Readable } from 'stream';
 
@@ -117,7 +117,7 @@ export class GeminiClient {
                 }
             } catch (error: any) {
                 const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
-                console.warn(`[GeminiClient] generateContent failed via ${label}: ${error.message}`);
+                Logger.warn(`[GeminiClient] generateContent failed via ${label}: ${error.message}`, 'GeminiClient');
                 errors.push(`${label}: ${error.message}`);
             }
         }
@@ -157,7 +157,7 @@ export class GeminiClient {
                     const isImagenModel = modelId.startsWith('imagen-');
 
                     if (isImagenModel) {
-                        console.log(`[GeminiClient] Using generateImages() for Imagen model: ${modelId}`);
+                        Logger.info(`[GeminiClient] Using generateImages() for Imagen model: ${modelId}`, 'GeminiClient');
                         const response = await (cred.googleGenAI as any).models.generateImages({
                             model: modelId,
                             prompt: prompt,
@@ -173,7 +173,7 @@ export class GeminiClient {
                         }
                         throw new Error('No images returned from Imagen API');
                     } else {
-                        console.log(`[GeminiClient] Using generateContent() for Gemini image model: ${modelId}`);
+                        Logger.info(`[GeminiClient] Using generateContent() for Gemini image model: ${modelId}`, 'GeminiClient');
                         const response = await (cred.googleGenAI as any).models.generateContent({
                             model: modelId,
                             contents: prompt,
@@ -191,7 +191,7 @@ export class GeminiClient {
                 }
             } catch (error: any) {
                 const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
-                console.warn(`[GeminiClient] generateImage failed via ${label}: ${error.message}`);
+                Logger.warn(`[GeminiClient] generateImage failed via ${label}: ${error.message}`, 'GeminiClient');
                 errors.push(`${label}: ${error.message}`);
             }
         }
@@ -234,43 +234,43 @@ export class GeminiClient {
                     else if (input.endsWith('.webp')) mimeType = 'image/webp';
                 }
 
-                systemLogger.info(`[GeminiClient] Resolved image reference ${input} to ${buffer.length} bytes, mime: ${mimeType}`);
+                Logger.info(`[GeminiClient] Resolved image reference ${input} to ${buffer.length} bytes, mime: ${mimeType}`, 'GeminiClient');
 
                 return {
                     imageBytes: buffer.toString('base64'),
                     mimeType
                 };
             } catch (err: any) {
-                systemLogger.warn(`[GeminiClient] Failed to resolve reference image ${input}: ${err.message}`);
+                Logger.warn(`[GeminiClient] Failed to resolve reference image ${input}: ${err.message}`, 'GeminiClient');
                 return undefined;
             }
         };
 
         // RESOLVE ALL IMAGES UPFRONT
         const resolvedOptions = { ...options };
-        console.log(`[GeminiClient] Starting image resolution for video generation...`);
+        Logger.info(`[GeminiClient] Starting image resolution for video generation...`, 'GeminiClient');
         
         if (options.imageStart || options.image) {
-            console.log(`[GeminiClient] Resolving imageStart/image: ${options.imageStart || options.image}`);
+            Logger.info(`[GeminiClient] Resolving imageStart/image: ${options.imageStart || options.image}`, 'GeminiClient');
             resolvedOptions.imageStart = await resolveToVeoImage(options.imageStart || options.image);
             resolvedOptions.image = resolvedOptions.imageStart;
         }
 
         if (options.imageEnd) {
-            console.log(`[GeminiClient] Resolving imageEnd: ${options.imageEnd}`);
+            Logger.info(`[GeminiClient] Resolving imageEnd: ${options.imageEnd}`, 'GeminiClient');
             resolvedOptions.imageEnd = await resolveToVeoImage(options.imageEnd);
         }
 
         const charRefs = options.characterImages || options.characterReferences || [];
-        console.log(`[GeminiClient] Found ${charRefs.length} character references to resolve.`);
+        Logger.info(`[GeminiClient] Found ${charRefs.length} character references to resolve.`, 'GeminiClient');
         if (Array.isArray(charRefs) && charRefs.length > 0) {
             const resolvedChars = await Promise.all(charRefs.map(async (img, idx) => {
-                console.log(`[GeminiClient] Resolving character image [${idx}]: ${img}`);
+                Logger.info(`[GeminiClient] Resolving character image [${idx}]: ${img}`, 'GeminiClient');
                 return await resolveToVeoImage(img);
             }));
             resolvedOptions.characterImages = resolvedChars.filter(img => !!img);
             resolvedOptions.characterReferences = resolvedOptions.characterImages;
-            console.log(`[GeminiClient] Successfully resolved ${resolvedOptions.characterImages.length} character images.`);
+            Logger.info(`[GeminiClient] Successfully resolved ${resolvedOptions.characterImages.length} character images.`, 'GeminiClient');
         }
 
         for (const cred of chain) {
@@ -312,18 +312,14 @@ export class GeminiClient {
                         image: resolvedOptions.imageStart || resolvedOptions.image
                     };
 
-                    // systemLogger.info("generateParams: ", generateParams);
+                    // Logger.info("generateParams: ", generateParams);
 
-                    // console.log("genConfig", JSON.stringify(genConfig));
-                    // console.log(modelId, prompt);
+                    // Logger.info("genConfig", JSON.stringify(genConfig));
+                    // Logger.info(modelId, prompt);
                     
                     if (Object.keys(genConfig).length > 0) generateParams.config = genConfig;
 
-                    console.log(`[GeminiClient] Final API Key Payload structure:`, {
-                        hasImage: !!generateParams.image,
-                        hasLastFrame: !!generateParams.config?.lastFrame,
-                        referenceImageCount: generateParams.config?.referenceImages?.length || 0
-                    });
+                    Logger.info(`[GeminiClient] Final API Key Payload structure: hasImage=${!!generateParams.image}, hasLastFrame=${!!generateParams.config?.lastFrame}, referenceImageCount=${generateParams.config?.referenceImages?.length || 0}`, 'GeminiClient');
 
                     const ai = new GoogleGenAI({ apiKey: cred.apiKey, apiVersion: "v1alpha" } as any);
 
@@ -332,7 +328,7 @@ export class GeminiClient {
                     const maxPolls = 60;
                     let pollCount = 0;
                     while (!operation.done && pollCount < maxPolls) {
-                        console.log(`[GeminiClient] Waiting for video generation... (poll ${pollCount + 1}/${maxPolls})`);
+                        Logger.debug(`[GeminiClient] Waiting for video generation... (poll ${pollCount + 1}/${maxPolls})`, 'GeminiClient');
                         await new Promise(resolve => setTimeout(resolve, 10000));
                         operation = await (cred.googleGenAI as any).operations.getVideosOperation({ operation });
                         pollCount++;
@@ -349,7 +345,7 @@ export class GeminiClient {
                         if (videoUrl.includes('generativelanguage.googleapis.com') && cred.apiKey) {
                             videoUrl += (videoUrl.includes('?') ? '&' : '?') + `key=${cred.apiKey}`;
                         }
-                        console.log(`[GeminiClient] Video generated successfully: ${videoUrl}`);
+                        Logger.info(`[GeminiClient] Video generated successfully: ${videoUrl}`, 'GeminiClient');
                         return { url: videoUrl, mimeType: videoFile.mimeType || 'video/mp4', sceneId: options.sceneId };
                     }
                     throw new Error('No video URI in Veo response');
@@ -363,13 +359,13 @@ export class GeminiClient {
                     const apiError = error.response.data.error;
                     detail = `[${apiError.code} ${apiError.status}] ${apiError.message}`;
                     if (apiError.details) {
-                        console.error(`[GeminiClient] Full API Error Details:`, JSON.stringify(apiError.details, null, 2));
+                        Logger.error(`[GeminiClient] Full API Error Details: ${JSON.stringify(apiError.details, null, 2)}`, 'GeminiClient');
                     }
                 } else if (error.details) {
                     detail = `${error.message} - ${JSON.stringify(error.details)}`;
                 }
 
-                console.warn(`[GeminiClient] generateVideo failed via ${label}: ${detail}`);
+                Logger.warn(`[GeminiClient] generateVideo failed via ${label}: ${detail}`, 'GeminiClient');
                 errors.push(`${label}: ${detail}`);
             }
         }
@@ -444,21 +440,37 @@ export class GeminiClient {
                     mimeType = result.mimeType || 'audio/wav';
                 } else if (cred.type === 'apikey' && cred.googleGenAI) {
                     let speechConfig: any;
-                    if (options.multiSpeaker && Array.isArray(options.multiSpeaker)) {
+                    let finalText = text;
+                    
+                    if (options.multiSpeaker && options.multiSpeaker.enabled && Array.isArray(options.multiSpeaker.speakers) && options.multiSpeaker.speakers.length > 0) {
+                        const speakers = options.multiSpeaker.speakers;
+                        
+                        const speakerNames = speakers.map((_: any, i: number) => `Speaker ${i + 1}`);
+                        const intro = `TTS the following conversation between ${speakerNames.join(' and ')}:`;
+                        
+                        const lines = text.split('\n').filter(l => l.trim().length > 0);
+                        const mappedLines = lines.map((line, idx) => {
+                           const sName = speakerNames[idx % speakerNames.length];
+                           return `${sName}: ${line.trim()}`;
+                        });
+                        
+                        finalText = [intro, ...mappedLines].join('\n');
+                        
                         speechConfig = {
                             multiSpeakerVoiceConfig: {
-                                speakerVoiceConfigs: options.multiSpeaker.map((s: any) => ({
-                                    speaker: s.speaker,
-                                    voiceConfig: { prebuiltVoiceConfig: { voiceName: s.voiceName || voiceId } }
+                                speakerVoiceConfigs: speakers.map((s: any, idx: number) => ({
+                                    speaker: `Speaker ${idx + 1}`,
+                                    voiceConfig: {
+                                        prebuiltVoiceConfig: { voiceName: s.voiceId || voiceId }
+                                    }
                                 }))
                             }
                         };
+                    } else {
                         speechConfig = { 
                             voiceConfig: { 
                                 prebuiltVoiceConfig: { 
-                                    voiceName: voiceId,
-                                    pitch: options.pitch || 0.0,
-                                    rate: options.rate || 1.0
+                                    voiceName: voiceId
                                 } 
                             } 
                         };
@@ -466,7 +478,7 @@ export class GeminiClient {
 
                     const response = await (cred.googleGenAI as any).models.generateContent({
                         model: modelId,
-                        contents: [{ parts: [{ text }] }],
+                        contents: [{ parts: [{ text: finalText }] }],
                         config: { responseModalities: ['AUDIO'], speechConfig }
                     });
 
@@ -503,14 +515,14 @@ export class GeminiClient {
                         base64 = wavBuffer.toString('base64');
                         mimeType = 'audio/wav';
                     } catch (e: any) {
-                        systemLogger.warn(`[GeminiClient] Failed to add WAV header: ${e.message}`);
+                        Logger.warn(`[GeminiClient] Failed to add WAV header: ${e.message}`, 'GeminiClient');
                     }
                 }
 
                 return { url: `data:${mimeType};base64,${base64}`, mimeType };
             } catch (error: any) {
                 const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
-                console.warn(`[GeminiClient] generateAudio failed via ${label}: ${error.message}`);
+                Logger.warn(`[GeminiClient] generateAudio failed via ${label}: ${error.message}`, 'GeminiClient');
                 errors.push(`${label}: ${error.message}`);
             }
         }
@@ -542,7 +554,7 @@ export class GeminiClient {
                     };
                 } catch (error: any) {
                     const label = `${cred.type} (${cred.account?.email})`;
-                    console.warn(`[GeminiClient] generateMusic failed via ${label}: ${error.message}`);
+                    Logger.warn(`[GeminiClient] generateMusic failed via ${label}: ${error.message}`, 'GeminiClient');
                     errors.push(`${label}: ${error.message}`);
                 }
             }
@@ -560,7 +572,7 @@ export class GeminiClient {
         const sampleRate = 48000;
         const channels = 2;
 
-        console.log(`[GeminiClient] Using Lyria RealTime for music generation. Duration: ${durationSeconds}s, BPM: ${bpm}`);
+        Logger.info(`[GeminiClient] Using Lyria RealTime for music generation. Duration: ${durationSeconds}s, BPM: ${bpm}`, 'GeminiClient');
 
         const ai = new GoogleGenAI({ apiKey: apiKeyCred.apiKey, apiVersion: "v1alpha" } as any);
 
@@ -585,17 +597,17 @@ export class GeminiClient {
                                 audioChunks.push(audioBuffer);
                             }
                         } else {
-                            console.log('[GeminiClient] Lyria non-audio message:', JSON.stringify(message));
+                            Logger.debug(`[GeminiClient] Lyria non-audio message: ${JSON.stringify(message)}`, 'GeminiClient');
                         }
                     },
                     onerror: (error: any) => {
                         clearTimeout(timeout);
-                        console.error('[GeminiClient] Lyria session error:', error);
+                        Logger.error(`[GeminiClient] Lyria session error: ${error}`, 'GeminiClient');
                         reject(new Error(`Lyria Music Generation Failed: ${error.message || error}`));
                     },
                     onclose: () => {
                         clearTimeout(timeout);
-                        console.log(`[GeminiClient] Lyria stream closed. Collected ${audioChunks.length} chunks.`);
+                        Logger.info(`[GeminiClient] Lyria stream closed. Collected ${audioChunks.length} chunks.`, 'GeminiClient');
 
                         if (audioChunks.length === 0) {
                             reject(new Error('No audio data received from Lyria'));
@@ -645,7 +657,7 @@ export class GeminiClient {
                     }
                 });
 
-                console.log('[GeminiClient] Lyria session started. Playing...');
+                Logger.info('[GeminiClient] Lyria session started. Playing...', 'GeminiClient');
                 await session.play();
             }).catch((err: any) => {
                 clearTimeout(timeout);
@@ -706,7 +718,7 @@ export class GeminiClient {
                     account: !isApiKey ? cred.account : undefined
                 };
             } catch (error: any) {
-                console.warn(`[GeminiClient] Live connection failed via ${cred.type}: ${error.message}`);
+                Logger.warn(`[GeminiClient] Live connection failed via ${cred.type}: ${error.message}`, 'GeminiClient');
             }
         }
 
@@ -734,7 +746,7 @@ export class GeminiClient {
                 }
             } catch (error: any) {
                 const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
-                console.warn(`[GeminiClient] uploadFile failed via ${label}: ${error.message}`);
+                Logger.warn(`[GeminiClient] uploadFile failed via ${label}: ${error.message}`, 'GeminiClient');
                 errors.push(`${label}: ${error.message}`);
             }
         }
@@ -766,7 +778,7 @@ export class GeminiClient {
                 }
             } catch (error: any) {
                 const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
-                console.warn(`[GeminiClient] waitForFileActive failed via ${label}: ${error.message}`);
+                Logger.warn(`[GeminiClient] waitForFileActive failed via ${label}: ${error.message}`, 'GeminiClient');
                 errors.push(`${label}: ${error.message}`);
             }
         }
@@ -791,7 +803,7 @@ export class GeminiClient {
                     return true;
                 }
             } catch (error: any) {
-                console.warn(`[GeminiClient] deleteFile failed via ${cred.type}: ${error.message}`);
+                Logger.warn(`[GeminiClient] deleteFile failed via ${cred.type}: ${error.message}`, 'GeminiClient');
             }
         }
 

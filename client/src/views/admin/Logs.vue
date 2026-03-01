@@ -2,56 +2,55 @@
   <div class="admin-logs">
     <div class="page-header">
       <div>
-        <h1>System Logs</h1>
-        <p class="subtitle">Live system monitoring and error alerting.</p>
+        <h1>{{ $t('admin.logs.title') }}</h1>
+        <p class="subtitle">{{ $t('admin.logs.subtitle') }}</p>
       </div>
       <div class="flex gap-2">
         <button class="primary-btn secondary" @click="showSettings = !showSettings">
           <setting-config theme="outline" size="20" />
-          Log Settings
+          {{ $t('admin.logs.logSettings') }}
         </button>
         <button class="primary-btn delete" @click="clearLogs">
           <delete theme="outline" size="20" />
-          Clear Logs
+          {{ $t('admin.logs.clearLogs') }}
         </button>
       </div>
     </div>
 
     <!-- Settings Panel -->
     <div v-if="showSettings" class="cinematic-card settings-panel animate-in">
-      <h3>Notification Rules</h3>
+      <h3>{{ $t('admin.logs.notificationRules') }}</h3>
       <div class="settings-grid">
         <div class="setting-item">
-          <label>Enable Email Alerts</label>
+          <label>{{ $t('admin.logs.enableEmailAlerts') }}</label>
           <div class="flex items-center gap-2">
             <el-switch v-model="settings.emailNotificationsEnabled" @change="saveSettings" />
-            <span class="text-xs opacity-60">{{ settings.emailNotificationsEnabled ? 'ACTIVE' : 'INACTIVE' }}</span>
+            <span class="text-xs opacity-60">{{ settings.emailNotificationsEnabled ? $t('admin.logs.active') : $t('admin.logs.inactive') }}</span>
           </div>
         </div>
         <div class="setting-item">
-          <label>Recipient Email</label>
-          <input type="email" v-model="settings.notificationEmail" placeholder="admin@example.com" class="dark-input"
+          <label>{{ $t('admin.logs.recipientEmail') }}</label>
+          <input type="email" v-model="settings.notificationEmail" :placeholder="t('admin.logs.recipientEmail')" class="dark-input"
             @blur="saveSettings" />
         </div>
         <div class="setting-item">
-          <label>Minimum Alert Level</label>
+          <label>{{ $t('admin.logs.minAlertLevel') }}</label>
           <select v-model="settings.minNotificationLevel" class="dark-select" @change="saveSettings">
-            <option value="error">Error (Recommended)</option>
-            <option value="warn">Warning & Error</option>
-            <option value="info">Info, Warning & Error</option>
+            <option value="error">{{ $t('admin.logs.alertLevels.error') }}</option>
+            <option value="warn">{{ $t('admin.logs.alertLevels.warn') }}</option>
+            <option value="info">{{ $t('admin.logs.alertLevels.info') }}</option>
           </select>
         </div>
         <div class="setting-item">
-          <label>Log Retention (Days)</label>
+          <label>{{ $t('admin.logs.logRetention') }}</label>
           <div class="flex items-center gap-2">
             <input type="number" v-model.number="settings.retentionDays" min="1" max="365" class="dark-input w-24"
               @blur="saveSettings" />
-            <span class="text-xs opacity-60">DAYS</span>
+            <span class="text-xs opacity-60">{{ $t('admin.logs.days') }}</span>
           </div>
         </div>
       </div>
-      <p class="settings-hint">System will automatically send an email alert when an error matching these rules is
-        detected. Logs are kept for the specified number of days before auto-deletion.</p>
+      <p class="settings-hint">{{ $t('admin.logs.settingsHint') }}</p>
     </div>
 
     <div class="logs-content">
@@ -59,30 +58,30 @@
       <div class="logs-toolbar">
         <div class="flex gap-4 items-center">
           <div class="filter-group">
-            <label>Level:</label>
+            <label>{{ $t('admin.logs.level') }}</label>
             <select v-model="filter.level" class="dark-select" @change="fetchLogs">
-              <option value="all">All Levels</option>
-              <option value="debug">Debug</option>
-              <option value="info">Normal</option>
-              <option value="warn">Warning</option>
-              <option value="error">Error</option>
+              <option value="all">{{ $t('admin.logs.allLevels') }}</option>
+              <option value="debug">{{ $t('admin.logs.debug') }}</option>
+              <option value="info">{{ $t('admin.logs.normal') }}</option>
+              <option value="warn">{{ $t('admin.logs.warning') }}</option>
+              <option value="error">{{ $t('admin.logs.error') }}</option>
             </select>
           </div>
           <div class="filter-group">
-            <label>Search:</label>
+            <label>{{ $t('admin.logs.search') }}</label>
             <div class="search-box">
               <search theme="outline" size="14" class="search-icon" />
-              <input v-model="filter.search" placeholder="Filter message..." class="dark-input search-input"
+              <input v-model="filter.search" :placeholder="t('admin.logs.searchPlaceholder')" class="dark-input search-input"
                 @input="debounceFetch" />
             </div>
           </div>
         </div>
         <div class="flex items-center gap-4">
           <div class="auto-refresh">
-            <label>Auto-refresh:</label>
+            <label>{{ $t('admin.logs.autoRefresh') }}</label>
             <el-switch v-model="autoRefresh" size="small" />
           </div>
-          <span class="log-count">{{ totalLogs }} records found</span>
+          <span class="log-count">{{ $t('admin.logs.recordsFound', { count: totalLogs }) }}</span>
         </div>
       </div>
 
@@ -92,11 +91,11 @@
           <el-icon class="is-loading">
             <Loading />
           </el-icon>
-          <span>Connecting to log stream...</span>
+          <span>{{ $t('admin.logs.connecting') }}</span>
         </div>
         <div v-else-if="!logs.length" class="empty-logs">
           <terminal theme="outline" size="48" />
-          <p>No logs matching your filters found.</p>
+          <p>{{ $t('admin.logs.noLogs') }}</p>
         </div>
         <div v-else class="console-lines">
           <div v-for="log in logs" :key="log._id" :class="['log-line', log.level]">
@@ -105,7 +104,7 @@
             <span class="source">[{{ log.source }}]</span>
             <span class="message">{{ log.message }}</span>
             <div v-if="log.metadata" class="metadata-toggle" @click="toggleMetadata(log._id)">
-              {{ expandedMetadata.has(log._id) ? 'Collapse' : 'View Metadata' }}
+              {{ expandedMetadata.has(log._id) ? t('admin.logs.collapse') : t('admin.logs.viewMetadata') }}
             </div>
             <pre v-if="expandedMetadata.has(log._id)"
               class="metadata-block">{{ JSON.stringify(log.metadata, null, 2) }}</pre>
@@ -124,10 +123,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { SettingConfig, Delete, Search, Loading, Terminal } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 import { useAdminStore } from '@/stores/admin';
 
+const { t } = useI18n()
 const adminStore = useAdminStore();
 const logs = ref<any[]>([]);
 const totalLogs = ref(0);
@@ -163,7 +164,7 @@ const fetchLogs = async (silent: any = false) => {
       totalLogs.value = data.total;
     }
   } catch (e) {
-    if (!isSilent) toast.error('Failed to load logs');
+    if (!isSilent) toast.error(t('admin.logs.toasts.loadLogsFailed'));
   } finally {
     if (!isSilent) loading.value = false;
   }
@@ -191,18 +192,18 @@ const saveSettings = async () => {
     await adminStore.updateLogSettings(settings);
     // toast handled by store or here
   } catch (e) {
-    toast.error('Failed to save settings');
+    toast.error(t('admin.logs.toasts.saveSettingsFailed'));
   }
 };
 
 const clearLogs = async () => {
-  if (!confirm('Are you sure you want to permanently delete all system logs?')) return;
+  if (!confirm(t('admin.logs.confirmClear'))) return;
   try {
     await adminStore.clearSystemLogs();
     logs.value = [];
     totalLogs.value = 0;
   } catch (e) {
-    toast.error('Failed to clear logs');
+    toast.error(t('admin.logs.toasts.clearLogsFailed'));
   }
 };
 

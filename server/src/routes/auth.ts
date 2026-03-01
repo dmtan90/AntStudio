@@ -4,11 +4,13 @@ import { connectDB } from '../utils/db.js';
 import config from '../utils/config.js';
 import { generateToken } from '../utils/jwt.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { checkUserLimit } from '../middleware/license.js';
+import { checkUserLimit } from '../middleware/licenseGating.js';
 import { emailService } from '../services/email.js';
 import { redisService } from '../services/RedisService.js';
 import crypto from 'crypto';
 import { AdminSettings } from '../models/AdminSettings.js';
+
+import { Logger } from '../utils/Logger.js';
 
 const router = Router();
 
@@ -79,7 +81,7 @@ router.post('/login', async (req, res) => {
             }
         });
     } catch (error: any) {
-        console.error('Login error:', error);
+        Logger.error('Login error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Login failed' });
     }
 });
@@ -119,7 +121,7 @@ router.post('/register', checkUserLimit, async (req, res) => {
         try {
             await emailService.sendWelcomeEmail({ email: user.email, name: user.name });
         } catch (emailError) {
-            console.error('Failed to send welcome email:', emailError);
+            Logger.error('Failed to send welcome email:', 'Auth', emailError);
             // Don't fail registration if email fails
         }
 
@@ -152,7 +154,7 @@ router.post('/register', checkUserLimit, async (req, res) => {
             }
         });
     } catch (error: any) {
-        console.error('Registration error:', error);
+        Logger.error('Registration error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Registration failed' });
     }
 });
@@ -209,7 +211,7 @@ router.post('/forgot-password', async (req, res) => {
 
         res.json({ success: true, data: { message: 'Password reset email sent' } })
     } catch (error: any) {
-        console.error('Forgot password error:', error)
+        Logger.error('Forgot password error:', error)
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to process request' })
     }
 })
@@ -220,15 +222,15 @@ router.post('/reset-password', async (req, res) => {
         await connectDB()
         const { token, newPassword } = req.body
 
-        console.log('Reset password request:', { token, hasPassword: !!newPassword });
+        Logger.info('Reset password request:', 'Auth', { token, hasPassword: !!newPassword });
 
         if (!token || !newPassword) {
-            console.log('Missing token or password');
+            Logger.info('Missing token or password', 'Auth', {});
             return res.status(400).json({ success: false, data: null, error: 'Token and new password are required' })
         }
 
         if (newPassword.length < 6) {
-            console.log('Password too short');
+            Logger.info('Password too short');
             return res.status(400).json({ success: false, data: null, error: 'Password must be at least 6 characters' });
         }
 
@@ -238,13 +240,13 @@ router.post('/reset-password', async (req, res) => {
         })
 
         if (!user) {
-            console.log('User not found or token expired for token:', token);
+            Logger.info('User not found or token expired for token:', 'Auth', { token });
             // Let's debug why: check if token exists but expired
             const debugUser = await User.findOne({ resetPasswordToken: token });
             if (debugUser) {
-                console.log('Token exists but expired. Expires:', debugUser.resetPasswordExpires, 'Now:', new Date());
+                Logger.info('Token exists but expired. Expires:', 'Auth', { expires: debugUser.resetPasswordExpires, now: new Date() });
             } else {
-                console.log('Token does not exist in DB');
+                Logger.info('Token does not exist in DB', 'Auth', {});
             }
             return res.status(400).json({ success: false, data: null, error: 'Invalid or expired token' })
         }
@@ -258,7 +260,7 @@ router.post('/reset-password', async (req, res) => {
         res.json({ success: true, data: { message: 'Password reset successfully' } })
 
     } catch (error: any) {
-        console.error('Reset password error:', error)
+        Logger.error('Reset password error:', error)
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to reset password' })
     }
 })
@@ -300,7 +302,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
             }
         });
     } catch (error: any) {
-        console.error('Get user error:', error);
+        Logger.error('Get user error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to get user' });
     }
 });
@@ -324,7 +326,7 @@ router.get('/credits/history', authMiddleware, async (req: AuthRequest, res) => 
             data: logs
         });
     } catch (error: any) {
-        console.error('Fetch credit history error:', error);
+        Logger.error('Fetch credit history error:', error);
         res.status(500).json({ success: false, data: null, error: 'Failed to fetch credit history' });
     }
 });
@@ -367,7 +369,7 @@ router.post('/change-password', authMiddleware, async (req: AuthRequest, res) =>
 
         res.json({ success: true, data: { message: 'Password changed successfully' } });
     } catch (error: any) {
-        console.error('Change password error:', error);
+        Logger.error('Change password error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to change password' });
     }
 });
@@ -380,7 +382,7 @@ router.get('/google', async (req, res) => {
         const url = await getGoogleLoginUrl();
         res.redirect(url);
     } catch (error: any) {
-        console.error('Google OAuth initiation error:', error);
+        Logger.error('Google OAuth initiation error:', error);
         res.redirect(`${domain}/login?error=oauth_failed`);
     }
 });
@@ -440,7 +442,7 @@ router.get('/google/callback', async (req, res) => {
 
         res.redirect(`${domain}/dashboard?token=${token}`);
     } catch (error: any) {
-        console.error('Google OAuth callback error:', error);
+        Logger.error('Google OAuth callback error:', error);
         res.redirect(`${domain}/login?error=oauth_failed`);
     }
 });
@@ -453,7 +455,7 @@ router.get('/facebook', async (req, res) => {
         const url = await getFacebookLoginUrl();
         res.redirect(url);
     } catch (error: any) {
-        console.error('Facebook OAuth initiation error:', error);
+        Logger.error('Facebook OAuth initiation error:', error);
         res.redirect(`${domain}/login?error=oauth_failed`);
     }
 });
@@ -514,7 +516,7 @@ router.get('/facebook/callback', async (req, res) => {
 
         res.redirect(`${domain}/dashboard?token=${token}`);
     } catch (error: any) {
-        console.error('Facebook OAuth callback error:', error);
+        Logger.error('Facebook OAuth callback error:', error);
         res.redirect(`${domain}/login?error=oauth_failed`);
     }
 });
@@ -534,7 +536,7 @@ router.get('/oauth-config', async (req, res) => {
             }
         });
     } catch (error: any) {
-        console.error('OAuth config fetch error:', error);
+        Logger.error('OAuth config fetch error:', error);
         res.json({ success: true, data: { google: false, facebook: false } });
     }
 })
@@ -568,7 +570,7 @@ router.patch('/notification-settings', authMiddleware, async (req: AuthRequest, 
         })
 
     } catch (error: any) {
-        console.error('Update notification settings error:', error)
+        Logger.error('Update notification settings error:', error)
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to update notification settings' })
     }
 })

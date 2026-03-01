@@ -4,6 +4,8 @@ import { IAIAccount } from '../../models/AIAccount.js';
 import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
 import { GeminiClient } from './GeminiClient.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 /**
  * AntigravityClient: High-performance client using embedded credentials
  * Based on antigravity2api-nodejs research:
@@ -65,7 +67,7 @@ export class AntigravityClient {
 
         const parts = Array.isArray(prompt) ? prompt : [{ text: prompt as string }];
         const projectId = await aiAccountManager.discoverProjectId(this.account);
-        console.log(`[AntigravityClient] generateContent project: ${projectId}, model: ${modelId}`);
+        Logger.info(`[AntigravityClient] generateContent project: ${projectId}, model: ${modelId}`);
 
         const identityMarker = 'You are Antigravity';
         let hasIdentity = false;
@@ -90,7 +92,9 @@ export class AntigravityClient {
                     temperature: 1,
                     topP: 0.85,
                     topK: 50,
-                    maxOutputTokens: 8192
+                    maxOutputTokens: 65536,//fix truncate JSON string
+                    // Merge caller-provided overrides (e.g. responseMimeType, maxOutputTokens from generateJSON)
+                    ...options.generationConfig,
                 }
             },
             model: modelId,
@@ -114,20 +118,20 @@ export class AntigravityClient {
 
             const content = candidates[0].content;
             if (!content || !content.parts || content.parts.length === 0) {
-                console.error(`[AntigravityClient] API Error:`, response.data || 'Malformed content in Antigravity response');
+                Logger.error(`[AntigravityClient] API Error:`, response.data || 'Malformed content in Antigravity response');
                 throw new Error(`Antigravity Generation failed: Malformed content`);
             }
 
             return { text: candidates[0].content?.parts?.[0]?.text || '' };
         } catch (error: any) {
             if (axios.isAxiosError(error) && error.response) {
-                console.error(`[AntigravityClient] generateContent API Error (${error.response.status}):`, JSON.stringify(error.response.data, null, 2));
+                Logger.error(`[AntigravityClient] generateContent API Error (${error.response.status}):`, JSON.stringify(error.response.data, null, 2));
             } else {
-                console.error(`[AntigravityClient] generateContent failed:`, error.message);
+                Logger.error(`[AntigravityClient] generateContent failed:`, error.message);
             }
             
             if (error.response?.status === 404 && !options._isRetry) {
-                 console.warn('[AntigravityClient] 404 received. Project ID might be invalid. Attempting re-discovery or fallback...');
+                 Logger.warn('[AntigravityClient] 404 received. Project ID might be invalid. Attempting re-discovery or fallback...');
                  try {
                      // Force re-discovery by clearing cached ID
                      const oldProjectId = this.account.projectId;
@@ -137,15 +141,15 @@ export class AntigravityClient {
                      // If re-discovery gives the same ID, try a standard fallback
                      // If re-discovery gives the same ID, try a standard fallback
                     //  if (newProjectId === oldProjectId) {
-                    //      console.warn('[AntigravityClient] Re-discovery returned same ID. Trying cloudaicompanion-default fallback...');
+                    //      Logger.warn('[AntigravityClient] Re-discovery returned same ID. Trying cloudaicompanion-default fallback...');
                     //      this.account.projectId = 'cloudaicompanion-default';
                     //  }
 					 this.account.projectId = newProjectId;
                      
-                     console.log(`[AntigravityClient] Retrying with Project: ${this.account.projectId}`);
+                     Logger.info(`[AntigravityClient] Retrying with Project: ${this.account.projectId}`);
                      return await this.generateContent(prompt, modelId, { ...options, _isRetry: true });
                  } catch (discoveryError: any) {
-                     console.error('[AntigravityClient] Project re-discovery/fallback failed:', discoveryError.message);
+                     Logger.error('[AntigravityClient] Project re-discovery/fallback failed:', discoveryError.message);
                  }
             }
 
@@ -191,12 +195,12 @@ export class AntigravityClient {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         payload.project = projectId;
 
-        console.log('[AntigravityClient] projectId', projectId);
+        Logger.info('[AntigravityClient] projectId', projectId);
 
         try {
-            console.log('[AntigravityClient] Payload:', JSON.stringify(payload));
+            Logger.info('[AntigravityClient] Payload:', JSON.stringify(payload));
             const response = await axios.post(url, payload, { headers });
-            console.log('[AntigravityClient] Response:', JSON.stringify(response.data));
+            Logger.info('[AntigravityClient] Response:', JSON.stringify(response.data));
 
             const candidates = response.data.response?.candidates || [];
             if (candidates.length === 0) throw new Error('No candidates returned from Antigravity Image API');
@@ -215,18 +219,18 @@ export class AntigravityClient {
                 }
             }
 
-            console.log('[AntigravityClient] base64Data', base64Data);
-            console.log('[AntigravityClient] mimeType', mimeType);
+            Logger.info('[AntigravityClient] base64Data', base64Data);
+            Logger.info('[AntigravityClient] mimeType', mimeType);
 
             if (!base64Data) {
-                console.error('[AntigravityClient] Image data not found in any parts. Parts found:', parts.length);
+                Logger.error('[AntigravityClient] Image data not found in any parts. Parts found:', parts.length);
                 throw new Error('No image data found in Antigravity response parts');
             }
 
             return { url: `data:${mimeType};base64,${base64Data}` };
         } catch (error: any) {
             if (axios.isAxiosError(error)) {
-                console.error(`[AntigravityClient] Image API Error:`, error.response?.data || error.message);
+                Logger.error(`[AntigravityClient] Image API Error:`, error.response?.data || error.message);
             }
             throw new Error(`Antigravity Image Gen failed: ${error.message}`);
         }
@@ -262,12 +266,12 @@ export class AntigravityClient {
         };
 
         try {
-            console.log(`[AntigravityClient] Requesting video generation for project: ${projectId}`);
+            Logger.info(`[AntigravityClient] Requesting video generation for project: ${projectId}`);
             const response = await axios.post(url, payload, { headers });
             const operationName = response.data.operations?.[0]?.operation?.name;
 
             if (!operationName) {
-                console.error('[AntigravityClient] No operation returned:', JSON.stringify(response.data));
+                Logger.error('[AntigravityClient] No operation returned:', JSON.stringify(response.data));
                 throw new Error('No operation name returned from Antigravity/Veo API');
             }
 
@@ -278,7 +282,7 @@ export class AntigravityClient {
                 statusUrl: `${AntigravityClient.AGENT_ENDPOINT}/video:batchCheckAsyncVideoGenerationStatus`
             };
         } catch (error: any) {
-            console.error(`[AntigravityClient] Video API Error:`, error.response?.data || error.message);
+            Logger.error(`[AntigravityClient] Video API Error:`, error.response?.data || error.message);
             throw new Error(`Antigravity Video Gen failed: ${error.message}`);
         }
     }
@@ -324,7 +328,7 @@ export class AntigravityClient {
             const base64 = part?.inlineData?.data;
 
             if (!base64) {
-                console.error('[AntigravityClient] No audio data in response:', JSON.stringify(response.data));
+                Logger.error('[AntigravityClient] No audio data in response:', JSON.stringify(response.data));
                 throw new Error('No audio data returned from Antigravity/TTS API');
             }
 
@@ -333,7 +337,7 @@ export class AntigravityClient {
                 mimeType: part.inlineData.mimeType || 'audio/wav'
             };
         } catch (error: any) {
-            console.error(`[AntigravityClient] Audio API Error:`, error.response?.data || error.message);
+            Logger.error(`[AntigravityClient] Audio API Error:`, error.response?.data || error.message);
             throw new Error(`Antigravity Audio Gen failed: ${error.message}`);
         }
     }
@@ -379,7 +383,7 @@ export class AntigravityClient {
                 mimeType: part.inlineData.mimeType || 'audio/mpeg'
             };
         } catch (error: any) {
-            console.error(`[AntigravityClient] Music API Error:`, error.response?.data || error.message);
+            Logger.error(`[AntigravityClient] Music API Error:`, error.response?.data || error.message);
             throw new Error(`Antigravity Music Gen failed: ${error.message}`);
         }
     }
@@ -393,7 +397,7 @@ export class AntigravityClient {
         const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:fetchAvailableModels`;
 
         try {
-            console.log(`[AntigravityClient] Fetching available models for ${this.account.email}...`);
+            Logger.info(`[AntigravityClient] Fetching available models for ${this.account.email}...`);
             const projectId = await aiAccountManager.discoverProjectId(this.account);
             
             const payload: any = {};
@@ -421,12 +425,12 @@ export class AntigravityClient {
                 }
             }
 
-            console.log(`[AntigravityClient] Discovered ${result.length} models:`, JSON.stringify(result).substring(0, 200) + '...');
+            Logger.info(`[AntigravityClient] Discovered ${result.length} models:`, JSON.stringify(result).substring(0, 200) + '...');
 
             return result;
         } catch (error: any) {
             if (axios.isAxiosError(error)) {
-                console.error(`[AntigravityClient] Fetch Models API Error:`, error.response?.data || error.message);
+                Logger.error(`[AntigravityClient] Fetch Models API Error:`, error.response?.data || error.message);
             }
             throw new Error(`Antigravity Model Fetch failed: ${error.message}`);
         }

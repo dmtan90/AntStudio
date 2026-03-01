@@ -1,7 +1,7 @@
 <template>
   <el-drawer
       v-model="visible"
-      title="Store"
+      :title="$t('studio.drawers.economy.title')"
       size="320px"
       direction="rtl"
       :modal="true"
@@ -12,15 +12,15 @@
         <!-- Balance Header -->
         <div class="p-4 border-b border-white/10 bg-black/40">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold uppercase tracking-widest text-white/50">My Wallet</span>
+                <span class="text-xs font-bold uppercase tracking-widest text-white/50">{{ $t('studio.drawers.economy.wallet.myWallet') }}</span>
                 <button @click="topUp" class="text-[10px] font-bold text-green-400 hover:text-green-300 transition-colors uppercase tracking-wider flex items-center gap-1">
-                    <plus theme="filled" /> Top Up
+                    <plus theme="filled" /> {{ $t('studio.drawers.economy.wallet.topUp') }}
                 </button>
             </div>
             <div class="flex items-end gap-2">
                 <currency theme="filled" size="24" class="text-yellow-400 mb-1" />
                 <span class="text-3xl font-black text-white leading-none">{{ studioStore.userWallet.balance }}</span>
-                <span class="text-xs font-bold text-white/50 mb-1">CREDITS</span>
+                <span class="text-xs font-bold text-white/50 mb-1">{{ $t('studio.drawers.economy.credits') }}</span>
             </div>
         </div>
 
@@ -30,7 +30,7 @@
                     @click="activeTab = tab.id"
                     class="flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors"
                     :class="activeTab === tab.id ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'">
-                {{ tab.label }}
+                {{ $t(`studio.drawers.economy.tabs.${tab.id}`) }}
             </button>
         </div>
 
@@ -57,10 +57,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStudioStore } from '@/stores/studio';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { Currency, Plus } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
+
+const { t } = useI18n();
 
 const props = defineProps<{
     modelValue: boolean
@@ -100,7 +103,7 @@ const filteredItems = computed(() => {
 
 const topUp = () => {
     // Simulate payment flow
-    toast.success('Simulated Top Up: +500 Credits');
+    toast.success(t('studio.drawers.economy.simulatedTopUp', { n: 500 }));
     // We can't update balance locally, must come from server via some event?
     // For Phase 68, let's assume `topUp` is an API/Socket call not implemented yet
     // OR just use a debug command.
@@ -115,7 +118,7 @@ const topUp = () => {
 
 const purchase = (item: any) => {
     if (studioStore.userWallet.balance < item.cost) {
-        toast.error('Insufficient Credits');
+        toast.error(t('studio.drawers.economy.insufficientCredits'));
         return;
     }
     

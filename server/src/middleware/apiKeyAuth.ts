@@ -3,6 +3,8 @@ import { ApiKeyService } from '../services/ApiKeyService.js';
 import { AuthRequest } from './auth.js';
 import { User } from '../models/User.js';
 
+import { Logger } from '../utils/Logger.js';
+
 /**
  * API Key Authentication Middleware.
  * Allows programmatic access via 'x-api-key' header.
@@ -39,7 +41,7 @@ export const apiKeyAuthMiddleware = async (req: AuthRequest, res: Response, next
 
         next();
     } catch (error) {
-        console.error('API Key Auth Error:', error);
+        Logger.error('API Key Auth Error:', error);
         res.status(500).json({ success: false, error: 'Tactical authentication engine failure.' });
     }
 };

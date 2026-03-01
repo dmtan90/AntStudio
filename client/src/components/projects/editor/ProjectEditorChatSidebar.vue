@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { Robot } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
 import ProjectUserMessage from '@/components/projects/new/ProjectUserMessage.vue'
 import ProjectChatInputEditor from '@/components/projects/editor/ProjectChatInputEditor.vue'
@@ -69,7 +69,7 @@ import VisualGenPathCard from '@/components/projects/new/VisualGenPathCard.vue'
 import VisualAssetsCard from '@/components/projects/new/VisualAssetsCard.vue'
 import ProjectAnalysisCard from '@/components/projects/new/ProjectAnalysisCard.vue'
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 const props = defineProps<{
     isVisible: boolean

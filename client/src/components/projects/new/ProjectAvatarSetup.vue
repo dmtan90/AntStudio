@@ -14,8 +14,8 @@
                 <!-- Step 1: Select Avatar -->
                 <div v-if="currentStep === 1" class="step-content">
                     <div class="header-section">
-                        <h2>Select VTuber</h2>
-                        <p>Choose a presenter for your video.</p>
+                        <h2>{{ t('projects.new.setup.avatar.selectVtuber') }}</h2>
+                        <p>{{ t('projects.new.setup.avatar.selectVtuberDesc') }}</p>
                     </div>
 
                     <div class="avatar-grid">
@@ -41,9 +41,9 @@
                             <div class="avatar-card upload-card p-5 text-center" @click="handleUploadAvatarClick">
                                 <div class="upload-placeholder">
                                     <Plus class="text-4xl" />
-                                    <span>Upload Custom</span>
+                                    <span>{{ t('projects.new.setup.avatar.uploadCustom') }}</span>
                                     <div class="mt-2 text-[10px] text-gray-400">
-                                        Support for Static VTuber Puppet
+                                        {{ t('projects.new.setup.avatar.uploadSupport') }}
                                     </div>
                                 </div>
                                 <input type="file" ref="fileInput" class="hidden" accept="image/*"
@@ -56,18 +56,18 @@
                 <!-- Step 2: Script & Voice -->
                 <div v-else-if="currentStep === 2" class="step-content">
                     <div class="header-section">
-                        <h2>Script & Voice</h2>
-                        <p>What should the avatar say?</p>
+                        <h2>{{ t('projects.new.setup.avatar.scriptVoice') }}</h2>
+                        <p>{{ t('projects.new.setup.avatar.scriptVoiceDesc') }}</p>
                     </div>
 
                     <div class="form-cols">
                         <div class="col-left">
-                            <label>Script</label>
+                            <label>{{ t('projects.new.setup.avatar.scriptLabel') }}</label>
                             <textarea v-model="script" class="glow-textarea"
-                                placeholder="Hello, welcome to our new product launch..."></textarea>
+                                :placeholder="t('projects.new.setup.avatar.scriptPlaceholder')"></textarea>
                         </div>
                         <div class="col-right">
-                            <label>Voice Selection</label>
+                            <label>{{ t('projects.new.setup.avatar.voiceSelection') }}</label>
 
                             <div v-if="!showAdvanced" class="voice-presets-list animate-fade-in">
                                 <div v-for="preset in voicePresets" :key="preset.id" class="voice-preset-card"
@@ -90,7 +90,7 @@
                             <!-- Advanced Mode (Toggle) -->
                             <div class="advanced-toggle-wrapper">
                                 <div class="advanced-toggle" @click="showAdvanced = !showAdvanced">
-                                    <span>Advanced Voice Settings</span>
+                                    <span>{{ t('projects.new.setup.avatar.advancedSettings') }}</span>
                                     <Up v-if="showAdvanced" />
                                     <Down v-else />
                                 </div>
@@ -100,20 +100,20 @@
                                 <div v-if="showAdvanced" class="advanced-voice-container">
                                     <!-- Search and Filters -->
                                     <div class="voice-filters">
-                                        <input v-model="voiceSearch" type="text" placeholder="Search voices..."
+                                        <input v-model="voiceSearch" type="text" :placeholder="t('projects.new.setup.avatar.searchVoices')"
                                             class="search-input" />
                                         <div class="filter-row">
                                             <select v-model="filterLanguage" class="filter-select">
-                                                <option value="">All Languages</option>
+                                                <option value="">{{ t('projects.new.setup.avatar.allLanguages') }}</option>
                                                 <option v-for="lang in availableLanguages" :key="lang" :value="lang">
                                                     {{ lang }}
                                                 </option>
                                             </select>
                                             <select v-model="filterGender" class="filter-select">
-                                                <option value="">All Genders</option>
-                                                <option value="male">Male</option>
-                                                <option value="female">Female</option>
-                                                <option value="neutral">Neutral</option>
+                                                <option value="">{{ t('projects.new.setup.avatar.allGenders') }}</option>
+                                                <option value="male">{{ t('projects.new.setup.avatar.male') }}</option>
+                                                <option value="female">{{ t('projects.new.setup.avatar.female') }}</option>
+                                                <option value="neutral">{{ t('projects.new.setup.avatar.neutral') }}</option>
                                             </select>
                                         </div>
                                     </div>
@@ -141,17 +141,17 @@
 
                                     <div class="advanced-settings-sliders animate-fade-in">
                                         <div class="setting-item">
-                                            <label>Speed ({{ voiceSpeed }}x)</label>
+                                            <label>{{ t('projects.new.setup.avatar.speed') }} ({{ voiceSpeed }}x)</label>
                                             <input type="range" v-model="voiceSpeed" min="0.5" max="2.0" step="0.1" />
                                         </div>
                                         <template v-if="isElevenLabsActive">
                                             <div class="setting-item">
-                                                <label>Stability ({{ voiceStability }})</label>
+                                                <label>{{ t('projects.new.setup.avatar.stability') }} ({{ voiceStability }})</label>
                                                 <input type="range" v-model="voiceStability" min="0" max="1"
                                                     step="0.1" />
                                             </div>
                                             <div class="setting-item">
-                                                <label>Similarity ({{ voiceSimilarity }})</label>
+                                                <label>{{ t('projects.new.setup.avatar.similarity') }} ({{ voiceSimilarity }})</label>
                                                 <input type="range" v-model="voiceSimilarity" min="0" max="1"
                                                     step="0.1" />
                                             </div>
@@ -162,7 +162,7 @@
                                     <div class="personal-voice-section">
                                         <button class="btn-clone" @click="showCloneModal = true">
                                             <Mic />
-                                            Train Personal Voice
+                                            {{ t('projects.new.setup.avatar.trainVoice') }}
                                         </button>
                                     </div>
                                 </div>
@@ -174,9 +174,9 @@
                 <!-- Step 3: Preview -->
                 <div v-else-if="currentStep === 3" class="step-content">
                     <div class="header-section">
-                        <h2>Video Preview</h2>
-                        <p v-if="!generatedVideoUrl">Generating your AI avatar video...</p>
-                        <p v-else>Your video is ready!</p>
+                        <h2>{{ t('projects.new.setup.avatar.videoPreview') }}</h2>
+                        <p v-if="!generatedVideoUrl">{{ t('projects.new.setup.avatar.generatingVideo') }}</p>
+                        <p v-else>{{ t('projects.new.setup.avatar.videoReady') }}</p>
                     </div>
 
                     <div class="preview-container">
@@ -190,10 +190,10 @@
                             <video :src="getFileUrl(generatedVideoUrl)" controls class="main-video"></video>
                             <div class="actions">
                                 <button class="btn-action" @click="handleDownload">
-                                    <span>Download</span>
+                                    <span>{{ t('projects.new.setup.avatar.download') }}</span>
                                 </button>
                                 <button class="btn-action primary" @click="handleUpload">
-                                    <span>Save to Library</span>
+                                    <span>{{ t('projects.new.setup.avatar.saveLibrary') }}</span>
                                 </button>
                             </div>
                         </div>
@@ -202,14 +202,14 @@
             </transition>
 
             <div class="setup-footer" v-if="currentStep < 3 || generatedVideoUrl">
-                <button v-if="currentStep > 1 && currentStep < 3" class="btn-back" @click="currentStep--">Back</button>
-                <button v-if="currentStep === 1" class="btn-cancel" @click="$router.push('/dashboard')">Cancel</button>
-                <button v-if="currentStep === 3" class="btn-cancel" @click="resetSetup">Create New</button>
+                <button v-if="currentStep > 1 && currentStep < 3" class="btn-back" @click="currentStep--">{{ t('projects.new.back') }}</button>
+                <button v-if="currentStep === 1" class="btn-cancel" @click="$router.push('/dashboard')">{{ t('common.cancel') }}</button>
+                <button v-if="currentStep === 3" class="btn-cancel" @click="resetSetup">{{ t('projects.new.setup.avatar.createNew') }}</button>
 
                 <button v-if="currentStep < 3" class="btn-next" :disabled="loading" @click="handleNext"
                     data-guide="generate-btn">
-                    <span v-if="loading">Processing...</span>
-                    <span v-else>{{ currentStep === 2 ? 'Generate Video' : 'Next' }}</span>
+                    <span v-if="loading">{{ t('common.processing') }}</span>
+                    <span v-else>{{ currentStep === 2 ? t('projects.new.create') : t('projects.new.next') }}</span>
                 </button>
             </div>
         </div>
@@ -219,24 +219,23 @@
             <div v-if="showCloneModal" class="modal-overlay" @click.self="showCloneModal = false">
                 <div class="modal-content animate-up">
                     <div class="modal-header">
-                        <h3>Train Personal Voice</h3>
+                        <h3>{{ t('projects.new.setup.avatar.modal.title') }}</h3>
                         <button class="btn-close-modal" @click="showCloneModal = false">
                             <Close />
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p class="modal-desc">Upload a few audio samples (30-60s each) of your voice to create a
-                            high-quality AI clone.</p>
+                        <p class="modal-desc">{{ t('projects.new.setup.avatar.modal.desc') }}</p>
 
                         <div class="form-group">
-                            <label>Voice Name</label>
-                            <input v-model="cloneName" type="text" placeholder="My Awesome Voice" class="modal-input" />
+                            <label>{{ t('projects.new.setup.avatar.modal.voiceName') }}</label>
+                            <input v-model="cloneName" type="text" :placeholder="t('projects.new.setup.avatar.modal.voiceNamePlaceholder')" class="modal-input" />
                         </div>
 
                         <div class="upload-zone" :class="{ dragover: isDragging }" @dragover.prevent="isDragging = true"
                             @dragleave.prevent="isDragging = false" @drop.prevent="onCloneDrop">
                             <UploadTwo />
-                            <p>Drag & drop audio files or <span>click to browse</span></p>
+                            <p v-html="t('projects.new.setup.avatar.modal.uploadZone')"></p>
                             <input type="file" multiple accept="audio/*" class="hidden-input"
                                 @change="onCloneFilesSelected" />
                         </div>
@@ -250,11 +249,11 @@
                     </div>
                     <div class="modal-footer">
                         <button class="btn-cancel-modal" @click="showCloneModal = false"
-                            :disabled="cloning">Cancel</button>
+                            :disabled="cloning">{{ t('common.cancel') }}</button>
                         <button class="btn-start-clone" @click="handleCloneVoice"
                             :disabled="cloning || !cloneName || cloneFiles.length === 0">
-                            <span v-if="cloning">Processing...</span>
-                            <span v-else>Start Training</span>
+                            <span v-if="cloning">{{ t('common.processing') }}</span>
+                            <span v-else>{{ t('projects.new.setup.avatar.modal.startTraining') }}</span>
                         </button>
                     </div>
                 </div>
@@ -275,6 +274,7 @@ import { getFileUrl } from '@/utils/api'
 import { useMediaStore } from '@/stores/media'
 import { useVoiceStore } from '@/stores/voice'
 import { useAIStore } from '@/stores/ai'
+import { useI18n } from 'vue-i18n';
 import {
     Plus, PlayOne, Check, Up, Down,
     Microphone as Mic, Close, UploadTwo, CloseOne
@@ -287,8 +287,9 @@ const projectStore = useProjectStore()
 const mediaStore = useMediaStore()
 const voiceStore = useVoiceStore()
 const aiStore = useAIStore()
+const { t } = useI18n()
 
-const steps = ['Avatar', 'Script', 'Preview']
+const steps = computed(() => t('projects.new.setup.avatar.steps', { returnObjects: true } as any) as unknown as string[])
 const currentStep = ref(1)
 const loading = ref(false)
 const selectedAvatar = ref(1)
@@ -296,7 +297,7 @@ const selectedVoice = ref('v1')
 const script = ref('')
 
 const generatedVideoUrl = ref('')
-const generationStatus = ref('Starting generation...')
+const generationStatus = ref(t('projects.new.setup.avatar.initializingEngine'))
 const jobId = ref('')
 
 const avatars = [
@@ -369,7 +370,7 @@ const onFileSelected = async (e: Event) => {
 
         const data = await mediaStore.uploadMedia(formData);
 
-        toast.success('Avatar uploaded successfully')
+        toast.success(t('projects.avatarCreator.toasts.avatarUploaded'))
         await fetchCustomAvatars()
         selectedAvatar.value = data?.media?._id
     } catch (error: any) {
@@ -485,7 +486,7 @@ const handleCloneVoice = async () => {
 
         await voiceStore.cloneVoice(formData)
 
-        toast.success('Voice training started successfully!')
+        toast.success(t('projects.avatarCreator.toasts.voiceTrainingStarted'))
         showCloneModal.value = false
         cloneName.value = ''
         cloneFiles.value = []
@@ -498,12 +499,12 @@ const handleCloneVoice = async () => {
 }
 
 const generateAvatarVideo = async () => {
-    if (!script.value.trim()) return toast.error('Please enter a script')
+    if (!script.value.trim()) return toast.error(t('projects.avatarCreator.toasts.enterScript'))
 
     loading.value = true
     currentStep.value = 3
     generatedVideoUrl.value = ''
-    generationStatus.value = 'Initializing AI engine...'
+    generationStatus.value = t('projects.new.setup.avatar.initializingEngine')
 
     try {
         const avatar = allAvatars.value.find(a => a.id === selectedAvatar.value)
@@ -544,11 +545,11 @@ const pollStatus = async () => {
 
         if (status.status === 'completed' && status.videoUrl) {
             generatedVideoUrl.value = status.videoUrl
-            toast.success('Video generated successfully!')
+            toast.success(t('projects.avatarCreator.toasts.videoGenerated'))
         }
     } catch (error: any) {
         console.error('Polling error:', error)
-        toast.error('Generation failed: ' + error.message)
+        toast.error(t('projects.avatarCreator.toasts.generationFailed', { error: error.message }))
         currentStep.value = 2
     }
 }
@@ -567,7 +568,7 @@ const handleUpload = async () => {
     if (!generatedVideoUrl.value) return;
     
     try {
-        toast.info('Saving to library...');
+        toast.info(t('projects.publish.toasts.vodSaving'));
         
         // 1. Fetch blob
         const response = await fetch(getFileUrl(generatedVideoUrl.value));
@@ -580,10 +581,10 @@ const handleUpload = async () => {
         formData.append('purpose', 'render');
         
         await mediaStore.uploadMedia(formData);
-        toast.success('Saved to Media Library');
+        toast.success(t('projects.avatarCreator.toasts.videoSaved'));
     } catch (error) {
         console.error('Failed to save video:', error);
-        toast.error('Failed to save to library');
+        toast.error(t('projects.avatarCreator.toasts.saveFailed'));
     }
 }
 

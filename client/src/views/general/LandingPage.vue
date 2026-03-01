@@ -12,12 +12,18 @@
         </div>
 
         <div class="hidden lg:flex items-center gap-10">
-          <a v-for="link in ['Features', 'Enterprise', 'Partners', 'Pricing']" :key="link" href="#" class="text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">{{ link }}</a>
+          <a v-for="link in ['features', 'enterprise', 'partners', 'pricing']" :key="link" href="#" class="text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">
+            {{ t('marketing.landing.nav.' + link) }}
+          </a>
         </div>
 
         <div class="flex items-center gap-4">
-          <button class="text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-xl hover:bg-white/5" @click="$router.push('/login')">Log In</button>
-          <button class="primary-btn px-6 py-3 text-[10px] font-black rounded-xl shadow-xl shadow-blue-600/20" @click="$router.push('/signup')">GET STARTED</button>
+          <button class="text-[10px] font-black uppercase tracking-widest px-6 py-2 rounded-xl hover:bg-white/5" @click="$router.push('/login')">
+            {{ t('marketing.landing.nav.login') }}
+          </button>
+          <button class="primary-btn px-6 py-3 text-[10px] font-black rounded-xl shadow-xl shadow-blue-600/20" @click="$router.push('/signup')">
+            {{ t('marketing.landing.nav.getStarted') }}
+          </button>
         </div>
       </div>
     </nav>
@@ -27,30 +33,30 @@
     
     <div class="divider h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
-    <!-- Feature Parallax (Internal or Inline for simplicity) -->
+    <!-- Feature Parallax -->
     <section class="features-parallax py-32">
        <div class="container mx-auto px-6">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center mb-40">
              <div class="content space-y-6">
-                <h3 class="text-3xl font-black italic text-blue-400 uppercase tracking-widest">01. AI Production</h3>
-                <h4 class="text-5xl font-black leading-tight">Cinematic Visuals <br/> from simple text.</h4>
-                <p class="text-gray-400 leading-relaxed text-lg">Harness the power of Veo 3 and Imagen 3 to generate high-fidelity cinematic video and product photography instantly. No camera required.</p>
+                <h3 class="text-3xl font-black italic text-blue-400 uppercase tracking-widest">{{ t('marketing.landing.features.production.title') }}</h3>
+                <h4 class="text-5xl font-black leading-tight" v-html="t('marketing.landing.features.production.subtitle')"></h4>
+                <p class="text-gray-400 leading-relaxed text-lg">{{ t('marketing.landing.features.production.desc') }}</p>
              </div>
              <div class="visual p-1 rounded-3xl bg-white/5 border border-white/10 overflow-hidden relative group">
-                <img src="/bg/photo-1620641788421-7a1c342ea42e.jpg" alt="AI Production" class="w-full h-auto opacity-80 group-hover:scale-105 transition-transform duration-1000" />
+                <img src="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="AI Production" class="w-full h-auto opacity-80 group-hover:scale-105 transition-transform duration-1000" />
                 <div class="absolute inset-0 bg-blue-500/10 mix-blend-overlay"></div>
              </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center flex-row-reverse">
              <div class="visual order-2 lg:order-1 p-1 rounded-3xl bg-white/5 border border-white/10 overflow-hidden relative group">
-                <img src="/bg/photo-1590602847861-f357a9332bbc.jpg" alt="Global Streaming" class="w-full h-auto opacity-80 group-hover:scale-105 transition-transform duration-1000" />
+                <img src="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1200&q=80" alt="Global Streaming" class="w-full h-auto opacity-80 group-hover:scale-105 transition-transform duration-1000" />
                 <div class="absolute inset-0 bg-purple-500/10 mix-blend-overlay"></div>
              </div>
              <div class="content space-y-6 order-1 lg:order-2">
-                <h3 class="text-3xl font-black italic text-purple-400 uppercase tracking-widest">02. Global Reach</h3>
-                <h4 class="text-5xl font-black leading-tight">Stream to everywhere. <br/> in every language.</h4>
-                <p class="text-gray-400 leading-relaxed text-lg">Broadcast to 40+ platforms simultaneously. Use real-time AI translation to reach global audiences in their native tongue.</p>
+                <h3 class="text-3xl font-black italic text-purple-400 uppercase tracking-widest">{{ t('marketing.landing.features.reach.title') }}</h3>
+                <h4 class="text-5xl font-black leading-tight" v-html="t('marketing.landing.features.reach.subtitle')"></h4>
+                <p class="text-gray-400 leading-relaxed text-lg">{{ t('marketing.landing.features.reach.desc') }}</p>
              </div>
           </div>
        </div>
@@ -69,7 +75,7 @@
             </div>
             <span class="text-xl font-black tracking-tighter uppercase">{{ uiStore.appName }}</span>
           </div>
-          <p class="text-[10px] text-gray-500 leading-relaxed">The global infrastructure for next-gen broadcast and AI-driven content monetization.</p>
+          <p class="text-[10px] text-gray-500 leading-relaxed">{{ t('marketing.landing.footer.brandDesc') }}</p>
         </div>
         
         <div v-for="group in footerLinks" :key="group.title">
@@ -80,10 +86,10 @@
         </div>
       </div>
       <div class="container mx-auto px-6 pt-20 flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-gray-700">
-        <p>© 2026 {{ uiStore.appName }} Systems. All rights reserved.</p>
+        <p>{{ t('marketing.landing.footer.rights', { appName: uiStore.appName }) }}</p>
         <div class="flex gap-6">
-          <span>Privacy Policy</span>
-          <span>Terms of Service</span>
+          <span>{{ t('marketing.home.footer.privacy') }}</span>
+          <span>{{ t('marketing.home.footer.terms') }}</span>
         </div>
       </div>
     </footer>
@@ -97,7 +103,9 @@ import LandingHero from '@/components/marketing/LandingHero.vue';
 import B2BShowcase from '@/components/marketing/B2BShowcase.vue';
 import { useUIStore } from '@/stores/ui';
 import { getFileUrl } from '@/utils/api';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const uiStore = useUIStore();
 
 const scrolled = ref(false);

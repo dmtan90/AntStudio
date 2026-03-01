@@ -2,30 +2,30 @@
   <div class="hook-performance glass-panel p-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">A/B Hook Insights</h3>
-        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Psychological Angle Performance</p>
+        <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">{{ $t('studio.analytics.hookPerformance') }}</h3>
+        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ $t('studio.analytics.hookInsightsDesc') }}</p>
       </div>
       
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
           <magic theme="outline" size="12" class="text-blue-400" />
-          <span class="text-[10px] font-black uppercase text-blue-400">AI Optimized</span>
+          <span class="text-[10px] font-black uppercase text-blue-400">{{ $t('studio.common.aiOptimized') }}</span>
         </div>
       </div>
     </div>
 
     <div v-if="loading" class="flex flex-col items-center justify-center py-12 gap-4">
       <refresh theme="outline" size="24" class="text-blue-500 animate-spin" />
-      <span class="text-[10px] font-black uppercase tracking-widest text-gray-600">Analyzing Viral Patterns...</span>
+      <span class="text-[10px] font-black uppercase tracking-widest text-gray-600">{{ $t('studio.analytics.analyzing') }}</span>
     </div>
 
     <div v-else-if="stats.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
       <div class="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mb-4">
         <trending-up theme="outline" size="32" class="text-gray-700" />
       </div>
-      <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">No A/B Data Yet</h4>
+      <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{{ $t('studio.analytics.noAbData') }}</h4>
       <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider max-w-[200px]">
-        Use the "AI Hook Lab" when publishing to start tracking performance.
+        {{ $t('studio.analytics.hookLabHint') }}
       </p>
     </div>
 
@@ -38,7 +38,7 @@
       >
         <div v-if="index === 0" class="absolute -top-3 left-6 px-3 py-1 bg-blue-600 text-white text-[8px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg border border-blue-400/50 flex items-center gap-1.5">
           <check-correct theme="outline" size="10" />
-          Winning Concept
+          {{ $t('studio.analytics.winningConcept') }}
         </div>
 
         <div class="flex items-center justify-between mb-5">
@@ -47,14 +47,14 @@
                 <component :is="getHookIcon(stat.type)" theme="filled" size="18" class="text-white" />
             </div>
             <div>
-              <div class="text-[11px] font-black uppercase tracking-widest text-white">{{ stat.type }}</div>
-              <div class="text-[9px] text-gray-500 font-bold uppercase tracking-wider">{{ stat.count }} Experimental Runs</div>
+              <div class="text-[11px] font-black uppercase tracking-widest text-white">{{ $t(`studio.analytics.hooks.${stat.type}`) }}</div>
+              <div class="text-[9px] text-gray-500 font-bold uppercase tracking-wider">{{ stat.count }} {{ $t('studio.analytics.experimentalRuns') }}</div>
             </div>
           </div>
           
           <div class="flex flex-col items-end">
             <div class="text-lg font-black text-blue-400 group-hover:text-blue-300 transition-colors">{{ formatNumber(stat.avgViews) }}</div>
-            <div class="text-[8px] text-gray-600 font-black uppercase tracking-widest">Avg Pulse</div>
+            <div class="text-[8px] text-gray-600 font-black uppercase tracking-widest">{{ $t('studio.analytics.avgPulse') }}</div>
           </div>
         </div>
 
@@ -69,7 +69,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div class="flex items-center gap-2">
             <like theme="outline" size="12" class="text-gray-500" />
-            <span class="text-[10px] font-bold text-gray-400">{{ formatNumber(stat.avgLikes) }} Avg Likes</span>
+            <span class="text-[10px] font-bold text-gray-400">{{ formatNumber(stat.avgLikes) }} {{ $t('studio.analytics.avgLikes') }}</span>
           </div>
           <div class="flex items-center justify-end gap-2">
              <button 
@@ -77,7 +77,7 @@
                @click="$emit('promote', stat.type)"
              >
                <external-transmission theme="outline" size="10" />
-               Promote
+               {{ $t('studio.common.promote') }}
              </button>
              <div class="flex items-center gap-1">
               <trending-up theme="outline" size="12" class="text-green-500" />

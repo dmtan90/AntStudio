@@ -1,5 +1,6 @@
 import { geminiPool } from '../../utils/gemini.js';
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
+
 
 export interface AgentDecision {
     agentId: string;
@@ -23,7 +24,7 @@ export class ConsensusService {
      * Reaches a consensus on a proposed orchestration change.
      */
     public async reachConsensus(projectId: string, proposal: string): Promise<{ result: 'approved' | 'rejected', debrief: string, votes: AgentDecision[] }> {
-        systemLogger.info(`⚖️ [Consensus] Evaluating proposal for ${projectId}: ${proposal}`, 'ConsensusService');
+        Logger.info(`⚖️ [Consensus] Evaluating proposal for ${projectId}: ${proposal}`, 'ConsensusService');
 
         const modelName = 'gemini-2.5-flash';
         const { client: ai } = await geminiPool.getOptimalClient(modelName);
@@ -50,7 +51,7 @@ export class ConsensusService {
                 const data = JSON.parse(result.response.text());
                 return { agentId: agent.id, persona: agent.name, ...data, weight: agent.weight };
             } catch (error: any) {
-                console.error(`[Consensus] Agent ${agent.name} failed:`, error.message);
+                Logger.error(`[Consensus] Agent ${agent.name} failed:`, error.message);
                 return { agentId: agent.id, persona: agent.name, vote: 'abstain' as const, reason: 'Error in reasoning', weight: agent.weight };
             }
         }));
@@ -65,7 +66,7 @@ export class ConsensusService {
         const result = score > 0 ? 'approved' : 'rejected';
         const debrief = votes.map(v => `[${v.persona}] ${v.vote.toUpperCase()}: ${v.reason}`).join('\n');
 
-        systemLogger.info(`✅ [Consensus] Final Decision: ${result.toUpperCase()} (Score: ${score})`, 'ConsensusService');
+        Logger.info(`✅ [Consensus] Final Decision: ${result.toUpperCase()} (Score: ${score})`, 'ConsensusService');
 
         return { result, debrief, votes };
     }

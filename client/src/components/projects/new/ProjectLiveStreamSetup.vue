@@ -5,8 +5,8 @@
             <div class="icon-glow mb-4">
                <broadcast theme="filled" size="48" />
             </div>
-            <h1 class="text-4xl font-black tracking-tighter">Live Stream Setup</h1>
-            <p class="opacity-50 mt-2">Broadcast your creativity to multiple platforms simultaneously.</p>
+            <h1 class="text-4xl font-black tracking-tighter">{{ t('projects.new.setup.liveStream.title') }}</h1>
+            <p class="opacity-50 mt-2">{{ t('projects.new.setup.liveStream.desc') }}</p>
          </header>
 
          <div class="setup-grid grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -14,8 +14,8 @@
             <div class="mode-card glass-selectable" :class="{ active: mode === 'studio' }" @click="mode = 'studio'">
                <div class="mode-icon"><camera-five theme="outline" size="32" /></div>
                <div class="mode-info">
-                  <h3>Interactive Studio</h3>
-                  <p>Live camera with AI effects, filters, and real-time interactions.</p>
+                  <h3>{{ t('projects.new.setup.liveStream.studioMode') }}</h3>
+                  <p>{{ t('projects.new.setup.liveStream.studioDesc') }}</p>
                </div>
             </div>
 
@@ -23,34 +23,33 @@
             <div class="mode-card glass-selectable" :class="{ active: mode === 'restream' }" @click="mode = 'restream'">
                <div class="mode-icon"><video-file theme="outline" size="32" /></div>
                <div class="mode-info">
-                  <h3>Video Restream</h3>
-                  <p>Restream an existing video or loop a video playlist.</p>
+                  <h3>{{ t('projects.new.setup.liveStream.restreamMode') }}</h3>
+                  <p>{{ t('projects.new.setup.liveStream.restreamDesc') }}</p>
                </div>
             </div>
          </div>
 
          <!-- Video Selection for Restream Mode -->
          <div v-if="mode === 'restream'" class="video-selection mt-8 animate-slide-up">
-            <h4 class="section-title">Select Content</h4>
+            <h4 class="section-title">{{ t('projects.new.setup.liveStream.selectContent') }}</h4>
             <div class="grid grid-cols-1 gap-4 mt-4">
-               <el-select v-model="selectedProjectId" placeholder="Select a finished project..."
+               <el-select v-model="selectedProjectId" :placeholder="t('projects.new.setup.liveStream.selectProject')"
                   class="w-full glass-input">
                   <el-option v-for="proj in finishedProjects" :key="proj._id" :label="proj.title" :value="proj._id" />
                </el-select>
                <div class="flex items-center gap-4 mt-2">
-                  <el-checkbox v-model="loopEnabled" label="Continuous Loop (24/7 Mode)" />
+                  <el-checkbox v-model="loopEnabled" :label="t('projects.new.setup.liveStream.loopMode')" />
                </div>
             </div>
          </div>
 
          <div class="platform-selection mt-10">
-            <h4 class="section-title">Select Destinations</h4>
-            <div v-if="loading" class="p-4 opacity-50">Loading platforms...</div>
+            <h4 class="section-title">{{ t('projects.new.setup.liveStream.selectDestinations') }}</h4>
+            <div v-if="loading" class="p-4 opacity-50">{{ t('projects.new.setup.liveStream.loading') }}</div>
             <div v-else-if="!platforms.length"
                class="empty-notif p-6 text-center border-2 border-dashed border-white/10 rounded-2xl">
-               <p class="opacity-50 mb-4">No platforms connected yet.</p>
-               <router-link to="/platforms" class="primary-btn secondary inline-block">Connect Platforms
-                  First</router-link>
+               <p class="opacity-50 mb-4">{{ t('projects.new.setup.liveStream.noPlatforms') }}</p>
+               <router-link to="/platforms" class="primary-btn secondary inline-block">{{ t('projects.new.setup.liveStream.connectFirst') }}</router-link>
             </div>
             <div v-else class="platforms-list grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                <div v-for="p in platforms" :key="p._id" class="p-pill glass-selectable"
@@ -66,7 +65,7 @@
 
          <div class="setup-footer mt-12 flex justify-center">
             <button class="primary-btn px-12 h-14 text-lg font-black" :disabled="!isConfigValid" @click="startStream">
-               {{ mode === 'studio' ? 'ENTER BROADCAST STUDIO' : 'START AUTOMATED RESTREAM' }}
+               {{ mode === 'studio' ? t('projects.new.setup.liveStream.studioBtn') : t('projects.new.setup.liveStream.restreamBtn') }}
             </button>
          </div>
       </div>
@@ -85,11 +84,13 @@ import { usePlatformStore } from '@/stores/platform';
 import { useProjectStore } from '@/stores/project';
 import { useStreamingStore } from '@/stores/streaming';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const platformStore = usePlatformStore();
 const projectStore = useProjectStore();
 const streamingStore = useStreamingStore();
+const { t } = useI18n()
 
 const { accounts: platforms } = storeToRefs(platformStore);
 const { projects: finishedProjects } = storeToRefs(projectStore);
@@ -132,7 +133,7 @@ const startStream = async () => {
          query: { platforms: selectedPlatforms.value.join(',') }
       });
    } else {
-      const toastId = toast.loading("Initializing restream engine...");
+      const toastId = toast.loading(t('projects.new.setup.liveStream.toasts.initializing'));
       try {
          await streamingStore.startStream({
             projectId: selectedProjectId.value,
@@ -140,11 +141,11 @@ const startStream = async () => {
             loop: loopEnabled.value
          });
 
-         toast.success("Automated restream started! Check your platforms.", { id: toastId });
+         toast.success(t('projects.new.setup.liveStream.toasts.success'), { id: toastId });
          router.push('/dashboard');
       } catch (e: any) {
          // Error toast might be handled in store, but we update the loading toast here
-         toast.error(e.response?.data?.error || "Failed to start restream", { id: toastId });
+         toast.error(e.response?.data?.error || t('projects.new.setup.liveStream.toasts.failed'), { id: toastId });
       }
    }
 };

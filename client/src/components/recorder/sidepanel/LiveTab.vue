@@ -4,7 +4,7 @@
         <div class="panel-section space-y-4">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-blue-400 uppercase">Destinations</span>
-                <button @click="showPlatforms = true" class="text-[9px] font-black text-white/40 hover:text-blue-400 uppercase tracking-widest transition-colors">
+                <button @click="$emit('update:show-platform-selector', true)" class="text-[9px] font-black text-white/40 hover:text-blue-400 uppercase tracking-widest transition-all">
                     Manage
                 </button>
             </div>
@@ -65,12 +65,11 @@
             </div>
         </div>
 
-        <PlatformSelector v-model="showPlatforms" :available-accounts="availableAccounts" :selected-platforms="selectedPlatforms" @toggle-platform="$emit('toggle-platform', $event)" />
+        <PlatformSelector :model-value="showPlatformSelector" @update:model-value="$emit('update:show-platform-selector', $event)" :available-accounts="availableAccounts" :selected-platforms="selectedPlatforms" @toggle-platform="$emit('toggle-platform', $event)" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { ElSwitch } from 'element-plus'
 import { Youtube, Facebook, Tiktok, Broadcast } from '@icon-park/vue-next'
 import PlatformSelector from '@/components/studio/modals/PlatformSelector.vue'
@@ -80,11 +79,10 @@ defineProps<{
     streamStats?: any
     selectedPlatforms: string[]
     availableAccounts: any[]
+    showPlatformSelector?: boolean
 }>()
 
-defineEmits(['toggle-platform'])
-
-const showPlatforms = ref(false)
+defineEmits(['toggle-platform', 'update:show-platform-selector'])
 </script>
 
 <style scoped lang="postcss">

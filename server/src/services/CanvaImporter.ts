@@ -1,5 +1,7 @@
 import { chromium } from 'playwright';
 
+import { Logger } from '../utils/Logger.js';
+
 // Simple Canva design importer
 // Note: Requires Canva API access token
 // This is a simplified version for MVP
@@ -18,7 +20,7 @@ export class CanvaImporter {
             throw new Error('Invalid Canva URL');
         }
 
-        console.log(`[CanvaImporter] 🕵️ Scoping Canva metadata for ${designId}...`);
+        Logger.info(`[CanvaImporter] 🕵️ Scoping Canva metadata for ${designId}...`);
 
         // Basic scraping via Playwright to get metadata
         let metadata = {
@@ -55,7 +57,7 @@ export class CanvaImporter {
 
             await browser.close();
         } catch (e: any) {
-            console.warn(`[CanvaImporter] Metadata scrape failed: ${e.message}`);
+            Logger.warn(`[CanvaImporter] Metadata scrape failed: ${e.message}`);
         }
 
         const templateData = {

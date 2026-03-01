@@ -3,9 +3,9 @@
         <div class="notes-header">
             <div class="flex items-center gap-2">
                 <div class="indicator pulse"></div>
-                <span class="title">Director Notes</span>
+                <span class="title">{{ $t('studio.directorNotes.title') }}</span>
             </div>
-            <button @click="clearAll" class="clear-btn">Clear</button>
+            <button @click="clearAll" class="clear-btn">{{ $t('studio.common.clear') }}</button>
         </div>
         
         <div class="notes-list scrollbar-hide">
@@ -17,13 +17,13 @@
                     :class="[note.priority, { read: note.read }]"
                     @click="markRead(note)"
                 >
-                    <div class="note-priority-tag">{{ note.priority }}</div>
+                    <div class="note-priority-tag">{{ $t(`studio.directorNotes.priorities.${note.priority}`) }}</div>
                     <h4 class="note-title">{{ note.title }}</h4>
                     <p class="note-desc">{{ note.description }}</p>
                     
                     <!-- AI Board Consensus Feedback -->
                     <div v-if="note.boardFeedback" class="board-feedback mt-3 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                        <div class="text-[8px] font-black text-red-400 uppercase tracking-widest mb-1">Board Consensus: REJECTED</div>
+                        <div class="text-[8px] font-black text-red-400 uppercase tracking-widest mb-1">{{ $t('studio.directorNotes.rejected') }}</div>
                         <p class="text-[9px] text-white/60 leading-tight italic">"{{ note.boardFeedback }}"</p>
                     </div>
 

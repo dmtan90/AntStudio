@@ -8,6 +8,8 @@ import { getAdminSettings } from '../../models/AdminSettings.js';
 import { config } from '../../utils/config.js';
 import { fileURLToPath } from 'url';
 
+import { Logger } from '../../utils/Logger.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -56,7 +58,7 @@ export class AudioExtractionService {
             for (const pkgPath of pkgCandidates) {
                 try {
                     if (fs.existsSync(pkgPath)) {
-                        console.log(`[AudioExtractionService] Extracting ${binaryName} from pkg snapshot ${pkgPath} to ${tmpPath}...`);
+                        Logger.info(`[AudioExtractionService] Extracting ${binaryName} from pkg snapshot ${pkgPath} to ${tmpPath}...`);
                         const binaryBuffer = fs.readFileSync(pkgPath);
                         fs.writeFileSync(tmpPath, binaryBuffer);
                         fs.chmodSync(tmpPath, '755');
@@ -65,7 +67,7 @@ export class AudioExtractionService {
                     }
                 } catch {}
             }
-            console.warn(`[AudioExtractionService] Failed to find ${binaryName} in pkg snapshot. Falling back to system PATH.`);
+            Logger.warn(`[AudioExtractionService] Failed to find ${binaryName} in pkg snapshot. Falling back to system PATH.`);
         }
 
         const candidates = [
@@ -77,7 +79,7 @@ export class AudioExtractionService {
         for (const p of candidates) {
             try {
                 if (fs.existsSync(p)) {
-                    console.log(`[AudioExtractionService] Using yt-dlp at ${p}`);
+                    Logger.info(`[AudioExtractionService] Using yt-dlp at ${p}`);
                     this.ytDlpPathCache = p;
                     return p;
                 }
@@ -85,7 +87,7 @@ export class AudioExtractionService {
             }
         }
 
-        console.warn(`[AudioExtractionService] yt-dlp binary not found in local bin paths, falling back to ${binaryName} on PATH`);
+        Logger.warn(`[AudioExtractionService] yt-dlp binary not found in local bin paths, falling back to ${binaryName} on PATH`);
         this.ytDlpPathCache = binaryName;
         return binaryName;
     }
@@ -99,7 +101,7 @@ export class AudioExtractionService {
         const outputPath = path.join(this.tempDir, outputFilename);
         const ytDlpPath = this.getYtDlpPath();
 
-        console.log(`[AudioExtractionService] Extracting ${videoId} for user ${userId} using yt-dlp`);
+        Logger.info(`[AudioExtractionService] Extracting ${videoId} for user ${userId} using yt-dlp`);
 
         return new Promise((resolve, reject) => {
             
@@ -115,31 +117,31 @@ export class AudioExtractionService {
                 `https://www.youtube.com/watch?v=${videoId}`
             ];
 
-            console.log(`[AudioExtractionService] Spawning: ${ytDlpPath} ${args.join(' ')}`);
+            Logger.info(`[AudioExtractionService] Spawning: ${ytDlpPath} ${args.join(' ')}`);
 
             const child = spawn(ytDlpPath, args);
 
             child.on('error', (err: any) => {
-                console.error('[AudioExtractionService] Failed to start yt-dlp process', err);
+                Logger.error('[AudioExtractionService] Failed to start yt-dlp process', err);
                 reject(err);
             });
 
             child.stdout.on('data', (data: any) => {
-                console.log(`[yt-dlp] ${data.toString().trim()}`);
+                Logger.info(`[yt-dlp] ${data.toString().trim()}`);
             });
 
             child.stderr.on('data', (data: any) => {
-                console.error(`[yt-dlp error] ${data.toString().trim()}`);
+                Logger.error(`[yt-dlp error] ${data.toString().trim()}`);
             });
 
             child.on('close', async (code: number) => {
                 if (code !== 0) {
-                    console.error(`[AudioExtractionService] yt-dlp process exited with code ${code}`);
+                    Logger.error(`[AudioExtractionService] yt-dlp process exited with code ${code}`);
                     reject(new Error(`yt-dlp failed with exit code ${code}`));
                     return;
                 }
 
-                console.log(`[AudioExtractionService] yt-dlp success: ${outputPath}`);
+                Logger.info(`[AudioExtractionService] yt-dlp success: ${outputPath}`);
                 
                 try {
                     // Upload to S3
@@ -195,7 +197,7 @@ export class AudioExtractionService {
      * Stream audio directly from YouTube to response (for preview) using yt-dlp piping
      */
     static async streamAudio(videoId: string, res: any) {
-        console.log(`[AudioExtractionService] Streaming ${videoId} using yt-dlp`);
+        Logger.info(`[AudioExtractionService] Streaming ${videoId} using yt-dlp`);
         
         const ytDlpPath = this.getYtDlpPath();
         
@@ -216,12 +218,12 @@ export class AudioExtractionService {
             res.setHeader('Access-Control-Allow-Origin', '*');
         }
 
-        console.log(`[AudioExtractionService] Spawning: ${ytDlpPath} ${args.join(' ')}`);
+        Logger.info(`[AudioExtractionService] Spawning: ${ytDlpPath} ${args.join(' ')}`);
         
         const child = spawn(ytDlpPath, args);
 
         child.on('error', (err: any) => {
-            console.error('[AudioExtractionService] Failed to start yt-dlp stream process', err);
+            Logger.error('[AudioExtractionService] Failed to start yt-dlp stream process', err);
             if (!res.headersSent) {
                 res.statusCode = 500;
             }
@@ -231,15 +233,15 @@ export class AudioExtractionService {
         child.stdout.pipe(res);
 
         child.stderr.on('data', (data: any) => {
-            console.log(`[yt-dlp stream] ${data.toString().trim()}`);
+            Logger.info(`[yt-dlp stream] ${data.toString().trim()}`);
         });
 
         child.on('close', (code: number) => {
             if (code !== 0) {
-                console.error(`[AudioExtractionService] Stream yt-dlp process exited with code ${code}`);
+                Logger.error(`[AudioExtractionService] Stream yt-dlp process exited with code ${code}`);
                 res.end(); 
             } else {
-                console.log(`[AudioExtractionService] Stream finished successfully`);
+                Logger.info(`[AudioExtractionService] Stream finished successfully`);
                 res.end();
             }
         });
@@ -260,7 +262,7 @@ export class AudioExtractionService {
         const baseFilename = `lyrics_${videoId}`;
         const ytDlpPath = this.getYtDlpPath();
         
-        console.log(`[AudioExtractionService] Fetching lyrics for ${videoId} (lang: ${preferredLanguage})...`);
+        Logger.info(`[AudioExtractionService] Fetching lyrics for ${videoId} (lang: ${preferredLanguage})...`);
 
         // Load proxy config from AdminSettings
         let proxyArgs: string[] = [];
@@ -271,10 +273,10 @@ export class AudioExtractionService {
                 const { proxyUsername, proxyPassword, domainName = 'p.webshare.io', proxyPort = 80 } = proxyConfig.webshare;
                 const proxyUrl = `http://${proxyUsername}:${proxyPassword}@${domainName}:${proxyPort}`;
                 proxyArgs = ['--proxy', proxyUrl];
-                console.log(`[AudioExtractionService] getLyrics: Using Webshare proxy via ${domainName}:${proxyPort}`);
+                Logger.info(`[AudioExtractionService] getLyrics: Using Webshare proxy via ${domainName}:${proxyPort}`);
             }
         } catch (e) {
-            console.warn('[AudioExtractionService] getLyrics: Failed to load proxy config, skipping proxy.');
+            Logger.warn('[AudioExtractionService] getLyrics: Failed to load proxy config, skipping proxy.');
         }
 
         return new Promise((resolve) => {
@@ -295,7 +297,7 @@ export class AudioExtractionService {
                 `https://www.youtube.com/watch?v=${videoId}`
             ];
 
-            console.log('[AudioExtractionService] Running yt-dlp with args:', args.join(' '));
+            Logger.info('[AudioExtractionService] Running yt-dlp with args:', args.join(' '));
             const child = spawn(ytDlpPath, args);
             
             // Capture stderr for debugging
@@ -306,8 +308,8 @@ export class AudioExtractionService {
 
             child.on('close', async (code: number) => {
                 if (code !== 0) {
-                    console.warn(`[AudioExtractionService] yt-dlp lyrics fetch failed with code ${code}`);
-                    console.warn(`[AudioExtractionService] stderr:`, stderrOutput);
+                    Logger.warn(`[AudioExtractionService] yt-dlp lyrics fetch failed with code ${code}`);
+                    Logger.warn(`[AudioExtractionService] stderr:`, stderrOutput);
                     resolve(null);
                     return;
                 }
@@ -318,10 +320,10 @@ export class AudioExtractionService {
                         f.startsWith(baseFilename) && f.endsWith('.vtt')
                     );
 
-                    console.log(`[AudioExtractionService] Files found in ${this.tempDir} starting with ${baseFilename}:`, files);
+                    Logger.info(`[AudioExtractionService] Files found in ${this.tempDir} starting with ${baseFilename}:`, files);
                     
                     if (files.length === 0) {
-                        console.log('[AudioExtractionService] No lyrics files found');
+                        Logger.info('[AudioExtractionService] No lyrics files found');
                         resolve(null);
                         return;
                     }
@@ -336,7 +338,7 @@ export class AudioExtractionService {
                     });
 
                     const bestFile = path.join(this.tempDir, sortedFiles[0]);
-                    console.log(`[AudioExtractionService] Reading lyrics from ${bestFile}`);
+                    Logger.info(`[AudioExtractionService] Reading lyrics from ${bestFile}`);
                     
                     const content = fs.readFileSync(bestFile, 'utf-8');
                     
@@ -346,7 +348,7 @@ export class AudioExtractionService {
                     // If it's a VTT file, return it primarily as-is (except basic normalize)
                     // This allows LyricsService.syncLyrics to use parseVTT
                     if (content.trim().startsWith('WEBVTT')) {
-                        console.log('[AudioExtractionService] Returning raw VTT content for sync');
+                        Logger.info('[AudioExtractionService] Returning raw VTT content for sync');
                         resolve(content.trim());
                         return;
                     }
@@ -365,7 +367,7 @@ export class AudioExtractionService {
 
                     resolve(cleanLyrics.trim());
                 } catch (e) {
-                    console.error('[AudioExtractionService] Error processing lyrics:', e);
+                    Logger.error('[AudioExtractionService] Error processing lyrics:', e);
                     resolve(null);
                 }
             });
@@ -413,38 +415,38 @@ export class AudioExtractionService {
                         domainName || 'p.webshare.io',
                         proxyPort || 80
                     );
-                    console.log(`[AudioExtractionService] getLyricsV2: Using Webshare proxy for ${videoId}`);
+                    Logger.info(`[AudioExtractionService] getLyricsV2: Using Webshare proxy for ${videoId}`);
                 }
             } catch (e) {
-                console.warn('[AudioExtractionService] getLyricsV2: Failed to load proxy config.');
+                Logger.warn('[AudioExtractionService] getLyricsV2: Failed to load proxy config.');
             }
 
             const api = new YouTubeTranscriptApi(proxyConfig);
-            console.log(`[AudioExtractionService] getLyricsV2: Attempting YouTube fetch for ${videoId} (langs: ${preferredLanguages.join(', ')})`);
+            Logger.info(`[AudioExtractionService] getLyricsV2: Attempting YouTube fetch for ${videoId} (langs: ${preferredLanguages.join(', ')})`);
             
             let transcript = null;
             try {
                 transcript = await api.fetch(videoId, preferredLanguages, false);
             } catch (ytError: any) {
-                console.warn(`[AudioExtractionService] getLyricsV2: YouTube fetch failed: ${ytError.message}`);
+                Logger.warn(`[AudioExtractionService] getLyricsV2: YouTube fetch failed: ${ytError.message}`);
             }
 
             if (transcript) {
                 const formatter = new WebVTTFormatter();
                 const vttContent = formatter.formatTranscript(transcript);
                 if (vttContent && vttContent.trim().startsWith('WEBVTT')) {
-                    console.log(`[AudioExtractionService] getLyricsV2: Successfully fetched from YouTube (${vttContent.length} chars)`);
+                    Logger.info(`[AudioExtractionService] getLyricsV2: Successfully fetched from YouTube (${vttContent.length} chars)`);
                     return vttContent.trim();
                 }
             }
 
             // 2. Fallback: Manual Invidious fetch if YouTube fails or is blocked
-            console.log(`[AudioExtractionService] getLyricsV2: YouTube failed, trying Invidious fallback for ${videoId}...`);
+            Logger.info(`[AudioExtractionService] getLyricsV2: YouTube failed, trying Invidious fallback for ${videoId}...`);
             const axios = (await import('axios')).default;
 
             for (const instance of invidiousInstances) {
                 try {
-                    console.log(`[AudioExtractionService] getLyricsV2: Trying Invidious instance: ${instance}`);
+                    Logger.info(`[AudioExtractionService] getLyricsV2: Trying Invidious instance: ${instance}`);
                     // Fetch available captions from Invidious
                     const captionsResp = await axios.get(`${instance}/api/v1/videos/${videoId}`, { timeout: 5000 });
                     const captions = captionsResp.data?.captions;
@@ -467,19 +469,19 @@ export class AudioExtractionService {
                         });
 
                         if (vttResp.data && vttResp.data.trim().startsWith('WEBVTT')) {
-                            console.log(`[AudioExtractionService] getLyricsV2: Successfully fetched from Invidious (${instance})`);
+                            Logger.info(`[AudioExtractionService] getLyricsV2: Successfully fetched from Invidious (${instance})`);
                             return vttResp.data.trim();
                         }
                     }
                 } catch (invError: any) {
-                    console.warn(`[AudioExtractionService] getLyricsV2: Invidious instance ${instance} failed: ${invError.message}`);
+                    Logger.warn(`[AudioExtractionService] getLyricsV2: Invidious instance ${instance} failed: ${invError.message}`);
                     continue; // try next instance
                 }
             }
 
             return null;
         } catch (err: any) {
-            console.error(`[AudioExtractionService] getLyricsV2: Fatal error:`, err.message);
+            Logger.error(`[AudioExtractionService] getLyricsV2: Fatal error:`, err.message);
             return null;
         }
     }

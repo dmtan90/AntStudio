@@ -85,10 +85,10 @@
     </div>
     
     <!-- Loading State -->
-    <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div class="flex flex-col items-center gap-3">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        <span class="text-white/80 text-sm">Loading performance...</span>
+    <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xl z-50">
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+        <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">{{ $t('vtubers.musicPerformance.loading') }}</span>
       </div>
     </div>
   </div>
@@ -96,10 +96,13 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import VTuberViewer from './VTuberViewer.vue';
 import LyricsOverlay from '../studio/overlays/LyricsOverlay.vue';
 import { useAudioVisualizer } from '@/composables/useAudioVisualizer';
 import { Play, PauseOne, VolumeSmall } from '@icon-park/vue-next';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   vtuber: any;

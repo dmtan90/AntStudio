@@ -124,7 +124,7 @@
 
             <div class="history-list">
               <el-empty v-if="loadingHistory" class="history-loading" :v-loading="loadingHistory"
-                description="No transactions found" />
+                :description="t('account.credits.noTransactions')" />
               <template v-else>
                 <div v-for="(log, idx) in filteredLogs" :key="idx" class="history-item">
                   <div class="item-info">
@@ -136,7 +136,7 @@
                   </div>
                 </div>
                 <div v-if="filteredLogs.length === 0" class="empty-state">
-                  No transactions found
+                  {{ t('account.credits.noTransactions') }}
                 </div>
               </template>
             </div>
@@ -146,44 +146,40 @@
         <!-- Price Details Section -->
         <div v-if="currentTab === 'price'" class="content-section">
           <div class="price-header text-center">
-            <h3>Model Pricing Table</h3>
-            <p class="text-muted">Dynamic model costs based on current platform settings.</p>
+            <h3>{{ t('account.pricing.title') }}</h3>
+            <p class="text-muted">{{ t('account.pricing.subtitle') }}</p>
           </div>
 
           <div class="pricing-table-container">
             <div v-if="loadingConfig" class="p-10 text-center">
-              <el-empty :v-loading="true" description="Loading pricing..." />
+              <el-empty :v-loading="true" :description="t('common.loading')" />
             </div>
             <table v-else class="pricing-table">
               <thead>
                 <tr>
-                  <th>Classification</th>
-                  <th>Model</th>
-                  <th>Price</th>
-                  <th>Remarks</th>
+                  <th>{{ t('account.pricing.columns.classification') }}</th>
+                  <th>{{ t('account.pricing.columns.model') }}</th>
+                  <th>{{ t('account.pricing.columns.price') }}</th>
+                  <th>{{ t('account.pricing.columns.remarks') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <template v-for="(typeLabel, typeKey) in taskTypes" :key="typeKey">
-                  <tr v-if="getModelsByType(typeKey)" class="category-row">
-                    <td :rowspan="getModelsByType(typeKey).length">
-                      {{ typeLabel }}
-                      <div v-if="typeKey === 'text'"><small>(Agent Dialogue & Script Creation)</small></div>
+                  <tr v-if="getModelsByType(typeKey as string)" class="category-row">
+                    <td :rowspan="1">
+                      {{ t('account.pricing.types.' + typeKey) }}
+                      <div v-if="typeKey === 'text'"><small>({{ t('account.pricing.remarks.dialogue') }})</small></div>
                     </td>
-                    <td>{{ getModelsByType(typeKey).modelId }}</td>
-                    <td>{{ getModelsByType(typeKey).creditCost }} Credits / {{ getUnit(typeKey) }}</td>
-                    <td :rowspan="getModelsByType(typeKey).length">
+                    <td>{{ getModelsByType(typeKey as string).modelId }}</td>
+                    <td>{{ getModelsByType(typeKey as string).creditCost }} Credits / {{ getUnit(typeKey as string) }}</td>
+                    <td :rowspan="1">
                       <ul>
-                        <li v-if="typeKey === 'image' || typeKey === 'text'">Beta Free (Limited) for subscribers</li>
-                        <li>Free quota varies by subscription plan</li>
-                        <li v-if="typeKey === 'video'">High quality generation</li>
+                        <li v-if="typeKey === 'image' || typeKey === 'text'">{{ t('account.pricing.remarks.beta') }}</li>
+                        <li>{{ t('account.pricing.remarks.quota') }}</li>
+                        <li v-if="typeKey === 'video'">{{ t('account.pricing.remarks.highQuality') }}</li>
                       </ul>
                     </td>
                   </tr>
-                  <!-- <tr v-for="model in getModelsByType(typeKey)" :key="model.id">
-                    <td>{{ model.modelId }}</td>
-                    <td>{{ model.creditCost }} Credits / {{ getUnit(typeKey) }}</td>
-                  </tr> -->
                 </template>
               </tbody>
             </table>
@@ -202,21 +198,21 @@
                   <youtube theme="filled" size="32" />
                 </div>
                 <div class="integration-info">
-                  <h4>YouTube</h4>
+                  <h4>{{ t('account.integrations.youtube') }}</h4>
                   <p v-if="user?.socialAccounts?.youtube?.channelId" class="connected">
                     <check-one theme="filled" size="16" fill="#52c41a" />
-                    Connected
+                    {{ t('account.integrations.connected') }}
                   </p>
-                  <p v-else class="disconnected">Not connected</p>
+                  <p v-else class="disconnected">{{ t('account.integrations.notConnected') }}</p>
                 </div>
               </div>
               <div class="integration-actions">
                 <GButton v-if="!user?.socialAccounts?.youtube?.channelId" type="primary"
                   @click="connectSocial('youtube')" :loading="connectingYoutube">
-                  Connect YouTube
+                  {{ t('account.integrations.connect', { platform: 'YouTube' }) }}
                 </GButton>
                 <GButton v-else @click="disconnectSocial('youtube')" :loading="disconnectingYoutube">
-                  Disconnect
+                  {{ t('account.integrations.disconnect') }}
                 </GButton>
               </div>
             </div>
@@ -228,21 +224,21 @@
                   <facebook theme="filled" size="32" />
                 </div>
                 <div class="integration-info">
-                  <h4>Facebook</h4>
+                  <h4>{{ t('account.integrations.facebook') }}</h4>
                   <p v-if="user?.socialAccounts?.facebook?.pageId" class="connected">
                     <check-one theme="filled" size="16" fill="#52c41a" />
-                    Connected
+                    {{ t('account.integrations.connected') }}
                   </p>
-                  <p v-else class="disconnected">Not connected</p>
+                  <p v-else class="disconnected">{{ t('account.integrations.notConnected') }}</p>
                 </div>
               </div>
               <div class="integration-actions">
                 <GButton v-if="!user?.socialAccounts?.facebook?.pageId" type="primary"
                   @click="connectSocial('facebook')" :loading="connectingFacebook">
-                  Connect Facebook
+                  {{ t('account.integrations.connect', { platform: 'Facebook' }) }}
                 </GButton>
                 <GButton v-else @click="disconnectSocial('facebook')" :loading="disconnectingFacebook">
-                  Disconnect
+                  {{ t('account.integrations.disconnect') }}
                 </GButton>
               </div>
             </div>
@@ -255,32 +251,32 @@
           <div class="notification-settings">
             <div class="setting-item glass-dark">
               <div class="setting-info">
-                <h4>Email Notifications</h4>
-                <p>Receive emails about your account activity and updates.</p>
+                <h4>{{ t('account.notifications.email.title') }}</h4>
+                <p>{{ t('account.notifications.email.desc') }}</p>
               </div>
               <GSwitch v-model="notifications.email" />
             </div>
 
             <div class="setting-item glass-dark">
               <div class="setting-info">
-                <h4>Project Updates</h4>
-                <p>Get notified when your video generation is complete.</p>
+                <h4>{{ t('account.notifications.project.title') }}</h4>
+                <p>{{ t('account.notifications.project.desc') }}</p>
               </div>
               <GSwitch v-model="notifications.projectUpdates" />
             </div>
 
             <div class="setting-item glass-dark">
               <div class="setting-info">
-                <h4>Marketing Emails</h4>
-                <p>Receive updates about new features and promotions.</p>
+                <h4>{{ t('account.notifications.marketing.title') }}</h4>
+                <p>{{ t('account.notifications.marketing.desc') }}</p>
               </div>
               <GSwitch v-model="notifications.marketing" />
             </div>
 
             <div class="setting-item glass-dark">
               <div class="setting-info">
-                <h4>Security Alerts</h4>
-                <p>Get notified about suspicious login attempts.</p>
+                <h4>{{ t('account.notifications.security.title') }}</h4>
+                <p>{{ t('account.notifications.security.desc') }}</p>
               </div>
               <GSwitch v-model="notifications.security" />
             </div>
@@ -348,7 +344,7 @@ import {
   Youtube,
   Facebook
 } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 import { getFileUrl } from '@/utils/api.js'
 import GDialog from '@/components/ui/GDialog.vue'
@@ -374,7 +370,7 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const { t, setLocale } = useTranslations()
+const { t, locale } = useI18n()
 const userStore = useUserStore()
 const { user, creditLogs, loadingHistory } = storeToRefs(userStore)
 
@@ -469,7 +465,7 @@ const handleMenuClick = (id: string) => {
 
 const formatDate = (date: any) => {
   if (!date) return ''
-  return new Date(date).toLocaleDateString('vi-VN', {
+  return new Date(date).toLocaleDateString(t('common.locale') === 'vi' ? 'vi-VN' : 'en-US', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
@@ -497,7 +493,7 @@ const updateProfile = async () => {
       language: profileForm.language
     })
 
-    setLocale(profileForm.language as any)
+    locale.value = profileForm.language as any
     toast.success(t('common.updateSuccess'))
   } catch (error: any) {
     toast.error(error.response?.data?.message || t('common.failed'))
@@ -595,7 +591,7 @@ const connectSocial = async (provider: 'youtube' | 'facebook') => {
 }
 
 const disconnectSocial = async (provider: 'youtube' | 'facebook') => {
-  if (!confirm(`Are you sure you want to disconnect ${provider}?`)) return
+  if (!confirm(t('account.integrations.confirmDisconnect', { platform: provider.charAt(0).toUpperCase() + provider.slice(1) }))) return
 
   if (provider === 'youtube') disconnectingYoutube.value = true
   else disconnectingFacebook.value = true
@@ -603,9 +599,9 @@ const disconnectSocial = async (provider: 'youtube' | 'facebook') => {
   try {
     await userStore.disconnectSocial(provider)
     await userStore.fetchProfile()
-    toast.success(`${provider} disconnected successfully`)
+    toast.success(t('account.integrations.disconnectSuccess', { platform: provider.charAt(0).toUpperCase() + provider.slice(1) }))
   } catch (error: any) {
-    toast.error(error.response?.data?.message || `Failed to disconnect ${provider}`)
+    toast.error(error.response?.data?.message || t('account.integrations.disconnectFailed', { platform: provider.charAt(0).toUpperCase() + provider.slice(1) }))
   } finally {
     if (provider === 'youtube') disconnectingYoutube.value = false
     else disconnectingFacebook.value = false
@@ -618,21 +614,16 @@ const getModelsByType = (type: string) => {
 }
 
 const getUnit = (type: string) => {
-  switch (type) {
-    case 'video': return 'Video (8s)'
-    case 'text': return 'Chat'
-    case 'audio': return 'Generation'
-    default: return 'Image'
-  }
+  return t('account.pricing.units.' + type)
 }
 
-const taskTypes = {
-  text: 'LLM',
-  image: 'Image Generation',
-  video: 'Video Generation',
-  audio: 'Audio/Speech',
-  music: 'Music Generation'
-}
+const taskTypes = computed(() => ({
+  text: t('account.pricing.types.text'),
+  image: t('account.pricing.types.image'),
+  video: t('account.pricing.types.video'),
+  audio: t('account.pricing.types.audio'),
+  music: t('account.pricing.types.music')
+}))
 </script>
 
 <style lang="scss" scoped>

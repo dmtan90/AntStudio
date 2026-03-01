@@ -66,7 +66,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { useProjectStore } from '@/stores/project'
 import { useUserStore } from '@/stores/user'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { useVideoAssembler } from '@/composables/useVideoAssembler'
 import { useProjectAssetGeneration } from '@/composables/useProjectAssetGeneration'
 import { useProjectChat } from '@/composables/useProjectChat'
@@ -79,11 +79,11 @@ import ProjectTimeline from '@/components/projects/editor/ProjectTimeline.vue'
 import ProjectEditorSidebar from '@/components/projects/editor/ProjectEditorSidebar.vue'
 import ProjectEditorChatSidebar from '@/components/projects/editor/ProjectEditorChatSidebar.vue'
 import ProjectEditorExportOverlay from '@/components/projects/editor/ProjectEditorExportOverlay.vue'
-import { EditorTemplate } from '../video-editor/types/editor'
+import { EditorTemplate } from 'video-editor/types/editor'
 import { useMarketplaceStore } from '@/stores/marketplace'
 // import router from '@/router'
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()

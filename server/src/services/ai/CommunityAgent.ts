@@ -1,5 +1,6 @@
 import { geminiPool } from '../../utils/gemini.js';
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
+
 
 export interface ChatMessage {
     user: string;
@@ -18,7 +19,7 @@ export class CommunityAgent {
      * Processes an incoming chat message and generates an autonomous response.
      */
     public async handleMessage(projectId: string, message: ChatMessage) {
-        systemLogger.info(`💬 [CommunityAgent] Processing message from ${message.user}: ${message.text}`, 'CommunityAgent');
+        Logger.info(`💬 [CommunityAgent] Processing message from ${message.user}: ${message.text}`, 'CommunityAgent');
 
         try {
             const modelName = 'gemini-2.5-flash';
@@ -43,7 +44,7 @@ export class CommunityAgent {
                 shouldSpeak: true
             };
         } catch (error: any) {
-            console.error('[CommunityAgent] Interaction failed:', error.message);
+            Logger.error('[CommunityAgent] Interaction failed:', error.message);
             return null;
         }
     }
@@ -73,7 +74,7 @@ export class CommunityAgent {
 
             return JSON.parse(result.response.text());
         } catch (error: any) {
-            console.error('[CommunityAgent] Sentiment analysis failed:', error.message);
+            Logger.error('[CommunityAgent] Sentiment analysis failed:', error.message);
             return { score: 0.5, status: 'neutral' };
         }
     }

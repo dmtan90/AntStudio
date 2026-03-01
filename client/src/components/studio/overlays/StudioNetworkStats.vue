@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { useTranslations } from '@/composables/useTranslations';
+import { useI18n } from 'vue-i18n';
 
 defineProps<{
     isLive: boolean;
@@ -65,5 +65,5 @@ defineProps<{
     quality: string;
 }>();
 
-const { t } = useTranslations();
+const { t } = useI18n()
 </script>

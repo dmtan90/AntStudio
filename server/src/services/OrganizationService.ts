@@ -176,4 +176,14 @@ export class OrganizationService {
     static async getPendingInvitations(organizationId: string): Promise<any[]> {
         return OrganizationInvitation.find({ organizationId: new Types.ObjectId(organizationId), status: 'pending' });
     }
+
+    /**
+     * Revoke a pending invitation.
+     */
+    static async revokeInvitation(invitationId: string): Promise<void> {
+        const result = await OrganizationInvitation.deleteOne({ _id: new Types.ObjectId(invitationId), status: 'pending' });
+        if (result.deletedCount === 0) {
+            throw new Error('Invitation not found or already processed');
+        }
+    }
 }

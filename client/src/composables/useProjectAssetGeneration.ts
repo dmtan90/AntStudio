@@ -1,11 +1,11 @@
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useProjectStore } from '@/stores/project'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
 export function useProjectAssetGeneration(projectId: string) {
     const projectStore = useProjectStore()
-    const { t } = useTranslations()
+    const { t } = useI18n()
     const generatingStates = ref<Record<string, boolean>>({})
 
     const pollAssetStatus = async (jobId: string, loadingKey: string) => {

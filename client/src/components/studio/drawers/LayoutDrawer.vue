@@ -8,8 +8,8 @@
                         <div class="flex items-center gap-3">
                             <video-two theme="filled" size="24" class="text-blue-400" />
                             <div>
-                                <h2 class="text-lg font-black text-white">Scene Manager</h2>
-                                <p class="text-xs text-white/40">Switch layouts & transitions</p>
+                                <h2 class="text-lg font-black text-white">{{ $t('studio.drawers.layout.sceneManager') }}</h2>
+                                <p class="text-xs text-white/40">{{ $t('studio.drawers.layout.sceneManagerDesc') }}</p>
                             </div>
                         </div>
                         <button @click="$emit('update:modelValue', false)" class="close-btn">
@@ -27,7 +27,7 @@
                                 <div class="flex items-center gap-2">
                                     <span class="text-sm font-black text-white">{{ studioStore.activeScene.name
                                         }}</span>
-                                    <div class="live-badge">ACTIVE</div>
+                                    <div class="live-badge">{{ $t('studio.common.active') }}</div>
                                 </div>
                                 <p class="text-xs text-white/50 mt-1">{{ studioStore.activeScene.description }}</p>
                             </div>
@@ -36,7 +36,7 @@
 
                     <!-- Scene Grid -->
                     <div class="drawer-content">
-                        <div class="section-title">Available Scenes</div>
+                        <div class="section-title">{{ $t('studio.drawers.layout.availableScenes') }}</div>
                         <div class="scene-grid">
                             <div v-for="scene in studioStore.scenes" :key="scene.id" class="scene-card"
                                 :class="{ active: scene.id === studioStore.activeScene.id }"
@@ -53,21 +53,21 @@
                         </div>
 
                         <!-- Transition Settings -->
-                        <div class="section-title mt-6">Transition Style</div>
+                        <div class="section-title mt-6">{{ $t('studio.drawers.layout.transitionStyle') }}</div>
                         <div class="transition-selector">
                             <button v-for="transition in transitions" :key="transition.value" class="transition-btn"
                                 :class="{ active: studioStore.transitionType === transition.value }"
                                 @click="studioStore.transitionType = transition.value">
                                 <component :is="transition.icon" theme="outline" size="20" />
-                                <span>{{ transition.label }}</span>
+                                <span>{{ $t(`studio.drawers.layout.transitions.${transition.value}`) }}</span>
                             </button>
                         </div>
 
                         <!-- Custom Scene Builder (Future) -->
-                        <div class="section-title mt-6">Custom Scenes</div>
+                        <div class="section-title mt-6">{{ $t('studio.drawers.layout.customScenes') }}</div>
                         <button class="create-scene-btn">
                             <plus theme="outline" size="20" />
-                            <span>Create Custom Scene</span>
+                            <span>{{ $t('studio.drawers.layout.createCustomScene') }}</span>
                         </button>
                     </div>
                 </aside>

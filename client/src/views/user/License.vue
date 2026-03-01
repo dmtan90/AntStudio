@@ -11,13 +11,13 @@
       <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
         <div>
           <h1 class="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
-            License <br/>
+            {{ t('license.title') }} <br/>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500">
-              Management
+              {{ t('license.subtitle') }}
             </span>
           </h1>
           <p class="text-xl text-gray-400 max-w-xl leading-relaxed font-medium">
-             Issue, track, and manage software licenses for your applications.
+             {{ t('license.subtitle') }}
           </p>
         </div>
         <button 
@@ -26,7 +26,7 @@
         >
            <div class="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
            <plus theme="outline" size="20" />
-           Issue License
+           {{ t('license.issue') }}
         </button>
       </div>
     </header>
@@ -38,7 +38,7 @@
              <search class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-yellow-400 transition-colors" size="18" />
              <input 
                 v-model="searchQuery" 
-                placeholder="Search licenses..." 
+                :placeholder="t('license.search')" 
                 class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-medium text-white focus:outline-none focus:border-yellow-500/50 focus:bg-white/10 transition-all"
              />
          </div>
@@ -65,11 +65,11 @@
             <table class="w-full text-left border-collapse">
                <thead>
                   <tr class="border-b border-white/5">
-                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">License Key / Owner</th>
-                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Type</th>
-                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">Limits</th>
-                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">Created</th>
-                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">Actions</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('license.columns.owner') }}</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('license.columns.type') }}</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">{{ t('license.columns.limits') }}</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('license.columns.created') }}</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">{{ t('license.columns.actions') }}</th>
                   </tr>
                </thead>
                <tbody>
@@ -125,12 +125,12 @@
       <!-- Empty State -->
       <div v-else class="text-center py-32 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
          <div class="text-6xl mb-4 grayscale opacity-20">📜</div>
-         <h3 class="text-xl font-bold text-white mb-2">No licenses found</h3>
+         <h3 class="text-xl font-bold text-white mb-2">{{ t('license.empty.title') }}</h3>
          <button 
             @click="showLicenseIssueDialog = true"
             class="mt-4 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors"
          >
-            Issue First License
+            {{ t('license.issue') }}
          </button>
       </div>
     </main>
@@ -138,38 +138,38 @@
     <!-- Issue Dialog -->
     <el-dialog v-model="showLicenseIssueDialog" width="500px" class="glass-dialog" :show-close="false" destroy-on-close align-center>
         <template #header>
-            <div class="text-lg font-black text-white uppercase tracking-wide">Issue New License</div>
+            <div class="text-lg font-black text-white uppercase tracking-wide">{{ t('license.dialog.issueTitle') }}</div>
         </template>
         <div class="space-y-4" v-loading="isUploading">
             <div>
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Owner Name</label>
-               <el-input v-model="licenseForm.owner" placeholder="e.g. Acme Corp" class="glass-input" />
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.ownerLabel') }}</label>
+               <el-input v-model="licenseForm.owner" :placeholder="t('license.dialog.ownerPlaceholder')" class="glass-input" />
             </div>
             <div>
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">License Tier</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.tierLabel') }}</label>
                <el-select v-model="licenseForm.tier" class="glass-select w-full" popper-class="glass-dropdown">
                   <el-option v-for="item in licenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
                </el-select>
             </div>
             <div class="grid grid-cols-2 gap-4">
                <div>
-                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Max Users</label>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.maxUsers') }}</label>
                   <el-input-number v-model="licenseForm.maxUsersPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
                </div>
                <div>
-                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Max Projects</label>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.maxProjects') }}</label>
                   <el-input-number v-model="licenseForm.maxProjectsPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
                </div>
             </div>
             <div>
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Duration (Days)</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.duration') }}</label>
                <el-input-number v-model="licenseForm.durationDays" :min="1" class="glass-input w-full" controls-position="right" />
             </div>
         </div>
         <template #footer>
            <div class="flex gap-4">
-              <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="showLicenseIssueDialog = false">Cancel</button>
-              <button class="flex-1 py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-yellow-500/20" @click="handleAddLicense">Issue</button>
+              <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="showLicenseIssueDialog = false">{{ t('license.dialog.cancel') }}</button>
+              <button class="flex-1 py-3 bg-yellow-500 hover:bg-yellow-400 text-black rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-yellow-500/20" @click="handleAddLicense">{{ t('license.dialog.issue') }}</button>
            </div>
         </template>
     </el-dialog>
@@ -177,49 +177,49 @@
     <!-- Preview/Edit Dialog -->
     <el-dialog v-model="showPreviewDialog" width="500px" class="glass-dialog" :show-close="false" destroy-on-close align-center>
         <template #header>
-            <div class="text-lg font-black text-white uppercase tracking-wide">Edit License</div>
+            <div class="text-lg font-black text-white uppercase tracking-wide">{{ t('license.dialog.editTitle') }}</div>
         </template>
         <div class="space-y-4" v-loading="isUploading">
             <div class="p-4 bg-white/5 rounded-xl border border-white/5 mb-6">
-               <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">License Key</div>
+               <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">{{ t('license.dialog.keyLabel') }}</div>
                <div class="font-mono text-xs text-yellow-400 break-all select-all">{{ previewLicense.key }}</div>
             </div>
 
             <div>
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Owner Name</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.ownerLabel') }}</label>
                <el-input v-model="previewLicense.owner" class="glass-input" />
             </div>
             <div>
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">License Tier</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.tierLabel') }}</label>
                <el-select v-model="previewLicense.tier" class="glass-select w-full" popper-class="glass-dropdown">
                   <el-option v-for="item in licenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
                </el-select>
             </div>
             <div class="grid grid-cols-2 gap-4">
                <div>
-                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Max Users</label>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.maxUsers') }}</label>
                   <el-input-number v-model="previewLicense.maxUsersPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
                </div>
                <div>
-                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Max Projects</label>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.maxProjects') }}</label>
                   <el-input-number v-model="previewLicense.maxProjectsPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
                </div>
             </div>
              <div class="grid grid-cols-2 gap-4">
                <div>
-                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Start Date</label>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.startDate') }}</label>
                   <el-date-picker v-model="previewLicense.startDate" type="date" class="glass-date w-full" />
                </div>
                <div>
-                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">End Date</label>
+                  <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.endDate') }}</label>
                   <el-date-picker v-model="previewLicense.endDate" type="date" class="glass-date w-full" />
                </div>
             </div>
         </div>
         <template #footer>
            <div class="flex gap-4">
-              <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="showPreviewDialog = false">Cancel</button>
-              <button class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-blue-600/20" @click="handleUpdateLicense">Update</button>
+              <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="showPreviewDialog = false">{{ t('license.dialog.cancel') }}</button>
+              <button class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-blue-600/20" @click="handleUpdateLicense">{{ t('license.dialog.update') }}</button>
            </div>
         </template>
     </el-dialog>
@@ -230,13 +230,13 @@
 import {
   Search, Delete, PlayOne, Plus, User, FolderClose, Edit
 } from '@icon-park/vue-next';
-import { useTranslations } from '@/composables/useTranslations';
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
 import { ref, computed, watch, onMounted } from 'vue';
 import { useLicenseStore } from '@/stores/license';
 import { storeToRefs } from 'pinia';
 
-const { t } = useTranslations();
+const { t } = useI18n()
 const licenseStore = useLicenseStore();
 const { licenses, loading } = storeToRefs(licenseStore);
 

@@ -1,5 +1,6 @@
 import { User } from '../../models/User.js';
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
+
 
 export interface ViewerAvatarMetadata {
     viewerId: string;
@@ -35,11 +36,11 @@ export class ViewerAvatarService {
             };
 
             this.avatarCache.set(userId, metadata);
-            systemLogger.info(`👥 [ViewerAvatar] Neural avatar generated for: ${user.name} (${tier})`, 'ViewerAvatarService');
+            Logger.info(`👥 [ViewerAvatar] Neural avatar generated for: ${user.name} (${tier})`, 'ViewerAvatarService');
 
             return metadata;
         } catch (error: any) {
-            console.error('[ViewerAvatar] Generation failed:', error.message);
+            Logger.error('[ViewerAvatar] Generation failed:', error.message);
             return this.getDefaultAvatar(userId);
         }
     }

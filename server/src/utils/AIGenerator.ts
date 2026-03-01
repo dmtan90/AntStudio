@@ -1,6 +1,7 @@
 import fs from 'fs'
 import { aiManager } from './ai/AIServiceManager.js'
 import config from './config.js'
+import { Logger } from './Logger.js'
 import { configService } from './configService.js'
 import { uploadToS3 } from './s3.js'
 import { 
@@ -29,7 +30,12 @@ export const generateText = async (prompt: string, modelName?: string, options: 
 
 export const generateJSON = async <T = any>(prompt: string, modelName?: string, options: any = {}): Promise<T> => {
     // If responseMimeType is already application/json, don't append the "Respond ONLY with valid JSON" footer if prompt already looks solid
-    const text = await generateText(prompt, modelName, options);
+    const text = await generateText(prompt, modelName, {...options, 
+        generationConfig: { 
+            responseMimeType: 'application/json',
+            maxOutputTokens: 65536//fix truncate JSON string
+        }
+    });
     let cleanedText = text.trim();
     
     // Resilient JSON extraction: Strip markdown code blocks if present
@@ -90,7 +96,7 @@ export const generateJSON = async <T = any>(prompt: string, modelName?: string, 
 
     if (startIdx !== Infinity) {
         if (endIdx === -1 || endIdx < startIdx) {
-            console.warn(`[AIGenerator] JSON appears truncated (no closing brace found). Attempting to repair...`);
+            Logger.warn(`[AIGenerator] JSON appears truncated (no closing brace found). Attempting to repair...`, 'AIGenerator');
             
             let repairText = cleanedText.substring(startIdx);
             let depthStack: string[] = [];
@@ -132,18 +138,16 @@ export const generateJSON = async <T = any>(prompt: string, modelName?: string, 
     try {
         return JSON.parse(cleanedText);
     } catch (error: any) {
-        // ... (existing error logging)
-        console.error(`[AIGenerator] JSON Parsing Failed. Error: ${error.message}`)
-        console.error(`[AIGenerator] Malformed text preview (first 500 chars): ${cleanedText.substring(0, 500)}`)
-        console.error(`[AIGenerator] Malformed text preview (last 500 chars): ${cleanedText.substring(cleanedText.length - 500)}`)
+        Logger.error(`[AIGenerator] JSON Parsing Failed. Error: ${error.message}`, 'AIGenerator', error);
+        Logger.error(`[AIGenerator] Malformed text preview (first 500 chars): ${cleanedText.substring(0, 500)}`, 'AIGenerator');
+        Logger.error(`[AIGenerator] Malformed text preview (last 500 chars): ${cleanedText.substring(cleanedText.length - 500)}`, 'AIGenerator');
         
-        // Log to a temporary file for deep inspection if it's large
         const debugPath = `json_error_${Date.now()}.txt`
         try {
             fs.writeFileSync(debugPath, cleanedText)
-            console.error(`[AIGenerator] Full malformed JSON saved to: ${debugPath}`)
+            Logger.error(`[AIGenerator] Full malformed JSON saved to: ${debugPath}`, 'AIGenerator');
         } catch (e: any) {
-            console.error(`[AIGenerator] Failed to save debug file: ${e.message}`)
+            Logger.error(`[AIGenerator] Failed to save debug file: ${e.message}`, 'AIGenerator', e);
         }
         
         throw new Error(`AI generated invalid JSON: ${error.message}`)
@@ -262,13 +266,13 @@ export const generateVideo = async (options: Veo3GenerateOptions): Promise<{ job
     // Background execution with LoRA and consistency support
     (async () => {
         try {
-            console.log(`[AIGenerator] Starting video generation job: ${jobId}`);
+            Logger.info(`[AIGenerator] Starting video generation job: ${jobId}`, 'AIGenerator');
             const result: any = await aiManager.generateVideo(options.prompt, model, provider, {
                 ...options
             });
-            console.log(`[AIGenerator] Job ${jobId} finished. Output: ${result.url || 'Success'}`);
+            Logger.info(`[AIGenerator] Job ${jobId} finished. Output: ${result.url || 'Success'}`, 'AIGenerator');
         } catch (e: any) {
-            console.error(`[AIGenerator] Job ${jobId} failed: ${e.message}`);
+            Logger.error(`[AIGenerator] Job ${jobId} failed: ${e.message}`, 'AIGenerator', e);
         }
     })();
 
@@ -286,7 +290,54 @@ export const downloadVideo = async (videoUrl: string): Promise<Buffer> => {
 }
 
 export const generateAudio = async (prompt: string, projectId: string, filename: string, options: any = {}) => {
-    return await aiManager.generateAudio(prompt, options.voice, undefined, { ...options, projectId, filename })
+    const result: any = await aiManager.generateAudio(prompt, undefined, undefined, { ...options, voiceId: options.voice, projectId, filename });
+    
+    let buffer: Buffer;
+    let mimeType = 'audio/mpeg';
+
+    if (result.media && result.media.url && result.media.url.startsWith('data:')) {
+        const base64Data = result.media.url.split(',')[1];
+        buffer = Buffer.from(base64Data, 'base64');
+        mimeType = result.media.mimeType || 'audio/mpeg';
+    } else if (result.url && typeof result.url === 'string' && result.url.startsWith('data:')) {
+        const base64Data = result.url.split(',')[1];
+        buffer = Buffer.from(base64Data, 'base64');
+        mimeType = result.mimeType || 'audio/wav';
+    } else if (result.buffer) {
+        buffer = result.buffer;
+        mimeType = result.mimeType || 'audio/mpeg';
+    } else {
+        Logger.error('[AIGenerator] Audio result format error:', 'AIGenerator', Object.keys(result));
+        throw new Error('Unsupported audio result format from provider');
+    }
+
+    const extension = mimeType.includes('wav') ? 'wav' : 'mp3';
+    const s3Key = options.s3Key || `projects/${projectId}/audio/${filename}.${extension}`;
+    const uploadResult = await uploadToS3(s3Key, buffer, mimeType);
+    return { s3Key: uploadResult.key };
+}
+
+export const generateMusic = async (prompt: string, projectId: string, filename: string, options: any = {}) => {
+    const result: any = await aiManager.generateMusic(prompt, undefined, undefined, { ...options, projectId, filename });
+    
+    let buffer: Buffer;
+    let mimeType = 'audio/wav'; // Lyria default
+
+    if (result.buffer) {
+        buffer = result.buffer;
+        mimeType = result.mimeType || 'audio/wav';
+    } else if (result.url && result.url.startsWith('data:')) {
+        const base64Data = result.url.split(',')[1];
+        buffer = Buffer.from(base64Data, 'base64');
+        mimeType = result.mimeType || 'audio/wav';
+    } else {
+        Logger.error('[AIGenerator] Music result format error:', 'AIGenerator', Object.keys(result));
+        throw new Error('Unsupported music result format from provider');
+    }
+
+    const s3Key = options.s3Key || `projects/${projectId}/music/${filename}.wav`;
+    const uploadResult = await uploadToS3(s3Key, buffer, mimeType);
+    return { s3Key: uploadResult.key };
 }
 
 export const getFileBuffer = async (input: string): Promise<Buffer> => {

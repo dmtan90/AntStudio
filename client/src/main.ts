@@ -25,6 +25,8 @@ import 'video-editor/styles/global.css'
 import 'video-editor/styles/element-plus.css'
 import 'video-editor/fabric/initialize'
 import { queryClient } from 'video-editor/config/queryClient'
+import { loadFFmpeg } from 'video-editor/plugins/editor';
+loadFFmpeg();
 
 const app = createApp(App)
 

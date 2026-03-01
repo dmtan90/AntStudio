@@ -4,15 +4,15 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 relative z-10">
       <div>
         <h1 class="text-5xl font-black tracking-tighter mb-2 relative inline-block">
-           AI Accounts
+           {{ t('admin.aiAccounts.title') }}
            <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
         </h1>
-        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Multi-Account Intelligence Pool</p>
+        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">{{ t('admin.aiAccounts.subtitle') }}</p>
       </div>
       <div class="flex gap-3">
         <button class="px-5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group hover:text-blue-400" @click="addAccount(true)">
           <google-ads theme="filled" size="14" />
-          Antigravity
+          {{ t('admin.aiAccounts.addAntigravity') }}
         </button>
         <!-- <button class="px-5 py-3 rounded-xl bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group text-purple-400" @click="add11LabsAccount">
           <brain theme="filled" size="14" />
@@ -20,7 +20,7 @@
         </button> -->
         <button class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center gap-2" @click="addAccount(false)">
           <google theme="outline" size="14" />
-          Google
+          {{ t('admin.aiAccounts.addGoogle') }}
         </button>
       </div>
     </div>
@@ -29,19 +29,19 @@
       <!-- Stats Overview -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
         <div class="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 backdrop-blur-sm hover:bg-white/[0.04] transition-colors group">
-          <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2 group-hover:text-white transition-colors">Total Accounts</label>
+          <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2 group-hover:text-white transition-colors">{{ t('admin.aiAccounts.stats.totalAccounts') }}</label>
           <div class="text-4xl font-black text-white tracking-tighter">{{ accounts.length }}</div>
         </div>
         <div class="p-6 rounded-[2rem] bg-green-500/[0.05] border border-green-500/10 backdrop-blur-sm hover:bg-green-500/[0.1] transition-colors group">
-          <label class="block text-[9px] font-black uppercase tracking-widest text-green-500/60 mb-2 group-hover:text-green-400 transition-colors">Active Nodes</label>
+          <label class="block text-[9px] font-black uppercase tracking-widest text-green-500/60 mb-2 group-hover:text-green-400 transition-colors">{{ t('admin.aiAccounts.stats.activeNodes') }}</label>
           <div class="text-4xl font-black text-green-400 tracking-tighter">{{ activeAccounts.length }}</div>
         </div>
         <div class="p-6 rounded-[2rem] bg-amber-500/[0.05] border border-amber-500/10 backdrop-blur-sm hover:bg-amber-500/[0.1] transition-colors group">
-          <label class="block text-[9px] font-black uppercase tracking-widest text-amber-500/60 mb-2 group-hover:text-amber-400 transition-colors">Rate Limited</label>
+          <label class="block text-[9px] font-black uppercase tracking-widest text-amber-500/60 mb-2 group-hover:text-amber-400 transition-colors">{{ t('admin.aiAccounts.stats.rateLimited') }}</label>
           <div class="text-4xl font-black text-amber-400 tracking-tighter">{{ limitedAccounts.length }}</div>
         </div>
         <div class="p-6 rounded-[2rem] bg-red-500/[0.05] border border-red-500/10 backdrop-blur-sm hover:bg-red-500/[0.1] transition-colors group">
-          <label class="block text-[9px] font-black uppercase tracking-widest text-red-500/60 mb-2 group-hover:text-red-400 transition-colors">Systems Down</label>
+          <label class="block text-[9px] font-black uppercase tracking-widest text-red-500/60 mb-2 group-hover:text-red-400 transition-colors">{{ t('admin.aiAccounts.stats.systemsDown') }}</label>
           <div class="text-4xl font-black text-red-400 tracking-tighter">{{ errorAccounts.length }}</div>
         </div>
       </div>
@@ -80,20 +80,20 @@
                    <div :class="['w-1.5 h-1.5 rounded-full animate-pulse', 
                       account.status === 'ready' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 
                       account.status === 'rate-limited' ? 'bg-amber-500' : 'bg-red-500']"></div>
-                   <span class="text-[9px] font-black opacity-40 uppercase tracking-widest">{{ account.isActive !== false ? account.status : 'DISABLED' }}</span>
+                   <span class="text-[9px] font-black opacity-40 uppercase tracking-widest">{{ account.isActive !== false ? account.status : t('admin.aiAccounts.account.disabled') }}</span>
                 </div>
               </div>
             </div>
             
             <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-4 group-hover:translate-x-0">
                <button :class="['w-8 h-8 rounded-lg flex items-center justify-center transition-colors', account.isActive !== false ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-white/5 text-gray-500 hover:bg-white/10']"
-                @click="toggleActive(account)" :title="account.isActive !== false ? 'Disable' : 'Enable'">
+                @click="toggleActive(account)" :title="account.isActive !== false ? t('common.disable') : t('common.enable')">
                 <power theme="outline" size="14" />
               </button>
-              <button class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center justify-center transition-colors" @click="syncAccount(account._id)" title="Sync Quota">
+              <button class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center justify-center transition-colors" @click="syncAccount(account._id)" :title="t('admin.aiAccounts.account.syncQuota')">
                 <refresh theme="outline" size="14" />
               </button>
-              <button class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-colors" @click="deleteAccount(account._id)" title="Remove">
+              <button class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-colors" @click="deleteAccount(account._id)" :title="t('admin.aiAccounts.account.remove')">
                 <delete theme="outline" size="14" />
               </button>
             </div>
@@ -121,7 +121,7 @@
             <!-- Expanded Section -->
             <div v-if="account.quotas && Object.keys(account.quotas).length > 3">
               <button @click="toggleExpand(account._id)" class="w-full py-2 bg-white/[0.02] hover:bg-white/[0.05] rounded-lg border border-dashed border-white/10 text-[9px] font-black uppercase text-gray-500 hover:text-white transition-all flex items-center justify-center gap-2">
-                <span>{{ isExpanded(account._id) ? 'SHOW LESS' : `+ ${Object.keys(account.quotas).length - 3} MORE MODELS` }}</span>
+                <span>{{ isExpanded(account._id) ? t('admin.aiAccounts.account.showLess') : t('admin.aiAccounts.account.moreModels', { n: Object.keys(account.quotas).length - 3 }) }}</span>
                 <down v-if="!isExpanded(account._id)" theme="outline" size="12" />
                 <up v-else theme="outline" size="12" />
               </button>
@@ -143,7 +143,7 @@
             </div>
 
             <div v-if="!Object.keys(account.quotas || {}).length" class="text-center py-8 opacity-20">
-               <p class="text-[10px] font-black uppercase tracking-widest">No Quota Data</p>
+               <p class="text-[10px] font-black uppercase tracking-widest">{{ t('admin.aiAccounts.account.noQuotaData') }}</p>
             </div>
           </div>
 
@@ -161,10 +161,10 @@
                     </div>
                     <template #dropdown>
                       <el-dropdown-menu>
-                        <el-dropdown-item :icon="Edit" @click="editProjectId(account)">Change Project ID</el-dropdown-item>
-                        <el-dropdown-item :icon="Plus" @click="createNewProject(account)">Create New Project</el-dropdown-item>
-                        <el-dropdown-item :icon="Check" @click="enableAPI(account)">Enable API</el-dropdown-item>
-                        <el-dropdown-item :icon="Bill" @click="enableBilling(account)">Enable Billing</el-dropdown-item>
+                        <el-dropdown-item :icon="Edit" @click="editProjectId(account)">{{ t('admin.aiAccounts.account.changeProjectId') }}</el-dropdown-item>
+                        <el-dropdown-item :icon="Plus" @click="createNewProject(account)">{{ t('admin.aiAccounts.account.createNewProject') }}</el-dropdown-item>
+                        <el-dropdown-item :icon="Check" @click="enableAPI(account)">{{ t('admin.aiAccounts.account.enableApi') }}</el-dropdown-item>
+                        <el-dropdown-item :icon="Bill" @click="enableBilling(account)">{{ t('admin.aiAccounts.account.enableBilling') }}</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
                   </el-dropdown>
@@ -184,8 +184,8 @@
         <div class="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
             <wallet theme="filled" size="40" class="text-gray-600" />
         </div>
-        <h3 class="text-xl font-black uppercase text-white mb-2">Initialize Neural Pool</h3>
-        <p class="text-sm font-medium text-gray-500">Connect Google or 11Labs accounts to spin up the intelligence grid.</p>
+        <h3 class="text-xl font-black uppercase text-white mb-2">{{ t('admin.aiAccounts.empty.title') }}</h3>
+        <p class="text-sm font-medium text-gray-500">{{ t('admin.aiAccounts.empty.description') }}</p>
       </div>
 
       <!-- Loading State -->
@@ -201,6 +201,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Plus, User, Refresh, Delete, Wallet, 
   Copy, Loading, Gemini, Brain, VideoTwo, Pic, 
   Down, Up, Power, Edit, LoadingFour, Google, GoogleAds,
@@ -212,6 +213,7 @@ import { useAdminStore } from '@/stores/admin';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
+const { t } = useI18n()
 const adminStore = useAdminStore();
 const loading = ref(true);
 const accounts = ref<any[]>([]);
@@ -231,22 +233,22 @@ const toggleActive = async (account: any) => {
     const newState = account.isActive === false ? true : false;
     await adminStore.updateAIAccount(account._id, { isActive: newState });
     account.isActive = newState;
-    toast.success(`Account ${newState ? 'enabled' : 'disabled'}`);
+    toast.success(newState ? t('admin.aiAccounts.toast.enabled') : t('admin.aiAccounts.toast.disabled'));
   } catch (e) {
-    toast.error('Failed to toggle account state');
+    toast.error(t('admin.aiAccounts.toast.toggleFailed'));
   }
 };
 
 const editProjectId = async (account: any) => {
-  const newId = prompt('Enter new Google Cloud Project ID:', account.projectId || '');
+  const newId = prompt(t('admin.aiAccounts.toast.enterProjectId'), account.projectId || '');
   if (newId === null || newId === account.projectId) return;
 
   try {
     await adminStore.updateAIAccount(account._id, { projectId: newId });
     account.projectId = newId;
-    toast.success('Project ID updated');
+    toast.success(t('admin.aiAccounts.toast.projectIdUpdated'));
   } catch (e) {
-    toast.error('Failed to update Project ID');
+    toast.error(t('admin.aiAccounts.toast.projectIdUpdateFailed'));
   }
 };
 
@@ -347,7 +349,7 @@ const fetchAccounts = async (silent = false) => {
     const data = await adminStore.fetchAIAccounts();
     if (data) accounts.value = data;
   } catch (e: any) {
-    if (!silent) toast.error('Failed to load AI accounts');
+    if (!silent) toast.error(t('admin.aiAccounts.toast.loadFailed'));
   } finally {
     if (!silent) loading.value = false;
   }
@@ -361,16 +363,16 @@ const addAccount = async (isAntigravity = false) => {
       window.location.href = data.url;
     }
   } catch (e) {
-    toast.error('Could not initiate OAuth flow');
+    toast.error(t('admin.aiAccounts.toast.oauthFailed'));
   }
 };
 
 const add11LabsAccount = async () => {
-  const email = prompt('1. Enter 11Labs Account Email:');
+  const email = prompt(t('admin.aiAccounts.toast.enterEmail'));
   if (!email) return;
   const token = undefined;
   try {
-    toast.info('Integrating 11Labs account...');
+    toast.info(t('admin.aiAccounts.toast.integrating11Labs'));
     await adminStore.addDirectAccount({
       email,
       accessToken: token || undefined,
@@ -385,21 +387,21 @@ const add11LabsAccount = async () => {
 
 const syncAccount = async (id: string) => {
   try {
-    toast.info('Syncing status...');
+    toast.info(t('admin.aiAccounts.toast.syncing'));
     await adminStore.syncAccount(id);
     await fetchAccounts(true);
   } catch (e) {
-    toast.error('Sync failed');
+    toast.error(t('admin.aiAccounts.toast.syncFailed'));
   }
 };
 
 const deleteAccount = async (id: string) => {
-  if (!confirm('Are you sure you want to remove this account?')) return;
+  if (!confirm(t('admin.aiAccounts.toast.removeConfirm'))) return;
   try {
     await adminStore.deleteAIAccount(id);
     accounts.value = accounts.value.filter(a => a._id !== id);
   } catch (e) {
-    toast.error('Failed to remove account');
+    toast.error(t('admin.aiAccounts.toast.removeFailed'));
   }
 };
 
@@ -445,14 +447,14 @@ const getInitials = (email: string) => {
 };
 
 const formatDate = (date: string) => {
-  if (!date) return 'NEVER';
+  if (!date) return t('admin.aiAccounts.account.never');
   const d = new Date(date);
   const now = new Date();
   const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
 
-  if (diff < 60) return 'JUST NOW';
-  if (diff < 3600) return `${Math.floor(diff / 60)}M AGO`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}H AGO`;
+  if (diff < 60) return t('admin.aiAccounts.account.justNow');
+  if (diff < 3600) return t('admin.aiAccounts.account.minsAgo', { n: Math.floor(diff / 60) });
+  if (diff < 86400) return t('admin.aiAccounts.account.hoursAgo', { n: Math.floor(diff / 3600) });
   return d.toLocaleDateString();
   
 };
@@ -465,7 +467,7 @@ const cleanModelName = (name: string) => {
 const copyText = (text: string) => {
   if (!text) return;
   navigator.clipboard.writeText(text);
-  toast.success('Copied to clipboard');
+  toast.success(t('common.copySuccess'));
 };
 
 onMounted(() => {

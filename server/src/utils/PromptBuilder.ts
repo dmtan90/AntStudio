@@ -1,4 +1,5 @@
 import { IDetailedCharacter } from '../models/Project.js'
+import { Logger } from './Logger.js';
 
 /**
  * PROMPT BUILDER UTILITIES
@@ -14,7 +15,7 @@ export const translateToEnglish = async (text: string, language?: string, transl
         return text
     }
     if (!translator) {
-        console.warn('[PromptBuilder] No translator provided, returning original text');
+        Logger.warn('[PromptBuilder] No translator provided, returning original text', 'PromptBuilder');
         return text;
     }
     const prompt = `Translate the following text to English. Only return the translation, nothing else:\n\n${text}`
@@ -22,7 +23,7 @@ export const translateToEnglish = async (text: string, language?: string, transl
         const translation = await translator(prompt)
         return translation.trim()
     } catch (error) {
-        console.error('Translation failed, using original text:', error)
+        Logger.error(`Translation failed, using original text: ${error}`, 'PromptBuilder');
         return text
     }
 }

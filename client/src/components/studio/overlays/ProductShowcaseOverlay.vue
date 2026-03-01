@@ -33,7 +33,7 @@ const buyNow = () => {
                  <div class="relative w-20 h-20 rounded-2xl overflow-hidden border border-white/10 bg-black flex-shrink-0">
                     <img :src="activeProduct.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div class="absolute bottom-2 left-2 px-1.5 py-0.5 bg-orange-500 rounded-md text-[8px] font-black text-white uppercase tracking-widest">Live Now</div>
+                    <div class="absolute bottom-2 left-2 px-1.5 py-0.5 bg-orange-500 rounded-md text-[8px] font-black text-white uppercase tracking-widest">{{ $t('studio.analytics.liveNow') }}</div>
                  </div>
 
                  <!-- Content -->
@@ -51,14 +51,14 @@ const buyNow = () => {
                                 <div class="h-full bg-orange-500 rounded-full" :style="{ width: Math.min(100, (activeProduct.stock / 20) * 100) + '%' }"></div>
                             </div>
                             <span class="text-[9px] font-black" :class="activeProduct.stock < 5 ? 'text-red-500 animate-pulse' : 'text-orange-400'">
-                                {{ activeProduct.stock }} LEFT
+                                {{ activeProduct.stock }} {{ $t('common.left') || 'LEFT' }}
                             </span>
                         </div>
                     </div>
                     
                     <div class="flex items-center gap-2">
                          <el-button type="primary" size="small" class="!bg-orange-500 !border-none !h-7 !px-4 !rounded-xl !text-[9px] font-black uppercase tracking-widest" @click="buyNow">
-                            <shopping-cart theme="outline" size="12" class="mr-1.5" /> Buy Now
+                            <shopping-cart theme="outline" size="12" class="mr-1.5" /> {{ $t('studio.drawers.economy.buyNow') || 'Buy Now' }}
                          </el-button>
                     </div>
                  </div>
@@ -69,7 +69,7 @@ const buyNow = () => {
                   </div>
 
                  <!-- Close Tag -->
-                 <div class="absolute -top-2 -right-2 bg-orange-500 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black shadow-lg cursor-pointer" @click="studioStore.removeProduct(activeProduct.id)">
+                 <div class="absolute -top-2 -right-2 bg-orange-500 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black shadow-lg cursor-pointer" @click="studioStore.removeProduct(activeProduct._id || activeProduct.id)">
                     ×
                  </div>
             </div>

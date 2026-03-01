@@ -6,10 +6,10 @@
       <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
         <div>
           <h1 class="text-5xl font-black mb-4 tracking-tighter">
-            My <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">Projects</span>
-          </h1>
+          {{ t('projects.header.title').split(' ')[0] }} <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">{{ t('projects.header.title').split(' ').slice(1).join(' ') }}</span>
+        </h1>
           <p class="text-xl text-gray-400 font-medium max-w-2xl">
-            Manage your video creations. Edit, duplicate, or publish your AI-generated content.
+            {{ t('projects.header.subtitle') }}
           </p>
         </div>
         
@@ -20,7 +20,7 @@
         >
           <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
           <plus theme="outline" size="20" />
-          {{ t('projects.newProject') }}
+          {{ t('projects.actions.newProject') }}
         </button>
       </div>
 
@@ -35,7 +35,7 @@
           <search class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" size="18" />
           <input 
             v-model="searchQuery" 
-            :placeholder="t('projects.search')" 
+            :placeholder="t('projects.filters.searchPlaceholder')" 
             class="w-full pl-12 pr-6 py-3 bg-transparent border-none focus:ring-0 text-white placeholder-gray-600 font-medium outline-none"
           />
         </div>
@@ -72,7 +72,7 @@
               class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105" fit="cover">
               <template #error>
                 <div class="w-full h-full flex items-center justify-center">
-                  <Pic theme="filled" size="48" fill="#9ca3af" />
+                   <Pic theme="filled" size="48" fill="#9ca3af" />
                 </div>
               </template>
              </el-image>
@@ -85,12 +85,13 @@
                 <span 
                    class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-md border shadow-lg"
                    :class="{
-                      'bg-green-500/20 border-green-500/30 text-green-400': project.status === 'completed',
-                      'bg-yellow-500/20 border-yellow-500/30 text-yellow-400': project.status === 'processing' || project.status === 'generating',
-                      'bg-blue-500/20 border-blue-500/30 text-blue-400': project.status === 'draft'
+                      'bg-green-500/20 border-green-500/30 text-green-400': project.status?.toLowerCase() === 'completed',
+                      'bg-yellow-500/20 border-yellow-500/30 text-yellow-400': ['processing', 'generating', 'storyboard'].includes(project.status?.toLowerCase()),
+                      'bg-red-500/20 border-red-500/30 text-red-400': project.status?.toLowerCase() === 'failed',
+                      'bg-gray-500/20 border-gray-500/30 text-gray-400': project.status?.toLowerCase() === 'draft' || !project.status
                    }"
                 >
-                   {{ t(`projects.status.${project.status?.toLowerCase()}`) || project.status }}
+                   {{ t('projects.status.' + (project.status || 'draft').toLowerCase()) }}
                 </span>
              </div>
 
@@ -116,9 +117,9 @@
                       </button>
                       <template #dropdown>
                          <el-dropdown-menu class="glass-dropdown">
-                            <el-dropdown-item command="edit" :icon="EditIcon">{{ t('projects.edit') }}</el-dropdown-item>
-                            <el-dropdown-item command="duplicate" :icon="CopyIcon">{{ t('projects.duplicate') }}</el-dropdown-item>
-                            <el-dropdown-item command="delete" divided class="text-red-500" :icon="DeleteIcon">{{ t('projects.delete') }}</el-dropdown-item>
+                            <el-dropdown-item command="edit" :icon="EditIcon">{{ t('projects.actions.edit') }}</el-dropdown-item>
+                            <el-dropdown-item command="duplicate" :icon="CopyIcon">{{ t('projects.actions.duplicate') }}</el-dropdown-item>
+                            <el-dropdown-item command="delete" divided class="text-red-500" :icon="DeleteIcon">{{ t('projects.actions.delete') }}</el-dropdown-item>
                          </el-dropdown-menu>
                       </template>
                    </el-dropdown>
@@ -126,13 +127,13 @@
              </div>
 
              <p class="text-xs text-gray-500 font-medium line-clamp-2 h-8 mb-4">
-                {{ project.description || 'No description' }}
+                {{ project.description || t('projects.placeholders.noDescription') }}
              </p>
 
              <div class="flex items-center justify-between pt-4 border-t border-white/5">
                 <div class="text-[10px] font-mono text-gray-600 uppercase">{{ formatDate(project.createdAt) }}</div>
                 <div class="text-[10px] font-black uppercase tracking-widest text-blue-500/50 group-hover:text-blue-400 transition-colors">
-                   {{ project.mode || 'Video' }}
+                   {{ t('projects.modes.' + (project.mode?.toLowerCase() || 'video')) }}
                 </div>
              </div>
           </div>
@@ -156,10 +157,10 @@
        <!-- Empty State (Only when not loading and no projects found) -->
       <div v-if="!loading && filteredProjects.length === 0" class="text-center py-32 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
         <div class="text-7xl mb-6 grayscale opacity-20">🎬</div>
-        <h3 class="text-2xl font-black text-white mb-2">{{ t('projects.noProjects') || 'No projects found' }}</h3>
-        <p class="text-gray-500 mb-8 max-w-md mx-auto">{{ t('projects.noProjectsDesc') || 'Start by creating your first cinematic masterpiece' }}</p>
+        <h3 class="text-2xl font-black text-white mb-2">{{ t('projects.empty.title') }}</h3>
+        <p class="text-gray-500 mb-8 max-w-md mx-auto">{{ t('projects.empty.description') }}</p>
         <button @click="showCreationDialog = true" class="px-8 py-4 bg-blue-600 rounded-2xl font-black text-sm uppercase tracking-wide hover:bg-blue-500 hover:scale-105 transition-all shadow-lg shadow-blue-600/20">
-          {{ t('projects.newProject') }}
+          {{ t('projects.actions.newProject') }}
         </button>
       </div>
     </div>
@@ -182,13 +183,13 @@ import {
   Copy as CopyIcon,
   Pic
 } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 import { ElMessageBox } from 'element-plus'
 import { ref, computed, onMounted } from 'vue'
 import AppTour from '@/components/ui/AppTour.vue'
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue'
-import ProductAdDialog from '@/components/studio/dialogs/ProductAdDialog.vue'
+import ProductAdDialog from '@/components/merchant/dialogs/ProductAdDialog.vue'
 import AIAvatarDialog from '@/components/projects/AIAvatarDialog.vue'
 import { useProjectStore } from '@/stores/project'
 import VideoPreviewModal from '@/components/projects/VideoPreviewModal.vue'
@@ -197,7 +198,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { getFileUrl } from '@/utils/api'
 
-const { t } = useTranslations()
+const { t } = useI18n()
 const router = useRouter()
 const projectStore = useProjectStore()
 const uiStore = useUIStore()
@@ -213,14 +214,14 @@ const showTour = ref(false)
 const tourSteps = [
   {
     target: '#tour-new-project',
-    title: 'Create Your Masterpiece',
-    description: 'Launch the AI assistance to start a new video project in seconds.',
+    title: t('projects.tour.create.title'),
+    description: t('projects.tour.create.desc'),
     placement: 'bottom'
   },
   {
     target: '#tour-filters',
-    title: 'Smart Filtering',
-    description: 'Switch between Drafts and Completed projects to stay organized.',
+    title: t('projects.tour.filters.title'),
+    description: t('projects.tour.filters.desc'),
     placement: 'bottom-end'
   }
 ]
@@ -250,9 +251,9 @@ const handleProjectEditor = (project: any) => {
 }
 
 const statusFilters = computed(() => [
-  { value: 'all', label: t('projects.filterAll') },
-  { value: 'draft', label: t('projects.filterDraft') },
-  { value: 'completed', label: t('projects.filterCompleted') }
+  { value: 'all', label: t('projects.filters.all') },
+  { value: 'draft', label: t('projects.filters.draft') },
+  { value: 'completed', label: t('projects.filters.completed') }
 ])
 
 const filteredProjects = computed(() => {
@@ -275,7 +276,6 @@ const filteredProjects = computed(() => {
 
 const handleAction = async (command: string, project: any) => {
   if (command === 'edit') {
-    // router.push(`/projects/${project._id}/editor`)
     handleProjectEditor(project);
   } else if (command === 'duplicate') {
     await duplicateProject(project)
@@ -314,7 +314,6 @@ const duplicateProject = async (project: any) => {
 const handlePageChange = (page: number) => {
   projectStore.pagination.page = page
   projectStore.fetchProjects()
-  // Scroll to top of the main container when changing page
   const mainContent = document.querySelector('.app-main')
   if (mainContent) mainContent.scrollTop = 0
 }

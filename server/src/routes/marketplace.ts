@@ -12,6 +12,8 @@ import { pptxImporter } from '../services/PptxImporter.js';
 import multer from 'multer';
 import axios from 'axios';
 
+import { Logger } from '../utils/Logger.js';
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
@@ -168,14 +170,14 @@ router.get('/templates', authMiddleware, async (req: AuthRequest, res) => {
         const count = await Template.countDocuments({ is_published: true });
         // 2. If empty, sync from Zocket
         if (count === 0) {
-            console.log('Template DB empty, syncing from Zocket...');
+            Logger.info('Template DB empty, syncing from Zocket...');
             try {
                 // Fetch all templates (or a large batch) to populate DB
                 const zocketUrl = `${ZOCKET_API_TEMPLATES}?is_published=true&page=0&limit=1000`; // Initial sync limit
                 const response = await fetch(zocketUrl);
 
                 if (!response.ok) {
-                    console.error(`Failed to fetch from Zocket: ${response.status}`);
+                    Logger.error(`Failed to fetch from Zocket: ${response.status}`);
                     // Don't fail the request, just return empty or what we have
                 }
                 else {
@@ -198,7 +200,7 @@ router.get('/templates', authMiddleware, async (req: AuthRequest, res) => {
                                     });
                                 }
                             } catch (e) {
-                                console.warn(`Failed to parse pages for template ${t.id}`, e);
+                                Logger.warn(`Failed to parse pages for template ${t.id}`, e);
                             }
                             return {
                                 id: t.id + "_zocket",
@@ -220,11 +222,11 @@ router.get('/templates', authMiddleware, async (req: AuthRequest, res) => {
                             };
                         });
                         await Template.insertMany(templatesToSave);
-                        console.log(`Synced ${templatesToSave.length} templates from Zocket`);
+                        Logger.info(`Synced ${templatesToSave.length} templates from Zocket`);
                     }
                 }
             } catch (error) {
-                console.error('Error syncing templates from Zocket:', error);
+                Logger.error('Error syncing templates from Zocket:', error);
             }
         }
 
@@ -415,7 +417,7 @@ router.post('/import/pptx', authMiddleware, upload.single('file'), async (req: A
 
         res.json({ success: true, data: { template } });
     } catch (e: any) {
-        console.error('PPTX Import error:', e);
+        Logger.error('PPTX Import error:', e);
         res.status(500).json({ success: false, error: e.message });
     }
 });

@@ -10,13 +10,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, watchEffect } from 'vue';
+import { computed, defineAsyncComponent, watchEffect, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { Toaster } from 'vue-sonner';
 import 'vue-sonner/style.css';
 import { useUIStore } from '@/stores/ui';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute()
+const { locale } = useI18n()
+
+// Persist locale changes
+watch(locale, (newLocale) => {
+  localStorage.setItem('preferred-language', newLocale);
+});
 
 // Async components for layouts
 const layouts = {

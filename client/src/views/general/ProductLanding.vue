@@ -9,7 +9,7 @@
 
     <div v-if="loading" class="flex flex-col items-center justify-center min-h-screen relative z-10">
        <div class="w-16 h-16 rounded-full border-t-2 border-blue-500 animate-spin mb-4"></div>
-       <p class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500/60">Loading Experience</p>
+       <p class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500/60">{{ t('productLanding.loading') }}</p>
     </div>
 
     <div v-else-if="product" class="relative z-10">
@@ -21,10 +21,10 @@
                <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-black text-xs" v-else>
                   {{ product.brand_name ? product.brand_name[0] : 'P' }}
                </div>
-               <span class="text-sm font-black uppercase tracking-tighter">{{ product.brand_name || 'AntStudio Product' }}</span>
+               <span class="text-sm font-black uppercase tracking-tighter">{{ product.brand_name || t('common.unknownProduct') }}</span>
             </div>
             <button @click="redirectToOrder" class="px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20 active:scale-95">
-               Order Now
+               {{ t('productLanding.orderNow') }}
             </button>
          </div>
       </nav>
@@ -44,7 +44,7 @@
 
                   <div class="flex items-baseline gap-2">
                      <span class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">{{ product.currency }} {{ product.price }}</span>
-                     <span class="text-xs text-gray-500 uppercase font-black tracking-widest">Free Global Shipping</span>
+                     <span class="text-xs text-gray-500 uppercase font-black tracking-widest">{{ t('productLanding.freeShipping') }}</span>
                   </div>
 
                   <div class="flex flex-wrap gap-3">
@@ -56,7 +56,7 @@
                   <div class="pt-6">
                      <button @click="redirectToOrder" class="group relative px-12 py-5 rounded-3xl bg-white text-black text-xs font-black uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-[0_20px_50px_rgba(255,255,255,0.1)] overflow-hidden">
                         <span class="relative z-10 flex items-center gap-3">
-                           Secure Checkout <rocket theme="filled" size="14" />
+                           {{ t('productLanding.secureCheckout') }} <rocket theme="filled" size="14" />
                         </span>
                         <div class="absolute inset-0 bg-gradient-to-r from-blue-100 to-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
                      </button>
@@ -79,7 +79,7 @@
                      <img v-else :src="product.image || '/placeholder-product.png'" class="w-full h-full object-cover" />
                      
                      <div v-if="!product.video" class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white">Ad Video Preview Unavailable</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white">{{ t('productLanding.previewUnavailable') }}</p>
                      </div>
                   </div>
                </div>
@@ -90,7 +90,7 @@
       <!-- Image Gallery -->
       <section class="py-20 px-8 bg-white/[0.02] border-y border-white/5">
          <div class="max-w-7xl mx-auto">
-            <h2 class="text-sm font-black uppercase tracking-[0.3em] text-gray-500 mb-12 text-center">Visual Gallery</h2>
+            <h2 class="text-sm font-black uppercase tracking-[0.3em] text-gray-500 mb-12 text-center">{{ t('productLanding.visualGallery') }}</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                <div 
                   v-for="(img, idx) in product.images" 
@@ -108,23 +108,23 @@
          <div class="max-w-4xl mx-auto text-center space-y-12">
             <div class="inline-flex items-center gap-6 px-10 py-5 rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-xl">
                <div class="text-left py-2">
-                  <div class="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1">Authentic Product</div>
-                  <div class="text-sm font-black uppercase text-white">{{ product.brand_name || 'Verified Collection' }}</div>
+                  <div class="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1">{{ t('productLanding.authenticProduct') }}</div>
+                  <div class="text-sm font-black uppercase text-white">{{ product.brand_name || t('common.verifiedCollection') }}</div>
                </div>
                <div class="w-px h-10 bg-white/10"></div>
                <div class="text-left py-2">
-                  <div class="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1">Stock Status</div>
-                  <div class="text-sm font-black uppercase" :class="product.stock > 0 ? 'text-green-400' : 'text-red-400'">{{ product.stock > 0 ? 'Limited Stock' : 'Out of Stock' }}</div>
+                  <div class="text-[8px] font-black uppercase tracking-widest text-gray-500 mb-1">{{ t('productLanding.stockStatus') }}</div>
+                  <div class="text-sm font-black uppercase" :class="product.stock > 0 ? 'text-green-400' : 'text-red-400'">{{ product.stock > 0 ? t('productLanding.limitedStock') : t('productLanding.outOfStock') }}</div>
                </div>
             </div>
 
             <p class="text-3xl font-black text-white/50 leading-tight italic">
-               &ldquo;Bringing the future of commerce to your fingertips through high-fidelity automation.&rdquo;
+               &ldquo;{{ product.tagline || t('productLanding.getItNow') }}&rdquo;
             </p>
 
             <div class="pt-12">
                <button @click="redirectToOrder" class="text-xs font-black uppercase tracking-[0.3em] text-blue-400 hover:text-white transition-colors">
-                  Get it now! &rarr;
+                  {{ t('productLanding.getItNow') }} &rarr;
                </button>
             </div>
          </div>
@@ -133,7 +133,7 @@
       <!-- Footer -->
       <footer class="py-12 border-t border-white/5 px-8 text-center">
          <p class="text-[8px] font-black uppercase tracking-widest text-gray-600">
-            Powered by AntStudio Intelligent Commerce Engine &bull; &copy; 2026
+            {{ t('productLanding.poweredBy', { appName: String(uiStore.appName) }) }} &bull; &copy; {{ new Date().getFullYear() }}
          </p>
       </footer>
     </div>
@@ -142,9 +142,9 @@
        <div class="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-8 border border-red-500/20">
           <close-one size="32" />
        </div>
-       <h2 class="text-2xl font-black uppercase tracking-tighter mb-4 text-white">Product Not Found</h2>
-       <p class="text-xs text-gray-500 uppercase tracking-widest mb-10 text-center">The link you followed may be broken or the product has been moved.</p>
-       <button @click="$router.push('/')" class="px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white">Back to Home</button>
+       <h2 class="text-2xl font-black uppercase tracking-tighter mb-4 text-white">{{ t('productLanding.notFound.title') }}</h2>
+       <p class="text-xs text-gray-500 uppercase tracking-widest mb-10 text-center">{{ t('productLanding.notFound.desc') }}</p>
+       <button @click="$router.push('/')" class="px-8 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-white">{{ t('productLanding.notFound.backHome') }}</button>
     </div>
   </div>
 </template>
@@ -155,9 +155,13 @@ import { useRoute } from 'vue-router';
 import { Rocket, Check, CloseOne, VideoFile, Broadcast } from '@icon-park/vue-next';
 import { useUserStore } from '@/stores/user';
 import api, { getFileUrl } from '@/utils/api';
+import { useI18n } from 'vue-i18n';
+import { useUIStore } from '@/stores/ui';
 
+const { t } = useI18n()
 const route = useRoute();
 const userStore = useUserStore();
+const uiStore = useUIStore();
 const id = route.params.id as string;
 
 const loading = ref(true);

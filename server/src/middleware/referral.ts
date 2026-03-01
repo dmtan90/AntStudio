@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Affiliate } from '../models/Affiliate.js';
 
+import { Logger } from '../utils/Logger.js';
+
 // Extend Express Request
 declare global {
     namespace Express {
@@ -19,7 +21,7 @@ export const referralMiddleware = async (req: Request, res: Response, next: Next
         const refCode = req.query.ref as string;
 
         if (refCode) {
-            console.log(`[Referral] Detected code: ${refCode}`);
+            Logger.info(`[Referral] Detected code: ${refCode}`);
 
             // 1. Verify Affiliate exists
             const affiliate = await Affiliate.findOne({ referralCode: refCode.toLowerCase(), status: 'active' });
@@ -49,7 +51,7 @@ export const referralMiddleware = async (req: Request, res: Response, next: Next
 
         next();
     } catch (error) {
-        console.error('[ReferralMiddleware] Tracking failed:', error);
+        Logger.error('[ReferralMiddleware] Tracking failed:', error);
         next(); // Don't block requests if tracking fails
     }
 };

@@ -10,9 +10,9 @@
                     </div>
                 </div>
                 <div class="text-content">
-                    <div class="label">LEVEL UP!</div>
-                    <div class="main-text">LEVEL {{ level }}</div>
-                    <div class="sub-text">New rewards unlocked</div>
+                    <div class="label">{{ $t('studio.common.levelUp') || 'LEVEL UP!' }}</div>
+                    <div class="main-text">{{ $t('studio.common.levelInfo', { level }) || 'LEVEL ' + level }}</div>
+                    <div class="sub-text">{{ $t('studio.common.newRewards') || 'New rewards unlocked' }}</div>
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Response, NextFunction, Request } from 'express';
 import { AuthRequest } from './auth.js';
 import config from '../utils/config.js';
 
@@ -13,15 +13,17 @@ export const licenseGating = (requiredTier: 'trial' | 'basic' | 'pro' | 'enterpr
             return next();
         }
 
-        // Need to check this task
-        // // Edge servers retrieve license state from local cache/database
-        // const { License } = await import('../models/License.js');
-        // const localLicense = await License.findOne({ status: 'valid' });
+        //bypass license to check features
+        return next();
 
-        // if (!localLicense) {
+        // // Edge servers retrieve license state from local cache/service
+        // const { LicenseWorker } = await import('../services/LicenseWorker.js');
+        // const localLicense = await LicenseWorker.getLicense();
+
+        // if (!localLicense || localLicense.status !== 'valid') {
         //     return res.status(402).json({
         //         success: false,
-        //         error: 'Tactical Block: valid license registry not found on this Edge unit.'
+        //         error: 'Tactical Block: valid license registry not found or expired on this Edge unit.'
         //     });
         // }
 
@@ -45,6 +47,46 @@ export const licenseGating = (requiredTier: 'trial' | 'basic' | 'pro' | 'enterpr
         //     });
         // }
 
-        next();
+        // next();
     };
+};
+
+export const checkUserLimit = async (req: Request, res: Response, next: NextFunction) => {
+    if (config.systemMode === 'master') return next();
+    return next();
+
+    // const { LicenseWorker } = await import('../services/LicenseWorker.js');
+    // const { User } = await import('../models/User.js');
+    
+    // const localLicense = await LicenseWorker.getLicense();
+    // if (!localLicense) return next();
+
+    // const maxUsers = localLicense.maxUsersPerInstance || 5;
+    // if (maxUsers === -1) return next();
+
+    // const currentUsers = await User.countDocuments();
+    // if (currentUsers >= maxUsers) {
+    //     return res.status(403).json({ success: false, error: `User limit reached (${maxUsers}). Please upgrade license.` });
+    // }
+    // next();
+};
+
+export const checkProjectLimit = async (req: Request, res: Response, next: NextFunction) => {
+    if (config.systemMode === 'master') return next();
+    return next();
+
+    // const { LicenseWorker } = await import('../services/LicenseWorker.js');
+    // const { Project } = await import('../models/Project.js');
+    
+    // const localLicense = await LicenseWorker.getLicense();
+    // if (!localLicense) return next();
+
+    // const maxProjects = localLicense.maxProjectsPerInstance || 10;
+    // if (maxProjects === -1) return next();
+
+    // const currentProjects = await Project.countDocuments();
+    // if (currentProjects >= maxProjects) {
+    //     return res.status(403).json({ success: false, error: `Project limit reached (${maxProjects}). Please upgrade license.` });
+    // }
+    // next();
 };

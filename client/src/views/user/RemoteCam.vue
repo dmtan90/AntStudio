@@ -3,10 +3,10 @@
         class="remote-cam glass-dark min-h-screen flex flex-col items-center justify-between p-6 bg-black text-white font-sans">
         <!-- Logo & Header -->
         <div class="w-full flex justify-between items-center py-4">
-            <span class="text-2xl font-black tracking-tighter">Ant<span class="text-blue-500">Flow</span></span>
+            <span class="text-2xl font-black tracking-tighter">{{ useUIStore().appName }}</span>
             <div
                 class="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white/60">
-                Mobile Camera
+                {{ t('remoteCam.header.title') }}
             </div>
         </div>
 
@@ -18,13 +18,12 @@
                 <camera theme="outline" size="48" />
             </div>
             <div class="space-y-3">
-                <h1 class="text-3xl font-black tracking-tight">Sync your device</h1>
-                <p class="opacity-40 text-sm max-w-xs mx-auto leading-relaxed">Transform this phone into a
-                    high-performance wireless camera for your live studio.</p>
+                <h1 class="text-3xl font-black tracking-tight">{{ t('remoteCam.pairing.title') }}</h1>
+                <p class="opacity-40 text-sm max-w-xs mx-auto leading-relaxed">{{ t('remoteCam.pairing.subtitle') }}</p>
             </div>
             <button @click="initMedia"
                 class="w-full max-w-xs py-5 bg-blue-600 rounded-3xl font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-600/30 hover:bg-blue-500 transition-all active:scale-95">
-                Enable Camera
+                {{ t('remoteCam.pairing.enableAction') }}
             </button>
         </div>
 
@@ -44,11 +43,11 @@
                             <div class="w-2 h-2 rounded-full"
                                 :class="isConnected ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-red-500'"></div>
                             <span class="text-[10px] font-black uppercase tracking-widest opacity-80">{{ isConnected ?
-                                'Live' : 'Ready' }}</span>
+                                t('remoteCam.status.live') : t('remoteCam.status.ready') }}</span>
                         </div>
                         <div v-if="isApproved"
                             class="inline-flex items-center bg-blue-500/20 backdrop-blur-md px-3 py-1.5 rounded-xl border border-blue-500/20 text-blue-400 text-[8px] font-black uppercase tracking-wider">
-                            ON AIR
+                            {{ t('remoteCam.status.onAir') }}
                         </div>
                     </div>
 
@@ -63,7 +62,7 @@
                     class="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm px-10 text-center animate-in fade-in">
                     <div class="space-y-4">
                         <div class="loading-spinner border-blue-500 mx-auto w-8 h-8"></div>
-                        <p class="text-sm font-bold">Awaiting Host Approval...</p>
+                        <p class="text-sm font-bold">{{ t('remoteCam.status.awaitingApproval') }}</p>
                         <p class="text-[10px] opacity-40 uppercase tracking-widest">{{ name }}</p>
                     </div>
                 </div>
@@ -73,18 +72,18 @@
             <div class="grid grid-cols-1 gap-4 mt-auto">
                 <button v-if="!isConnected" @click="connectToStudio"
                     class="w-full py-6 bg-white text-black rounded-3xl font-black uppercase tracking-[0.24em] shadow-xl shadow-white/5 hover:bg-zinc-200 transition-all active:scale-95">
-                    Start Broadcasting
+                    {{ t('remoteCam.actions.startBroadcast') }}
                 </button>
                 <button v-else @click="disconnect"
                     class="w-full py-6 bg-red-500/10 border border-red-500/20 text-red-500 rounded-3xl font-black uppercase tracking-[0.24em] hover:bg-red-500/20 transition-all active:scale-95">
-                    Disconnect
+                    {{ t('remoteCam.actions.disconnect') }}
                 </button>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="py-4 text-center">
-            <p class="text-[9px] font-black opacity-20 uppercase tracking-[0.4em]">Integrated Secure P2P Bridge</p>
+            <p class="text-[9px] font-black opacity-20 uppercase tracking-[0.4em]">{{ t('remoteCam.footer.p2pBridge') }}</p>
         </div>
     </div>
 </template>
@@ -96,7 +95,10 @@ import { Camera, Refresh, Close } from '@icon-park/vue-next';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { useStudioP2P } from '@/composables/studio/useStudioP2P';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
+import { useUIStore } from '@/stores/ui';
 
+const { t } = useI18n()
 const route = useRoute();
 const sessionId = computed(() => route.query.session as string);
 const name = computed(() => route.query.name as string || 'MobileCam');
@@ -159,10 +161,10 @@ const initMedia = async () => {
             localVideo.value.play().catch(e => console.error("Video auto-play failed:", e));
         }
 
-        toast.success(`Camera active: ${facingMode.value === 'user' ? 'Front' : 'Back'}`);
+        toast.success(t('remoteCam.toasts.cameraActive', { mode: facingMode.value === 'user' ? t('remoteCam.toasts.front') : t('remoteCam.toasts.back') }));
     } catch (e) {
         console.error(e);
-        toast.error("Camera access required. Please check your browser permissions.");
+        toast.error(t('remoteCam.toasts.cameraRequired'));
     }
 };
 
@@ -172,7 +174,7 @@ const flipCamera = () => {
 };
 
 const connectToStudio = () => {
-    if (!sessionId.value) return toast.error("Invalid session link");
+    if (!sessionId.value) return toast.error(t('remoteCam.toasts.invalidSession'));
 
     // Connect to signaling (Uses Guest Join flow)
     ActionSyncService.connect(sessionId.value, token.value, { displayName: name.value });
@@ -186,7 +188,7 @@ const connectToStudio = () => {
         // Listen for approvals
         socket.on('guest:approved', async (data: any) => {
             isApproved.value = true;
-            toast.success("Broadcast live!");
+            toast.success(t('remoteCam.toasts.broadcastLive'));
 
             // Apply initial permissions
             if (data.permissions) {
@@ -202,13 +204,13 @@ const connectToStudio = () => {
 
         socket.on('guest:rejected', () => {
             isConnected.value = false;
-            toast.error("Host declined the connection");
+            toast.error(t('remoteCam.toasts.hostDeclined'));
         });
 
         socket.on('disconnect', () => {
             isConnected.value = false;
             isApproved.value = false;
-            toast.info("Signaling disconnected");
+            toast.info(t('remoteCam.toasts.signalingDisconnected'));
         });
 
         // Handle remote controls (Mute/Unmute/Kick) from Host
@@ -219,15 +221,15 @@ const connectToStudio = () => {
             if (action === 'audio') {
                 if (localStream.value) {
                     localStream.value.getAudioTracks().forEach(t => t.enabled = value);
-                    toast.info(value ? "Host unmuted your mic" : "Host muted your mic");
+                    toast.info(value ? t('remoteCam.toasts.hostUnmuted') : t('remoteCam.toasts.hostMuted'));
                 }
             } else if (action === 'video') {
                 if (localStream.value) {
                     localStream.value.getVideoTracks().forEach(t => t.enabled = value);
-                    toast.info(value ? "Host enabled your camera" : "Host disabled your camera");
+                    toast.info(value ? t('remoteCam.toasts.hostEnabledCam') : t('remoteCam.toasts.hostDisabledCam'));
                 }
             } else if (action === 'kick') {
-                toast.error("Removed by host");
+                toast.error(t('remoteCam.toasts.removedByHost'));
                 disconnect();
             }
         });
@@ -238,7 +240,7 @@ const disconnect = () => {
     ActionSyncService.disconnect();
     isConnected.value = false;
     isApproved.value = false;
-    toast.info("Session stopped");
+    toast.info(t('remoteCam.toasts.sessionStopped'));
 };
 
 onMounted(() => {

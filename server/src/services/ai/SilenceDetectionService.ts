@@ -6,6 +6,8 @@ import path from 'path';
 import os from 'os';
 import { v4 as uuidv4 } from 'uuid';
 
+import { Logger } from '../../utils/Logger.js';
+
 // Set FFmpeg paths from config
 ffmpeg.setFfmpegPath(config.ffmpegPath);
 ffmpeg.setFfprobePath(config.ffprobePath);
@@ -47,7 +49,7 @@ export class SilenceDetectionService {
                     .audioFilters(`silencedetect=n=${noise}dB:d=${duration}`)
                     .format('null')
                     .on('start', (commandLine: string) => {
-                        console.log(`[SilenceDetection] Spawned FFmpeg with command: ${commandLine}`);
+                        Logger.info(`[SilenceDetection] Spawned FFmpeg with command: ${commandLine}`);
                     })
                     .on('stderr', (stderrLine: string) => {
                         // silencedetect outputs to stderr
@@ -66,7 +68,7 @@ export class SilenceDetectionService {
                         }
                     })
                     .on('error', (err: Error) => {
-                        console.error('[SilenceDetection] FFmpeg error:', err);
+                        Logger.error('[SilenceDetection] FFmpeg error:', err);
                         reject(err);
                     })
                     .on('end', () => {
@@ -98,7 +100,7 @@ export class SilenceDetectionService {
             });
 
         } catch (error: any) {
-            console.error('[SilenceDetectionService] Detection failed:', error.message);
+            Logger.error('[SilenceDetectionService] Detection failed:', error.message);
             throw error;
         } finally {
             // Cleanup temp file

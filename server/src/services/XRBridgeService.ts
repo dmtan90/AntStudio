@@ -1,4 +1,4 @@
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 
 export interface XREvent {
     type: 'lighting_sync' | 'hype_pulse' | 'spatial_shift';
@@ -21,7 +21,7 @@ export class XRBridgeService {
             timestamp: new Date()
         };
 
-        systemLogger.info(`🌌 [XRBridge] Broadcasting Lighting Sync: ${color} @ ${intensity}%`, 'XRBridgeService');
+        Logger.info(`🌌 [XRBridge] Broadcasting Lighting Sync: ${color} @ ${intensity}%`, 'XRBridgeService');
         // socketServer.to(`xr_${projectId}`).emit('xr_update', event);
     }
 
@@ -35,7 +35,7 @@ export class XRBridgeService {
             timestamp: new Date()
         };
 
-        systemLogger.info(`🔥 [XRBridge] High-impact Hype Pulse triggered (M:${magnitude})`, 'XRBridgeService');
+        Logger.info(`🔥 [XRBridge] High-impact Hype Pulse triggered (M:${magnitude})`, 'XRBridgeService');
     }
 }
 

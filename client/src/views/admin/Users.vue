@@ -3,10 +3,10 @@
     <div class="page-header flex flex-col md:flex-row justify-between items-end gap-6 mb-12 relative z-10">
       <div>
         <h1 class="text-5xl font-black tracking-tighter mb-2 relative inline-block">
-           User Registry
+           {{ $t('admin.users.title') }}
            <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
         </h1>
-        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Global Identity Management</p>
+        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">{{ $t('admin.users.subtitle') }}</p>
       </div>
 
       <div class="relative group w-full md:w-auto md:max-w-md">
@@ -14,7 +14,7 @@
         <input 
            v-model="search" 
            @input="handleSearch"
-           placeholder="Search identity matrix..." 
+           :placeholder="t('admin.users.searchPlaceholder')" 
            class="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-medium text-white focus:outline-none focus:border-blue-500/50 focus:bg-white/10 transition-all shadow-lg"
         />
       </div>
@@ -27,11 +27,11 @@
 
       <div v-else class="cinematic-table-container bg-white/[0.02] rounded-[2rem] border border-white/5 overflow-hidden backdrop-blur-sm">
         <div class="cinematic-table-header px-8 py-6 border-b border-white/5 bg-white/[0.02] hidden md:grid grid-cols-12 gap-4">
-          <div class="col-span-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Identity / Profile</div>
-          <div class="col-span-2 text-[9px] font-black uppercase tracking-widest text-gray-500">Role Access</div>
-          <div class="col-span-2 text-[9px] font-black uppercase tracking-widest text-gray-500">Subscription</div>
-          <div class="col-span-2 text-[9px] font-black uppercase tracking-widest text-gray-500 text-center">Status</div>
-          <div class="col-span-2 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">Actions</div>
+          <div class="col-span-4 text-[9px] font-black uppercase tracking-widest text-gray-500">{{ $t('admin.users.table.identity') }}</div>
+          <div class="col-span-2 text-[9px] font-black uppercase tracking-widest text-gray-500">{{ $t('admin.users.table.role') }}</div>
+          <div class="col-span-2 text-[9px] font-black uppercase tracking-widest text-gray-500">{{ $t('admin.users.table.subscription') }}</div>
+          <div class="col-span-2 text-[9px] font-black uppercase tracking-widest text-gray-500 text-center">{{ $t('admin.users.table.status') }}</div>
+          <div class="col-span-2 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">{{ $t('admin.users.table.actions') }}</div>
         </div>
 
         <div class="cinematic-table-body">
@@ -52,12 +52,12 @@
             <div class="col-span-2">
               <span :class="['px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border', 
                  user.role === 'admin' ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-white/5 border-white/10 text-gray-400']">
-                 {{ user.role }}
+                 {{ t(`admin.users.roles.${user.role}`) }}
               </span>
             </div>
 
             <div class="col-span-2">
-              <span class="text-xs font-bold text-blue-400 tracking-wide">{{ user.subscription?.plan?.toUpperCase() || 'FREE' }}</span>
+              <span class="text-xs font-bold text-blue-400 tracking-wide">{{ t('admin.users.plans.' + (user.subscription?.plan?.toLowerCase() || 'free')) }}</span>
             </div>
 
             <div class="col-span-2 text-center pointer-events-auto" @click.stop>
@@ -69,10 +69,10 @@
             </div>
 
             <div class="col-span-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-               <button class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-colors" @click="viewDetails(user._id)" title="View Details">
+               <button class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-colors" @click="viewDetails(user._id)" :title="t('admin.users.actions.viewDetails')">
                   <doc-detail theme="outline" size="16" />
                </button>
-               <button class="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors" @click="deleteUser(user._id)" title="Delete User">
+               <button class="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors" @click="deleteUser(user._id)" :title="t('admin.users.actions.deleteUser')">
                   <delete theme="outline" size="16" />
                </button>
             </div>
@@ -101,6 +101,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n';
 import { ElMessageBox } from 'element-plus'
 import { DocDetail, Delete, Loading, Search } from '@icon-park/vue-next'
 import { toast } from 'vue-sonner'
@@ -109,6 +110,7 @@ import GMedia from '@/components/ui/GMedia.vue'
 import { useAdminStore } from '@/stores/admin'
 import { storeToRefs } from 'pinia'
 
+const { t } = useI18n()
 const adminStore = useAdminStore()
 const { users, loading } = storeToRefs(adminStore)
 
@@ -126,7 +128,7 @@ const fetchUsers = async () => {
     })
     total.value = response.total
   } catch (error) {
-    toast.error('Failed to load users')
+    toast.error(t('admin.users.toasts.loadFailed'))
   }
 }
 
@@ -138,9 +140,10 @@ const handleSearch = () => {
 const handleStatusChange = async (userId: string, active: boolean) => {
   try {
     await adminStore.updateUser(userId, { isActive: active })
-    toast.success(`User ${active ? 'activated' : 'deactivated'} successfully`)
-  } catch (error) {
-    toast.error('Failed to update user status')
+    const statusText = active ? t('admin.users.status.activated') : t('admin.users.status.deactivated')
+    toast.success(t('admin.users.toasts.statusUpdated', { status: statusText }))
+  } catch (e) {
+    toast.error(t('admin.users.toasts.updateFailed'))
   }
 }
 
@@ -152,21 +155,27 @@ const viewDetails = (userId: string) => {
   showDetailDialog.value = true
 }
 
-const deleteUser = (userId: string) => {
-  ElMessageBox.confirm('Are you sure you want to delete this user? This action is irreversible.', 'Warning', {
-    confirmButtonText: 'Delete',
-    cancelButtonText: 'Cancel',
-    type: 'warning',
-    customClass: 'glass-message-box'
-  }).then(async () => {
-    try {
-      await adminStore.deleteUser(userId)
-      toast.success('User deleted successfully')
-      fetchUsers()
-    } catch (error) {
-      toast.error('Failed to delete user')
+const deleteUser = async (userId: string) => {
+  try {
+    await ElMessageBox.confirm(
+      t('admin.users.deleteConfirm.message'),
+      t('admin.users.deleteConfirm.title'),
+      {
+        confirmButtonText: t('admin.users.deleteConfirm.confirm'),
+        cancelButtonText: t('admin.users.deleteConfirm.cancel'),
+        type: 'warning',
+        customClass: 'cinematic-message-box'
+      }
+    )
+
+    await adminStore.deleteUser(userId)
+    toast.success(t('admin.users.toasts.userDeleted'))
+    fetchUsers()
+  } catch (e) {
+    if (e !== 'cancel') {
+      toast.error(t('admin.users.toasts.deleteFailed'))
     }
-  }).catch(() => {})
+  }
 }
 
 onMounted(fetchUsers)
@@ -187,7 +196,7 @@ onMounted(fetchUsers)
    font-weight: 900;
 }
 
-:global(.glass-message-box) {
+:global(.cinematic-message-box) {
    background: rgba(20, 20, 25, 0.95) !important;
    backdrop-filter: blur(24px) !important;
    border: 1px solid rgba(255, 255, 255, 0.1) !important;

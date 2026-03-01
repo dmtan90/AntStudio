@@ -5,20 +5,20 @@
                 <div class="icon-wrapper">
                     <plus theme="filled" size="32" fill="#fff" />
                 </div>
-                <h2>Start Blank Project</h2>
-                <p>Start from scratch with a clean canvas. Choose your settings to begin.</p>
+                <h2>{{ t('projects.new.setup.blank.title') }}</h2>
+                <p>{{ t('projects.new.setup.blank.desc') }}</p>
             </div>
 
             <div class="form-group">
-                <label>Project Title</label>
+                <label>{{ t('projects.new.setup.blank.projectTitle') }}</label>
                 <div class="input-wrapper">
-                    <textarea v-model="form.title" placeholder="Enter project title..." class="title-input" rows="1"
+                    <textarea v-model="form.title" :placeholder="t('projects.new.setup.blank.projectTitlePlaceholder')" class="title-input" rows="1"
                         @keydown.enter.prevent="createProject"></textarea>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Aspect Ratio</label>
+                <label>{{ t('projects.new.setup.blank.aspectRatio') }}</label>
                 <div class="ratio-grid">
                     <div v-for="ratio in ratios" :key="ratio.value" class="ratio-card justify-center"
                         :class="{ active: form.aspectRatio === ratio.value }" @click="form.aspectRatio = ratio.value">
@@ -30,10 +30,10 @@
             </div>
 
             <div class="actions">
-                <button class="btn-cancel" @click="$router.push('/dashboard')">Cancel</button>
+                <button class="btn-cancel" @click="$router.push('/dashboard')">{{ t('common.cancel') }}</button>
                 <button class="btn-create" :disabled="!form.title.trim() || loading" @click="createProject">
-                    <span v-if="loading">Creating...</span>
-                    <span v-else>Create Project</span>
+                    <span v-if="loading">{{ t('projects.new.setup.blank.creating') }}</span>
+                    <span v-else>{{ t('projects.new.create') }}</span>
                 </button>
             </div>
         </div>
@@ -46,9 +46,11 @@ import { useRouter } from 'vue-router'
 import { Plus } from '@icon-park/vue-next'
 import { useProjectStore } from '@/stores/project'
 import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter()
 const projectStore = useProjectStore()
+const { t } = useI18n()
 const loading = ref(false)
 
 const form = reactive({

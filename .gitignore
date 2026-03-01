@@ -46,3 +46,8 @@ server/cert1.pem
 server/chain1.pem
 server/eval_log.txt
 server/fullchain1.pem
+server/migrate_logger.mjs
+server/migrate_systemLogger.mjs
+server/tsc_output.txt
+server/tsc_output_fixed.txt
+server/tsc_output_utf8.txt

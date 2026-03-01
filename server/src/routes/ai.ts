@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { 
     generateJSON, 
     generateText, 
@@ -9,7 +10,8 @@ import {
     generateStoryboard,
     extractHighlights,
     generateSocialMeta,
-    translateContent
+    translateContent,
+    generateMusic
 } from '../utils/AIGenerator.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { parseDocument } from '../utils/documentParser.js';
@@ -17,8 +19,9 @@ import { enhanceAudioFile } from '../utils/audioEnhancer.js'; // Added for audio
 import multer from 'multer';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { uploadToS3 } from '../utils/s3.js';
+import { uploadToS3, getFromS3 } from '../utils/s3.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
+import { licenseGating } from '../middleware/licenseGating.js';
 import { Media } from '../models/Media.js';
 import { connectDB } from '../utils/db.js';
 import config from '../utils/config.js';
@@ -33,16 +36,77 @@ import { aiGuestService } from '../services/ai/AIGuestService.js';
 import { aiProducerService } from '../services/ai/AIProducerService.js';
 import { ttsService } from '../services/ai/TTSService.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Middleware for auth
+// Middleware for auth & license
 router.use(authMiddleware);
+router.use(licenseGating('trial'));
 
 // Helper to clean and validate response
 const cleanResponse = (data: any[]) => {
     return data.map(item => typeof item === 'string' ? item.trim() : item).filter(item => item && item.length > 0);
 };
+
+/**
+ * Helper to resolve media input (file upload or mediaId string) to Buffer and MimeType.
+ * mediaId can be: Database ID, S3 Key, URL, or Base64 string.
+ */
+async function resolveMediaInput(file?: Express.Multer.File, mediaId?: string): Promise<{ buffer: Buffer, mimeType: string }> {
+    if (file) {
+        return { buffer: file.buffer, mimeType: file.mimetype };
+    }
+
+    if (!mediaId) {
+        throw new Error('No media input provided');
+    }
+
+    // 1. Check for Base64 (Data URI)
+    if (mediaId.startsWith('data:')) {
+        const matches = mediaId.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+            return {
+                mimeType: matches[1],
+                buffer: Buffer.from(matches[2], 'base64')
+            };
+        }
+    }
+
+    // 2. Check if it's a Database ID
+    let key = mediaId;
+    let mimeType = 'video/mp4'; // Default fallback
+
+    // Attempt to guess mimeType from extension if it's a URL/Key
+    const ext = mediaId.split('.').pop()?.split('?')[0].toLowerCase();
+    if (ext) {
+        if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+        else if (['mp4', 'webm', 'mov'].includes(ext)) mimeType = `video/${ext === 'mov' ? 'quicktime' : ext}`;
+        else if (['mp3', 'wav', 'aac', 'ogg'].includes(ext)) mimeType = `audio/${ext === 'mp3' ? 'mpeg' : ext}`;
+    }
+
+    if (mediaId.length === 24 && mongoose.Types.ObjectId.isValid(mediaId)) {
+        const media = await Media.findById(mediaId);
+        if (media) {
+            key = media.key;
+            mimeType = media.contentType;
+        }
+    }
+
+    // 3. Resolve Key/URL to Buffer
+    if (key.startsWith('http')) {
+        const response = await axios.get(key, { responseType: 'arraybuffer' });
+        return { buffer: Buffer.from(response.data), mimeType };
+    } else {
+        const stream = await getFromS3(key);
+        const chunks: any[] = [];
+        for await (const chunk of (stream as any)) {
+            chunks.push(chunk);
+        }
+        return { buffer: Buffer.concat(chunks), mimeType };
+    }
+}
 
 // ============================================================================
 // AI MEDIA GENERATION
@@ -91,7 +155,7 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
         // Return Key instead of URL (Frontend constructs /api/s3/...)
         res.json({ success: true, data: { media, url: s3Key } });
     } catch (error: any) {
-        console.error('Image generation error:', error);
+        Logger.error('Image generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate image' });
     }
 });
@@ -100,7 +164,7 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
 router.post('/generate-voice', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { text, voice, provider } = req.body;
+        const { text, voice, provider, multiSpeaker } = req.body;
         const userId = req.user!.userId;
 
         // Credit Deduction
@@ -116,7 +180,8 @@ router.post('/generate-voice', async (req: AuthRequest, res) => {
             `gen_voice_${Date.now()}`,
             {
                 voice,
-                providerId: provider // 'elevenlabs' or others
+                providerId: provider,//google/gemini
+                multiSpeaker: multiSpeaker
             }
         );
 
@@ -138,8 +203,51 @@ router.post('/generate-voice', async (req: AuthRequest, res) => {
         // Return Key
         res.json({ success: true, data: { media, url: s3Key } });
     } catch (error: any) {
-        console.error('Voice generation error:', error);
+        Logger.error('Voice generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate voice' });
+    }
+});
+
+// POST /api/ai/generate-music
+router.post('/generate-music', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { prompt, duration } = req.body;
+        const userId = req.user!.userId;
+
+        // Credit Deduction
+        try {
+            await deductCredits(userId, 'audio', CREDIT_PRICES.VOICE_GEN, `Generate AI Music: ${prompt.substring(0, 30)}...`);
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
+
+        const { s3Key } = await generateMusic(
+            prompt,
+            userId,
+            `gen_music_${Date.now()}`,
+            { durationSeconds: duration || 30 }
+        );
+
+        // Create Media Record
+        const media = await Media.create({
+            userId,
+            key: s3Key,
+            fileName: `AI Music - ${prompt.substring(0, 20)}...`,
+            contentType: 'audio/wav',
+            size: 0,
+            bucket: config.awsS3Bucket,
+            purpose: 'ai-music',
+            metadata: {
+                prompt,
+                duration
+            }
+        });
+
+        res.json({ success: true, data: { media, url: s3Key } });
+    } catch (error: any) {
+        Logger.error('Music generation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate music' });
     }
 });
 
@@ -168,7 +276,7 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
 
         res.json({ success: true, data: { jobId } });
     } catch (error: any) {
-        console.error('Video generation error:', error);
+        Logger.error('Video generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate video' });
     }
 });
@@ -214,7 +322,7 @@ router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
 
         res.json({ success: true, data: status });
     } catch (error: any) {
-        console.error('Video status check error:', error);
+        Logger.error('Video status check error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to check video status' });
     }
 });
@@ -239,7 +347,7 @@ router.post('/generate-storyboard', async (req: AuthRequest, res) => {
         const storyboard = await generateStoryboard(scriptOrTopic, projectAnalysis, targetDuration, language);
         res.json({ success: true, data: { storyboard } });
     } catch (error: any) {
-        console.error('Storyboard generation error:', error);
+        Logger.error('Storyboard generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate storyboard' });
     }
 });
@@ -269,7 +377,7 @@ router.post('/extract-highlights', async (req: AuthRequest, res) => {
         const result = await extractHighlights(analysisContext);
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('Highlight extraction error:', error);
+        Logger.error('Highlight extraction error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to extract highlights' });
     }
 });
@@ -293,7 +401,7 @@ router.post('/generate-social-meta', async (req: AuthRequest, res) => {
         const result = await generateSocialMeta(contentSummary);
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('Social meta generation error:', error);
+        Logger.error('Social meta generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate social meta' });
     }
 });
@@ -317,7 +425,7 @@ router.post(['/translate-media', '/translate-project'], async (req: AuthRequest,
         const translated = await translateContent(text, targetLanguage);
         res.json({ success: true, data: { translated } });
     } catch (error: any) {
-        console.error('Translation error:', error);
+        Logger.error('Translation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to translate content' });
     }
 });
@@ -327,18 +435,13 @@ router.post(['/translate-media', '/translate-project'], async (req: AuthRequest,
  */
 router.post(['/generate-caption', '/generate-image-caption'], upload.single('file'), async (req: AuthRequest, res) => {
     try {
-        const file = req.file;
-        const { image } = req.body;
+        const { image, mediaId } = req.body;
+        const { buffer, mimeType } = await resolveMediaInput(req.file, mediaId || image);
         
-        let inputImage = image;
-        if (file) {
-            inputImage = file.buffer.toString('base64');
-        }
-
-        if (!inputImage) return res.status(400).json({ success: false, error: 'No image provided' });
-
         const prompt = "Describe this image in detail for a blind user. Be concise but descriptive.";
-        const result = await generateText(prompt, 'gemini-2.5-flash', { images: [inputImage] });
+        const result = await generateText(prompt, 'gemini-2.5-flash', { 
+            images: [buffer.toString('base64')] 
+        });
 
         res.json({ success: true, data: { caption: result } });
     } catch (error: any) {
@@ -351,18 +454,13 @@ router.post(['/generate-caption', '/generate-image-caption'], upload.single('fil
  */
 router.post('/detect-objects', upload.single('file'), async (req: AuthRequest, res) => {
     try {
-        const file = req.file;
-        const { image } = req.body;
-        
-        let inputImage = image;
-        if (file) {
-            inputImage = file.buffer.toString('base64');
-        }
-
-        if (!inputImage) return res.status(400).json({ success: false, error: 'No image provided' });
+        const { image, mediaId } = req.body;
+        const { buffer, mimeType } = await resolveMediaInput(req.file, mediaId || image);
 
         const prompt = "Detect all major objects in this image and return a JSON list: { \"objects\": [ { \"name\": \"obj_name\", \"confidence\": 0.9, \"box_2d\": [ymin, xmin, ymax, xmax] } ] }";
-        const result = await generateJSON(prompt, 'gemini-2.5-flash', { images: [inputImage] });
+        const result = await generateJSON(prompt, 'gemini-2.5-flash', { 
+            images: [buffer.toString('base64')] 
+        });
 
         res.json({ success: true, data: result });
     } catch (error: any) {
@@ -375,18 +473,13 @@ router.post('/detect-objects', upload.single('file'), async (req: AuthRequest, r
  */
 router.post('/detect-faces', upload.single('file'), async (req: AuthRequest, res) => {
     try {
-        const file = req.file;
-        const { image } = req.body;
-        
-        let inputImage = image;
-        if (file) {
-            inputImage = file.buffer.toString('base64');
-        }
-
-        if (!inputImage) return res.status(400).json({ success: false, error: 'No image provided' });
+        const { image, mediaId } = req.body;
+        const { buffer, mimeType } = await resolveMediaInput(req.file, mediaId || image);
 
         const prompt = "Detect all faces in this image and return a JSON list with bounding boxes: { \"faces\": [ { \"box_2d\": [ymin, xmin, ymax, xmax], \"emotion\": \"happy\", \"confidence\": 0.99 } ] }";
-        const result = await generateJSON(prompt, 'gemini-2.5-flash', { images: [inputImage] });
+        const result = await generateJSON(prompt, 'gemini-2.5-flash', { 
+            images: [buffer.toString('base64')] 
+        });
 
         res.json({ success: true, data: result });
     } catch (error: any) {
@@ -399,18 +492,13 @@ router.post('/detect-faces', upload.single('file'), async (req: AuthRequest, res
  */
 router.post('/extract-text', upload.single('file'), async (req: AuthRequest, res) => {
     try {
-        const file = req.file;
-        const { image } = req.body;
-        
-        let inputImage = image;
-        if (file) {
-            inputImage = file.buffer.toString('base64');
-        }
-
-        if (!inputImage) return res.status(400).json({ success: false, error: 'No image provided' });
+        const { image, mediaId } = req.body;
+        const { buffer, mimeType } = await resolveMediaInput(req.file, mediaId || image);
 
         const prompt = "Extract all text from this image as it appears. Return ONLY the extracted text.";
-        const result = await generateText(prompt, 'gemini-2.5-flash', { images: [inputImage] });
+        const result = await generateText(prompt, 'gemini-2.5-flash', { 
+            images: [buffer.toString('base64')] 
+        });
 
         res.json({ success: true, data: { text: result } });
     } catch (error: any) {
@@ -423,26 +511,9 @@ router.post('/detect-scenes', upload.single('file'), async (req: AuthRequest, re
     try {
         await connectDB();
         const userId = req.user!.userId;
-        const file = req.file;
         const { mediaId } = req.body;
 
-        let videoBuffer: Buffer;
-        let mimeType: string;
-
-        if (file) {
-            videoBuffer = file.buffer;
-            mimeType = file.mimetype;
-        } else if (mediaId) {
-            const media = await Media.findById(mediaId);
-            if (!media) return res.status(404).json({ success: false, error: 'Media not found' });
-
-            // Fetch from S3
-            const response = await axios.get(media.key.startsWith('http') ? media.key : `${config.awsS3Endpoint}/${media.key}`, { responseType: 'arraybuffer' });
-            videoBuffer = Buffer.from(response.data);
-            mimeType = media.contentType;
-        } else {
-            return res.status(400).json({ success: false, error: 'No video provided' });
-        }
+        const { buffer: videoBuffer, mimeType } = await resolveMediaInput(req.file, mediaId);
 
         // Credit Deduction (1 credit per 2 seconds of video, simplified)
         // Hardcoding 10 credits for now as we don't know duration easily without ffprobe
@@ -455,7 +526,7 @@ router.post('/detect-scenes', upload.single('file'), async (req: AuthRequest, re
         const scenes = await sceneDetectionService.detectScenes(videoBuffer, mimeType);
         res.json({ success: true, data: { scenes } });
     } catch (error: any) {
-        console.error('Scene detection error:', error);
+        Logger.error('Scene detection error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to detect scenes' });
     }
 });
@@ -467,26 +538,9 @@ router.post('/detect-beats', upload.single('file'), async (req: AuthRequest, res
     try {
         await connectDB();
         const userId = req.user!.userId;
-        const file = req.file;
         const { mediaId } = req.body;
 
-        let audioBuffer: Buffer;
-        let mimeType: string;
-
-        if (file) {
-            audioBuffer = file.buffer;
-            mimeType = file.mimetype;
-        } else if (mediaId) {
-            const media = await Media.findById(mediaId);
-            if (!media) return res.status(404).json({ success: false, error: 'Media not found' });
-
-            const url = media.key.startsWith('http') ? media.key : `${config.awsS3Endpoint}/${media.key}`;
-            const response = await axios.get(url, { responseType: 'arraybuffer' });
-            audioBuffer = Buffer.from(response.data);
-            mimeType = media.contentType;
-        } else {
-            return res.status(400).json({ success: false, error: 'No audio provided' });
-        }
+        const { buffer: audioBuffer, mimeType } = await resolveMediaInput(req.file, mediaId);
 
         try {
             // Deduct 5 credits for beat analysis
@@ -498,7 +552,7 @@ router.post('/detect-beats', upload.single('file'), async (req: AuthRequest, res
         const beats = await audioAnalysisService.detectBeats(audioBuffer, mimeType);
         res.json({ success: true, data: { beats } });
     } catch (error: any) {
-        console.error('Beat detection error:', error);
+        Logger.error('Beat detection error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to detect beats' });
     }
 });
@@ -510,26 +564,9 @@ router.post('/detect-silence', upload.single('file'), async (req: AuthRequest, r
     try {
         await connectDB();
         const userId = req.user!.userId;
-        const file = req.file;
         const { mediaId, noiseThreshold, minSilenceLen } = req.body;
 
-        let videoBuffer: Buffer;
-        let mimeType: string;
-
-        if (file) {
-            videoBuffer = file.buffer;
-            mimeType = file.mimetype;
-        } else if (mediaId) {
-            const media = await Media.findById(mediaId);
-            if (!media) return res.status(404).json({ success: false, error: 'Media not found' });
-
-            const url = media.key.startsWith('http') ? media.key : `${config.awsS3Endpoint}/${media.key}`;
-            const response = await axios.get(url, { responseType: 'arraybuffer' });
-            videoBuffer = Buffer.from(response.data);
-            mimeType = media.contentType;
-        } else {
-            return res.status(400).json({ success: false, error: 'No media provided' });
-        }
+        const { buffer: videoBuffer, mimeType } = await resolveMediaInput(req.file, mediaId);
 
         try {
             await deductCredits(userId, 'video', 5, 'AI Silence Detection');
@@ -545,7 +582,7 @@ router.post('/detect-silence', upload.single('file'), async (req: AuthRequest, r
 
         res.json({ success: true, data: { regions } });
     } catch (error: any) {
-        console.error('Silence detection error:', error);
+        Logger.error('Silence detection error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to detect silence' });
     }
 });
@@ -569,7 +606,7 @@ router.post('/guest/talk', async (req: AuthRequest, res) => {
         const result = await aiGuestService.generateGuestDialogue(userId, entityId, prompt, context);
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[AI/Guest] Talk Error:', error);
+        Logger.error('[AI/Guest] Talk Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -590,7 +627,7 @@ router.post('/guest/tts', async (req: AuthRequest, res) => {
         });
         res.json({ success: true, data: { url: result.media.url } });
     } catch (error: any) {
-        console.error('[AI/Guest] TTS Error:', error);
+        Logger.error('[AI/Guest] TTS Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -608,7 +645,7 @@ router.post('/producer/suggest', async (req: AuthRequest, res) => {
         const result = await aiProducerService.generateSuggestions(userId, studioState);
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[AI/Producer] Suggest Error:', error);
+        Logger.error('[AI/Producer] Suggest Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -618,19 +655,19 @@ router.post('/producer/suggest', async (req: AuthRequest, res) => {
  */
 router.post('/vision/analyze', async (req: AuthRequest, res) => {
     try {
-        const { image, prompt } = req.body;
-        if (!image) return res.status(400).json({ success: false, error: 'Image is required' });
+        const { image, mediaId, prompt } = req.body;
+        const { buffer, mimeType } = await resolveMediaInput(undefined, mediaId || image);
 
         const analysisPrompt = prompt || "Analyze this live stream frame. What is happening? Suggest one director improvement (lighting, framing, or content). Return a concise response.";
         
         // Use AI Manager with image support
         const result = await aiManager.generateText(analysisPrompt, 'gemini-2.5-flash', 'google', {
-            images: [image] // Array of base64 strings or URLs
+            images: [buffer.toString('base64')] // Array of base64 strings
         });
 
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[AI/Vision] Analyze Error:', error);
+        Logger.error('[AI/Vision] Analyze Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -640,26 +677,9 @@ router.post('/generate-captions', upload.single('file'), async (req: AuthRequest
     try {
         await connectDB();
         const userId = req.user!.userId;
-        const file = req.file;
         const { mediaId } = req.body;
 
-        let videoBuffer: Buffer;
-        let mimeType: string;
-
-        if (file) {
-            videoBuffer = file.buffer;
-            mimeType = file.mimetype;
-        } else if (mediaId) {
-            const media = await Media.findById(mediaId);
-            if (!media) return res.status(404).json({ success: false, error: 'Media not found' });
-
-            const response = await axios.get(media.key.startsWith('http') ? media.key : `${config.awsS3Endpoint}/${media.key}`, { responseType: 'arraybuffer' });
-            videoBuffer = Buffer.from(response.data);
-            mimeType = media.contentType;
-        } else {
-            // Fallback to project-wide captioning (if logic exists elsewhere, for now error)
-            return res.status(400).json({ success: false, error: 'No video provided for captioning' });
-        }
+        const { buffer: videoBuffer, mimeType } = await resolveMediaInput(req.file, mediaId);
 
         try {
             await deductCredits(userId, 'audio', 5, 'AI Caption Generation');
@@ -672,7 +692,7 @@ router.post('/generate-captions', upload.single('file'), async (req: AuthRequest
 
         res.json({ success: true, data: { segments } });
     } catch (error: any) {
-        console.error('Caption generation error:', error);
+        Logger.error('Caption generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate captions' });
     }
 });
@@ -688,7 +708,7 @@ router.post('/headlines', async (req, res) => {
         const result = await generateJSON<{ data: string[] }>(prompt);
         res.json({ success: true, data: { data: cleanResponse(result.data) } });
     } catch (error: any) {
-        console.error('Headlines generation error:', error);
+        Logger.error('Headlines generation error:', error);
         res.status(500).json({ success: false, error: 'Failed to generate headlines' });
     }
 });
@@ -704,7 +724,7 @@ router.post('/subheadlines', async (req, res) => {
         const result = await generateJSON<{ data: string[] }>(prompt);
         res.json({ success: true, data: { data: cleanResponse(result.data) } });
     } catch (error: any) {
-        console.error('Subheadlines generation error:', error);
+        Logger.error('Subheadlines generation error:', error);
         res.status(500).json({ success: false, error: 'Failed to generate subheadlines' });
     }
 });
@@ -721,7 +741,7 @@ router.post('/ad-cta', async (req, res) => {
         const result = await generateJSON<{ data: string[] }>(prompt);
         res.json({ success: true, data: { data: cleanResponse(result.data) } });
     } catch (error: any) {
-        console.error('CTA generation error:', error);
+        Logger.error('CTA generation error:', error);
         res.status(500).json({ success: false, error: 'Failed to generate CTAs' });
     }
 });
@@ -766,7 +786,7 @@ router.post('/analyze-product', upload.single('file'), async (req, res) => {
                 $('script, style, nav, footer, header').remove();
                 contentToAnalyze = $('body').text().replace(/\s+/g, ' ').trim().substring(0, 15000);
             } catch (e) {
-                console.warn('Failed to scrape URL:', e);
+                Logger.warn('Failed to scrape URL:', 'AI', e);
                 contentToAnalyze = `Analyze this URL: ${url}`;
             }
         } else if (text) {
@@ -861,7 +881,7 @@ router.post('/analyze-product', upload.single('file'), async (req, res) => {
 
                 product.images = [{ id: Math.floor(Math.random() * 10000), url: s3Key }];
             } catch (imageError) {
-                console.warn('Failed to generate AI product image:', imageError);
+                Logger.warn('Failed to generate AI product image:', 'AI', imageError);
                 // Fallback placeholder
                 product.images = [{ id: 1, url: 'https://via.placeholder.com/500?text=Product' }];
             }
@@ -872,7 +892,7 @@ router.post('/analyze-product', upload.single('file'), async (req, res) => {
         res.json({ success: true, data: { product, brand } });
 
     } catch (error: any) {
-        console.error('Product analysis error:', error);
+        Logger.error('Product analysis error:', error);
         res.status(500).json({ success: false, error: 'Failed to analyze product' });
     }
 });
@@ -932,7 +952,7 @@ router.post('/generate-avatar-video', async (req: AuthRequest, res) => {
 
         res.json({ success: true, data: { jobId, status: 'processing', provider: 'veo-3' } });
     } catch (error: any) {
-        console.error('Avatar generation error:', error);
+        Logger.error('Avatar generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate avatar video' });
     }
 });
@@ -992,7 +1012,7 @@ router.post('/convert-presentation', upload.single('file'), async (req: AuthRequ
 
         res.json({ success: true, data: { scenes, totalDuration: scenes.length * 5 } });
     } catch (error: any) {
-        console.error('Presentation conversion error:', error);
+        Logger.error('Presentation conversion error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to convert presentation' });
     }
 });
@@ -1013,7 +1033,7 @@ router.post('/cookies', adminMiddleware, async (req: AuthRequest, res) => {
             try {
                 cookies = JSON.parse(cookies);
             } catch (e) {
-                console.warn('[AI Routes] Failed to parse cookies string as JSON');
+                Logger.warn('[AI Routes] Failed to parse cookies string as JSON');
             }
         }
 
@@ -1021,7 +1041,7 @@ router.post('/cookies', adminMiddleware, async (req: AuthRequest, res) => {
             return res.status(400).json({ success: false, error: 'cookies are required' });
         }
 
-        console.log(`[AI Routes] Updating cookies for provider: ${providerId}`);
+        Logger.info(`[AI Routes] Updating cookies for provider: ${providerId}`);
 
         if (providerId === 'aistudio' || providerId === 'gemini-chat') {
             const { aiStudioClient } = await import('../integrations/aistudio/AIStudioClient.js');
@@ -1035,7 +1055,7 @@ router.post('/cookies', adminMiddleware, async (req: AuthRequest, res) => {
 
         res.json({ success: true, message: 'Cookies updated successfully' });
     } catch (error: any) {
-        console.error('Cookie update error:', error);
+        Logger.error('Cookie update error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to update cookies' });
     }
 });
@@ -1050,7 +1070,7 @@ router.post('/cookies/sync', adminMiddleware, async (req: AuthRequest, res) => {
         const result = await aiStudioClient.syncWithGoogle();
         res.json({ success: true, message: `Successfully synced ${result.count} cookies!`, data: result });
     } catch (error: any) {
-        console.error('Cookie sync error:', error);
+        Logger.error('Cookie sync error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to sync with Google' });
     }
 });
@@ -1139,7 +1159,7 @@ router.post('/presentation/analyze', upload.single('file'), async (req: AuthRequ
                     focusPoints: result.focusPoints || []
                 };
             } catch (err) {
-                console.error(`AI Analysis failed for slide ${index + 1}:`, err);
+                Logger.error(`AI Analysis failed for slide ${index + 1}:`, 'AI', err);
                 return {
                     id: index + 1,
                     text: slideText,
@@ -1164,7 +1184,7 @@ router.post('/presentation/analyze', upload.single('file'), async (req: AuthRequ
         });
 
     } catch (error: any) {
-        console.error('Autopilot analysis error:', error);
+        Logger.error('Autopilot analysis error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to analyze presentation' });
     }
 });
@@ -1187,7 +1207,7 @@ router.post('/enhance-audio', upload.single('file'), async (req: AuthRequest, re
             }
         });
     } catch (error: any) {
-        console.error('Audio enhancement error:', error);
+        Logger.error('Audio enhancement error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to enhance audio' });
     }
 });
@@ -1204,7 +1224,7 @@ router.post('/translate', async (req: AuthRequest, res) => {
         const translatedText = await generateText(text, undefined, { systemPrompt });
         res.json({ success: true, data: translatedText.trim() });
     } catch (error: any) {
-        console.error('Translation error:', error);
+        Logger.error('Translation error:', error);
         res.status(500).json({ success: false, error: 'Failed to translate text' });
     }
 });
@@ -1298,7 +1318,7 @@ router.post('/guest/talk', async (req: AuthRequest, res: Response) => {
 
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[AI/Guest] Talk Error:', error);
+        Logger.error('[AI/Guest] Talk Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1323,7 +1343,7 @@ router.post('/guest/tts', async (req: AuthRequest, res: Response) => {
 
         res.json({ success: true, data: { url: audioResult.media.url } });
     } catch (error: any) {
-        console.error('[AI/Guest] TTS Error:', error);
+        Logger.error('[AI/Guest] TTS Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

@@ -74,7 +74,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req: AuthRe
             }
         });
     } catch (error: any) {
-        console.error('Upload error:', error);
+        Logger.error('Upload error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to upload media' });
     }
 });
@@ -130,7 +130,7 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
             }
         });
     } catch (error: any) {
-        console.error('List media error:', error);
+        Logger.error('List media error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to list media' });
     }
 });
@@ -156,7 +156,7 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
 
         res.json({ success: true, data: { message: 'Media deleted' } });
     } catch (error: any) {
-        console.error('Delete media error:', error);
+        Logger.error('Delete media error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to delete media' });
     }
 });
@@ -175,7 +175,7 @@ router.get('/cloud/list', authMiddleware, async (req: AuthRequest, res) => {
             }
         });
     } catch (error: any) {
-        console.error('Cloud list error:', error);
+        Logger.error('Cloud list error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to list cloud assets' });
     }
 });
@@ -257,7 +257,7 @@ router.get('/proxy', async (req: Request, res: Response) => {
         }
 
     } catch (error: any) {
-        console.error('Proxy error:', error);
+        Logger.error('Proxy error:', error);
         if (!res.headersSent) {
             res.status(500).json({ success: false, error: error.message || 'Proxy failed' });
         }
@@ -353,7 +353,7 @@ router.get('/giphy/gifs', authMiddleware, async (req: AuthRequest, res: Response
             }
         });
     } catch (error: any) {
-        console.error('Giphy GIF API error:', error);
+        Logger.error('Giphy GIF API error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch GIFs from Giphy',
@@ -434,7 +434,7 @@ router.get('/giphy/stickers', authMiddleware, async (req: AuthRequest, res: Resp
             }
         });
     } catch (error: any) {
-        console.error('Giphy Sticker API error:', error);
+        Logger.error('Giphy Sticker API error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch stickers from Giphy',
@@ -515,7 +515,7 @@ router.get('/giphy/emoji', authMiddleware, async (req: AuthRequest, res: Respons
             }
         });
     } catch (error: any) {
-        console.error('Giphy Emoji API error:', error);
+        Logger.error('Giphy Emoji API error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch emoji from Giphy',
@@ -600,7 +600,7 @@ router.get('/pexels/images', authMiddleware, async (req: AuthRequest, res: Respo
             }
         });
     } catch (error: any) {
-        console.error('Pexels Image API error:', error);
+        Logger.error('Pexels Image API error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch images from Pexels',
@@ -678,7 +678,7 @@ router.get('/pexels/videos', authMiddleware, async (req: AuthRequest, res: Respo
             }
         });
     } catch (error: any) {
-        console.error('Pexels Video API error:', error);
+        Logger.error('Pexels Video API error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch videos from Pexels',
@@ -785,7 +785,7 @@ router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Res
             }
         });
     } catch (error: any) {
-        console.error('Unsplash API error:', error);
+        Logger.error('Unsplash API error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch images from Unsplash',
@@ -815,14 +815,14 @@ router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Res
 
 //         // 2. If empty, sync from Zocket
 //         if (count === 0) {
-//             console.log('Template DB empty, syncing from Zocket...');
+//             Logger.info('Template DB empty, syncing from Zocket...');
 //             try {
 //                 // Fetch all templates (or a large batch) to populate DB
 //                 const zocketUrl = `${ZOCKET_API_TEMPLATES}?is_published=true&page=0&limit=100`; // Initial sync limit
 //                 const response = await fetch(zocketUrl);
 
 //                 if (!response.ok) {
-//                     console.error(`Failed to fetch from Zocket: ${response.status}`);
+//                     Logger.error(`Failed to fetch from Zocket: ${response.status}`);
 //                     // Don't fail the request, just return empty or what we have
 //                 } else {
 //                     const data: any = await response.json();
@@ -832,7 +832,7 @@ router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Res
 //                             try {
 //                                 pages = typeof t.pages === 'string' ? JSON.parse(t.pages) : t.pages;
 //                             } catch (e) {
-//                                 console.warn(`Failed to parse pages for template ${t.id}`, e);
+//                                 Logger.warn(`Failed to parse pages for template ${t.id}`, e);
 //                             }
 
 //                             return {
@@ -846,12 +846,12 @@ router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Res
 
 //                         if (templatesToSave.length > 0) {
 //                             await Template.insertMany(templatesToSave);
-//                             console.log(`Synced ${templatesToSave.length} templates from Zocket.`);
+//                             Logger.info(`Synced ${templatesToSave.length} templates from Zocket.`);
 //                         }
 //                     }
 //                 }
 //             } catch (syncError) {
-//                 console.error('Error syncing templates from Zocket:', syncError);
+//                 Logger.error('Error syncing templates from Zocket:', syncError);
 //                 // Continue to serve what we have (which might be empty)
 //             }
 //         }
@@ -886,7 +886,7 @@ router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Res
 //         });
 
 //     } catch (error: any) {
-//         console.error('Template API error:', error);
+//         Logger.error('Template API error:', error);
 //         res.status(500).json({
 //             success: false,
 //             error: 'Failed to fetch templates',
@@ -902,6 +902,8 @@ router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Res
 import { YouTubeMusicService } from '../services/media/YouTubeMusicService.js';
 import { LyricsService, LyricsLine } from '../services/media/LyricsService.js';
 import { AudioExtractionService } from '../services/media/AudioExtractionService.js';
+
+import { Logger } from '../utils/Logger.js';
 
 /**
  * Search YouTube music
@@ -928,7 +930,7 @@ router.post('/youtube/search', authMiddleware, async (req: AuthRequest, res) => 
 
         res.json(results);
     } catch (error: any) {
-        console.error('YouTube search error:', error);
+        Logger.error('YouTube search error:', error);
         res.status(error.requiresReauth ? 401 : 500).json({ error: error.message || 'Failed to search YouTube music', requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
@@ -953,7 +955,7 @@ router.get('/youtube/trending', authMiddleware, async (req: AuthRequest, res) =>
 
         res.json(results);
     } catch (error: any) {
-        console.error('YouTube trending error:', error);
+        Logger.error('YouTube trending error:', error);
         res.status(error.requiresReauth ? 401 : 500).json({ error: error.message || 'Failed to fetch trending music', requiresReauth: error.requiresReauth || false, platform: error.platform });
     }
 });
@@ -990,25 +992,25 @@ router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) =
                 // 1. Primary: getLyricsV2 via @playzone/youtube-transcript + Invidious (fastest, exact captions)
                 lyrics = await AudioExtractionService.getLyricsV2(videoId, preferredLangs) || '';
                 if (lyrics) {
-                    console.log(`[MediaRoute] Found getLyricsV2 captions for ${videoId}`);
+                    Logger.info(`[MediaRoute] Found getLyricsV2 captions for ${videoId}`);
                 }
 
                 // 2. Fallback: Gemini AI with Google Search grounding (best for songs without official captions)
                 if (!lyrics && (songTitle || metadata.title)) {
-                    console.log(`[MediaRoute] getLyricsV2 failed for ${videoId}, trying Gemini...`);
+                    Logger.info(`[MediaRoute] getLyricsV2 failed for ${videoId}, trying Gemini...`);
                     const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
                     lyrics = await LyricsService.searchLyrics(songTitle || metadata.title, metadata.channelTitle, youtubeUrl, preferredLang);
                     if (lyrics) {
-                        console.log(`[MediaRoute] Found Gemini grounded lyrics for ${videoId}`);
+                        Logger.info(`[MediaRoute] Found Gemini grounded lyrics for ${videoId}`);
                     }
                 }
 
                 // 3. Last resort: yt-dlp subprocess (slowest, but works when others fail)
                 if (!lyrics) {
-                    console.log(`[MediaRoute] Gemini failed for ${videoId}, falling back to yt-dlp...`);
+                    Logger.info(`[MediaRoute] Gemini failed for ${videoId}, falling back to yt-dlp...`);
                     lyrics = await AudioExtractionService.getLyrics(videoId, preferredLangs.join(',')) || '';
                     if (lyrics) {
-                        console.log(`[MediaRoute] Found yt-dlp fallback lyrics for ${videoId}`);
+                        Logger.info(`[MediaRoute] Found yt-dlp fallback lyrics for ${videoId}`);
                     }
                 }
 
@@ -1016,12 +1018,12 @@ router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) =
                     lyricsLines = await LyricsService.syncLyrics(lyrics, metadata.duration);
                 }
             } catch (error) {
-                console.warn('Lyrics fetch failed:', error);
+                Logger.warn('Lyrics fetch failed:', error);
                 // Continue without lyrics
             }
         }
 
-        console.log(`[MediaRoute] Returning metadata for ${videoId}: found ${lyricsLines.length} lyrics lines`);
+        Logger.info(`[MediaRoute] Returning metadata for ${videoId}: found ${lyricsLines.length} lyrics lines`);
 
         res.json({
             ...metadata,
@@ -1030,7 +1032,7 @@ router.post('/youtube/metadata', authMiddleware, async (req: AuthRequest, res) =
             lyricsLines
         });
     } catch (error: any) {
-        console.error('Metadata fetch error:', error);
+        Logger.error('Metadata fetch error:', error);
         res.status(500).json({ error: error.message || 'Failed to fetch video metadata' });
     }
 });
@@ -1055,7 +1057,7 @@ router.post('/youtube/extract-audio', authMiddleware, async (req: AuthRequest, r
         const result = await AudioExtractionService.extractAudio(videoId, userId);
         res.json(result);
     } catch (error: any) {
-        console.error('Audio extraction error:', error);
+        Logger.error('Audio extraction error:', error);
         res.status(500).json({ error: error.message || 'Failed to extract audio' });
     }
 });
@@ -1072,7 +1074,7 @@ router.get('/youtube/stream/:videoId', async (req, res) => {
         }
         await AudioExtractionService.streamAudio(videoId, res);
     } catch (error: any) {
-        console.error('Audio streaming error:', error);
+        Logger.error('Audio streaming error:', error);
         res.status(500).send('Streaming failed');
     }
 });

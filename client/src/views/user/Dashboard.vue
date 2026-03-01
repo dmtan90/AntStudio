@@ -47,8 +47,9 @@ import { usePlatformStore } from '@/stores/platform';
 import { useMarketplaceStore } from '@/stores/marketplace';
 import { useUIStore } from '@/stores/ui';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue';
-import ProductAdDialog from '@/components/studio/dialogs/ProductAdDialog.vue';
+import ProductAdDialog from '@/components/merchant/dialogs/ProductAdDialog.vue'
 import AppTour from '@/components/ui/AppTour.vue';
 
 // Dashboard Components
@@ -63,6 +64,7 @@ const projectStore = useProjectStore();
 const platformStore = usePlatformStore();
 const marketplaceStore = useMarketplaceStore();
 const uiStore = useUIStore();
+const { t } = useI18n()
 
 const { user } = storeToRefs(userStore);
 const { projects, loadingList: loadingProjects, pagination } = storeToRefs(projectStore);
@@ -76,26 +78,26 @@ const adDialogVisible = ref(false);
 const tourSteps = [
   {
     target: '#tour-welcome',
-    title: 'Welcome to your Dashboard',
-    description: 'This is your central hub for managing projects and assets.',
+    title: t('dashboard.tour.welcome.title'),
+    description: t('dashboard.tour.welcome.desc'),
     placement: 'bottom'
   },
   {
     target: '#tour-stats',
-    title: 'Your Performance',
-    description: 'Get a quick overview of your credits, active projects, and commerce stats.',
+    title: t('dashboard.tour.stats.title'),
+    description: t('dashboard.tour.stats.desc'),
     placement: 'bottom'
   },
   {
     target: '#tour-actions',
-    title: 'Quick Actions',
-    description: 'Launch the Project Wizard or Go Live instantly with our Studio.',
+    title: t('dashboard.tour.actions.title'),
+    description: t('dashboard.tour.actions.desc'),
     placement: 'bottom'
   },
   {
     target: '#tour-recent',
-    title: 'Recent Creations',
-    description: 'Quickly access and manage your most recently edited projects.',
+    title: t('dashboard.tour.recent.title'),
+    description: t('dashboard.tour.recent.desc'),
     placement: 'top'
   }
 ];

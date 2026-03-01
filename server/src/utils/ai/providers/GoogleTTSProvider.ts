@@ -1,5 +1,6 @@
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import { OAuth2Client } from 'google-auth-library';
+import { Logger } from '../../Logger.js';
 
 export class GoogleTTSProvider {
     private client!: TextToSpeechClient;
@@ -49,7 +50,7 @@ export class GoogleTTSProvider {
             }
             return response.voices || [];
         } catch (error: any) {
-            console.error('Google TTS List Voices Error:', error.message);
+            Logger.error(`Google TTS List Voices Error: ${error.message}`, 'GoogleTTSProvider');
             return []; // Return empty array on error
         }
     }
@@ -110,7 +111,7 @@ export class GoogleTTSProvider {
                 }
             };
         } catch (error: any) {
-            console.error('Google TTS Generation Error:', error.message);
+            Logger.error(`Google TTS Generation Error: ${error.message}`, 'GoogleTTSProvider');
             throw error;
         }
     }

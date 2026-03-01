@@ -2,6 +2,8 @@ import { Page } from 'playwright';
 import { browserManager } from './BrowserManager.js';
 import { AdminSettings } from '../../models/AdminSettings.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 export class AIStudioClient {
     private isReady = false;
 
@@ -15,7 +17,7 @@ export class AIStudioClient {
      * Inject cookies from an external source (e.g. Database)
      */
     async injectCookies(cookies: any[]) {
-        console.log(`[AIStudio] Injecting ${cookies.length} cookies from external source...`);
+        Logger.info(`[AIStudio] Injecting ${cookies.length} cookies from external source...`);
         const page = await browserManager.getPage();
         const context = page.context();
         await context.addCookies(cookies);
@@ -31,11 +33,11 @@ export class AIStudioClient {
                     // Mark as modified if it's a Map or nested object in some Mongoose versions
                     settings.markModified('aiSettings.providers');
                     await settings.save();
-                    console.log('[AIStudio] Cookies persisted to Database.');
+                    Logger.info('[AIStudio] Cookies persisted to Database.');
                 }
             }
         } catch (e) {
-            console.error('[AIStudio] Failed to save cookies to DB:', e);
+            Logger.error('[AIStudio] Failed to save cookies to DB:', e);
         }
     }
 
@@ -45,13 +47,13 @@ export class AIStudioClient {
             // 1. Initial Check: Are we already on a "logged in" URL?
             let currentUrl = page.url();
             if (currentUrl.includes('/app/') || currentUrl.includes('/prompts/')) {
-                console.log('[AIStudio] Already on workspace URL. Session likely valid.');
+                Logger.info('[AIStudio] Already on workspace URL. Session likely valid.');
                 this.isReady = true;
                 return;
             }
 
             // 2. Navigation & Detection
-            console.log('[AIStudio] Navigating to AI Studio Home...');
+            Logger.info('[AIStudio] Navigating to AI Studio Home...');
             await page.goto('https://aistudio.google.com/app/home', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
             // 3. Robust Login Detection Heuristic
@@ -65,7 +67,7 @@ export class AIStudioClient {
                     page.waitForURL('**/prompts/**', { timeout: 15000 })
                 ]);
 
-                console.log('[AIStudio] Session Valid (Detected via UI).');
+                Logger.info('[AIStudio] Session Valid (Detected via UI).');
                 this.isReady = true;
             } catch (e) {
                 // Check if we are stuck on a login/landing page
@@ -75,15 +77,15 @@ export class AIStudioClient {
                 });
 
                 if (isLanding) {
-                    console.log('[AIStudio] Still on Landing/Login page. Cookies might be expired or invalid.');
+                    Logger.info('[AIStudio] Still on Landing/Login page. Cookies might be expired or invalid.');
                 } else {
-                    console.log('[AIStudio] Could not determine login status, but proceeding with caution.');
+                    Logger.info('[AIStudio] Could not determine login status, but proceeding with caution.');
                     // Occasionally AI Studio UI is just weird; if we have cookies, we can try to proceed
                     this.isReady = true;
                 }
             }
         } catch (error) {
-            console.error('[AIStudio] Navigation Failed:', error);
+            Logger.error('[AIStudio] Navigation Failed:', error);
         }
     }
 
@@ -110,7 +112,7 @@ export class AIStudioClient {
         }
 
         // 2. If not, try to navigate to the new chat URL
-        console.log('[AIStudio] Creating new chat session...');
+        Logger.info('[AIStudio] Creating new chat session...');
         await page.goto('https://aistudio.google.com/app/prompts/new_chat', { waitUntil: 'domcontentloaded' }).catch(() => { });
 
         // 3. Wait for any valid input selector
@@ -178,20 +180,20 @@ export class AIStudioClient {
         const inputSelector = await this.ensureChatPage();
 
         // 1. Attempt to use Tool Menu for Veo 3.1
-        console.log('[AIStudio] Attempting to use Veo 3.1 tool...');
+        Logger.info('[AIStudio] Attempting to use Veo 3.1 tool...');
         const toolSelected = await this.selectTool('Veo 3.1').catch(() => false);
 
         if (toolSelected) {
-            console.log('[AIStudio] Tool selected, sending prompt...');
+            Logger.info('[AIStudio] Tool selected, sending prompt...');
         } else {
-            console.log('[AIStudio] Tool menu not found or item missing, using direct prompt with prefix...');
+            Logger.info('[AIStudio] Tool menu not found or item missing, using direct prompt with prefix...');
             await page.click(inputSelector);
             await page.keyboard.press('Control+A');
             await page.keyboard.press('Backspace');
             await page.keyboard.type('Generate a video: ');
         }
 
-        console.log('[AIStudio] Found input box. Cleaning and sending prompt...');
+        Logger.info('[AIStudio] Found input box. Cleaning and sending prompt...');
         await page.click(inputSelector);
         await page.keyboard.press('Control+A');
         await page.keyboard.press('Backspace');
@@ -213,19 +215,19 @@ export class AIStudioClient {
             '.run-button'
         ];
 
-        console.log('[AIStudio] Prompt typed. Attempting to trigger generation...');
+        Logger.info('[AIStudio] Prompt typed. Attempting to trigger generation...');
         for (const selector of runButtonSelectors) {
             try {
                 const btn = await page.$(selector);
                 if (btn && await btn.isVisible()) {
                     await btn.click();
-                    console.log(`[AIStudio] Clicked trigger button: ${selector}`);
+                    Logger.info(`[AIStudio] Clicked trigger button: ${selector}`);
                     break;
                 }
             } catch (e: any) { }
         }
 
-        console.log('[AIStudio] Waiting for generation indicator...');
+        Logger.info('[AIStudio] Waiting for generation indicator...');
 
         // 3. Wait for Video Result
         // Veo generation takes time. We need to watch for a <video> tag or a specific "Generated" indicator.
@@ -258,7 +260,7 @@ export class AIStudioClient {
                     (contentLength > 1000000 && contentType.includes('application/octet-stream')); // Large files
 
                 if (isVideoUrl) {
-                    console.log(`[AIStudio] Potential Video captured [${contentType}, ${contentLength} bytes]:`, url.substring(0, 100));
+                    Logger.info(`[AIStudio] Potential Video captured [${contentType}, ${contentLength} bytes]:`, url.substring(0, 100));
                     capturedUrl = url;
                 }
             };
@@ -273,10 +275,10 @@ export class AIStudioClient {
                     page.waitForSelector('.loading-spinner, ms-progress-bar', { timeout: 20000 }),
                     page.waitForSelector('ms-content-view', { timeout: 20000 })
                 ]).catch(() => {
-                    console.log('[AIStudio] Warning: Traditional generation indicators not seen, but waiting for result anyway.');
+                    Logger.info('[AIStudio] Warning: Traditional generation indicators not seen, but waiting for result anyway.');
                 });
 
-                console.log('[AIStudio] Waiting for generation to COMPLETE (Stop/Loading to vanish)...');
+                Logger.info('[AIStudio] Waiting for generation to COMPLETE (Stop/Loading to vanish)...');
                 await Promise.all([
                     page.waitForSelector('button[aria-label*="Stop"]', { state: 'detached', timeout: 300000 }).catch(() => { }),
                     page.waitForSelector('.loading-spinner, ms-progress-bar', { state: 'detached', timeout: 300000 }).catch(() => { })
@@ -300,13 +302,13 @@ export class AIStudioClient {
                 });
 
                 if (refusalText) {
-                    console.warn(`[AIStudio] Potential refusal or error detected: "${refusalText}"`);
+                    Logger.warn(`[AIStudio] Potential refusal or error detected: "${refusalText}"`);
                 }
 
                 // 6. Final UI Check
-                console.log('[AIStudio] Performing final UI sweep for video elements...');
+                Logger.info('[AIStudio] Performing final UI sweep for video elements...');
                 const uiVideoUrlResult = await page.evaluate(`(() => {
-                    console.log('[AIStudio Debug] Starting video extraction from UI...');
+                    Logger.info('[AIStudio Debug] Starting video extraction from UI...');
 
                     // Helper: Check if element is likely navigation/header
                     const isNav = (el: any) => {
@@ -353,26 +355,26 @@ export class AIStudioClient {
 
                     for (const selector of selectors) {
                         const elements = document.querySelectorAll(selector);
-                        console.log(\`[AIStudio Debug] Selector "\${selector}" found \${elements.length} elements\`);
+                        Logger.info(\`[AIStudio Debug] Selector "\${selector}" found \${elements.length} elements\`);
 
                         if (elements.length > 0) {
                             const last = elements[elements.length - 1];
 
                             // Basic check to ensure we aren't picking up a background video in the UI
                             if (isNav(last) || (last.closest && (last.closest('nav') || last.closest('header')))) {
-                                console.log('[AIStudio Debug] Skipping video likely in navigation area');
+                                Logger.info('[AIStudio Debug] Skipping video likely in navigation area');
                                 continue;
                             }
 
                             const url = last.src || last.href || (last.querySelector && last.querySelector('source')?.src);
                             if (url && (url.startsWith('http') || url.startsWith('blob:'))) {
-                                console.log(\`[AIStudio Debug] Found video URL: \${url.substring(0, 100)}...\`);
+                                Logger.info(\`[AIStudio Debug] Found video URL: \${url.substring(0, 100)}...\`);
                                 return url;
                             }
                         }
                     }
 
-                    console.log('[AIStudio Debug] No video found in UI');
+                    Logger.info('[AIStudio Debug] No video found in UI');
                     return null;
                 })()`);
 
@@ -387,7 +389,7 @@ export class AIStudioClient {
                     throw new Error('Could not find generated video URL in UI or network logs');
                 }
 
-                console.log('[AIStudio] Successfully extracted video URL:', finalUrl);
+                Logger.info('[AIStudio] Successfully extracted video URL:', finalUrl);
                 resolve(finalUrl);
 
             } catch (error: any) {
@@ -406,12 +408,12 @@ export class AIStudioClient {
         await browserManager.init(false);
         const page = await browserManager.getPage();
 
-        console.log('[AIStudio] Navigating to Login Page...');
+        Logger.info('[AIStudio] Navigating to Login Page...');
         try {
             await page.goto('https://aistudio.google.com/app/home', { waitUntil: 'domcontentloaded', timeout: 60000 });
 
             // Wait for successful login (Heuristic: "Create new" button or specific URL)
-            console.log('[AIStudio] Waiting for user to login...');
+            Logger.info('[AIStudio] Waiting for user to login...');
 
             // Wait up to 5 minutes for user to login
             // We look for multiple indicators: "Create new", "Playground", "Dashboard", or the profile icon
@@ -426,7 +428,7 @@ export class AIStudioClient {
                     !!document.querySelector('img[src*="googleusercontent.com"]') // Profile photo
                 );
             }, { timeout: 300000 });
-            console.log('[AIStudio] Login detected! Capturing cookies...');
+            Logger.info('[AIStudio] Login detected! Capturing cookies...');
 
             const cookies = await page.context().cookies();
             this.isReady = true;
@@ -439,7 +441,7 @@ export class AIStudioClient {
 
             return { count: cookies.length };
         } catch (error: any) {
-            console.error('[AIStudio] Sync Timeout or Failed:', error.message);
+            Logger.error('[AIStudio] Sync Timeout or Failed:', error.message);
             await browserManager.close();
 
             if (error.message.includes('closed')) {
@@ -457,7 +459,7 @@ export class AIStudioClient {
         const page = await browserManager.getPage();
 
         const inputSelector = await this.ensureChatPage();
-        console.log('[AIStudio] Found input box. Sending text prompt...');
+        Logger.info('[AIStudio] Found input box. Sending text prompt...');
 
         // Clear old content if any (best effort)
         await page.click(inputSelector);
@@ -468,7 +470,7 @@ export class AIStudioClient {
         await page.fill(inputSelector, prompt);
         await page.press(inputSelector, 'Enter');
 
-        console.log('[AIStudio] Prompt sent. Waiting for text response...');
+        Logger.info('[AIStudio] Prompt sent. Waiting for text response...');
 
         // Strategy: Wait for the "Stop" button to disappear OR the "Run" button to be enabled again
         // In AI Studio, the "Run" button or Enter key triggers generation.
@@ -490,7 +492,7 @@ export class AIStudioClient {
             // Enhanced response extraction with string-based evaluation to avoid bundler interference
             // Enhanced response extraction with string-based evaluation to avoid bundler interference
             const responseText = await page.evaluate(`(() => {
-                console.log('[AIStudio Debug] Starting response extraction...');
+                Logger.info('[AIStudio Debug] Starting response extraction...');
 
                 // Helper: Check if element is strictly inside navigation or structural UI
                 const isNav = (el: any) => {
@@ -536,20 +538,20 @@ export class AIStudioClient {
                 for (const selector of highPrioritySelectors) {
                     const elements = document.querySelectorAll(selector);
                     if (elements.length > 0) {
-                        console.log(\`[AIStudio Debug] Selector "\${selector}" found \${elements.length} elements\`);
+                        Logger.info(\`[AIStudio Debug] Selector "\${selector}" found \${elements.length} elements\`);
                         // Iterate backwards to get the LATEST response
                         for (let i = elements.length - 1; i >= 0; i--) {
                             const el = elements[i];
                             const navCheck = isNav(el);
                             if (navCheck.isNav) {
-                                console.log(\`[AIStudio Debug] Skipping "\${selector}" item - Reason: \${navCheck.reason}\`);
+                                Logger.info(\`[AIStudio Debug] Skipping "\${selector}" item - Reason: \${navCheck.reason}\`);
                                 continue;
                             }
                             
                             const text = el.innerText?.trim();
                             // Genuine responses are usually more than just a few characters
                             if (text && text.length > 10) {
-                                console.log(\`[AIStudio Debug] Found qualifying content in "\${selector}"\`);
+                                Logger.info(\`[AIStudio Debug] Found qualifying content in "\${selector}"\`);
                                 return text;
                             }
                         }
@@ -590,15 +592,15 @@ export class AIStudioClient {
                     };
                 });
 
-                console.error('[AIStudio] Extraction Failed. Diagnostic Info:', JSON.stringify(diagnosticInfo, null, 2));
+                Logger.error('[AIStudio] Extraction Failed. Diagnostic Info:', JSON.stringify(diagnosticInfo, null, 2));
                 throw new Error('Could not extract response text from UI. UI might have changed or response is missing.');
             }
 
             const responseStr = responseText as string;
-            console.log(`[AIStudio] Successfully extracted response: ${responseStr.substring(0, 100)}...`);
+            Logger.info(`[AIStudio] Successfully extracted response: ${responseStr.substring(0, 100)}...`);
             return responseStr.trim();
         } catch (error: any) {
-            console.error('[AIStudio] Text Generation Error:', error.message);
+            Logger.error('[AIStudio] Text Generation Error:', error.message);
             throw new Error(`AIStudio Text Generation Failed: ${error.message}`);
         }
     }
@@ -611,13 +613,13 @@ export class AIStudioClient {
         const page = await browserManager.getPage();
         const inputSelector = await this.ensureChatPage();
 
-        console.log('[AIStudio] Attempting to use Imagen tool...');
+        Logger.info('[AIStudio] Attempting to use Imagen tool...');
         const toolSelected = await this.selectTool('Imagen').catch(() => false);
 
         if (toolSelected) {
-            console.log('[AIStudio] Tool selected, sending prompt...');
+            Logger.info('[AIStudio] Tool selected, sending prompt...');
         } else {
-            console.log('[AIStudio] Tool menu not found or item missing, using direct prompt with prefix...');
+            Logger.info('[AIStudio] Tool menu not found or item missing, using direct prompt with prefix...');
             await page.click(inputSelector);
             await page.keyboard.press('Control+A');
             await page.keyboard.press('Backspace');
@@ -627,7 +629,7 @@ export class AIStudioClient {
         await page.keyboard.type(prompt);
         await page.press(inputSelector, 'Enter');
 
-        console.log('[AIStudio] Image prompt sent. Waiting for generation...');
+        Logger.info('[AIStudio] Image prompt sent. Waiting for generation...');
 
         // Network monitoring for image URLs (as backup)
         let capturedImageUrl: string | null = null;
@@ -636,7 +638,7 @@ export class AIStudioClient {
             const contentType = response.headers()['content-type'] || '';
 
             if (contentType.includes('image/') || url.includes('googleusercontent.com') && url.includes('image')) {
-                console.log(`[AIStudio] Captured image URL from network: ${url.substring(0, 100)}...`);
+                Logger.info(`[AIStudio] Captured image URL from network: ${url.substring(0, 100)}...`);
                 capturedImageUrl = url;
             }
         };
@@ -653,7 +655,7 @@ export class AIStudioClient {
 
             // Extract the latest image URL with enhanced selectors (string-based)
             const imageUrl = await page.evaluate(`(() => {
-                console.log('[AIStudio Debug] Starting image extraction...');
+                Logger.info('[AIStudio Debug] Starting image extraction...');
 
                 // Helper: Check if element is strictly inside navigation
                 const isNav = (el) => {
@@ -699,15 +701,15 @@ export class AIStudioClient {
 
             if (!finalUrl) {
                 const pageUrl = page.url();
-                console.error('[AIStudio] Failed to extract image. Page URL:', pageUrl);
+                Logger.error('[AIStudio] Failed to extract image. Page URL:', pageUrl);
                 throw new Error('Could not find generated image in UI or network logs');
             }
 
-            console.log(`[AIStudio] Successfully extracted image URL: ${finalUrl.substring(0, 100)}...`);
+            Logger.info(`[AIStudio] Successfully extracted image URL: ${finalUrl.substring(0, 100)}...`);
             return finalUrl;
         } catch (error: any) {
             page.off('response', imageResponseListener);
-            console.error('[AIStudio] Image Generation Error:', error.message);
+            Logger.error('[AIStudio] Image Generation Error:', error.message);
             throw new Error(`AIStudio Image Generation Failed: ${error.message}`);
         }
     }
@@ -720,7 +722,7 @@ export class AIStudioClient {
         const page = await browserManager.getPage();
 
         const inputSelector = await this.ensureChatPage();
-        console.log('[AIStudio] Found input box. Sending audio prompt...');
+        Logger.info('[AIStudio] Found input box. Sending audio prompt...');
 
         await page.click(inputSelector);
         await page.keyboard.press('Control+A');
@@ -730,7 +732,7 @@ export class AIStudioClient {
         await page.fill(inputSelector, `Generate audio / speech for this text: ${prompt} `);
         await page.press(inputSelector, 'Enter');
 
-        console.log('[AIStudio] Audio prompt sent. Waiting for generation...');
+        Logger.info('[AIStudio] Audio prompt sent. Waiting for generation...');
 
         try {
             await page.waitForSelector('button[aria-label*="Stop"]', { timeout: 15000 }).catch(() => { });
@@ -749,7 +751,7 @@ export class AIStudioClient {
             if (!audioUrl) throw new Error('Could not find generated audio in UI');
             return audioUrl;
         } catch (error: any) {
-            console.error('[AIStudio] Audio Generation Error:', error.message);
+            Logger.error('[AIStudio] Audio Generation Error:', error.message);
             throw new Error(`AIStudio Audio Generation Failed: ${error.message}`);
         }
     }
@@ -805,15 +807,15 @@ export class AIStudioClient {
             return sanitized;
         }).filter(Boolean);
 
-        console.log(`[AIStudio] Final attempt adding ${sanitizedCookies.length} cookies with explicit domain / path.`);
+        Logger.info(`[AIStudio] Final attempt adding ${sanitizedCookies.length} cookies with explicit domain / path.`);
         try {
             await context.addCookies(sanitizedCookies);
         } catch (e: any) {
-            console.error('[AIStudio] addCookies failed:', e.message);
+            Logger.error('[AIStudio] addCookies failed:', e.message);
             // Fallback: try adding them one by one to find the culprit
             for (const cookie of sanitizedCookies) {
                 await context.addCookies([cookie]).catch(err => {
-                    console.warn(`[AIStudio] Skipping invalid cookie[${cookie.name}]: `, err.message);
+                    Logger.warn(`[AIStudio] Skipping invalid cookie[${cookie.name}]: `, err.message);
                 });
             }
         }

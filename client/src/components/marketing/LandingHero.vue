@@ -9,24 +9,21 @@
       <div class="hero-text-content space-y-8">
         <div class="badge inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full animate-fade-in-down">
           <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
-          <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">Next-Gen Streaming OS active</span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">{{ $t('marketing.hero.badge') }}</span>
         </div>
         
-        <h1 class="text-6xl lg:text-8xl font-black text-white leading-[0.9] tracking-tighter animate-fade-in">
-          BROADCAST <br/>
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">BEYOND LIMITS</span>
-        </h1>
+        <h1 class="text-6xl lg:text-8xl font-black text-white leading-[0.9] tracking-tighter animate-fade-in" v-html="$t('marketing.hero.title')"></h1>
         
         <p class="text-xl text-gray-400 max-w-lg leading-relaxed animate-fade-in delay-100">
-          The ultimate AI-powered infrastructure for creators, resellers, and global enterprises. Create, distribute, and monetize like never before.
+          {{ $t('marketing.hero.desc') }}
         </p>
 
         <div class="cta-group flex flex-wrap gap-4 animate-fade-in delay-200">
           <button class="primary-btn px-10 py-5 text-sm font-black rounded-2xl shadow-2xl shadow-blue-600/20" @click="$router.push('/signup')">
-            START FOR FREE
+            {{ $t('marketing.hero.cta.start') }}
           </button>
           <button class="secondary-btn px-10 py-5 text-sm font-black rounded-2xl border border-white/10 hover:bg-white/5 backdrop-blur-xl">
-            BOOK ENTERPRISE DEMO
+            {{ $t('marketing.hero.cta.demo') }}
           </button>
         </div>
 
@@ -45,9 +42,9 @@
             <!-- AI Prompt HUD -->
             <div class="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black to-transparent">
               <div class="prompt-box glass-card p-4 rounded-2xl border border-white/20 translate-y-4 group-hover:translate-y-0 transition-transform">
-                <p class="text-[10px] font-black uppercase text-blue-400 mb-2">AI ENGINE ACTIVE</p>
+                <p class="text-[10px] font-black uppercase text-blue-400 mb-2">{{ $t('marketing.hero.demo.aiEngine') }}</p>
                 <div class="flex items-center gap-4">
-                  <div class="flex-1 text-sm font-medium text-white italic">"Generate a cinematic 4K video of a neon city in the year 2099..."</div>
+                  <div class="flex-1 text-sm font-medium text-white italic">{{ $t('marketing.hero.demo.prompt') }}</div>
                   <div class="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center animate-pulse"><magic size="20" /></div>
                 </div>
               </div>
@@ -57,7 +54,7 @@
             <div class="absolute top-6 right-6 flex flex-col gap-2">
                <div class="px-3 py-1.5 bg-red-500 rounded-lg flex items-center gap-2">
                   <div class="w-2 h-2 rounded-full bg-white animate-ping"></div>
-                  <span class="text-[10px] font-black">LIVE</span>
+                  <span class="text-[10px] font-black">{{ $t('marketing.hero.demo.live') }}</span>
                </div>
                <div class="px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg flex items-center gap-2 border border-white/10">
                   <peoples size="12" />
@@ -71,14 +68,20 @@
 
     <!-- Scroll Indicator -->
     <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-20">
-      <span class="text-[8px] font-black uppercase tracking-[0.2em]">Explore Infrastructure</span>
+      <span class="text-[8px] font-black uppercase tracking-[0.2em]">{{ $t('marketing.hero.scroll') }}</span>
       <div class="w-[1px] h-12 bg-white animate-scroll-down"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Magic, Peoples } from '@icon-park/vue-next';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { Magic, Peoples } from '@icon-park/vue-next'
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n()
+const router = useRouter()
 </script>
 
 <style lang="scss" scoped>

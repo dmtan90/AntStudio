@@ -14,8 +14,8 @@
                         <div
                             class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 mb-8 shadow-lg shadow-blue-500/20">
                         </div>
-                        <h2 class="text-xs font-black uppercase tracking-widest text-white/40 mb-2">Setup Assistant</h2>
-                        <h1 class="text-xl font-bold text-white leading-tight">Initialize Your AntStudio</h1>
+                        <h2 class="text-xs font-black uppercase tracking-widest text-white/40 mb-2">{{ $t('auth.onboarding.setupAssistant') }}</h2>
+                        <h1 class="text-xl font-bold text-white leading-tight">{{ $t('auth.onboarding.initializeTitle') }}</h1>
                     </div>
 
                     <div class="space-y-3">
@@ -24,7 +24,7 @@
                                 :class="step === s ? 'bg-blue-500 scale-125' : 'bg-white/10'"></div>
                             <span class="text-[10px] uppercase font-bold tracking-tighter transition-all"
                                 :class="step === s ? 'text-white' : 'text-white/20'">
-                                {{ stepLabels[s] }}
+                                {{ t(`auth.onboarding.steps.${stepLabels[s]}`) }}
                             </span>
                         </div>
                     </div>
@@ -35,9 +35,8 @@
 
                     <!-- STEP 0: Regional & Language -->
                     <div v-if="step === 0" class="animate-macos-in">
-                        <h2 class="text-3xl font-black mb-2 tracking-tight">Select Region</h2>
-                        <p class="text-sm text-white/50 mb-10">Choose your primary language and region for localized
-                            services.</p>
+                        <h2 class="text-3xl font-black mb-2 tracking-tight">{{ $t('auth.onboarding.step0.title') }}</h2>
+                        <p class="text-sm text-white/50 mb-10">{{ $t('auth.onboarding.step0.desc') }}</p>
 
                         <div class="grid grid-cols-2 gap-4 mb-10">
                             <div v-for="lang in languages" :key="lang.code" @click="selectedLang = lang.code"
@@ -48,62 +47,59 @@
                             </div>
                         </div>
 
-                        <button @click="nextStep" class="macos-btn primary">Continue</button>
+                        <button @click="nextStep" class="macos-btn primary">{{ $t('auth.onboarding.step0.continue') }}</button>
                     </div>
 
                     <!-- STEP 1: Owner Registration -->
                     <div v-if="step === 1" class="animate-macos-in">
-                        <h2 class="text-3xl font-black mb-2 tracking-tight">Create Admin</h2>
-                        <p class="text-sm text-white/50 mb-10">Register the supreme owner of this node.</p>
+                        <h2 class="text-3xl font-black mb-2 tracking-tight">{{ $t('auth.onboarding.step1.title') }}</h2>
+                        <p class="text-sm text-white/50 mb-10">{{ $t('auth.onboarding.step1.desc') }}</p>
                         <div class="space-y-4">
-                            <el-input v-model="ownerForm.name" placeholder="Full Name" />
-                            <el-input v-model="ownerForm.email" placeholder="Email Address" />
-                            <el-input v-model="ownerForm.password" type="password" placeholder="Secure Password" />
+                            <el-input v-model="ownerForm.name" :placeholder="t('auth.onboarding.step1.fullName')" />
+                            <el-input v-model="ownerForm.email" :placeholder="t('auth.onboarding.step1.email')" />
+                            <el-input v-model="ownerForm.password" type="password" :placeholder="t('auth.onboarding.step1.password')" />
                             <button @click="registerOwner" :disabled="loading" class="macos-btn primary w-full mt-4">
-                                {{ loading ? 'Creating...' : 'Initialize Identity' }}
+                                {{ loading ? t('auth.onboarding.step1.creating') : t('auth.onboarding.step1.initIdentity') }}
                             </button>
                         </div>
                     </div>
 
                     <!-- STEP 2: License Activation -->
                     <div v-if="step === 2" class="animate-macos-in">
-                        <h2 class="text-3xl font-black mb-2 tracking-tight">Activation</h2>
-                        <p class="text-sm text-white/50 mb-10">Paste your high-fidelity license key to unlock features.
+                        <h2 class="text-3xl font-black mb-2 tracking-tight">{{ $t('auth.onboarding.step2.title') }}</h2>
+                        <p class="text-sm text-white/50 mb-10">{{ $t('auth.onboarding.step2.desc') }}
                         </p>
                         <div class="space-y-6">
-                            <el-input v-model="licenseKey" placeholder="LIC-XXXX-XXXX" class="font-mono text-center" />
+                            <el-input v-model="licenseKey" :placeholder="t('auth.onboarding.step2.placeholder')" class="font-mono text-center" />
                             <button @click="activateLicense" :disabled="loading" class="macos-btn purple w-full">
-                                {{ loading ? 'Validating...' : 'Authorize Registry' }}
+                                {{ loading ? t('auth.onboarding.step2.validating') : t('auth.onboarding.step2.authorize') }}
                             </button>
                             <p
                                 class="text-center text-[10px] font-bold text-white/30 uppercase tracking-widest cursor-pointer hover:text-white transition-colors">
-                                Get a trial key
+                                {{ $t('auth.onboarding.step2.getTrial') }}
                             </p>
                         </div>
                     </div>
 
                     <!-- STEP 3: Calibration -->
                     <div v-if="step === 3" class="animate-macos-in">
-                        <h2 class="text-3xl font-black mb-2 tracking-tight">Calibration</h2>
-                        <p class="text-sm text-white/50 mb-10">Finalize storage and AI unit configuration.</p>
+                        <h2 class="text-3xl font-black mb-2 tracking-tight">{{ $t('auth.onboarding.step3.title') }}</h2>
+                        <p class="text-sm text-white/50 mb-10">{{ $t('auth.onboarding.step3.desc') }}</p>
                         <div class="grid grid-cols-2 gap-4 mb-10">
                             <div
                                 class="p-6 bg-white/5 rounded-3xl text-center border border-white/5 hover:border-green-500/30 transition-all cursor-pointer group">
                                 <database-network theme="outline"
                                     class="mb-3 mx-auto text-white/20 group-hover:text-green-400" size="24" />
-                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">Cloud
-                                    Storage</p>
+                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">{{ $t('auth.onboarding.step3.cloudStorage') }}</p>
                             </div>
                             <div
                                 class="p-6 bg-white/5 rounded-3xl text-center border border-white/5 hover:border-blue-500/30 transition-all cursor-pointer group">
                                 <brain theme="outline" class="mb-3 mx-auto text-white/20 group-hover:text-blue-400"
                                     size="24" />
-                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">VTuber
-                                    Units</p>
+                                <p class="text-[10px] font-black uppercase text-white/40 group-hover:text-white">{{ $t('auth.onboarding.step3.vtuberUnits') }}</p>
                             </div>
                         </div>
-                        <button @click="completeOnboarding" class="macos-btn success w-full">DEPLOY PRODUCTION
-                            HUB</button>
+                        <button @click="completeOnboarding" class="macos-btn success w-full">{{ $t('auth.onboarding.step3.deployHub') }}</button>
                     </div>
 
                 </div>
@@ -117,12 +113,12 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { DatabaseNetwork, Brain, AtSign, Key, Config, DataServer } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
-import { useTranslations } from '@/composables/useTranslations';
+import { useI18n } from 'vue-i18n';
 import { useUserStore } from '@/stores/user';
 import { useLicenseStore } from '@/stores/license';
 
 const router = useRouter();
-const { setLocale } = useTranslations();
+const { t, locale } = useI18n()
 const userStore = useUserStore();
 const licenseStore = useLicenseStore();
 
@@ -130,7 +126,7 @@ const step = ref(0);
 const loading = ref(false);
 const selectedLang = ref('en');
 
-const stepLabels = ['Regional', 'Identity', 'Security', 'Finish'];
+const stepLabels = ['regional', 'identity', 'security', 'finish'];
 
 const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -144,7 +140,7 @@ const licenseKey = ref('');
 
 const nextStep = () => {
     if (step.value === 0) {
-        setLocale(selectedLang.value as any);
+        locale.value = selectedLang.value as any;
     }
     step.value++;
 };
@@ -153,10 +149,10 @@ const registerOwner = async () => {
     loading.value = true;
     try {
         await userStore.registerOwner(ownerForm.value);
-        toast.success('Identity established. Authenticating registry...');
+        toast.success(t('auth.onboarding.toasts.identityEstablished'));
         step.value = 2;
     } catch (e: any) {
-        toast.error(e.response?.data?.error || 'Registration failed');
+        toast.error(e.response?.data?.error || t('auth.onboarding.toasts.regFailed'));
     } finally { loading.value = false; }
 };
 
@@ -164,15 +160,15 @@ const activateLicense = async () => {
     loading.value = true;
     try {
         await licenseStore.activateLicense({ key: licenseKey.value });
-        toast.success('VTuber handshake established. Tier confirmed.');
+        toast.success(t('auth.onboarding.toasts.handshakeEstablished'));
         step.value = 3;
     } catch (e: any) {
-        toast.error(e.response?.data?.error || 'License activation failed');
+        toast.error(e.response?.data?.error || t('auth.onboarding.toasts.activationFailed'));
     } finally { loading.value = false; }
 };
 
 const completeOnboarding = () => {
-    toast.success('AntStudio Edge is now mission-ready!');
+    toast.success(t('auth.onboarding.toasts.missionReady'));
     router.push('/dashboard');
 };
 </script>

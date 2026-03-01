@@ -5,6 +5,8 @@ import { User } from '../models/User.js';
 import { connectDB } from '../utils/db.js';
 import crypto from 'crypto';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // Join affiliate program
@@ -51,7 +53,7 @@ router.post('/join', authMiddleware, async (req: AuthRequest, res: Response) => 
             }
         });
     } catch (error: any) {
-        console.error('Failed to join affiliate program:', error);
+        Logger.error('Failed to join affiliate program:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message || 'Failed to join affiliate program' 
@@ -101,7 +103,7 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response)
             }
         });
     } catch (error: any) {
-        console.error('Failed to get affiliate dashboard:', error);
+        Logger.error('Failed to get affiliate dashboard:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message || 'Failed to get affiliate dashboard' 
@@ -144,7 +146,7 @@ router.post('/track-click', async (req: Request, res: Response) => {
         
         res.json({ success: true, message: 'Click tracked' });
     } catch (error: any) {
-        console.error('Failed to track click:', error);
+        Logger.error('Failed to track click:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message || 'Failed to track click' 
@@ -187,7 +189,7 @@ router.post('/payout', authMiddleware, async (req: AuthRequest, res: Response) =
             message: 'Payout request submitted successfully'
         });
     } catch (error: any) {
-        console.error('Failed to request payout:', error);
+        Logger.error('Failed to request payout:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message || 'Failed to request payout' 

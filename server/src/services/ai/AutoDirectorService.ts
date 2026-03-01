@@ -1,5 +1,7 @@
 import { EventEmitter } from 'events';
 
+import { Logger } from '../../utils/Logger.js';
+
 interface DirectorState {
     isEnabled: boolean;
     currentFocus: string; // 'host' | 'screen' | 'wide' | 'guest_ID'
@@ -28,7 +30,7 @@ class AutoDirectorService extends EventEmitter {
 
     public toggleDirector(enabled: boolean) {
         this.state.isEnabled = enabled;
-        console.log(`[AutoDirector] State: ${enabled ? 'ON' : 'OFF'}`);
+        Logger.info(`[AutoDirector] State: ${enabled ? 'ON' : 'OFF'}`);
         if (!enabled) {
             this.clearSilenceTimer();
         }
@@ -59,7 +61,7 @@ class AutoDirectorService extends EventEmitter {
 
     public handleReaction(sourceId: string, type: string) {
         if (!this.state.isEnabled) return;
-        console.log(`[AutoDirector] Reaction from ${sourceId}: ${type}`);
+        Logger.info(`[AutoDirector] Reaction from ${sourceId}: ${type}`);
         
         // Reactions trigger a quick cut
         this.considerSwitch(sourceId, true);
@@ -97,7 +99,7 @@ class AutoDirectorService extends EventEmitter {
         this.state.currentFocus = targetId;
         this.state.lastSwitchTime = Date.now();
         
-        console.log(`[AutoDirector] Cutting to: ${targetId}`);
+        Logger.info(`[AutoDirector] Cutting to: ${targetId}`);
         
         // Emit event for socket service to pick up
         this.emit('cut', {

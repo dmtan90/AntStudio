@@ -2,13 +2,12 @@
     <div class="collaboration-settings flex flex-col gap-6 animate-in">
         <section>
             <div class="flex justify-between items-center mb-4">
-                <h4 class="text-xs font-black opacity-30 uppercase tracking-widest">Team Session</h4>
+                <h4 class="text-xs font-black opacity-30 uppercase tracking-widest">{{ $t('drawers.collaboration.title') }}</h4>
                 <button class="text-[10px] text-blue-500 font-bold hover:text-blue-400"
-                    @click="$emit('invite-cohost')">+ Invite</button>
+                    @click="$emit('invite-cohost')">+ {{ $t('drawers.collaboration.invite') }}</button>
             </div>
             <div class="p-5 rounded-3xl bg-blue-500/5 border border-blue-500/10 mb-6">
-                <p class="text-[10px] opacity-40 leading-relaxed mb-6">Invite others to edit layers and manage the
-                    stream in real-time. Changes are synced across all hosts.</p>
+                <p class="text-[10px] opacity-40 leading-relaxed mb-6">{{ $t('drawers.collaboration.desc') }}</p>
 
                 <div v-if="teamList.length" class="collaborators-list space-y-3">
                     <div v-for="c in teamList" :key="c.id"
@@ -20,16 +19,16 @@
                         </div>
                         <div class="flex-1">
                             <p class="text-[10px] font-bold">{{ c.name }} <span v-if="c.id === currentUserId"
-                                    class="opacity-30 ml-1">(You)</span></p>
+                                    class="opacity-30 ml-1">({{ $t('drawers.collaboration.you') }})</span></p>
                             <div class="flex items-center gap-1">
                                 <div class="w-1.5 h-1.5 rounded-full" :class="c.online ? 'bg-green-400 animate-pulse' : 'bg-white/20'"></div>
-                                <span class="text-[8px] opacity-30 uppercase font-black">{{ c.online ? 'Connected' : 'Offline' }}</span>
+                                <span class="text-[8px] opacity-30 uppercase font-black">{{ c.online ? $t('drawers.collaboration.connected') : $t('drawers.collaboration.offline') }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div v-else class="text-center py-4 border border-dashed border-white/10 rounded-2xl">
-                    <p class="text-[10px] opacity-20 italic">No team members assigned</p>
+                    <p class="text-[10px] opacity-20 italic">{{ $t('drawers.collaboration.noMembers') }}</p>
                 </div>
             </div>
         </section>
@@ -38,12 +37,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStudioStore } from '@/stores/studio';
 
-const props = defineProps<{
+const props = defineProps<{ 
     currentUserId: string;
 }>();
 
+const { t } = useI18n();
 const studioStore = useStudioStore();
 
 const teamList = computed(() => {

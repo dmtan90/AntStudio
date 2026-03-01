@@ -2,7 +2,7 @@ import ffmpeg from 'fluent-ffmpeg';
 /* @ts-ignore */
 import NodeMediaServer from 'node-media-server';
 /* @ts-ignore */
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 import path from 'path';
 import { PassThrough } from 'stream';
 import { exec } from 'child_process';
@@ -72,7 +72,7 @@ export class StreamingService extends EventEmitter {
     }
 
     public async initialize() {
-        systemLogger.info('[StreamingService] Initializing Node Media Server...', 'StreamingService');
+        Logger.info('[StreamingService] Initializing Node Media Server...', 'StreamingService');
         this.initNodeMediaServer();
     }
 
@@ -116,7 +116,7 @@ export class StreamingService extends EventEmitter {
                 }
 
                 if (!cleanPath) {
-                    systemLogger.warn(`[NMS-Relay] postPublish received empty streamPath via id ${id}`, 'StreamingService');
+                    Logger.warn(`[NMS-Relay] postPublish received empty streamPath via id ${id}`, 'StreamingService');
                     return;
                 }
                 
@@ -125,12 +125,12 @@ export class StreamingService extends EventEmitter {
                 const pathParts = cleanPath.split('/');
                 const sessionId = pathParts[pathParts.length - 1];
                 
-                systemLogger.info(`[NMS-Debug] Extracted sessionId: "${sessionId}" from path: "${cleanPath}"`, 'StreamingService');
+                Logger.info(`[NMS-Debug] Extracted sessionId: "${sessionId}" from path: "${cleanPath}"`, 'StreamingService');
                 const session = this.sessions.get(sessionId);
                 
                 if (session) {
                     if (session.targets && session.targets.length > 0) {
-                        systemLogger.info(`[NMS-Relay] Stream detected for session ${sessionId}. Starting DIRECT FFmpeg push to ${session.targets.length} targets.`, 'StreamingService', JSON.stringify(session.targets));
+                        Logger.info(`[NMS-Relay] Stream detected for session ${sessionId}. Starting DIRECT FFmpeg push to ${session.targets.length} targets.`, 'StreamingService', JSON.stringify(session.targets));
                         
                         // Initialize relay array if needed
                         if (!session.relayProcesses) {
@@ -142,7 +142,7 @@ export class StreamingService extends EventEmitter {
 
                         session.targets.forEach((target, index) => {
                             const remoteUrl = `${target.url}/${target.key}`;
-                            systemLogger.info(`[NMS-Relay] Spawning Relay Process ${index + 1}: ${sessionId} -> ${target.platform}`, 'StreamingService');
+                            Logger.info(`[NMS-Relay] Spawning Relay Process ${index + 1}: ${sessionId} -> ${target.platform}`, 'StreamingService');
                             
                             // Spawn separate FFmpeg process for each target
                             // Logic: Read from local RTMP -> Copy Codec -> Push to Remote RTMP
@@ -156,19 +156,19 @@ export class StreamingService extends EventEmitter {
                                 ])
                                 .output(remoteUrl)
                                 .on('start', (cmdLine: any) => {
-                                    systemLogger.info(`[NMS-Relay] Relay started for ${target.platform}: ${cmdLine}`, 'StreamingService');
+                                    Logger.info(`[NMS-Relay] Relay started for ${target.platform}: ${cmdLine}`, 'StreamingService');
                                 })
                                 .on('error', (err: any, stdout: any, stderr: any) => {
                                     // Only log real errors, not kill signals
                                     if (err.message && !err.message.includes('SIGKILL') && !err.message.includes('exited with code 1')) {
-                                        systemLogger.error(`[NMS-Relay] Error relaying to ${target.platform}: ${err.message}`, 'StreamingService');
-                                        systemLogger.debug(`[NMS-Relay] Stderr: ${stderr}`, 'StreamingService');
+                                        Logger.error(`[NMS-Relay] Error relaying to ${target.platform}: ${err.message}`, 'StreamingService');
+                                        Logger.debug(`[NMS-Relay] Stderr: ${stderr}`, 'StreamingService');
                                     } else {
-                                        systemLogger.info(`[NMS-Relay] Relay to ${target.platform} stopped normally.`, 'StreamingService');
+                                        Logger.info(`[NMS-Relay] Relay to ${target.platform} stopped normally.`, 'StreamingService');
                                     }
                                 })
                                 .on('end', () => {
-                                    systemLogger.info(`[NMS-Relay] Relay to ${target.platform} finished.`, 'StreamingService');
+                                    Logger.info(`[NMS-Relay] Relay to ${target.platform} finished.`, 'StreamingService');
                                 });
 
                             // Execute and track
@@ -176,18 +176,18 @@ export class StreamingService extends EventEmitter {
                             session.relayProcesses?.push(relayCommand);
                         });
                     } else {
-                        systemLogger.warn(`[NMS-Relay] Session ${sessionId} found but has NO targets. Relay skipped.`, 'StreamingService');
+                        Logger.warn(`[NMS-Relay] Session ${sessionId} found but has NO targets. Relay skipped.`, 'StreamingService');
                     }
                 } else {
                     const availableSessions = Array.from(this.sessions.keys());
-                    systemLogger.warn(`[NMS-Relay] Session lookup failed for ID: "${sessionId}". Available sessions: ${JSON.stringify(availableSessions)}`, 'StreamingService');
+                    Logger.warn(`[NMS-Relay] Session lookup failed for ID: "${sessionId}". Available sessions: ${JSON.stringify(availableSessions)}`, 'StreamingService');
                 }
             } catch(err){
-                systemLogger.error(`[NMS-Relay] Error in postPublish: ${err}`, 'StreamingService');
+                Logger.error(`[NMS-Relay] Error in postPublish: ${err}`, 'StreamingService');
             }
         });
 
-        systemLogger.info(`Node Media Server initialized on port ${RTMP_PORT} (RTMP) and 8000 (HTTP)`, 'StreamingService');
+        Logger.info(`Node Media Server initialized on port ${RTMP_PORT} (RTMP) and 8000 (HTTP)`, 'StreamingService');
     }
 
     /**
@@ -230,14 +230,14 @@ export class StreamingService extends EventEmitter {
                         Cookie: cookie
                     }
                 }).catch(err => {
-                    systemLogger.warn(` Failed to add AMS RTMP endpoint for ${target.platform}: ${err.message}`, 'StreamingService');
+                    Logger.warn(` Failed to add AMS RTMP endpoint for ${target.platform}: ${err.message}`, 'StreamingService');
                 });
             }
 
-            systemLogger.info(`Configured AMS ${streamId} to restream to ${externalTargets.length} endpoints`, 'StreamingService');
+            Logger.info(`Configured AMS ${streamId} to restream to ${externalTargets.length} endpoints`, 'StreamingService');
 
         } catch (error: any) {
-            systemLogger.error(`AMS Restream Setup Error: ${error.message}`, 'StreamingService');
+            Logger.error(`AMS Restream Setup Error: ${error.message}`, 'StreamingService');
             // Fallback: Do not fail, just log. System will just stream to AMS and fail to restream.
         }
     }
@@ -253,7 +253,7 @@ export class StreamingService extends EventEmitter {
             const controllers = graphics.controllers;
             const gpuNames = controllers.map((c: any) => `${c.model || ''} ${c.vendor || ''}`.toLowerCase());
 
-            systemLogger.info(`[GPU-Detect] Detected Hardware: ${gpuNames.join(' | ')}`, 'StreamingService');
+            Logger.info(`[GPU-Detect] Detected Hardware: ${gpuNames.join(' | ')}`, 'StreamingService');
 
             const hasNvidia = gpuNames.some((name: string) => name.includes('nvidia'));
             const hasIntel = gpuNames.some((name: string) => name.includes('intel'));
@@ -274,11 +274,11 @@ export class StreamingService extends EventEmitter {
                 }
             }
         } catch (err) {
-            systemLogger.warn(`[GPU-Detect] Detection failed, falling back to libx264: ${err}`, 'StreamingService');
+            Logger.warn(`[GPU-Detect] Detection failed, falling back to libx264: ${err}`, 'StreamingService');
         }
 
         this.cachedCodec = codec;
-        systemLogger.info(`[Relay-Optimization] Final Codec Selection: ${codec}`, 'StreamingService');
+        Logger.info(`[Relay-Optimization] Final Codec Selection: ${codec}`, 'StreamingService');
         return codec;
     }
 
@@ -296,7 +296,7 @@ export class StreamingService extends EventEmitter {
     ): Promise<{ sessionId: string, mode: string }> {
         const sessionId = options.sessionId || `stream_${Date.now()}`;
 
-        systemLogger.info(`Starting restream for user ${userId} to ${targets.length} targets (Loop: ${options.loop})`, 'StreamingService');
+        Logger.info(`Starting restream for user ${userId} to ${targets.length} targets (Loop: ${options.loop})`, 'StreamingService');
 
         // 0. Credit Check (Must have at least 1 credit to start)
         const user = await User.findById(userId);
@@ -312,7 +312,7 @@ export class StreamingService extends EventEmitter {
 
         // If we have an AMS target and external targets, let AMS handle the distribution
         if (amsTarget && externalTargets.length > 0) {
-            systemLogger.info('AMS detected. Offloading restreaming responsibility to AMS.', 'StreamingService');
+            Logger.info('AMS detected. Offloading restreaming responsibility to AMS.', 'StreamingService');
             await this.setupAMSRestream(amsTarget, externalTargets);
             finalTargets = [amsTarget]; // FFmpeg only streams to AMS
         }
@@ -334,7 +334,7 @@ export class StreamingService extends EventEmitter {
                 // Persist State
                 await this.syncSessionToDB(session, { mode: source === 'webrtc' ? 'webrtc_ams' : 'ams' });
 
-                systemLogger.info(`WebRTC session ${sessionId} initialized using AMS Bridge. Browser handles ingest.`, 'StreamingService');
+                Logger.info(`WebRTC session ${sessionId} initialized using AMS Bridge. Browser handles ingest.`, 'StreamingService');
                 return { sessionId, mode: 'webrtc_ams' };
             } else {
                 // Fallback: Use backend relay (WebRTC-to-RTMP)
@@ -359,7 +359,7 @@ export class StreamingService extends EventEmitter {
 
                 this.syncSessionToDB(relaySession, { mode: 'webrtc_relay' }).catch(() => { });
 
-                systemLogger.info(`WebRTC session ${sessionId} initialized with BACKEND RELAY bridge.`, 'StreamingService');
+                Logger.info(`WebRTC session ${sessionId} initialized with BACKEND RELAY bridge.`, 'StreamingService');
 
                 return { sessionId, mode: 'webrtc_relay' };
             }
@@ -388,31 +388,31 @@ export class StreamingService extends EventEmitter {
             command.output(teeOutput);
 
             command.on('start', async (cmd: string) => {
-                systemLogger.info(`FFmpeg process started: ${cmd}`, 'StreamingService');
+                Logger.info(`FFmpeg process started: ${cmd}`, 'StreamingService');
                 session.status = 'live';
                 session.startTime = new Date();
                 
                 try {
                     await this.syncSessionToDB(session, { mode: 'file_relay' });
-                    systemLogger.info(`Session ${session.id} is now LIVE`, 'StreamingService');
+                    Logger.info(`Session ${session.id} is now LIVE`, 'StreamingService');
                     
                     // Start chat and engagement sync workers when session goes live
                     const { socketServer } = await import('./SocketServer.js');
                     socketServer.ensureSyncWorkersRunning();
                 } catch (err: any) {
-                    systemLogger.error(`Failed to sync session to DB: ${err.message}`, 'StreamingService');
+                    Logger.error(`Failed to sync session to DB: ${err.message}`, 'StreamingService');
                 }
             });
 
             command.on('error', (err: Error) => {
-                systemLogger.error(`FFmpeg streaming error: ${err.message}`, 'StreamingService');
+                Logger.error(`FFmpeg streaming error: ${err.message}`, 'StreamingService');
                 session.status = 'error';
                 this.syncSessionToDB(session, { mode: 'file_relay' }).catch(() => { });
                 this.stopRestream(sessionId);
             });
 
             command.on('end', () => {
-                systemLogger.info(`FFmpeg stream ended: ${sessionId}`, 'StreamingService');
+                Logger.info(`FFmpeg stream ended: ${sessionId}`, 'StreamingService');
                 session.status = 'stopped';
                 this.syncSessionToDB(session, { mode: 'file_relay' }).catch(() => { });
             });
@@ -428,7 +428,7 @@ export class StreamingService extends EventEmitter {
             return { sessionId, mode: 'file_relay' };
 
         } catch (error: any) {
-            systemLogger.error(`Failed to initialize stream: ${error.message}`, 'StreamingService');
+            Logger.error(`Failed to initialize stream: ${error.message}`, 'StreamingService');
             throw error;
         }
     }
@@ -450,7 +450,7 @@ export class StreamingService extends EventEmitter {
             fps: 30
         };
 
-        systemLogger.info(`[Relay-Config] Session ${sessionId} Quality: ${config.width}x${config.height} @ ${config.videoBitrate}kbps`, 'StreamingService');
+        Logger.info(`[Relay-Config] Session ${sessionId} Quality: ${config.width}x${config.height} @ ${config.videoBitrate}kbps`, 'StreamingService');
 
         // Determine output: Push to local NMS first
         const localRtmpUrl = `rtmp://127.0.0.1/live/${sessionId}`;
@@ -507,7 +507,7 @@ export class StreamingService extends EventEmitter {
         // in initNodeMediaServer, which triggers as soon as FFmpeg starts pushing to local NMS.
 
         command.on('start', (cmd: string) => {
-            systemLogger.info(`Relay FFmpeg process started: ${cmd}`, 'StreamingService');
+            Logger.info(`Relay FFmpeg process started: ${cmd}`, 'StreamingService');
             session.startTime = new Date();
         });
 
@@ -515,19 +515,19 @@ export class StreamingService extends EventEmitter {
             // Log ALL messages from FFmpeg for debugging for now
             const lineString = line.trim();
             if(!lineString.startsWith('frame=')){
-                systemLogger.info(`[Relay-Debug] ${lineString}`, 'StreamingService');
+                Logger.info(`[Relay-Debug] ${lineString}`, 'StreamingService');
             }
         });
 
         command.on('error', (err: Error) => {
-            systemLogger.error(`Relay FFmpeg error: ${err.message}`, 'StreamingService');
+            Logger.error(`Relay FFmpeg error: ${err.message}`, 'StreamingService');
             session.status = 'error';
             this.emit('session:stopped', { sessionId, reason: err.message, status: 'error' });
             this.stopRestream(sessionId);
         });
 
         command.on('end', () => {
-            systemLogger.info(`Relay FFmpeg stream ended: ${sessionId}`, 'StreamingService');
+            Logger.info(`Relay FFmpeg stream ended: ${sessionId}`, 'StreamingService');
             session.status = 'stopped';
             this.emit('session:stopped', { sessionId, reason: 'Stream ended cleanly', status: 'stopped' });
         });
@@ -551,11 +551,11 @@ export class StreamingService extends EventEmitter {
                 if (buffer.length >= 4) {
                     const header = buffer.subarray(0, 4).toString('hex');
                     if (header === '1a45dfa3') {
-                        systemLogger.info(`[Relay-Debug] Valid EBML Header found in chunk for ${sessionId}`, 'StreamingService');
+                        Logger.info(`[Relay-Debug] Valid EBML Header found in chunk for ${sessionId}`, 'StreamingService');
                     } else {
                         // Only log if it's the very first chunk we are receiving
                         if (!session.startTime) {
-                             systemLogger.warn(`[Relay-Debug] Chunk for ${sessionId} does NO START with EBML header: ${header}`, 'StreamingService');
+                             Logger.warn(`[Relay-Debug] Chunk for ${sessionId} does NO START with EBML header: ${header}`, 'StreamingService');
                         }
                     }
                 }
@@ -564,7 +564,7 @@ export class StreamingService extends EventEmitter {
                 // Maintain rolling buffer for highlights
                 highlightService.appendChunk(sessionId, buffer);
             } catch (err: any) {
-                systemLogger.warn(`Failed to write chunk to relay ${sessionId}: ${err.message}`, 'StreamingService');
+                Logger.warn(`Failed to write chunk to relay ${sessionId}: ${err.message}`, 'StreamingService');
             }
         }
     }
@@ -582,7 +582,7 @@ export class StreamingService extends EventEmitter {
                 expiresAt
             });
         } catch (error) {
-            systemLogger.error(`Failed to save guest token to DB: ${error}`, 'StreamingService');
+            Logger.error(`Failed to save guest token to DB: ${error}`, 'StreamingService');
         }
 
         // 2. Save to Redis for high-speed cache (Optional)
@@ -650,7 +650,7 @@ export class StreamingService extends EventEmitter {
                 };
             }
         } catch (error) {
-            systemLogger.error(`DB validation error for guest token: ${error}`, 'StreamingService');
+            Logger.error(`DB validation error for guest token: ${error}`, 'StreamingService');
         }
 
         return null;
@@ -694,37 +694,37 @@ export class StreamingService extends EventEmitter {
                     // On Windows, use taskkill to ensuring the entire process tree is dead (including child threads)
                     if (pid) {
                         if (process.platform === 'win32') {
-                            systemLogger.info(`[Stop] Attempting taskkill for PID ${pid}`, 'StreamingService');
+                            Logger.info(`[Stop] Attempting taskkill for PID ${pid}`, 'StreamingService');
                             await new Promise<void>((resolve) => {
                                 exec(`taskkill /pid ${pid} /f /t`, (err: any) => {
                                     if (err && !err.message.includes('not found') && !err.message.includes('no instance(s)')) {
-                                        systemLogger.warn(`[Stop] taskkill error for ${sessionId}: ${err.message}`, 'StreamingService');
+                                        Logger.warn(`[Stop] taskkill error for ${sessionId}: ${err.message}`, 'StreamingService');
                                     } else {
-                                        systemLogger.info(`[Stop] Force killed process tree for ${sessionId} (PID: ${pid})`, 'StreamingService');
+                                        Logger.info(`[Stop] Force killed process tree for ${sessionId} (PID: ${pid})`, 'StreamingService');
                                     }
                                     resolve();
                                 });
                             });
                         } else if (process.platform === 'linux' || process.platform === 'darwin') {
-                            systemLogger.info(`[Stop] Attempting pkill for children of PID ${pid}`, 'StreamingService');
+                            Logger.info(`[Stop] Attempting pkill for children of PID ${pid}`, 'StreamingService');
                             await new Promise<void>((resolve) => {
                                 exec(`pkill -9 -P ${pid}`, (err: any) => {
                                     // pkill returns 1 if no processes matched; we can ignore that
-                                    systemLogger.info(`[Stop] Deep kill (pkill) executed for ${sessionId}`, 'StreamingService');
+                                    Logger.info(`[Stop] Deep kill (pkill) executed for ${sessionId}`, 'StreamingService');
                                     resolve();
                                 });
                             });
                         }
                     }
-                    systemLogger.info(`[Stop] Killed Ingest FFmpeg process for ${sessionId} (SIGKILL)`, 'StreamingService');
+                    Logger.info(`[Stop] Killed Ingest FFmpeg process for ${sessionId} (SIGKILL)`, 'StreamingService');
                 } catch (e) {
-                    systemLogger.warn(`[Stop] Failed to kill Ingest FFmpeg: ${e}`, 'StreamingService');
+                    Logger.warn(`[Stop] Failed to kill Ingest FFmpeg: ${e}`, 'StreamingService');
                 }
             }
 
             // 2. Stop Manual FFmpeg Relay Processes (Push to YouTube/Facebook)
             if (session.relayProcesses && session.relayProcesses.length > 0) {
-                systemLogger.info(`[Stop] Stopping ${session.relayProcesses.length} relay processes for ${sessionId}`, 'StreamingService');
+                Logger.info(`[Stop] Stopping ${session.relayProcesses.length} relay processes for ${sessionId}`, 'StreamingService');
                 
                 for (const relayProc of session.relayProcesses) {
                     try {
@@ -735,16 +735,16 @@ export class StreamingService extends EventEmitter {
                         if (pid) {
                             if (process.platform === 'win32') {
                                 exec(`taskkill /pid ${pid} /f /t`, (err: any) => {
-                                    if (!err) systemLogger.info(`[Stop] Relay process ${pid} killed via taskkill.`, 'StreamingService');
+                                    if (!err) Logger.info(`[Stop] Relay process ${pid} killed via taskkill.`, 'StreamingService');
                                 });
                             } else if (process.platform === 'linux' || process.platform === 'darwin') {
                                 exec(`pkill -9 -P ${pid}`, (err: any) => {
-                                    if (!err) systemLogger.info(`[Stop] Relay process ${pid} children killed via pkill.`, 'StreamingService');
+                                    if (!err) Logger.info(`[Stop] Relay process ${pid} children killed via pkill.`, 'StreamingService');
                                 });
                             }
                         }
                     } catch (e) {
-                        systemLogger.warn(`[Stop] Error killing relay process: ${e}`, 'StreamingService');
+                        Logger.warn(`[Stop] Error killing relay process: ${e}`, 'StreamingService');
                     }
                 }
                 session.relayProcesses = [];
@@ -759,13 +759,13 @@ export class StreamingService extends EventEmitter {
                     nmsSessions.forEach((s: any, key: string) => {
                         // Check if this session matches our stream ID (often the last part of streamPath or name)
                         if (s.streamPath === `/live/${sessionId}` || s.id === sessionId || (s.id && s.id.id === sessionId)) {
-                            systemLogger.info(`[Stop] Stopping NMS Session ${key} for stream ${sessionId}`, 'StreamingService');
+                            Logger.info(`[Stop] Stopping NMS Session ${key} for stream ${sessionId}`, 'StreamingService');
                             s.stop();
                         }
                     });
                 }
             } catch (e) { 
-                systemLogger.error(`[Stop] Error clearing NMS sessions: ${e}`, 'StreamingService');
+                Logger.error(`[Stop] Error clearing NMS sessions: ${e}`, 'StreamingService');
             }
 
             // Calculate Duration
@@ -778,7 +778,7 @@ export class StreamingService extends EventEmitter {
             const creditsToDeduct = Math.max(1, Math.ceil(durationMinutes / 60));
 
             session.status = 'stopped';
-            systemLogger.info(`Stopped stream ${sessionId}. Duration: ${durationMinutes} mins. Deducting ${creditsToDeduct} credits.`, 'StreamingService');
+            Logger.info(`Stopped stream ${sessionId}. Duration: ${durationMinutes} mins. Deducting ${creditsToDeduct} credits.`, 'StreamingService');
 
             // Enforce Deduction
             await creditManager.deductCredits(
@@ -838,7 +838,7 @@ export class StreamingService extends EventEmitter {
             // 2. Save to Redis (Fast monitoring)
             await redisService.registerSession(session.id, data);
         } catch (e) {
-            systemLogger.error(`Failed to sync session ${session.id} to distributed state: ${e}`, 'StreamingService');
+            Logger.error(`Failed to sync session ${session.id} to distributed state: ${e}`, 'StreamingService');
         }
     }
 }

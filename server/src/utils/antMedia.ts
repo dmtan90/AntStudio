@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { configService } from './configService.js';
+import { Logger } from './Logger.js';
 
 export interface AntMediaBroadcastParams {
     name: string;
@@ -32,7 +33,7 @@ export class AntMediaService {
             });
             return response.data.success;
         } catch (error) {
-            console.error('[AntMedia] Authentication failed:', error);
+            Logger.error('[AntMedia] Authentication failed', 'AntMedia', { error });
             return false;
         }
     }
@@ -53,7 +54,7 @@ export class AntMediaService {
             });
             return response.data;
         } catch (error) {
-            console.error('[AntMedia] Failed to create broadcast:', error);
+            Logger.error('[AntMedia] Failed to create broadcast', 'AntMedia', { error });
             return null;
         }
     }
@@ -68,7 +69,7 @@ export class AntMediaService {
             });
             return response.data.success;
         } catch (error) {
-            console.error('[AntMedia] Failed to start stream:', error);
+            Logger.error('[AntMedia] Failed to start stream', 'AntMedia', { error });
             return false;
         }
     }
@@ -88,7 +89,7 @@ export class AntMediaService {
             });
             return response.data;
         } catch (error) {
-            console.error('[AntMedia] Failed to upload VoD:', error);
+            Logger.error('[AntMedia] Failed to upload VoD', 'AntMedia', { error });
             return null;
         }
     }
@@ -106,7 +107,7 @@ export class AntMediaService {
             });
             return response.data.success;
         } catch (error) {
-            console.error('[AntMedia] Failed to add endpoint:', error);
+            Logger.error('[AntMedia] Failed to add endpoint', 'AntMedia', { error });
             return false;
         }
     }
@@ -121,7 +122,7 @@ export class AntMediaService {
             });
             return response.data.success;
         } catch (error) {
-            console.error('[AntMedia] Failed to stop broadcast:', error);
+            Logger.error('[AntMedia] Failed to stop broadcast', 'AntMedia', { error });
             return false;
         }
     }

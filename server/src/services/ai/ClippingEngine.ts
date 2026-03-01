@@ -3,7 +3,7 @@ import { config } from '../../utils/config.js';
 import path from 'path';
 import fs from 'fs';
 import { Project } from '../../models/Project.js';
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
 import { socialSyndicationService } from '../SocialSyndicationService.js';
 import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { uploadToS3, deleteFromS3 } from '../../utils/s3.js';
@@ -29,17 +29,17 @@ export class ClippingEngine {
         const { videoPath, projectId, userId } = config;
 
         try {
-            systemLogger.info(`✂️ [ClippingEngine] Processing recording for Project: ${projectId}`, 'ClippingEngine');
+            Logger.info(`✂️ [ClippingEngine] Processing recording for Project: ${projectId}`, 'ClippingEngine');
 
             // 1. Identification logic using Gemini File API
             const segments = await this.identifyViralSegments(videoPath);
             
             if (segments.length === 0) {
-                systemLogger.info(`⚠️ [ClippingEngine] No viral segments detected for ${projectId}`, 'ClippingEngine');
+                Logger.info(`⚠️ [ClippingEngine] No viral segments detected for ${projectId}`, 'ClippingEngine');
                 return;
             }
 
-            systemLogger.info(`✂️ [ClippingEngine] Identified ${segments.length} segments to clip`, 'ClippingEngine');
+            Logger.info(`✂️ [ClippingEngine] Identified ${segments.length} segments to clip`, 'ClippingEngine');
 
             const project = await Project.findById(projectId);
             if (!project) throw new Error('Project not found');
@@ -56,7 +56,7 @@ export class ClippingEngine {
                         .on('end', async () => {
                             try {
                                 // 2. Upload to S3
-                                systemLogger.info(`☁️ [ClippingEngine] Uploading clip to S3: ${clipName}`, 'ClippingEngine');
+                                Logger.info(`☁️ [ClippingEngine] Uploading clip to S3: ${clipName}`, 'ClippingEngine');
                                 const fileBuffer = fs.readFileSync(tempOutputPath);
                                 const s3Key = `projects/${projectId}/clips/${clipName}`;
                                 
@@ -85,19 +85,19 @@ export class ClippingEngine {
                                 const newAsset = updatedProject?.visualAssets?.find(a => a.name === seg.title) as any;
                                 if (newAsset && newAsset._id) {
                                     socialSyndicationService.createAutonomousDraft(projectId, newAsset._id.toString(), seg.title, seg.description)
-                                        .catch((err: any) => systemLogger.error(`Draft creation failed for clip ${clipName}: ${err.message}`, 'ClippingEngine'));
+                                        .catch((err: any) => Logger.error(`Draft creation failed for clip ${clipName}: ${err.message}`, 'ClippingEngine'));
                                 }
 
                                 // Cleanup temp file
                                 if (fs.existsSync(tempOutputPath)) fs.unlinkSync(tempOutputPath);
                                 resolve();
                             } catch (err: any) {
-                                systemLogger.error(`Failed to upload/register clip ${clipName}: ${err.message}`, 'ClippingEngine');
+                                Logger.error(`Failed to upload/register clip ${clipName}: ${err.message}`, 'ClippingEngine');
                                 reject(err);
                             }
                         })
                         .on('error', (err: any) => {
-                            systemLogger.error(`FFmpeg clipping error for ${clipName}: ${err.message}`, 'ClippingEngine');
+                            Logger.error(`FFmpeg clipping error for ${clipName}: ${err.message}`, 'ClippingEngine');
                             reject(err);
                         })
                         .run();
@@ -105,10 +105,10 @@ export class ClippingEngine {
             });
 
             await Promise.all(clipTasks);
-            systemLogger.info(`✅ [ClippingEngine] Generated ${segments.length} viral clips for ${projectId}`, 'ClippingEngine');
+            Logger.info(`✅ [ClippingEngine] Generated ${segments.length} viral clips for ${projectId}`, 'ClippingEngine');
 
         } catch (error: any) {
-            systemLogger.error(`❌ [ClippingEngine] Processing failed: ${error.message}`, 'ClippingEngine');
+            Logger.error(`❌ [ClippingEngine] Processing failed: ${error.message}`, 'ClippingEngine');
         }
     }
 
@@ -118,7 +118,7 @@ export class ClippingEngine {
     private async identifyViralSegments(videoPath: string): Promise<Array<{ start: number, duration: number, title: string, description: string, score: number }>> {
         let fileUri = '';
         try {
-            systemLogger.info(`📤 [ClippingEngine] Uploading video to Gemini File API for analysis...`, 'ClippingEngine');
+            Logger.info(`📤 [ClippingEngine] Uploading video to Gemini File API for analysis...`, 'ClippingEngine');
             
             // 1. Upload file to Gemini File API
             const file: any = await this.gemini.uploadFile(videoPath, 'video/mp4', `clip_analysis_${path.basename(videoPath)}`);
@@ -126,7 +126,7 @@ export class ClippingEngine {
             fileUri = file.uri;
 
             // 2. Wait for file to be active
-            systemLogger.info(`⏳ [ClippingEngine] Waiting for video processing (File API)...`, 'ClippingEngine');
+            Logger.info(`⏳ [ClippingEngine] Waiting for video processing (File API)...`, 'ClippingEngine');
             await this.gemini.waitForFileActive(fileUri);
 
             // 3. Generate Analysis
@@ -168,7 +168,7 @@ export class ClippingEngine {
             }
 
             // Cleanup File API (Optional, but good practice)
-            this.gemini.deleteFile(fileUri).catch(e => systemLogger.warn(`Failed to delete Gemini file ${fileUri}: ${e.message}`));
+            this.gemini.deleteFile(fileUri).catch(e => Logger.warn(`Failed to delete Gemini file ${fileUri}: ${e.message}`));
 
             // Validate and sanitize
             return segments.map((s: any) => ({
@@ -180,7 +180,7 @@ export class ClippingEngine {
             })).filter((s: any) => s.duration > 0 && !isNaN(s.start));
 
         } catch (error: any) {
-             systemLogger.error(`[ClippingEngine] AI Analysis failed. Error: ${error.message}`, 'ClippingEngine');
+             Logger.error(`[ClippingEngine] AI Analysis failed. Error: ${error.message}`, 'ClippingEngine');
              if (fileUri) this.gemini.deleteFile(fileUri).catch(() => {});
              return [];
         }

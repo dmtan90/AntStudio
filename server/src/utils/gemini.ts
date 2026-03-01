@@ -1,5 +1,6 @@
 import { GoogleGenAI, Modality } from '@google/genai';
 import { AdminSettings, IAdminSettings } from '../models/AdminSettings.js';
+import { Logger } from './Logger.js';
 
 export interface GeminiKeyInfo {
     key: string;
@@ -137,7 +138,7 @@ export class GeminiPool {
                 await settings.save();
             }
         } catch (error) {
-            console.error('[GeminiPool] Failed to record usage:', error);
+            Logger.error('[GeminiPool] Failed to record usage', 'GeminiPool', { error });
         }
     }
 }

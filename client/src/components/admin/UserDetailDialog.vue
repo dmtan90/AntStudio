@@ -1,13 +1,14 @@
 <template>
-  <GDialog
+  <el-dialog
     v-model="visible"
-    title="User Details"
+    :title="t('admin.userDetails.title')"
     width="600px"
-    class="user-detail-dialog"
+    class="cinematic-dialog"
+    destroy-on-close
   >
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading user details...</p>
+    <div v-if="loading" class="py-12 flex flex-col items-center gap-4">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <span class="text-[10px] font-black uppercase tracking-widest opacity-40">{{ $t('admin.userDetails.loading') }}</span>
     </div>
 
     <div v-else-if="user" class="user-detail-content">
@@ -21,58 +22,61 @@
           <p class="email">{{ user.email }}</p>
           <div class="badges">
             <el-tag :type="user.role === 'admin' ? 'danger' : 'info'" size="small">{{ user.role }}</el-tag>
-            <el-tag :type="user.isActive ? 'success' : 'danger'" size="small">{{ user.isActive ? 'Active' : 'Inactive' }}</el-tag>
-            <el-tag size="small">{{ user.subscription?.plan?.toUpperCase() || 'FREE' }}</el-tag>
+            <el-tag :type="user.isActive ? 'success' : 'danger'" size="small">{{ user.isActive ? $t('admin.userDetails.status.active') : $t('admin.userDetails.status.inactive') }}</el-tag>
+            <el-tag size="small">{{ user.subscription?.plan?.toUpperCase() || $t('admin.userDetails.subscription.free').toUpperCase() }}</el-tag>
           </div>
         </div>
       </div>
 
       <div class="info-grid">
         <div class="info-item">
-          <label>User ID</label>
+          <label>{{ $t('admin.userDetails.userId') }}</label>
           <div class="value code">{{ user._id }}</div>
         </div>
         <div class="info-item">
-          <label>Joined Date</label>
+          <label>{{ $t('admin.userDetails.joinedDate') }}</label>
           <div class="value">{{ new Date(user.createdAt).toLocaleDateString() }}</div>
         </div>
         <div class="info-item">
-          <label>Last Login</label>
-          <div class="value">{{ user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never' }}</div>
+          <label>{{ $t('admin.userDetails.lastLogin') }}</label>
+          <div class="value">{{ user.lastLogin ? new Date(user.lastLogin).toLocaleString() : $t('admin.userDetails.never') }}</div>
         </div>
         <div class="info-item">
-          <label>Credits Balance</label>
+          <label>{{ $t('admin.userDetails.creditsBalance') }}</label>
           <div class="value highlight">{{ user.credits?.balance || 0 }}</div>
         </div>
       </div>
 
       <div class="subscription-details">
-        <h4>Subscription Status</h4>
+        <h4>{{ $t('admin.userDetails.subscription.status') }}</h4>
         <div class="glass-box">
              <div class="detail-row">
-                <span>Plan</span>
-                <strong>{{ user.subscription?.plan?.toUpperCase() || 'Free' }}</strong>
+                <span>{{ $t('admin.userDetails.subscription.plan') }}</span>
+                <strong>{{ user.subscription?.plan?.toUpperCase() || $t('admin.userDetails.subscription.free') }}</strong>
              </div>
              <div class="detail-row">
-                <span>Status</span>
-                <span :class="user.subscription?.status">{{ user.subscription?.status || 'Active' }}</span>
+                <span>{{ $t('admin.userDetails.subscription.currentStatus') }}</span>
+                <span :class="user.subscription?.status">{{ user.subscription?.status || $t('admin.userDetails.status.active') }}</span>
              </div>
              <div class="detail-row" v-if="user.subscription?.currentPeriodEnd">
-                <span>Renews On</span>
+                <span>{{ $t('admin.userDetails.subscription.renewsOn') }}</span>
                 <span>{{ new Date(user.subscription.currentPeriodEnd).toLocaleDateString() }}</span>
              </div>
         </div>
       </div>
     </div>
-  </GDialog>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import GDialog from '@/components/ui/GDialog.vue'
 import GMedia from '@/components/ui/GMedia.vue'
 import { useAdminStore } from '@/stores/admin'
 import { getFileUrl } from '@/utils/api'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean

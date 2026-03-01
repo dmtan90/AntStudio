@@ -1,5 +1,7 @@
 import { geminiPool } from '../../utils/gemini.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 export interface EmotionResult {
     emotion: 'happy' | 'surprised' | 'thinking' | 'sad' | 'neutral';
     intensity: number; // 0 to 1
@@ -73,7 +75,7 @@ export class EmotionAnalysisService {
                 duration: Math.min(10, Math.max(0.5, parsed.duration || 2))
             };
         } catch (error: any) {
-            console.error('[EmotionAnalysisService] Analysis failed:', error.message);
+            Logger.error('[EmotionAnalysisService] Analysis failed:', error.message);
             return { emotion: 'neutral', intensity: 0.5, duration: 2 };
         }
     }

@@ -1,5 +1,7 @@
 import puter from '@heyputer/puter.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 export class PuterService {
     private static instance: PuterService;
 
@@ -17,11 +19,11 @@ export class PuterService {
      */
     async chat(prompt: string, model: string = 'gpt-4o-mini', options: any = {}) {
         try {
-            console.log(`[PuterService] Calling Puter Chat (${model})...`);
+            Logger.info(`[PuterService] Calling Puter Chat (${model})...`);
             const response = await puter.ai.chat(prompt, { model });
             return response;
         } catch (error: any) {
-            console.error('[PuterService] Chat Error:', error.message);
+            Logger.error('[PuterService] Chat Error:', error.message);
             throw error;
         }
     }
@@ -31,11 +33,11 @@ export class PuterService {
      */
     async generateImage(prompt: string) {
         try {
-            console.log(`[PuterService] Calling Puter Image Generation...`);
+            Logger.info(`[PuterService] Calling Puter Image Generation...`);
             const response = await puter.ai.txt2img(prompt);
             return response;
         } catch (error: any) {
-            console.error('[PuterService] Image Error:', error.message);
+            Logger.error('[PuterService] Image Error:', error.message);
             throw error;
         }
     }
@@ -45,11 +47,11 @@ export class PuterService {
      */
     async tts(text: string) {
         try {
-            console.log(`[PuterService] Calling Puter TTS...`);
+            Logger.info(`[PuterService] Calling Puter TTS...`);
             const response = await puter.ai.txt2speech(text);
             return response;
         } catch (error: any) {
-            console.error('[PuterService] TTS Error:', error.message);
+            Logger.error('[PuterService] TTS Error:', error.message);
             throw error;
         }
     }

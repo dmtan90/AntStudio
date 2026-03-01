@@ -22,13 +22,13 @@
             <h1 class="film-title">{{ activeFilm.title }}</h1>
             <p class="film-synopsis">{{ activeFilm.synopsis }}</p>
             <div class="film-meta">
-              <span class="creator">Created by {{ activeFilm.creator }}</span>
+              <span class="creator">{{ t('gallery.showcase.createdBy') }} {{ activeFilm.creator }}</span>
               <div class="social-icons">
                  <instagram theme="outline" size="18" fill="#fff" />
                  <share-two theme="outline" size="18" fill="#fff" />
               </div>
             </div>
-            <button class="watch-btn">WATCH</button>
+            <button class="watch-btn">{{ t('gallery.showcase.watch') }}</button>
           </div>
         </div>
       </section>
@@ -59,7 +59,7 @@
         </button>
       </div>
       <div class="disclaimer">
-        Disclaimer: These films were created with AntStudio alongside other tools and techniques.
+        {{ t('gallery.showcase.disclaimer') }}
       </div>
     </footer>
   </div>
@@ -73,52 +73,55 @@ import {
   Instagram, 
   ShareTwo
 } from '@icon-park/vue-next'
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n()
 
 // Import images
 import filmElectricPink from '@/assets/images/film_electric_pink.jpg'
 import filmDearStranger from '@/assets/images/film_dear_stranger.jpg'
 import gallery3 from '@/assets/images/gallery_3.png'
 
-const films = [
+const films = computed(() => [
   {
     id: 'electric-pink',
-    title: 'ELECTRIC PINK',
-    synopsis: "You think you know coming-of-age? Think again. This one's got fights. And a multiverse. And, you know, a bit of crying. It's creativity: The Ride. Buckle-up, kid.",
+    title: t('gallery.showcase.films.electricPink.title'),
+    synopsis: t('gallery.showcase.films.electricPink.synopsis'),
     creator: 'Henry Daubrez',
     poster: filmElectricPink,
     video: 'https://storage.googleapis.com/gweb-tveo-website.appspot.com/short-films/ElectricPink-rollover.mp4'
   },
   {
     id: 'dear-stranger',
-    title: 'DEAR "STRANGER"',
-    synopsis: 'On the same day Eden was born, her grandmother passed away. But when a train crashes into a parallel world, time breaks open, and memories flood the stage.',
+    title: t('gallery.showcase.films.dearStranger.title'),
+    synopsis: t('gallery.showcase.films.dearStranger.synopsis'),
     creator: 'Junie Lau',
     poster: filmDearStranger,
     video: 'https://storage.googleapis.com/gweb-tveo-website.appspot.com/short-films/DearStranger-rollover.mp4'
   },
   {
     id: 'freelancers',
-    title: 'FREELANCERS',
-    synopsis: 'Over dinner in a clandestine New York restaurant, two estranged adopted brothers—one methodical, the other loud and brash—reminisce on their careers as international hitmen.',
+    title: t('gallery.showcase.films.freelancers.title'),
+    synopsis: t('gallery.showcase.films.freelancers.synopsis'),
     creator: 'Dave Clark',
     poster: gallery3,
     video: 'https://storage.googleapis.com/gweb-tveo-website.appspot.com/short-films/Freelancers-rollover.mp4'
   }
-]
+])
 
 const activeFilmId = ref('electric-pink')
-const activeFilm = computed(() => films.find(f => f.id === activeFilmId.value) || films[0])
+const activeFilm = computed(() => films.value.find(f => f.id === activeFilmId.value) || films.value[0])
 
 const nextFilm = () => {
-  const currentIndex = films.findIndex(f => f.id === activeFilmId.value)
-  const nextIndex = (currentIndex + 1) % films.length
-  activeFilmId.value = films[nextIndex].id
+  const currentIndex = films.value.findIndex(f => f.id === activeFilmId.value)
+  const nextIndex = (currentIndex + 1) % films.value.length
+  activeFilmId.value = films.value[nextIndex].id
 }
 
 const prevFilm = () => {
-  const currentIndex = films.findIndex(f => f.id === activeFilmId.value)
-  const prevIndex = (currentIndex - 1 + films.length) % films.length
-  activeFilmId.value = films[prevIndex].id
+  const currentIndex = films.value.findIndex(f => f.id === activeFilmId.value)
+  const prevIndex = (currentIndex - 1 + films.value.length) % films.value.length
+  activeFilmId.value = films.value[prevIndex].id
 }
 </script>
 

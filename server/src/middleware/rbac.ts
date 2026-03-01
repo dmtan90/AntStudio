@@ -3,6 +3,8 @@ import { AuthRequest } from './auth.js';
 import { Organization } from '../models/Organization.js';
 import { Permission, OrgRole, hasPermission } from '../utils/permissions.js';
 
+import { Logger } from '../utils/Logger.js';
+
 /**
  * RBAC Middleware: Enforce granular specialized permissions.
  * @param requiredPermission The tactical permission required for this mission.
@@ -52,7 +54,7 @@ export const rbacMiddleware = (requiredPermission: Permission) => {
             // Success: specialist has clearance
             next();
         } catch (error: any) {
-            console.error('RBAC Middleware Error:', error);
+            Logger.error('RBAC Middleware Error:', error);
             res.status(500).json({ success: false, error: 'Security Engine failure during tactical check.' });
         }
     };

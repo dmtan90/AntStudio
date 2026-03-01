@@ -2,23 +2,23 @@
    <div class="guest-room dark-theme min-h-screen flex flex-col items-center p-6 sm:p-12 overflow-y-auto">
       <!-- Site Logo for Guests -->
       <div class="brand-header mt-4 mb-12 animate-fade-in">
-         <span class="text-2xl font-black tracking-tighter text-white">Ant<span class="text-blue-500">Flow</span></span>
+         <span class="text-2xl font-black tracking-tighter text-white">{{ useUIStore().appName }}</span>
       </div>
 
       <div v-if="loading" class="text-center animate-pulse flex-1 flex flex-col justify-center">
          <div class="icon-orb mb-6 mx-auto bg-white/10">
             <connection theme="outline" size="32" />
          </div>
-         <p class="opacity-50 font-bold uppercase tracking-widest text-xs">Validating Secure Link...</p>
+         <p class="opacity-50 font-bold uppercase tracking-widest text-xs">{{ t('guestRoom.loading') }}</p>
       </div>
 
       <div v-else-if="error" class="error-box text-center glass-card p-10 max-w-md my-auto">
          <div class="icon-orb mb-6 mx-auto bg-red-500/20 text-red-500">
             <close theme="outline" size="32" />
          </div>
-         <h2 class="text-2xl font-black mb-4">Invite Invalid</h2>
+         <h2 class="text-2xl font-black mb-4">{{ t('guestRoom.error.title') }}</h2>
          <p class="opacity-50 mb-8">{{ error }}</p>
-         <router-link to="/" class="primary-btn px-8 inline-block">Return Home</router-link>
+         <router-link to="/" class="primary-btn px-8 inline-block">{{ t('common.returnHome') }}</router-link>
       </div>
 
       <div v-else class="onboarding-flow max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -33,11 +33,11 @@
                </div>
             </div>
             <div class="media-controls flex justify-center gap-4">
-               <button class="ctrl-btn" :class="{ active: micOn }" @click="micOn = !micOn">
+               <button class="ctrl-btn" :class="{ active: micOn }" @click="micOn = !micOn" :title="micOn ? t('common.mute') : t('common.unmute')">
                   <microphone v-if="micOn" theme="filled" />
                   <microphone v-else theme="outline" class="opacity-30" />
                </button>
-               <button class="ctrl-btn" :class="{ active: camOn }" @click="camOn = !camOn">
+               <button class="ctrl-btn" :class="{ active: camOn }" @click="camOn = !camOn" :title="camOn ? t('common.stopCamera') : t('common.startCamera')">
                   <camera v-if="camOn" theme="filled" />
                   <camera-five v-else theme="outline" class="opacity-30" />
                </button>
@@ -48,8 +48,8 @@
          <div class="form-section flex flex-col justify-center">
             <template v-if="!isApproved">
                <div class="mb-8">
-                  <h1 class="text-4xl font-black text-white mb-2 leading-tight">Ready to Join?</h1>
-                  <p class="text-gray-400">You've been invited to broadcast live on AntStudio.</p>
+                  <h1 class="text-4xl font-black text-white mb-2 leading-tight">{{ t('guestRoom.join.title') }}</h1>
+                  <p class="text-gray-400">{{ t('guestRoom.join.subtitle') }}</p>
                </div>
 
                <div class="join-info mb-10">
@@ -58,16 +58,15 @@
                         <broadcast theme="filled" class="text-white" />
                      </div>
                      <div>
-                        <p class="text-[10px] font-black uppercase opacity-50">Active Session</p>
-                        <p class="font-bold">{{ hostName }}'s Studio</p>
+                        <p class="text-[10px] font-black uppercase opacity-50">{{ t('guestRoom.join.activeSession') }}</p>
+                        <p class="font-bold">{{ t('guestRoom.join.hostStudio', { name: hostName }) }}</p>
                      </div>
                   </div>
                </div>
 
                <div class="form-group mb-8">
-                  <label class="block text-[10px] font-black uppercase opacity-30 mb-2 tracking-widest">Your Display
-                     Name</label>
-                  <el-input v-model="displayName" placeholder="Enter name for lower-thirds..."
+                  <label class="block text-[10px] font-black uppercase opacity-30 mb-2 tracking-widest">{{ t('guestRoom.join.displayName') }}</label>
+                  <el-input v-model="displayName" :placeholder="t('guestRoom.join.placeholder')"
                      class="glass-input h-14" />
                </div>
 
@@ -76,10 +75,10 @@
                   <template v-if="joining">
                      <div class="flex items-center justify-center gap-2">
                         <div class="loading-spinner"></div>
-                        <span>CONNECTING...</span>
+                        <span>{{ t('common.connecting').toUpperCase() }}</span>
                      </div>
                   </template>
-                  <span v-else>JOIN BROADCAST NOW</span>
+                  <span v-else>{{ t('guestRoom.join.action') }}</span>
                </button>
             </template>
 
@@ -89,30 +88,27 @@
                      class="w-16 h-16 rounded-3xl bg-green-500/20 text-green-500 flex items-center justify-center mb-6">
                      <broadcast theme="filled" size="32" />
                   </div>
-                  <h1 class="text-4xl font-black text-white mb-2 leading-tight">You're On Air!</h1>
-                  <p class="text-gray-400">Your feed is now being mixed into the live production at {{ hostName }}.</p>
+                  <h1 class="text-4xl font-black text-white mb-2 leading-tight">{{ t('guestRoom.live.title') }}</h1>
+                  <p class="text-gray-400">{{ t('guestRoom.live.subtitle', { name: hostName }) }}</p>
                </div>
 
                <div class="p-6 rounded-3xl bg-white/5 border border-white/10 mb-10">
                   <div class="flex items-center gap-4 mb-4">
                      <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                     <span class="text-xs font-black uppercase text-green-500">Live Connection Healthy</span>
+                     <span class="text-xs font-black uppercase text-green-500">{{ t('guestRoom.live.status') }}</span>
                   </div>
-                  <p class="text-sm opacity-50 leading-relaxed">The host can now see and hear you. Adjust your mic and
-                     cam
-                     using the controls on the left.</p>
+                  <p class="text-sm opacity-50 leading-relaxed">{{ t('guestRoom.live.desc') }}</p>
                </div>
 
                <button
                   class="h-14 rounded-2xl border border-red-500/30 hover:bg-red-500/10 text-red-500 bg-transparent flex items-center justify-center gap-3 transition-all font-black text-sm uppercase tracking-widest"
                   @click="handleLeave">
                   <close theme="outline" />
-                  <span>Disconnect</span>
+                  <span>{{ t('common.disconnect') }}</span>
                </button>
             </template>
 
-            <p class="text-center text-[10px] opacity-20 uppercase font-black mt-6 tracking-widest">Powered by AntStudio
-               WebRTC Bridge</p>
+            <p class="text-center text-[10px] opacity-20 uppercase font-black mt-6 tracking-widest">{{ t('guestRoom.poweredBy') }}</p>
          </div>
       </div>
    </div>
@@ -130,7 +126,10 @@ import { toast } from 'vue-sonner';
 import { useUserStore } from '@/stores/user';
 import { useStreamingStore } from '@/stores/streaming';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
+import { useI18n } from 'vue-i18n';
+import { useUIStore } from '@/stores/ui';
 
+const { t } = useI18n()
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
@@ -164,7 +163,7 @@ const currentWebRTCUrl = ref<string | null>(null); // Keep for host-to-viewer st
 const validateToken = async () => {
    const token = route.query.token as string;
    if (!token) {
-      error.value = "No invite token provided.";
+      error.value = t('guestRoom.error.noToken');
       loading.value = false;
       return;
    }
@@ -180,10 +179,10 @@ const validateToken = async () => {
          initMedia();
       }
       else {
-         error.value = data?.error || "Expired or invalid invite.";
+         error.value = data?.error || t('guestRoom.error.invalidOrExpired');
       }
    } catch (e: any) {
-      error.value = e.response?.data?.error || "Expired or invalid invite.";
+      error.value = e.response?.data?.error || t('guestRoom.error.invalidOrExpired');
    } finally {
       loading.value = false;
    }
@@ -196,7 +195,7 @@ const initMedia = async () => {
          localVideo.value.srcObject = localStream;
       }
    } catch (e) {
-      toast.error("Media permission denied");
+      toast.error(t('guestRoom.toasts.mediaPermissionDenied'));
    }
 };
 
@@ -220,7 +219,7 @@ const handleJoin = () => {
       socket.on('guest:approved', async (data: any) => {
          joining.value = false;
          isApproved.value = true;
-         toast.success("Host approved! Transitioning to Studio...");
+         toast.success(t('guestRoom.toasts.hostApproved'));
 
          // Instead of staying in GuestRoom, we move to the professional Studio view
          setTimeout(() => {
@@ -257,7 +256,7 @@ const handleJoin = () => {
 
       socket.on('guest:rejected', () => {
          joining.value = false;
-         toast.error("The host has declined your join request.");
+         toast.error(t('guestRoom.toasts.hostDeclined'));
          ActionSyncService.disconnect();
       });
 
@@ -272,12 +271,12 @@ const handleJoin = () => {
 
       if (action === 'audio') {
          micOn.value = value;
-         toast.info(value ? "Host unmuted your mic" : "Host muted your mic");
+         toast.info(value ? t('guestRoom.toasts.hostUnmutedMic') : t('guestRoom.toasts.hostMutedMic'));
       } else if (action === 'video') {
          camOn.value = value;
-         toast.info(value ? "Host enabled your camera" : "Host disabled your camera");
+         toast.info(value ? t('guestRoom.toasts.hostEnabledCam') : t('guestRoom.toasts.hostDisabledCam'));
       } else if (action === 'kick') {
-         toast.error("You have been removed from the session by the host.");
+         toast.error(t('guestRoom.toasts.kicked'));
          handleLeave();
          setTimeout(() => router.push('/'), 3000);
       }
@@ -288,7 +287,7 @@ const handleJoin = () => {
       localStorage.setItem('guest-name', displayName.value);
    }
 
-   toast.info(`Request sent to ${hostName.value}. Please wait...`);
+   toast.info(t('guestRoom.toasts.requestSent', { name: hostName.value }));
 };
 
 const startP2P = async (hostId: string) => {
@@ -314,7 +313,7 @@ const startP2P = async (hostId: string) => {
    p2pConnection.onconnectionstatechange = () => {
       console.log("[P2P] Connection state:", p2pConnection?.connectionState);
       if (p2pConnection?.connectionState === 'failed') {
-         toast.error("Low-latency connection failed.");
+         toast.error(t('guestRoom.toasts.p2pFailed'));
       }
    };
 
@@ -350,7 +349,7 @@ const handleLeave = () => {
    }
    isApproved.value = false;
    ActionSyncService.disconnect();
-   toast.info("You have disconnected from the studio.");
+   toast.info(t('guestRoom.toasts.disconnected'));
 };
 
 onMounted(validateToken);

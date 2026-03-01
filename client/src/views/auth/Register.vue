@@ -20,41 +20,41 @@
               </el-image>
             </div>
             <h1 class="brand">{{ uiStore.appName }}</h1>
-            <p>Create wonderful videos with AI</p>
+            <p>{{ t('auth.register.subtitle') }}</p>
           </div>
 
           <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleRegister" class="ant-form">
             <el-form-item prop="name">
-              <GInput v-model="form.name" placeholder="Full Name" class="register-input" />
+              <GInput v-model="form.name" :placeholder="t('auth.register.namePlaceholder')" class="register-input" />
             </el-form-item>
 
             <el-form-item prop="email">
-              <GInput v-model="form.email" placeholder="Email address" type="email" class="register-input" />
+              <GInput v-model="form.email" :placeholder="t('auth.register.emailPlaceholder')" type="email" class="register-input" />
             </el-form-item>
 
             <el-form-item prop="password">
-              <GInput v-model="form.password" placeholder="Password (min 8 chars)" type="password" show-password
+              <GInput v-model="form.password" :placeholder="t('auth.register.passwordPlaceholder')" type="password" show-password
                 class="register-input" />
             </el-form-item>
 
             <el-form-item prop="confirmPassword">
-              <GInput v-model="form.confirmPassword" placeholder="Confirm password" type="password" show-password
+              <GInput v-model="form.confirmPassword" :placeholder="t('auth.register.confirmPasswordPlaceholder')" type="password" show-password
                 class="register-input" />
             </el-form-item>
 
             <el-form-item>
               <GButton type="primary" size="lg" :loading="loading" native-type="submit" class="register-btn">
-                Create Account
+                {{ t('auth.register.createAccount') }}
               </GButton>
             </el-form-item>
           </el-form>
 
           <div class="auth-footer">
             <p>
-              Already have an account?
-              <router-link to="/login" class="link">Login</router-link>
+              {{ t('auth.register.alreadyHave') }}
+              <router-link to="/login" class="link">{{ t('auth.register.login') }}</router-link>
             </p>
-            <router-link to="/" class="back-home">Back to Home</router-link>
+            <router-link to="/" class="back-home">{{ t('auth.login.backHome') }}</router-link>
           </div>
         </GCard>
       </transition>
@@ -73,7 +73,9 @@ import GCard from '@/components/ui/GCard.vue'
 import GInput from '@/components/ui/GInput.vue'
 import GButton from '@/components/ui/GButton.vue'
 import { getFileUrl } from '@/utils/api'
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 const uiStore = useUIStore()
@@ -89,7 +91,7 @@ const form = reactive({
 
 const validateConfirmPassword = (rule: any, value: any, callback: any) => {
   if (value !== form.password) {
-    callback(new Error('Passwords do not match'))
+    callback(new Error(t('auth.register.rules.mismatch')))
   } else {
     callback()
   }
@@ -97,18 +99,18 @@ const validateConfirmPassword = (rule: any, value: any, callback: any) => {
 
 const rules: FormRules = {
   name: [
-    { required: true, message: 'Please input your name', trigger: 'blur' }
+    { required: true, message: t('auth.register.rules.nameRequired'), trigger: 'blur' }
   ],
   email: [
-    { required: true, message: 'Please input email', trigger: 'blur' },
-    { type: 'email', message: 'Please input valid email', trigger: 'blur' }
+    { required: true, message: t('auth.register.rules.emailRequired'), trigger: 'blur' },
+    { type: 'email', message: t('auth.register.rules.emailInvalid'), trigger: 'blur' }
   ],
   password: [
-    { required: true, message: 'Please input password', trigger: 'blur' },
-    { min: 8, message: 'Password must be at least 8 characters', trigger: 'blur' }
+    { required: true, message: t('auth.register.rules.passwordRequired'), trigger: 'blur' },
+    { min: 8, message: t('auth.register.rules.passwordMin'), trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: 'Please confirm password', trigger: 'blur' },
+    { required: true, message: t('auth.register.rules.confirmRequired'), trigger: 'blur' },
     { validator: validateConfirmPassword, trigger: 'blur' }
   ]
 }
@@ -127,12 +129,12 @@ const handleRegister = async () => {
         name: form.name
       })
 
-      toast.success('Account created successfully!')
+      toast.success(t('auth.register.toasts.success'))
 
       // Redirect to dashboard
       router.push('/dashboard')
     } catch (error: any) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Registration failed')
+      toast.error(error.response?.data?.error || error.response?.data?.message || t('auth.register.toasts.failed'))
     } finally {
       loading.value = false
     }

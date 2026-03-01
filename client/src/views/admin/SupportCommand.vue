@@ -2,13 +2,12 @@
     <div class="support-command min-h-screen bg-[#0a0a0c] text-white font-outfit p-8 animate-in fade-in duration-700">
         <header class="flex justify-between items-start mb-12">
             <div>
-                <h1 class="text-4xl font-black tracking-tighter text-white mb-2">SUPPORT COMMAND</h1>
-                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-500">Tactical Assistance & Log
-                    Forensics</p>
+                <h1 class="text-4xl font-black tracking-tighter text-white mb-2">{{ $t('admin.support.title') }}</h1>
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-500">{{ $t('admin.support.subtitle') }}</p>
             </div>
             <div class="flex gap-4">
                 <div class="text-right">
-                    <p class="text-[8px] font-black opacity-40 uppercase">Open Incidents</p>
+                    <p class="text-[8px] font-black opacity-40 uppercase">{{ $t('admin.support.openIncidents') }}</p>
                     <p class="text-2xl font-black text-red-400">{{ openCount }}</p>
                 </div>
             </div>
@@ -19,7 +18,7 @@
             <!-- LEFT: Ticket List -->
             <div class="col-span-4 bg-white/5 border border-white/5 rounded-3xl overflow-hidden flex flex-col">
                 <div class="p-6 border-b border-white/5 bg-black/20">
-                    <input v-model="search" placeholder="Search operational logs..."
+                    <input v-model="search" :placeholder="$t('admin.support.searchPlaceholder')"
                         class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:border-purple-500 outline-none" />
                 </div>
                 <div class="flex-1 overflow-y-auto p-4 space-y-2">
@@ -34,7 +33,7 @@
                             <span class="text-[10px] opacity-40">{{ timeAgo(ticket.createdAt) }}</span>
                         </div>
                         <h4 class="text-sm font-bold text-white mb-1 truncate">{{ ticket.subject }}</h4>
-                        <p class="text-[10px] text-gray-400 truncate">{{ ticket.userId?.email || 'Unknown Agent' }}</p>
+                        <p class="text-[10px] text-gray-400 truncate">{{ ticket.userId?.email || $t('admin.support.unknownAgent') }}</p>
                     </div>
                 </div>
             </div>
@@ -57,10 +56,10 @@
                         <div class="flex gap-2">
                             <select v-model="selectedTicket.status" @change="updateStatus"
                                 class="bg-black border border-white/20 rounded-lg px-3 py-1 text-xs text-white uppercase font-bold">
-                                <option value="open">Open</option>
-                                <option value="in-progress">Tracking</option>
-                                <option value="solved">Resolved</option>
-                                <option value="closed">Archived</option>
+                                <option value="open">{{ $t('admin.support.status.open') }}</option>
+                                <option value="in-progress">{{ $t('admin.support.status.inProgress') }}</option>
+                                <option value="solved">{{ $t('admin.support.status.solved') }}</option>
+                                <option value="closed">{{ $t('admin.support.status.closed') }}</option>
                             </select>
                         </div>
                     </div>
@@ -73,7 +72,7 @@
 
                             <!-- Attachments -->
                             <div v-if="selectedTicket.attachments.length" class="mt-6 pt-6 border-t border-white/5">
-                                <p class="text-[10px] font-black uppercase text-gray-500 mb-2">Tactical Data Bundles</p>
+                                <p class="text-[10px] font-black uppercase text-gray-500 mb-2">{{ $t('admin.support.dataBundles') }}</p>
                                 <div class="flex gap-2">
                                     <div v-for="file in selectedTicket.attachments" :key="file.s3Key"
                                         class="flex items-center gap-2 px-3 py-2 bg-black/40 rounded-lg border border-white/10 hover:border-purple-500/50 cursor-pointer group">
@@ -87,7 +86,7 @@
                                 </div>
                                 <div v-if="selectedTicket.dataSharingConsent"
                                     class="mt-2 flex items-center gap-2 text-green-400 text-[10px] font-bold uppercase">
-                                    <check-one theme="outline" /> Data Transfer Authorized
+                                    <check-one theme="outline" /> {{ $t('admin.support.dataAuthorized') }}
                                 </div>
                             </div>
                         </div>
@@ -111,7 +110,7 @@
                     <!-- Input -->
                     <div class="p-6 border-t border-white/5 bg-black/20">
                         <div class="relative">
-                            <input v-model="replyText" @keyup.enter="sendReply" placeholder="Transmit response..."
+                            <input v-model="replyText" @keyup.enter="sendReply" :placeholder="$t('admin.support.replyPlaceholder')"
                                 class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 pr-12 text-sm text-white focus:border-purple-500 outline-none" />
                             <button @click="sendReply"
                                 class="absolute right-2 top-2 p-2 bg-purple-600 rounded-lg text-white hover:bg-purple-500 transition-colors">
@@ -123,7 +122,7 @@
                 </div>
                 <div v-else class="flex flex-col items-center justify-center h-full opacity-20">
                     <folder-close theme="outline" size="64" class="mb-4" />
-                    <p class="text-xs font-black uppercase tracking-widest">Select an incident to investigate</p>
+                    <p class="text-xs font-black uppercase tracking-widest">{{ $t('admin.support.selectIncident') }}</p>
                 </div>
             </div>
 
@@ -137,7 +136,9 @@ import { User, IdCard, FileZip, Pic, Download, CheckOne, Send, FolderClose } fro
 
 import { useSupportStore } from '@/stores/support';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const supportStore = useSupportStore();
 
 const tickets = ref<any[]>([]);
@@ -169,7 +170,7 @@ const selectTicket = (ticket: any) => {
 
 const updateStatus = async () => {
     // Mock status update call
-    toast.success('Incident status updated.');
+    toast.success(t('admin.support.toasts.statusUpdated'));
 };
 
 const sendReply = async () => {

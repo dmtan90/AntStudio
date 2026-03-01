@@ -7,7 +7,7 @@
     
     <div v-if="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-10">
       <el-icon class="is-loading text-blue-400 text-2xl mb-2"><loading /></el-icon>
-      <span class="text-[9px] font-black uppercase tracking-widest text-white/80">Synchronizing...</span>
+      <span class="text-[9px] font-black uppercase tracking-widest text-white/80">{{ $t('studio.common.syncing') }}</span>
     </div>
 
     <template v-if="!hasFile">
@@ -29,7 +29,7 @@
           </div>
           <div class="text-[9px] opacity-40 truncate">{{ activeSubtitle }}</div>
         </div>
-        <el-button size="small" link class="text-blue-400 font-bold hover:text-white" @click.stop="inputRef?.click()">CHANGE</el-button>
+        <el-button size="small" link class="text-blue-400 font-bold hover:text-white" @click.stop="inputRef?.click()">{{ $t('studio.common.changeBtn') || 'Change' }}</el-button>
       </div>
     </template>
   </div>
@@ -61,7 +61,7 @@ const handleChange = (e: Event) => {
 };
 </script>
 
-<style scoped>
+<style lang="postcss" scoped>
 .upload-dropzone {
   @apply flex flex-col items-center justify-center p-8 bg-white/5 border-2 border-dashed border-white/10 rounded-[32px] cursor-pointer hover:border-blue-500/40 hover:bg-blue-500/5;
 }

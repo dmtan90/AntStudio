@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useMarketplaceStore } from '@/stores/marketplace';
 
+const { t } = useI18n();
 const marketplaceStore = useMarketplaceStore();
 </script>
 
@@ -16,28 +18,28 @@ const marketplaceStore = useMarketplaceStore();
       <div>
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
           <div class="w-2 h-2 rounded-full bg-green-500 animate-ping"></div>
-          <span class="text-[10px] font-black uppercase tracking-widest text-green-400">Live Commerce Active</span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-green-400">{{ $t('merchant.header.liveCommerce') }}</span>
         </div>
         
         <h1 class="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
-          Merchant <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">Hub</span>
+          {{ $t('merchant.header.title') }} <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">{{ $t('merchant.header.hub') }}</span>
         </h1>
         <p class="text-xl text-gray-400 max-w-xl leading-relaxed font-medium">
-          Manage your live streams, track orders in real-time, and fulfill customer requests instantly.
+          {{ $t('merchant.header.subtitle') }}
         </p>
       </div>
 
       <!-- Quick Stats -->
       <div class="flex gap-4">
          <div class="p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-sm min-w-[200px]">
-            <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Total Revenue</div>
+            <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ $t('merchant.header.totalRevenue') }}</div>
             <div class="text-3xl font-black text-white flex items-baseline gap-1">
                <span class="text-lg text-gray-500">{{ marketplaceStore.commerceStats.currency }}</span>
                {{ marketplaceStore.commerceStats.totalRevenue.toLocaleString() }}
             </div>
          </div>
          <div class="p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-sm min-w-[200px]">
-            <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Pending Orders</div>
+            <div class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ $t('merchant.header.pendingOrders') }}</div>
             <div class="text-3xl font-black text-orange-400">
                {{ marketplaceStore.commerceStats.pendingOrders }}
             </div>

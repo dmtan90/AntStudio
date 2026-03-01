@@ -9,9 +9,9 @@
                 <div class="flex items-center justify-between mb-4">
                      <div class="flex items-center gap-2">
                          <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                         <span class="text-xs font-bold uppercase tracking-widest text-blue-400">Hive Mind Poll</span>
+                         <span class="text-xs font-bold uppercase tracking-widest text-blue-400">{{ $t('studio.common.hiveMindPollTitle') }}</span>
                      </div>
-                     <span class="text-xs font-mono text-white/50">{{ timeLeft }}s remaining</span>
+                     <span class="text-xs font-mono text-white/50">{{ $t('studio.common.pollRemaining', { count: timeLeft }) }}</span>
                 </div>
 
                 <h3 class="text-xl font-bold text-white mb-6 leading-tight text-center">
@@ -41,10 +41,10 @@
 
                 <div class="mt-4 flex items-center justify-between px-2">
                      <p class="text-[10px] text-white/40 uppercase tracking-widest">
-                         {{ studioStore.activePoll.totalVotes }} Votes Cast
+                         {{ $t('studio.common.pollVotesCast', { count: studioStore.activePoll.totalVotes }) }}
                      </p>
                      <p v-if="hasVoted" class="text-[10px] text-green-400 font-bold uppercase tracking-widest flex items-center gap-1">
-                        <check-one theme="filled" size="12" /> Vote Recorded
+                        <check-one theme="filled" size="12" /> {{ $t('studio.common.pollVoteRecorded') }}
                      </p>
                 </div>
             </div>

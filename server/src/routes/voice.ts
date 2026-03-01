@@ -4,6 +4,8 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { ElevenLabsProvider } from '../utils/ai/providers/ElevenLabsProvider.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -55,11 +57,11 @@ router.get('/list-all', async (req: AuthRequest, res) => {
 
         const [elevenVoices, googleVoices] = await Promise.all([
             elevenProvider ? elevenProvider.listVoices().catch((err: any) => {
-                console.error('ElevenLabs listVoices error:', err.message);
+                Logger.error('ElevenLabs listVoices error:', err.message);
                 return [];
             }) : Promise.resolve([]),
             googleProvider ? googleProvider.listVoices(langStr).catch((err: any) => {
-                console.error('Google TTS listVoices error:', err.message);
+                Logger.error('Google TTS listVoices error:', err.message);
                 return [];
             }) : Promise.resolve([])
         ]);
@@ -86,7 +88,7 @@ router.get('/list-all', async (req: AuthRequest, res) => {
 
         res.json({ success: true, data: [...formattedEleven, ...formattedGoogle] });
     } catch (error: any) {
-        console.error('List all voices error:', error.message);
+        Logger.error('List all voices error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -130,7 +132,7 @@ router.post('/clone', upload.array('files', 5), async (req: AuthRequest, res) =>
 
         res.json({ success: true, data: { voiceId, name } });
     } catch (error: any) {
-        console.error('Voice cloning error:', error.message);
+        Logger.error('Voice cloning error:', error.message);
         res.status(500).json({ success: false, error: 'Voice cloning failed: ' + error.message });
     }
 });

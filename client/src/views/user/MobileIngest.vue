@@ -4,11 +4,11 @@
     <header class="p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/80 to-transparent">
       <div class="flex items-center gap-2">
          <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" v-if="isLive"></div>
-         <span class="text-[10px] font-black tracking-widest uppercase">{{ isLive ? 'LIVE IN STUDIO' : 'STANDBY' }}</span>
+         <span class="text-[10px] font-black tracking-widest uppercase">{{ isLive ? t('mobileIngest.status.live') : t('mobileIngest.status.standby') }}</span>
       </div>
       <div class="flex items-center gap-4">
          <div class="text-right">
-            <p class="text-[8px] opacity-40 uppercase font-black">Bitrate</p>
+            <p class="text-[8px] opacity-40 uppercase font-black">{{ t('mobileIngest.stats.bitrate') }}</p>
             <p class="text-[10px] font-mono font-bold">{{ bitrate }} Mbps</p>
          </div>
          <button class="bg-white/10 rounded-full p-2" @click="toggleSettings">
@@ -54,15 +54,15 @@
 
        <div class="flex justify-center gap-8">
           <div class="stat-pill text-center">
-             <p class="text-[8px] opacity-30 font-black uppercase mb-1">Latency</p>
+             <p class="text-[8px] opacity-30 font-black uppercase mb-1">{{ t('mobileIngest.stats.latency') }}</p>
              <p class="text-[10px] font-bold">142ms</p>
           </div>
           <div class="stat-pill text-center">
-             <p class="text-[8px] opacity-30 font-black uppercase mb-1">Device Temp</p>
-             <p class="text-[10px] font-bold text-green-400">Normal</p>
+             <p class="text-[8px] opacity-30 font-black uppercase mb-1">{{ t('mobileIngest.stats.deviceTemp') }}</p>
+             <p class="text-[10px] font-bold text-green-400">{{ t('mobileIngest.stats.tempNormal') }}</p>
           </div>
           <div class="stat-pill text-center">
-             <p class="text-[8px] opacity-30 font-black uppercase mb-1">Resolution</p>
+             <p class="text-[8px] opacity-30 font-black uppercase mb-1">{{ t('mobileIngest.stats.resolution') }}</p>
              <p class="text-[10px] font-bold">1080p60</p>
           </div>
        </div>
@@ -73,8 +73,8 @@
        <div class="w-20 h-20 rounded-3xl bg-blue-500/10 flex items-center justify-center mb-8 border border-blue-500/20">
           <connection-point size="40" class="text-blue-400" />
        </div>
-       <h2 class="text-2xl font-black mb-4">Pairing Required</h2>
-       <p class="text-gray-400 text-sm mb-10">Scan the QR code in your AntStudio Desktop Studio to link this device as a wireless camera.</p>
+       <h2 class="text-2xl font-black mb-4">{{ t('mobileIngest.pairing.title') }}</h2>
+       <p class="text-gray-400 text-sm mb-10">{{ t('mobileIngest.pairing.desc') }}</p>
        <div class="animate-pulse w-48 h-1 bg-white/10 rounded-full overflow-hidden">
           <div class="w-1/2 h-full bg-blue-500"></div>
        </div>
@@ -86,7 +86,9 @@
 import { ref, onMounted } from 'vue';
 import { SettingTwo, VoiceOne, VoiceOff, CameraTwo, ConnectionPoint } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const isLive = ref(false);
 const isBroadcasting = ref(false);
 const bitrate = ref(4.2);
@@ -108,19 +110,19 @@ const startCamera = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: true });
         if (cameraPreview.value) cameraPreview.value.srcObject = stream;
     } catch (e) {
-        toast.error("Camera access required for ingest");
+        toast.error(t('mobileIngest.toasts.cameraRequired'));
     }
 };
 
 const toggleBroadcast = () => {
     isBroadcasting.value = !isBroadcasting.value;
     if (isBroadcasting.value) {
-        toast.success("Pushing high-fidelity feed to AntStudio Relay bridge");
+        toast.success(t('mobileIngest.toasts.broadcastStarted'));
     }
 };
 
 const switchCamera = () => {
-    toast.info("Switching to Ultra-wide lens...");
+    toast.info(t('mobileIngest.toasts.switchingCamera'));
 };
 
 const toggleMic = () => {
@@ -128,7 +130,7 @@ const toggleMic = () => {
 };
 
 const toggleSettings = () => {
-    toast("Encoding: H.264 High Profile | Mode: Wireless Ingest");
+    toast(t('mobileIngest.toasts.settingsInfo'));
 };
 
 onMounted(() => {

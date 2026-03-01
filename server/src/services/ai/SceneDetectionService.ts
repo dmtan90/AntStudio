@@ -1,6 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
 import { geminiPool } from '../../utils/gemini.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 /**
  * Service for automatically identifying shot boundaries (scenes) in video clips using AI.
  */
@@ -80,7 +82,7 @@ export class SceneDetectionService {
             }));
 
         } catch (error: any) {
-            console.error('[SceneDetectionService] Analysis failed:', error.message);
+            Logger.error('[SceneDetectionService] Analysis failed:', error.message);
             throw new Error(`Scene detection failed: ${error.message}`);
         }
     }

@@ -4,6 +4,8 @@ import { generateText } from '../utils/AIGenerator.js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // All routes require authentication and admin role
@@ -25,7 +27,7 @@ router.post('/generate-template', async (req: AuthRequest, res) => {
         }
 
         // Fetch the documentation page
-        console.log(`[AI Config] Fetching documentation from: ${docUrl}`);
+        Logger.info(`[AI Config] Fetching documentation from: ${docUrl}`);
         // const response = await axios.get(docUrl, {
         //     headers: {
         //         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -50,7 +52,7 @@ router.post('/generate-template', async (req: AuthRequest, res) => {
         //     content = content.substring(0, 15000) + '...';
         // }
 
-        // console.log(`[AI Config] Extracted ${content.length} characters from documentation`);
+        // Logger.info(`[AI Config] Extracted ${content.length} characters from documentation`);
 
         // // Check if we got meaningful content
         // if (content.length < 100) {
@@ -123,7 +125,7 @@ Rules (follow strictly):
 Task Type: ${taskType}`;
 
         // Call Gemini AI
-        console.log('[AI Config] Calling Gemini AI to generate template...');
+        Logger.info('[AI Config] Calling Gemini AI to generate template...');
         const aiResponse = await generateText(prompt);
 
         // Parse AI response
@@ -137,7 +139,7 @@ Task Type: ${taskType}`;
                 throw new Error('No JSON found in AI response');
             }
         } catch (parseError) {
-            // console.error('[AI Config] Failed to parse AI response:', aiResponse);
+            // Logger.error('[AI Config] Failed to parse AI response:', aiResponse);
             return res.status(500).json({
                 success: false,
                 error: 'Failed to parse AI-generated template',
@@ -145,7 +147,7 @@ Task Type: ${taskType}`;
             });
         }
 
-        // console.log('[AI Config] Successfully generated template:', templateConfig);
+        // Logger.info('[AI Config] Successfully generated template:', templateConfig);
 
         res.status(201).json({
             success: true,
@@ -153,7 +155,7 @@ Task Type: ${taskType}`;
         });
 
     } catch (error: any) {
-        // console.error('[AI Config] Error generating template:', error);
+        // Logger.error('[AI Config] Error generating template:', error);
 
         let errorMessage = 'Failed to generate template';
 

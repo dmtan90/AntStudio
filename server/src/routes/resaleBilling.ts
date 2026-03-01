@@ -7,6 +7,8 @@ import { connectDB } from '../utils/db.js';
 import { tenantMiddleware } from '../middleware/tenant.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 /**
@@ -94,7 +96,7 @@ router.post('/subscribe', authMiddleware, tenantMiddleware, async (req: AuthRequ
         res.json({ success: true, data: { url: session.url } });
 
     } catch (error: any) {
-        console.error('[ResaleBilling] Checkout failed:', error.message);
+        Logger.error('[ResaleBilling] Checkout failed:', error.message);
         res.status(500).json({ error: 'Subscription failed to initialize' });
     }
 });

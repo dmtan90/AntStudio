@@ -5,9 +5,10 @@ import { Project } from '../models/Project.js';
 import { Media } from '../models/Media.js';
 import { alertService } from './AlertService.js';
 import { redisService } from './RedisService.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 import { getS3Client } from '../utils/s3.js';
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
+
 
 /**
  * RecoveryService (Industrial Watchdog)
@@ -26,7 +27,7 @@ export class RecoveryService {
     public startMonitoring(): void {
         if (this.monitoringInterval) return;
 
-        console.log('🛡️ Industrial Watchdog started');
+        Logger.info('🛡️ Industrial Watchdog started');
         this.monitoringInterval = setInterval(() => this.performHealthCheck(), this.CHECK_INTERVAL);
 
         // Initial check
@@ -57,10 +58,10 @@ export class RecoveryService {
             await this.cleanupOrphanMedia();
             await this.verifyProjectDatabaseReferences();
 
-            console.log("[RecoveryService] ✅ System health check: STABLE");
+            Logger.info("[RecoveryService] ✅ System health check: STABLE");
             this.isFailoverActive = false;
         } catch (error) {
-            console.error('[RecoveryService] 🚨 Health check failed:', error);
+            Logger.error('[RecoveryService] 🚨 Health check failed:', error);
             await alertService.sendCriticalAlert('Watchdog internal failure', { error: String(error) });
         }
     }
@@ -92,7 +93,7 @@ export class RecoveryService {
                 timestamp: new Date()
             };
         } catch (error) {
-            console.error('[RecoveryService] Failed to collect metrics:', error);
+            Logger.error('[RecoveryService] Failed to collect metrics:', error);
             throw error;
         }
     }
@@ -101,7 +102,7 @@ export class RecoveryService {
         try {
             await SystemMetric.create(metrics);
         } catch (e) {
-            console.error('Failed to save metrics:', e);
+            Logger.error('Failed to save metrics:', e);
         }
     }
 
@@ -131,7 +132,7 @@ export class RecoveryService {
         });
 
         if (stuckProjects.length > 0) {
-            console.log(`🧹 Found ${stuckProjects.length} stuck jobs. Resetting...`);
+            Logger.info(`🧹 Found ${stuckProjects.length} stuck jobs. Resetting...`);
 
             for (const project of stuckProjects) {
                 project.status = 'failed';
@@ -139,7 +140,7 @@ export class RecoveryService {
                 project.error = 'System Watchdog: Job timed out or worker stalled.';
                 await project.save();
 
-                systemLogger.warn(`Stuck job recovered: ${project._id}`, "RecoveryService");
+                Logger.warn(`Stuck job recovered: ${project._id}`, "RecoveryService");
 
                 await alertService.sendWarningAlert('Stuck Job Recovered', {
                     projectId: project._id,
@@ -163,13 +164,13 @@ export class RecoveryService {
 
         // Redis Check (Optional in some environments)
         if (!redisService.isReady()) {
-            systemLogger.warn('Redis is disconnected or unavailable', 'RecoveryService');
+            Logger.warn('Redis is disconnected or unavailable', 'RecoveryService');
         } else {
             try {
                 const pong = await redisService.ping();
                 if (pong !== 'PONG') throw new Error('Redis ping failed');
             } catch (error) {
-                systemLogger.warn('Redis ping failed despite being ready', 'RecoveryService');
+                Logger.warn('Redis ping failed despite being ready', 'RecoveryService');
             }
         }
     }
@@ -181,8 +182,8 @@ export class RecoveryService {
         if (this.isFailoverActive) return;
         this.isFailoverActive = true;
 
-        systemLogger.error("GLOBAL OUTAGE DETECTED. Initiating Phase 25 Failover Procedure.", "RecoveryService");
-        console.log("[RecoveryService] ⚙️ Re-routing global traffic to Secondary Node...");
+        Logger.error("GLOBAL OUTAGE DETECTED. Initiating Phase 25 Failover Procedure.", "RecoveryService");
+        Logger.info("[RecoveryService] ⚙️ Re-routing global traffic to Secondary Node...");
 
         alertService.sendCriticalAlert('FAILOVER INITIATED', { reason: 'Primary infrastructure failure' });
     }
@@ -258,7 +259,7 @@ export class RecoveryService {
         }
 
         if (cleanupCount > 0) {
-            console.log(`🧹 Identified ${cleanupCount} orphan media files for potential cleanup.`);
+            Logger.info(`🧹 Identified ${cleanupCount} orphan media files for potential cleanup.`);
         }
     }
 
@@ -285,7 +286,7 @@ export class RecoveryService {
                     const mediaExists = await Media.exists({ key });
                     if (!mediaExists) {
                         brokenRefCount++;
-                        systemLogger.warn(`Broken media reference in project ${project._id}: ${key}`, "RecoveryService");
+                        Logger.warn(`Broken media reference in project ${project._id}: ${key}`, "RecoveryService");
                     }
                 }
             }

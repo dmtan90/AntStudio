@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="Project video"
+    :title="$t('projects.previewModal.title')"
     width="800px"
     class="preview-dialog"
     destroy-on-close
@@ -15,7 +15,7 @@
           class="preview-player"
         ></video>
         <div v-else class="no-video">
-          <p>No video asset found for this project.</p>
+          <p>{{ $t('projects.previewModal.noVideo') }}</p>
         </div>
       </div>
 
@@ -29,16 +29,16 @@
         <!-- Publish Section -->
         <div class="publish-section">
           <div class="divider">
-            <span>Syndicate Recording</span>
+            <span>{{ $t('projects.previewModal.syndicate') }}</span>
           </div>
 
           <div v-if="loadingAccounts" class="loading-state">
-            Loading platforms...
+            {{ $t('projects.previewModal.loadingPlatforms') }}
           </div>
           
           <div v-else-if="accounts.length === 0" class="empty-accounts">
-            <p>No connected social accounts found.</p>
-            <GButton size="sm" @click="openIntegrations">Connect Accounts</GButton>
+            <p>{{ $t('projects.previewModal.noAccounts') }}</p>
+            <GButton size="sm" @click="openIntegrations">{{ $t('projects.previewModal.connectAccounts') }}</GButton>
           </div>
 
           <div v-else class="publish-form">
@@ -63,14 +63,16 @@
 
             <div class="metadata-form">
                <div class="flex items-center justify-between mb-2">
-                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Metadata</span>
+                 <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                   {{ $t('projects.previewModal.metadata') }}
+                 </span>
                  <button 
                   class="text-[9px] font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-all"
                   @click="generateAiHooks"
                   :disabled="loadingHooks"
                  >
                   <magic theme="outline" size="12" />
-                  {{ loadingHooks ? 'Generating...' : 'AI Hook Lab' }}
+                  {{ loadingHooks ? $t('projects.previewModal.generating') : $t('projects.previewModal.aiHookLab') }}
                  </button>
                </div>
                
@@ -90,15 +92,17 @@
                  </div>
                </div>
 
-               <GInput v-model="publishMetadata.title" label="Title" />
-               <GInput v-model="publishMetadata.description" type="textarea" label="Description" />
+               <GInput v-model="publishMetadata.title" :label="$t('projects.previewModal.titleLabel')" />
+               <GInput v-model="publishMetadata.description" type="textarea" :label="$t('projects.previewModal.descriptionLabel')" />
             </div>
 
             <div class="schedule-section mb-6 p-4 rounded-xl bg-white/[0.02] border border-white/5">
               <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
                   <timer theme="outline" size="16" class="text-blue-400" />
-                  <span class="text-[11px] font-black uppercase tracking-widest text-white">Schedule Distribution</span>
+                  <span class="text-[11px] font-black uppercase tracking-widest text-white">
+                    {{ $t('projects.previewModal.scheduleDistribution') }}
+                  </span>
                 </div>
                 <el-switch v-model="isScheduled" />
               </div>
@@ -108,7 +112,7 @@
                   <el-date-picker
                     v-model="scheduledDate"
                     type="datetime"
-                    placeholder="Select Date & Time"
+                    :placeholder="$t('projects.previewModal.selectDateTime')"
                     class="flex-1 !bg-black/40"
                     size="small"
                   />
@@ -118,11 +122,11 @@
                     :disabled="loadingPeakTime"
                   >
                     <magic theme="outline" size="12" />
-                    {{ loadingPeakTime ? 'Analyzing...' : 'AI Peak Time' }}
+                    {{ loadingPeakTime ? $t('projects.previewModal.analyzing') : $t('projects.previewModal.aiPeakTime') }}
                   </button>
                 </div>
                 <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                  AI suggestions are based on platform-specific audience peaks.
+                  {{ $t('projects.previewModal.aiPeakDesc') }}
                 </p>
               </div>
             </div>
@@ -130,7 +134,7 @@
             <div class="btn-row">
                <GButton @click="handleDownload" variant="secondary">
                   <download theme="outline" size="18" class="mr-2" />
-                  Download
+                  {{ $t('projects.previewModal.download') }}
                </GButton>
                <GButton 
                   @click="handlePublish" 
@@ -139,7 +143,7 @@
                   :disabled="selectedAccountIds.length === 0"
                >
                   <send theme="outline" size="18" class="mr-2" />
-                  Syndicate to Selected
+                  {{ $t('projects.previewModal.syndicateBtn') }}
                </GButton>
             </div>
           </div>
@@ -151,6 +155,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getFileUrl } from '@/utils/api'
 import { Download, Send, Youtube, Facebook, Tiktok, PlayOne, CheckOne, Timer, Magic } from '@icon-park/vue-next'
 import GButton from '@/components/ui/GButton.vue'
@@ -166,6 +171,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue'])
 
+const { t } = useI18n()
 const platformStore = usePlatformStore()
 const { accounts, loading: loadingAccounts } = storeToRefs(platformStore)
 
@@ -239,7 +245,8 @@ const handleDownload = async () => {
     if (!url) return
     const a = document.createElement('a')
     a.href = url
-    a.download = `${props.project.title || 'video'}.mp4`
+    const defaultName = t('projects.previewModal.defaultVideoName')
+    a.download = `${props.project.title || defaultName}.mp4`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -247,12 +254,12 @@ const handleDownload = async () => {
 
 const handlePublish = async () => {
   if (!s3Key.value) {
-    toast.error('No video asset found to publish')
+    toast.error(t('projects.previewModal.toasts.noVideo'))
     return
   }
 
   if (isScheduled.value && !scheduledDate.value) {
-    toast.error('Please select a schedule date')
+    toast.error(t('projects.previewModal.toasts.selectDate'))
     return
   }
   isPublishing.value = true
@@ -278,7 +285,7 @@ const handlePublish = async () => {
     visible.value = false
   } catch (error: any) {
     console.error(error)
-    toast.error(error.message || 'Failed to syndicate')
+    toast.error(error.message || t('projects.previewModal.toasts.publishFailed'))
   } finally {
     isPublishing.value = false
   }
@@ -286,7 +293,7 @@ const handlePublish = async () => {
 
 const getAiPeakTime = async () => {
   if (selectedAccountIds.value.length === 0) {
-    toast.error('Select a platform first');
+    toast.error(t('projects.previewModal.toasts.selectPlatform'));
     return;
   }
   
@@ -305,10 +312,10 @@ const getAiPeakTime = async () => {
       }
       
       scheduledDate.value = suggested;
-      toast.success(`AI suggested peak time: ${timeStr} (UTC)`);
+      toast.success(t('projects.previewModal.toasts.peakTimeSuccess', { time: timeStr }));
     }
   } catch (err) {
-    toast.error('Failed to get AI peak time');
+    toast.error(t('projects.previewModal.toasts.peakTimeFailed'));
   } finally {
     loadingPeakTime.value = false;
   }
@@ -321,10 +328,10 @@ const generateAiHooks = async () => {
     const hooks = await platformStore.generateHooks(props.project._id, context);
     if (hooks && hooks.length > 0) {
       aiHooks.value = hooks;
-      toast.success('Generated 3 viral hook variations');
+      toast.success(t('projects.previewModal.toasts.hooksSuccess'));
     }
   } catch (err) {
-    toast.error('Failed to generate hooks');
+    toast.error(t('projects.previewModal.toasts.hooksFailed'));
   } finally {
     loadingHooks.value = false;
   }
@@ -338,7 +345,7 @@ const applyHook = (idx: number) => {
   if (!hookId.value) {
     hookId.value = crypto.randomUUID();
   }
-  toast.info(`Applied "${hook.type}" hook variant`);
+  toast.info(t('projects.previewModal.toasts.hookApplied', { type: hook.type }));
 };
 
 const openIntegrations = () => {

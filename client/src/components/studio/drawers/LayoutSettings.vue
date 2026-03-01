@@ -12,7 +12,7 @@
                         <div class="flex items-center gap-2">
                             <span class="text-sm font-black text-white">{{ studioStore.activeScene.name
                                 }}</span>
-                            <div class="live-badge">ACTIVE</div>
+                            <div class="live-badge">{{ $t('studio.common.active') }}</div>
                         </div>
                         <p class="text-xs text-white/50 mt-1">{{ studioStore.activeScene.description }}</p>
                     </div>
@@ -21,7 +21,7 @@
 
             <!-- Scene Grid -->
             <div class="drawer-content">
-                <div class="section-title">Available Layouts</div>
+                <div class="section-title">{{ $t('studio.drawers.layout.availableLayouts') }}</div>
                 <div class="scene-grid">
                     <div v-for="scene in studioStore.scenes" :key="scene.id" class="scene-card"
                         :class="{ active: scene.id === studioStore.activeScene.id }" @click="switchToScene(scene.id)">
@@ -36,13 +36,13 @@
                     </div>
                 </div>
                 <!-- Transition Settings -->
-                <div class="section-title mt-6">Transition Style</div>
+                <div class="section-title mt-6">{{ $t('studio.drawers.layout.transitionStyle') }}</div>
                 <div class="transition-selector">
                     <button v-for="transition in transitions" :key="transition.value" class="transition-btn"
                         :class="{ active: studioStore.transitionType === transition.value }"
                         @click="studioStore.transitionType = transition.value">
                         <component :is="transition.icon" theme="outline" size="20" />
-                        <span>{{ transition.label }}</span>
+                        <span>{{ $t(`studio.drawers.layout.transitions.${transition.value}`) }}</span>
                     </button>
                 </div>
             </div>
@@ -51,17 +51,17 @@
         <!-- Dynamic Settings (e.g. PiP) -->
         <section v-if="studioStore.activeScene.type === 'pip'" class="dynamic-settings-section animate-in">
             <div class="drawer-content pt-0">
-                <div class="section-title">PiP Frame Settings</div>
+                <div class="section-title">{{ $t('studio.drawers.layout.pipSettings') }}</div>
 
                 <!-- Shape Selection -->
                 <div class="setting-group mb-6">
-                    <label class="setting-label">Frame Shape</label>
+                    <label class="setting-label">{{ $t('studio.drawers.layout.frameShape') }}</label>
                     <div class="shape-grid">
                         <button v-for="shape in shapes" :key="shape.id" class="shape-btn"
                             :class="{ active: (overlayRegion?.shape || 'rect') === shape.id }"
                             @click="updateOverlayProperty('shape', shape.id)">
                             <component :is="shape.icon" theme="outline" size="18" />
-                            <span>{{ shape.name }}</span>
+                            <span>{{ $t(`studio.drawers.layout.shapes.${shape.id}`) }}</span>
                         </button>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                 <!-- Corner Radius (for Rect/Square) -->
                 <div v-if="overlayRegion?.shape !== 'circle'" class="setting-group mb-6">
                     <div class="flex justify-between items-center mb-2">
-                        <label class="setting-label m-0">Corner Radius</label>
+                        <label class="setting-label m-0">{{ $t('studio.drawers.layout.cornerRadius') }}</label>
                         <span class="text-[10px] text-white/40 font-mono">{{ overlayRegion?.borderRadius || 0
                         }}px</span>
                     </div>
@@ -81,18 +81,18 @@
                 <!-- Border Settings -->
                 <div class="setting-group mb-6">
                     <div class="flex justify-between items-center mb-4">
-                        <label class="setting-label m-0">Border</label>
+                        <label class="setting-label m-0">{{ $t('studio.drawers.layout.border') }}</label>
                         <el-switch v-model="hasBorder" size="small" />
                     </div>
                     <div v-if="hasBorder" class="flex gap-4 items-end animate-in">
                         <div class="flex-1">
-                            <label class="text-[10px] opacity-30 uppercase block mb-2">Width</label>
+                            <label class="text-[10px] opacity-30 uppercase block mb-2">{{ $t('studio.drawers.layout.width') }}</label>
                             <input type="range" min="1" max="10" step="1" :value="overlayRegion?.border?.width || 2"
                                 @input="updateBorder('width', Number(($event.target as HTMLInputElement).value))"
                                 class="glass-slider" />
                         </div>
                         <div class="w-12">
-                            <label class="text-[10px] opacity-30 uppercase block mb-2">Color</label>
+                            <label class="text-[10px] opacity-30 uppercase block mb-2">{{ $t('studio.drawers.layout.color') }}</label>
                             <input type="color" :value="overlayRegion?.border?.color || '#3b82f6'"
                                 @input="updateBorder('color', ($event.target as HTMLInputElement).value)"
                                 class="color-picker-input" />
@@ -103,19 +103,19 @@
                 <!-- Shadow Settings -->
                 <div class="setting-group mb-6">
                     <div class="flex justify-between items-center mb-4">
-                        <label class="setting-label m-0">Shadow (Glow)</label>
+                        <label class="setting-label m-0">{{ $t('studio.drawers.layout.shadowGlow') }}</label>
                         <el-switch v-model="hasShadow" size="small" />
                     </div>
                     <div v-if="hasShadow" class="shadow-controls animate-in">
                         <div class="flex gap-4 mb-4">
                             <div class="flex-1">
-                                <label class="text-[10px] opacity-30 uppercase block mb-2">Blur Force</label>
+                                <label class="text-[10px] opacity-30 uppercase block mb-2">{{ $t('studio.drawers.layout.blurForce') }}</label>
                                 <input type="range" min="0" max="40" step="1" :value="overlayRegion?.shadow?.blur || 15"
                                     @input="updateShadow('blur', Number(($event.target as HTMLInputElement).value))"
                                     class="glass-slider" />
                             </div>
                             <div class="w-12">
-                                <label class="text-[10px] opacity-30 uppercase block mb-2">Color</label>
+                                <label class="text-[10px] opacity-30 uppercase block mb-2">{{ $t('studio.drawers.layout.color') }}</label>
                                 <input type="color" :value="overlayRegion?.shadow?.color || '#000000'"
                                     @input="updateShadow('color', ($event.target as HTMLInputElement).value)"
                                     class="color-picker-input" />
@@ -123,13 +123,13 @@
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-[10px] opacity-30 uppercase block mb-2">Offset X</label>
+                                <label class="text-[10px] opacity-30 uppercase block mb-2">{{ $t('studio.drawers.layout.offsetX') }}</label>
                                 <input type="range" min="-20" max="20" step="1" :value="overlayRegion?.shadow?.x || 0"
                                     @input="updateShadow('x', Number(($event.target as HTMLInputElement).value))"
                                     class="glass-slider" />
                             </div>
                             <div>
-                                <label class="text-[10px] opacity-30 uppercase block mb-2">Offset Y</label>
+                                <label class="text-[10px] opacity-30 uppercase block mb-2">{{ $t('studio.drawers.layout.offsetY') }}</label>
                                 <input type="range" min="-20" max="20" step="1" :value="overlayRegion?.shadow?.y || 0"
                                     @input="updateShadow('y', Number(($event.target as HTMLInputElement).value))"
                                     class="glass-slider" />

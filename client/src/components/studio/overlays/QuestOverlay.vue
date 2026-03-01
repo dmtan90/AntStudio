@@ -5,13 +5,13 @@
       <!-- User Gamification Profile (Always Visible) -->
       <div class="user-profile-banner glass-panel mb-4">
           <div class="level-badge">
-              <span class="level-label">LVL</span>
+              <span class="level-label">{{ $t('studio.common.level') || 'LVL' }}</span>
               <span class="level-value">{{ studioStore.userProgress.level }}</span>
           </div>
           <div class="xp-section">
               <div class="xp-header">
-                  <span class="xp-label">EXPERIENCE</span>
-                  <span class="xp-value">{{ studioStore.userProgress.xp }} XP</span>
+                  <span class="xp-label">{{ $t('studio.common.experience') || 'EXPERIENCE' }}</span>
+                  <span class="xp-value">{{ studioStore.userProgress.xp }} {{ $t('studio.common.xp') || 'XP' }}</span>
               </div>
               <div class="xp-bar-track">
                   <div class="xp-bar-fill" :style="{ width: getXpPercent() + '%' }"></div>
@@ -29,7 +29,7 @@
             <div class="quest-details">
                 <div class="flex justify-between items-start">
                     <h3 class="quest-title">{{ quest.title }}</h3>
-                    <span class="quest-reward">+{{ quest.rewardXp }} XP</span>
+                    <span class="quest-reward">+{{ quest.rewardXp }} {{ $t('studio.common.xp') || 'XP' }}</span>
                 </div>
                 <p class="quest-desc">{{ quest.description }}</p>
                 

@@ -4,21 +4,21 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-16 relative z-10">
             <div>
                 <h1 class="text-5xl font-black tracking-tighter text-white mb-2 relative inline-block">
-                    LICENSE HUB
+                    {{ t('licensePortal.header.title') }}
                     <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
                 </h1>
-                <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Orchestrating Global Production Units</p>
+                <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">{{ t('licensePortal.header.subtitle') }}</p>
             </div>
             <div class="flex gap-4">
                 <button @click="showSupportDialog = true"
                     class="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 group">
                     <help theme="outline" size="14" class="group-hover:text-blue-400 transition-colors" />
-                    Support Terminal
+                    {{ t('licensePortal.actions.support') }}
                 </button>
                 <button @click="scrollToPricing"
                     class="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center gap-2">
                     <rocket theme="outline" size="14" />
-                    Upgrade Fleet
+                    {{ t('licensePortal.actions.upgrade') }}
                 </button>
             </div>
         </header>
@@ -27,7 +27,7 @@
             <!-- LEFT: Active Licenses -->
             <div class="col-span-12 lg:col-span-4 space-y-6">
                 <h3 class="text-xs font-black uppercase tracking-widest flex items-center gap-3 mb-6 text-gray-400">
-                    <key theme="filled" size="16" class="text-blue-500" /> Active Registries
+                    <key theme="filled" size="16" class="text-blue-500" /> {{ t('licensePortal.sidebar.registries') }}
                 </h3>
 
                 <div v-for="lic in licenses" :key="lic._id" @click="selectedLicense = lic"
@@ -46,12 +46,12 @@
                         </span>
                         <div class="flex items-center gap-2">
                             <div class="w-2 h-2 rounded-full animate-pulse" :class="lic.status === 'active' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500'"></div>
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ lic.status }}</span>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ t('licensePortal.status.' + lic.status) }}</span>
                         </div>
                     </div>
                     
                     <div class="mb-6 relative z-10">
-                        <p class="text-[10px] font-black uppercase text-gray-600 tracking-widest mb-1">License Key ID</p>
+                        <p class="text-[10px] font-black uppercase text-gray-600 tracking-widest mb-1">{{ t('licensePortal.license.keyId') }}</p>
                         <p class="text-xs font-mono text-gray-400 group-hover:text-white transition-colors truncate">{{ lic.key }}</p>
                     </div>
 
@@ -59,9 +59,9 @@
                         <div>
                             <div class="flex items-baseline gap-1 mb-1">
                                 <span class="text-2xl font-black text-white">{{ lic.activeInstances || 0 }}</span>
-                                <span class="text-sm font-bold text-gray-500">/ {{ lic.instancesLimit }} Units</span>
+                                <span class="text-sm font-bold text-gray-500">/ {{ lic.instancesLimit }} {{ t('licensePortal.license.units') }}</span>
                             </div>
-                            <p class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Expires: {{ formatDate(lic.endDate) }}</p>
+                            <p class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">{{ t('licensePortal.license.expires', { date: formatDate(lic.endDate) }) }}</p>
                         </div>
                         <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all transform group-hover:rotate-[-45deg]">
                             <arrow-right theme="outline" size="14" />
@@ -72,7 +72,7 @@
                 <div v-if="licenses.length === 0"
                     class="p-12 border border-dashed border-white/10 rounded-[2rem] text-center bg-white/[0.02]">
                     <div class="text-4xl mb-4 opacity-20 grayscale">📭</div>
-                    <p class="text-xs font-black uppercase text-gray-500 tracking-widest">No Active Licenses Detected</p>
+                    <p class="text-xs font-black uppercase text-gray-500 tracking-widest">{{ t('licensePortal.empty.title') }}</p>
                 </div>
             </div>
 
@@ -89,16 +89,16 @@
                             <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
                                 <data-server theme="filled" />
                             </div>
-                            Unit Fleet Telemetry
+                            {{ t('licensePortal.telemetry.title') }}
                         </h3>
                         <div class="flex items-center gap-4">
                             <div class="px-4 py-1.5 bg-black/40 rounded-lg border border-white/5 flex items-center gap-2">
                                 <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">System Operational</span>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ t('licensePortal.telemetry.operational') }}</span>
                             </div>
                             <button @click="renewLicense(selectedLicense)"
                                 class="px-5 py-2 bg-green-500 hover:bg-green-400 text-black rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-green-500/10 hover:shadow-green-500/30">
-                                Extend Validity
+                                {{ t('licensePortal.telemetry.extend') }}
                             </button>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                                     <h4 class="text-sm font-bold text-white font-mono truncate">{{ unit.instanceId }}</h4>
                                     <span
                                         class="px-2 py-0.5 bg-green-500/10 text-green-400 text-[9px] font-black rounded border border-green-500/20 uppercase tracking-widest">
-                                        Active
+                                        {{ t('licensePortal.telemetry.active') }}
                                     </span>
                                 </div>
                                 <div class="flex items-center gap-4 text-[10px] text-gray-500 font-mono">
@@ -126,7 +126,7 @@
                                 </div>
                             </div>
                             <div class="text-right pl-4 border-l border-white/5">
-                                <p class="text-[9px] font-black uppercase text-gray-500 tracking-widest mb-1">Last Heartbeat</p>
+                                <p class="text-[9px] font-black uppercase text-gray-500 tracking-widest mb-1">{{ t('licensePortal.telemetry.lastHeartbeat') }}</p>
                                 <p class="text-xs font-bold text-white font-mono">{{ timeAgo(unit.lastHeartbeat) }}</p>
                             </div>
                         </div>
@@ -136,8 +136,8 @@
                         <div class="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
                             <radar theme="outline" size="40" class="mx-auto animate-spin-slow" />
                         </div>
-                        <p class="text-xs font-bold uppercase tracking-widest text-white">No Tactical Units Detected</p>
-                        <p class="text-[10px] text-gray-500 mt-2 max-w-xs mx-auto">Deploy instances with this license key to see telemetry data stream in real-time.</p>
+                        <p class="text-xs font-bold uppercase tracking-widest text-white">{{ t('licensePortal.telemetry.empty.title') }}</p>
+                        <p class="text-[10px] text-gray-500 mt-2 max-w-xs mx-auto">{{ t('licensePortal.telemetry.empty.desc') }}</p>
                     </div>
                 </div>
                 
@@ -146,7 +146,7 @@
                     <div class="w-32 h-32 rounded-full bg-white/5 flex items-center justify-center mb-8 animate-pulse">
                         <doc-search theme="filled" size="48" class="text-gray-600" />
                     </div>
-                    <p class="text-sm font-black uppercase tracking-widest text-gray-400">Select a registry to inspect telemetry</p>
+                    <p class="text-sm font-black uppercase tracking-widest text-gray-400">{{ t('licensePortal.telemetry.selectRegistry') }}</p>
                 </div>
             </div>
         </div>
@@ -157,10 +157,10 @@
             
             <div class="text-center mb-20 relative z-10">
                 <span class="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-6 inline-block">
-                    Operational Tiers
+                    {{ t('licensePortal.pricing.operationalTiers') }}
                 </span>
-                <h2 class="text-5xl font-black mb-4">TACTICAL UPGRADES</h2>
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest">Scale your infrastructure capabilities</p>
+                <h2 class="text-5xl font-black mb-4">{{ t('licensePortal.pricing.title') }}</h2>
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-widest">{{ t('licensePortal.pricing.subtitle') }}</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto relative z-10 px-4">
@@ -169,7 +169,7 @@
                     
                     <div v-if="pkg.tier === 'pro'"
                         class="absolute top-0 right-0 bg-blue-600 text-white text-[9px] font-black px-6 py-2 rounded-bl-2xl uppercase tracking-widest shadow-lg shadow-blue-600/20 z-20">
-                        Most Popular
+                        {{ t('licensePortal.pricing.popular') }}
                     </div>
 
                     <div class="mb-8">
@@ -179,7 +179,7 @@
 
                     <div class="mb-10 p-6 bg-white/[0.03] rounded-2xl border border-white/5 group-hover:border-white/10 transition-colors">
                         <span class="text-5xl font-black text-white block mb-1">${{ pkg.price }}</span>
-                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Billed {{ pkg.billingPeriod }}</span>
+                        <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">{{ t('licensePortal.pricing.billed', { period: pkg.billingPeriod }) }}</span>
                     </div>
 
                     <ul class="space-y-5 mb-12 flex-1">
@@ -187,25 +187,25 @@
                             <div class="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 flex-shrink-0">
                                 <check-one theme="filled" size="12" />
                             </div>
-                            {{ pkg.limits.instances }} Edge Unit(s)
+                            {{ pkg.limits.instances }} {{ t('licensePortal.pricing.edgeUnits') }}
                         </li>
                         <li class="flex items-center gap-4 text-xs font-bold text-gray-300">
                             <div class="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 flex-shrink-0">
                                 <check-one theme="filled" size="12" />
                             </div>
-                            {{ pkg.limits.usersPerInstance }} Users / Unit
+                            {{ pkg.limits.usersPerInstance }} {{ t('licensePortal.pricing.usersPerUnit') }}
                         </li>
                         <li class="flex items-center gap-4 text-xs font-bold text-gray-300">
                             <div class="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 flex-shrink-0">
                                 <check-one theme="filled" size="12" />
                             </div>
-                            {{ pkg.limits.projectsPerInstance }} Projects / Unit
+                            {{ pkg.limits.projectsPerInstance }} {{ t('licensePortal.pricing.projectsPerUnit') }}
                         </li>
                     </ul>
 
                     <button @click="initiateCheckout(pkg._id)"
                         class="w-full py-5 rounded-2xl bg-white text-black font-black uppercase text-xs tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl shadow-white/5 hover:shadow-blue-600/30 group-hover:scale-[1.02]">
-                        Deploy {{ pkg.name }}
+                        {{ t('licensePortal.pricing.deployAction', { name: pkg.name }) }}
                     </button>
                     
                     <!-- Background Glow -->
@@ -228,7 +228,9 @@ import { toast } from 'vue-sonner';
 import SupportTicketDialog from '@/components/SupportTicketDialog.vue';
 import { useLicenseStore } from '@/stores/license';
 import { usePaymentStore } from '@/stores/payment';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const licenses = ref<any[]>([]);
 const packages = ref<any[]>([]);
 const selectedLicense = ref<any>(null);
@@ -240,11 +242,15 @@ const paymentStore = usePaymentStore();
 const fetchLicenses = async () => {
     try {
         const res = await licenseStore.fetchMyLicenses();
+        console.log("fetchLicenses", res);
         if (res && res.data) {
             licenses.value = res.data.licenses;
             if (licenses.value.length > 0 && !selectedLicense.value) selectedLicense.value = licenses.value[0];
         }
-    } catch (e) { }
+    } catch (e) { 
+        toast.error(t('licensePortal.toasts.fetchLicensesFailed'));
+        console.log(e);
+    }
 };
 
 const fetchPackages = async () => {
@@ -262,13 +268,13 @@ const scrollToPricing = () => {
 
 const initiateCheckout = async (packageId: string) => {
     try {
-        toast.info('Initializing secure secure gateway...');
+        toast.info(t('licensePortal.toasts.initiateCheckout'));
         const res = await paymentStore.createCheckout({ packageId });
         if (res.data.url) {
             window.location.href = res.data.url;
         }
     } catch (e: any) {
-        toast.error(e.response?.data?.error || 'Checkout initiation failed.');
+        toast.error(e.response?.data?.error || t('licensePortal.toasts.checkoutFailed'));
     }
 };
 
@@ -277,7 +283,7 @@ const renewLicense = async (license: any) => {
     if (!currentPkg) return;
 
     try {
-        toast.info(`Renewing ${license.key}...`);
+        toast.info(t('licensePortal.toasts.renewing', { key: license.key }));
         const res = await paymentStore.createCheckout({
             packageId: currentPkg._id,
             licenseKey: license.key
@@ -287,17 +293,17 @@ const renewLicense = async (license: any) => {
             window.location.href = res.data.url;
         }
     } catch (e: any) {
-        toast.error('Renewal Gateway Error');
+        toast.error(t('licensePortal.toasts.renewalError'));
     }
 };
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString();
 const timeAgo = (date: string) => {
     const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
-    if (seconds < 60) return 'Just now';
+    if (seconds < 60) return t('common.time.justNow');
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    return `${Math.floor(minutes / 60)}h ago`;
+    if (minutes < 60) return t('common.time.minutesAgo', { n: String(minutes) });
+    return t('common.time.hoursAgo', { n: String(Math.floor(minutes / 60)) });
 };
 
 onMounted(() => {
@@ -315,25 +321,25 @@ const handlePaymentCallback = () => {
     if (!payment) return;
 
     if (payment === 'success') {
-        const gatewayName = gateway === 'stripe' ? 'Stripe' : gateway === 'paypal' ? 'PayPal' : 'Payment Gateway';
-        toast.success(`🎉 Payment successful via ${gatewayName}! Your license has been activated.`, { duration: 5000 });
+        const gatewayName = gateway === 'stripe' ? 'Stripe' : gateway === 'paypal' ? 'PayPal' : t('licensePortal.payment.gateway');
+        toast.success(t('licensePortal.toasts.paymentSuccess', { gateway: gatewayName }), { duration: 5000 });
         setTimeout(() => fetchLicenses(), 1000);
     }
 
     if (payment === 'failed') {
-        let errorMessage = 'Payment failed. Please try again.';
+        let errorMessage = t('licensePortal.toasts.paymentFailed');
         switch (reason) {
             case 'missing_session':
-            case 'missing_token': errorMessage = 'Payment session expired. Please try again.'; break;
+            case 'missing_token': errorMessage = t('licensePortal.toasts.paymentExpired'); break;
             case 'verification_failed':
-            case 'capture_failed': errorMessage = 'Payment verification failed.'; break;
-            case 'error': errorMessage = 'An error occurred during payment processing.'; break;
+            case 'capture_failed': errorMessage = t('licensePortal.toasts.paymentVerificationFailed'); break;
+            case 'error': errorMessage = t('licensePortal.toasts.paymentProcessingError'); break;
         }
         toast.error(errorMessage, { duration: 7000 });
     }
 
     if (payment === 'cancelled') {
-        toast.info(`Payment was cancelled. You can try again anytime.`, { duration: 4000 });
+        toast.info(t('licensePortal.toasts.paymentCancelled'), { duration: 4000 });
     }
 
     if (payment) {

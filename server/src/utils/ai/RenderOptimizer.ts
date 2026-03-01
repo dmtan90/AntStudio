@@ -1,6 +1,7 @@
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import { configService } from '../configService.js';
+import { Logger } from '../Logger.js';
 
 /**
  * Service for self-evolving AI performance optimization.
@@ -20,7 +21,7 @@ export class RenderOptimizer {
      * Analyzes current rendering bottlenecks and suggests WGSL (WebGPU) optimizations.
      */
     public async suggestShaderOptimization(currentShaderCode: string, performanceLogs: string) {
-        console.log("🧠 [RenderOptimizer] Analyzing WebGPU performance...");
+        Logger.info('🧠 [RenderOptimizer] Analyzing WebGPU performance...', 'RenderOptimizer');
 
         try {
             const response = await this.ai.generate({
@@ -44,7 +45,7 @@ export class RenderOptimizer {
             return response.text;
 
         } catch (error: any) {
-            console.error('[RenderOptimizer] Optimization analysis failed:', error.message);
+            Logger.error(`[RenderOptimizer] Optimization analysis failed: ${error.message}`, 'RenderOptimizer');
             return null;
         }
     }

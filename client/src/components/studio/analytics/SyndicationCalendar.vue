@@ -2,8 +2,8 @@
   <div class="syndication-calendar glass-panel p-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">Content Calendar</h3>
-        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Distribution Schedule & Planning</p>
+        <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">{{ $t('studio.analytics.contentCalendar') }}</h3>
+        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ $t('studio.analytics.distributionSchedule') }}</p>
       </div>
       
       <div class="flex items-center gap-4 bg-white/5 p-1 rounded-xl">
@@ -27,8 +27,8 @@
 
     <div class="grid grid-cols-7 gap-2">
       <!-- Days Header -->
-      <div v-for="day in weekDays" :key="day" class="text-center py-2">
-        <span class="text-[9px] font-black uppercase tracking-widest text-gray-600">{{ day }}</span>
+      <div v-for="day in weekDayKeys" :key="day" class="text-center py-2">
+        <span class="text-[9px] font-black uppercase tracking-widest text-gray-600">{{ $t(`studio.calendar.weekDays.${day}`) }}</span>
       </div>
 
       <!-- Calendar Grid -->
@@ -73,6 +73,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Left, Right, Tiktok, Youtube, Facebook, ShareTwo } from '@icon-park/vue-next';
 
 const props = defineProps<{
@@ -81,15 +82,17 @@ const props = defineProps<{
 
 defineEmits(['select-record']);
 
-const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const weekDayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const currentMonth = ref(new Date());
 
+const { locale } = useI18n();
+
 const formatMonth = (date: Date) => {
-  return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  return date.toLocaleString(locale.value, { month: 'long', year: 'numeric' });
 };
 
 const formatTime = (date: string | Date) => {
-  return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return new Date(date).toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 const prevMonth = () => {

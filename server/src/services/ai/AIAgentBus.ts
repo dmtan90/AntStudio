@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { Logger } from '../../utils/Logger.js';
 
 interface AgentMessage {
     fromAgent: string; // archiveId
@@ -31,7 +32,7 @@ export class AIAgentBus extends EventEmitter {
             timestamp: Date.now()
         };
         
-        console.log(`[AIAgentBus] [${projectId}] ${message.fromAgent} -> ${message.toAgent || 'ALL'}: ${JSON.stringify(message.payload)}`);
+        Logger.info(`[AIAgentBus] [${projectId}] ${message.fromAgent} -> ${message.toAgent || 'ALL'}: ${JSON.stringify(message.payload)}`, 'AIAgentBus');
         
         // Emit for the project
         this.emit(`message:${projectId}`, fullMessage);

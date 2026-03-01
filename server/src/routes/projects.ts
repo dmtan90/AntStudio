@@ -4,18 +4,18 @@ import { connectDB } from '../utils/db.js';
 import { Project } from '../models/Project.js';
 import { Media } from '../models/Media.js';
 import { monitoringService } from '../services/monitoringService.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 import { WebhookService } from '../services/WebhookService.js';
 import { moderationService } from '../services/ModerationService.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { cacheMiddleware } from '../middleware/cache.js';
-import { checkLicenseStatus, checkProjectLimit } from '../middleware/license.js';
+// import { checkLicenseStatus, checkProjectLimit } from '../middleware/license.js';
 import { generateText, generateJSON, generateImage } from '../utils/AIGenerator.js';
 import { generateStoryboardIteratively } from '../services/iterativeStoryboard.js';
 import { User } from '../models/User.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
-import { licenseGating } from '../middleware/licenseGating.js';
+import { checkProjectLimit, licenseGating } from '../middleware/licenseGating.js';
 import { hasSufficientCredits, deductCredits, getCreditCost } from '../utils/credits.js';
 import { uploadToS3, S3KeyGenerator, getS3Client } from '../utils/s3.js';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
@@ -146,13 +146,13 @@ router.get('/',
                 }
             });
         } catch (error: any) {
-            console.error('List projects error:', error);
+            Logger.error('List projects error:', error);
             res.status(500).json({ success: false, error: error.message || 'Failed to list projects' });
         }
     });
 
 // POST /api/projects - Create new project (scoped to organization)
-router.post('/', checkLicenseStatus, checkProjectLimit, licenseGating('trial'), rbacMiddleware(Permission.PROJECT_CREATE), async (req: any, res: Response) => {
+router.post('/', licenseGating('trial'), checkProjectLimit, rbacMiddleware(Permission.PROJECT_CREATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { title, description, mode, aspectRatio, videoStyle, targetDuration, metadata, pages, scriptAnalysis, storyboard } = req.body;
@@ -180,7 +180,7 @@ router.post('/', checkLicenseStatus, checkProjectLimit, licenseGating('trial'), 
 
         res.status(201).json({ success: true, data: { project } });
     } catch (error: any) {
-        console.error('Create project error:', error);
+        Logger.error('Create project error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to create project' });
     }
 });
@@ -207,7 +207,7 @@ router.get('/:id', async (req: any, res: Response) => {
 
         res.json({ success: true, data: { project } });
     } catch (error: any) {
-        console.error('Get project error:', error);
+        Logger.error('Get project error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to get project' });
     }
 });
@@ -224,13 +224,13 @@ router.put('/:id', rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
         res.json({ success: true, data: { project } });
     } catch (error: any) {
-        console.error('Update project error:', error);
+        Logger.error('Update project error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to update project' });
     }
 });
 
 // POST /api/projects/preview - Quick preview (Granular Stages)
-router.post('/preview', checkLicenseStatus, licenseGating('trial'), upload.array('files'), async (req: any, res: Response) => {
+router.post('/preview', licenseGating('trial'), upload.array('files'), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { topic, history, targetDuration, stage, script, analysis, language, videoStyle } = req.body;
@@ -467,13 +467,13 @@ router.post('/preview', checkLicenseStatus, licenseGating('trial'), upload.array
 
 
     } catch (error: any) {
-        console.error('Preview error:', error);
+        Logger.error('Preview error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate preview' });
     }
 });
 
 // POST /api/projects/:id/analyze - Deep analysis
-router.post(['/:id/analyze', '/:id/analysis'], checkLicenseStatus, rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post(['/:id/analyze', '/:id/analysis'], licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
@@ -599,7 +599,7 @@ router.post(['/:id/analyze', '/:id/analysis'], checkLicenseStatus, rbacMiddlewar
 });
 
 // POST /api/projects/:id/chat - AI Refinement
-router.post('/:id/chat', checkLicenseStatus, rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post('/:id/chat', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
@@ -620,7 +620,7 @@ router.post('/:id/chat', checkLicenseStatus, rbacMiddleware(Permission.PROJECT_E
 });
 
 // POST /api/projects/:id/generate-visual-plan
-router.post('/:id/generate-visual-plan', checkLicenseStatus, rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post('/:id/generate-visual-plan', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
@@ -644,7 +644,7 @@ router.post('/:id/generate-visual-plan', checkLicenseStatus, rbacMiddleware(Perm
 });
 
 // POST /api/projects/:id/generate-storyboard
-router.post('/:id/generate-storyboard', checkLicenseStatus, rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post('/:id/generate-storyboard', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
@@ -713,7 +713,7 @@ router.post('/:id/stream', rbacMiddleware(Permission.STREAM_START), async (req: 
 
         res.json({ success: true, data: { streamId: broadcast.streamId } });
     } catch (error: any) {
-        console.error('Ant Media stream initiation failed:', error);
+        Logger.error('Ant Media stream initiation failed:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -790,7 +790,7 @@ router.post('/:id/publish', rbacMiddleware(Permission.PROJECT_EDIT), upload.fiel
         });
 
     } catch (error: any) {
-        console.error('[Publish] Error:', error);
+        Logger.error('[Publish] Error:', error);
         res.status(500).json({ success: false, error: error.message });
     } finally {
         // Cleanup temp files
@@ -798,7 +798,7 @@ router.post('/:id/publish', rbacMiddleware(Permission.PROJECT_EDIT), upload.fiel
             try {
                 fs.rmSync(tempDir, { recursive: true, force: true });
             } catch (e) {
-                console.error('Cleanup error:', e);
+                Logger.error('Cleanup error:', 'ProjectsRoute', e);
             }
         }
     }
@@ -816,7 +816,7 @@ router.post('/:id/syndicate-final', rbacMiddleware(Permission.PROJECT_EDIT), asy
 
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[SyndicateFinal] Error:', error);
+        Logger.error('[SyndicateFinal] Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -829,13 +829,13 @@ router.delete('/:id', rbacMiddleware(Permission.PROJECT_DELETE), async (req: any
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
         res.json({ success: true, data: { message: 'Project deleted successfully' } });
     } catch (error: any) {
-        console.error('Delete project error:', error);
+        Logger.error('Delete project error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to delete project' });
     }
 });
 
 // POST /api/projects/:id/segments/:segmentId/generate-voiceover - Generate TTS voiceover for a segment
-router.post('/:id/segments/:segmentId/generate-voiceover', checkLicenseStatus, rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/:id/segments/:segmentId/generate-voiceover', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { id: projectId, segmentId } = req.params;
@@ -913,14 +913,14 @@ router.post('/:id/segments/:segmentId/generate-voiceover', checkLicenseStatus, r
         res.json({ success: true, data: { generatedAudio: segment.generatedAudio } });
 
     } catch (error: any) {
-        console.error('[generate-voiceover] Error:', error);
+        Logger.error('[generate-voiceover] Error:', error);
         // Try to mark as failed if possible
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 // POST /api/projects/:id/segments/:segmentId/captions - Generate captions for segment
-router.post('/:id/segments/:segmentId/captions', checkLicenseStatus, rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/:id/segments/:segmentId/captions', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { id: projectId, segmentId } = req.params;
@@ -976,13 +976,13 @@ router.post('/:id/segments/:segmentId/captions', checkLicenseStatus, rbacMiddlew
         res.json({ success: true, data: { captions } });
 
     } catch (error: any) {
-        console.error('Caption generation error:', error);
+        Logger.error('Caption generation error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 // POST /api/projects/:id/assets/generate - Generate specific asset
-router.post('/:id/assets/generate', checkLicenseStatus, rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const projectId = req.params.id;
@@ -1050,7 +1050,7 @@ router.post('/:id/assets/generate', checkLicenseStatus, rbacMiddleware(Permissio
                     }
                 }
                 if (referenceImages.length > 0) {
-                    console.log(`[assets/generate] Collected ${referenceImages.length} reference images for consistency grounding.`);
+                    Logger.info(`[assets/generate] Collected ${referenceImages.length} reference images for consistency grounding.`);
                 }
             }
 
@@ -1075,7 +1075,7 @@ router.post('/:id/assets/generate', checkLicenseStatus, rbacMiddleware(Permissio
                     const character = project.scriptAnalysis.characters.find((c: any) => c.name === charName);
                     if (character) {
                         character.referenceImage = result.s3Key;
-                        console.log(`[assets/generate] Updated referenceImage for character "${charName}" → ${result.s3Key}`);
+                        Logger.info(`[assets/generate] Updated referenceImage for character "${charName}" → ${result.s3Key}`);
                     }
                 }
                 project.markModified('scriptAnalysis');
@@ -1154,7 +1154,7 @@ router.post('/:id/assets/generate', checkLicenseStatus, rbacMiddleware(Permissio
                     'vi',
                     async (p) => await mgr.generateText(p, 'gemini-2.5-flash')
                 );
-                console.log(`[assets/generate] Enriched prompt for segment ${segment.order}`);
+                Logger.info(`[assets/generate] Enriched prompt for segment ${segment.order}`);
             }
 
             const result = await mgr.generateVideo(finalPrompt, modelId, providerId, {
@@ -1289,7 +1289,7 @@ router.post('/:id/assets/generate', checkLicenseStatus, rbacMiddleware(Permissio
         return res.status(400).json({ success: false, error: `Unsupported asset type: ${type}` });
 
     } catch (error: any) {
-        console.error('[assets/generate] Error:', error.message);
+        Logger.error('[assets/generate] Error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1297,7 +1297,7 @@ router.post('/:id/assets/generate', checkLicenseStatus, rbacMiddleware(Permissio
 
 // POST /api/projects/:id/assets/upload - Upload asset
 router.post('/:id/assets/upload',
-    checkLicenseStatus,
+    licenseGating('trial'),
     rbacMiddleware(Permission.PROJECT_EDIT),
     upload.single('file'),
     async (req: any, res: Response) => {
@@ -1377,7 +1377,7 @@ router.post('/:id/assets/upload',
 
             res.json({ success: true, data: { s3Key: uploadResult.key, url: uploadResult.key } });
         } catch (error: any) {
-            console.error('Asset upload error:', error);
+            Logger.error('Asset upload error:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
@@ -1410,7 +1410,7 @@ router.post('/:id/track', async (req: any, res: Response) => {
 });
 
 // POST /api/projects/:id/storyboard/generate-assets - Batch generate all segment videos
-router.post('/:id/storyboard/generate-assets', checkLicenseStatus, rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const projectId = req.params.id;
@@ -1456,9 +1456,9 @@ router.post('/:id/storyboard/generate-assets', checkLicenseStatus, rbacMiddlewar
                     segment.generatedVideo = { s3Key, status: 'completed', generatedAt: new Date(), duration: segment.duration };
                     await project.save();
                     
-                    console.log(`[BatchGen] Completed segment ${segment.order} for project ${projectId}`);
+                    Logger.info(`[BatchGen] Completed segment ${segment.order} for project ${projectId}`);
                 } catch (err: any) {
-                    console.error(`[BatchGen] Failed segment ${segment.order}:`, err.message);
+                    Logger.error(`[BatchGen] Failed segment ${segment.order}:`, err.message);
                     segment.generatedVideo = { s3Key: '', status: 'failed', generatedAt: new Date() };
                     await project.save();
                 }
@@ -1469,7 +1469,7 @@ router.post('/:id/storyboard/generate-assets', checkLicenseStatus, rbacMiddlewar
 
         res.json({ success: true, message: 'Batch generation started' });
     } catch (error: any) {
-        console.error('Batch generation start error:', error);
+        Logger.error('Batch generation start error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

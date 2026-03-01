@@ -15,8 +15,8 @@
                                     <Info theme="filled" class="text-yellow-400" />
                                 </div>
                                 <div>
-                                    <h3 class="guide-title">{{ currentStep.title }}</h3>
-                                    <p class="guide-subtitle">Step {{ currentStepIndex + 1 }} of {{ steps.length }}</p>
+                                    <h3 class="guide-title">{{ typeof currentStep.title === 'function' ? currentStep.title() : currentStep.title }}</h3>
+                                    <p class="guide-subtitle">{{ $t('common.guide.step', { step: currentStepIndex + 1, total: steps.length }) }}</p>
                                 </div>
                             </div>
                             <button @click="handleSkip" class="close-btn">
@@ -26,7 +26,7 @@
 
                         <!-- Content -->
                         <div class="guide-content">
-                            <p class="guide-description">{{ currentStep.description }}</p>
+                            <p class="guide-description">{{ typeof currentStep.description === 'function' ? currentStep.description() : currentStep.description }}</p>
                             
                             <!-- Optional Image/GIF -->
                             <img v-if="currentStep.image" :src="currentStep.image" 
@@ -35,7 +35,7 @@
                             <!-- Tips -->
                             <div v-if="currentStep.tip" class="guide-tip">
                                 <Info theme="outline" class="tip-icon" />
-                                <span>{{ currentStep.tip }}</span>
+                                <span>{{ typeof currentStep.tip === 'function' ? currentStep.tip() : currentStep.tip }}</span>
                             </div>
                         </div>
 
@@ -50,23 +50,29 @@
                             
                             <div class="guide-actions">
                                 <button v-if="currentStepIndex > 0" @click="previousStep" class="btn-secondary">
-                                    <Left theme="outline" />
-                                    Back
+                                    <span class="flex items-center gap-2">
+                                        <Left theme="outline" />
+                                        {{ $t('common.guide.back') }}
+                                    </span>
                                 </button>
                                 <button v-if="currentStepIndex < steps.length - 1" @click="nextStep" class="btn-primary">
-                                    Next
-                                    <Right theme="outline" />
+                                    <span class="flex items-center gap-2">
+                                        {{ $t('common.guide.next') }}
+                                        <Right theme="outline" />
+                                    </span>
                                 </button>
                                 <button v-else @click="completeGuide" class="btn-success">
-                                    <Check theme="outline" />
-                                    Got it!
+                                    <span class="flex items-center gap-2">
+                                        <Check theme="outline" />
+                                        {{ $t('common.guide.gotIt') }}
+                                    </span>
                                 </button>
                             </div>
                         </div>
 
                         <!-- Skip Link -->
                         <button @click="handleSkip" class="skip-link">
-                            Skip tutorial
+                            {{ $t('common.guide.skip') }}
                         </button>
                     </div>
                 </Transition>
@@ -81,12 +87,12 @@ import { Close, Info, Left, Right, Check } from '@icon-park/vue-next';
 import type { CSSProperties } from 'vue';
 
 export interface GuideStep {
-    title: string;
-    description: string;
+    title: string | (() => string);
+    description: string | (() => string);
     target?: string; // CSS selector for element to highlight
     position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
     image?: string; // Optional illustration
-    tip?: string; // Optional tip
+    tip?: string | (() => string); // Optional tip
 }
 
 interface Props {

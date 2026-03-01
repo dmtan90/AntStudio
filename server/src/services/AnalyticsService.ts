@@ -1,4 +1,5 @@
 import { Project } from '../models/Project.js';
+import { Logger } from '../utils/Logger.js';
 
 export class AnalyticsService {
     /**
@@ -11,7 +12,7 @@ export class AnalyticsService {
                 $set: { 'analytics.lastViewedAt': new Date() }
             });
         } catch (error) {
-            console.error('[AnalyticsService] Error tracking view:', error);
+            Logger.error('[AnalyticsService] Error tracking view', 'AnalyticsService', { error });
         }
     }
 
@@ -25,7 +26,7 @@ export class AnalyticsService {
                 $inc: { [field]: 1 }
             });
         } catch (error) {
-            console.error(`[AnalyticsService] Error tracking ${type}:`, error);
+            Logger.error(`[AnalyticsService] Error tracking ${type}`, 'AnalyticsService', { error });
         }
     }
 
@@ -38,7 +39,7 @@ export class AnalyticsService {
                 $set: { 'analytics.assemblyTime': timeMs }
             });
         } catch (error) {
-            console.error('[AnalyticsService] Error setting assembly time:', error);
+            Logger.error('[AnalyticsService] Error setting assembly time', 'AnalyticsService', { error });
         }
     }
 
@@ -52,7 +53,7 @@ export class AnalyticsService {
                 $inc: { [`metadata.assetUsage.${assetName.replace(/\./g, '_')}`]: 1 }
             });
         } catch (error) {
-            console.error('[AnalyticsService] Error tracking asset usage:', error);
+            Logger.error('[AnalyticsService] Error tracking asset usage', 'AnalyticsService', { error });
         }
     }
 
@@ -78,7 +79,7 @@ export class AnalyticsService {
                 }
             };
         } catch (error) {
-            console.error('[AnalyticsService] Error fetching analytics:', error);
+            Logger.error('[AnalyticsService] Error fetching analytics', 'AnalyticsService', { error });
             throw error;
         }
     }
@@ -111,7 +112,7 @@ export class AnalyticsService {
                 totalCompletedProjects: 0
             };
         } catch (error) {
-            console.error('[AnalyticsService] Error fetching global stats:', error);
+            Logger.error('[AnalyticsService] Error fetching global stats', 'AnalyticsService', { error });
             throw error;
         }
     }

@@ -2,6 +2,7 @@ import { Project } from '../models/Project.js';
 import { MarketplaceAsset } from '../models/MarketplaceAsset.js';
 import { AnalyticsEvent } from '../models/AnalyticsEvent.js';
 import { User } from '../models/User.js';
+import { Logger } from '../utils/Logger.js';
 
 export class GrowthService {
     /**
@@ -28,7 +29,7 @@ export class GrowthService {
                 }
             }
         } catch (e) {
-            console.error('SEO Metadata generation failure:', e);
+            Logger.error(`SEO Metadata generation failure: ${e}`, 'GrowthService');
         }
 
         return {
@@ -126,7 +127,7 @@ export class GrowthService {
                 keywords
             };
         } catch (error: any) {
-            console.error('[GrowthService] Failed to get global growth stats:', error.message);
+            Logger.error(`[GrowthService] Failed to get global growth stats: ${error.message}`, 'GrowthService');
             throw error;
         }
     }

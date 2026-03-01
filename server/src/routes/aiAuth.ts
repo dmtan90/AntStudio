@@ -3,6 +3,8 @@ import * as crypto from 'crypto';
 import { aiAccountManager } from '../utils/ai/AIAccountManager.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // All routes require admin authentication
@@ -26,7 +28,7 @@ router.get('/:platform', async (req: AuthRequest, res) => {
             return res.status(400).json({ success: false, error: 'redirectUri query parameter is required' });
         }
 
-        console.log(`[AI Auth] Generating ${platform} OAuth URL with redirect_uri: ${redirectUri}`);
+        Logger.info(`[AI Auth] Generating ${platform} OAuth URL with redirect_uri: ${redirectUri}`);
 
         // Generate state token
         const stateObj = {
@@ -39,7 +41,7 @@ router.get('/:platform', async (req: AuthRequest, res) => {
 
         res.json({ success: true, url, data: { url } });
     } catch (error: any) {
-        console.error('[AI Auth] Error generating auth URL:', error.message);
+        Logger.error('[AI Auth] Error generating auth URL:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -61,19 +63,19 @@ router.post('/:platform/callback', async (req: AuthRequest, res) => {
             return res.status(400).json({ success: false, error: 'Authorization code is required' });
         }
 
-        console.log(`[AI Auth] Processing ${platform} callback`);
+        Logger.info(`[AI Auth] Processing ${platform} callback`);
 
         // Exchange code for tokens
         const account = await aiAccountManager.exchangeCodeForTokens(code, redirectUri || 'postmessage');
 
         // Trigger background discovery
         aiAccountManager.discoverProjectId(account).catch(err => {
-            console.error(`[AI Auth] Deferred discovery failed for ${account.email}:`, err.message);
+            Logger.error(`[AI Auth] Deferred discovery failed for ${account.email}:`, err.message);
         });
 
         res.json({ success: true, data: account });
     } catch (error: any) {
-        console.error('[AI Auth] Callback error:', error.message);
+        Logger.error('[AI Auth] Callback error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });

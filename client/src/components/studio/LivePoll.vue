@@ -35,7 +35,7 @@ const winnerIndex = computed(() => {
             <div class="p-1.5 bg-blue-500/10 rounded shadow-inner-white">
                 <chart-histogram theme="outline" size="14" class="text-blue-400" />
             </div>
-            <h4 class="text-[10px] font-black uppercase tracking-tighter text-white/60">Live Poll</h4>
+            <h4 class="text-[10px] font-black uppercase tracking-tighter text-white/60">{{ $t('studio.interactions.livePoll') }}</h4>
         </div>
 
         <p class="text-[12px] font-bold text-white mb-4 line-clamp-2 leading-tight">
@@ -47,7 +47,7 @@ const winnerIndex = computed(() => {
                 <div class="flex justify-between text-[10px] items-center mb-1">
                     <span class="font-bold flex items-center gap-1.5">
                         {{ opt.label }}
-                        <span v-if="idx === winnerIndex && poll.totalVotes > 0" class="text-[8px] px-1 bg-green-500/20 text-green-400 rounded">Leader</span>
+                        <span v-if="idx === winnerIndex && poll.totalVotes > 0" class="text-[8px] px-1 bg-green-500/20 text-green-400 rounded">{{ $t('studio.interactions.pollLeader') }}</span>
                     </span>
                     <span class="opacity-40">{{ getPercentage(opt.votes) }}%</span>
                 </div>
@@ -61,10 +61,10 @@ const winnerIndex = computed(() => {
         </div>
 
         <div class="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-[9px] font-bold uppercase opacity-30">
-            <span>{{ poll.totalVotes }} Votes</span>
+            <span>{{ $t('studio.interactions.votes', { count: poll.totalVotes }) }}</span>
             <span class="animate-pulse flex items-center gap-1">
                 <div class="w-1 h-1 bg-blue-400 rounded-full"></div>
-                Collecting...
+                {{ $t('studio.interactions.collectingVotes') }}
             </span>
         </div>
     </div>

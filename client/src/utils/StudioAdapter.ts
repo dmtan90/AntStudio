@@ -1,6 +1,6 @@
 import type { EditorTemplate, EditorTemplatePage } from 'video-editor/types/editor';
 import { nanoid } from 'nanoid';
-import { defaultFont } from '@/views/video-editor/constants/fonts';
+import { defaultFont } from 'video-editor/constants/fonts';
 import fabric from 'fabric';
 
 export interface StudioProject {

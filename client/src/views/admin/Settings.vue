@@ -3,22 +3,22 @@
         <header class="flex flex-col md:flex-row justify-between items-end gap-6 mb-12 relative z-10">
             <div>
                 <h1 class="text-5xl font-black tracking-tighter mb-2 relative inline-block">
-                    System Core
+                    {{ t('admin.settings.title') }}
                     <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
                 </h1>
-                <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">Global AntStudio Intelligence Registry</p>
+                <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 mt-4 pl-1">{{ t('admin.settings.subtitle') }}</p>
             </div>
             <div class="flex gap-4">
                 <button @click="fetchSettings" :disabled="loading" 
                     class="px-6 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 group disabled:opacity-50">
                     <refresh theme="outline" size="14" :class="{ 'animate-spin': loading }" />
-                    Sync
+                    {{ t('admin.settings.sync') }}
                 </button>
                 <button @click="saveSettings" :disabled="saving"
                     class="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-50">
                     <save theme="outline" size="14" v-if="!saving" />
                     <loading-one theme="outline" size="14" class="animate-spin" v-else />
-                    {{ saving ? 'Committing...' : 'Save Configuration' }}
+                    {{ saving ? t('admin.settings.committing') : t('admin.settings.save') }}
                 </button>
             </div>
         </header>
@@ -31,7 +31,7 @@
                 <el-tab-pane name="license">
                     <template #label>
                         <div class="tab-label">
-                            <id-card theme="filled" size="14" /> License & Identity
+                            <id-card theme="filled" size="14" /> {{ t('admin.settings.tabs.license') }}
                         </div>
                     </template>
                     <div class="space-y-8 animate-in slide-up">
@@ -44,7 +44,7 @@
                 <el-tab-pane name="system">
                     <template #label>
                         <div class="tab-label">
-                            <server theme="filled" size="14" /> Infrastructure
+                            <server theme="filled" size="14" /> {{ t('admin.settings.tabs.system') }}
                         </div>
                     </template>
                     <div class="animate-in slide-up">
@@ -57,7 +57,7 @@
                 <el-tab-pane name="media">
                     <template #label>
                         <div class="tab-label">
-                            <play-one theme="filled" size="14" /> Media Assets
+                            <play-one theme="filled" size="14" /> {{ t('admin.settings.tabs.media') }}
                         </div>
                     </template>
                     <div class="animate-in slide-up">
@@ -69,7 +69,7 @@
                 <el-tab-pane name="ai">
                     <template #label>
                         <div class="tab-label">
-                            <brain theme="filled" size="14" /> AI Engine
+                            <brain theme="filled" size="14" /> {{ t('admin.settings.tabs.ai') }}
                         </div>
                     </template>
                     <div class="space-y-8 animate-in slide-up">
@@ -94,7 +94,7 @@
                 <el-tab-pane name="billing">
                     <template #label>
                         <div class="tab-label">
-                            <shopping-bag theme="filled" size="14" /> Commercial
+                            <shopping-bag theme="filled" size="14" /> {{ t('admin.settings.tabs.billing') }}
                         </div>
                     </template>
                     <div class="animate-in slide-up">
@@ -106,7 +106,7 @@
 
             <div v-else class="flex flex-col items-center justify-center py-32 opacity-50">
                 <loading-four theme="outline" size="40" class="animate-spin mb-4 text-blue-500" />
-                <p class="text-xs font-black uppercase tracking-widest text-gray-500">Loading System Core...</p>
+                <p class="text-xs font-black uppercase tracking-widest text-gray-500">{{ t('admin.settings.loading') }}</p>
             </div>
         </div>
 
@@ -120,6 +120,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
 import { 
@@ -137,6 +138,7 @@ import TaskDefaultsSettings from '@/components/admin/settings/TaskDefaultsSettin
 import SubscriptionSettings from '@/components/admin/settings/SubscriptionSettings.vue';
 import AIProviderTaskConfigDialog from '@/components/admin/settings/AIProviderTaskConfigDialog.vue';
 
+const { t } = useI18n()
 const adminStore = useAdminStore();
 const activeTab = ref('license');
 const loading = ref(false);
@@ -170,9 +172,9 @@ const fetchSettings = async () => {
     loading.value = true;
     try {
         await adminStore.fetchSettings();
-        toast.success("System settings synchronized");
+        toast.success(t("admin.settings.toasts.syncSuccess"));
     } catch (e) {
-        toast.error("Failed to load settings registry");
+        toast.error(t("admin.settings.toasts.syncFailed"));
     } finally {
         loading.value = false;
     }
@@ -182,9 +184,9 @@ const saveSettings = async () => {
     saving.value = true;
     try {
         await adminStore.updateSettings(settings.value);
-        toast.success("All changes committed to VTuber core");
+        toast.success(t("admin.settings.toasts.saveSuccess"));
     } catch (e) {
-        toast.error("Failed to save changes");
+        toast.error(t("admin.settings.toasts.saveFailed"));
     } finally {
         saving.value = false;
     }
@@ -219,13 +221,13 @@ const saveTaskConfig = ({ type, config }: { type: string, config: any }) => {
         selectedProvider.value.taskConfigs = {};
     }
     selectedProvider.value.taskConfigs[type] = config;
-    toast.success(`Staged ${type} protocol for ${selectedProvider.value.name}`);
+    toast.success(t('admin.settings.toasts.stagedProtocol', { type, name: selectedProvider.value.name }));
 };
 
 const removeGeminiKey = (idx: number) => {
     if (!settings.value.geminiApiKeys) return;
     settings.value.geminiApiKeys.splice(idx, 1);
-    toast.success("Key removed from pool");
+    toast.success(t('admin.settings.toasts.keyRemoved'));
 };
 
 const bulkAddGeminiKeys = (rawKeys: string) => {
@@ -249,9 +251,9 @@ const bulkAddGeminiKeys = (rawKeys: string) => {
     });
 
     if (addedCount > 0) {
-        toast.success(`Registered ${addedCount} new Gemini API keys to the AI pool`);
+        toast.success(t('admin.settings.toasts.keysRegistered', { count: addedCount }));
     } else {
-        toast.info("No new unique keys found in input");
+        toast.info(t('admin.settings.toasts.noUniqueKeys'));
     }
 };
 
@@ -261,15 +263,15 @@ const saveSessionCookies = async (cookies: { googleCookies: string, flowCookies:
     }
     settings.value.aiSettings.sessionSync.googleCookies = cookies.googleCookies;
     settings.value.aiSettings.sessionSync.flowCookies = cookies.flowCookies;
-    toast.success("Session cookies staged for commit");
+    toast.success(t('admin.settings.toasts.cookiesStaged'));
 };
 
 const syncGoogleAI = async () => {
     try {
-        toast.info("Validating and syncing session cookies...");
+        toast.info(t('admin.settings.toasts.validatingCookies'));
 
         if (!settings.value.aiSettings.sessionSync?.googleCookies && !settings.value.aiSettings.sessionSync?.flowCookies) {
-            toast.error("Please paste cookies in at least one field before syncing");
+            toast.error(t('admin.settings.toasts.noCookies'));
             return;
         }
 
@@ -287,15 +289,15 @@ const syncGoogleAI = async () => {
         const flowValid = validateCookies(settings.value.aiSettings.sessionSync?.flowCookies || '');
 
         if (!googleValid || !flowValid) {
-            toast.error("Invalid cookie format. Please paste valid JSON or cookie string.");
+            toast.error(t('admin.settings.toasts.invalidCookies'));
             return;
         }
 
         await adminStore.updateSettings(settings.value);
-        toast.success("✅ Session cookies synced successfully!");
+        toast.success(t('admin.settings.toasts.syncCookiesSuccess'));
     } catch (error: any) {
         console.error('Sync error:', error);
-        toast.error(`Sync failed: ${error.message}`);
+        toast.error(t('admin.settings.toasts.syncCookiesFailed', { error: error.message }));
     }
 };
 

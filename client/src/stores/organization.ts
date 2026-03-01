@@ -89,6 +89,19 @@ export const useOrganizationStore = defineStore('organization', () => {
         }
     }
 
+    async function cancelInvite(invitationId: string) {
+        try {
+            await api.delete(`/organizations/invitations/${invitationId}`)
+            toast.success('Invitation revoked')
+            if (activeOrg.value) {
+                await fetchInvitations(activeOrg.value._id)
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to revoke invitation')
+            throw error
+        }
+    }
+
     return {
         organizations,
         activeOrg,
@@ -100,6 +113,7 @@ export const useOrganizationStore = defineStore('organization', () => {
         sendInvite,
         acceptInvite,
         registerOwner,
-        acceptInviteByToken
+        acceptInviteByToken,
+        cancelInvite
     }
 })

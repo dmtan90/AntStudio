@@ -2,15 +2,14 @@
     <div class="organization-view p-6 max-w-7xl mx-auto animate-in">
         <header class="page-header flex justify-between items-center mb-10">
             <div>
-                <h1 class="text-3xl font-black uppercase tracking-tighter">Team Management</h1>
+                <h1 class="text-3xl font-black uppercase tracking-tighter">{{ t('organization.title') }}</h1>
                 <p class="text-xs font-bold opacity-40 uppercase tracking-widest mt-1" v-if="activeOrg">
-                    Orchestrating {{ activeOrg.name }} Intelligence Unit
+                    {{ t('organization.subtitle', { name: activeOrg.name }) }}
                 </p>
             </div>
             <div class="flex gap-4">
-                <el-button @click="fetchOrganizations" :loading="loading" class="glass-btn">Sync Teams</el-button>
-                <el-button type="primary" @click="showCreateDialog = true" class="create-btn px-8">Establish New
-                    Team</el-button>
+                <el-button @click="fetchOrganizations" :loading="loading" class="glass-btn">{{ t('organization.actions.sync') }}</el-button>
+                <el-button type="primary" @click="showCreateDialog = true" class="create-btn px-8">{{ t('organization.actions.create') }}</el-button>
             </div>
         </header>
 
@@ -20,10 +19,9 @@
                 <el-card class="member-card cinematic-panel">
                     <template #header>
                         <div class="flex justify-between items-center">
-                            <span class="text-xs font-black uppercase tracking-widest opacity-60">VTuber Members
-                                Registry</span>
+                            <span class="text-xs font-black uppercase tracking-widest opacity-60">{{ t('organization.members.title') }}</span>
                             <el-button type="primary" plain bg round size="small"
-                                @click="showInviteDialog = true">Invite Specialist</el-button>
+                                @click="showInviteDialog = true">{{ t('organization.members.invite') }}</el-button>
                         </div>
                     </template>
 
@@ -34,21 +32,17 @@
                                 <el-avatar :size="40" class="border border-white/10" />
                                 <div>
                                     <p class="text-sm font-bold">{{ member.userId }}</p>
-                                    <p class="text-[10px] opacity-40 uppercase font-black">{{ member.role }}</p>
+                                    <p class="text-[10px] opacity-40 uppercase font-black">{{ t('organization.roles.' + member.role) }}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <span class="text-[10px] opacity-30 italic">Joined {{ new
-                                    Date(member.joinedAt).toLocaleDateString()
-                                }}</span>
+                                <span class="text-[10px] opacity-30 italic">{{ t('organization.members.joined', { date: formatDate(member.joinedAt) }) }}</span>
                                 <el-dropdown trigger="click" @command="(cmd) => handleMemberAction(cmd, member)">
                                     <button class="icon-btn-sm"><more-one theme="outline" size="14" /></button>
                                     <template #dropdown>
                                         <el-dropdown-menu>
-                                            <el-dropdown-item command="change-role">Modify Access
-                                                Level</el-dropdown-item>
-                                            <el-dropdown-item command="remove" class="text-red-500">Revoke
-                                                Membership</el-dropdown-item>
+                                            <el-dropdown-item command="change-role">{{ t('organization.members.actions.modifyAccess') }}</el-dropdown-item>
+                                            <el-dropdown-item command="remove" class="text-red-500">{{ t('organization.members.actions.revoke') }}</el-dropdown-item>
                                         </el-dropdown-menu>
                                     </template>
                                 </el-dropdown>
@@ -60,8 +54,7 @@
                 <!-- Pending Invitations -->
                 <el-card v-if="pendingInvites.length > 0" class="member-card cinematic-panel">
                     <template #header>
-                        <span class="text-xs font-black uppercase tracking-widest opacity-60">Pending Tactical
-                            Commissions</span>
+                        <span class="text-xs font-black uppercase tracking-widest opacity-60">{{ t('organization.invitations.pending') }}</span>
                     </template>
                     <div class="cinematic-table">
                         <div v-for="invite in pendingInvites" :key="invite._id"
@@ -73,16 +66,14 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold">{{ invite.email }}</p>
-                                    <p class="text-[10px] opacity-40 uppercase font-black">{{ invite.role }} (Pending)
+                                    <p class="text-[10px] opacity-40 uppercase font-black">{{ t('organization.roles.' + invite.role) }} ({{ t('organization.invitations.status.pending') }})
                                     </p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <span class="text-[10px] opacity-30 italic">Expires {{ new
-                                    Date(invite.expiresAt).toLocaleDateString()
-                                }}</span>
+                                <span class="text-[10px] opacity-30 italic">{{ t('organization.invitations.expires', { date: formatDate(invite.expiresAt) }) }}</span>
                                 <button
-                                    class="text-[10px] text-red-500 font-black uppercase hover:underline">Revoke</button>
+                                    class="text-[10px] text-red-500 font-black uppercase hover:underline" @click="orgStore.cancelInvite(invite._id)">{{ t('common.revoke') }}</button>
                             </div>
                         </div>
                     </div>
@@ -94,7 +85,7 @@
                 <!-- Organization Switcher if multiple -->
                 <el-card v-if="organizations.length > 1" class="stat-card cinematic-panel">
                     <template #header>
-                        <span class="text-xs font-black uppercase tracking-widest opacity-60">Active Context</span>
+                        <span class="text-xs font-black uppercase tracking-widest opacity-60">{{ t('organization.sidebar.activeContext') }}</span>
                     </template>
                     <div class="p-2">
                         <el-select v-model="activeOrg._id" @change="handleOrgSwitch" class="w-full">
@@ -106,7 +97,7 @@
                 <!-- Seat Usage -->
                 <el-card class="stat-card cinematic-panel">
                     <template #header>
-                        <span class="text-xs font-black uppercase tracking-widest opacity-60">Intelligence Seats</span>
+                        <span class="text-xs font-black uppercase tracking-widest opacity-60">{{ t('organization.sidebar.seats.title') }}</span>
                     </template>
                     <div class="p-4 text-center">
                         <el-progress type="dashboard"
@@ -114,23 +105,23 @@
                             :color="activeOrg.branding?.primaryColor || '#3b82f6'" :stroke-width="12" />
                         <p class="text-2xl font-black mt-4">{{ activeOrg.members.length }} / {{
                             activeOrg.settings.maxMembers }}</p>
-                        <p class="text-[9px] opacity-40 uppercase font-black mt-1">Specialists Engaged</p>
+                        <p class="text-[9px] opacity-40 uppercase font-black mt-1">{{ t('organization.sidebar.seats.engaged') }}</p>
                     </div>
                 </el-card>
 
                 <!-- Org Branding Quick Actions -->
                 <el-card class="stat-card cinematic-panel">
                     <template #header>
-                        <span class="text-xs font-black uppercase tracking-widest opacity-60">Identity Shield</span>
+                        <span class="text-xs font-black uppercase tracking-widest opacity-60">{{ t('organization.sidebar.identity.title') }}</span>
                     </template>
                     <div class="space-y-4">
                         <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-                            <span class="text-[10px] font-bold uppercase">Public Discovery</span>
+                            <span class="text-[10px] font-bold uppercase">{{ t('organization.sidebar.identity.discovery') }}</span>
                             <el-switch v-model="activeOrg.settings.publicDiscovery" />
                         </div>
                         <div
                             class="flex justify-between items-center bg-white/5 p-3 rounded-xl text-blue-400 cursor-pointer hover:bg-white/10">
-                            <span class="text-[10px] font-bold uppercase">Customize Graphics</span>
+                            <span class="text-[10px] font-bold uppercase">{{ t('organization.sidebar.identity.customize') }}</span>
                             <graphic-design theme="outline" size="14" />
                         </div>
                     </div>
@@ -141,66 +132,64 @@
         <!-- Empty State -->
         <div v-else-if="!loading" class="empty-state py-20 text-center glass-card border-dashed">
             <peoples theme="outline" size="48" class="mx-auto mb-4 opacity-20" />
-            <h2 class="text-xl font-bold">No High-Level Teams Found</h2>
-            <p class="opacity-40 text-sm max-w-md mx-auto mt-2">Establish your first organization to invite
-                collaborators and
-                orchestrate multi-agent studio sessions.</p>
+            <h2 class="text-xl font-bold">{{ t('organization.empty.title') }}</h2>
+            <p class="opacity-40 text-sm max-w-md mx-auto mt-2">{{ t('organization.empty.desc') }}</p>
         </div>
 
         <!-- Dialog: Create Organization -->
-        <el-dialog v-model="showCreateDialog" title="Project Intelligence Setup" width="500px" class="glass-dialog">
+        <el-dialog v-model="showCreateDialog" :title="t('organization.dialogs.create.title')" width="500px" class="glass-dialog">
             <el-form label-position="top" :model="createForm">
-                <el-form-item label="Organization Name">
-                    <el-input v-model="createForm.name" :placeholder="'e.g. ' + uiStore.appName + ' Labs'" class="glass-input" />
+                <el-form-item :label="t('organization.dialogs.create.fields.name')">
+                    <el-input v-model="createForm.name" :placeholder="t('organization.dialogs.create.placeholders.name', { appName: uiStore.appName })" class="glass-input" />
                 </el-form-item>
-                <el-form-item label="Entity Identifier (Slug)">
-                    <el-input v-model="createForm.slug" placeholder="labs" class="glass-input">
-                        <template #prepend>{{ uiStore.domain.replace('https://', '').replace('http://', '') }}/org/</template>
+                <el-form-item :label="t('organization.dialogs.create.fields.slug')">
+                    <el-input v-model="createForm.slug" :placeholder="t('organization.dialogs.create.placeholders.slug')" class="glass-input">
+                        <!-- <template #prepend>{{ uiStore.domain.replace('https://', '').replace('http://', '') }}/org/</template> -->
                     </el-input>
                 </el-form-item>
-                <el-form-item label="Strategic Mission (Description)">
+                <el-form-item :label="t('organization.dialogs.create.fields.description')">
                     <el-input v-model="createForm.description" type="textarea"
-                        placeholder="Describe the focus of this unit..." class="glass-input" />
+                        :placeholder="t('organization.dialogs.create.placeholders.description')" class="glass-input" />
                 </el-form-item>
             </el-form>
             <template #footer>
-                <el-button @click="showCreateDialog = false" class="glass-btn">Cancel</el-button>
-                <el-button type="primary" @click="handleCreate" :loading="creating" class="create-btn">Initialize
-                    Core</el-button>
+                <el-button @click="showCreateDialog = false" class="glass-btn">{{ t('common.cancel') }}</el-button>
+                <el-button type="primary" @click="handleCreate" :loading="creating" class="create-btn">{{ t('organization.dialogs.create.submit') }}</el-button>
             </template>
         </el-dialog>
 
         <!-- Dialog: Invite Member -->
-        <el-dialog v-model="showInviteDialog" title="Recruit New Specialist" width="500px" class="glass-dialog">
+        <el-dialog v-model="showInviteDialog" :title="t('organization.dialogs.invite.title')" width="500px" class="glass-dialog">
             <el-form label-position="top" :model="inviteForm">
-                <el-form-item label="Specialist Email">
-                    <el-input v-model="inviteForm.email" :placeholder="'e.g. agent@' + uiStore.appName.toLowerCase().replace(/\s+/g, '') + '.ai'" class="glass-input" />
+                <el-form-item :label="t('organization.dialogs.invite.fields.email')">
+                    <el-input v-model="inviteForm.email" :placeholder="t('organization.dialogs.invite.placeholders.email', { domain: uiStore.appName.toLowerCase().replace(/\s+/g, '') })" class="glass-input" />
                 </el-form-item>
-                <el-form-item label="Access Level">
-                    <el-select v-model="inviteForm.role" placeholder="Select role" class="glass-input">
-                        <el-option label="Producer" value="producer" />
-                        <el-option label="Editor" value="editor" />
-                        <el-option label="Synthesizer" value="synthesizer" />
+                <el-form-item :label="t('organization.dialogs.invite.fields.role')">
+                    <el-select v-model="inviteForm.role" :placeholder="t('organization.dialogs.invite.placeholders.role')" class="glass-input">
+                        <el-option :label="t('organization.roles.producer')" value="producer" />
+                        <el-option :label="t('organization.roles.editor')" value="editor" />
+                        <el-option :label="t('organization.roles.synthesizer')" value="synthesizer" />
                     </el-select>
                 </el-form-item>
             </el-form>
             <template #footer>
-                <el-button @click="showInviteDialog = false" class="glass-btn">Cancel</el-button>
-                <el-button type="primary" @click="handleInvite" :loading="inviting" class="create-btn">Dispatch
-                    Invitation</el-button>
+                <el-button @click="showInviteDialog = false" class="glass-btn">{{ t('common.cancel') }}</el-button>
+                <el-button type="primary" @click="handleInvite" :loading="inviting" class="create-btn">{{ t('organization.dialogs.invite.submit') }}</el-button>
             </template>
         </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useUIStore } from '@/stores/ui';
 import { Peoples, MoreOne, GraphicDesign, Mail } from '@icon-park/vue-next';
 import { useOrganizationStore } from '@/stores/organization';
 import { storeToRefs } from 'pinia';
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const uiStore = useUIStore();
 
 const creators = ref<any[]>([]); // local creators if needed, or from store
@@ -264,11 +253,20 @@ const handleInvite = async () => {
 const handleOrgSwitch = (orgId: string) => {
     activeOrg.value = organizations.value.find((o: any) => o._id === orgId);
     orgStore.fetchInvitations(orgId);
-    toast.info(`Context switched to ${activeOrg.value?.name}`);
+    toast.info(t('organization.toasts.switched', { name: activeOrg.value?.name }));
 };
 
 const handleMemberAction = (cmd: string, member: any) => {
-    toast.info(`Executing Action: ${cmd} on specialist ${member.userId}`);
+    toast.info(t('organization.toasts.actionExecuted', { cmd, user: member.userId }));
+};
+
+const formatDate = (date: string) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString(t('common.locale') === 'vi' ? 'vi-VN' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
 };
 
 onMounted(fetchOrganizations);

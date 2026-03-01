@@ -1,3 +1,4 @@
+import { Logger } from '../utils/Logger.js';
 // import { Router } from 'express';
 // import { Template } from '../models/Template.js';
 // import { authMiddleware, AuthRequest } from '../middleware/auth.js';
@@ -20,14 +21,14 @@
 
 //         // 2. If empty, sync from Zocket
 //         if (count === 0) {
-//             console.log('Template DB empty, syncing from Zocket...');
+//             Logger.info('Template DB empty, syncing from Zocket...');
 //             try {
 //                 // Fetch all templates (or a large batch) to populate DB
 //                 const zocketUrl = `${ZOCKET_API_TEMPLATES}?is_published=true&page=0&limit=1000`; // Initial sync limit
 //                 const response = await fetch(zocketUrl);
 
 //                 if (!response.ok) {
-//                     console.error(`Failed to fetch from Zocket: ${response.status}`);
+//                     Logger.error(`Failed to fetch from Zocket: ${response.status}`);
 //                 } else {
 //                     const data: any = await response.json();
 //                     if (data.data && Array.isArray(data.data.templates)) {
@@ -36,7 +37,7 @@
 //                             try {
 //                                 pages = typeof t.pages === 'string' ? JSON.parse(t.pages) : t.pages;
 //                             } catch (e) {
-//                                 console.warn(`Failed to parse pages for template ${t.id}`, e);
+//                                 Logger.warn(`Failed to parse pages for template ${t.id}`, e);
 //                             }
 //                             return {
 //                                 id: t.id + "_zocket",
@@ -57,11 +58,11 @@
 //                             };
 //                         });
 //                         await Template.insertMany(templatesToSave);
-//                         console.log(`Synced ${templatesToSave.length} templates from Zocket`);
+//                         Logger.info(`Synced ${templatesToSave.length} templates from Zocket`);
 //                     }
 //                 }
 //             } catch (error) {
-//                 console.error('Error syncing templates from Zocket:', error);
+//                 Logger.error('Error syncing templates from Zocket:', error);
 //             }
 //         }
 

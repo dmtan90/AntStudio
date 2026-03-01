@@ -20,13 +20,13 @@
 
         <div class="rail-item" :class="{ active: activeTab === 'vibe' }" @click="$emit('update:activeTab', 'vibe')">
             <heart theme="outline" size="20" />
-            <span class="label">Vibe</span>
+            <span class="label">{{ $t('studio.rail.vibe') }}</span>
         </div>
 
         <div class="rail-item" :class="{ active: activeTab === 'resources' }"
             @click="$emit('update:activeTab', 'resources')">
             <folder-open theme="outline" size="20" />
-            <span class="label">Assets</span>
+            <span class="label">{{ $t('studio.rail.assets') }}</span>
         </div>
 
         <!-- <div class="rail-item" :class="{ active: activeTab === 'guests' }" @click="$emit('update:activeTab', 'guests')"
@@ -38,7 +38,7 @@
         <div class="rail-item" :class="{ active: activeTab === 'collaboration' }"
             @click="$emit('update:activeTab', 'collaboration')">
             <connection-point theme="outline" size="20" />
-            <span class="label">Co-Hosts</span>
+            <span class="label">{{ $t('studio.rail.coHosts') }}</span>
         </div>
     </aside>
 </template>

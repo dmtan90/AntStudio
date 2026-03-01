@@ -24,7 +24,7 @@
          <div v-if="activeTab === 'inventory'">
             <button @click="handleAdd" class="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black shadow-lg shadow-blue-500/20 hover:scale-105 transition-all flex items-center gap-2 group">
                <plus theme="outline" size="18" />
-               <span class="uppercase tracking-wide text-xs">Add Product</span>
+               <span class="uppercase tracking-wide text-xs">{{ t('merchant.actions.addProduct') }}</span>
             </button>
          </div>
       </div>
@@ -81,9 +81,10 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { Shopping, Plus, Cube, ChartPie } from '@icon-park/vue-next';
 import { useMarketplaceStore } from '@/stores/marketplace';
-import ProductEditDialog from '@/components/studio/dialogs/ProductEditDialog.vue';
-import ProductAdDialog from '@/components/studio/dialogs/ProductAdDialog.vue';
-import ProductPreviewDialog from '@/components/studio/dialogs/ProductPreviewDialog.vue';
+import ProductEditDialog from '@/components/merchant/dialogs/ProductEditDialog.vue';
+import ProductAdDialog from '@/components/merchant/dialogs/ProductAdDialog.vue';
+import ProductPreviewDialog from '@/components/merchant/dialogs/ProductPreviewDialog.vue';
+import { useI18n } from 'vue-i18n';
 
 // Refactored Components
 import MerchantHeader from '@/components/merchant/MerchantHeader.vue';
@@ -93,14 +94,15 @@ import MerchantAnalytics from '@/components/merchant/MerchantAnalytics.vue';
 
 import { ElMessageBox } from 'element-plus';
 
+const { t } = useI18n()
 const marketplaceStore = useMarketplaceStore();
 
 const activeTab = ref('inventory');
-const tabs = [
-   { id: 'inventory', label: 'Product Inventory', icon: Cube },
-   { id: 'orders', label: 'Recent Orders', icon: Shopping },
-   { id: 'analytics', label: 'Performance Analytics', icon: ChartPie },
-];
+const tabs = computed(() => [
+   { id: 'inventory', label: t('merchant.tabs.inventory'), icon: Cube },
+   { id: 'orders', label: t('merchant.tabs.orders'), icon: Shopping },
+   { id: 'analytics', label: t('merchant.tabs.analytics'), icon: ChartPie },
+]);
 
 const loading = ref(true);
 const orders = ref<any[]>([]);
@@ -127,7 +129,8 @@ const fetchData = async () => {
                 product: o.productName,
                 amount: `${o.currency} ${o.amount}`,
                 source: o.source,
-                status: o.status.charAt(0).toUpperCase() + o.status.slice(1)
+                status_raw: o.status,
+                status: t(`merchant.orders.statuses.${o.status?.toLowerCase()}`)
             }));
         } else if (activeTab.value === 'inventory') {
             await marketplaceStore.fetchProducts();
@@ -160,11 +163,11 @@ const handleEdit = (p: any) => {
 const handleDelete = async (p: any) => {
   try {
     await ElMessageBox.confirm(
-      `Are you sure you want to delete ${p.name}?`,
-      'Delete Product',
+      t('merchant.confirmDelete.message', { name: p.name }),
+      t('merchant.confirmDelete.title'),
       {
-        confirmButtonText: 'Delete',
-        cancelButtonText: 'Cancel',
+        confirmButtonText: t('common.delete'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
         customClass: 'glass-message-box'
       }

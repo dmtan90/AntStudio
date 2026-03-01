@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import config from './config.js';
 import { clusterManager } from './ClusterManager.js';
+import { Logger } from './Logger.js';
 
 let isConnected = false;
 
@@ -13,9 +14,9 @@ export const connectDB = async () => {
     try {
         await clusterManager.connect();
         isConnected = true;
-        console.log(`✅ Global Database Cluster connected successfully (State: ${mongoose.connection.readyState})`);
+        Logger.info(`✅ Global Database Cluster connected successfully (State: ${mongoose.connection.readyState})`, 'Database');
     } catch (error) {
-        console.error('❌ Database Cluster connection failed:', error);
+        Logger.error('❌ Database Cluster connection failed', 'Database', { error });
         throw error;
     }
 };

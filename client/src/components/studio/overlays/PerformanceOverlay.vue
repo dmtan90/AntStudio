@@ -39,7 +39,7 @@
           circle
           text
           size="small"
-          title="Toggle Lyrics"
+          :title="$t('studio.common.toggleLyrics')"
         />
         
          <el-button
@@ -48,7 +48,7 @@
           circle
           type="danger"
           size="small"
-          title="Stop Performance"
+          :title="$t('studio.common.stopPerformance')"
         />
     </div>
   </div>

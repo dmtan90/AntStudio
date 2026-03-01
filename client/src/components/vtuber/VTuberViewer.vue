@@ -17,7 +17,7 @@
         <!-- Empty State -->
         <div v-else class="w-full h-full flex flex-col items-center justify-center text-white/30 bg-[#050505]">
             <box theme="outline" size="48" class="mb-2 opacity-50" />
-            <span class="text-xs font-mono uppercase tracking-widest">No Model Loaded</span>
+            <span class="text-xs font-mono uppercase tracking-widest">{{ $t('vtubers.viewer.noModel') }}</span>
         </div>
 
         <!-- Unified Controls Overlay -->
@@ -25,10 +25,10 @@
             <button 
                 @click="resetView" 
                 class="p-2 bg-black/60 hover:bg-black/80 text-white rounded-lg backdrop-blur-md transition-colors border border-white/10 shadow-lg flex items-center gap-2"
-                title="Reset Camera View (Auto Fit)"
+                :title="$t('vtubers.viewer.resetViewTooltip')"
             >
                 <full-screen theme="outline" size="16" />
-                <span class="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Reset</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">{{ $t('vtubers.viewer.reset') }}</span>
             </button>
         </div>
     </div>
@@ -36,10 +36,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Box, FullScreen } from '@icon-park/vue-next';
 import VRMViewer from './VRMViewer.vue';
 import Live2DViewer from './Live2DViewer.vue';
 import StaticPhotoViewer from './StaticPhotoViewer.vue';
+
+const { t } = useI18n();
 
 defineOptions({
     inheritAttrs: false

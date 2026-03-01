@@ -4,17 +4,17 @@
     <div class="lg:col-span-2 glass-panel p-6">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">Viral Growth</h3>
-          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Historical views vs Likes (Last 14 Days)</p>
+          <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">{{ $t('studio.analytics.viralGrowth') }}</h3>
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ $t('studio.analytics.historicalViews') }}</p>
         </div>
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-            <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Views</span>
+            <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">{{ $t('projects.publish.viewers') }}</span>
           </div>
           <div class="flex items-center gap-2">
             <div class="w-2 h-2 rounded-full bg-purple-500"></div>
-            <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Likes</span>
+            <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">{{ $t('studio.analytics.avgLikes') }}</span>
           </div>
         </div>
       </div>
@@ -27,15 +27,15 @@
     <!-- Platform Share (Doughnut Chart) -->
     <div class="glass-panel p-6">
       <div class="mb-6">
-        <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">Platform Share</h3>
-        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Syndication footprint distribution</p>
+        <h3 class="text-sm font-black uppercase tracking-widest text-gray-400">{{ $t('studio.analytics.platformShare') }}</h3>
+        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{{ $t('studio.analytics.syndicationFootprint') }}</p>
       </div>
       
       <div class="h-[240px] relative flex items-center justify-center">
         <Doughnut :data="doughnutChartData" :options="doughnutChartOptions" />
         <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <div class="text-2xl font-black text-white">{{ stats.totalViews > 1000 ? (stats.totalViews/1000).toFixed(1) + 'K' : stats.totalViews }}</div>
-          <div class="text-[9px] font-black uppercase tracking-widest text-gray-600">Total Reach</div>
+          <div class="text-[9px] font-black uppercase tracking-widest text-gray-600">{{ $t('studio.analytics.totalReach') }}</div>
         </div>
       </div>
 
@@ -51,6 +51,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -77,6 +78,8 @@ ChartJS.register(
   Filler
 );
 
+const { t } = useI18n();
+
 const props = defineProps<{
   stats: {
     platformDistribution: Record<string, number>;
@@ -99,7 +102,7 @@ const lineChartData = computed(() => ({
   labels: props.stats.timeline.map(t => new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
   datasets: [
     {
-      label: 'Views',
+      label: t('projects.publish.viewers'),
       data: props.stats.timeline.map(t => t.views),
       borderColor: '#3b82f6',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -110,7 +113,7 @@ const lineChartData = computed(() => ({
       borderWidth: 2
     },
     {
-      label: 'Likes',
+      label: t('studio.analytics.likes'),
       data: props.stats.timeline.map(t => t.likes),
       borderColor: '#a855f7',
       backgroundColor: 'rgba(168, 85, 247, 0.1)',

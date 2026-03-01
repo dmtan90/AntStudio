@@ -2,12 +2,12 @@
   <div class="success-page">
     <el-result
       icon="success"
-      title="Payment Successful!"
-      sub-title="Your subscription has been updated. You can now enjoy your premium features."
+      :title="t('paymentSuccess.title')"
+      :sub-title="t('paymentSuccess.subtitle')"
     >
       <template #extra>
-        <el-button type="primary" @click="router.push('/dashboard')">Go to Dashboard</el-button>
-        <el-button @click="router.push('/subscription')">View My Subscription</el-button>
+        <el-button type="primary" @click="router.push('/dashboard')">{{ t('common.returnDashboard') }}</el-button>
+        <el-button @click="router.push('/subscription')">{{ t('paymentSuccess.viewSubscription') }}</el-button>
       </template>
     </el-result>
   </div>
@@ -15,6 +15,9 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n()
 const router = useRouter()
 </script>
 

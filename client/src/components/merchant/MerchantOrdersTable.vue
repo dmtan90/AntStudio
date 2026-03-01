@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { Broadcast, VideoFile } from '@icon-park/vue-next';
+
+const { t } = useI18n();
 
 defineProps<{
     orders: any[];
@@ -17,13 +20,13 @@ defineProps<{
          <table class="w-full text-left border-collapse">
             <thead class="bg-white/5 text-[10px] font-black uppercase text-gray-500 tracking-wider">
                <tr>
-                  <th class="p-6 font-black">Order ID</th>
-                  <th class="p-6 font-black">Customer</th>
-                  <th class="p-6 font-black">Product</th>
-                  <th class="p-6 font-black">Amount</th>
-                  <th class="p-6 font-black">Source</th>
-                  <th class="p-6 font-black">Status</th>
-                  <th class="p-6 font-black text-right">Actions</th>
+                  <th class="p-6 font-black">{{ $t('merchant.orders.table.orderId') }}</th>
+                  <th class="p-6 font-black">{{ $t('merchant.orders.table.customer') }}</th>
+                  <th class="p-6 font-black">{{ $t('merchant.orders.table.product') }}</th>
+                  <th class="p-6 font-black">{{ $t('merchant.orders.table.amount') }}</th>
+                  <th class="p-6 font-black">{{ $t('merchant.orders.table.source') }}</th>
+                  <th class="p-6 font-black">{{ $t('merchant.orders.table.status') }}</th>
+                  <th class="p-6 font-black text-right">{{ $t('merchant.orders.table.actions') }}</th>
                </tr>
             </thead>
             <tbody class="text-xs divide-y divide-white/5">
@@ -43,14 +46,14 @@ defineProps<{
                      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/5 border border-white/5">
                         <broadcast v-if="ord.source === 'live'" size="12" class="text-red-500" />
                         <video-file v-else size="12" class="text-blue-500" />
-                        <span class="text-[10px] uppercase font-bold text-gray-400">{{ ord.source === 'live' ? 'Live Stream' : 'Video' }}</span>
+                        <span class="text-[10px] uppercase font-bold text-gray-400">{{ ord.source === 'live' ? $t('merchant.orders.sources.live') : $t('merchant.orders.sources.video') }}</span>
                      </div>
                   </td>
                   <td class="p-6">
-                     <span class="status-badge" :class="ord.status.toLowerCase()">{{ ord.status }}</span>
+                     <span class="status-badge" :class="ord.status_raw?.toLowerCase()">{{ t(`merchant.orders.statuses.${ord.status_raw?.toLowerCase()}`) }}</span>
                   </td>
                   <td class="p-6 text-right">
-                     <button class="text-gray-500 hover:text-white transition-colors font-bold text-[10px] uppercase tracking-wider">Details</button>
+                     <button class="text-gray-500 hover:text-white transition-colors font-bold text-[10px] uppercase tracking-wider">{{ $t('merchant.orders.details') }}</button>
                   </td>
                </tr>
             </tbody>

@@ -102,7 +102,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { useProjectStore } from '@/stores/project'
 import { storeToRefs } from 'pinia'
 
@@ -122,7 +122,7 @@ import ProjectPresentationSetup from '@/components/projects/new/ProjectPresentat
 import ProjectLiveStreamSetup from '@/components/projects/new/ProjectLiveStreamSetup.vue'
 import { onMounted } from 'vue'
 
-const { t } = useTranslations()
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -134,7 +134,7 @@ const mode = computed(() => route.query.mode as string || 'chat')
 // Clone Mode Logic
 onMounted(() => {
   if (route.query.mode === 'clone') {
-    prompt.value = "I want to create a video similar to this style: [Paste URL here]. Requirements: "
+    prompt.value = t('projects.new.clonePrompt')
     // Auto-focus the input after a short delay
     setTimeout(() => {
       chatInputRef.value?.focus()
@@ -174,13 +174,13 @@ const messages = ref<ChatMessage[]>([])
 const abortController = ref<AbortController | null>(null)
 const lastInput = reactive({ prompt: '', files: [] as File[] })
 
-const quickSuggestions = [
-  'Create a 30s marketing ad',
-  'Write a short film script',
-  'Convert @script into a video',
-  'Clone style from @reference',
-  'MC presentation for report data'
-]
+const quickSuggestions = computed(() => [
+  t('projects.new.suggestions.marketing'),
+  t('projects.new.suggestions.script'),
+  t('projects.new.suggestions.convert'),
+  t('projects.new.suggestions.clone'),
+  t('projects.new.suggestions.presentation')
+])
 
 // Form Data
 const form = reactive({
@@ -323,7 +323,7 @@ const startAnalysis = async (stage: string = 'script', script?: string, analysis
 
   const userMessageCount = messages.value.filter(m => m.author === 'user').length
   if (userMessageCount <= 1) {
-    const isScript = prompt.value.toLowerCase().includes('phim') || prompt.value.toLowerCase().includes('kịch bản') || selectedFiles.value.length > 0
+    const isScript = prompt.value.toLowerCase().includes('script') || prompt.value.toLowerCase().includes('movie') || selectedFiles.value.length > 0
     const key = isScript ? 'script' : 'topic'
 
     const greeting = `
@@ -407,7 +407,7 @@ const startAnalysis = async (stage: string = 'script', script?: string, analysis
     }
   } catch (error: any) {
     if (error.name === 'AbortError') return
-    toast.error(error.response?.data?.message || 'AI Analysis failed')
+    toast.error(error.response?.data?.message || t('projects.new.toasts.analysisFailed'))
   } finally {
     scrollToBottom()
   }
@@ -426,7 +426,7 @@ async function finalizeProject(previewData: any) {
   creating.value = true
   projectStore.isProcessing = true
   try {
-    const title = form.title || previewData.creativeBrief?.title || 'Project ' + new Date().toLocaleDateString()
+    const title = form.title || previewData.creativeBrief?.title || t('projects.new.projectPrefix') + new Date().toLocaleDateString()
 
     const projectRes = await projectStore.createProject({
       title, aspectRatio: form.aspectRatio, videoStyle: form.videoStyle, targetDuration: form.targetDuration
@@ -493,12 +493,12 @@ async function finalizeProject(previewData: any) {
       ]
     }, project._id)
 
-    toast.success('Project created!')
+    toast.success(t('projects.new.toasts.created'))
     selectedFiles.value = []
     hasResults.value = false
     router.push({name: "project-editor", params: {id: project._id}});
   } catch (error: any) {
-    toast.error('Failed to create project')
+    toast.error(t('projects.new.toasts.createFailed'))
   } finally {
     projectStore.isProcessing = false
   }
@@ -511,7 +511,7 @@ function resetFlow() {
   selectedFiles.value = []
   lastInput.prompt = ''
   lastInput.files = []
-  toast.success('Chat memory and project state reset.')
+  toast.success(t('projects.new.toasts.resetSuccess'))
 }
 
 

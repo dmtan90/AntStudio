@@ -5,7 +5,7 @@
         <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md z-50">
             <div class="flex flex-col items-center gap-4">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Neural Puppet Analyzing</span>
+                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">{{ $t('vtubers.neuralLinkEstablishing') }}</span>
             </div>
         </div>
 

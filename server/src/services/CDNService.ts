@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Logger } from '../utils/Logger.js';
 
 /**
  * Service to manage global content delivery (CDN).
@@ -33,7 +34,7 @@ export const cdnService = {
             return `${targetUrl}?Expires=${expires}&Signature=${signature}&Key-Pair-Id=${this.keyPairId}`;
 
         } catch (error) {
-            console.warn("[CDNService] Signing failed, falling back to origin:", error);
+            Logger.warn(`[CDNService] Signing failed, falling back to origin: ${error}`, 'CDNService');
             return rawUrl;
         }
     },
@@ -49,7 +50,7 @@ export const cdnService = {
      * Invalidates cache for a specific set of paths.
      */
     async invalidatePaths(paths: string[]) {
-        console.log(`[CDNService] Requesting invalidation for ${paths.length} paths on Edge network`);
+        Logger.info(`[CDNService] Requesting invalidation for ${paths.length} paths on Edge network`, 'CDNService');
         // Logic to call CloudFront.createInvalidation
     }
 };

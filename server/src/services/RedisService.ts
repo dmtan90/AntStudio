@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 import { NodeHeartbeat } from '../models/NodeHeartbeat.js';
 
 /**
@@ -41,22 +41,22 @@ export class RedisService {
             this.client.on('error', (err: any) => {
                 // Log only once per disconnect to avoid spam
                 if (this.client?.status === 'ready') {
-                    systemLogger.error(`[Redis] Connection Error: ${err.message}`, 'RedisService');
+                    Logger.error(`[Redis] Connection Error: ${err.message}`, 'RedisService');
                 }
             });
 
             this.client.on('connect', () => {
-                systemLogger.info(`[Redis] Connecting to cluster state...`, 'RedisService');
+                Logger.info(`[Redis] Connecting to cluster state...`, 'RedisService');
             });
 
             this.client.on('ready', () => {
-                systemLogger.info(`[Redis] Connected and Ready.`, 'RedisService');
+                Logger.info(`[Redis] Connected and Ready.`, 'RedisService');
             });
 
             // Start heartbeat
             this.startHeartbeat();
         } catch (error: any) {
-            systemLogger.error(`[Redis] Failed to initialize: ${error.message}`, 'RedisService');
+            Logger.error(`[Redis] Failed to initialize: ${error.message}`, 'RedisService');
         }
     }
 
@@ -122,7 +122,7 @@ export class RedisService {
                 return JSON.parse(cached);
             }
         } catch (err) {
-            systemLogger.warn(`[Redis] Cache miss/error for ${key}, fetching fresh properly.`, 'RedisService');
+            Logger.warn(`[Redis] Cache miss/error for ${key}, fetching fresh properly.`, 'RedisService');
         }
 
         // Fetch fresh data
@@ -132,7 +132,7 @@ export class RedisService {
             try {
                 await this.client.set(key, JSON.stringify(data), 'EX', ttlSeconds);
             } catch (err) {
-                systemLogger.warn(`[Redis] Failed to set cache for ${key}`, 'RedisService');
+                Logger.warn(`[Redis] Failed to set cache for ${key}`, 'RedisService');
             }
         }
 
@@ -149,7 +149,7 @@ export class RedisService {
                 registeredAt: Date.now()
             }), 'EX', 3600 * 2); // 2h expiry for sessions
         } catch (e) {
-            systemLogger.error(`[Redis] Failed to register session`, 'RedisService');
+            Logger.error(`[Redis] Failed to register session`, 'RedisService');
         }
     }
 
@@ -238,7 +238,7 @@ export class RedisService {
                 await this.client!.del(...keys);
             }
         } catch (e) {
-            systemLogger.warn(`[Redis] Failed to invalidate pattern ${pattern}`, 'RedisService');
+            Logger.warn(`[Redis] Failed to invalidate pattern ${pattern}`, 'RedisService');
         }
     }
 }

@@ -60,8 +60,9 @@
                             </span>
                         </Transition>
                     </div>
-                    <span class="text-orange-400 font-bold uppercase tracking-[0.3em] mt-8 animate-pulse text-xl">Get
-                        Ready!</span>
+                    <span class="text-orange-400 font-bold uppercase tracking-[0.3em] mt-8 animate-pulse text-xl">
+                        {{ $t('projects.recorder.getReady') }}
+                    </span>
                 </div>
             </div>
         </Transition>
@@ -74,7 +75,7 @@
             <div
                 class="absolute top-3 left-3 z-10 px-2 py-0.5 rounded-full bg-black/40 border border-white/10 backdrop-blur-md flex items-center gap-1.5 pointer-events-none">
                 <div class="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
-                <span class="text-[8px] font-bold text-white uppercase tracking-wider">Live Cam</span>
+                <span class="text-[8px] font-bold text-white uppercase tracking-wider">{{ $t('projects.recorder.liveCam') }}</span>
             </div>
             <video ref="miniCamVideo" :srcObject="webcamVideo" autoplay muted playsinline
                 class="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] pointer-events-none" />
@@ -141,7 +142,7 @@
             @toggle-platform="togglePlatform"
             @update:bgm-volume="v => bgmVolume = v" @update:is-ducking-enabled="v => isDuckingEnabled = v"
             @update:bgm-url="v => bgmUrl = v" @toggle-bgm="toggleBGM"
-            @update:selected-mic-id="v => { if (isRecording) { toast.error('Cannot change mic while recording'); return; }; selectedMicId = v; initializeStream() }"
+            @update:selected-mic-id="v => { if (isRecording) { toast.error(t('projects.recorder.toasts.micChangeDisabled')); return; }; selectedMicId = v; initializeStream() }"
             @update:mic-volume="v => micVolume = v" 
             @update:podcast-settings="v => podcastSettings = { ...podcastSettings, ...v }"
             @update:audio-advanced="v => podcastSettings = { ...podcastSettings, ...v }"
@@ -161,7 +162,9 @@
             @clear-annotations="clearAnnotations" 
             :recording-quality="recordingQuality"
             @update:recording-quality="v => recordingQuality = { ...recordingQuality, ...v }"
-            :processing-canvas="processingCanvas" />
+            :processing-canvas="processingCanvas"
+            :show-platform-selector="showPlatformSelector"
+            @update:show-platform-selector="v => showPlatformSelector = v" />
 
         <!-- Hidden Inputs -->
         <input ref="fileInput" type="file" class="hidden" accept="image/*,video/*" @change="handleFileUpload" />
@@ -169,7 +172,7 @@
             @change="handlePresentationUpload" />
 
         <!-- Finish Dialog -->
-        <el-dialog v-model="showFinishDialog" title="Recording Finished" width="600px" center
+        <el-dialog v-model="showFinishDialog" :title="$t('projects.recorder.finishDialog.title')" width="600px" center
             class="finish-dialog glass-dialog">
             <div class="flex flex-col gap-6 py-4">
                 <!-- Video Preview Player -->
@@ -181,15 +184,15 @@
                 <div class="grid grid-cols-2 gap-4">
                     <button class="action-btn primary" @click="saveToProject">
                         <handle-round theme="outline" size="18" />
-                        <span>Save to Project</span>
+                        <span>{{ $t('projects.recorder.finishDialog.save') }}</span>
                     </button>
                     <button class="action-btn secondary" @click="downloadRecording">
                         <file-addition theme="outline" size="18" />
-                        <span>Download .webm</span>
+                        <span>{{ $t('projects.recorder.finishDialog.download') }}</span>
                     </button>
                 </div>
                 <button class="action-btn ghost" @click="showFinishDialog = false">
-                    <span>Discard Recording</span>
+                    <span>{{ $t('projects.recorder.finishDialog.discard') }}</span>
                 </button>
             </div>
         </el-dialog>
@@ -201,6 +204,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElDialog } from 'element-plus'
 import { toast } from 'vue-sonner'
 import { HandleRound, FileAddition } from '@icon-park/vue-next'
@@ -215,6 +219,7 @@ import UserGuide from '@/components/common/UserGuide.vue'
 import { recorderGuide } from '@/config/userGuides'
 import { useRouter, useRoute } from 'vue-router'
 
+const { t } = useI18n();
 const route = useRoute();
 
 const {
@@ -222,7 +227,7 @@ const {
     appliedFilter, showFinishDialog, enableAslAssist, aslMode, enableBeauty, beautySettings, currentDb,
     isAiActive, processingCanvas, displayCanvas, activeCaptions, currentCaption,
     translatedCaption, targetLanguage, isStreaming, streamConfig, streamStats, publisher,
-    selectedPlatforms, availableAccounts, togglePlatform,
+    selectedPlatforms, availableAccounts, togglePlatform, showPlatformSelector,
     fileInput, presentationInput, resourcePool, activeOverlays, currentSlideIndex,
     audioLevels, isScreenShareEnded, tabs, camSettings, podcastSettings,
     avatarPresets: _unused, selectedAvatar, selectedVoice,

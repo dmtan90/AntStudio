@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Logger } from './Logger.js';
 
 /**
  * ProjectContext Utility
@@ -70,7 +71,7 @@ export class ProjectContext {
             }
 
         } catch (error) {
-            console.warn('[ProjectContext] Failed to load grounding files:', error);
+            Logger.warn('[ProjectContext] Failed to load grounding files', 'ProjectContext', { error });
         }
 
         return result;

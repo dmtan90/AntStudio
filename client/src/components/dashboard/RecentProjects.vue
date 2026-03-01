@@ -3,9 +3,9 @@
      <div class="flex items-center justify-between mb-8">
         <h2 class="text-2xl font-black flex items-center gap-3">
            <span class="w-2 h-8 bg-blue-500 rounded-full"></span>
-           Recent Projects
+           {{ t('dashboard.recentProjects.title') }}
         </h2>
-        <button @click="router.push('/projects')" class="text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-white transition-colors">View All Projects</button>
+        <button @click="router.push('/projects')" class="text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-white transition-colors">{{ t('dashboard.recentProjects.viewAll') }}</button>
      </div>
 
      <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -40,12 +40,13 @@
                        <span 
                           class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border"
                           :class="{
-                             'bg-green-500/20 border-green-500/30 text-green-400': project.status === 'completed',
-                             'bg-yellow-500/20 border-yellow-500/30 text-yellow-400': project.status === 'processing',
-                             'bg-gray-500/20 border-gray-500/30 text-gray-400': project.status === 'draft'
+                             'bg-green-500/20 border-green-500/30 text-green-400': project.status?.toLowerCase() === 'completed',
+                             'bg-yellow-500/20 border-yellow-500/30 text-yellow-400': ['processing', 'generating', 'storyboard'].includes(project.status?.toLowerCase()),
+                             'bg-red-500/20 border-red-500/30 text-red-400': project.status?.toLowerCase() === 'failed',
+                             'bg-gray-500/20 border-gray-500/30 text-gray-400': project.status?.toLowerCase() === 'draft' || !project.status
                           }"
                        >
-                          {{ project.status }}
+                          {{ t('projects.status.' + (project.status || 'draft').toLowerCase()) }}
                        </span>
                     </div>
                     <h3 class="text-lg font-bold text-white leading-tight mb-1 line-clamp-1">{{ project.title }}</h3>
@@ -62,19 +63,21 @@
 
      <div v-else class="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
         <div class="text-6xl mb-4 grayscale opacity-30">🎬</div>
-        <h3 class="text-xl font-bold text-white mb-2">No projects yet</h3>
-        <p class="text-gray-500 mb-6 max-w-sm mx-auto">Start your creative journey by creating your first AI-powered video project.</p>
-        <button @click="$emit('create')" class="px-6 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-blue-500 transition-colors">Create Project</button>
+        <h3 class="text-xl font-bold text-white mb-2">{{ t('dashboard.recentProjects.noProjects') }}</h3>
+        <p class="text-gray-500 mb-6 max-w-sm mx-auto">{{ t('dashboard.recentProjects.startJourney') }}</p>
+        <button @click="$emit('create')" class="px-6 py-3 bg-blue-600 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-blue-500 transition-colors">{{ t('dashboard.recentProjects.createProject') }}</button>
      </div>
   </div>
   <VideoPreviewModal v-model="showPreviewModal" :project="selectedProject" />
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { PlayOne, Pic } from '@icon-park/vue-next';
 import { getFileUrl } from '@/utils/api';
 import VideoPreviewModal from '@/components/projects/VideoPreviewModal.vue'
+import { useI18n } from 'vue-i18n';
 
 defineProps<{
   projects: any[];
@@ -82,13 +85,14 @@ defineProps<{
 }>();
 
 defineEmits(['create']);
+const { t, locale } = useI18n()
 const showPreviewModal = ref(false)
 const selectedProject = ref<any>(null);
 const router = useRouter();
 
 const formatDate = (date: string) => {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('en-US', {
+  return new Date(date).toLocaleDateString(locale.value === 'vi' ? 'vi-VN' : 'en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric'

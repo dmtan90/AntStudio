@@ -3,7 +3,7 @@
         <template #header>
             <div class="flex items-center gap-3">
                 <div class="h-8 w-1.5 bg-green-500 rounded-full shadow-[0_0_12px_rgba(34,197,94,0.5)]" />
-                <h3 class="text-sm font-black uppercase tracking-[0.2em] text-white/90">Production Complete</h3>
+                <h3 class="text-sm font-black uppercase tracking-[0.2em] text-white/90">{{ t('projects.editor.publish.title') }}</h3>
             </div>
         </template>
 
@@ -24,7 +24,7 @@
                                     <Loading />
                                 </el-icon>
                                 <span class="mt-6 text-[11px] font-black uppercase tracking-[0.2em] text-white/90">{{
-                                    syncStatus }}</span>
+                                    t('projects.editor.publish.syncing') }}</span>
                             </div>
                         </div>
                     </div>
@@ -36,18 +36,17 @@
                                 <div class="w-2.5 h-2.5 rounded-full"
                                     :class="project?.publish?.s3Key ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]' : 'bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.4)]'">
                                 </div>
-                                <span class="text-[11px] font-black uppercase tracking-widest text-white/70">Cloud
-                                    Storage</span>
+                                <span class="text-[11px] font-black uppercase tracking-widest text-white/70">{{ t('projects.editor.publish.storage') }}</span>
                             </div>
                             <span class="text-[10px] text-white/40 uppercase font-black tracking-tighter">{{
-                                project?.publish?.s3Key ? 'Archived' : 'Syncing...' }}</span>
+                                project?.publish?.s3Key ? t('projects.editor.publish.archived') : t('common.processing') }}</span>
                         </div>
                         <el-button @click="downloadVideo"
                             class="cinematic-button !h-auto !px-8 !bg-blue-600 !text-white !border-transparent !rounded-xl shadow-[0_8px_20px_rgba(59,130,246,0.3)] hover:!scale-[1.02] active:!scale-95 group">
                             <div class="flex items-center gap-2.5 py-1">
                                 <Download :size="16" :stroke-width="5"
                                     class="group-hover:translate-y-0.5 transition-transform" />
-                                <span class="text-[11px] font-black uppercase tracking-widest">Download</span>
+                                <span class="text-[11px] font-black uppercase tracking-widest">{{ t('projects.editor.publish.download') }}</span>
                             </div>
                         </el-button>
                     </div>
@@ -56,24 +55,23 @@
                 <!-- Right: Meta & Direct Links -->
                 <div class="space-y-6">
                     <div class="p-6 rounded-2xl bg-black/40 border border-white/5 ring-1 ring-white/5">
-                        <h4 class="text-[10px] font-black text-white/30 uppercase mb-4 tracking-[0.2em]">Specifications
+                        <h4 class="text-[10px] font-black text-white/30 uppercase mb-4 tracking-[0.2em]">{{ t('projects.editor.publish.specifications') }}
                         </h4>
                         <div class="space-y-4">
                             <div class="flex justify-between items-center text-sm border-b border-white/5 pb-2">
                                 <span
-                                    class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Duration</span>
+                                    class="text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ t('projects.detail.duration') }}</span>
                                 <span class="text-white font-mono font-black text-xs tracking-tighter">{{
                                     formatDuration(duration) }}</span>
                             </div>
                             <div class="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                                <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">File
-                                    Size</span>
+                                <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ t('projects.editor.publish.fileSize') }}</span>
                                 <span class="text-white font-mono font-black text-xs tracking-tighter">{{
                                     formatSize(blobSize) }}</span>
                             </div>
                             <div class="flex justify-between items-center text-sm">
                                 <span
-                                    class="text-[10px] font-bold text-white/40 uppercase tracking-widest">Format</span>
+                                    class="text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ t('projects.editor.video.format') }}</span>
                                 <span class="text-white font-mono font-black text-xs uppercase tracking-tighter">{{
                                     format || 'MP4' }}</span>
                             </div>
@@ -81,7 +79,7 @@
                     </div>
 
                     <div class="social-share-mini">
-                        <h4 class="text-[10px] font-black text-white/30 uppercase mb-4 tracking-[0.2em]">Syndicate to Viral Hub
+                        <h4 class="text-[10px] font-black text-white/30 uppercase mb-4 tracking-[0.2em]">{{ t('projects.editor.publish.syndicate') }}
                         </h4>
                         
                         <div v-if="loadingAccounts" class="py-4 text-center">
@@ -89,8 +87,8 @@
                         </div>
                         
                         <div v-else-if="accounts.length === 0" class="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-                            <p class="text-[10px] text-white/40 font-bold uppercase mb-3">No connected accounts</p>
-                            <el-button size="small" @click="openIntegrations" class="cinematic-button !h-8 !rounded-lg !bg-white/10 !text-white !border-transparent">Connect</el-button>
+                            <p class="text-[10px] text-white/40 font-bold uppercase mb-3">{{ t('projects.editor.publish.noAccounts') }}</p>
+                            <el-button size="small" @click="openIntegrations" class="cinematic-button !h-8 !rounded-lg !bg-white/10 !text-white !border-transparent">{{ t('projects.editor.publish.connect') }}</el-button>
                         </div>
 
                         <div v-else class="space-y-4">
@@ -110,15 +108,15 @@
                             </div>
 
                             <div v-if="selectedAccountIds.length > 0" class="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                <el-input v-model="publishMetadata.title" placeholder="Syndication Title" size="small" class="cinematic-input-ghost" />
-                                <el-input v-model="publishMetadata.description" type="textarea" :rows="2" placeholder="Syndication Description" size="small" class="cinematic-input-ghost" />
+                                <el-input v-model="publishMetadata.title" :placeholder="t('projects.editor.publish.syndicationTitle')" size="small" class="cinematic-input-ghost" />
+                                <el-input v-model="publishMetadata.description" type="textarea" :rows="2" :placeholder="t('projects.editor.publish.syndicationDescription')" size="small" class="cinematic-input-ghost" />
                                 
                                 <el-button 
                                     class="!w-full !h-10 !rounded-xl !bg-blue-600 !text-white !border-transparent shadow-lg hover:!scale-[1.02] active:!scale-95"
                                     :loading="isPublishing"
                                     @click="handlePublish"
                                 >
-                                    <span class="text-[10px] font-black uppercase tracking-widest">Syndicate Now</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest">{{ t('projects.editor.publish.syndicateNow') }}</span>
                                 </el-button>
                             </div>
                         </div>
@@ -135,27 +133,23 @@
                                 class="w-6 h-6 grayscale opacity-80" />
                         </div>
                         <div class="flex flex-col">
-                            <h3 class="text-xs font-black text-white/90 uppercase tracking-[0.2em]">Ant Media
-                                Integration</h3>
-                            <span class="text-[10px] font-bold text-white/30 uppercase tracking-tighter mt-0.5">Stream
-                                live or save to cloud VoD</span>
+                            <h3 class="text-xs font-black text-white/90 uppercase tracking-[0.2em]">{{ t('projects.editor.publish.antMedia') }}</h3>
+                            <span class="text-[10px] font-bold text-white/30 uppercase tracking-tighter mt-0.5">{{ t('projects.editor.publish.antMediaDesc') }}</span>
                         </div>
                     </div>
                     <div
                         class="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
                         <div class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#10b981] animate-pulse"></div>
-                        <span class="text-[9px] font-black text-green-400 uppercase tracking-widest">Connected</span>
+                        <span class="text-[9px] font-black text-green-400 uppercase tracking-widest">{{ t('projects.editor.publish.connected') }}</span>
                     </div>
                 </div>
 
                 <div class="stream-control-panel grid grid-cols-1 md:grid-cols-2 gap-10 items-start px-2">
                     <div class="space-y-4">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-white/30 uppercase tracking-widest pl-1">Stream
-                                Identifier</label>
-                            <el-input v-model="streamId" placeholder="Stream ID" class="cinematic-input-ghost" />
-                            <p class="text-[10px] font-bold text-white/20 px-1 italic">This ID will be used as the URL
-                                slug for your production stream.</p>
+                            <label class="text-[10px] font-black text-white/30 uppercase tracking-widest pl-1">{{ t('projects.editor.publish.streamId') }}</label>
+                            <el-input v-model="streamId" :placeholder="t('projects.editor.publish.streamId')" class="cinematic-input-ghost" />
+                            <p class="text-[10px] font-bold text-white/20 px-1 italic">{{ t('projects.editor.publish.streamIdDesc') }}</p>
                         </div>
                     </div>
 
@@ -166,7 +160,7 @@
                             <div class="flex items-center gap-3">
                                 <span
                                     class="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#fff] animate-pulse"></span>
-                                <span class="text-xs font-black uppercase tracking-[0.2em]">Push RTMP Stream</span>
+                                <span class="text-xs font-black uppercase tracking-[0.2em]">{{ t('projects.editor.publish.pushRtmp') }}</span>
                             </div>
                         </el-button>
 
@@ -174,14 +168,14 @@
                             <el-button :disabled="isStreaming"
                                 class="cinematic-button !h-12 !rounded-xl !bg-white/5 !border-white/10 !text-white/80 hover:!bg-white/10 hover:!text-white"
                                 @click="startWebRTC">
-                                <span class="text-[10px] font-black uppercase tracking-widest">Live WebRTC</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest">{{ t('projects.editor.publish.liveWebRtc') }}</span>
                             </el-button>
                             <el-button :disabled="isStreaming || isSavingVoD"
                                 class="cinematic-button !h-12 !rounded-xl !bg-green-500/20 !border-green-500/30 !text-green-500 hover:!bg-green-500/30 hover:!text-white hover:!border-green-500/50"
                                 @click="saveToVoD">
                                 <div class="flex items-center gap-2.5">
                                     <Loading v-if="isSavingVoD" class="animate-spin" :size="14" />
-                                    <span class="text-[10px] font-black uppercase tracking-widest">Save to VoD</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest">{{ t('projects.editor.publish.saveVod') }}</span>
                                 </div>
                             </el-button>
                         </div>
@@ -190,8 +184,7 @@
                         <div v-if="isStreaming && streamStatus"
                             class="mt-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 space-y-3 animate-in fade-in duration-500">
                             <div class="flex items-center justify-between">
-                                <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Live
-                                    Metrics</span>
+                                <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest">{{ t('projects.editor.publish.metrics') }}</span>
                                 <div class="flex items-center gap-2">
                                     <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
                                     <span class="text-[9px] font-black text-red-400 uppercase tracking-widest">{{
@@ -202,13 +195,13 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="metric-item">
                                     <p class="text-[8px] font-black text-white/30 uppercase tracking-tighter mb-1">
-                                        Viewers</p>
+                                        {{ t('projects.editor.publish.viewers') }}</p>
                                     <p class="text-sm font-black text-white font-mono">{{ streamStatus.renderersCount ||
                                         0 }}</p>
                                 </div>
                                 <div class="metric-item">
                                     <p class="text-[8px] font-black text-white/30 uppercase tracking-tighter mb-1">
-                                        Bitrate</p>
+                                        {{ t('projects.editor.publish.bitrate') }}</p>
                                     <p class="text-sm font-black text-white font-mono">{{ streamStatus.speed || '0' }}
                                         kbps</p>
                                 </div>
@@ -220,8 +213,7 @@
                             <div class="flex items-center justify-between cursor-pointer group"
                                 @click="showSimulcast = !showSimulcast">
                                 <span
-                                    class="text-[10px] font-black text-white/30 uppercase tracking-widest group-hover:text-white/60 transition-colors">Simulcast
-                                    / Restream</span>
+                                    class="text-[10px] font-black text-white/30 uppercase tracking-widest group-hover:text-white/60 transition-colors">{{ t('projects.editor.publish.simulcast') }}</span>
                                 <el-icon :class="{ 'rotate-180': showSimulcast }"
                                     class="text-white/30 transition-transform group-hover:text-white/60">
                                     <ArrowDown />
@@ -240,7 +232,7 @@
                                 </div>
                                 <el-button type="primary" link @click="addEndpoint"
                                     class="!text-[10px] font-black uppercase tracking-widest !text-blue-400/80 hover:!text-blue-400">+
-                                    Add Endpoint</el-button>
+                                    {{ t('projects.editor.publish.addEndpoint') }}</el-button>
                             </div>
                         </div>
                     </div>
@@ -252,7 +244,7 @@
             <div class="px-4 pb-4">
                 <el-button @click="visible = false"
                     class="cinematic-button !w-full !h-12 !rounded-2xl !bg-white/5 !border-white/10 !text-white/80 hover:!bg-white/10 hover:!text-white shadow-xl">
-                    <span class="text-[11px] font-black uppercase tracking-[0.2em]">Exit Production View</span>
+                    <span class="text-[11px] font-black uppercase tracking-[0.2em]">{{ t('projects.editor.publish.exit') }}</span>
                 </el-button>
             </div>
         </template>
@@ -260,6 +252,7 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false })
 import { ref, watch, onUnmounted, computed } from 'vue'
 import { AntMediaService } from '@/utils/antMedia'
 import { Download, VideoPlay, Share, Loading, ArrowDown, Delete } from '@element-plus/icons-vue'
@@ -271,6 +264,9 @@ import { useUIStore } from '@/stores/ui'
 import { getFileUrl } from '@/utils/api'
 import GMedia from '@/components/ui/GMedia.vue'
 import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n()
 
 const props = defineProps<{
     modelValue: boolean
@@ -310,7 +306,7 @@ const ams = computed(() => {
 })
 
 const syncing = computed(() => props.project?.status === 'processing')
-const syncStatus = ref('Optimizing and Finalizing...')
+const syncStatus = computed(() => t('projects.editor.publish.syncing'))
 const blobSize = computed(() => props.project?.publish?.fileSize || 0)
 const duration = computed(() => props.project?.publish?.duration || 0)
 const format = computed(() => props.project?.publish?.s3Key?.split('.').pop() || 'mp4')
@@ -418,7 +414,7 @@ const startStreaming = async () => {
 
         if (result.success) {
             const settings = adminStore.settings?.apiConfigs?.antMedia
-            toast.success(`Broadcasting started!`)
+            toast.success(t('projects.editor.publish.toasts.broadcastStarted'))
 
             // Start Polling
             startPolling()
@@ -433,12 +429,12 @@ const startStreaming = async () => {
                             addedCount++;
                         } catch (err: any) {
                             console.error("Failed to add endpoint", err);
-                            toast.warning(`Failed to add restream endpoint: ${endpoint.url}`);
+                            toast.warning(t('projects.editor.publish.toasts.endpointFailed', { error: endpoint.url }));
                         }
                     }
                 }
                 if (addedCount > 0) {
-                    toast.success(`Added ${addedCount} restream endpoints.`);
+                    toast.success(t('projects.editor.publish.toasts.endpointsAdded', { count: addedCount.toString() }));
                 }
             }
 
@@ -483,10 +479,10 @@ const saveToVoD = async () => {
     try {
         const result = await projectStore.saveToVoD(props.project._id)
         if (result.success) {
-            toast.success(`Video saved to Ant Media VoD!`)
+            toast.success(t('projects.editor.publish.toasts.vodSaved'))
         }
     } catch (e: any) {
-        toast.error(`VoD Upload failed: ${e.response?.data?.error || e.message}`)
+        toast.error(t('projects.editor.publish.toasts.vodFailed', { error: e.response?.data?.error || e.message }))
     } finally {
         isSavingVoD.value = false
     }

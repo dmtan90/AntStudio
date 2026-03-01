@@ -3,7 +3,7 @@
         <div class="section-header flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <magic theme="outline" size="18" class="text-blue-400" />
-                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Cinematic Studio</h3>
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">{{ $t('drawers.cinematic.title') }}</h3>
             </div>
             <el-switch 
                 v-model="studioStore.visualSettings.cinematic.enabled"
@@ -12,13 +12,13 @@
         </div>
 
         <p class="text-[10px] text-white/40 leading-relaxed italic">
-            Enable immersive rendering to place all AI agents in a unified high-fidelity environment.
+            {{ $t('drawers.cinematic.desc') }}
         </p>
 
         <div v-if="studioStore.visualSettings.cinematic.enabled" class="space-y-4 animate-fade-in">
             <!-- Environment Selection -->
             <div class="space-y-2">
-                <label class="text-[10px] font-bold text-white/60 uppercase">Active Environment</label>
+                <label class="text-[10px] font-bold text-white/60 uppercase">{{ $t('drawers.cinematic.activeEnvironment') }}</label>
                 <div class="grid grid-cols-2 gap-2">
                     <div 
                         v-for="env in environments" 
@@ -36,29 +36,29 @@
             </div>
 
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-white/60 uppercase">Auto Camera (AI Director)</span>
+                <span class="text-[10px] font-bold text-white/60 uppercase">{{ $t('drawers.cinematic.autoCamera') }}</span>
                 <el-switch v-model="studioStore.autoCameraEnabled" size="small" active-color="#10b981" />
             </div>
 
             <div class="vfx-status flex items-center gap-2 px-3 py-2 bg-blue-500/5 rounded-lg border border-blue-500/10">
                 <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse" :class="{ 'bg-green-500': studioStore.autoCameraEnabled }"></div>
                 <span class="text-[9px] font-mono text-blue-400 uppercase tracking-tighter" :class="{ 'text-green-400': studioStore.autoCameraEnabled }">
-                    PROD: {{ studioStore.autoCameraEnabled ? 'AUTO-PRODUCING' : 'VFX ACTIVE' }}
+                    {{ $t('drawers.cinematic.status.prod') }}: {{ studioStore.autoCameraEnabled ? $t('drawers.cinematic.status.autoProducing') : $t('drawers.cinematic.status.vfxActive') }}
                 </span>
             </div>
 
             <!-- VFX Controls -->
             <div class="space-y-4 pt-4 border-t border-white/5">
                 <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-white/60 uppercase">VTuber Link Visuals</span>
+                    <span class="text-[10px] font-bold text-white/60 uppercase">{{ $t('drawers.cinematic.vtuberLink') }}</span>
                     <el-switch v-model="studioStore.visualSettings.cinematic.showVTuberLinks" size="small" />
                 </div>
                 
                 <div class="vfx-status flex items-center gap-2 px-3 py-2 bg-blue-500/5 rounded-lg border border-blue-500/10">
                     <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
                     <span class="text-[9px] font-mono text-blue-400 uppercase tracking-tighter">
-                        Active VFX: {{ currentEnv?.vfx.particles || 'None' }} 
-                        {{ currentEnv?.vfx.bloom ? '+ Bloom' : '' }}
+                        {{ $t('drawers.cinematic.activeVfx') }}: {{ currentEnv?.vfx.particles || $t('drawers.cinematic.options.none') }} 
+                        {{ currentEnv?.vfx.bloom ? $t('drawers.cinematic.options.bloom') : '' }}
                     </span>
                 </div>
             </div>
@@ -66,7 +66,7 @@
 
         <div v-else class="empty-state py-8 text-center bg-white/5 rounded-2xl border border-dashed border-white/10">
             <video-two theme="outline" size="24" class="text-white/10 mb-2 mx-auto" />
-            <span class="text-[10px] text-white/20">Immersive Stage Disabled</span>
+            <span class="text-[10px] text-white/20">{{ $t('drawers.cinematic.immersiveDisabled') }}</span>
         </div>
     </div>
 </template>
@@ -75,9 +75,11 @@
 import { computed } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { Magic, VideoTwo } from '@icon-park/vue-next';
+import { useI18n } from 'vue-i18n';
 import { STUDIO_ENVIRONMENTS } from '@/constants/StudioEnvironments';
 import { getFileUrl } from '@/utils/api';
 
+const { t } = useI18n();
 const studioStore = useStudioStore();
 const environments = computed(() => Object.values(STUDIO_ENVIRONMENTS));
 const currentEnv = computed(() => STUDIO_ENVIRONMENTS[studioStore.visualSettings.cinematic.environmentId]);

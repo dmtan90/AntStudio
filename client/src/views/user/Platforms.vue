@@ -11,13 +11,13 @@
       <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
         <div>
           <h1 class="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
-            Connected <br/>
+            {{ t('platforms.header.connected') }}
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">
-              Platforms
+              {{ t('platforms.header.platforms') }}
             </span>
           </h1>
           <p class="text-xl text-gray-400 max-w-xl leading-relaxed font-medium">
-             Manage your professional streaming channels and automated content distribution.
+             {{ t('platforms.header.subtitle') }}
           </p>
         </div>
 
@@ -27,7 +27,7 @@
         >
            <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
            <plus theme="outline" size="20" />
-           Connect New
+           {{ t('platforms.actions.connectNew') }}
         </button>
       </div>
     </header>
@@ -36,10 +36,10 @@
       <!-- Empty State -->
       <div v-if="!accounts.length && !loading" class="text-center py-32 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
          <div class="text-7xl mb-6 grayscale opacity-20">📡</div>
-         <h3 class="text-2xl font-black text-white mb-2">No platforms connected</h3>
-         <p class="text-gray-500 mb-8 max-w-md mx-auto">Connect your YouTube, Facebook, or TikTok channels to start streaming.</p>
+         <h3 class="text-2xl font-black text-white mb-2">{{ t('platforms.empty.title') }}</h3>
+         <p class="text-gray-500 mb-8 max-w-md mx-auto">{{ t('platforms.empty.desc') }}</p>
          <button @click="showAddModal = true" class="px-8 py-4 bg-white/10 rounded-2xl font-bold text-sm uppercase tracking-wide hover:bg-white/20 transition-all border border-white/10">
-            Get Started
+            {{ t('common.getStarted') }}
          </button>
       </div>
 
@@ -81,13 +81,13 @@
                         class="w-1.5 h-1.5 rounded-full"
                         :class="account.status === 'connected' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'"
                       ></div>
-                      <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">{{ account.status }}</span>
+                      <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">{{ t('platforms.status.' + account.status) }}</span>
                    </div>
                </div>
 
                <div class="mb-auto relative">
                   <h3 class="text-2xl font-bold text-white mb-1 leading-tight">{{ account.accountName }}</h3>
-                  <p class="text-sm font-medium text-gray-500 truncate">{{ account.credentials?.email || account.accountEmail || 'No email' }}</p>
+                  <p class="text-sm font-medium text-gray-500 truncate">{{ account.credentials?.email || account.accountEmail || account.rtmpUrl || t('platforms.noEmail') }}</p>
                </div>
 
                <div class="flex gap-3 mt-8 relative">
@@ -95,12 +95,14 @@
                      v-if="account.platform == 'custom-rtmp' || account.platform == 'ant-media'"
                      @click="editAccount(account)"
                      class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors text-gray-400 hover:text-white"
+                     :title="t('common.settings')"
                   >
                      <setting theme="outline" size="18" />
                   </button>
                   <button 
                      @click="syncAccount(account)"
                      class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-colors text-gray-400 hover:text-white"
+                     :title="t('common.refresh')"
                   >
                      <refresh theme="outline" size="18" />
                   </button>
@@ -109,12 +111,13 @@
                      :to="account.platform === 'custom-rtmp' ? { name: 'live-studio', query: { platformId: account._id } } : { name: 'platforms-cms', query: { accountId: account._id } }"
                      class="flex-1 h-10 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wide flex items-center justify-center hover:scale-[1.02] transition-transform"
                   >
-                     {{ account.platform === 'custom-rtmp' ? 'Go Live' : 'Manage' }}
+                     {{ account.platform === 'custom-rtmp' ? t('platforms.actions.goLive') : t('platforms.actions.manage') }}
                   </router-link>
 
                   <button 
                      @click="disconnectAccount(account)"
                      class="w-10 h-10 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center transition-colors text-red-500"
+                     :title="t('platforms.actions.disconnect')"
                   >
                      <close theme="outline" size="18" />
                   </button>
@@ -127,7 +130,7 @@
     <!-- Connect Modal -->
     <el-dialog v-model="showAddModal" width="500px" class="glass-dialog" :show-close="false" destroy-on-close align-center>
       <template #header>
-         <div class="text-white text-lg font-black uppercase tracking-wide">Connect Platform</div>
+         <div class="text-white text-lg font-black uppercase tracking-wide">{{ t('platforms.dialogs.connect.title') }}</div>
       </template>
 
       <div class="grid grid-cols-2 gap-4 mb-8">
@@ -146,23 +149,23 @@
           <!-- AMS Fields -->
           <div v-if="selectedPlatform === 'ant-media'">
             <div class="mb-4">
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Internal Name</label>
-              <el-input v-model="form.name" placeholder="e.g. My AMS Instance" class="glass-input" />
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platforms.dialogs.connect.fields.internalName') }}</label>
+              <el-input v-model="form.name" :placeholder="t('platforms.dialogs.connect.placeholders.amsName')" class="glass-input" />
             </div>
-            <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Server URL</label>
+             <div class="mb-4">
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platforms.dialogs.connect.fields.serverUrl') }}</label>
               <el-input v-model="form.serverUrl" placeholder="https://antmedia.server.com:5443" class="glass-input" />
             </div>
             <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Admin Email</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platforms.dialogs.connect.fields.adminEmail') }}</label>
               <el-input v-model="form.email" placeholder="admin@server.com" class="glass-input" />
             </div>
             <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Password</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platforms.dialogs.connect.fields.password') }}</label>
               <el-input v-model="form.password" type="password" show-password class="glass-input" />
             </div>
             <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">App Name</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platforms.dialogs.connect.fields.appName') }}</label>
               <el-input v-model="form.appName" placeholder="LiveApp" class="glass-input" />
             </div>
           </div>
@@ -170,15 +173,15 @@
           <!-- Custom RTMP -->
           <div v-else-if="selectedPlatform === 'custom-rtmp'">
             <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Internal Name</label>
-              <el-input v-model="form.name" placeholder="e.g. Custom Endpoint" class="glass-input" />
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platforms.dialogs.connect.fields.internalName') }}</label>
+              <el-input v-model="form.name" :placeholder="t('platforms.dialogs.connect.placeholders.rtmpName')" class="glass-input" />
             </div>
             <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">RTMP URL</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platforms.dialogs.connect.fields.rtmpUrl') }}</label>
               <el-input v-model="form.rtmpUrl" placeholder="rtmp://server.com/app" class="glass-input" />
             </div>
             <div class="mb-4">
-               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Stream Key</label>
+               <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('platforms.dialogs.connect.fields.streamKey') }}</label>
               <el-input v-model="form.streamKey" type="password" show-password class="glass-input" />
             </div>
           </div>
@@ -189,7 +192,7 @@
               <component :is="availablePlatforms.find(p => p.id === selectedPlatform)?.icon" theme="filled" size="32" class="text-white" />
             </div>
             <p class="text-gray-400 px-8">
-              Connect your {{availablePlatforms.find(p => p.id === selectedPlatform)?.name}} account to automatically sync videos and live streams.
+              {{ t('platforms.dialogs.connect.oauthDesc', { platform: availablePlatforms.find(p => p.id === selectedPlatform)?.name, appName: useUIStore().appName }) }}
             </p>
           </div>
         </div>
@@ -197,9 +200,9 @@
 
       <template #footer>
         <div class="flex gap-4">
-          <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors border border-white/5" @click="showAddModal = false">Cancel</button>
+          <button class="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors border border-white/5" @click="showAddModal = false">{{ t('common.cancel') }}</button>
           <button class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-blue-600/20" :disabled="!selectedPlatform" @click="handleConnect">
-            {{ loading ? 'Connecting...' : 'Connect' }}
+            {{ loading ? t('common.connecting') : t('common.connect') }}
           </button>
         </div>
       </template>
@@ -217,7 +220,10 @@ import {
 import { toast } from 'vue-sonner';
 import { usePlatformStore } from '@/stores/platform';
 import { getFileUrl } from '@/utils/api';
+import { useI18n } from 'vue-i18n';
+import { useUIStore } from '@/stores/ui';
 
+const { t } = useI18n()
 const platformStore = usePlatformStore();
 const accounts = computed(() => platformStore.accounts);
 const loading = computed(() => platformStore.loading);
@@ -251,7 +257,7 @@ const initiateOAuth = async (platform: string) => {
     if (data && data.url) {
       window.location.href = data.url;
     } else {
-      toast.error('Failed to get authorization URL');
+      toast.error(t('platforms.toasts.authUrlFailed'));
     }
   } catch (e) {
   }
@@ -265,14 +271,14 @@ const handleConnect = async () => {
     return;
   }
 
-  if (!form.value.name) return toast.error('Account Name is required');
+  if (!form.value.name) return toast.error(t('platforms.toasts.nameRequired'));
 
   if (selectedPlatform.value === 'ant-media') {
     const isPasswordRequired = !editingAccountId.value;
-    if (!form.value.serverUrl || !form.value.email) return toast.error('Server URL and Email are required');
-    if (isPasswordRequired && !form.value.password) return toast.error('Password is required for new connection');
+    if (!form.value.serverUrl || !form.value.email) return toast.error(t('platforms.toasts.serverAndEmailRequired'));
+    if (isPasswordRequired && !form.value.password) return toast.error(t('platforms.toasts.passwordRequired'));
   } else if (selectedPlatform.value === 'custom-rtmp') {
-    if (!form.value.rtmpUrl || !form.value.streamKey) return toast.error('RTMP URL and Stream Key are required');
+    if (!form.value.rtmpUrl || !form.value.streamKey) return toast.error(t('platforms.toasts.rtmpAndKeyRequired'));
   }
 
   try {
@@ -302,7 +308,7 @@ const handleConnect = async () => {
 };
 
 const disconnectAccount = async (account: any) => {
-  if (!confirm(`Are you sure you want to disconnect ${account.accountName}?`)) return;
+  if (!confirm(t('platforms.confirmDisconnect', { name: account.accountName }))) return;
   await platformStore.disconnectPlatform(account._id);
 };
 
@@ -328,8 +334,8 @@ const resetForm = () => {
 };
 
 const syncAccount = async (account: any) => {
-  toast.info(`Syncing status for ${account.accountName}...`);
-  setTimeout(() => toast.success('Status synchronized'), 1000);
+  toast.info(t('platforms.toasts.syncing', { name: account.accountName }));
+  setTimeout(() => toast.success(t('platforms.toasts.syncSuccess')), 1000);
 };
 
 onMounted(() => {

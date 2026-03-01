@@ -6,19 +6,19 @@
                 class="p-4 inline-flex items-center rounded-xl border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-center transition-all group"
                 @click="$emit('invite-guest')">
                 <user theme="outline" class="opacity-50 group-hover:opacity-100 mx-auto" />
-                <span class="text-[8px] font-black uppercase">Invite Guest</span>
+                <span class="text-[8px] font-black uppercase">{{ $t('studio.drawers.guest.inviteGuest') }}</span>
             </button>
             <button
                 class="p-4 inline-flex items-center rounded-xl border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10 text-center transition-all group"
                 @click="$emit('add-mobile-cam')">
                 <iphone theme="outline" class="opacity-50 group-hover:opacity-100 mx-auto" />
-                <span class="text-[8px] font-black uppercase">Add Mobile Cam</span>
+                <span class="text-[8px] font-black uppercase">{{ $t('studio.drawers.guest.addMobileCam') }}</span>
             </button>
         </div>
 
         <!-- Active Remote Guests -->
         <section v-if="remoteGuests.length > 0">
-            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">Active Guests</h4>
+            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">{{ $t('studio.drawers.guest.activeGuests') }}</h4>
             <div class="guest-list grid grid-cols-2 gap-3">
                 <div v-for="g in remoteGuests" :key="g.uuid"
                     class="guest-item glass-selectable flex flex-col justify-between items-center bg-white/5 rounded-xl border border-white/10 group/item relative overflow-hidden"
@@ -39,14 +39,14 @@
                                 class="text-[10px] font-black uppercase tracking-tight text-white drop-shadow-md pr-1">{{
                                     g.name }}</span>
                             <span class="text-[8px] opacity-60 font-mono text-blue-400 drop-shadow-md">
-                                {{ g.slotIndex !== undefined ? `SLOT S${g.slotIndex + 1}` : 'WAITING' }}
+                                {{ g.slotIndex !== undefined ? $t('studio.drawers.guest.slot', { n: g.slotIndex + 1 }) : $t('studio.drawers.guest.waitingStatus') }}
                             </span>
                         </div>
                     </div>
 
 
                     <div class="flex items-center gap-1 relative z-10 bg-black/50 p-2">
-                        <button class="icon-btn xs hover:text-blue-400" title="Solo / Swap with Host"
+                        <button class="icon-btn xs hover:text-blue-400" :title="$t('studio.drawers.guest.swapTitle')"
                             @click="studioStore.swapWithHost(g.uuid)">
                             <full-selection theme="outline" size="12" />
                         </button>
@@ -75,7 +75,7 @@
 
         <!-- Synthetic Personas -->
         <section>
-            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">Synthetic Persona Gallery</h4>
+            <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">{{ $t('studio.drawers.guest.personaGallery') }}</h4>
             <div class="grid grid-cols-1 gap-3">
                 <div v-for="g in guestPersonas" :key="g.uuid"
                     class="p-3 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-blue-500/30 cursor-pointer"
@@ -98,7 +98,7 @@
                             class="px-2 py-1 rounded-md text-[8px] font-black tracking-widest transition-all border border-white/5"
                             :class="g.isMaster ? 'bg-amber-500 text-black border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'bg-white/5 text-white/40 hover:text-white'"
                         >
-                            {{ g.isMaster ? 'MASTER' : 'AGENT' }}
+                            {{ g.isMaster ? $t('studio.drawers.guest.roles.master') : $t('studio.drawers.guest.roles.agent') }}
                         </button>
                         <el-switch v-slot="{ value }" :model-value="g.active" @change="$emit('toggle-guest', g)" />
                     </div>

@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { geminiPool } from '../../utils/gemini.js';
 import fs from 'fs';
+import { Logger } from '../../utils/Logger.js';
 
 /**
  * Service for generating AI-powered kinetic captions for short-form clips.
@@ -71,7 +72,7 @@ export class AutoCaptionService {
             }));
 
         } catch (error: any) {
-            console.error('[AutoCaptionService] Generation failed:', error.message);
+            Logger.error(`[AutoCaptionService] Generation failed: ${error.message}`, 'AutoCaptionService');
             // Fallback mock for dev/testing if API fails
             if (process.env.NODE_ENV === 'development') {
                 return [

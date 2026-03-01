@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { Buffer } from 'node:buffer'
 import config from './config.js'
-import { systemLogger } from './systemLogger.js'
+import { Logger } from './Logger.js'
 
 /**
  * Google OAuth 2.0 client utility - Simplified for direct API calls
@@ -56,7 +56,7 @@ export const uploadToYouTube = async (options: {
     categoryId?: string
 }) => {
     try {
-        systemLogger.info(`🚀 [YouTube Utils] Starting direct resumable upload`, 'google-utils');
+        Logger.info(`🚀 [YouTube Utils] Starting direct resumable upload`, 'google-utils');
 
         // 1. Initiate resumable upload session
         const initiateRes = await axios.post(
@@ -86,7 +86,7 @@ export const uploadToYouTube = async (options: {
             throw new Error('Failed to get YouTube upload location');
         }
 
-        systemLogger.info(`🚀 [YouTube Utils] Session created: ${uploadUrl}`, 'google-utils');
+        Logger.info(`🚀 [YouTube Utils] Session created: ${uploadUrl}`, 'google-utils');
 
         // 2. Upload the video buffer
         const uploadRes = await axios.put(uploadUrl, options.videoBuffer, {
@@ -97,7 +97,7 @@ export const uploadToYouTube = async (options: {
 
         return uploadRes.data;
     } catch (error: any) {
-        systemLogger.error(`❌ [YouTube Utils] Upload failed: ${error.response?.data?.error?.message || error.message}`, 'google-utils');
+        Logger.error(`❌ [YouTube Utils] Upload failed: ${error.response?.data?.error?.message || error.message}`, 'google-utils');
         throw error;
     }
 }

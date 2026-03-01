@@ -1,7 +1,7 @@
 import axios from 'axios';
 import WebSocket from 'ws';
 import { v4 as uuidv4 } from 'uuid';
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
 
 export interface VeoRequest {
     prompt: string;
@@ -51,7 +51,7 @@ export class ElevenLabsDirectClient {
             }, 120000);
 
             ws.on('open', () => {
-                systemLogger.info(`[ElevenLabsDirectClient] WS Connection opened for task ${taskId}`, 'ElevenLabsDirectClient');
+                Logger.info(`[ElevenLabsDirectClient] WS Connection opened for task ${taskId}`, 'ElevenLabsDirectClient');
                 // 1. Register
                 ws.send(JSON.stringify({
                     action: 'register',
@@ -64,7 +64,7 @@ export class ElevenLabsDirectClient {
                     const data = JSON.parse(message.toString());
 
                     if (data.event === 'registered') {
-                        systemLogger.info(`[ElevenLabsDirectClient] WS Registered. Submitting video prompt...`, 'ElevenLabsDirectClient');
+                        Logger.info(`[ElevenLabsDirectClient] WS Registered. Submitting video prompt...`, 'ElevenLabsDirectClient');
                         // 2. Submit task
                         ws.send(JSON.stringify({
                             action: 'submit_video_prompt',
@@ -77,9 +77,9 @@ export class ElevenLabsDirectClient {
                             task_id: taskId
                         }));
                     } else if (data.event === 'video_queued') {
-                        systemLogger.info(`[ElevenLabsDirectClient] Video queued. Position: ${data.queue_position}`, 'ElevenLabsDirectClient');
+                        Logger.info(`[ElevenLabsDirectClient] Video queued. Position: ${data.queue_position}`, 'ElevenLabsDirectClient');
                     } else if (data.event === 'video_processing') {
-                        systemLogger.info(`[ElevenLabsDirectClient] Video processing...`, 'ElevenLabsDirectClient');
+                        Logger.info(`[ElevenLabsDirectClient] Video processing...`, 'ElevenLabsDirectClient');
                     } else if (data.event === 'video_result') {
                         if (data.task_id === taskId || data.status === 'success' || data.status === 'error') {
                             clearTimeout(timeout);
@@ -96,7 +96,7 @@ export class ElevenLabsDirectClient {
                         reject(new Error(data.message || 'WebSocket server error'));
                     }
                 } catch (err: any) {
-                    systemLogger.error(`[ElevenLabsDirectClient] WS message parsing error: ${err.message}`, 'ElevenLabsDirectClient');
+                    Logger.error(`[ElevenLabsDirectClient] WS message parsing error: ${err.message}`, 'ElevenLabsDirectClient');
                 }
             });
 
@@ -106,7 +106,7 @@ export class ElevenLabsDirectClient {
             });
 
             ws.on('close', () => {
-                systemLogger.info(`[ElevenLabsDirectClient] WS Connection closed for task ${taskId}`, 'ElevenLabsDirectClient');
+                Logger.info(`[ElevenLabsDirectClient] WS Connection closed for task ${taskId}`, 'ElevenLabsDirectClient');
             });
         });
     }
@@ -123,7 +123,7 @@ export class ElevenLabsDirectClient {
             }
 
             // 1. Fetch dynamic tokens from 11labs.net
-            systemLogger.info(`[ElevenLabsDirectClient] Fetching Imagen4 tokens for license ${licenseKey.substring(0, 8)}...`, 'ElevenLabsDirectClient');
+            Logger.info(`[ElevenLabsDirectClient] Fetching Imagen4 tokens for license ${licenseKey.substring(0, 8)}...`, 'ElevenLabsDirectClient');
             const tokenResponse = await axios.post(`${this.directBaseUrl}/api/checker/get-imagen4-token.php`, {
                 license_key: licenseKey,
                 limit: 1
@@ -152,7 +152,7 @@ export class ElevenLabsDirectClient {
 
             return response.data;
         } catch (error: any) {
-            systemLogger.error(`ElevenLabs Imagen Direct failed: ${error.message}`, 'ElevenLabsDirectClient');
+            Logger.error(`ElevenLabs Imagen Direct failed: ${error.message}`, 'ElevenLabsDirectClient');
             throw error;
         }
     }
@@ -171,7 +171,7 @@ export class ElevenLabsDirectClient {
             const voiceId = options.voiceId || '21m00Tcm4TlvDq8ikWAM'; // Rachel
 
             // 1. Request resource allocation from 11labs.net to get an ElevenLabs API Key
-            systemLogger.info(`[ElevenLabsDirectClient] Allocating ElevenLabs resource for license ${licenseKey.substring(0, 8)}...`, 'ElevenLabsDirectClient');
+            Logger.info(`[ElevenLabsDirectClient] Allocating ElevenLabs resource for license ${licenseKey.substring(0, 8)}...`, 'ElevenLabsDirectClient');
             const allocationResponse = await axios.post(`${this.directBaseUrl}/api/resource/initial_allocation`, {
                 license_key: licenseKey,
                 voice_id: voiceId,
@@ -202,7 +202,7 @@ export class ElevenLabsDirectClient {
 
             return Buffer.from(response.data);
         } catch (error: any) {
-            systemLogger.error(`ElevenLabs Audio Direct failed: ${error.message}`, 'ElevenLabsDirectClient');
+            Logger.error(`ElevenLabs Audio Direct failed: ${error.message}`, 'ElevenLabsDirectClient');
             throw error;
         }
     }
@@ -219,7 +219,7 @@ export class ElevenLabsDirectClient {
             }
 
             // 1. Request resource allocation from 11labs.net
-            systemLogger.info(`[ElevenLabsDirectClient] Allocating ElevenLabs music resource for license ${licenseKey.substring(0, 8)}...`, 'ElevenLabsDirectClient');
+            Logger.info(`[ElevenLabsDirectClient] Allocating ElevenLabs music resource for license ${licenseKey.substring(0, 8)}...`, 'ElevenLabsDirectClient');
             const allocationResponse = await axios.post(`${this.directBaseUrl}/api/resource/initial_allocation`, {
                 license_key: licenseKey,
                 text_length: prompt.length,
@@ -254,7 +254,7 @@ export class ElevenLabsDirectClient {
                 ]
             };
         } catch (error: any) {
-            systemLogger.error(`ElevenLabs Music Direct failed: ${error.message}`, 'ElevenLabsDirectClient');
+            Logger.error(`ElevenLabs Music Direct failed: ${error.message}`, 'ElevenLabsDirectClient');
             throw error;
         }
     }

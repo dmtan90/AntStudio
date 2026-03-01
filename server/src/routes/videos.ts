@@ -9,6 +9,8 @@ import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import { clippingEngine } from '../services/ai/ClippingEngine.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadDir = path.join(__dirname, '../../tmp/recordings');
@@ -80,7 +82,7 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
             }
         });
     } catch (error: any) {
-        console.error('Fetch videos error:', error);
+        Logger.error('Fetch videos error:', error);
         res.status(500).json({ success: false, data: null, error: 'Failed to fetch videos' });
     }
 });
@@ -106,7 +108,7 @@ router.post('/upload-recording', authMiddleware, upload.single('video'), async (
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
         // Log receipt
-        console.log(`🎬 Received recording for project ${project.title}: ${videoFile.path}`);
+        Logger.info(`🎬 Received recording for project ${project.title}: ${videoFile.path}`);
 
         // Asynchronously trigger Clipping Engine (Phase 7)
         clippingEngine.processRecording({
@@ -117,7 +119,7 @@ router.post('/upload-recording', authMiddleware, upload.single('video'), async (
 
         res.json({ success: true, data: { status: 'queued', filePath: videoFile.path } });
     } catch (error: any) {
-        console.error('Upload recording error:', error);
+        Logger.error('Upload recording error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

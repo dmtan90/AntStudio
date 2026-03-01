@@ -1,4 +1,5 @@
 import { aiStudioClient } from '../../../integrations/aistudio/AIStudioClient.js';
+import { Logger } from '../../Logger.js';
 
 export class AIStudioProvider {
     constructor() { }
@@ -15,11 +16,11 @@ export class AIStudioProvider {
      */
     async generateText(prompt: string, modelId: string = 'gemini-1.5-pro', options: any = {}) {
         try {
-            console.log(`[AIStudioProvider] Generating text via Browser Client...`);
+            Logger.info('[AIStudioProvider] Generating text via Browser Client...', 'AIStudioProvider');
             const text = await aiStudioClient.generateText(prompt);
             return { text };
         } catch (error: any) {
-            console.error('AIStudio Provider Text Error:', error.message);
+            Logger.error(`AIStudio Provider Text Error: ${error.message}`, 'AIStudioProvider');
             throw new Error(`AIStudio Browser Failed: ${error.message}`);
         }
     }
@@ -35,7 +36,7 @@ export class AIStudioProvider {
         try {
             return JSON.parse(text);
         } catch (e) {
-            console.error('[AIStudioProvider] JSON Parse Failed:', text);
+            Logger.error(`[AIStudioProvider] JSON Parse Failed: ${text}`, 'AIStudioProvider');
             throw new Error('Failed to parse JSON response from AI Studio');
         }
     }
@@ -45,7 +46,7 @@ export class AIStudioProvider {
      */
     async generateImage(prompt: string, modelId: string = 'imagen-3.0', options: any = {}) {
         try {
-            console.log(`[AIStudioProvider] Generating image via Browser Client...`);
+            Logger.info('[AIStudioProvider] Generating image via Browser Client...', 'AIStudioProvider');
             const imageUrl = await aiStudioClient.generateImage(prompt);
             return {
                 media: {
@@ -54,7 +55,7 @@ export class AIStudioProvider {
                 }
             };
         } catch (error: any) {
-            console.error('AIStudio Provider Image Error:', error.message);
+            Logger.error(`AIStudio Provider Image Error: ${error.message}`, 'AIStudioProvider');
             throw error;
         }
     }
@@ -64,7 +65,7 @@ export class AIStudioProvider {
      */
     async generateVideo(prompt: string, modelId: string = 'veo-2.0', options: any = {}) {
         try {
-            console.log(`[AIStudioProvider] Generating video via Browser Client...`);
+            Logger.info('[AIStudioProvider] Generating video via Browser Client...', 'AIStudioProvider');
             const videoUrl = await aiStudioClient.generateVideo(prompt);
             return {
                 jobId: `aistudio-browser-${Date.now()}`,
@@ -72,7 +73,7 @@ export class AIStudioProvider {
                 status: 'completed'
             };
         } catch (error: any) {
-            console.error('AIStudio Provider Video Error:', error.message);
+            Logger.error(`AIStudio Provider Video Error: ${error.message}`, 'AIStudioProvider');
             throw error;
         }
     }
@@ -82,7 +83,7 @@ export class AIStudioProvider {
      */
     async generateAudio(prompt: string, modelId: string, options: any = {}) {
         try {
-            console.log(`[AIStudioProvider] Generating audio via Browser Client...`);
+            Logger.info('[AIStudioProvider] Generating audio via Browser Client...', 'AIStudioProvider');
             const audioUrl = await aiStudioClient.generateAudio(prompt);
             return {
                 media: {
@@ -91,7 +92,7 @@ export class AIStudioProvider {
                 }
             };
         } catch (error: any) {
-            console.error('AIStudio Provider Audio Error:', error.message);
+            Logger.error(`AIStudio Provider Audio Error: ${error.message}`, 'AIStudioProvider');
             throw error;
         }
     }

@@ -24,7 +24,7 @@ export function useRecorderCanvas(
     const frameCount = ref(0);
     const isTransferred = ref(false);
     let lastAIProcessTime = 0;
-    const AI_PROCESS_INTERVAL = 120;
+    const AI_PROCESS_INTERVAL = 300; // Increase from 120ms to 300ms to save CPU, ~3 fps segmentation is usually enough for background processing
 
     // Worker State
     let worker: Worker | null = null;
@@ -110,7 +110,7 @@ export function useRecorderCanvas(
                 // const pipH = (pipSize * 9) / 16;
                 const pipH = pipSize;
                 const margin = 10;
-                const offset = 0;
+                const offset = 100;
                 console.log(s, pipSize, pipH, margin);
 
                 const rawPos = (s.position ?? 'BR').toUpperCase();
@@ -204,7 +204,7 @@ export function useRecorderCanvas(
         try {
             const stream = element.srcObject as MediaStream;
             const track = stream.getVideoTracks()[0];
-            if (!track) return;
+            if (!track || track.readyState !== 'live') return;
 
             const processor = new MediaStreamTrackProcessor({ track });
             const readable = processor.readable;
@@ -227,7 +227,7 @@ export function useRecorderCanvas(
             // Bridge VTuber stream
             if (worker && !bridgedStreams.has('host')) {
                 const track = options.vtuberStream.value.getVideoTracks()[0];
-                if (track) {
+                if (track && track.readyState === 'live') {
                     const processor = new MediaStreamTrackProcessor({ track });
                     const readable = processor.readable;
                     worker.postMessage({ type: 'add-stream', payload: { id: 'host', stream: readable } }, [readable]);
@@ -252,7 +252,7 @@ export function useRecorderCanvas(
                 // Bridge whiteboard screen share
                 if (worker && !bridgedStreams.has('screen')) {
                      const track = (options.whiteboardContent.value as MediaStream).getVideoTracks()[0];
-                     if (track) {
+                     if (track && track.readyState === 'live') {
                          const processor = new MediaStreamTrackProcessor({ track });
                          const readable = processor.readable;
                          worker.postMessage({ type: 'add-stream', payload: { id: 'screen', stream: readable } }, [readable]);
@@ -329,8 +329,8 @@ export function useRecorderCanvas(
             }
 
             const modeValue = options.mode.value;
-            const needsSegmentation = options.camSettings.value.enableBlur && (modeValue === 'camera' || modeValue === 'camera-screen');
-            if (needsSegmentation && (webcamVideo.value || sourceVideo.value)) {
+            const needsSegmentation = options.camSettings.value.enableBlur || options.enableBeauty.value || options.isVTuberActive.value;
+            if (needsSegmentation && (modeValue === 'camera' || modeValue === 'camera-screen') && (webcamVideo.value || sourceVideo.value)) {
                 const aiSource = (options.mode.value === 'camera' ? sourceVideo.value : webcamVideo.value) as HTMLVideoElement;
                 if (aiSource && aiSource.videoWidth > 0 && (forceFirstMask || time - lastAIProcessTime > AI_PROCESS_INTERVAL)) {
                     processAISegmentation(aiSource, time);
@@ -346,6 +346,11 @@ export function useRecorderCanvas(
 
     const processAISegmentation = async (video: HTMLVideoElement, timestamp: number) => {
         if (!worker || !video.videoWidth) return;
+
+        // Skip segmentation if beauty/blur is off and vtuber is not active
+        if (!options.camSettings.value.enableBlur && !options.isVTuberActive.value && !options.enableBeauty.value) {
+            return;
+        }
 
         const results = await liveAIEngine.processFrame(video, timestamp, { 
             enableSegmentation: true,
@@ -385,6 +390,15 @@ export function useRecorderCanvas(
         }
     };
 
+    const destroy = () => {
+        stopRendering();
+        if (worker) {
+            worker.terminate();
+            worker = null;
+        }
+        isTransferred.value = false;
+    };
+
     // Watchers for reactive updates
     watch(() => options.mode.value, (newMode) => {
         if (newMode === 'audio') {
@@ -408,11 +422,12 @@ export function useRecorderCanvas(
         updateWorkerSettings();
     }, { deep: true });
 
-    onUnmounted(stopRendering);
+    onUnmounted(destroy);
 
     return {
         startRendering,
         stopRendering,
+        destroy,
         isTransferred,
         markAnnotationDirty: () => { isAnnotationDirty = true; }
     };

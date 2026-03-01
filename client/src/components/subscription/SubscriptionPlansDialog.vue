@@ -4,9 +4,8 @@
       <div class="flex items-center gap-4">
         <div class="h-10 w-1.5 bg-brand-primary rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
         <div class="flex flex-col">
-          <h3 class="text-xl font-black uppercase tracking-[0.2em] text-white/90">Expansion Plans</h3>
-          <span class="text-[11px] font-bold text-white/30 uppercase tracking-widest mt-0.5">Scale your production with
-            AI-powered features</span>
+          <h3 class="text-xl font-black uppercase tracking-[0.2em] text-white/90">{{ t('subscription.dialogs.plans.title') }}</h3>
+          <span class="text-[11px] font-bold text-white/30 uppercase tracking-widest mt-0.5">{{ t('subscription.dialogs.plans.subtitle') }}</span>
         </div>
       </div>
     </template>
@@ -18,14 +17,13 @@
           class="inline-flex items-center bg-black/40 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 gap-2">
           <button @click="isYearly = false"
             :class="cn('px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300', !isYearly ? 'bg-white/10 text-white shadow-lg' : 'text-white/30 hover:text-white/60')">
-            Monthly
+            {{ t('subscription.dialogs.plans.monthly') }}
           </button>
           <button @click="isYearly = true"
             :class="cn('px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2', isYearly ? 'bg-brand-primary text-black shadow-[0_8px_20px_rgba(59,130,246,0.3)]' : 'text-white/30 hover:text-white/60')">
-            Annually
+            {{ t('subscription.dialogs.plans.annually') }}
             <span
-              :class="cn('text-[8px] px-1.5 py-0.5 rounded-full font-black', isYearly ? 'bg-black/60 text-black' : 'bg-brand-primary/20 text-brand-primary')">SAVE
-              17%</span>
+              :class="cn('text-[8px] px-1.5 py-0.5 rounded-full font-black', isYearly ? 'bg-black/60 text-black' : 'bg-brand-primary/20 text-brand-primary')">{{ t('subscription.dialogs.plans.save', { percent: '17' }) }}</span>
           </button>
         </div>
       </div>
@@ -37,7 +35,7 @@
             (plan.name === 'Pro' || plan.name === 'Enterprise') ? 'border-brand-primary/30 bg-brand-primary/[0.03] shadow-[0_20px_50px_rgba(59,130,246,0.1)]' : '')">
           <div v-if="plan.name === 'Pro'"
             class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-primary text-black text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-[0_8px_20px_rgba(59,130,246,0.5)] z-10">
-            Recommended
+            {{ t('subscription.dialogs.plans.recommended') }}
           </div>
 
           <div class="plan-header text-center mb-8">
@@ -60,18 +58,18 @@
 
           <el-button v-if="plan.price === 0" disabled
             class="cinematic-button !h-12 !w-full !rounded-2xl !bg-white/5 !border-white/10 !text-white/40 mb-8">
-            <span class="text-xs font-black uppercase tracking-[0.2em]">CURRENT PLAN</span>
+            <span class="text-xs font-black uppercase tracking-[0.2em]">{{ t('subscription.dialogs.plans.currentPlan') }}</span>
           </el-button>
           <el-button v-else @click="openPaymentInterface(plan)"
             :class="cn('cinematic-button !h-12 !w-full !rounded-2xl mb-8 group/btn !transition-all duration-300',
               plan.name === 'Pro' ? '!bg-brand-primary !text-white !border-transparent shadow-[0_8px_25px_rgba(59,130,246,0.3)] hover:!scale-105 active:!scale-95' : '!bg-white/5 !text-white !border-white/10 hover:!bg-white/10')">
-            <span class="text-xs font-black uppercase tracking-[0.2em]">UPGRADE NOW</span>
+            <span class="text-xs font-black uppercase tracking-[0.2em]">{{ t('subscription.dialogs.plans.upgradeNow') }}</span>
           </el-button>
 
           <div class="plan-features grow space-y-8">
             <template v-if="getPlanFeatures(plan.name)">
               <div v-for="(category, catName) in getPlanFeatures(plan.name)" :key="catName" class="category">
-                <h4 class="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-3">{{ catName }}</h4>
+                <h4 class="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-3">{{ t('subscription.dialogs.plans.features.' + catName.toLowerCase()) }}</h4>
                 <ul class="space-y-2.5">
                   <li v-for="feat in category" :key="feat" class="flex items-start gap-2.5">
                     <div
@@ -90,7 +88,7 @@
 
 
     <!-- Payment Method Selector -->
-    <GDialog v-model="paymentSelectorVisible" title="Select Payment Method" width="400px" append-to-body>
+    <GDialog v-model="paymentSelectorVisible" :title="t('subscription.dialogs.plans.payment.title')" width="400px" append-to-body>
       <div class="payment-methods p-4 space-y-4">
         <div
           class="method-card flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer hover:bg-white/10 transition-all"
@@ -100,8 +98,8 @@
               <credit theme="filled" />
             </div>
             <div>
-              <p class="text-sm font-black text-white">Credit / Debit Card</p>
-              <p class="text-[10px] opacity-40">Visa, Master, AMEX</p>
+              <p class="text-sm font-black text-white">{{ t('subscription.dialogs.plans.payment.card.title') }}</p>
+              <p class="text-[10px] opacity-40">{{ t('subscription.dialogs.plans.payment.card.desc') }}</p>
             </div>
           </div>
           <right class="opacity-20" />
@@ -115,8 +113,8 @@
               <paypal theme="filled" />
             </div>
             <div>
-              <p class="text-sm font-black text-white">PayPal</p>
-              <p class="text-[10px] opacity-40">Wallet & Google/Apple Pay</p>
+              <p class="text-sm font-black text-white">{{ t('subscription.dialogs.plans.payment.paypal.title') }}</p>
+              <p class="text-[10px] opacity-40">{{ t('subscription.dialogs.plans.payment.paypal.desc') }}</p>
             </div>
           </div>
           <right class="opacity-20" />
@@ -135,7 +133,9 @@ import { useConfigStore } from '@/stores/config'
 import { storeToRefs } from 'pinia'
 import { Credit, Paypal, Right, Check as CheckIcon } from '@icon-park/vue-next'
 import { cn } from '@/utils/ui'
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const configStore = useConfigStore()
 const { plans } = storeToRefs(configStore)
@@ -165,6 +165,7 @@ const initiateStripeCheckout = async () => {
   if (!selectedPlan.value) return
   paymentSelectorVisible.value = false
   try {
+    toast.info(t('subscription.dialogs.plans.payment.redirecting', { platform: 'Stripe' }))
     await userStore.createCheckoutSession({
       planName: selectedPlan.value.name,
       billingPeriod: billingPeriod.value
@@ -185,7 +186,7 @@ const initiatePayPalCheckout = async () => {
     
     // Redirect to PayPal approval URL
     if (response.data?.url) {
-      toast.success("Redirecting to PayPal...")
+      toast.success(t('subscription.dialogs.plans.payment.redirecting', { platform: 'PayPal' }))
       // Redirect to PayPal checkout page
       window.location.href = response.data.url
     } else {
@@ -216,32 +217,32 @@ const getPlanFeatures = (name: string) => {
   if (name === 'Free') {
     return {
       'Rewards': ['Weekly Bonus: 500 Credits', 'Inviter Bonus: 50% AI Rewards'],
-      'AI Vision': ['Gemini 2.0 Pro Analysis', 'Flux.1 [dev] Image: 5 Generation'],
+      'aiVision': ['Gemini 2.0 Pro Analysis', 'Flux.1 [dev] Image: 5 Generation'],
       'Motion': ['Kling 1.6 Video: 5 Segment']
     }
   } else if (name === 'Starter') {
     return {
       'Rewards': ['Weekly Bonus: 500 Credits', 'Inviter Bonus: 50% AI Rewards'],
-      'AI Vision': ['Gemini 2.0 Flash: 500 Credits', 'Flux.1 [dev]: 14 Generation'],
+      'aiVision': ['Gemini 2.0 Flash: 500 Credits', 'Flux.1 [dev]: 14 Generation'],
       'Motion': ['Kling 1.6 Video: 10 Segment']
     }
   } else if (name === 'Basic') {
     return {
       'Rewards': ['Weekly Bonus: 1000 Credits', 'Inviter Bonus: 70% AI Rewards'],
-      'AI Vision': ['Gemini 2.0 Flash: 2000 Credits', 'Flux.1 [dev]: 40 Generation'],
+      'aiVision': ['Gemini 2.0 Flash: 2000 Credits', 'Flux.1 [dev]: 40 Generation'],
       'Motion': ['Kling 1.6 Video: 30 Segment']
     }
   } else if (name === 'Pro') {
     return {
       'Rewards': ['Weekly Bonus: 2500 Credits', 'Inviter Bonus: 90% AI Rewards'],
-      'AI Vision': ['Gemini 2.0 Pro: Priority Access', 'Flux.1 [pro]: Premium Quality'],
+      'aiVision': ['Gemini 2.0 Pro: Priority Access', 'Flux.1 [pro]: Premium Quality'],
       'Motion': ['Kling 1.6 Video: Unlimited HQ'],
       'Rights': ['Watermark-free Overlays', 'Full Commercial License']
     }
   } else if (name === 'Enterprise') {
     return {
       'Rewards': ['Weekly Bonus: 10000 Credits', 'Inviter Bonus: 100% Rewards'],
-      'AI Vision': ['Unlimited Analysis API', 'Dedicated Model Training'],
+      'aiVision': ['Unlimited Analysis API', 'Dedicated Model Training'],
       'Motion': ['Custom SOTA Video Models'],
       'Portal': ['Team Seat Management', 'White-label Player']
     }

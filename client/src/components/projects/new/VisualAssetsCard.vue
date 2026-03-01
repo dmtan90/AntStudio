@@ -6,7 +6,7 @@
     >
       <div class="flex items-center gap-3 text-[#eee] text-sm font-semibold">
         <pic theme="outline" size="18"/>
-        <span>Visual Assets <span class="text-[#888] font-normal ml-1">{{ t('projects.new.results.analysis.isReady') }}</span></span>
+        <span>{{ t('projects.new.results.visualAssets.summaryBar') }} <span class="text-[#888] font-normal ml-1">{{ t('projects.new.results.analysis.isReady') }}</span></span>
       </div>
       <arrow-right 
         theme="outline" 
@@ -51,10 +51,10 @@ import { ref, watch } from 'vue'
 import { Pic, ArrowRight, LoadingOne, Attention } from '@icon-park/vue-next'
 import { toast } from 'vue-sonner'
 import GMedia from '@/components/ui/GMedia.vue'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 import { useProjectStore } from '@/stores/project'
 
-const { t } = useTranslations()
+const { t } = useI18n()
 const projectStore = useProjectStore()
 
 interface VisualAsset {
@@ -86,7 +86,7 @@ const processQueue = async () => {
     try {
         const res = await projectStore.generateAsset(props.projectId, {
             assetName: asset.name,
-            description: asset.description || `Visual asset for ${asset.name}`,
+            description: asset.description || t('projects.new.results.visualAssets.visualAssetDesc', { name: asset.name }),
             type: 'image'
         })
         

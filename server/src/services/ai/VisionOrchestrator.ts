@@ -1,6 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
 import { geminiPool } from '../../utils/gemini.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 /**
  * Orchestrates Vision-based analysis for the AI Director.
  * Uses Gemini 1.5 Pro to "see" the stream content.
@@ -41,7 +43,7 @@ export class VisionOrchestrator {
             
             return response.text();
         } catch (error: any) {
-            console.error('[VisionOrchestrator] Analysis failed:', error.message);
+            Logger.error('[VisionOrchestrator] Analysis failed:', error.message);
             return null;
         }
     }

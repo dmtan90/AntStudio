@@ -2,7 +2,8 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { SocialPlatform, UserPlatformAccount } from '../models/UserPlatformAccount.js';
 import { getAdminSettings } from '../models/AdminSettings.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
+
 
 interface PlatformConfig {
     clientId: string;
@@ -140,7 +141,7 @@ export class PlatformAuthService {
             return response.data;
         } catch (error: any) {
             const errorData = error.response?.data;
-            console.error(`Failed to refresh token for ${platform}:`, errorData || error.message);
+            Logger.error(`Failed to refresh token for ${platform}:`, errorData || error.message);
             
             // Detect revoked/expired refresh tokens
             const isInvalidGrant = errorData?.error === 'invalid_grant' 
@@ -163,16 +164,16 @@ export class PlatformAuthService {
      * Updates the database if token is refreshed
      */
     static async getValidCredentials(account: any, forceRefresh: boolean = false): Promise<any> {
-        console.log(`[Token Check] START - Platform: ${account.platform}, Account: ${account.accountName || account._id}, Force: ${forceRefresh}`);
-        console.log(`[Token Check] Has refreshToken: ${!!account.credentials?.refreshToken}, Has expiresAt: ${!!account.credentials?.expiresAt}`);
+        Logger.info(`[Token Check] START - Platform: ${account.platform}, Account: ${account.accountName || account._id}, Force: ${forceRefresh}`);
+        Logger.info(`[Token Check] Has refreshToken: ${!!account.credentials?.refreshToken}, Has expiresAt: ${!!account.credentials?.expiresAt}`);
 
         // If not an OAuth platform or no refresh token, return existing
         if (!account.credentials.refreshToken || !account.credentials.expiresAt) {
             if (forceRefresh) {
-                console.error(`[Token Check] CRITICAL - Force refresh requested but no refreshToken exists for ${account.platform}`);
+                Logger.error(`[Token Check] CRITICAL - Force refresh requested but no refreshToken exists for ${account.platform}`);
                 throw new Error(`Account connection expired and no refresh token available. Please reconnect your ${account.platform} account.`);
             }
-            console.log(`[Token Check] EARLY RETURN - Missing refreshToken or expiresAt, returning existing credentials`);
+            Logger.info(`[Token Check] EARLY RETURN - Missing refreshToken or expiresAt, returning existing credentials`);
             return account.credentials;
         }
 
@@ -180,16 +181,16 @@ export class PlatformAuthService {
         const now = Date.now();
         const timeUntilExpiry = expiresAt - now;
 
-        console.log(`[Token Check] Platform: ${account.platform}, Account: ${account.accountName || account._id}`);
-        console.log(`[Token Check] Expires at: ${new Date(expiresAt).toISOString()}, Time until expiry: ${Math.round(timeUntilExpiry / 1000)}s`);
-        console.log(`[Token Check] Force refresh: ${forceRefresh}, Will refresh: ${forceRefresh || timeUntilExpiry < 5 * 60 * 1000}`);
+        Logger.info(`[Token Check] Platform: ${account.platform}, Account: ${account.accountName || account._id}`);
+        Logger.info(`[Token Check] Expires at: ${new Date(expiresAt).toISOString()}, Time until expiry: ${Math.round(timeUntilExpiry / 1000)}s`);
+        Logger.info(`[Token Check] Force refresh: ${forceRefresh}, Will refresh: ${forceRefresh || timeUntilExpiry < 5 * 60 * 1000}`);
 
         // Refresh if forced or expired or expiring in 5 minutes
         if (forceRefresh || timeUntilExpiry < 5 * 60 * 1000) {
-            console.log(`[Token Refresh] Starting token refresh for ${account.platform} (${account.accountName || account._id})`);
+            Logger.info(`[Token Refresh] Starting token refresh for ${account.platform} (${account.accountName || account._id})`);
             try {
                 const tokens = await this.refreshOAuthToken(account.platform, account.credentials.refreshToken);
-                console.log(`[Token Refresh] Successfully refreshed token for ${account.platform}`);
+                Logger.info(`[Token Refresh] Successfully refreshed token for ${account.platform}`);
 
                 // Update Account in DB
                 account.credentials.accessToken = tokens.access_token;
@@ -215,14 +216,14 @@ export class PlatformAuthService {
                     }
                 }
 
-                console.log(`[Token Refresh] Token saved to database for ${account.platform}`);
+                Logger.info(`[Token Refresh] Token saved to database for ${account.platform}`);
                 return account.credentials;
             } catch (error: any) {
-                console.error(`[Token Refresh] Failed to refresh token for ${account.platform}:`, error);
+                Logger.error(`[Token Refresh] Failed to refresh token for ${account.platform}:`, error);
                 
                 // If token is revoked/expired, mark account as needing re-authentication
                 if (error.requiresReauth) {
-                    console.warn(`[Token Refresh] Token revoked for ${account.platform}. Marking account as expired.`);
+                    Logger.warn(`[Token Refresh] Token revoked for ${account.platform}. Marking account as expired.`);
                     
                     // Clear the stale refresh token and mark status
                     account.credentials.refreshToken = null;
@@ -253,7 +254,7 @@ export class PlatformAuthService {
             }
         }
 
-        console.log(`[Token Check] Using existing valid token for ${account.platform}`);
+        Logger.info(`[Token Check] Using existing valid token for ${account.platform}`);
         return account.credentials;
     }
 
@@ -276,7 +277,7 @@ export class PlatformAuthService {
                         });
                         email = userRes.data.email;
                     } catch (e) {
-                        console.error('Failed to get user email via userinfo:', e);
+                        Logger.error('Failed to get user email via userinfo:', e);
                     }
 
                     const channel = ytRes.data.items?.[0]?.snippet;
@@ -341,7 +342,7 @@ export class PlatformAuthService {
 
             return res.data.success === true;
         } catch (e) {
-            console.error('AMS Verification Failed:', e);
+            Logger.error('AMS Verification Failed:', e);
             throw new Error('Failed to authenticate with Ant Media Server. Check credentials and URL.');
         }
     }
@@ -421,7 +422,7 @@ export class PlatformAuthService {
                             stats: statsMap.get(video.id)
                         }));
                     } catch (error) {
-                        console.error('Failed to fetch video statistics:', error);
+                        Logger.error('Failed to fetch video statistics:', error);
                     }
                 }
 
@@ -756,7 +757,7 @@ export class PlatformAuthService {
                     return null;
             }
         } catch (error: any) {
-            console.error(`[PlatformAuth] Failed to fetch video stats for ${platform}:`, error.response?.data || error.message);
+            Logger.error(`[PlatformAuth] Failed to fetch video stats for ${platform}:`, error.response?.data || error.message);
             return null;
         }
     }
@@ -820,7 +821,7 @@ export class PlatformAuthService {
             case SocialPlatform.YOUTUBE:
                 {
                     // Use direct API for resumable upload to avoid googleapis/fetch issues
-                    systemLogger.info(`🚀 [YouTube Upload] Starting resumable upload session`, 'PlatformAuthService');
+                    Logger.info(`🚀 [YouTube Upload] Starting resumable upload session`, 'PlatformAuthService');
                     
                     // 1. Initiate resumable upload session
                     const initiateRes = await axios.post(
@@ -849,7 +850,7 @@ export class PlatformAuthService {
                         throw new Error('Failed to get YouTube upload location');
                     }
 
-                    systemLogger.info(`🚀 [YouTube Upload] Session created: ${uploadUrl}`, 'PlatformAuthService');
+                    Logger.info(`🚀 [YouTube Upload] Session created: ${uploadUrl}`, 'PlatformAuthService');
 
                     // 2. Upload the video stream
                     const uploadRes = await axios.put(uploadUrl, videoStream, {
@@ -947,9 +948,9 @@ export class PlatformAuthService {
                     });
                     
                     if (ytRes.data.items?.length === 0) {
-                        systemLogger.info(`[ChatSync] YouTube Chat Fetch for ${liveId}: Found 0 items. Full Response: ${JSON.stringify(ytRes.data)}`, 'PlatformAuth');
+                        Logger.info(`[ChatSync] YouTube Chat Fetch for ${liveId}: Found 0 items. Full Response: ${JSON.stringify(ytRes.data)}`, 'PlatformAuth');
                     } else {
-                        systemLogger.info(`[ChatSync] YouTube Chat Fetch for ${liveId}: Found ${ytRes.data.items?.length} items.`, 'PlatformAuth');
+                        Logger.info(`[ChatSync] YouTube Chat Fetch for ${liveId}: Found ${ytRes.data.items?.length} items.`, 'PlatformAuth');
                     }
 
                     const messages = ytRes.data.items?.map((item: any) => ({
@@ -991,7 +992,7 @@ export class PlatformAuthService {
                     return { messages: [] };
             }
         } catch (error: any) {
-            console.error(`[ChatSync] Failed to fetch ${platform} chat:`, error.response?.data || error.message);
+            Logger.error(`[ChatSync] Failed to fetch ${platform} chat:`, error.response?.data || error.message);
             return { messages: [] };
         }
     }
@@ -1018,9 +1019,9 @@ export class PlatformAuthService {
                     });
 
                     const broadcasts = activeBroadcastsRes.data.items || [];
-                    console.log(`[PlatformAuth] Found ${broadcasts.length} broadcasts for YouTube.`);
+                    Logger.info(`[PlatformAuth] Found ${broadcasts.length} broadcasts for YouTube.`);
                     broadcasts.forEach((b: any) => {
-                        console.log(`[PlatformAuth] Broadcast ${b.id}: status=${b.status.lifeCycleStatus}, title=${b.snippet.title}, chatId=${b.snippet.liveChatId}`);
+                        Logger.info(`[PlatformAuth] Broadcast ${b.id}: status=${b.status.lifeCycleStatus}, title=${b.snippet.title}, chatId=${b.snippet.liveChatId}`);
                     });
 
                     // Find the best match: live > testing > ready
@@ -1030,7 +1031,7 @@ export class PlatformAuthService {
                                      broadcasts[0];
 
                     if (existing) {
-                        console.log(`[PlatformAuth] Selected broadcast: ${existing.id} (${existing.status.lifeCycleStatus})`);
+                        Logger.info(`[PlatformAuth] Selected broadcast: ${existing.id} (${existing.status.lifeCycleStatus})`);
                         
                         // Get stream info if bound
                         let rtmpUrl = 'rtmp://a.rtmp.youtube.com/live2';
@@ -1051,7 +1052,7 @@ export class PlatformAuthService {
                                     streamKey = cdn.streamName || '';
                                 }
                             } catch (e) {
-                                console.warn('[PlatformAuth] Failed to fetch bound stream details, using defaults.');
+                                Logger.warn('[PlatformAuth] Failed to fetch bound stream details, using defaults.');
                             }
                         }
 
@@ -1110,7 +1111,7 @@ export class PlatformAuthService {
                     });
 
                     const chatId = broadcastRes.data.snippet?.liveChatId;
-                    console.log(`[PlatformAuth] Created YouTube Broadcast: ${broadcastRes.data.id}, ChatID: ${chatId}`);
+                    Logger.info(`[PlatformAuth] Created YouTube Broadcast: ${broadcastRes.data.id}, ChatID: ${chatId}`);
 
                     return {
                         rtmpUrl: streamRes.data.cdn?.ingestionInfo?.ingestionAddress || 'rtmp://a.rtmp.youtube.com/live2',
@@ -1123,7 +1124,7 @@ export class PlatformAuthService {
                     if (errMsg.includes('live streaming') || errMsg.includes('not enabled')) {
                         throw new Error('Your YouTube account is not enabled for live streaming. Please enable it in YouTube Studio and wait 24 hours for activation.');
                     }
-                    console.error('YouTube Live Setup Error:', error.response?.data || error.message);
+                    Logger.error('YouTube Live Setup Error:', error.response?.data || error.message);
                     throw error;
                 }
 
@@ -1216,7 +1217,7 @@ export class PlatformAuthService {
 
                     return true;
                 } catch (error: any) {
-                    systemLogger.error(`YouTube Metadata Update Error: ${error.response?.data || error.message}`);
+                    Logger.error(`YouTube Metadata Update Error: ${error.response?.data || error.message}`);
                     throw error;
                 }
 
@@ -1241,7 +1242,7 @@ export class PlatformAuthService {
 
                     return true;
                 } catch (error: any) {
-                    systemLogger.error(`Facebook Metadata Update Error: ${error.response?.data || error.message}`);
+                    Logger.error(`Facebook Metadata Update Error: ${error.response?.data || error.message}`);
                     throw error;
                 }
 
@@ -1272,7 +1273,7 @@ export class PlatformAuthService {
 
                     return true;
                 } catch (error: any) {
-                    systemLogger.error(`AMS Metadata Update Error: ${error.response?.data || error.message}`);
+                    Logger.error(`AMS Metadata Update Error: ${error.response?.data || error.message}`);
                     throw error;
                 }
 

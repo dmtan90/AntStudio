@@ -1,8 +1,8 @@
 <template>
     <div class="analytics-dashboard p-6">
         <div class="page-header mb-8">
-            <h1>AI Performance Hub</h1>
-            <p class="subtitle">Data-driven insights and optimization control.</p>
+            <h1>{{ $t('admin.analytics.title') }}</h1>
+            <p class="subtitle">{{ $t('admin.analytics.subtitle') }}</p>
         </div>
 
         <!-- Optimization Control -->
@@ -11,9 +11,9 @@
                 <div>
                     <h3 class="flex items-center gap-2">
                         <robot theme="outline" size="20" />
-                        Autonomous Optimization
+                        {{ $t('admin.analytics.autonomousOptimization') }}
                     </h3>
-                    <p class="text-xs opacity-50">AI will automatically switch styles to maximize viewer retention.</p>
+                    <p class="text-xs opacity-50">{{ $t('admin.analytics.autonomousOptimizationDesc') }}</p>
                 </div>
                 <el-switch v-model="optimizationActive" @change="toggleOptimization" />
             </div>
@@ -23,7 +23,7 @@
             <!-- Left: Performance Metrics -->
             <div class="lg:col-span-2 space-y-6">
                 <div class="cinematic-card p-6 h-[400px]">
-                    <h3>Engagement vs. AI Configuration</h3>
+                    <h3>{{ $t('admin.analytics.engagementVsConfig') }}</h3>
                     <div class="h-[300px] mt-4">
                         <Line v-if="chartData" :data="chartData" :options="chartOptions" />
                     </div>
@@ -31,12 +31,12 @@
 
                 <div class="grid grid-cols-2 gap-6">
                     <div class="cinematic-card p-6 text-center">
-                        <p class="text-[10px] font-black opacity-30 uppercase mb-2">Optimal Style</p>
-                        <p class="text-2xl font-black text-blue-400">{{ insights.optimalStyle || 'ANALYZING...' }}</p>
+                        <p class="text-[10px] font-black opacity-30 uppercase mb-2">{{ $t('admin.analytics.optimalStyle') }}</p>
+                        <p class="text-2xl font-black text-blue-400">{{ insights.optimalStyle || t('admin.analytics.analyzing') }}</p>
                     </div>
                     <div class="cinematic-card p-6 text-center">
-                        <p class="text-[10px] font-black opacity-30 uppercase mb-2">Optimal Persona</p>
-                        <p class="text-2xl font-black text-purple-400">{{ insights.optimalPersona || 'ANALYZING...' }}
+                        <p class="text-[10px] font-black opacity-30 uppercase mb-2">{{ $t('admin.analytics.optimalPersona') }}</p>
+                        <p class="text-2xl font-black text-purple-400">{{ insights.optimalPersona || t('admin.analytics.analyzing') }}
                         </p>
                     </div>
                 </div>
@@ -44,7 +44,7 @@
 
             <!-- Right: Director Insights -->
             <div class="cinematic-card p-6 bg-black/40">
-                <h3 class="mb-4">Director Insights</h3>
+                <h3 class="mb-4">{{ $t('admin.analytics.directorInsights') }}</h3>
                 <div class="insight-list space-y-4">
                     <div v-for="(insight, idx) in insightHistory" :key="idx"
                         class="p-4 rounded-xl bg-white/5 border border-white/5 animate-in">
@@ -55,7 +55,7 @@
                         <p class="text-xs leading-relaxed">{{ insight }}</p>
                     </div>
                     <div v-if="!insightHistory.length" class="empty-state py-20 text-center opacity-20">
-                        Gathering stream data...
+                        {{ $t('admin.analytics.gatheringData') }}
                     </div>
                 </div>
             </div>
@@ -65,11 +65,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Robot, ChartLine } from '@icon-park/vue-next';
 import { Line } from 'vue-chartjs';
 import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
 
+const { t } = useI18n();
 const adminStore = useAdminStore();
 
 const optimizationActive = ref(false);
@@ -98,10 +100,10 @@ const toggleOptimization = async () => {
                 candidates: ['neon', 'cinematic', 'noir', 'dreamy']
             });
         } else {
-            toast.info("AI Optimizer Disengaged");
+            toast.info(t('admin.analytics.toasts.disengaged'));
         }
     } catch (e) {
-        toast.error("Failed to toggle optimizer");
+        toast.error(t('admin.analytics.toasts.toggleFailed'));
         optimizationActive.value = !optimizationActive.value;
     }
 };
@@ -122,7 +124,7 @@ const chartOptions = {
 const chartData = computed(() => ({
     labels: Array(20).fill(''),
     datasets: [{
-        label: 'Retention Score',
+        label: t('admin.analytics.retentionScore'),
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59,130,246,0.1)',
         data: Array(20).fill(0).map(() => Math.random() * 100),

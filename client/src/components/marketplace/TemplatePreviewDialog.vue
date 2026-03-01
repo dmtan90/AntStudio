@@ -38,7 +38,7 @@
                             class="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center text-xs font-bold text-white uppercase shadow-lg">
                             {{ template.authorName?.charAt(0) || 'A' }}
                         </div>
-                        <p class="text-gray-400 text-sm font-medium">{{ template.authorName || 'AntStudio Creator' }}</p>
+                        <p class="text-gray-400 text-sm font-medium">{{ template.authorName || $t('marketplace.previewDialog.defaultAuthor') }}</p>
                     </div>
 
                     <div class="h-px bg-white/5 w-full mb-6"></div>
@@ -49,7 +49,7 @@
                             <Movie class="text-blue-400 text-xl" />
                             <div>
                                 <div class="text-lg font-bold text-white leading-none">{{ stats.clips }}</div>
-                                <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">Clips</div>
+                                <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">{{ $t('marketplace.previewDialog.clips') }}</div>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
@@ -57,14 +57,14 @@
                             <div>
                                 <div class="text-lg font-bold text-white leading-none">{{ formatDuration(stats.duration)
                                     }}</div>
-                                <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">Duration</div>
+                                <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">{{ $t('marketplace.previewDialog.duration') }}</div>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
                             <Text class="text-green-400 text-xl" />
                             <div>
-                                <div class="text-lg font-bold text-white leading-none">{{ stats.texts }} texts</div>
-                                <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">Editable</div>
+                                <div class="text-lg font-bold text-white leading-none">{{ stats.texts }} {{ $t('marketplace.previewDialog.texts') }}</div>
+                                <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">{{ $t('marketplace.previewDialog.editable') }}</div>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
@@ -72,15 +72,16 @@
                             <div>
                                 <div class="text-lg font-bold text-white leading-none">{{ template.downloads || 0 }}
                                 </div>
-                                <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">Uses</div>
+                                <div class="text-[10px] text-gray-500 uppercase font-bold mt-1">{{ $t('marketplace.previewDialog.uses') }}</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Ratio Selector -->
                     <div v-if="pagesWithDifferentRatios.length > 0" class="mb-8">
-                        <label class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-3 block">Select
-                            Ratio</label>
+                        <label class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-3 block">
+                            {{ $t('marketplace.previewDialog.selectRatio') }}
+                        </label>
                         <div class="flex flex-wrap gap-2">
                             <button v-for="page in pagesWithDifferentRatios" :key="page.id" @click="selectedPage = page"
                                 :class="['px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 border',
@@ -94,10 +95,10 @@
                     <!-- Description -->
                     <div class="mb-8">
                         <label
-                            class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2 block">Description</label>
+                            class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2 block">{{ $t('marketplace.previewDialog.description') }}</label>
                         <p class="text-gray-400 leading-relaxed text-sm">
                             {{
-                                template.description || 'Create stunning videos in seconds with this professionallayout.'
+                                template.description || $t('marketplace.previewDialog.defaultDesc')
                             }}
                         </p>
                     </div>
@@ -115,14 +116,14 @@
                 <div class="p-8 border-t border-white/5 bg-[#0a0a0c]">
                     <button @click="handleUse"
                         class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-3 text-lg group">
-                        <span>Use Template</span>
+                        <span>{{ $t('marketplace.previewDialog.useTemplate') }}</span>
                         <span v-if="selectedPage" class="px-2 py-0.5 bg-black/20 rounded text-sm font-medium">
                             ({{ getRatioLabel(selectedPage) }})
                         </span>
                         <ArrowRight />
                     </button>
                     <p class="text-center text-[10px] text-gray-600 mt-4 uppercase tracking-widest font-bold">
-                        Fully Customizable in Editor
+                        {{ $t('marketplace.previewDialog.customizable') }}
                     </p>
                 </div>
             </div>
@@ -132,8 +133,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Close, Movie, Time, Text, Fire, ArrowRight } from '@icon-park/vue-next';
 import { getFileUrl } from '@/utils/api';
+
+const { t } = useI18n()
 
 const props = defineProps<{
     template: any
@@ -177,7 +181,7 @@ const stats = computed(() => {
 
 // Helper to determine aspect ratio label
 const getRatioLabel = (page: any) => {
-    if (!page?.data) return 'Default';
+    if (!page?.data) return t('marketplace.previewDialog.defaultRatio');
     const { width, height } = page.data;
     const ratio = width / height;
 

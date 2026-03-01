@@ -46,7 +46,7 @@
           <li v-for="char in msg.result.cumulative?.analysis?.characters" :key="char.name">
             <strong>{{ char.name }}:</strong> {{ char.description }}
             <div class="char-sub-details" v-if="char.physical_traits">
-              <span class="sub-label">Physical:</span> {{ Object.values(char.physical_traits).filter(Boolean).join(', ') }} | <span class="sub-label">Voice:</span> {{ char.voice_profile }}
+              <span class="sub-label">{{ t('projects.new.results.analysis.physical') }}:</span> {{ Object.values(char.physical_traits).filter(Boolean).join(', ') }} | <span class="sub-label">{{ t('projects.new.results.analysis.voice') }}:</span> {{ char.voice_profile }}
             </div>
           </li>
         </ul>
@@ -86,10 +86,10 @@
         <ul>
           <li><strong>{{ t('projects.new.results.analysis.palette') }}:</strong> {{ msg.result.cumulative?.analysis?.visuals?.palette }}</li>
           <li v-if="msg.result.cumulative?.analysis?.visuals?.visualWorldRules">
-            <strong>World Rules:</strong> {{ msg.result.cumulative?.analysis?.visuals?.visualWorldRules?.physics }} | Lighting: {{ msg.result.cumulative?.analysis?.visuals?.visualWorldRules?.lighting }}
+            <strong>{{ t('projects.new.results.analysis.worldRules') }}:</strong> {{ msg.result.cumulative?.analysis?.visuals?.visualWorldRules?.physics }} | {{ t('projects.new.results.analysis.lighting') }}: {{ msg.result.cumulative?.analysis?.visuals?.visualWorldRules?.lighting }}
           </li>
           <li v-if="msg.result.cumulative?.analysis?.visuals?.visualWorldRules?.colorHarmony">
-            <strong>Color Harmony:</strong>
+            <strong>{{ t('projects.new.results.analysis.colorHarmony') }}:</strong>
             <span v-for="color in msg.result.cumulative?.analysis?.visuals?.visualWorldRules?.colorHarmony" :key="color.hex" class="hex-tag" :style="{ borderLeft: `4px solid ${color.hex}` }">
                {{ color.name }} ({{ color.hex }})
             </span>
@@ -107,7 +107,7 @@
         <ul>
           <li><strong>{{ t('projects.new.results.analysis.sfx') }}:</strong> {{ msg.result.cumulative?.analysis?.audio?.sfx }}</li>
           <li><strong>{{ t('projects.new.results.analysis.music') }}:</strong> {{ msg.result.cumulative?.analysis?.audio?.music }}</li>
-          <li v-if="msg.result.cumulative?.analysis?.audio?.ambience"><strong>Ambience:</strong> {{ msg.result.cumulative?.analysis?.audio?.ambience }}</li>
+          <li v-if="msg.result.cumulative?.analysis?.audio?.ambience"><strong>{{ t('projects.new.results.analysis.ambience') }}:</strong> {{ msg.result.cumulative?.analysis?.audio?.ambience }}</li>
         </ul>
       </div>
 
@@ -125,9 +125,9 @@
 
 <script setup lang="ts">
 import { MagicWand, ArrowRight, Comment, Check } from '@icon-park/vue-next'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 defineProps<{
   msg: any

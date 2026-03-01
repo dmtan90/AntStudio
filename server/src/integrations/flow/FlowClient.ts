@@ -2,6 +2,7 @@ import { Page } from 'playwright';
 import { browserManager } from '../aistudio/BrowserManager.js';
 import { AdminSettings } from '../../models/AdminSettings.js';
 import { flowApiClient } from './FlowApiClient.js';
+import { Logger } from '../../utils/Logger.js';
 
 export class FlowClient {
     private isReady = false;
@@ -16,14 +17,14 @@ export class FlowClient {
      * Inject cookies from an external source (e.g. Database)
      */
     async injectCookies(cookies: any[]) {
-        console.log(`[Flow] Injecting ${cookies.length} cookies...`);
+        Logger.info(`[Flow] Injecting ${cookies.length} cookies...`);
         const page = await browserManager.getPage();
         const context = page.context();
 
         // 1. Inject specialized Flow token if found in DB
         const settings = await AdminSettings.findOne();
         if (settings?.aiSettings?.flowSessionToken) {
-            console.log('[Flow] Injecting dedicated next-auth session token...');
+            Logger.info('[Flow] Injecting dedicated next-auth session token...');
             await context.addCookies([{
                 name: '__Secure-next-auth.session-token',
                 value: settings.aiSettings.flowSessionToken,
@@ -50,7 +51,7 @@ export class FlowClient {
                 if (flowToken) {
                     settings.aiSettings.flowSessionToken = flowToken.value;
                     updated = true;
-                    console.log('[Flow] Dedicated session token detected and persisted.');
+                    Logger.info('[Flow] Dedicated session token detected and persisted.');
                 }
 
                 // 2. Save common Google session symbols to 'aistudio' shared pool
@@ -59,7 +60,7 @@ export class FlowClient {
                     googleProvider.apiKey = JSON.stringify(cookies);
                     settings.markModified('aiSettings.providers');
                     updated = true;
-                    console.log('[Flow] Standard cookies persisted to shared storage (aistudio).');
+                    Logger.info('[Flow] Standard cookies persisted to shared storage (aistudio).');
                 }
 
                 if (updated) {
@@ -67,7 +68,7 @@ export class FlowClient {
                 }
             }
         } catch (e: any) {
-            console.error('[Flow] Failed to save cookies to DB:', e.message);
+            Logger.error('[Flow] Failed to save cookies to DB:', 'FlowClient', e.message);
         }
     }
 
@@ -83,11 +84,11 @@ export class FlowClient {
                         settings.aiSettings.flowWorkspaceUrls.shift();
                     }
                     await settings.save();
-                    console.log(`[Flow] Workspace URL persisted: ${url}`);
+                    Logger.info(`[Flow] Workspace URL persisted: ${url}`);
                 }
             }
         } catch (e: any) {
-            console.error('[Flow] Failed to save workspace URL:', e.message);
+            Logger.error('[Flow] Failed to save workspace URL:', 'FlowClient', e.message);
         }
     }
 
@@ -102,11 +103,11 @@ export class FlowClient {
             if (pool.length > 0) {
                 // Pick the most recent one (last in list)
                 targetUrl = pool[pool.length - 1];
-                console.log(`[Flow] Using existing workspace from pool: ${targetUrl}`);
+                Logger.info(`[Flow] Using existing workspace from pool: ${targetUrl}`);
             }
 
             // 2. Navigation
-            console.log(`[Flow] Navigating to: ${targetUrl}`);
+            Logger.info(`[Flow] Navigating to: ${targetUrl}`);
             await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
 
             // 3. Project Creation & Redirection Logic
@@ -114,12 +115,12 @@ export class FlowClient {
             let isInWorkspace = currentUrl.includes('/project/');
 
             if (!isInWorkspace && currentUrl.includes('/tools/flow')) {
-                console.log('[Flow] Not in workspace. Starting project creation cycle...');
+                Logger.info('[Flow] Not in workspace. Starting project creation cycle...');
 
                 let retryCount = 0;
                 while (retryCount < 2 && !isInWorkspace) {
                     try {
-                        console.log(`[Flow] Attempting to click "Dự án mới" (Attempt ${retryCount + 1}/2)...`);
+                        Logger.info(`[Flow] Attempting to click "Dự án mới" (Attempt ${retryCount + 1}/2)...`);
 
                         // Strategy 1: Targeted class + broad text
                         const btn = page.locator('button.sc-c177465c-1, button').filter({ hasText: /Dự án mới|New project/i }).first();
@@ -130,23 +131,23 @@ export class FlowClient {
                             // Strategy 2: Icon search 'add_2'
                             const iconBtn = page.locator('button:has(i:has-text("add_2")), button:has(.google-symbols)').first();
                             if (await iconBtn.isVisible({ timeout: 2000 })) {
-                                console.log('[Flow] Found button by icon "add_2".');
+                                Logger.info('[Flow] Found button by icon "add_2".');
                                 await iconBtn.click({ force: true });
                             } else {
                                 // Strategy 3: Pure text search
-                                console.log('[Flow] Generic text search fallback...');
+                                Logger.info('[Flow] Generic text search fallback...');
                                 await page.click('text="Dự án mới"', { timeout: 2000 }).catch(() => { });
                             }
                         }
 
                         // Wait for navigation and URL change
-                        console.log('[Flow] Waiting for project redirection...');
+                        Logger.info('[Flow] Waiting for project redirection...');
                         await page.waitForURL(url => url.toString().includes('/project/'), { timeout: 15000 }).catch(() => { });
 
                         currentUrl = page.url();
                         isInWorkspace = currentUrl.includes('/project/');
                     } catch (e: any) {
-                        console.warn(`[Flow] Navigation attempt failed: ${e.message}`);
+                        Logger.warn(`[Flow] Navigation attempt failed: ${e.message}`, 'FlowClient');
                     }
                     retryCount++;
                 }
@@ -155,14 +156,14 @@ export class FlowClient {
             // 4. Persistence & Final State Check
             if (isInWorkspace) {
                 await this.saveWorkspaceUrlToDB(page.url());
-                console.log(`[Flow] Flow Workspace Ready: ${page.url()}`);
+                Logger.info(`[Flow] Flow Workspace Ready: ${page.url()}`);
                 this.isReady = true;
             } else {
-                console.warn('[Flow] Still in Lobby. Marking as NOT READY.');
+                Logger.warn('[Flow] Still in Lobby. Marking as NOT READY.', 'FlowClient');
                 this.isReady = false;
             }
         } catch (error: any) {
-            console.error('[Flow] Initialization Failed:', error.message);
+            Logger.error('[Flow] Initialization Failed:', 'FlowClient', error.message);
             this.isReady = false;
         }
     }
@@ -181,14 +182,14 @@ export class FlowClient {
                 });
 
                 if (!isSelected) {
-                    console.log(`[Flow] Switching to tab: ${tabText}`);
+                    Logger.info(`[Flow] Switching to tab: ${tabText}`);
                     await tabLocator.click();
                     await page.waitForTimeout(2000);
                 } else {
-                    console.log(`[Flow] Tab "${tabText}" is already active.`);
+                    Logger.info(`[Flow] Tab "${tabText}" is already active.`);
                 }
             } else {
-                console.warn(`[Flow] Tab button "${tabText}" not visible via Role. Trying fallback text...`);
+                Logger.warn(`[Flow] Tab button "${tabText}" not visible via Role. Trying fallback text...`, 'FlowClient');
                 // Fallback to generic button search
                 const fallback = page.locator('button').filter({ hasText: new RegExp(`^${tabText}$`, 'i') }).first();
                 if (await fallback.isVisible()) {
@@ -197,7 +198,7 @@ export class FlowClient {
                 }
             }
         } catch (e) {
-            console.warn(`[Flow] Could not find or click tab: ${tabText}`);
+            Logger.warn(`[Flow] Could not find or click tab: ${tabText}`, 'FlowClient');
         }
     }
 
@@ -208,7 +209,7 @@ export class FlowClient {
 
         if (currentUrl.includes('/tools/flow') && isInWorkspace) return;
 
-        console.log('[Flow] Not in project workspace. Re-navigating to Flow tools...');
+        Logger.info('[Flow] Not in project workspace. Re-navigating to Flow tools...');
         if (!currentUrl.includes('/tools/flow')) {
             await page.goto('https://labs.google/fx/vi/tools/flow', { waitUntil: 'domcontentloaded' }).catch(() => { });
         }
@@ -235,7 +236,7 @@ export class FlowClient {
         if (projectId) {
             const isValid = await flowApiClient.validateProject(stToken, projectId);
             if (!isValid) {
-                console.log(`[Flow] Project ${projectId} is invalid or deleted. Will create a new one.`);
+                Logger.info(`[Flow] Project ${projectId} is invalid or deleted. Will create a new one.`);
                 needsNewProject = true;
             }
         }
@@ -253,7 +254,7 @@ export class FlowClient {
      * Generate Video using Flow (Refined API Path)
      */
     async generateVideo(prompt: string): Promise<string> {
-        console.log('[Flow] Triggering Video Generation (Veo 3.1)...');
+        Logger.info('[Flow] Triggering Video Generation (Veo 3.1)...');
 
         // 1. Fetch Priority Config (Gemini API Key from Env or Google Provider)
         const settings = await AdminSettings.findOne();
@@ -267,7 +268,7 @@ export class FlowClient {
         try {
             const { at, stToken, projectId } = await this.ensureApiContext();
 
-            console.log(`[Flow] Switching to API Path (Project: ${projectId})`);
+            Logger.info(`[Flow] Switching to API Path (Project: ${projectId})`);
 
             const startGen = async (useApiKey: boolean) => {
                 return await flowApiClient.generateVideo(prompt, {
@@ -281,10 +282,10 @@ export class FlowClient {
             try {
                 // HAPPY PATH: Try with API Key first (If available) or Pure API (No Captcha)
                 if (geminiKey) {
-                    console.log('[Flow] Attempting API-Key driven generation (No Captcha needed)...');
+                    Logger.info('[Flow] Attempting API-Key driven generation (No Captcha needed)...');
                     operationName = await startGen(true);
                 } else {
-                    console.log('[Flow] No API Key found. Attempting Pure API generation (No Captcha attempt)...');
+                    Logger.info('[Flow] No API Key found. Attempting Pure API generation (No Captcha attempt)...');
                     operationName = await startGen(false);
                 }
             } catch (err: any) {
@@ -292,7 +293,7 @@ export class FlowClient {
                 if (msg.includes('recaptcha') || msg.includes('challenge') || msg.includes('security') || msg.includes('blocked') || err.response?.status === 403 || err.response?.status === 401) {
                     // Only fallback to captcha solving if we AREN'T already using an API Key (which should bypass it)
                     // Or if even the API Key is challenged.
-                    console.log(`[Flow] API security challenge detected (${err.response?.status || 'Unknown Status'}). Invoking background solver...`);
+                    Logger.info(`[Flow] API security challenge detected (${err.response?.status || 'Unknown Status'}). Invoking background solver...`);
 
                     let rt = "";
                     try {
@@ -310,12 +311,12 @@ export class FlowClient {
                 }
             }
 
-            console.log(`[Flow] API Generation started: ${operationName}. Polling status...`);
+            Logger.info(`[Flow] API Generation started: ${operationName}. Polling status...`);
             let attempts = 0;
             while (attempts < 60) {
                 const { status, url } = await flowApiClient.checkStatus(at, operationName, stToken);
                 if (status === 'MEDIA_GENERATION_STATUS_SUCCESSFUL') {
-                    console.log(`[Flow] API Generation Success: ${url}`);
+                    Logger.info(`[Flow] API Generation Success: ${url}`);
                     return url || '';
                 }
                 if (status === 'MEDIA_GENERATION_STATUS_FAILED') {
@@ -326,7 +327,7 @@ export class FlowClient {
             }
             throw new Error('API Generation timed out');
         } catch (apiErr: any) {
-            console.warn(`[Flow] API Mode failed: ${apiErr.message}. Falling back to Browser Mode...`);
+            Logger.warn(`[Flow] API Mode failed: ${apiErr.message}. Falling back to Browser Mode...`, 'FlowClient');
         }
 
         // 2. Path B: Browser Fallback
@@ -336,7 +337,7 @@ export class FlowClient {
         const page = await browserManager.getPage();
 
         try {
-            console.log('[Flow] Starting deep discovery of input box...');
+            Logger.info('[Flow] Starting deep discovery of input box...');
             let inputLocator = null;
             const idLocator = page.locator('textarea#PINHOLE_TEXT_AREA_ELEMENT_ID');
             if (await idLocator.isVisible({ timeout: 2000 })) {
@@ -361,7 +362,7 @@ export class FlowClient {
                 await inputLocator.press('Backspace');
                 await inputLocator.fill(prompt);
             } else {
-                console.log('[Flow] Blind input strategy...');
+                Logger.info('[Flow] Blind input strategy...');
                 const size = page.viewportSize();
                 if (size) await page.mouse.click(size.width / 2, size.height - 80);
                 await page.keyboard.type(prompt, { delay: 30 });
@@ -421,7 +422,7 @@ export class FlowClient {
             if (!mediaResult) throw new Error('Generation finished but no media found in UI.');
             return mediaResult as string;
         } catch (error: any) {
-            console.error('[Flow] Video Gen (Browser) Error:', error.message);
+            Logger.error('[Flow] Video Gen (Browser) Error:', 'FlowClient', error.message);
             throw error;
         }
     }
@@ -430,7 +431,7 @@ export class FlowClient {
      * Generate Image using Flow
      */
     async generateImage(prompt: string): Promise<string> {
-        console.log('[Flow] Triggering Image Generation (Imagen 3.5)...');
+        Logger.info('[Flow] Triggering Image Generation (Imagen 3.5)...');
 
         // 1. Fetch Priority Config
         const settings = await AdminSettings.findOne();
@@ -444,16 +445,16 @@ export class FlowClient {
         try {
             const { at, stToken, projectId } = await this.ensureApiContext();
 
-            console.log(`[Flow] Switching to Image API Path (Project: ${projectId})`);
+            Logger.info(`[Flow] Switching to Image API Path (Project: ${projectId})`);
             try {
                 if (geminiKey) {
-                    console.log('[Flow] Attempting API-Key driven image generation...');
+                    Logger.info('[Flow] Attempting API-Key driven image generation...');
                     return await flowApiClient.generateImage(prompt, {
                         at, projectId, stToken, apiKey: geminiKey,
                         aspectRatio: 'IMAGE_ASPECT_RATIO_LANDSCAPE'
                     });
                 } else {
-                    console.log('[Flow] Attempting Pure API Image generation...');
+                    Logger.info('[Flow] Attempting Pure API Image generation...');
                     return await flowApiClient.generateImage(prompt, {
                         at, projectId, stToken,
                         aspectRatio: 'IMAGE_ASPECT_RATIO_LANDSCAPE'
@@ -462,7 +463,7 @@ export class FlowClient {
             } catch (err: any) {
                 const msg = (err.response?.data?.error?.message || err.message || "").toLowerCase();
                 if (msg.includes('recaptcha') || msg.includes('challenge') || msg.includes('security') || msg.includes('blocked') || err.response?.status === 403 || err.response?.status === 401) {
-                    console.log(`[Flow] Image API challenge detected (${err.response?.status || 'Unknown Status'}). Falling back to solver...`);
+                    Logger.info(`[Flow] Image API challenge detected (${err.response?.status || 'Unknown Status'}). Falling back to solver...`);
 
                     const rToken = await flowApiClient.solveCaptcha(stToken, projectId);
                     return await flowApiClient.generateImage(prompt, {
@@ -474,7 +475,7 @@ export class FlowClient {
                 }
             }
         } catch (apiErr: any) {
-            console.warn(`[Flow] Image API Mode failed: ${apiErr.message}. Falling back to Browser Mode...`);
+            Logger.warn(`[Flow] Image API Mode failed: ${apiErr.message}. Falling back to Browser Mode...`, 'FlowClient');
         }
 
         // 2. Path B: Browser Fallback
@@ -484,7 +485,7 @@ export class FlowClient {
         const page = await browserManager.getPage();
 
         try {
-            console.log('[Flow] Starting deep discovery of image input box...');
+            Logger.info('[Flow] Starting deep discovery of image input box...');
             let inputLocator = null;
             const targetPlaceholders = ['Tạo hình ảnh từ văn bản và thành phần', 'Nhập vào ô nhập câu lệnh để bắt đầu', 'Tạo một hình ảnh bằng văn bản...', 'Bắt đầu bằng cách nhập câu lệnh'];
             for (const text of targetPlaceholders) {
@@ -528,7 +529,7 @@ export class FlowClient {
             if (!imageUrl) throw new Error('Could not extract generated image from Flow UI.');
             return imageUrl as string;
         } catch (error: any) {
-            console.error('[Flow] Image Gen (Browser) Error:', error.message);
+            Logger.error('[Flow] Image Gen (Browser) Error:', 'FlowClient', error.message);
             throw error;
         }
     }
@@ -572,11 +573,11 @@ export class FlowClient {
             return sanitized;
         }).filter(Boolean);
 
-        console.log(`[Flow] Applying ${sanitizedCookies.length} cookies...`);
+        Logger.info(`[Flow] Applying ${sanitizedCookies.length} cookies...`);
         try {
             await context.addCookies(sanitizedCookies);
         } catch (e: any) {
-            console.error('[Flow] addCookies failed:', e.message);
+            Logger.error('[Flow] addCookies failed:', 'FlowClient', e.message);
         }
         await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => { });
         this.isReady = true;

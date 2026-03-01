@@ -9,6 +9,8 @@ import { commerceSyncService } from '../services/CommerceSyncService.js';
 import { generateJSON } from '../utils/AIGenerator.js';
 import geoip from 'geoip-lite';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // Public routes
@@ -143,16 +145,11 @@ Fields to extract:
             primary_colors: string[];
             secondary_colors: string[];
             video: string;
-        }>(prompt, 'gemini-2.5-flash', {
-            generationConfig: { 
-                responseMimeType: 'application/json',
-                maxOutputTokens: 4096
-            }
-        });
+        }>(prompt, 'gemini-2.5-flash');
 
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('Extract product error:', error);
+        Logger.error('Extract product error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to extract product data' });
     }
 });
@@ -181,7 +178,7 @@ router.get('/orders', async (req: AuthRequest, res: Response) => {
             data: orders
         });
     } catch (error: any) {
-        console.error('List orders error:', error);
+        Logger.error('List orders error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to list orders' });
     }
 });
@@ -215,7 +212,7 @@ router.get('/stats', async (req: AuthRequest, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error('Commerce stats error:', error);
+        Logger.error('Commerce stats error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to fetch stats' });
     }
 });
@@ -289,8 +286,52 @@ router.get('/analytics/report', async (req: AuthRequest, res: Response) => {
 
         res.json({ success: true, data: report });
     } catch (error: any) {
-        console.error('Analytics report error:', error);
+        Logger.error('Analytics report error:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/commerce/reports/:sessionId - Session commerce report
+router.get('/reports/:sessionId', async (req: AuthRequest, res: Response) => {
+    try {
+        await connectDB();
+        const { sessionId } = req.params;
+
+        const orders = await Order.find({
+            sessionId,
+            userId: req.user!.userId
+        });
+
+        const completedOrders = orders.filter(
+            (o: any) => o.status !== 'cancelled'
+        );
+
+        const totalRevenue = completedOrders.reduce(
+            (sum: number, o: any) => sum + (o.amount || 0), 0
+        );
+
+        // Determine dominant currency from orders, fallback to USD
+        const currencyCounts: Record<string, number> = {};
+        orders.forEach((o: any) => {
+            const c = o.currency || 'USD';
+            currencyCounts[c] = (currencyCounts[c] || 0) + 1;
+        });
+        const currency = Object.keys(currencyCounts).sort(
+            (a, b) => currencyCounts[b] - currencyCounts[a]
+        )[0] || 'USD';
+
+        res.json({
+            success: true,
+            data: {
+                sessionId,
+                totalOrders: orders.length,
+                totalRevenue,
+                currency
+            }
+        });
+    } catch (error: any) {
+        Logger.error('Commerce session report error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to fetch session report' });
     }
 });
 
@@ -315,7 +356,7 @@ router.get('/products', async (req: AuthRequest, res: Response) => {
             data: products
         });
     } catch (error: any) {
-        console.error('List products error:', error);
+        Logger.error('List products error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to list products' });
     }
 });
@@ -356,7 +397,7 @@ router.post('/products', async (req: AuthRequest, res: Response) => {
 
         res.status(201).json({ success: true, data: product });
     } catch (error: any) {
-        console.error('Create product error:', error);
+        Logger.error('Create product error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to create product' });
     }
 });
@@ -428,7 +469,7 @@ router.put('/products/:id', async (req: AuthRequest, res: Response) => {
 
         res.json({ success: true, data: product });
     } catch (error: any) {
-        console.error('Update product error:', error);
+        Logger.error('Update product error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to update product' });
     }
 });
@@ -443,7 +484,7 @@ router.delete('/products/:id', async (req: AuthRequest, res: Response) => {
 
         res.json({ success: true, message: 'Product deleted successfully' });
     } catch (error: any) {
-        console.error('Delete product error:', error);
+        Logger.error('Delete product error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to delete product' });
     }
 });

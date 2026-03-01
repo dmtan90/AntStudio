@@ -7,6 +7,8 @@ import { socialSyndicationService } from '../services/SocialSyndicationService.j
 import { Project } from '../models/Project.js';
 import { SyndicationRecord } from '../models/SyndicationRecord.js';
 
+import { Logger } from '../utils/Logger.js';
+
 const router = Router();
 
 // All syndication routes require authentication
@@ -38,7 +40,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error('[Syndication] List error:', error);
+        Logger.error('[Syndication] List error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -69,7 +71,7 @@ router.post('/publish-video', rbacMiddleware(Permission.PROJECT_PUBLISH), async 
 
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[Syndication] Publish error:', error);
+        Logger.error('[Syndication] Publish error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -81,7 +83,7 @@ router.post('/sync', async (req: AuthRequest, res: Response) => {
         await socialSyndicationService.syncEngagementMetrics(req.user!.userId);
         res.json({ success: true, message: 'Engagement sync started' });
     } catch (error: any) {
-        console.error('[Syndication] Sync error:', error);
+        Logger.error('[Syndication] Sync error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -94,7 +96,7 @@ router.post('/retry/:recordId', rbacMiddleware(Permission.PROJECT_PUBLISH), asyn
         const result = await socialSyndicationService.retrySyndication(recordId);
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[Syndication] Retry error:', error);
+        Logger.error('[Syndication] Retry error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -107,7 +109,7 @@ router.get('/:recordId/comments', async (req: AuthRequest, res: Response) => {
         const comments = await socialSyndicationService.getVideoComments(recordId);
         res.json({ success: true, data: comments });
     } catch (error: any) {
-        console.error('[Syndication] Comments fetch error:', error);
+        Logger.error('[Syndication] Comments fetch error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -121,7 +123,7 @@ router.post('/:recordId/reply', async (req: AuthRequest, res: Response) => {
         const result = await socialSyndicationService.replyToComment(recordId, text, parentId);
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[Syndication] Reply error:', error);
+        Logger.error('[Syndication] Reply error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -133,7 +135,7 @@ router.post('/ai-suggestion', async (req: AuthRequest, res: Response) => {
         const suggestion = await socialSyndicationService.generateAiReply(commentText, context || 'A viral video clip.');
         res.json({ success: true, data: suggestion });
     } catch (error: any) {
-        console.error('[Syndication] AI Suggestion error:', error);
+        Logger.error('[Syndication] AI Suggestion error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -159,7 +161,7 @@ router.post('/schedule', rbacMiddleware(Permission.PROJECT_PUBLISH), async (req:
 
         res.json({ success: true, data: result });
     } catch (error: any) {
-        console.error('[Syndication] Schedule error:', error);
+        Logger.error('[Syndication] Schedule error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

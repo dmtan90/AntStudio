@@ -29,17 +29,17 @@
                 <div class="flex items-center gap-1.5">
                     <div class="flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 backdrop-blur-md border border-white/10">
                         <div class="h-1 w-1 rounded-full bg-green-500 animate-pulse"></div>
-                        <span class="text-[8px] font-black uppercase tracking-widest text-green-400">Ready</span>
+                        <span class="text-[8px] font-black uppercase tracking-widest text-green-400">{{ t('vtubers.ready') }}</span>
                     </div>
                     <!-- Gemini Live Quick Chat -->
                     <button 
                         v-if="vtuber.meta?.voiceConfig?.provider === 'gemini'"
                         @click.stop="$router.push(`/gemini-live-chat?vtuberId=${vtuber.entityId}`)"
                         class="flex h-7 px-2 items-center gap-1 rounded-lg bg-blue-500/10 text-blue-400 backdrop-blur-md border border-blue-500/20 hover:bg-blue-500 hover:text-black transition-all text-[8px] font-black uppercase tracking-widest"
-                        title="Start Live Voice Session"
+                        :title="t('vtubers.startLiveVoice')"
                     >
                         <microphone theme="outline" size="10" />
-                        Live
+                        {{ t('vtubers.live') }}
                     </button>
                 </div>
                 <button @click.stop="$emit('delete')" 
@@ -65,7 +65,7 @@
                 <div class="mb-2">
                     <h3 class="text-base font-black tracking-tight text-white transition-colors group-hover:text-blue-400">{{ vtuber.identity.name }}</h3>
                     <p class="mt-0.5 text-[10px] font-medium text-white/50 line-clamp-1">
-                        {{ vtuber.identity.description || 'VTuber identity awaiting further synchronization.' }}
+                        {{ vtuber.identity.description || t('vtubers.identityAwaitingSync') }}
                     </p>
                 </div>
 
@@ -95,8 +95,10 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Brain, Delete, SettingConfig, Microphone } from '@icon-park/vue-next';
 import { getFileUrl } from '@/utils/api';
+import { useI18n } from "vue-i18n";
 
 const router = useRouter();
+const { t } = useI18n();
 
 const props = defineProps<{
     vtuber: any;

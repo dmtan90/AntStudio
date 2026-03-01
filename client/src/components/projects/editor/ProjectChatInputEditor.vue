@@ -119,9 +119,9 @@ import {
 import GDropdown from '@/components/ui/GDropdown.vue'
 import GPopover from '@/components/ui/GPopover.vue'
 import GSlider from '@/components/ui/GSlider.vue'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   modelValue: string

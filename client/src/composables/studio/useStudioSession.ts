@@ -5,7 +5,7 @@ import { usePlatformStore } from '@/stores/platform';
 import { useStreamingStore } from '@/stores/streaming';
 import { WebRTCPublisher } from '@/utils/ai/WebRTCPublisher.js';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService.js';
-import { useTranslations } from '@/composables/useTranslations';
+import { useI18n } from 'vue-i18n';
 import { audioMixerService } from '@/utils/ai/AudioMixerService';
 import { toast } from 'vue-sonner';
 
@@ -22,7 +22,7 @@ export function useStudioSession(
         resizeCanvas?: (width: number, height: number) => void;
     }
 ) {
-    const { t } = useTranslations();
+    const { t } = useI18n()
     const studioStore = useStudioStore();
     const userStore = useUserStore();
     const platformStore = usePlatformStore();

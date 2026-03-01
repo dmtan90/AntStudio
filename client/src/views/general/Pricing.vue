@@ -1,8 +1,8 @@
 <template>
   <div class="pricing-page">
     <div class="pricing-header">
-      <h1>Simple, Transparent Pricing</h1>
-      <p>Choose the plan that's right for your creative journey.</p>
+      <h1>{{ t('pricing.title') }}</h1>
+      <p>{{ t('pricing.subtitle') }}</p>
     </div>
 
     <div class="pricing-cards">
@@ -13,17 +13,17 @@
         :class="{ 'pro-card': plan.name === 'Pro' }"
         :hoverable="true"
       >
-        <div v-if="plan.name === 'Pro'" class="badge">Most Popular</div>
+        <div v-if="plan.name === 'Pro'" class="badge">{{ t('pricing.mostPopular') }}</div>
         <h3>{{ plan.name }}</h3>
         <div class="price">
           <span class="currency">$</span>
           <span class="amount">{{ plan.price }}</span>
-          <span class="interval">/month</span>
+          <span class="interval">{{ t('pricing.perMonth') }}</span>
         </div>
         <ul class="features">
-          <li><check-one theme="outline" size="18" /> {{ plan.features.videosPerMonth }} Videos / month</li>
-          <li><check-one theme="outline" size="18" /> {{ plan.features.storageLimit }}GB Storage</li>
-          <li><check-one theme="outline" size="18" /> {{ plan.features.prioritySupport ? 'Priority' : 'Standard' }} Support</li>
+          <li><check-one theme="outline" size="18" /> {{ t('pricing.features.videosPerMonth', { count: plan.features.videosPerMonth }) }}</li>
+          <li><check-one theme="outline" size="18" /> {{ t('pricing.features.storageLimit', { count: plan.features.storageLimit }) }}</li>
+          <li><check-one theme="outline" size="18" /> {{ plan.features.prioritySupport ? t('pricing.features.prioritySupport') : t('pricing.features.standardSupport') }}</li>
           <li><check-one theme="outline" size="18" /> Gemini 3 Flash AI</li>
           <li><check-one theme="outline" size="18" /> Veo3 Video AI</li>
         </ul>
@@ -36,23 +36,23 @@
             :loading="loadingPlan === plan.name"
             class="subscribe-btn"
           >
-            {{ plan.price === 0 ? 'Get Started' : 'Subscribe Now' }}
+            {{ plan.price === 0 ? t('pricing.getStarted') : t('pricing.subscribeNow') }}
           </GButton>
         </div>
       </GCard>
     </div>
 
     <div class="faq-section">
-      <h2>Frequently Asked Questions</h2>
+      <h2>{{ t('pricing.faq.title') }}</h2>
       <el-collapse v-model="activeFaq">
-        <el-collapse-item title="Can I cancel my subscription at any time?" name="1">
-          <div>Yes, you can cancel your subscription at any time from your account settings. You will continue to have access to your plan until the end of your current billing period.</div>
+        <el-collapse-item :title="t('pricing.faq.q1')" name="1">
+          <div>{{ t('pricing.faq.a1') }}</div>
         </el-collapse-item>
-        <el-collapse-item title="What happens if I exceed my video quota?" name="2">
-          <div>If you reach your monthly limit, you can upgrade to a higher plan or wait until your next billing cycle for your quota to reset.</div>
+        <el-collapse-item :title="t('pricing.faq.q2')" name="2">
+          <div>{{ t('pricing.faq.a2') }}</div>
         </el-collapse-item>
-        <el-collapse-item title="Do you offer enterprise custom plans?" name="3">
-          <div>Yes! Please contact our sales team for custom solutions tailored to your organization's needs.</div>
+        <el-collapse-item :title="t('pricing.faq.q3')" name="3">
+          <div>{{ t('pricing.faq.a3') }}</div>
         </el-collapse-item>
       </el-collapse>
     </div>
@@ -67,9 +67,11 @@ import { toast } from 'vue-sonner'
 import GCard from '@/components/ui/GCard.vue'
 import GButton from '@/components/ui/GButton.vue'
 import { useUserStore } from '@/stores/user'
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter()
 const userStore = useUserStore()
+const { t } = useI18n()
 const plans = ref<any[]>([])
 const loading = ref(true)
 const loadingPlan = ref<string | null>(null)
@@ -81,9 +83,9 @@ const fetchPlans = async () => {
   } catch (error) {
     // Fallback default plans if API fails
     plans.value = [
-      { name: 'Free', price: 0, features: { videosPerMonth: 3, storageLimit: 1, prioritySupport: false } },
-      { name: 'Pro', price: 29, features: { videosPerMonth: 50, storageLimit: 50, prioritySupport: true } },
-      { name: 'Enterprise', price: 99, features: { videosPerMonth: 500, storageLimit: 500, prioritySupport: true } }
+      { name: t('pricing.plans.free'), price: 0, features: { videosPerMonth: 3, storageLimit: 1, prioritySupport: false } },
+      { name: t('pricing.plans.pro'), price: 29, features: { videosPerMonth: 50, storageLimit: 50, prioritySupport: true } },
+      { name: t('pricing.plans.enterprise'), price: 99, features: { videosPerMonth: 500, storageLimit: 500, prioritySupport: true } }
     ]
   } finally {
     loading.value = false

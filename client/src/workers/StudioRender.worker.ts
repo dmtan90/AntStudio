@@ -891,14 +891,26 @@ function renderLoop(time: number = 0) {
     // 1. There is an active video stream OR an active 3D model
     // 2. AND something dynamic is happening (ticker, lyrics, scene transition)
     // 3. OR the scene is simply dirty (new settings, first frame)
+    // 4. OR there are new video frames ready to upload
     
+    let hasNewFrames = false;
+    textureDirtyMap.forEach((dirty) => {
+        if (dirty) hasNewFrames = true;
+    });
+
     const hasVisualOutput = hasActiveVideo || hasActiveModel || (activeScene && activeScene.layout);
     
     const hasDynamicElements = performanceLyricsVisible || 
                              visualSettings.showTicker || 
                              visualSettings.breakMode?.enabled;
     
-    if (!sceneDirty && (!hasVisualOutput || !hasDynamicElements) && !hasActiveVideo && !hasActiveModel) {
+    // CPU/GPU Optimization: Skip drawing entirely if nothing changed
+    if (!sceneDirty && !hasNewFrames && !hasDynamicElements && hasVisualOutput) {
+        requestAnimationFrame(renderLoop);
+        return;
+    }
+
+    if (!sceneDirty && (!hasVisualOutput || !hasDynamicElements) && !hasActiveVideo && !hasActiveModel && !hasNewFrames) {
         // console.log('[Worker] Render loop idling (Total Standby)...');
         isRendering = false;
         lastTime = 0;

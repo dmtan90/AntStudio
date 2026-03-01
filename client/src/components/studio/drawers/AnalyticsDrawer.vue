@@ -8,8 +8,8 @@
             <chart-histogram theme="outline" size="20" class="text-purple-400" />
           </div>
           <div>
-            <h2 class="text-lg font-black text-white uppercase tracking-tighter">Live Insight</h2>
-            <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Real-time performance metrics</p>
+            <h2 class="text-lg font-black text-white uppercase tracking-tighter">{{ $t('studio.drawers.analytics.title') }}</h2>
+            <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">{{ $t('studio.drawers.analytics.subtitle') }}</p>
           </div>
         </div>
         <button @click="$emit('update:modelValue', false)" class="close-btn">
@@ -23,40 +23,40 @@
       <div class="grid grid-cols-3 gap-4">
         <div
           class="p-5 bg-white/5 border border-white/10 rounded-3xl text-center group hover:bg-blue-500/5 transition-all">
-          <p class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Current</p>
+          <p class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">{{ $t('studio.drawers.analytics.current') }}</p>
           <p class="text-2xl font-black text-white">{{ engagement.viewerCount }}</p>
           <div class="flex items-center justify-center gap-1 mt-1">
             <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-            <span class="text-[8px] font-bold text-green-500 uppercase">Live Now</span>
+            <span class="text-[8px] font-bold text-green-500 uppercase">{{ $t('studio.drawers.analytics.liveNow') }}</span>
           </div>
         </div>
         <div
           class="p-5 bg-white/5 border border-white/10 rounded-3xl text-center group hover:bg-purple-500/5 transition-all">
-          <p class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Peak</p>
+          <p class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">{{ $t('studio.drawers.analytics.peak') }}</p>
           <p class="text-2xl font-black text-white">{{ engagement.peakViewers }}</p>
-          <span class="text-[8px] font-bold text-white/20 uppercase">Max Audience</span>
+          <span class="text-[8px] font-bold text-white/20 uppercase">{{ $t('studio.drawers.analytics.maxAudience') }}</span>
         </div>
         <div
           class="p-5 bg-white/5 border border-white/10 rounded-3xl text-center group hover:bg-red-500/5 transition-all">
-          <p class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Total Likes</p>
+          <p class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">{{ $t('studio.drawers.analytics.totalLikes') }}</p>
           <p class="text-2xl font-black text-white">{{ engagement.likes }}</p>
-          <span class="text-[8px] font-bold text-red-500/40 uppercase">+12% vs last</span>
+          <span class="text-[8px] font-bold text-red-500/40 uppercase">{{ $t('studio.drawers.analytics.growthVsLast', { val: '+12%' }) }}</span>
         </div>
       </div>
 
       <!-- Section: Stream Health Monitor -->
       <section class="space-y-4">
         <div class="flex justify-between items-center">
-          <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Technical Pulse</h4>
+          <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">{{ $t('studio.drawers.analytics.technicalPulse') }}</h4>
           <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase" :class="healthStatusColor">
-            {{ health.status }} Connection
+            {{ $t('studio.drawers.analytics.connectionStatus', { status: health.status }) }}
           </span>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between">
             <div class="flex items-center gap-3">
               <broadcast theme="outline" size="16" class="text-blue-400" />
-              <span class="text-[10px] font-bold text-white/60 uppercase">Bitrate</span>
+              <span class="text-[10px] font-bold text-white/60 uppercase">{{ $t('studio.drawers.analytics.bitrate') }}</span>
             </div>
             <span class="text-xs font-black text-white">{{ health.bitrate }} <span
                 class="text-[8px] opacity-40">kbps</span></span>
@@ -64,7 +64,7 @@
           <div class="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between">
             <div class="flex items-center gap-3">
               <connection-point theme="outline" size="16" class="text-yellow-400" />
-              <span class="text-[10px] font-bold text-white/60 uppercase">Latency (RTT)</span>
+              <span class="text-[10px] font-bold text-white/60 uppercase">{{ $t('studio.drawers.analytics.latency') }}</span>
             </div>
             <span class="text-xs font-black text-white">{{ health.rtt }} <span
                 class="text-[8px] opacity-40">ms</span></span>
@@ -72,7 +72,7 @@
           <div class="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between">
             <div class="flex items-center gap-3">
               <effects theme="outline" size="16" class="text-green-400" />
-              <span class="text-[10px] font-bold text-white/60 uppercase">Frame Rate</span>
+              <span class="text-[10px] font-bold text-white/60 uppercase">{{ $t('studio.drawers.analytics.frameRate') }}</span>
             </div>
             <span class="text-xs font-black text-white">{{ health.fps }} <span
                 class="text-[8px] opacity-40">fps</span></span>
@@ -80,7 +80,7 @@
           <div class="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between">
             <div class="flex items-center gap-3">
               <preview-close-one theme="outline" size="16" class="text-red-400" />
-              <span class="text-[10px] font-bold text-white/60 uppercase">Packet Loss</span>
+              <span class="text-[10px] font-bold text-white/60 uppercase">{{ $t('studio.drawers.analytics.packetLoss') }}</span>
             </div>
             <span class="text-xs font-black text-white">{{ health.packetLoss }}%</span>
           </div>
@@ -89,12 +89,12 @@
 
       <!-- Section: Engagement Velocity -->
       <section class="space-y-4">
-        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Engagement Velocity</h4>
+        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">{{ $t('studio.drawers.analytics.engagementVelocity') }}</h4>
         <div class="p-6 bg-white/5 border border-white/10 rounded-3xl space-y-6">
           <div class="space-y-2">
             <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-              <span class="text-white/60">Chat Activity</span>
-              <span class="text-blue-400">{{ engagement.chatMessagesPerMin }} msgs/min</span>
+              <span class="text-white/60">{{ $t('studio.drawers.analytics.chatActivity') }}</span>
+              <span class="text-blue-400">{{ $t('studio.drawers.analytics.msgsPerMin', { val: engagement.chatMessagesPerMin }) }}</span>
             </div>
             <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
               <div class="h-full bg-blue-500 transition-all duration-1000"
@@ -104,8 +104,8 @@
 
           <div class="space-y-2">
             <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-              <span class="text-white/60">Share Velocity</span>
-              <span class="text-purple-400">{{ engagement.shares }} shares</span>
+              <span class="text-white/60">{{ $t('studio.drawers.analytics.shareVelocity') }}</span>
+              <span class="text-purple-400">{{ $t('studio.drawers.analytics.sharesCount', { val: engagement.shares }) }}</span>
             </div>
             <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
               <div class="h-full bg-purple-500 transition-all duration-1000"
@@ -117,7 +117,7 @@
 
       <!-- Section: Shadowing (Multi-Platform) -->
       <section v-if="shadowStats.length > 0" class="space-y-4">
-        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Platform Distribution</h4>
+        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">{{ $t('studio.drawers.analytics.platformDistribution') }}</h4>
         <div class="grid grid-cols-1 gap-3">
           <div v-for="s in shadowStats" :key="s.platform"
             class="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-blue-500/30 transition-all">
@@ -131,16 +131,15 @@
               <div>
                 <span class="text-[10px] font-black text-white uppercase tracking-wider">{{ s.platform }}</span>
                 <div class="flex items-center gap-2">
-                  <span class="text-[8px] font-bold text-white/40 uppercase">{{ s.viewers }} Viewers</span>
+                  <span class="text-[8px] font-bold text-white/40 uppercase">{{ $t('studio.drawers.analytics.viewersCount', { val: s.viewers }) }}</span>
                   <div class="w-1 h-1 rounded-full bg-white/20"></div>
-                  <span class="text-[8px] font-bold text-green-400 uppercase">{{ Math.round(s.sentiment * 100) }}%
-                    Positive</span>
+                  <span class="text-[8px] font-bold text-green-400 uppercase">{{ $t('studio.drawers.analytics.positiveSentiment', { val: Math.round(s.sentiment * 100) }) }}</span>
                 </div>
               </div>
             </div>
             <div class="text-right">
               <span class="text-xs font-black text-white">{{ s.likes }}</span>
-              <p class="text-[7px] font-bold text-white/20 uppercase">Likes</p>
+              <p class="text-[7px] font-bold text-white/20 uppercase">{{ $t('studio.drawers.analytics.likes') }}</p>
             </div>
           </div>
         </div>
@@ -148,14 +147,14 @@
       
       <!-- Section: AI Predictive Analytics -->
       <section class="space-y-4">
-        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">AI Intelligence</h4>
+        <h4 class="text-xs font-black text-white/30 uppercase tracking-[0.2em]">{{ $t('studio.drawers.analytics.aiIntelligence') }}</h4>
         <PredictiveTrends />
       </section>
     </div>
 
     <template #footer>
       <div class="p-6 text-center border-t border-white/5">
-        <p class="text-[10px] text-white/20 font-bold uppercase tracking-widest">Metrics updated every 2.5 seconds</p>
+        <p class="text-[10px] text-white/20 font-bold uppercase tracking-widest">{{ $t('studio.drawers.analytics.updateFrequency') }}</p>
       </div>
     </template>
   </el-dialog>

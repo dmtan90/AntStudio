@@ -2,6 +2,8 @@ import { GoogleGenAI } from '@google/genai';
 import { geminiPool } from '../../utils/gemini.js';
 import { vibeEngine } from './VibeEngine.js';
 
+import { Logger } from '../../utils/Logger.js';
+
 /**
  * Service for real-time generative AI music (Google Music FX).
  */
@@ -30,7 +32,7 @@ export class MusicFXService {
                 Return an audio generation task identifier.
             `;
 
-            console.log(`🎵 [MusicFX] Generating ${vibe} loop (Intensity: ${intensity})`);
+            Logger.info(`🎵 [MusicFX] Generating ${vibe} loop (Intensity: ${intensity})`);
 
             // In real implementation, this would call the Google Music FX (Labs) API
             // For now, we simulate returning a generated stem URL
@@ -39,7 +41,7 @@ export class MusicFXService {
                 metadata: { bpm: 80 + (intensity * 40), key: 'Am' }
             };
         } catch (error: any) {
-            console.error('[MusicFXService] Soundtrack generation failed:', error.message);
+            Logger.error('[MusicFXService] Soundtrack generation failed:', error.message);
             return null;
         }
     }
@@ -48,7 +50,7 @@ export class MusicFXService {
      * Triggers a "Commercial Stinger" for a conversion event (e.g. Sale).
      */
     public async generateStinger(event: string) {
-        console.log(`✨ [MusicFX] Generating celebratory stinger for: ${event}`);
+        Logger.info(`✨ [MusicFX] Generating celebratory stinger for: ${event}`);
         return { url: '/api/media/music/stinger_celebration.mp3' };
     }
 }

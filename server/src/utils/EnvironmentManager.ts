@@ -1,5 +1,5 @@
 import { SystemConfig } from '../models/SystemConfig.js';
-import { systemLogger } from './systemLogger.js';
+import { Logger } from './Logger.js';
 
 /**
  * EnvironmentManager: Centralized class to manage process.env variables
@@ -30,9 +30,9 @@ export class EnvironmentManager {
                 this.cache.set(config.key, config.value);
             }
             this.isInitialized = true;
-            systemLogger.info(`📂 EnvManager initialized with ${this.cache.size} DB overrides`, 'EnvManager');
+            Logger.info(`📂 EnvManager initialized with ${this.cache.size} DB overrides`, 'EnvManager');
         } catch (error: any) {
-            systemLogger.error(`❌ EnvManager failed to initialize: ${error.message}`, 'EnvManager');
+            Logger.error(`❌ EnvManager failed to initialize: ${error.message}`, 'EnvManager', error);
         }
     }
 
@@ -82,9 +82,9 @@ export class EnvironmentManager {
                 { upsert: true, new: true }
             );
             this.cache.set(key, value);
-            systemLogger.info(`📝 Config updated: ${key} = ${value}`, 'EnvManager');
+            Logger.info(`📝 Config updated: ${key} = ${value}`, 'EnvManager');
         } catch (error: any) {
-            systemLogger.error(`❌ Failed to set config ${key}: ${error.message}`, 'EnvManager');
+            Logger.error(`❌ Failed to set config ${key}: ${error.message}`, 'EnvManager', error);
             throw error;
         }
     }
@@ -96,9 +96,9 @@ export class EnvironmentManager {
         try {
             await SystemConfig.deleteOne({ key });
             this.cache.delete(key);
-            systemLogger.info(`🗑️ Config override removed: ${key}`, 'EnvManager');
+            Logger.info(`🗑️ Config override removed: ${key}`, 'EnvManager');
         } catch (error: any) {
-            systemLogger.error(`❌ Failed to delete config ${key}: ${error.message}`, 'EnvManager');
+            Logger.error(`❌ Failed to delete config ${key}: ${error.message}`, 'EnvManager', error);
             throw error;
         }
     }

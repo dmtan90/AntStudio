@@ -4,6 +4,8 @@ import { Transaction } from '../models/Transaction.js';
 import { User } from '../models/User.js';
 import { LicensePackage } from '../models/LicensePackage.js';
 
+import { Logger } from '../utils/Logger.js';
+
 class PayPalService {
     private baseUrl: string;
     private clientId: string;
@@ -28,7 +30,7 @@ class PayPalService {
             });
             return response.data.access_token;
         } catch (e) {
-            console.error('PayPal Auth Failed:', e);
+            Logger.error('PayPal Auth Failed:', e);
             throw new Error('PayPal gateway authentication failed.');
         }
     }

@@ -1,5 +1,5 @@
 import { Order, IOrder } from '../models/Order.js';
-import { systemLogger } from '../utils/systemLogger.js';
+import { Logger } from '../utils/Logger.js';
 
 /**
  * CommerceSyncService handles real-time order aggregation from external platforms
@@ -63,10 +63,10 @@ export class CommerceSyncService {
                 });
             }
 
-            systemLogger.info(`[Commerce] Order recorded for session ${data.sessionId}: ${data.amount} ${data.currency}`, 'CommerceSyncService');
+            Logger.info(`[Commerce] Order recorded for session ${data.sessionId}: ${data.amount} ${data.currency}`, 'CommerceSyncService');
             return order;
         } catch (error: any) {
-            systemLogger.error(`[Commerce] Failed to record order: ${error.message}`, 'CommerceSyncService');
+            Logger.error(`[Commerce] Failed to record order: ${error.message}`, 'CommerceSyncService');
             throw error;
         }
     }
@@ -101,7 +101,7 @@ export class CommerceSyncService {
                     .slice(0, 3)
             };
         } catch (error: any) {
-            systemLogger.error(`[Commerce] Failed to generate report: ${error.message}`, 'CommerceSyncService');
+            Logger.error(`[Commerce] Failed to generate report: ${error.message}`, 'CommerceSyncService');
             return null;
         }
     }

@@ -43,9 +43,9 @@
 <script setup lang="ts">
 import { MovieBoard, ArrowRight, MagicWand } from '@icon-park/vue-next'
 import GTag from '@/components/ui/GTag.vue'
-import { useTranslations } from '@/composables/useTranslations'
+import { useI18n } from 'vue-i18n';
 
-const { t } = useTranslations()
+const { t } = useI18n()
 
 defineProps<{
   msg: any

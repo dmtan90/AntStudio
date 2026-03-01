@@ -1,6 +1,6 @@
 import { aiPerformanceService, PerformanceSnapshot } from './AIPerformanceService.js';
 
-import { systemLogger } from '../../utils/systemLogger.js';
+import { Logger } from '../../utils/Logger.js';
 
 /**
  * Engine for autonomous A/B testing of stream styles and personas.
@@ -29,7 +29,7 @@ export class StyleABTestingEngine {
             retentionThreshold: 0.7 // Require at least 70% of peak retention
         });
 
-        systemLogger.info(`🧪 [A/B Testing] Optimization cycle started for ${projectId}`, 'StyleABTestingEngine');
+        Logger.info(`🧪 [A/B Testing] Optimization cycle started for ${projectId}`, 'StyleABTestingEngine');
     }
 
     /**
@@ -44,7 +44,7 @@ export class StyleABTestingEngine {
             const nextStyle = experiment.candidateStyles[Math.floor(Math.random() * experiment.candidateStyles.length)];
 
             if (nextStyle !== experiment.currentStyle) {
-                systemLogger.info(`⚖️ [A/B Testing] Performance dip detected (Chat: ${currentSnapshot.chatVelocity}). Switching style: ${experiment.currentStyle} -> ${nextStyle}`, 'StyleABTestingEngine');
+                Logger.info(`⚖️ [A/B Testing] Performance dip detected (Chat: ${currentSnapshot.chatVelocity}). Switching style: ${experiment.currentStyle} -> ${nextStyle}`, 'StyleABTestingEngine');
 
                 // Trigger AI Director to switch
                 if (this.io) {
