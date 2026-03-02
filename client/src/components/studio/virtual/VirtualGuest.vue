@@ -221,7 +221,7 @@ const safeAnimationConfig = computed(() => ({
 // Listen for audio updates from manager
 const handleWorkerCommand = (e: CustomEvent) => {
     const { type, payload } = e.detail;
-    if (payload.id !== `guest_${props.persona.uuid}`) return;
+    if (payload.id !== props.persona.uuid) return;
 
     if (type === 'update-3d-audio') {
         if (!isLiveVoiceActive.value) {

@@ -182,6 +182,7 @@ app.use('/api/collaboration', collaborationRouter);
 app.use('/api/versions', versionsRouter);
 app.use('/api/syndication', syndicationRouter);
 app.use('/api/live', liveRouter);
+app.use('/api/show', showRouter);
 app.use('/api/admin/env', envRouter);
 app.use('/api/economy', economyRouter);
 app.use('/api/gamification', gamificationRouter);

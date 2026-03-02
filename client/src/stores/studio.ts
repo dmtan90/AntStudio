@@ -720,7 +720,8 @@ export const useStudioStore = defineStore('studio', () => {
             const res: any = await api.post('/streaming/invite', { sessionId });
             if (res.data.inviteUrl) {
                 const { token, inviteUrl } = res.data;
-                guestJoinLink.value = inviteUrl;
+				const link = `${window.location.origin}/join/${token}`;
+                guestJoinLink.value = link;
                 return guestJoinLink.value;
             }
         } catch (error) {

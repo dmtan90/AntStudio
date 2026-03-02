@@ -112,23 +112,23 @@ export class Recorder {
   }
 
   private get canvas() {
-    return this.editor.canvas.instance!;
+    return this.editor?.canvas?.instance!;
   }
 
   private get workspace() {
-    return this.editor.canvas.workspace;
+    return this.editor?.canvas?.workspace;
   }
 
   private get preview() {
-    return this.editor.canvas.timeline;
+    return this.editor?.canvas?.timeline;
   }
 
   private get artboard() {
-    return this.editor.canvas.artboard!;
+    return this.editor?.canvas?.artboard!;
   }
 
   private get animations() {
-    return this.editor.canvas.animations;
+    return this.editor?.canvas?.animations;
   }
 
   private get contents() {

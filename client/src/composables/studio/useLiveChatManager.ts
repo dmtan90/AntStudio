@@ -180,7 +180,7 @@ export function useLiveChatManager() {
                     window.dispatchEvent(new CustomEvent('studio-worker-command', {
                         detail: {
                             type: 'update-3d-audio',
-                            payload: { id: `guest_${personaId}`, audioLevel: level }
+                            payload: { id: personaId, audioLevel: level }
                         }
                     }));
                 }
@@ -261,22 +261,35 @@ export function useLiveChatManager() {
         
         const currentVTuberIds = new Set<string>();
 
+        const sanitizeId = (id: string) => id.startsWith('guest_') ? id.replace('guest_', '') : id;
+
         // Find all AI guests (VTubers) in the room
         for (const [slotId, guestData] of Object.entries(guestSlotMap)) {
             // guestData can be a string ID or a Guest object
-            const guestId = typeof guestData === 'string' ? guestData : (guestData as any)?.uuid || (guestData as any)?.id;
-            
-            console.log(`[LiveChatManager] Checking slot ${slotId}: guestId=${guestId}`, { type: typeof guestData });
+            let guestId = typeof guestData === 'string' ? guestData : (guestData as any)?.uuid || (guestData as any)?.id;
             
             if (!guestId || typeof guestId !== 'string') {
                 console.log(`[LiveChatManager] Skipping slot ${slotId} - invalid guestId:`, guestId);
                 continue;
             }
+
+            // Phase 90: Sanitize ID to ensure it's a raw UUID
+            guestId = sanitizeId(guestId);
             
-            // Find full persona data
+            console.log(`[LiveChatManager] Checking slot ${slotId}: guestId=${guestId}`, { type: typeof guestData });
+            
+            // Find full persona data (using raw UUID)
             const persona = allPersonas.find(p => p.uuid === guestId || p.id === guestId);
+            
             if (!persona) {
-                console.warn(`[LiveChatManager] Skipping slot ${slotId} - persona data for ID "${guestId}" not found in current list (Size: ${allPersonas.length})`);
+                console.warn(`[LiveChatManager] Skipping slot ${slotId} - persona data for ID "${guestId}" not found.`);
+                continue;
+            }
+
+            // Phase 101: Skip Real Humans - they don't need automated AI sessions/GeminiLive
+            // The backend GeminiLiveService only handles Synthetic VTubers.
+            if ((persona as any).isRealHuman) {
+                console.log(`[LiveChatManager] Skipping slot ${slotId} - ${persona.name} is a Real Human guest.`);
                 continue;
             }
 

@@ -123,7 +123,7 @@ export class SocketServer {
                     const persistentGuestId = socket.handshake.auth.persistentGuestId;
 
                     socket.data.user = {
-                        id: persistentGuestId ? `guest_${persistentGuestId}` : `guest_${socket.id}`,
+                        id: persistentGuestId || socket.id,
                         name: displayName,
                         role: 'guest',
                         isAnonymous: true
@@ -273,7 +273,7 @@ export class SocketServer {
                         id: user.id, // Phase 90: Use stabilized user.id
                         userId: user.id,
                         name: payload.displayName,
-                        streamId: payload.streamId || `guest_${user.id}`,
+                        streamId: payload.streamId || user.id,
                         joinedAt: new Date()
                     });
                 }
@@ -283,7 +283,7 @@ export class SocketServer {
                 if (roomId && user?.role === 'host' && this.io) {
                     this.io.to(`user:${payload.guestId}`).emit('guest:approved', {
                         roomId,
-                        hostId: socket.id,
+                        hostId: user.id, // Phase 90: Use stabilized User UUID instead of socket.id
                         permissions: payload.permissions
                     });
                 }
@@ -310,10 +310,13 @@ export class SocketServer {
 
             socket.on('guest:signal', (payload: { to: string, signal: any }) => {
                 if (this.io && user) {
-                    // Phase 90: Use stabilized user.id instead of socket.id
-                    // Note: 'to' can be either a socket.id or a user.id room
-                    const target = payload.to.startsWith('guest_') || payload.to.length > 20 ? `user:${payload.to}` : payload.to;
-                    this.io.to(target).emit('guest:signal', {
+                    // Phase 90: Use stabilized user.id
+                    // All IDs are now raw UUIDs or socket IDs
+                    const target = payload.to.length > 20 ? `user:${payload.to}` : payload.to;
+                    
+                    // Use socket.to instead of this.io.to to prevent loopback to the same socket
+                    // (especially important in multi-tab testing on the same browser)
+                    socket.to(target).emit('guest:signal', {
                         from: user.id,
                         signal: payload.signal
                     });

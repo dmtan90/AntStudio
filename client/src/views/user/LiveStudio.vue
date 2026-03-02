@@ -219,9 +219,8 @@
       <GiftsOverlay />
 
       <!-- Virtual Guests (Hidden/Off-screen Rendering) -->
-      <!-- Virtual Guests (Hidden/Off-screen Rendering) -->
       <!-- changing v-show="false" to offscreen to ensure ResizeObserver triggers -->
-      <div class="absolute -left-[9999px] top-0 w-[1920px] h-[1080px] overflow-hidden opacity-0 pointer-events-none">
+      <div v-if="!isGuest" class="absolute -left-[9999px] top-0 w-[1920px] h-[1080px] overflow-hidden opacity-0 pointer-events-none">
          <VirtualGuest 
             v-for="guest in activeGuests" 
             :key="guest.persona.uuid" 
@@ -433,9 +432,7 @@ const isGuest = computed(() => route.query.role === 'guest' || !!route.query.tok
 const { isAutoDirectorEnabled, toggleDirector } = useAutoDirector();
 const { startAILoop, stopAILoop } = useStudioAI(studioStore);
 
-onMounted(() => {
-    console.log('[LiveStudio] Mounted', studioStore.visualSettings);
-});
+// Initial mount logging removed, merged into main onMounted
 
 const handleToggleDirector = (enabled: boolean) => {
    toggleDirector(enabled);
@@ -610,13 +607,32 @@ const chromaSettings = ref({ keyColor: '#00ff00', similarity: 0.1, smoothness: 0
 const guestPersonas = computed(() => {
    const library = syntheticGuestManager.getPersonaLibrary();
    const activeIds = new Set(syntheticGuestManager.getGuests().map(g => g.persona.uuid));
-   return library.map(p => ({
+   
+   // 1. Synthetic Guests (VTubers)
+   const vtubers = library.map(p => ({
       ...p,
       avatarUrl: p.visual?.thumbnailUrl ? getFileUrl(p.visual.thumbnailUrl) : p.avatarUrl,
       active: activeIds.has(p.uuid),
       isLiveVoiceActive: liveVoiceActiveGuestId.value === p.uuid && isGeminiConnected.value,
       isVisionActive: isVisionActive.value
    }));
+
+   // 2. Real Guests (Bridge them as personas for LiveChatManager)
+   const realGuests = studioStore.liveGuests.map(g => ({
+      id: g.uuid,
+      uuid: g.uuid,
+      entityId: g.uuid,
+      name: g.name || 'Guest',
+      identity: { name: g.name || 'Guest', description: 'Real human guest' },
+      visual: { thumbnailUrl: g.avatar || '/avatars/default-guest.png' },
+      avatarUrl: g.avatar || '/avatars/default-guest.png',
+      active: true,
+      isRealHuman: true,
+      isLiveVoiceActive: false,
+      isVisionActive: false
+   }));
+
+   return [...vtubers, ...realGuests];
 });
 const currentVibeName = ref(t('studio.vibes.technoChill'));
 const vibeScore = ref(85);
@@ -1123,7 +1139,7 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
         } else if (fn === 'assemble_highlights') {
             handleHighlight();
         } else if (fn === 'request_vision') {
-            handleVisionRequest(`guest_${persona.id}`);
+            handleVisionRequest(persona.uuid || persona.id);
             result = { success: true, message: t('studio.messages.visionCaptured') };
         } else if (fn === 'set_camera_transform') {
             cameraZoom.value = args.zoom || 1;
@@ -1713,7 +1729,7 @@ watch(() => studioStore.demoMode, (active) => {
                 'Wow, the VTuber looks so real!',
                 'Love the lighting in this scene!',
                 'Is this running on Gemini Live?',
-                'Amazing production quality! 🔥',
+                'Amazing production quality! ��',
                 'Can we see the marketplace integration?',
                 'The Swarm monitor is showing 100% health, nice!'
             ];
@@ -2151,7 +2167,7 @@ watch(activeGuests, (guests) => {
       const slotIndex = Object.values(studioStore.guestSlotMap).findIndex((g: any) => g?.uuid === speakingGuest.persona.uuid);
       if (slotIndex !== -1) {
          // Focus on the guest
-         const targetScene = `guest_${slotIndex + 1}`;
+         const targetScene = `${slotIndex + 1}`;
          if (studioStore.scenes.find(s => s.id === targetScene)) {
             studioStore.switchScene(targetScene);
          } else {
@@ -2255,6 +2271,7 @@ const handleManualGesture = ({ id, gesture }: { id: string, gesture: string }) =
  * Captures a high-res snapshot of the canvas and sends it to the requesting AI guest for "Vision" analysis.
  */
 const handleVisionRequest = async (guestId: string) => {
+	console.log("handleVisionRequest", guestId);
     if (!outputCanvas.value) return;
     
     // Capture high-res frame from main output
@@ -2262,8 +2279,7 @@ const handleVisionRequest = async (guestId: string) => {
     const base64 = dataUrl.split(',')[1];
     
     // Find the agent in the swarm
-    const personaId = guestId.replace('guest_', '');
-    const persona = guestPersonas.value.find(p => p.uuid === personaId);
+	const persona = guestPersonas.value.find(p => p.uuid === guestId);
     const archiveId = persona?.entityId || persona?.uuid;
     const agent = archiveId ? swarmAgents[archiveId] : null;
 
@@ -2342,7 +2358,7 @@ onMounted(() => {
          user: comment.userName,
          text: comment.text,
          timestamp: new Date(comment.createdAt).getTime(),
-         avatar: comment.userId.startsWith('guest_') ? '' : `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`
       };
       
       messages.value.push(msg);
@@ -2541,14 +2557,14 @@ onMounted(() => {
          socket.off('commerce:purchase');
             socket.on('commerce:purchase', (data: { userName: string, productName: string }) => {
                spawnPurchaseNotification(data.userName, data.productName);
-               toast.info(`🛒 ${data.userName} just bought ${data.productName}!`);
+               toast.info(`�� ${data.userName} just bought ${data.productName}!`);
             });
 
             // Listen for Real Order Tracking (Phase 17)
             socket.off('commerce:order_recorded');
             socket.on('commerce:order_recorded', (data: any) => {
                spawnPurchaseNotification(data.customerName, data.productName);
-               toast.success(`💰 Order Recorded: ${data.customerName} bought ${data.productName}!`, {
+               toast.success(`�� Order Recorded: ${data.customerName} bought ${data.productName}!`, {
                    description: `${data.amount} ${data.currency}`
                });
             });
@@ -2766,7 +2782,6 @@ onMounted(async () => {
          sourceVideo.value.srcObject = hostStream.value;
          updateAudioStream(hostStream.value);
          
-         // Single entry point for rendering
          const handleVideoReady = () => {
             setCanvasSize();
             startRendering();
@@ -2817,7 +2832,6 @@ onMounted(async () => {
          });
       } else {
           await fetchAccounts();
-          // Sync VTuber Library (Phase 96)
           const vtData = await vtuberStore.fetchLibrary();
           if (vtData?.data && Array.isArray(vtData.data)) {
              syntheticGuestManager.setLibrary(vtData.data);
@@ -2838,6 +2852,14 @@ onMounted(async () => {
             if (data) {
                currentSessionId.value = data.sessionId;
                studioStore.currentSessionId = data.sessionId;
+               
+               // Connect to signaling as host
+               if (userStore.user) {
+                  ActionSyncService.connect(data.sessionId, userStore.token, {
+                     displayName: userStore.user.name,
+                     avatar: userStore.user.avatar
+                  });
+               }
             }
          } catch (e) {
             console.error("[Studio] Session prepare failed", e);
@@ -2945,9 +2967,20 @@ onUnmounted(() => {
    if (snapshotInterval) clearInterval(snapshotInterval);
    if (visionTimer) clearInterval(visionTimer);
    window.removeEventListener('keydown', handleKeyPress);
+   window.removeEventListener('director:cut', handleDirectorCut);
+   window.removeEventListener('economy:gift', handleGiftEvent);
+//    window.removeEventListener('producer:action', handleProducerAction);
+//    window.removeEventListener('style:switch', handleStyleSwitch);
+//    window.removeEventListener('guest:control', handleGuestControl);
+//    window.removeEventListener('guest:approved', handleGuestApproved);
+//    window.removeEventListener('studio:chat', handleStudioChat);
+   
    if (hostStream.value) hostStream.value.getTracks().forEach(t => t.stop());
    stopRendering();
+   stopAILoop();
+   stopGuestSubscriber('host');
    disconnectAllLiveChat();
+   ActionSyncService.disconnect();
 });
 
 const effectTabs = computed(() => [

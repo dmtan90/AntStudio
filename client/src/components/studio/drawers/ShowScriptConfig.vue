@@ -37,34 +37,32 @@
             </div>
 
             <!-- 2. Inputs -->
-            <transition name="fade">
-                <div v-if="currentProfile" class="space-y-4 animate-slide-up">
-                    <div class="flex items-center gap-2 py-2 border-b border-white/5">
-                        <edit theme="outline" size="14" class="text-white/40" />
-                        <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ $t('studio.drawers.showrunner.scriptInputs') }}</span>
-                    </div>
-
-                    <div v-for="field in currentProfile.requiredInputs" :key="field.key" class="space-y-1">
-                        <label class="text-xs font-medium text-white/80">{{ field.label }}</label>
-                        
-                        <textarea 
-                            v-if="field.type === 'textarea' || field.type === 'list'"
-                            v-model="inputs[field.key]"
-                            rows="4"
-                            class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm focus:border-purple-500/50 focus:outline-none transition-colors resize-none placeholder-white/20"
-                            :placeholder="field.placeholder"
-                        ></textarea>
-
-                        <input 
-                            v-else
-                            v-model="inputs[field.key]"
-                            type="text"
-                            class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm focus:border-purple-500/50 focus:outline-none transition-colors placeholder-white/20"
-                            :placeholder="field.placeholder"
-                        />
-                    </div>
+            <div v-show="currentProfile" class="space-y-4 py-4">
+                <div class="flex items-center gap-2 py-2 border-b border-white/5">
+                    <edit theme="outline" size="14" class="text-white/40" />
+                    <span class="text-[10px] font-bold text-white/40 uppercase tracking-widest">{{ $t('studio.drawers.showrunner.scriptInputs') }}</span>
                 </div>
-            </transition>
+
+                <div v-if="currentProfile" v-for="field in currentProfile.requiredInputs" :key="field.key" class="space-y-1">
+                    <label class="text-xs font-medium text-white/80">{{ field.label }}</label>
+                    
+                    <textarea 
+                        v-if="field.type === 'textarea' || field.type === 'list'"
+                        v-model="inputs[field.key]"
+                        rows="4"
+                        class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm focus:border-purple-500/50 focus:outline-none transition-colors resize-none placeholder-white/20"
+                        :placeholder="field.placeholder"
+                    ></textarea>
+
+                    <input 
+                        v-else
+                        v-model="inputs[field.key]"
+                        type="text"
+                        class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm focus:border-purple-500/50 focus:outline-none transition-colors placeholder-white/20"
+                        :placeholder="field.placeholder"
+                    />
+                </div>
+            </div>
         </div>
 
         <!-- Footer Actions -->
@@ -125,12 +123,16 @@ const selectedProfileId = ref<string | null>(null);
 const inputs = ref<Record<string, string>>({});
 const isGenerating = ref(false);
 
-const currentProfile = computed(() => studioStore.showProfiles.find(p => p.id === selectedProfileId.value));
+const currentProfile = computed(() => {
+    if (!selectedProfileId.value || !studioStore.showProfiles) return null;
+    return studioStore.showProfiles.find((p: any) => p.id === selectedProfileId.value) || null;
+});
 
 const isValid = computed(() => {
     if (!currentProfile.value) return false;
     // Simple check: are required fields filled?
-    return currentProfile.value.requiredInputs.every((f: any) => !!inputs.value[f.key]);
+    const requiredInps = currentProfile.value.requiredInputs || [];
+    return requiredInps.every((f: any) => !!inputs.value[f.key]);
 });
 
 onMounted(async () => {

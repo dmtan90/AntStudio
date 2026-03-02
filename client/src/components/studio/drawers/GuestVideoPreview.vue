@@ -43,8 +43,18 @@ const attachVideo = () => {
         // Let's use the srcObject of the main video element if available.
         if (video.srcObject) {
             previewVideo.srcObject = video.srcObject;
+            
+            const attemptPlay = () => {
+                if (previewVideo.paused) {
+                    previewVideo.play().catch(() => { });
+                }
+            };
+
+            previewVideo.onloadedmetadata = attemptPlay;
+            previewVideo.oncanplay = attemptPlay;
+            
             container.value.appendChild(previewVideo);
-            previewVideo.play().catch(() => { });
+            attemptPlay();
         }
     }
 };

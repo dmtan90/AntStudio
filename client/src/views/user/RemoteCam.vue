@@ -3,6 +3,13 @@
         class="remote-cam glass-dark min-h-screen flex flex-col items-center justify-between p-6 bg-black text-white font-sans">
         <!-- Logo & Header -->
         <div class="w-full flex justify-between items-center py-4">
+            <el-image :src="getFileUrl(useUIStore().logo)" :alt="useUIStore().appName" class="h-8 w-auto object-contain mr-2">
+                <template #error>
+                <el-icon>
+                    <img src="/logo.png" alt="" />
+                </el-icon>
+                </template>
+            </el-image>
             <span class="text-2xl font-black tracking-tighter">{{ useUIStore().appName }}</span>
             <div
                 class="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white/60">
@@ -97,6 +104,7 @@ import { useStudioP2P } from '@/composables/studio/useStudioP2P';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import { useUIStore } from '@/stores/ui';
+import { getFileUrl } from '@/utils/api';
 
 const { t } = useI18n()
 const route = useRoute();

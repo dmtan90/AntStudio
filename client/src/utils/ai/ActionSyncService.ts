@@ -224,10 +224,6 @@ export class ActionSyncService {
             console.log('[ActionSync] Guest left:', payload.guestId);
             // Attempt cleanup for raw ID, prefixed ID, and unprefixed ID
             studio.removeGuest(payload.guestId);
-            studio.removeGuest(`guest_${payload.guestId}`);
-            if (payload.guestId.startsWith('guest_')) {
-                studio.removeGuest(payload.guestId.replace('guest_', ''));
-            }
         });
 
         this.socket.on('guest:control', (payload: { action: 'audio' | 'video' | 'kick', value: any }) => {

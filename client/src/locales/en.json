@@ -1134,7 +1134,13 @@
                 "Comparison": "Comparison",
                 "Myth Busting": "Myth Busting"
             },
-            "liveNow": "Live Now"
+            "liveNow": "Live Now",
+            "liveAnalyticsTitle": "Live Analytics",
+            "audience": "Audience",
+            "economy": "Economy",
+            "chatVel": "Chat Vel",
+            "hypeMeter": "Hype Meter",
+            "liveFeed": "Live Feed"
         },
         "calendar": {
             "weekDays": {
@@ -1263,7 +1269,7 @@
                 "inviteGuestPlaceholder": "Invite guests to your stream",
                 "inviteGuestButton": "Invite Guest",
                 "inviteGuestButtonDesc": "Invite guests to your stream",
-                "addMobileCam": "Add Mobile Cam",
+                "addMobileCam": "Mobile Cam",
                 "personaGallery": "Gallery",
                 "roles": {
                     "agent": "Agent",
@@ -1288,7 +1294,15 @@
                 "linkSecondaryDevice": "Add Mobile Camera For Ingest Video",
                 "activeGuests": "Active Guests",
                 "slot": "Slot",
-                "swapTitle": "Swap"
+                "swapTitle": "Swap",
+                "waitingRoom": "Waiting Room",
+                "knocking": "Knocking",
+                "waiting": "Waiting",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "waitingStatus": "Guest Waiting",
+                "guestApproved": "Guest Approved",
+                "guestRejected": "Guest Rejected"
             },
             "graphics": {
                 "hostIdentity": "Host name",
@@ -1341,7 +1355,70 @@
                 "addToCart": "Add To Cart",
                 "endFlash": "End Flash Deal",
                 "flashSaleActive": "Flash Sale Active",
-                "endingIn": "Ending In"
+                "endingIn": "Ending In",
+                "wallet": {
+                    "balance": "Balance"
+                },
+                "giftCatalog": "Gift Catalog",
+                "powerups": "Powerups"
+            },
+            "vibe": {
+                "script": {
+                    "title": "AI ShowRunner Logic",
+                    "desc": "Generate autonomous run-of-show scripts.",
+                    "openGenerator": "Open Script Generator",
+                    "generate": "Generate",
+                    "regenerate": "Regenerate",
+                    "loading": "Loading...",
+                    "empty": "No Script",
+                    "activeScript": "Active Script"
+                },
+                "atmosphereCore": "ATMOSPHERE CORE",
+                "currentState": "Current State",
+                "neuralAdaptation": "Neural Adaptation",
+                "dynamicMusic": "Dynamic Music FX",
+                "musicSyncDesc": "Syncing beats to chat energy ({status})",
+                "trackingInProgress": "Sentiment tracking in progress",
+                "tabs": {
+                    "classic": "Classic",
+                    "pano": "360 Pano"
+                },
+                "presets": {
+                    "Late Night Talk": "Late Night Talk",
+                    "Morning Vibes": "Morning Vibes",
+                    "Cyberpunk Stream": "Cyberpunk Stream",
+                    "Cozy Fireside": "Cozy Fireside",
+                    "Nebula Void": "Nebula Void",
+                    "Digital Forest": "Digital Forest",
+                    "Neon City Peak": "Neon City Peak",
+                    "Minimal Stage": "Minimal Stage"
+                },
+                "moodDesc": "{mood} mood",
+                "scenePresets": "Studio Scene Presets"
+            },
+            "showrunner": {
+                "title": "ShowRunner AI",
+                "selectProfile": "Select Show Profile",
+                "generateAiScript": "Generate AI Script",
+                "loadProfilesFailed": "Failed to load show profiles",
+                "scriptInputs": "Script Inputs",
+                "dreaming": "Dreaming up the show...",
+                "scriptReady": "Script Ready: {title}",
+                "startProduction": "Start Production",
+                "generateScriptSuccess": "Script generated successfully!",
+                "showrunnerActive": "ShowRunner Active! Sit back and relax."
+            },
+            "engagement": {
+                "livePolls": "Live Polls",
+                "startNew": "Start new poll",
+                "noActivePoll": "No active poll",
+                "createNewPoll": "Create New Poll",
+                "qaQueueHeader": "Q&A Realtime queue",
+                "ending": "Ending...",
+                "question": "Question",
+                "questionPlaceholder": "Input your question",
+                "options": "Options",
+                "launchPoll": "Launch Poll"
             }
         },
         "tabs": {
@@ -1467,6 +1544,120 @@
             "awaitingEvaluationDesc": "Awaiting Evaluation",
             "decisionLog": "Decision Log",
             "decisionLogDesc": "Decision Log"
+        },
+        "director": {
+            "roomVibe": "Room Vibe",
+            "vibeTense": "TENSE",
+            "vibeNeutral": "NEUTRAL",
+            "vibeHype": "HYPE",
+            "audienceActions": "Audience Actions",
+            "pollCreatorTitle": "Poll Creator",
+            "newHivePoll": "New Hive Poll",
+            "pollQuestionLabel": "Question",
+            "pollQuestionPlaceholder": "What happens next?",
+            "pollOptionsLabel": "Options",
+            "pollOptionPlaceholder": "Option",
+            "cancelButton": "Cancel",
+            "launchPollButton": "Launch",
+            "actions": {
+                "airHorn": "Air Horm",
+                "airHornDesc": "Hype up the moment",
+                "confetti": "Confetti",
+                "confettiDesc": "Celebrate a win",
+                "dramaticCut": "Dramatic Cut",
+                "dramaticCutDesc": "Focus on speaker",
+                "randomClip": "Random Clip",
+                "randomClipDesc": "Insert chaos B-roll"
+            },
+            "insufficientCredits": "Insufficient Credits",
+            "actionRequested": "Requested {name}",
+            "pollRequestSent": "Poll request sent to Host!",
+            "createHivePoll": "Create Hive Poll"
+        },
+        "resources": {
+            "title": "Resources",
+            "searchLibrary": "Search assets",
+            "noAssets": "No Asset Found",
+            "uploadDesc": "Upload images or videos for your show",
+            "actions": {
+                "bg": "Background",
+                "media": "Media"
+            },
+            "fetchingHub": "Loading...",
+            "libraryEmpty": "No Asset",
+            "addToSession": "Add to Session",
+            "tabs": {
+                "pool": "Pool",
+                "library": "Library"
+            }
+        },
+        "guides": {
+            "liveStudioWelcomeTitle": "Welcome to Live Studio!",
+            "step": "Step",
+            "liveStudioWelcomeDesc": "LiveStudio is your professional broadcasting platform. Let's take a quick tour to get you started with live streaming and recording.",
+            "skipTip": "You can skip this tutorial anytime by pressing ESC or clicking outside.",
+            "studioCanvasTitle": "Studio Canvas",
+            "studioCanvasDesc": "This is your main canvas where your live stream appears. You can see yourself, guests, and all visual effects in real-time.",
+            "studioCanvasTip": "The canvas automatically adjusts to your selected layout and resolution.",
+            "effectsRailTitle": "Effects Rail",
+            "effectsRailDesc": "Access powerful effects from this sidebar. Choose from layouts, filters, overlays, backgrounds, and more to enhance your stream.",
+            "effectsRailTip": "Click any tab to open the effects panel and customize your stream.",
+            "stageControlsTitle": "Stage Controls",
+            "stageControlsTip": "Green buttons mean active, gray means inactive.",
+            "liveChatTitle": "Live Chat & Interactions",
+            "liveChatDesc": "Engage with your audience in real-time. See messages, spawn likes, and interact with viewers during your stream.",
+            "liveChatTip": "Messages appear instantly when viewers comment on your stream.",
+            "guestManagementTitle": "Guest Management",
+            "guestManagementDesc": "Invite guests to join your stream! Manage guest slots, summon AI personas, or invite real collaborators.",
+            "guestManagementTip": "You can have multiple guests in different layouts.",
+            "goLiveTitle": "Go Live!",
+            "goLiveDesc": "When you're ready, click the \"Go Live\" button to start broadcasting to your connected platforms. Make sure your mic and camera are on!",
+            "goLiveTip": "Connect platforms from the Platforms tab before going live.",
+            "allSetTitle": "You're All Set!",
+            "allSetDesc": "You're ready to create amazing live content! Explore the effects, experiment with layouts, and have fun streaming.",
+            "allSetTip": "Press ? anytime to see keyboard shortcuts.",
+            "recorderWelcomeTitle": "Welcome to Recorder!",
+            "recorderWelcomeDesc": "The Recorder lets you capture professional videos with webcam, screen sharing, or AI avatars. Let's explore the features!",
+            "recorderWelcomeTip": "Switch between modes using the tabs at the top.",
+            "recordingModesTitle": "Recording Modes",
+            "recordingModesDesc": "Choose your recording mode: Webcam for face camera, Screen for screen capture, or Avatar for AI-powered presentations.",
+            "recordingModesTip": "Each mode has unique features optimized for different use cases.",
+            "previewAreaTitle": "Preview Area",
+            "previewAreaDesc": "See yourself or your screen in real-time before recording. What you see here is what will be recorded.",
+            "previewAreaTip": "Adjust your camera angle and lighting before hitting record.",
+            "recordingControlsTitle": "Recording Controls",
+            "recordingControlsDesc": "Start/stop recording, toggle microphone, enable beauty filters, and more. All essential controls are here.",
+            "recordingControlsTip": "The red button starts recording, click again to stop.",
+            "sidePanelToolsTitle": "Side Panel Tools",
+            "sidePanelToolsDesc": "Access advanced features like filters, backgrounds, teleprompter, and settings from the side panel.",
+            "sidePanelToolsTip": "Click icons on the control bar to open different panels.",
+            "teleprompterTitle": "Teleprompter (Pro Tip!)",
+            "teleprompterDesc": "Use the teleprompter to read your script while recording. Perfect for professional presentations!",
+            "teleprompterTip": "Adjust scroll speed and font size to your preference.",
+            "startRecordingTitle": "Start Recording!",
+            "startRecordingDesc": "You're ready to record! Click the record button when you're prepared, and create amazing content.",
+            "startRecordingTip": "Recordings are automatically saved to your project library.",
+            "avatarWelcomeTitle": "Welcome to AI Avatar Setup!",
+            "avatarWelcomeDesc": "Create professional videos with AI avatars. Follow these steps to bring your script to life with realistic AI presenters.",
+            "avatarWelcomeTip": "This is a 4-step process that takes about 2 minutes.",
+            "step1Title": "Step 1: Choose Your Avatar",
+            "step1Desc": "Select from our library of professional AI avatars, or upload your own custom avatar image.",
+            "step1Tip": "Each avatar has unique characteristics and styles.",
+            "uploadCustomTitle": "Upload Custom Avatar",
+            "uploadCustomDesc": "Want to use your own face? Click the + card to upload a custom avatar photo.",
+            "uploadCustomTip": "Use a clear, front-facing photo for best results.",
+            "step2Title": "Step 2: Write Your Script",
+            "step2Desc": "Enter the text you want your avatar to speak. Be natural and conversational!",
+            "step2Tip": "You can use AI to generate scripts or write your own.",
+            "step3Title": "Step 3: Select Voice",
+            "step3Desc": "Choose a voice that matches your avatar. We have voices in multiple languages and accents.",
+            "step3Tip": "Click the play button to preview each voice.",
+            "step4Title": "Advanced Voice Settings",
+            "step4Desc": "Fine-tune your voice with advanced controls like pitch, speed, and emotion.",
+            "step4Tip": "Toggle this to access professional voice customization.",
+            "generateTitle": "Generate Your Video!",
+            "generateDesc": "All set! Click \"Generate Video\" and our AI will create your professional avatar video in minutes.",
+            "generateTip": "You'll be notified when your video is ready."
         }
     },
     "subscription": {
@@ -3903,10 +4094,11 @@
         },
         "live": {
             "title": "Live",
-            "status": "Status",
-            "desc": "Description"
+            "status": "Live Connection Healthy",
+            "desc": "The host can now see and hear you. Adjust your mic and cam using the controls on the left.",
+            "subtitle": "Your feed is now being mixed into the live production at {name}."
         },
-        "poweredBy": "Powered By",
+        "poweredBy": "Powered by AntStudio WebRTC Bridge",
         "toasts": {
             "hostUnmutedMic": "Host Unmuted Mic",
             "hostMutedMic": "Host Muted Mic",
@@ -3919,7 +4111,8 @@
             "muted": "Muted",
             "unmuted": "Unmuted",
             "cameraOn": "Camera On",
-            "cameraOff": "Camera Off"
+            "cameraOff": "Camera Off",
+            "hostApproved": "Host Approved"
         }
     },
     "joinOrg": {
@@ -4219,7 +4412,9 @@
             "hostUnmuted": "Host Unmuted",
             "hostMuted": "Host Muted",
             "hostEnabledCam": "Host Enabled Cam",
-            "hostDisabledCam": "Host Disabled Cam"
+            "hostDisabledCam": "Host Disabled Cam",
+            "cameraActive": "Camera Active",
+            "cameraInactive": "Camera Inactive"
         }
     },
     "viral": {

@@ -11,24 +11,54 @@ export function useStudioP2P(
     const p2pConnections = new Map<string, RTCPeerConnection>();
     const guestStreams = new Map<string, MediaStream>();
     const guestVideoElements = reactive(new Map<string, HTMLVideoElement>());
-
+    const lastPlayTime = new Map<string, number>();
     const guestVideos = ref<Record<string, HTMLVideoElement>>({});
     const connectedHostId = ref<string | null>(null);
 
     const syncGuestVideos = () => {
+        const now = Date.now();
+        const playVideo = (v: HTMLVideoElement, guestId: string) => {
+            const last = lastPlayTime.get(guestId) || 0;
+            
+            // If already playing and has video data, don't re-trigger
+            if (!v.paused && v.readyState >= 2 && v.videoWidth > 0) return;
+
+            // If ready, play immediately
+            if (v.readyState >= 2) {
+                if (now - last > 500) {
+                    lastPlayTime.set(guestId, now);
+                    v.play().catch(e => {
+                        if (e.name !== 'AbortError') console.warn(`[Studio P2P] Play failed for ${guestId}:`, e);
+                    });
+                }
+            } else {
+                // Not ready yet — always re-register handler since srcObject may have changed
+                v.onloadedmetadata = () => {
+                    v.play().catch(e => {
+                        if (e.name !== 'AbortError') console.warn(`[Studio P2P] Late play failed for ${guestId}:`, e);
+                    });
+                };
+                // Also cover onscanstart for streams that skip loadedmetadata
+                if (!v.oncanplay) {
+                    v.oncanplay = () => {
+                        if (v.paused) v.play().catch(() => {});
+                    };
+                }
+            }
+        };
+
         // For Guests: ensure our own camera is available in the video map for previews
         if (isGuestMode?.value && localStream.value && studioStore.myGuestId) {
-            // We use a dummy video element or just the source element if it's already a video
-            // But usually we want a consistent HTMLVideoElement
             let myVideo = guestVideoElements.get(studioStore.myGuestId);
             if (!myVideo) {
                 myVideo = document.createElement('video');
+                myVideo.id = studioStore.myGuestId;
                 myVideo.autoplay = true;
                 myVideo.muted = true;
                 myVideo.srcObject = localStream.value;
                 guestVideoElements.set(studioStore.myGuestId, myVideo);
-                myVideo.play();
             }
+            playVideo(myVideo, studioStore.myGuestId);
         }
 
         studioStore.liveGuests.forEach((g) => {
@@ -37,17 +67,20 @@ export function useStudioP2P(
                 let video = guestVideoElements.get(g.uuid);
                 if (!video) {
                     video = document.createElement('video');
+                    video.id = g.uuid;
                     video.autoplay = true;
                     video.playsInline = true;
                     video.srcObject = stream;
-                    video.muted = false;
+                    video.muted = true; // Mute hidden source to bypass autoplay policy
                     guestVideoElements.set(g.uuid, video);
-                    video.play().catch(e => console.warn("[Studio P2P] Video play failed:", e));
-                } else {
-                    if (video.srcObject !== stream) video.srcObject = stream;
-                    // Re-trigger play even if stream object is the same
-                    video.play().catch(() => { });
+                } else if (video.srcObject !== stream || (stream.getTracks().length > 0 && !video.paused && video.readyState < 2)) {
+                    // Stream object changed or tracks replaced (forcing re-assignment refreshes the pipeline)
+                    video.srcObject = null; // Clear first to ensure a fresh start
+                    video.srcObject = stream;
+                    video.onloadedmetadata = null; // reset so playVideo re-registers
+                    video.oncanplay = null;
                 }
+                playVideo(video, g.uuid);
             }
         });
 
@@ -57,16 +90,18 @@ export function useStudioP2P(
             let hostVideo = guestVideoElements.get('host');
             if (!hostVideo) {
                 hostVideo = document.createElement('video');
+                hostVideo.id = 'host';
                 hostVideo.autoplay = true;
                 hostVideo.playsInline = true;
                 hostVideo.srcObject = hostStream;
-                hostVideo.muted = false;
+                hostVideo.muted = true; // Mute hidden source to bypass autoplay policy
                 guestVideoElements.set('host', hostVideo);
-                hostVideo.play().catch(() => { });
             } else if (hostVideo.srcObject !== hostStream) {
                 hostVideo.srcObject = hostStream;
-                hostVideo.play().catch(() => { });
+                hostVideo.onloadedmetadata = null;
+                hostVideo.oncanplay = null;
             }
+            playVideo(hostVideo, 'host');
         }
 
         const nextVideos: Record<string, HTMLVideoElement> = {};
@@ -295,7 +330,8 @@ export function useStudioP2P(
             try {
                 // If reuse, check state
                 if (pc.signalingState !== 'stable' && pc.signalingState !== 'have-local-offer') {
-                    // Start of negotiation
+                    console.warn(`[Studio P2P] Cannot set remote answer in state: ${pc.signalingState}`);
+                    return;
                 }
 
                 // If we are reusing PC and it has 'have-local-offer', it means we tried to send them an offer?

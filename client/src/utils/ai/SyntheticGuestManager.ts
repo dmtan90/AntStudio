@@ -547,7 +547,7 @@ export class SyntheticGuestManager {
         if (guest) {
              guest.isThinking = false;
              // Also notify worker to stop any ongoing viseme animations if possible
-             this.notifyWorker('update-3d-audio', { id: `guest_${id}`, audioLevel: 0 });
+             this.notifyWorker('update-3d-audio', { id: id, audioLevel: 0 });
         }
     }
 
@@ -567,7 +567,7 @@ export class SyntheticGuestManager {
         if (!guest) return null;
 
         guest.isThinking = true;
-        this.notifyWorker('update-3d-thinking', { id: `guest_${guestId}`, isThinking: true });
+        this.notifyWorker('update-3d-thinking', { id: guestId, isThinking: true });
 
         const enrichedContext = {
             ...context,
@@ -602,7 +602,7 @@ export class SyntheticGuestManager {
 
                         // Update State & Worker
                         guest.isThinking = false;
-                        this.notifyWorker('update-3d-thinking', { id: `guest_${guestId}`, isThinking: false });
+                        this.notifyWorker('update-3d-thinking', { id: guestId, isThinking: false });
 
                         // Handle Metadata (Emotions/Gestures)
                         if (metadata?.isConsolidated) {
@@ -610,7 +610,7 @@ export class SyntheticGuestManager {
                             if (emotion) {
                                 guest.emotion = emotion;
                                 this.notifyWorker('update-3d-expression', { 
-                                    id: `guest_${guestId}`, 
+                                    id: guestId, 
                                     emotion, 
                                     gesture: gesture || 'normal' 
                                 });
@@ -645,14 +645,14 @@ export class SyntheticGuestManager {
             } else {
                 console.warn(`[SyntheticGuest] WebSocket connection not available for ${guestId}. Skipping dialogue generation.`);
                 guest.isThinking = false;
-                this.notifyWorker('update-3d-thinking', { id: `guest_${guestId}`, isThinking: false });
+                this.notifyWorker('update-3d-thinking', { id: `${guestId}`, isThinking: false });
                 return { text: "...", audioUrl: '', action: 'none' };
             }
         } catch (error: any) {
             console.error(`[SyntheticGuest] Talk failed for ${guestId}:`, error.message);
             if (this.dialogueLock === guestId) this.dialogueLock = null;
             guest.isThinking = false;
-            this.notifyWorker('update-3d-thinking', { id: `guest_${guestId}`, isThinking: false });
+            this.notifyWorker('update-3d-thinking', { id: `${guestId}`, isThinking: false });
             return null;
         }
     }
@@ -668,7 +668,7 @@ export class SyntheticGuestManager {
         const guest = this.activeGuests.get(id);
         if (guest) {
             guest.gesture = gesture;
-            this.notifyWorker('update-3d-expression', { id: `guest_${id}`, gesture });
+            this.notifyWorker('update-3d-expression', { id, gesture });
             
             // Auto-clear gesture after a few seconds or keep it until next interaction
             setTimeout(() => {
@@ -685,7 +685,7 @@ export class SyntheticGuestManager {
         if (guest) {
             guest.emotion = emotion;
             guest.persona.emotion = emotion;
-            this.notifyWorker('update-3d-expression', { id: `guest_${id}`, emotion });
+            this.notifyWorker('update-3d-expression', { id, emotion });
         }
     }
 
@@ -697,7 +697,7 @@ export class SyntheticGuestManager {
         if (guest && guest.persona.animationConfig) {
             guest.persona.animationConfig = { ...guest.persona.animationConfig, ...config };
             this.notifyWorker('update-3d-animation', { 
-                id: `guest_${id}`, 
+                id: id, 
                 config: guest.persona.animationConfig 
             });
         }
@@ -711,7 +711,7 @@ export class SyntheticGuestManager {
         if (guest && guest.persona.performanceConfig) {
             guest.persona.performanceConfig = { ...guest.persona.performanceConfig, ...config };
             this.notifyWorker('update-3d-performance', { 
-                id: `guest_${id}`, 
+                id: id, 
                 config: guest.persona.performanceConfig 
             });
         }
@@ -725,7 +725,7 @@ export class SyntheticGuestManager {
         if (guest && guest.persona.visual) {
             guest.persona.visual.backgroundUrl = backgroundUrl;
             this.notifyWorker('update-3d-background', { 
-                id: `guest_${id}`, 
+                id: id, 
                 backgroundUrl 
             });
         }
@@ -739,7 +739,7 @@ export class SyntheticGuestManager {
 
         const analysis = aiAudioAnalyzer.analyze(audioUrl, (level: number) => {
             this.notifyWorker('update-3d-audio', {
-                id: `guest_${id}`,
+                id: id,
                 audioLevel: level
             });
         });
@@ -930,7 +930,7 @@ export class SyntheticGuestManager {
      * Proactively request a vision snapshot of the studio.
      */
     public requestVisionSnapshot(guestId: string) {
-        this.notifyWorker('vision:request_snapshot', { id: `guest_${guestId}` });
+        this.notifyWorker('vision:request_snapshot', { id: guestId });
     }
 }
 

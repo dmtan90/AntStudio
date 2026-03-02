@@ -61,9 +61,17 @@ export function initializeLiveWebSocket(server: Server) {
             if (decoded) {
                 userId = decoded.userId;
             } else {
-                ws.send(JSON.stringify({ type: 'error', message: 'Invalid or expired token' }));
-                ws.close();
-                return;
+                // Phase 90: Try Guest Token fallback
+                const { streamingService } = await import('~/services/StreamingService.js');
+                const guestInfo = await streamingService.validateGuestToken(token);
+                if (guestInfo) {
+                    userId = archiveId; // Use archiveId as the "acting" userId for guests
+                    Logger.info(`[LiveWS] Authenticated as guest via token for archive ${archiveId}`, 'LiveWS');
+                } else {
+                    ws.send(JSON.stringify({ type: 'error', message: 'Invalid or expired token' }));
+                    ws.close();
+                    return;
+                }
             }
         } else {
             Logger.warn('[LiveWS] Connection without token, using system user');
