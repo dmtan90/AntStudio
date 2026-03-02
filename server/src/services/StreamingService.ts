@@ -62,7 +62,7 @@ export class StreamingService extends EventEmitter {
     private sessions: Map<string, StreamSession> = new Map();
     private nodeId: string;
     private nms: any;
-    private readonly GUEST_TOKEN_PREFIX = 'antflow:guest:token:';
+    private readonly GUEST_TOKEN_PREFIX = 'antstudio:guest:token:';
     private cachedCodec: string | null = null;
 
     constructor() {

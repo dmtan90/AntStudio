@@ -2,7 +2,6 @@ import { Router } from 'express';
 import multer from 'multer';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
-import { ElevenLabsProvider } from '../utils/ai/providers/ElevenLabsProvider.js';
 
 import { Logger } from '../utils/Logger.js';
 

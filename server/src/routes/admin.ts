@@ -220,7 +220,7 @@ router.put('/settings', async (req: AuthRequest, res) => {
             // Import dynamically to avoid circular dependency if any, or just import at top if fine.
             // But we can just use the service.
             const { LicenseWorker } = await import('../services/LicenseWorker.js');
-            await LicenseWorker.checkStatus();
+            await LicenseWorker.checkStatus(req.body.license.key);
 
 
             // Re-fetch settings to get updated license info
@@ -228,6 +228,18 @@ router.put('/settings', async (req: AuthRequest, res) => {
             return res.json({ success: true, data: updatedSettings, error: null });
         }
 
+        res.json({ success: true, data: settings, error: null });
+    } catch (error: any) {
+        res.status(500).json({ success: false, data: null, error: error.message });
+    }
+});
+
+// POST /api/admin/sync-license - Force sync license with Master
+router.post('/sync-license', async (req: AuthRequest, res) => {
+    try {
+        const { LicenseWorker } = await import('../services/LicenseWorker.js');
+        await LicenseWorker.checkStatus();
+        const settings = await AdminSettings.findOne();
         res.json({ success: true, data: settings, error: null });
     } catch (error: any) {
         res.status(500).json({ success: false, data: null, error: error.message });

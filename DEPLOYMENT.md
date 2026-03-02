@@ -1,6 +1,6 @@
-# 🚀 AntFlow Deployment Guide
+# 🚀 AntStudio Deployment Guide
 
-This guide describes how to deploy the AntFlow Standalone Engine (Backend + Frontend) as a system service on various platforms.
+This guide describes how to deploy the AntStudio Standalone Engine (Backend + Frontend) as a system service on various platforms.
 
 ## 📋 Prerequisites
 - **Binary**: Ensure you have built the binaries using `pnpm run build:standalone` in the `server` directory.
@@ -63,11 +63,11 @@ This guide describes how to deploy the AntFlow Standalone Engine (Backend + Fron
 ## 🌐 Nginx Configuration (Reverse Proxy)
 
 To serve the application via a domain with SSL:
-1. Copy `server/scripts/nginx.conf` to `/etc/nginx/sites-available/antflow`.
+1. Copy `client/scripts/nginx.conf` to `/etc/nginx/sites-available/antstudio`.
 2. Update `server_name` to your domain.
 3. Enable the site:
    ```bash
-   sudo ln -s /etc/nginx/sites-available/antflow /etc/nginx/sites-enabled/
+   sudo ln -s /etc/nginx/sites-available/antstudio /etc/nginx/sites-enabled/
    sudo nginx -t
    sudo systemctl restart nginx
    ```

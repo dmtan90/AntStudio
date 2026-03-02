@@ -37,7 +37,7 @@ BASE_DOMAIN="stream.yourcompany.com"
 
 ## ⚙️ Deployment Modes
 
-AntFlow Enterprise supports two high-level business modes:
+AntStudio Enterprise supports two high-level business modes:
 
 ### 1. Internal Enterprise Mode (Private)
 - **Use Case**: Communication for employees only.
@@ -54,11 +54,11 @@ AntFlow Enterprise supports two high-level business modes:
 ### Backups
 Data is stored in the `enterprise_mongo_data` Docker volume. We recommend daily snapshots:
 ```bash
-docker exec antflow-mongo-b2b mongodump --out /data/db/backups/$(date +%F)
+docker exec antstudio-mongo-b2b mongodump --out /data/db/backups/$(date +%F)
 ```
 
 ### Health Monitoring
 View the live dashboard at `http://your-domain/admin/tenant` to monitor organization-wide consumption and node health.
 
 ---
-© 2026 AntFlow Enterprise Solutions. For VIP support, contact your dedicated account manager.
+© 2026 AntStudio Enterprise Solutions. For VIP support, contact your dedicated account manager.

@@ -424,7 +424,7 @@ export const useStudioStore = defineStore('studio', () => {
     // ============================================
 
     // Scene Management
-    const activeScene = useLocalStorage<Scene>('antflow_studio_active_scene', SCENE_PRESETS[0]);
+    const activeScene = useLocalStorage<Scene>('antstudio_studio_active_scene', SCENE_PRESETS[0]);
     const nextScene = ref<Scene | null>(null);
     const scenes = ref<Scene[]>([...SCENE_PRESETS]);
     const transitionType = ref<TransitionType>('fade');
@@ -453,7 +453,7 @@ export const useStudioStore = defineStore('studio', () => {
         camEnabled: true
     });
 
-    const visualSettings = useLocalStorage('antflow_studio_visual_settings', { ...DEFAULT_VISUAL_SETTINGS });
+    const visualSettings = useLocalStorage('antstudio_studio_visual_settings', { ...DEFAULT_VISUAL_SETTINGS });
 
     const backgroundAssets = ref([
         // { id: 'none', name: 'None', url: '', thumbnail: '', isVideo: false },
@@ -497,7 +497,7 @@ export const useStudioStore = defineStore('studio', () => {
 
     // God Mode
     const godModeEnabled = ref(false);
-    const autoDirectorSettings = useLocalStorage<AutoDirectorConfig>('antflow_studio_auto_director', {
+    const autoDirectorSettings = useLocalStorage<AutoDirectorConfig>('antstudio_studio_auto_director', {
         enabled: false,
         sensitivity: 0.5,
         transitionStyle: 'instant',

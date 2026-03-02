@@ -239,9 +239,9 @@ export class AIAccountManager {
             Logger.info(`[AIAccountManager] Onboarding 11labs-direct account for ${email}...`);
 
             // Generate deterministic hardware IDs for this server instance
-            const hardware_id = crypto.createHash('md5').update('antflow-server-hw').digest('hex').substring(0, 16);
-            const cpu_id = crypto.createHash('md5').update('antflow-server-cpu').digest('hex').substring(0, 16);
-            const mainboard_uuid = crypto.createHash('md5').update('antflow-server-mb').digest('hex').substring(0, 16);
+            const hardware_id = crypto.createHash('md5').update('antstudio-server-hw').digest('hex').substring(0, 16);
+            const cpu_id = crypto.createHash('md5').update('antstudio-server-cpu').digest('hex').substring(0, 16);
+            const mainboard_uuid = crypto.createHash('md5').update('antstudio-server-mb').digest('hex').substring(0, 16);
 
             const serviceKeys = new Map<string, string>();
             const brands = [
@@ -427,7 +427,7 @@ export class AIAccountManager {
         const token = await this.refreshAccessToken(account);
         const timestamp = Date.now();
         const shortEmail = account.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 10);
-        const projectId = `antflow-${shortEmail}-${timestamp.toString().slice(-4)}`;
+        const projectId = `antstudio-${shortEmail}-${timestamp.toString().slice(-4)}`;
         const projectName = `AntStudio AI - ${account.email.split('@')[0]}`;
 
         try {

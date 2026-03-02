@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# ANTFLOW ENTERPRISE SETUP UTILITY
+# ANTSTUDIO ENTERPRISE SETUP UTILITY
 # Professional One-Click Installation for White-Label B2B Clients
 # ==============================================================================
 
@@ -31,7 +31,7 @@ BASE_DOMAIN=localhost
 JWT_SECRET=$(openssl rand -base64 32)
 
 # DATABASE
-MONGO_URI=mongodb://mongo-enterprise:27017/antflow_b2b
+MONGO_URI=mongodb://mongo-enterprise:27017/antstudio_b2b
 
 # AI INTEGRATIONS (REPLACE WITH YOUR KEYS)
 GEMINI_API_KEY=your_gemini_key
@@ -42,7 +42,7 @@ VEO_API_ENDPOINT=your_veo_endpoint
 AWS_ACCESS_KEY_ID=your_key
 AWS_SECRET_ACCESS_KEY=your_secret
 AWS_REGION=us-east-1
-AWS_S3_BUCKET=antflow-enterprise-storage
+AWS_S3_BUCKET=antstudio-enterprise-storage
 EOT
     echo "✅ .env.enterprise generated. PLEASE EDIT THIS FILE WITH YOUR REAL API KEYS."
 else
@@ -59,7 +59,7 @@ echo "⏳ Waiting for services to stabilize (10s)..."
 sleep 10
 
 echo "------------------------------------------------------------------------------"
-echo "🎉 ANTFLOW ENTERPRISE INSTALLED SUCCESSFULLY!"
+echo "🎉 ANTSTUDIO ENTERPRISE INSTALLED SUCCESSFULLY!"
 echo "------------------------------------------------------------------------------"
 echo "🌐 Frontend: http://localhost"
 echo "📡 Backend API: http://localhost/api"

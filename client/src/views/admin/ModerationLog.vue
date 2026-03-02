@@ -90,7 +90,7 @@ const searchQuery = ref('');
 
 const audits = ref([
  { id: '1', type: 'text', content: 'Create a video of a heated political riot with explicit violence...', user: { name: 'John Doe' }, tenant: { name: 'Acme News' }, scores: { toxicity: 0.92 }, status: 'blocked', timestamp: '2 mins ago' },
- { id: '2', type: 'video', content: 'https://s3.antflow.ai/media/gen_921bc.mp4', user: { name: 'Sarah Key' }, tenant: { name: 'Social Labs' }, scores: { nsfw: 0.78 }, status: 'flagged', timestamp: '1 hour ago' },
+ { id: '2', type: 'video', content: 'https://antstudio.agrhub.com/s3/media/gen_921bc.mp4', user: { name: 'Sarah Key' }, tenant: { name: 'Social Labs' }, scores: { nsfw: 0.78 }, status: 'flagged', timestamp: '1 hour ago' },
  { id: '3', type: 'text', content: 'Promote our competitor BrandX by showing their flaws...', user: { name: 'Mike Ross' }, tenant: { name: 'Dentsu Corp' }, scores: { toxicity: 0.1 }, status: 'flagged', timestamp: '3 hours ago' }
 ]);
 

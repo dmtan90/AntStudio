@@ -4,7 +4,7 @@
  * Only works in secure contexts (HTTPS or localhost) where the Cache API is available.
  */
 
-const CACHE_NAME = 'antflow-blob-cache-v1'
+const CACHE_NAME = 'antstudio-blob-cache-v1'
 
 export class BlobCache {
     private static instance: BlobCache

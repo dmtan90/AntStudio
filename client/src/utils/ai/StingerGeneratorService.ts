@@ -26,7 +26,7 @@ export class StingerGeneratorService {
             await new Promise(r => setTimeout(r, 6000)); // Simulate AI processing
 
             // Simulate a generated transparent MP4/GIF URL
-            const mockUrl = `https://s3.antflow.ai/stinger/gen_${Math.random().toString(36).substring(7)}.webm`;
+            const mockUrl = `https://antstudio.agrhub.com/s3/stinger/gen_${Math.random().toString(36).substring(7)}.webm`;
 
             this.isGenerating = false;
             toast.success("AI Stinger ready and queued for production!");

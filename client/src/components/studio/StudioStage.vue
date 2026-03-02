@@ -145,7 +145,7 @@ const onDragLeave = (event: DragEvent) => {
 
 const onDrop = (event: DragEvent) => {
     isDragging.value = false;
-    const guestId = event.dataTransfer?.getData('application/antflow-guest');
+    const guestId = event.dataTransfer?.getData('application/antstudio-guest');
     
     console.log('[StudioStage] Drop detected:', { guestId, clientX: event.clientX, clientY: event.clientY });
     console.log('[StudioStage] Store State:', { 

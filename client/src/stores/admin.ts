@@ -486,6 +486,20 @@ export const useAdminStore = defineStore('admin', () => {
         }
     }
 
+    async function syncLicense() {
+        loading.value = true
+        try {
+            const res : any = await api.post('/admin/sync-license')
+            settings.value = res.data
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
     return {
         users,
         settings,
@@ -536,6 +550,7 @@ export const useAdminStore = defineStore('admin', () => {
         handleAIAuthCallback,
         createProject,
         fetchAIPerformance,
-        toggleAIOptimization
+        toggleAIOptimization,
+        syncLicense
     }
 })

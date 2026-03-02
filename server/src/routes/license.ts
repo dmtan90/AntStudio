@@ -165,7 +165,7 @@ router.post('/license-status', async (req, res) => {
         let telemetry = license.fleetTelemetry.find(f => f.instanceId === instanceId);
         if (!telemetry) {
             // New instance pairing
-            if (license.activeInstances >= license.instancesLimit) {
+            if (license.instancesLimit !== -1 && license.activeInstances >= license.instancesLimit) {
                 return res.json({ status: 'invalid', message: 'Instance limit reached. Upgrade required.' });
             }
             license.fleetTelemetry.push({

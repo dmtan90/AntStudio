@@ -134,7 +134,7 @@ const emit = defineEmits([
 const onDragStart = (event: DragEvent, guestId: string) => {
     if (event.dataTransfer) {
         console.log('[GuestSettings] Drag Start:', guestId);
-        event.dataTransfer.setData('application/antflow-guest', guestId);
+        event.dataTransfer.setData('application/antstudio-guest', guestId);
         event.dataTransfer.effectAllowed = 'move';
 
         // Custom drag image if needed

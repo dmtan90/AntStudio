@@ -425,10 +425,10 @@ export class ActionSyncService {
      * Phase 90: Generates or retrieves a persistent ID for reconnection stability.
      */
     private static getOrCreatePersistentId(): string {
-        let id = localStorage.getItem('antflow_persistent_id');
+        let id = localStorage.getItem('antstudio_persistent_id');
         if (!id) {
             id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
-            localStorage.setItem('antflow_persistent_id', id);
+            localStorage.setItem('antstudio_persistent_id', id);
         }
         return id;
     }

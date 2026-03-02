@@ -1431,6 +1431,7 @@ router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddl
                     if (segment.generatedVideo?.status === 'completed' || segment.generatedVideo?.status === 'generating') continue;
 
                     segment.generatedVideo = { s3Key: '', status: 'generating', generatedAt: new Date() };
+                    project.markModified('storyboard');
                     await project.save();
 
                     const allCharacters = project.scriptAnalysis?.characters || [];
@@ -1454,13 +1455,27 @@ router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddl
                     await uploadToS3(s3Key, result.buffer, result.mimeType || 'video/mp4');
 
                     segment.generatedVideo = { s3Key, status: 'completed', generatedAt: new Date(), duration: segment.duration };
+                    project.markModified('storyboard');
                     await project.save();
+                    
+                    const { socketServer } = await import('../services/SocketServer.js');
+                    socketServer.emitProjectUpdate(req.user!.userId, projectId, {
+                        type: 'segment_video_ready',
+                        segmentOrder: segment.order
+                    });
                     
                     Logger.info(`[BatchGen] Completed segment ${segment.order} for project ${projectId}`);
                 } catch (err: any) {
                     Logger.error(`[BatchGen] Failed segment ${segment.order}:`, err.message);
                     segment.generatedVideo = { s3Key: '', status: 'failed', generatedAt: new Date() };
+                    project.markModified('storyboard');
                     await project.save();
+
+                    const { socketServer } = await import('../services/SocketServer.js');
+                    socketServer.emitProjectUpdate(req.user!.userId, projectId, {
+                        type: 'segment_video_failed',
+                        segmentOrder: segment.order
+                    });
                 }
             }
         };

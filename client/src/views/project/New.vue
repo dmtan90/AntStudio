@@ -327,9 +327,9 @@ const startAnalysis = async (stage: string = 'script', script?: string, analysis
     const key = isScript ? 'script' : 'topic'
 
     const greeting = `
-      ${t(`ai.greetings.${key}.title`)}<br><br>
+      ${t(`ai.greetings.${key}.title`)}<br>
       ${t(`ai.greetings.${key}.steps`)}<br>
-      <ol style="margin: 12px 0; padding-left: 20px; line-height: 2;">
+      <ol style="margin: 5px 0; padding-left: 20px; line-height: 2;">
         <li><b>${t(`ai.greetings.${key}.step1`)}</b></li>
         <li><b>${t(`ai.greetings.${key}.step2`)}</b></li>
         <li><b>${t(`ai.greetings.${key}.step3`)}</b></li>

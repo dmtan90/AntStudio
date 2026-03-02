@@ -8,8 +8,8 @@ import { NodeHeartbeat } from '../models/NodeHeartbeat.js';
 export class RedisService {
     private client: Redis | null = null;
     private readonly nodeId: string;
-    private readonly SESSION_KEY_PREFIX = 'antflow:session:';
-    private readonly HEARTBEAT_KEY_PREFIX = 'antflow:node:';
+    private readonly SESSION_KEY_PREFIX = 'antstudio:session:';
+    private readonly HEARTBEAT_KEY_PREFIX = 'antstudio:node:';
 
     constructor() {
         this.nodeId = process.env.NODE_ID || `node_${Math.random().toString(36).substring(2, 9)}`;

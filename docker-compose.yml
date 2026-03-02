@@ -6,19 +6,19 @@ services:
   # ==========================================
   mongo:
     image: mongo:latest
-    container_name: antflow-mongo
+    container_name: antstudio-mongo
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
     networks:
-      - antflow-network
+      - antstudio-network
 
   # ==========================================
   # BACKEND SERVER
   # ==========================================
-  antflow-server:
-    container_name: antflow-server
+  antstudio-server:
+    container_name: antstudio-server
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -26,7 +26,7 @@ services:
       - "4000:4000"
     environment:
       - PORT=4000
-      - MONGO_URI=mongodb://mongo:27017/antflow
+      - MONGO_URI=mongodb://mongo:27017/antstudio
       - JWT_SECRET=change_me_in_prod
       # Add your AI Keys here or use .env file
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -34,25 +34,25 @@ services:
       - VEO_API_ENDPOINT=${VEO_API_ENDPOINT}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
     networks:
-      - antflow-network
+      - antstudio-network
 
   # ==========================================
   # FRONTEND CLIENT
   # ==========================================
-  antflow-client:
-    container_name: antflow-client
+  antstudio-client:
+    container_name: antstudio-client
     build:
       context: ./client
       dockerfile: Dockerfile
     ports:
       - "80:80"
     depends_on:
-      - antflow-server
+      - antstudio-server
     networks:
-      - antflow-network
+      - antstudio-network
 
 networks:
-  antflow-network:
+  antstudio-network:
     driver: bridge
 
 volumes:

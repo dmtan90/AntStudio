@@ -1,17 +1,7 @@
-import { GoogleTTSProvider } from '../../utils/ai/providers/GoogleTTSProvider.js';
-import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
-import { ElevenLabsProvider } from '../../utils/ai/providers/ElevenLabsProvider.js';
-import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
-import { AdminSettings } from '../../models/AdminSettings.js';
+import { aiManager } from '../../utils/ai/AIServiceManager.js';
 
 export class TTSService {
-    private googleProvider: GoogleTTSProvider;
-    private geminiClient: GeminiClient | null = null;
-    private elevenLabsProvider: ElevenLabsProvider | null = null;
-
-    constructor() {
-        this.googleProvider = new GoogleTTSProvider();
-    }
+    constructor() {}
 
     /**
      * Generate speech from text using specified provider
@@ -26,51 +16,11 @@ export class TTSService {
 
         switch (provider) {
             case 'google': {
-                const account = await aiAccountManager.getOptimalAccount('audio');
-                if (account) {
-                    const token = await aiAccountManager.refreshAccessToken(account);
-                    this.googleProvider.updateClient({ 
-                        accessToken: token,
-                        projectId: account.projectId 
-                    });
-                }
-                return await this.googleProvider.generateAudio(text, voiceId, { languageCode: language });
+                return await aiManager.generateAudio(text, undefined, 'google', { voiceId, languageCode: language, providerId: "google" });
             }
 
             case 'gemini': {
-                if (!this.geminiClient) {
-                    const settings = await AdminSettings.findOne();
-                    const geminiConfig = settings?.aiSettings?.providers?.find((p: any) => p.id === 'google');
-                    const apiKey = geminiConfig?.apiKey || process.env.GOOGLE_API_KEY;
-                    
-                    if (!apiKey) {
-                        throw new Error('Gemini API key not configured');
-                    }
-                    
-                    this.geminiClient = new GeminiClient({ apiKey });
-                }
-                const result = await this.geminiClient.generateAudio(text, voiceId);
-                return { media: result };
-            }
-
-            case 'elevenlabs': {
-                if (!this.elevenLabsProvider) {
-                    const settings = await AdminSettings.findOne();
-                    const elevenLabsConfig = settings?.aiSettings?.providers?.find((p: any) => p.id === 'elevenlabs');
-                    const apiKey = elevenLabsConfig?.apiKey || process.env.ELEVENLABS_API_KEY;
-                    
-                    if (!apiKey) {
-                        throw new Error('ElevenLabs API key not configured');
-                    }
-                    
-                    this.elevenLabsProvider = new ElevenLabsProvider(apiKey);
-                }
-                return await this.elevenLabsProvider.generateAudio(text, voiceId);
-            }
-
-            case 'openai': {
-                // OpenAI TTS implementation
-                throw new Error('OpenAI TTS not yet implemented');
+                return await aiManager.generateAudio(text, undefined, 'google', { voiceId, language, providerId: "gemini" });
             }
 
             default:

@@ -1,5 +1,5 @@
 {
-  "name": "antflow",
+  "name": "antstudio",
   "private": true,
   "scripts": {
     "dev:client": "pnpm --filter client dev",

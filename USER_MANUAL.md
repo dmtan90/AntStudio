@@ -1,10 +1,10 @@
-# AntFlow User Manual
+# AntStudio User Manual
 
-Welcome to AntFlow/AntStudio! This manual describes the features and workflows for end-users.
+Welcome to AntStudio/AntStudio! This manual describes the features and workflows for end-users.
 
 ## 🌟 Introduction
 
-AntFlow is an AI-powered video creation platform that allows you to turn text scripts, ideas, or products into cinematic videos automatically.
+AntStudio is an AI-powered video creation platform that allows you to turn text scripts, ideas, or products into cinematic videos automatically.
 
 ## 🎬 Dashboard Overview
 
@@ -95,4 +95,4 @@ A: Go to Settings -> Subscription to upgrade plan or buy credit packs.
 **Q: Can I use my own footage?**
 A: Yes, use the "Upload" tab in the Media sidebar.
 
-For technical support, please contact your administrator or support@antflow.ai.
+For technical support, please contact your administrator or dmtan90@gmail.com.

@@ -68,29 +68,6 @@ export class AIServiceManager {
                     providerInstances['google'] = new GeminiClient({ apiKey });
                     Logger.info('[AIServiceManager] Google Gemini Client (Unified) initialized.');
                 }
-            } else if (providerId === 'elevenlabs') {
-                const apiKey = providerConfig?.isActive ? providerConfig.apiKey : process.env.ELEVENLABS_API_KEY;
-                if (apiKey) {
-                    const { ElevenLabsProvider } = await import('./providers/ElevenLabsProvider.js');
-                    providerInstances['elevenlabs'] = new ElevenLabsProvider(apiKey);
-                    Logger.info('[AIServiceManager] ElevenLabs Provider initialized.');
-                }
-            } else if (providerId === 'aistudio') {
-                const { AIStudioProvider } = await import('./providers/AIStudioProvider.js');
-                providerInstances['aistudio'] = new AIStudioProvider();
-                Logger.info('[AIServiceManager] AI Studio Provider initialized.');
-            } else if (providerId === 'flow') {
-                const { FlowProvider } = await import('./providers/FlowProvider.js');
-                providerInstances['flow'] = new FlowProvider();
-                Logger.info('[AIServiceManager] Flow Provider initialized.');
-            } else if (providerId === 'puter') {
-                try {
-                    const { PuterProvider } = await import('./providers/PuterProvider.js');
-                    providerInstances['puter'] = new PuterProvider();
-                    Logger.info('[AIServiceManager] Puter AI (Free Priority) Provider initialized.');
-                } catch (puterError: any) {
-                    Logger.warn(`[AIServiceManager] Failed to initialize Puter AI: ${puterError.message}`);
-                }
             } else if (providerId === 'private') {
                 providerInstances['private'] = privateLLMClient;
             } else if (providerConfig?.baseUrl) {
@@ -124,19 +101,22 @@ export class AIServiceManager {
             Logger.info(`[AIServiceManager] Resolved default for ${type}: ${providerId}/${modelId}`);
         }
 
-        // 2. PRIORITY: Fallbacks if still no provider specified
+        // 2. Mapping legacy IDs to the unified Google provider
+        const legacyGeminiIds = ['aistudio', 'gemini-chat', 'gemini-veo', 'gemini-music', 'gemini-content', 'google-tts'];
+        if (providerId && legacyGeminiIds.includes(providerId)) {
+            providerId = 'google';
+        }
+
+        // 3. PRIORITY: Fallbacks if still no provider specified
         if (!providerId) {
             if (providerInstances['google']) {
                 providerId = 'google'
                 modelId = modelId || (type === 'image' ? 'imagen-3.0' : type === 'video' ? 'veo-2.0' : 'gemini-2.5-flash')
-            } else if (providerInstances['puter']) {
-                providerId = 'puter'
-                modelId = modelId || (type === 'image' ? 'dall-e-3' : 'gpt-4o-mini')
             } else {
                 // Last resort fallback
-                providerId = Object.keys(providerInstances).find(k => k !== 'private') || 'puter';
+                providerId = Object.keys(providerInstances).find(k => k !== 'private') || 'google';
             }
-            Logger.info(`[AIServiceManager] Using hardcoded fallback for ${type}: ${providerId}/${modelId}`);
+            Logger.info(`[AIServiceManager] Using resolved fallback for ${type}: ${providerId}/${modelId}`);
         }
 
         // Get Provider Instance
@@ -157,12 +137,11 @@ export class AIServiceManager {
     /**
      * Generate text using a specific model
      */
-    public async generateText(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
+    public async generateText(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}): Promise<string> {
         let { provider, providerId, modelId } = await this.resolveProvider('text', inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'gemini-2.5-flash' // Fallback
+        const finalModelName = modelId || inputModelName || 'gemini-2.5-flash'
 
         // SOVEREIGN HYBRID ROUTING (Phase 9)
-        // If it's a "brain/logic" task and local AI is ready, use PrivateLLM
         if (options.usePrivateAI || (currentSettings?.usePrivateAI && providerId === 'google')) {
             if (await privateLLMClient.testConnection()) {
                 Logger.info(`[AIServiceManager] 🛡️ Routing text task to Private AI (Local)`);
@@ -171,59 +150,20 @@ export class AIServiceManager {
             }
         }
 
-        // SMART MULTI-ACCOUNT SELECTION for Google/AIStudio tasks
-        if (providerId === 'google' || providerId === 'aistudio' || providerId === 'gemini-chat') {
-            try {
-                const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
-                const client = new GeminiClient({});
-                return await client.generateContent(prompt, finalModelName, options).then(r => r.text);
-            } catch (apiError: any) {
-                Logger.error(`[AIServiceManager] Gemini direct failed, trying fallback chain...`);
-            }
-        }
-
-        // PRIORITY FALLBACK TO PUTER (Phase 30.3)
-        if (providerId !== 'puter') {
-            const puter = providerInstances['puter'];
-            if (puter && await puter.isReady()) {
-                try {
-                    Logger.info(`[AIServiceManager] Calling Puter as Priority Provider for text...`);
-                    const result = await puter.generateText(prompt, finalModelName, options);
-                    return result.text;
-                } catch (e) {
-                    Logger.warn(`[AIServiceManager] Puter priority failed, falling back to ${providerId}...`);
-                }
-            }
-        }
-
         try {
-            if (providerId === 'google' && provider.generate) {
-                // Genkit Native
-                const { systemPrompt, ...genConfig } = options;
-
-                const result = await provider.generate({
-                    model: googleAI.model(finalModelName),
-                    prompt: prompt,
-                    systemInstruction: systemPrompt,
-                    config: genConfig
-                })
-                return result.text
+            if (providerId === 'google') {
+                const result = await provider.generateContent(prompt, finalModelName, options);
+                return result.text;
             } else {
-                // Custom Adapter or AIStudio Native
-                const result = await provider.generateText(prompt, finalModelName, options)
-                return result.text
+                const result = await provider.generateText(prompt, finalModelName, options);
+                return result.text;
             }
         } catch (error: any) {
             Logger.error(`AI Text Generation failed (${finalModelName}) via ${providerId}:`, error.message)
 
-            // AUTOMATIC FALLBACK TO GEMINI CHAT
-            if (providerId !== 'gemini-chat') {
-                const geminiChat = providerInstances['gemini-chat'];
-                if (geminiChat && await geminiChat.isReady()) {
-                    Logger.info(`[AIServiceManager] Falling back to Gemini Chat for text generation...`);
-                    const result = await geminiChat.generateText(prompt, finalModelName, options);
-                    return result.text;
-                }
+            if (providerId !== 'google') {
+                Logger.info(`[AIServiceManager] Falling back to primary Gemini for text generation...`);
+                return this.generateText(prompt, finalModelName, 'google', options);
             }
             throw error
         }
@@ -234,116 +174,34 @@ export class AIServiceManager {
      */
     public async generateImage(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
         let { provider, providerId, modelId } = await this.resolveProvider('image', inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'imagen-3.0' // Fallback
+        const finalModelName = modelId || inputModelName || 'imagen-3.0'
 
-        // SMART MULTI-ACCOUNT SELECTION
-        if (providerId === 'google' || providerId === 'aistudio' || providerId === 'gemini-chat') {
-            try {
-                const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
-                const client = new GeminiClient({});
-                const result = await client.generateImage(prompt, finalModelName, options);
-                
-                // Reformat for Service Manager response
-                const base64Data = result.url.replace(/^data:image\/\w+;base64,/, "");
-                return { buffer: Buffer.from(base64Data, 'base64'), mimeType: result.mimeType || 'image/png' };
-            } catch (apiError: any) {
-                Logger.error(`[AIServiceManager] Gemini Image direct failed, trying fallback chain...`);
-            }
-        }
-
-        // PRIORITY FALLBACK TO PUTER (Phase 30.3)
-        // if (providerId !== 'puter') {
-        //     const puter = providerInstances['puter'];
-        //     if (puter && await puter.isReady()) {
-        //         try {
-        //             Logger.info(`[AIServiceManager] Calling Puter as Priority Provider for image...`);
-        //             const result = await puter.generateImage(prompt, finalModelName, options);
-        //             const media = result.media;
-        //             if (media && media.url) {
-        //                  const { getFileBuffer } = await import('../AIGenerator.js');
-        //                  const buffer = await getFileBuffer(media.url);
-        //                  return { buffer, mimeType: media.mimeType || 'image/png' };
-        //             }
-        //         } catch (e) {
-        //             Logger.warn(`[AIServiceManager] Puter priority failed for image, falling back to ${providerId}...`);
-        //         }
-        //     }
-        // }
-
-        Logger.debug(`generateImage [Provider: ${providerId}, Model: ${finalModelName}]`)
-
-        const executeImageGen = async (p: any, pId: string) => {
-            let media: any;
-            if (pId === 'google' && typeof p.generate === 'function') {
-                // Genkit Native
-                const result = await p.generate({
-                    model: googleAI.model(finalModelName),
-                    prompt: prompt,
-                    config: { responseModalities: ['IMAGE'] }
-                })
-                media = result.media
+        try {
+            let result: any;
+            if (providerId === 'google') {
+                result = await provider.generateImage(prompt, finalModelName, options);
             } else {
-                // Custom Adapter or Multi-Account Provider
-                const result = await p.generateImage(prompt, finalModelName, options)
-                media = result.media || result
+                result = await provider.generateImage(prompt, finalModelName, options);
             }
 
-            if (!media || !media.url) throw new Error('No image generated')
+            const media = result.media || result;
+            if (!media || !media.url) throw new Error('No image generated');
 
-            // Case 1: External URL (HTTP)
             if (typeof media.url === 'string' && media.url.startsWith('http')) {
                 const { getFileBuffer } = await import('../AIGenerator.js');
                 const buffer = await getFileBuffer(media.url);
                 return { buffer, mimeType: media.mimeType || 'image/png' };
             }
 
-            // Case 2: Data URL (Base64)
             if (typeof media.url === 'string' && media.url.startsWith('data:')) {
                 const base64Data = media.url.replace(/^data:image\/\w+;base64,/, "");
-                if (!base64Data) throw new Error('Invalid image data format');
                 return { buffer: Buffer.from(base64Data, 'base64'), mimeType: media.mimeType || 'image/png' }
             }
 
-            // Fallback for raw objects
             const base64Data = typeof media.url === 'string' ? media.url : '';
             return { buffer: Buffer.from(base64Data, 'base64'), mimeType: media.mimeType || 'image/png' }
-        };
-
-        try {
-            return await executeImageGen(provider, providerId);
         } catch (error: any) {
             Logger.error(`AI Image Generation failed (${finalModelName}) via ${providerId}:`, error.message)
-
-            // PRIORITY FALLBACK TO 11LABS
-            // if (providerId !== '11labs') {
-            //     const labsProvider = providerInstances['11labs'];
-            //     if (labsProvider && await labsProvider.isReady()) {
-            //         Logger.info(`[AIServiceManager] Falling back to 11Labs for image generation...`);
-            //         try {
-            //             return await executeImageGen(labsProvider, '11labs');
-            //         } catch (labsError) {
-            //             Logger.error(`[AIServiceManager] 11Labs fallback failed for image:`, (labsError as any).message);
-            //         }
-            //     }
-            // }
-
-            // AUTOMATIC FALLBACK TO GEMINI CHAT
-            // if (providerId !== 'gemini-chat') {
-            //     const geminiChat = providerInstances['gemini-chat'];
-            //     if (geminiChat && await geminiChat.isReady()) {
-            //         Logger.info(`[AIServiceManager] Falling back to Gemini Chat for image generation...`);
-            //         return await executeImageGen(geminiChat, 'gemini-chat');
-            //     }
-            // }
-
-            // AUTOMATIC FALLBACK TO AISTUDIO
-            // if (providerId !== 'aistudio') {
-            //     const aiStudio = providerInstances['aistudio'];
-            //     if (aiStudio && await aiStudio.isReady()) {
-            //         Logger.info(`[AIServiceManager] Falling back to AIStudio for image generation...`);
-            //         return await executeImageGen(aiStudio, 'aistudio');
-            //     }
-            // }
             throw error
         }
     }
@@ -353,115 +211,37 @@ export class AIServiceManager {
      */
     public async generateVideo(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
         let { provider, providerId, modelId } = await this.resolveProvider('video', inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'veo-2.0' // Fallback
+        const finalModelName = modelId || inputModelName || 'veo-2.0'
 
-        // SMART MULTI-ACCOUNT SELECTION (Prefer GeminiVeoProvider for 'google' or pooled tasks)
-        if (providerId === 'google' || providerId === 'gemini-veo' || providerId === 'aistudio') {
-            try {
-                const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
-                const client = new GeminiClient({});
-                Logger.info(`[AIServiceManager] Calling GeminiClient.generateVideo for ${finalModelName}. Options:`, JSON.stringify(options, null, 2));
-                const result = await client.generateVideo(prompt, finalModelName, options);
-                
-                if (result.url && result.url.startsWith('data:')) {
-                    const base64Data = result.url.replace(/^data:video\/\w+;base64,/, "");
-                    return { buffer: Buffer.from(base64Data, 'base64'), mimeType: 'video/mp4' };
-                } else if (result.url && result.url.startsWith('http')) {
-                    Logger.info(`[AIServiceManager] Downloading video from: ${result.url}`);
-                    const { getFileBuffer } = await import('../AIGenerator.js');
-                    const buffer = await getFileBuffer(result.url);
-                    return { buffer, mimeType: result.mimeType || 'video/mp4', url: result.url };
-                }
-                return { buffer: Buffer.from(''), mimeType: 'video/mp4', url: result.url };
-            } catch (err: any) {
-                Logger.error(`[AIServiceManager] Gemini Veo direct failed, trying fallbacks:`, err.message);
+        try {
+            let result: any;
+            if (providerId === 'google') {
+                result = await provider.generateVideo(prompt, finalModelName, options);
+            } else {
+                if (typeof provider.generateVideo !== 'function') throw new Error(`Provider ${providerId} does not support video generation`);
+                result = await provider.generateVideo(prompt, finalModelName, options);
             }
-        }
 
-        Logger.debug(`generateVideo [Provider: ${providerId}, Model: ${finalModelName}]`)
-
-        const executeVideoGen = async (p: any, pId: string) => {
-            if (typeof p.generateVideo !== 'function') {
-                throw new Error(`Provider ${pId} does not support video generation`)
-            }
-            const result = await p.generateVideo(prompt, finalModelName, options)
-
-            // Multi-account providers return { media: { url } }, older ones might return { buffer }
             const media = result.media || result;
             if (!media || (!media.url && !media.buffer)) throw new Error('No video generated');
 
-            // Case 1: Buffer
             if (media.buffer) return { buffer: media.buffer, mimeType: media.mimeType || 'video/mp4' };
 
-            // Case 2: External URL (HTTP)
             if (typeof media.url === 'string' && media.url.startsWith('http')) {
                 const { getFileBuffer } = await import('../AIGenerator.js');
                 const buffer = await getFileBuffer(media.url);
-                return { buffer, mimeType: media.mimeType || 'video/mp4' };
+                return { buffer, mimeType: media.mimeType || 'video/mp4', url: media.url };
             }
 
-            // Case 3: Data URL (Base64)
             if (typeof media.url === 'string' && media.url.startsWith('data:')) {
                 const base64Data = media.url.replace(/^data:video\/\w+;base64,/, "");
-                if (!base64Data) throw new Error('Invalid video data format');
                 return { buffer: Buffer.from(base64Data, 'base64'), mimeType: media.mimeType || 'video/mp4' }
             }
 
-            // Fallback
             const base64Data = typeof media.url === 'string' ? media.url : '';
-            return { buffer: Buffer.from(base64Data, 'base64'), mimeType: media.mimeType || 'video/mp4' }
-        };
-
-        try {
-            if (providerId === 'google') {
-                // Fallback to 11labs/flow/aistudio for now if ready
-                const labsProvider = providerInstances['11labs'];
-                if (labsProvider && await labsProvider.isReady()) {
-                    Logger.info(`[AIServiceManager] Proactively falling back to 11Labs for Google Video task...`);
-                    return await executeVideoGen(labsProvider, '11labs');
-                }
-
-                const fallbackProvider = providerInstances['aistudio'] || providerInstances['gemini-chat'];
-                if (fallbackProvider && await fallbackProvider.isReady()) {
-                    return await executeVideoGen(fallbackProvider, 'fallback');
-                }
-                throw new Error('Native Google Veo via Manager not fully implemented yet');
-            }
-
-            return await executeVideoGen(provider, providerId);
+            return { buffer: Buffer.from(base64Data, 'base64'), mimeType: media.mimeType || 'video/mp4', url: media.url }
         } catch (error: any) {
             Logger.error(`AI Video Generation failed (${finalModelName}) via ${providerId}:`, error.message)
-
-            // PRIORITY FALLBACK TO 11LABS
-            // if (providerId !== '11labs') {
-            //     const labsProvider = providerInstances['11labs'];
-            //     if (labsProvider && await labsProvider.isReady()) {
-            //         Logger.info(`[AIServiceManager] Falling back to 11Labs for video generation...`);
-            //         try {
-            //             return await executeVideoGen(labsProvider, '11labs');
-            //         } catch (labsError) {
-            //             Logger.error(`[AIServiceManager] 11Labs fallback failed for video:`, (labsError as any).message);
-            //         }
-            //     }
-            // }
-
-            // AUTOMATIC FALLBACK TO GEMINI CHAT
-            // if (providerId !== 'gemini-chat') {
-            //     const geminiChat = providerInstances['gemini-chat'];
-            //     if (geminiChat && await geminiChat.isReady()) {
-            //         Logger.info(`[AIServiceManager] Falling back to Gemini Chat for video generation...`);
-            //         return await executeVideoGen(geminiChat, 'gemini-chat');
-            //     }
-            // }
-
-            // AUTOMATIC FALLBACK TO AISTUDIO
-            // if (providerId !== 'aistudio') {
-            //     const aiStudio = providerInstances['aistudio'];
-            //     if (aiStudio && await aiStudio.isReady()) {
-            //         Logger.info(`[AIServiceManager] Falling back to AIStudio for video generation...`);
-            //         return await executeVideoGen(aiStudio, 'aistudio');
-            //     }
-            // }
             throw error
         }
     }
@@ -471,118 +251,30 @@ export class AIServiceManager {
      */
     public async generateAudio(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
         let { provider, providerId, modelId } = await this.resolveProvider('audio', inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'tts-1' // Fallback
+        const finalModelName = modelId || inputModelName || 'tts-1'
 
-        // Proactive switch to AIStudio if ready
-        // if (providerId === 'google' || providerId === 'google-tts') {
-        //     const aiStudio = providerInstances['aistudio'];
-        //     if (aiStudio && await aiStudio.isReady()) {
-        //         Logger.info(`[AIServiceManager] AIStudio is Ready. Proactively using it for audio generation.`);
-        //         provider = aiStudio;
-        //         providerId = 'aistudio';
-        //     }
-        // }
-
-        // SMART MULTI-ACCOUNT SELECTION for Audio
-        if (providerId === 'google' || providerId === 'google-tts') {
+        if (providerId === 'google') {
             try {
                 const voiceProvider = options.providerId || 'gemini';
                 if(voiceProvider === 'gemini'){
-                    const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
-                    const client = new GeminiClient({});
-                    const result = await client.generateAudio(prompt, options.voiceId || 'Puck', finalModelName, options);
+                    const result = await provider.generateAudio(prompt, options.voiceId || 'Puck', finalModelName, options);
                     return { media: result };    
-                }
-                else{ // google-tts
+                } else {
                     const { GoogleTTSProvider } = await import('./providers/GoogleTTSProvider.js');
                     const client = new GoogleTTSProvider();
                     const result = await client.generateAudio(prompt, options.voiceId || 'en-US-Standard-A', options);
                     return result;
                 }
             } catch (err: any) {
-                Logger.error(`[AIServiceManager] Gemini direct audio failed, trying fallback chain...`);
+                Logger.error(`[AIServiceManager] Gemini direct audio failed:`, err.message);
             }
         }
 
-        // if ((providerId === 'elevenlabs' || providerId === '11labs') && options.usePool) {
-        //     // Only use pool if explicitly requested or for general background tasks
-        //     // For "ElevenLabs provider" (static key), we skip this and use the direct instance below
-        //     const account = await aiAccountManager.getOptimalAccount('audio');
-        //     if (account && account.accountType === '11labs-direct') {
-        //         Logger.info(`[AIServiceManager] Using 11Labs Direct pooled account for audio: ${account.email}`);
-        //         const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
-        //         const client = new ElevenLabsDirectClient({
-        //             email: account.email,
-        //             token: account.accessToken || 'invalid',
-        //             licenseKey: account.licenseKey,
-        //             serviceKeys: account.serviceKeys
-        //         });
-        //         const buffer = await client.generateAudio(prompt, finalModelName, options);
-        //         return { media: { url: `data:audio/mpeg;base64,${buffer.toString('base64')}`, mimeType: 'audio/mpeg' } };
-        //     }
-        // }
-
-        // PRIORITY FALLBACK TO PUTER (Phase 30.3)
-        // if (providerId !== 'puter') {
-        //     const puter = providerInstances['puter'];
-        //     if (puter && await puter.isReady()) {
-        //         try {
-        //             Logger.info(`[AIServiceManager] Calling Puter as Priority Provider for audio...`);
-        //             const result = await puter.generateAudio(prompt, finalModelName, options);
-        //             return result;
-        //         } catch (e) {
-        //             Logger.warn(`[AIServiceManager] Puter priority failed for audio, falling back to ${providerId}...`);
-        //         }
-        //     }
-        // }
-
-        Logger.debug(`generateAudio [Provider: ${providerId}, Model: ${finalModelName}]`)
-
         try {
-            if (providerId === 'google') {
-                // For now, treat Google TTS as a manual implementation or via CustomAdapter if configured
-                throw new Error('Native Google TTS via Genkit not fully implemented yet')
-            } else if (providerId === 'elevenlabs') {
-                // ElevenLabs Provider
-                const result = await provider.generateAudio(prompt, finalModelName, options)
-                return result
-            } else if (providerId === 'aistudio') {
-                // AIStudio Provider
-                const result = await provider.generateAudio(prompt, finalModelName, options)
-                return result
-            } else {
-                // Custom Adapter
-                if (typeof provider.generateAudio !== 'function') {
-                    throw new Error(`Provider ${providerId} does not support audio generation`)
-                }
-                const result = await provider.generateAudio(prompt, finalModelName, options)
-                return result
-            }
+            if (typeof provider.generateAudio !== 'function') throw new Error(`Provider ${providerId} does not support audio generation`)
+            return await provider.generateAudio(prompt, finalModelName, options)
         } catch (error: any) {
             Logger.error(`AI Audio Generation failed (${finalModelName}) via ${providerId}:`, error.message)
-
-            // PRIORITY FALLBACK TO 11LABS
-            // if (providerId !== 'elevenlabs' && providerId !== '11labs') {
-            //     const labsProvider = providerInstances['11labs'] || providerInstances['elevenlabs'];
-            //     if (labsProvider && typeof labsProvider.generateAudio === 'function') {
-            //         Logger.info(`[AIServiceManager] Falling back to 11Labs for audio generation...`);
-            //         try {
-            //             const result = await labsProvider.generateAudio(prompt, finalModelName, options);
-            //             return result;
-            //         } catch (labsError) {
-            //             Logger.error(`[AIServiceManager] 11Labs fallback failed for audio:`, (labsError as any).message);
-            //         }
-            //     }
-            // }
-
-            // AUTOMATIC FALLBACK TO AISTUDIO
-            // if (providerId !== 'aistudio') {
-            //     const aiStudio = providerInstances['aistudio'];
-            //     if (aiStudio && await aiStudio.isReady()) {
-            //         Logger.info(`[AIServiceManager] Falling back to AIStudio for audio generation...`);
-            //         return await aiStudio.generateAudio(prompt, finalModelName, options);
-            //     }
-            // }
             throw error
         }
     }
@@ -591,51 +283,22 @@ export class AIServiceManager {
      * Generate Music using a specific model
      */
     public async generateMusic(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
-        let { provider, providerId, modelId } = await this.resolveProvider('audio', inputProviderId, inputModelName); // Reuse audio resolution for music
+        let { provider, providerId, modelId } = await this.resolveProvider('audio', inputProviderId, inputModelName);
         const finalModelName = modelId || inputModelName || 'music-fx-default';
 
-        // SMART MULTI-ACCOUNT SELECTION (Prefer GeminiMusicProvider for 'google' or pooled tasks)
-        if (providerId === 'google' || providerId === 'gemini-music' || providerId === 'aistudio') {
+        if (providerId === 'google') {
             try {
-                const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
-                const client = new GeminiClient({});
-                const result = await client.generateMusic(prompt, finalModelName, options);
+                const result = await provider.generateMusic(prompt, finalModelName, options);
                 const media = result as any;
-                if (media.url && media.url.startsWith('data:')) {
+                if (media.url?.startsWith('data:')) {
                     const base64Data = media.url.replace(/^data:audio\/\w+;base64,/, "");
                     return { buffer: Buffer.from(base64Data, 'base64'), mimeType: media.mimeType || 'audio/mpeg' };
                 }
                 return { buffer: Buffer.from(''), mimeType: media.mimeType || 'audio/mpeg', url: media.url };
             } catch (err: any) {
-                Logger.error(`[AIServiceManager] Gemini direct music failed, trying fallbacks:`, err.message);
+                Logger.error(`[AIServiceManager] Gemini direct music failed:`, err.message);
             }
         }
-
-        // Direct handling for ElevenLabs music
-        // if (providerId === '11labs' || providerId === 'elevenlabs') {
-        //     const account = await aiAccountManager.getOptimalAccount('audio'); // Reuse audio pool
-        //     if (account && account.accountType === '11labs-direct') {
-        //         Logger.info(`[AIServiceManager] Using 11Labs Direct account for music: ${account.email}`);
-        //         const { ElevenLabsDirectClient } = await import('../../integrations/ai/ElevenLabsDirectClient.js');
-        //         const client = new ElevenLabsDirectClient({
-        //             email: account.email,
-        //             token: account.accessToken || 'invalid',
-        //             licenseKey: account.licenseKey
-        //         });
-
-        //         try {
-        //             const result = await client.generateMusic(prompt, { ...options, modelId: finalModelName });
-        //             await aiAccountManager.recordUsage(account, finalModelName);
-
-        //             const sound = result.sounds?.[0];
-        //             return { buffer: Buffer.from(sound.data, 'base64'), mimeType: `audio/${sound.audioContainer.toLowerCase()}` };
-        //         } catch (e: any) {
-        //             Logger.error(`[AIServiceManager] 11Labs music direct failed for ${account.email}:`, e.message);
-        //         }
-        //     }
-        // }
-
-        Logger.debug(`generateMusic [Provider: ${providerId}, Model: ${finalModelName}]`);
 
         try {
             if (typeof provider.generateMusic === 'function') {
@@ -653,30 +316,19 @@ export class AIServiceManager {
      */
     public async generatePrompt(payload: any, type: string, options: any = {}) {
         const translator = async (prompt: string) => {
-            return await this.generateText(prompt, 'gemini-2.5-flash', undefined, { ...options, usePrivateAI: false });
+            return await this.generateText(prompt, undefined, undefined, { ...options, usePrivateAI: false });
         };
 
         if (type === 'segment' || type === 'video' || type === 'image') {
-            // Resolve style from payload or project analysis
             const videoStyle = payload.videoStyle || payload.projectAnalysis?.creativeBrief?.visualStyle || payload.projectAnalysis?.visuals?.visualStyle?.label || 'Cinematic';
-
-            // 1. Build Scene Prompt (for Images) - Now async with internal translation
             const imagePrompt = await buildScenePrompt(payload.description, payload.characters_context || [], videoStyle, payload.projectAnalysis, 'vi', translator);
-
-            
-            // 2. Build Veo Video Prompt (for Video)
             const videoPrompt = await buildVeoVideoPrompt(payload, payload.all_characters || [], payload.projectAnalysis || payload, 'vi', translator);
 
-            return {
-                imagePrompt: imagePrompt,
-                videoPrompt: videoPrompt
-            };
+            return { imagePrompt, videoPrompt };
         } else if (type === 'character') {
             const videoStyle = payload.videoStyle || payload.projectAnalysis?.creativeBrief?.visualStyle || payload.projectAnalysis?.visuals?.visualStyle?.label || 'Cinematic';
             const characterPrompt = await buildCharacterSheetPrompt(payload, videoStyle, payload.projectAnalysis, 'vi', translator);
-            
             return { characterPrompt };
-
         } else if (type === 'audio') {
             const { buildVoiceoverPrompt } = await import('../PromptBuilder.js');
             const audioPrompt = await buildVoiceoverPrompt(payload.text, payload.characterName, payload.all_characters || [], 'vi', translator);
@@ -686,7 +338,6 @@ export class AIServiceManager {
             const musicPrompt = await buildMusicPrompt(payload.mood, payload.projectAnalysis, 'vi', translator);
             return { musicPrompt };
         }
-
         throw new Error(`Unsupported prompt generation type: ${type}`);
     }
 
@@ -695,14 +346,8 @@ export class AIServiceManager {
      */
     public async testConnection(providerId: string): Promise<{ success: boolean; message: string }> {
         const provider = await this.getProvider(providerId);
-        if (!provider) {
-            return { success: false, message: `Provider ${providerId} not found or not initialized` };
-        }
-
-        if (typeof provider.testConnection !== 'function') {
-            return { success: false, message: `Provider ${providerId} does not support connection testing` };
-        }
-
+        if (!provider) return { success: false, message: `Provider ${providerId} not found or not initialized` };
+        if (typeof provider.testConnection !== 'function') return { success: false, message: `Provider ${providerId} does not support connection testing` };
         return await provider.testConnection();
     }
 }

@@ -802,7 +802,7 @@ export function useStudioCanvas(
         if (!qrImg) {
             qrImg = new Image();
             qrImg.crossOrigin = 'anonymous';
-            qrImg.src = QRCodeGenerator.getProductQR(product.inventoryUrl || `https://antflow.ai/shop/${productId}`);
+            qrImg.src = QRCodeGenerator.getProductQR(product.inventoryUrl || `https://antstudio.agrhub.com/p/${productId}`);
             qrCodeImages.set(productId, qrImg);
         }
 

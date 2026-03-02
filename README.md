@@ -4,11 +4,11 @@
 
 > Transform your ideas into cinematic videos with AI. The world's first fully autonomous entertainment and commerce engine.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://opensource.org/licenses/AGPL-3.0)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](https://github.com/yourusername/antflow)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](https://github.com/dmtan90/AntStudio)
 
 ## 📸 Platform Overview
 
@@ -65,7 +65,7 @@ AntStudio is the world's first **fully autonomous AI-powered entertainment platf
 - 🎬 **Live Studio**:
   - Real-time AI processing (face detection, segmentation, AR)
   - Virtual production (chromakey, 3D stages)
-  - Multi-platform streaming (YouTube, Facebook, TikTok)
+  - Multi-platform streaming (YouTube, Facebook, TikTok, Ant Media Server)
   - Mobile camera ingest
   - WebRTC guest integration
 
@@ -168,7 +168,7 @@ antstudio/
 
 ## 🚀 Quick Start (Docker)
 
-The easiest way to run AntFlow is with Docker.
+The easiest way to run AntStudio is with Docker.
 
 1. **Clone the repository**
    ```bash
@@ -298,9 +298,22 @@ pnpm dev
 
 We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
-## 📄 License
+## � Support the Project
 
-This project is licensed under the MIT License - see [LICENSE](./LICENSE) file for details.
+If you find AntStudio useful and want to support its development, you can sponsor the project via **PayPal**:
+
+👉 **[Sponsor via PayPal (dmtan90@gmail.com)](https://www.paypal.com/paypalme/dmtan90)**
+
+---
+
+## �📄 License
+
+AntStudio is dual-licensed:
+
+1. **Personal & Non-Commercial Use**: Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. You can use, modify, and distribute the software for free, provided that any derivative works are also licensed under AGPL-3.0 and their source code is made available.
+2. **Commercial Use**: Requires a **Commercial License**. If you wish to use AntStudio for commercial purposes, in a closed-source environment, or without the restrictions of AGPL-3.0, please contact **Tan Do** at [dmtan90@gmail.com](mailto:dmtan90@gmail.com) to purchase a commercial license.
+
+See the [LICENSE](./LICENSE) file for more details.
 
 ---
 

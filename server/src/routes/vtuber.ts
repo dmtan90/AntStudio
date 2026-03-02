@@ -264,7 +264,6 @@ router.post('/:entityId/model', upload.single('model'), async (req: AuthRequest,
  */
 import { getAdminSettings } from '../models/AdminSettings.js';
 import { GoogleTTSProvider } from '../utils/ai/providers/GoogleTTSProvider.js';
-import { ElevenLabsProvider } from '../utils/ai/providers/ElevenLabsProvider.js';
 import { GeminiClient } from '../integrations/ai/GeminiClient.js';
 
 import { Logger } from '../utils/Logger.js';
@@ -309,28 +308,6 @@ router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
             }));
             
             return res.json({ success: true, data: formattedVoices });
-        } 
-        else if (provider === 'elevenlabs') {
-            // ElevenLabs
-            const elevenProvider = settings.aiSettings.providers.find(p => p.id === 'elevenlabs');
-            let apiKey = elevenProvider?.apiKey || process.env.ELEVENLABS_API_KEY;
-            
-            if (!apiKey) {
-                return res.status(500).json({ success: false, error: 'ElevenLabs API Key not configured' });
-            }
-            
-            const ttsProvider = new ElevenLabsProvider(apiKey);
-            const voices = await ttsProvider.listVoices();
-            
-            const formattedVoices = voices.map((v: any) => ({
-                id: v.voice_id,
-                name: v.name,
-                language: v.labels?.language || 'en',
-                gender: v.labels?.gender || 'neutral',
-                provider: 'elevenlabs'
-            }));
-            
-            return res.json({ success: true, data: formattedVoices });
         }
         else if (provider === 'gemini') {
             // Gemini TTS
@@ -345,19 +322,6 @@ router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
             const voices = await client.listVoices();
             
             return res.json({ success: true, data: voices });
-        }
-        else if (provider === 'openai') {
-            // OpenAI TTS
-            const openaiVoices = [
-                { id: 'alloy', name: 'Alloy', language: 'en', gender: 'neutral', provider: 'openai' },
-                { id: 'echo', name: 'Echo', language: 'en', gender: 'male', provider: 'openai' },
-                { id: 'fable', name: 'Fable', language: 'en', gender: 'neutral', provider: 'openai' },
-                { id: 'onyx', name: 'Onyx', language: 'en', gender: 'male', provider: 'openai' },
-                { id: 'nova', name: 'Nova', language: 'en', gender: 'female', provider: 'openai' },
-                { id: 'shimmer', name: 'Shimmer', language: 'en', gender: 'female', provider: 'openai' }
-            ];
-            
-            return res.json({ success: true, data: openaiVoices });
         }
         else {
             return res.status(400).json({ success: false, error: 'Unsupported provider.' });

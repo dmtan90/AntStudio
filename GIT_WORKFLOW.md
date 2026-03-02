@@ -4,8 +4,8 @@ This guide explains how to manage two repositories (Public & Private) using **Gi
 
 ## 🏗️ The Architecture
 
-- **GitHub Public**: `https://github.com/your-org/antflow-core`
-- **GitHub Private**: `https://github.com/your-org/antflow-pro`
+- **GitHub Public**: `https://github.com/your-org/antstudio-core`
+- **GitHub Private**: `https://github.com/your-org/antstudio-pro`
 
 In this setup, the **Private Repo** is your primary workspace. The **Public Repo** lives inside it as a subdirectory (e.g., `/core`).
 
@@ -16,7 +16,7 @@ In this setup, the **Private Repo** is your primary workspace. The **Public Repo
 ### 1. In your Private Repo
 Register the Public repository as a remote:
 ```bash
-git remote add public https://github.com/your-org/antflow-core.git
+git remote add public https://github.com/your-org/antstudio-core.git
 ```
 
 ### 2. Add the Public code as a Subtree
@@ -44,7 +44,7 @@ git subtree pull --prefix core public main --squash
 
 ---
 
-## 💡 Best Practices for AntFlow
+## 💡 Best Practices for AntStudio
 
 ### 1. Structure
 Move shared logic (Models, Core Utils, Basic Routes) into the `core/` folder.

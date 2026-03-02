@@ -420,7 +420,7 @@
     <!-- Character Detail Dialog -->
     <el-dialog v-model="charDialogVisible"
       :title="editingChar?.name || t('projects.editor.storyboard.charDialog.title')" width="1000px"
-      class="cinematic-dialog" destroy-on-close>
+      class="cinematic-dialog" destroy-on-close :append-to-body="true">
       <div v-if="editingChar" class="grid grid-cols-12 gap-8">
         <!-- Preview Column -->
         <div class="col-span-12 lg:col-span-5 flex flex-col gap-4">
@@ -609,8 +609,9 @@
     </el-dialog>
 
     <!-- Segment Detail Dialog -->
-    <el-dialog v-model="segDialogVisible" :title="editingSeg?.title || t('projects.editor.storyboard.segDialog.title')"
-      width="1200px" class="cinematic-dialog" destroy-on-close>
+    <el-dialog v-model="segDialogVisible" 
+      :title="editingSeg?.title || t('projects.editor.storyboard.segDialog.title')"
+      width="1200px" class="cinematic-dialog" destroy-on-close :append-to-body="true">
       <div v-if="editingSeg" class="grid grid-cols-12 gap-8">
         <!-- Media Preview -->
         <div class="col-span-12 lg:col-span-6 flex flex-col gap-4">
@@ -891,7 +892,7 @@ import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 import GMedia from '@/components/ui/GMedia.vue'
 
-const activeSection = ref('segments')
+const activeSection = ref('characters')
 const projectStore = useProjectStore()
 const { t } = useI18n()
 

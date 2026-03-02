@@ -122,7 +122,8 @@
         "right": "Right",
         "top": "Top",
         "bottom": "Bottom",
-        "center": "Center"
+        "center": "Center",
+        "unlimited": "Unlimited"
     },
     "dashboard": {
         "header": {
@@ -281,7 +282,11 @@
                     "videoProcessing": "Video Processing...",
                     "imageProcessing": "Image Processing...",
                     "tabs": {
-                        "environment": "Environment"
+                        "environment": "Environment",
+                        "general": "General",
+                        "cinematic": "Cinematic",
+                        "audio": "Audio",
+                        "prompt": "Prompt"
                     },
                     "locationType": "Type",
                     "atmosphere": "Atmosphere",
@@ -303,8 +308,51 @@
                     "audioDetails": "Audio Details",
                     "detailedDialogue": "Detailed Dialogue",
                     "imagePrompt": "Image Generation Prompt",
-                    "videoPrompt": "Video Generation Prompt"
+                    "videoPrompt": "Video Generation Prompt",
+                    "options": {
+                        "extremeCloseUp": "Extreme Close-up",
+                        "closeUp": "Close-up",
+                        "mediumShot": "Medium Shot",
+                        "fullShot": "Full Shot",
+                        "wideShot": "Wide Shot",
+                        "extremeWideShot": "Extreme Wide Shot",
+                        "ultraWideShot": "Ultra Wide Shot",
+                        "pov": "POV",
+                        "eyeLevel": "Eye Level",
+                        "highAngle": "Hight Angle",
+                        "lowAngle": "Low Angle",
+                        "dutchAngle": "Dutch Angle",
+                        "overShoulder": "Over Shoulder",
+                        "birdsEye": "Birds Eye",
+                        "wormsEye": "Worms Eye",
+                        "static": "Static",
+                        "pan": "Pan",
+                        "tilt": "Tilt",
+                        "zoomIn": "Zoom In",
+                        "zoomOut": "Zoom Out",
+                        "dolly": "Dolly",
+                        "tracking": "Tracking",
+                        "handheld": "Handheld",
+                        "craneFlycam": "Crane Flycam",
+                        "deepFocus": "Deep Focus",
+                        "shallowFocus": "Shallow Focus",
+                        "rackFocus": "Rack Focus",
+                        "softFocus": "Soft Focus",
+                        "studio": "Studio",
+                        "indoor": "Indoor",
+                        "outdoor": "Outdoor",
+                        "urban": "Urban",
+                        "nature": "Nature",
+                        "scifi": "Scifi",
+                        "cyberpunk": "Cyber Punk",
+                        "cinematicInterior": "Cinematic Interior"
+                    },
+                    "ambience": "Ambience",
+                    "sfx": "Sound Effects",
+                    "music": "Music"
                 },
+                "addVisualCues": "Add visual cues...",
+                "addAudioCues": "Add audio cues...",
                 "charDialog": {
                     "title": "Character Details",
                     "noImage": "No Image",
@@ -315,7 +363,59 @@
                     "costume": "Costume & Props",
                     "voice": "Voice Casting (TTS)",
                     "voiceId": "Select Voice",
-                    "pitch": "Pitch"
+                    "pitch": "Pitch",
+                    "name": "Name",
+                    "species": "Species",
+                    "gender": "Gender",
+                    "age": "Age",
+                    "bodyBuild": "Body",
+                    "faceShape": "Face Shape",
+                    "hair": "Hair",
+                    "skinColor": "Skin Color",
+                    "eyes": "Eyes",
+                    "features": "Features",
+                    "outfitTop": "Outfit Top",
+                    "outfitBottom": "Outfit Bottom",
+                    "footwear": "Footwear", 
+                    "headwear": "Headwear",
+                    "props": "Props",
+                    "listen": "Listen",
+                    "styleCategory": "Style Category",
+                    "options": {
+                        "human": "Human",
+                        "robot": "Robot",
+                        "animal": "Animal",
+                        "mystical": "Mystical",
+                        "alien": "Alien",
+                        "male": "Male",
+                        "female": "Female",
+                        "other": "Other",
+                        "unknown": "Unknown",
+                        "slender": "Slender",
+                        "balanced": "Balanced",
+                        "muscular": "Muscular",
+                        "chubby": "Chubby",
+                        "petite": "Petite",
+                        "athletic": "Athletic",
+                        "oval": "Oval",
+                        "round": "Round",
+                        "square": "Square",
+                        "long": "Long",
+                        "diamond": "Diamond",
+                        "heart": "Heart",
+                        "blackShort": "Black Short",
+                        "blondeLong": "Blonde Long",
+                        "brownCurly": "Brown Curly",
+                        "bald": "Bald",
+                        "silverBun": "Silver Bun",
+                        "shoulder": "Shoulder",
+                        "white": "White",
+                        "yellow": "Yellow",
+                        "tan": "Tan",
+                        "black": "Black",
+                        "grey": "Grey",
+                        "green": "Green"
+                    }
                 },
                 "englishAiPrompt": "English Ai Prompt",
                 "visualKeywords": "Visual Keywords",
@@ -324,7 +424,8 @@
                     "generateFrames": "Generate Frames",
                     "generateMotion": "Generate Motion",
                     "generateAudio": "Generate Audio"
-                }
+                },
+                "generateMusic": "Generate Music"
             },
             "timeline": {
                 "title": "Timeline",
@@ -356,6 +457,7 @@
                 "voiceoverGenerating": "Generating voiceover...",
                 "voiceoverSuccess": "Voiceover ready",
                 "voiceoverFailed": "Failed to generate voiceover",
+                "transitionSettings": "Transitions",
                 "transitions": {
                     "none": "None",
                     "fade": "Fade",
@@ -370,7 +472,8 @@
                     "wipe": "Wipe",
                     "circle": "Circle",
                     "slide": "Slide"
-                }
+                },
+                "selectedSegment": "Selected: #{id}"
             },
             "chatAssistant": "AI Assistant",
             "video": {
@@ -397,7 +500,8 @@
                 "processing": "Processing...",
                 "complete": "Complete",
                 "done": "Done",
-                "error": "Failed to assemble video"
+                "error": "Failed to assemble video",
+                "noSegments": "No video segments. Please general video segments first!"
             },
             "lowerThird": {
                 "edit": "Edit",
@@ -433,11 +537,13 @@
                 }
             },
             "chat": {
+                "attachFiles": "Attach files",
                 "mentionFiles": "Mention Files",
                 "keywords": {
                     "visualPlan": "Visual Plan",
                     "generatePlan": "Generate Plan"
                 },
+                "visualStrategyFailed": "Failed to generate visual plan",
                 "error": "Sorry, I encountered an error processing your request."
             },
             "assistant": "AI Assistant",
@@ -597,8 +703,12 @@
                 "reGenerate": "Re-Generate",
                 "approve_script": "I approve this screenplay. Please proceed with the resource analysis.",
                 "approve_analysis": "I approve the resource analysis. Please proceed to storyboard generation.",
-                "thinking": "I'm processing your idea..."
+                "thinking": "I'm processing your idea...",
+                "analyzing": "Analyzing...",
+                "resetTitle": "Reset",
+                "attachFiles": "Support images, video, text, documents"
             },
+            "topicPlaceholder": "Describe your video topic, story or idea. Be as detailed as possible.",
             "results": {
                 "analysis": {
                     "summaryBar": "Resource Analysis",
@@ -713,13 +823,13 @@
                     "desc": "Start with a clean canvas in the studio."
                 }
             },
-            "clonePrompt": "Clone Prompt",
+            "clonePrompt": "I want to create a video similar to this style: [Paste URL here]. Requirements: ",
             "suggestions": {
-                "marketing": "Marketing",
-                "script": "Script",
-                "convert": "Convert",
-                "clone": "Clone",
-                "presentation": "Presentation"
+                "marketing": "Create a 15s marketing ad for [Product Name]",
+                "script": "Write a short film script about [Topic]",
+                "convert": "Convert [@file] into a video",
+                "clone": "Clone style from [@reference]",
+                "presentation": "MC presentation for report data"
             },
             "toasts": {
                 "analysisFailed": "Analysis Failed"
@@ -1658,6 +1768,9 @@
             "generateTitle": "Generate Your Video!",
             "generateDesc": "All set! Click \"Generate Video\" and our AI will create your professional avatar video in minutes.",
             "generateTip": "You'll be notified when your video is ready."
+        },
+        "virtual": {
+            "aiSuffix": "AI"
         }
     },
     "subscription": {
@@ -2261,7 +2374,9 @@
                     "maxProjects": "Max rojects",
                     "expires": "Expires"
                 },
-                "instruction": "Instruction"
+                "instruction": "Enter your license key and click 'Save All Changes' to activate full system capabilities.",
+                "key": "License Key",
+                "keyPlaceholder": "Enter your license key"
             },
             "media": {
                 "giphy": {
@@ -2451,7 +2566,7 @@
         "aiAccounts": {
             "title": "AI Nodes",
             "subtitle": "Manage intelligent nodes & quotas",
-            "addAntigravity": "Add AntFlow Node",
+            "addAntigravity": "Add AntStudio Node",
             "addGoogle": "Connect Google Workspace",
             "stats": {
                 "totalAccounts": "Total Accounts",
@@ -2646,7 +2761,9 @@
             "type": "Type",
             "limits": "Limits",
             "created": "Created",
-            "actions": "Actions"
+            "actions": "Actions",
+            "status": "Status",
+            "expires": "Expires"
         },
         "empty": {
             "title": "No Licenses"
@@ -2664,7 +2781,8 @@
             "keyLabel": "Key",
             "startDate": "Start Date",
             "endDate": "End Date",
-            "update": "Update"
+            "update": "Update",
+            "ownerPlaceholder": "Input owner email"
         },
         "typeBasic": "Type Basic",
         "typePro": "Type Pro"
@@ -3771,7 +3889,7 @@
                 "regFailed": "Failed to create identity",
                 "handshakeEstablished": "Handshake Established",
                 "activationFailed": "Failed to activate license",
-                "missionReady": "System Ready. Welcome to AntFlow."
+                "missionReady": "System Ready. Welcome to AntStudio."
             }
         },
         "password": {
@@ -5179,6 +5297,34 @@
             "timeLimit": "Time Limit",
             "toggleTimeline": "Toggle Timeline Panel",
             "timeline": "Timeline"
+        }
+    },
+    "ai": {
+        "greetings": {
+            "script": {
+                "title": "Hello! I've received your movie script. 📄",
+                "steps": "Next, I will automatically perform the following steps:",
+                "step1": "Analyze script content from the files you uploaded",
+                "step2": "Create a project summary based on the script",
+                "step3": "Build a detailed storyboard for the video",
+                "footer": "Once the storyboard is complete, I'll pause for your confirmation before generating visuals. Please wait a moment! ⏳"
+            },
+            "topic": {
+                "title": "Hello! I'm starting to set up your video project. 🚀",
+                "steps": "Next, I will perform the following steps:",
+                "step1": "Analyze ideas and latest trends",
+                "step2": "Create a detailed Creative Brief",
+                "step3": "Build a complete Storyboard",
+                "footer": "I'll stop for your review before creating visuals. Please stay tuned! ⏳"
+            },
+            "visualGuide": {
+                "title": "The system has completed the detailed storyboard for the project, including key characters and settings.",
+                "footer": "Please review the storyboard content above. If you want to adjust any details regarding character design or setting before I plan the visual production, please let me know.",
+                "steps": "Here are the next steps to start realizing these scenes:",
+                "step1": "Design Visual Strategy to determine the most suitable technical methods and artistic models.",
+                "step2": "Create Characters and Key Items. This is a mandatory step to ensure visual consistency before we design motion scenes.",
+                "step3": "Generate Background Music and Voiceover to establish the atmosphere."
+            }
         }
     }
 }

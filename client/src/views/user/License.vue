@@ -66,18 +66,41 @@
                <thead>
                   <tr class="border-b border-white/5">
                      <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('license.columns.owner') }}</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">{{ t('license.columns.status') }}</th>
                      <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('license.columns.type') }}</th>
-                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-center">{{ t('license.columns.limits') }}</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('license.columns.limits') }}</th>
                      <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('license.columns.created') }}</th>
+                     <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('license.columns.expires') }}</th>
                      <th class="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">{{ t('license.columns.actions') }}</th>
                   </tr>
                </thead>
                <tbody>
-                  <tr v-for="license in filteredLicenses" :key="license._id" class="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group">
+                  <tr v-for="license in paginatedLicenses" :key="license._id" class="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group">
                      <td class="px-6 py-5">
-                        <div class="font-bold text-white mb-1">{{ license.owner }}</div>
-                        <div class="text-[10px] font-mono text-gray-500 truncate max-w-[200px]">{{ license.key }}</div>
+                        <div class="flex items-center gap-3">
+                           <div class="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-transparent border border-white/10 flex items-center justify-center font-black text-xs text-gray-400 uppercase tracking-tighter">
+                              {{ license.owner ? license.owner.charAt(0) : '?' }}
+                           </div>
+                           <div class="flex flex-col min-w-0">
+                              <div class="font-bold text-white text-sm truncate max-w-[180px]">{{ license.owner }}</div>
+                              <div class="text-[9px] font-mono text-gray-500 truncate max-w-[150px] tracking-tight uppercase flex items-center gap-1.5 pt-0.5">
+                                 <key theme="outline" size="10" />
+                                 {{ license.key.substring(0, 12) }}...
+                              </div>
+                           </div>
+                        </div>
                      </td>
+                     <td class="px-6 py-5 text-center">
+                         <span class="inline-flex px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border"
+                            :class="{
+                               'bg-green-500/10 border-green-500/30 text-green-400': license.status === 'valid',
+                               'bg-red-500/10 border-red-500/30 text-red-400': license.status === 'expired',
+                               'bg-orange-500/10 border-orange-500/30 text-orange-400': license.status === 'blocked'
+                            }"
+                         >
+                            {{ t('license.' + license.status) }}
+                         </span>
+                      </td>
                      <td class="px-6 py-5">
                         <span class="inline-flex px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border"
                            :class="{
@@ -89,36 +112,69 @@
                            {{ license.tier }}
                         </span>
                      </td>
-                     <td class="px-6 py-5 text-center">
-                        <div class="flex items-center justify-center gap-4 text-xs font-medium text-gray-400">
-                           <span title="Max Users"><user theme="outline" size="14" class="inline mr-1" /> {{ license.maxUsersPerInstance }}</span>
-                           <span title="Max Projects"><folder-close theme="outline" size="14" class="inline mr-1" /> {{ license.maxProjectsPerInstance }}</span>
+                     <td class="px-6 py-5">
+                        <div class="flex flex-col gap-1.5 min-w-[120px]">
+                           <div class="flex items-center justify-between bg-white/[0.03] border border-white/5 rounded-lg px-2 py-1">
+                              <div class="flex items-center gap-2 text-[10px] uppercase font-black tracking-tighter text-gray-500">
+                                 <user theme="outline" size="12" />
+                                 Users
+                              </div>
+                              <span class="text-xs font-bold" :class="license.maxUsersPerInstance === -1 ? 'text-yellow-400' : 'text-white'">
+                                 {{ license.maxUsersPerInstance === -1 ? t('common.unlimited') : license.maxUsersPerInstance }}
+                              </span>
+                           </div>
+                           <div class="flex items-center justify-between bg-white/[0.03] border border-white/5 rounded-lg px-2 py-1">
+                              <div class="flex items-center gap-2 text-[10px] uppercase font-black tracking-tighter text-gray-500">
+                                 <folder-close theme="outline" size="12" />
+                                 Projects
+                              </div>
+                              <span class="text-xs font-bold" :class="license.maxProjectsPerInstance === -1 ? 'text-orange-400' : 'text-white'">
+                                 {{ license.maxProjectsPerInstance === -1 ? t('common.unlimited') : license.maxProjectsPerInstance }}
+                              </span>
+                           </div>
                         </div>
                      </td>
                      <td class="px-6 py-5 text-xs font-medium text-gray-400">
                         {{ formatDate(license.createdAt) }}
                      </td>
+                     <td class="px-6 py-5 text-xs font-medium text-gray-400">
+                        {{ formatDate(license.endDate) }}
+                     </td>
                      <td class="px-6 py-5 text-right">
-                        <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-4 transition-all duration-300">
                            <button 
                               @click="handlePreviewLicense(license)"
-                              class="w-8 h-8 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center transition-colors"
+                              class="w-8 h-8 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center transition-colors border border-blue-500/20"
                               title="Edit / Preview"
                            >
-                              <edit theme="outline" size="16" />
+                              <edit theme="outline" size="14" />
                            </button>
                            <button 
                               @click="deleteLicense(license)"
-                              class="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors"
+                              class="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors border border-red-500/20"
                               title="Delete"
                            >
-                              <delete theme="outline" size="16" />
+                              <delete theme="outline" size="14" />
                            </button>
                         </div>
                      </td>
                   </tr>
                </tbody>
             </table>
+         </div>
+         
+         <!-- Pagination -->
+         <div class="p-6 border-t border-white/5 flex items-center justify-between">
+            <div class="text-xs text-gray-500 font-medium">
+               Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, filteredLicenses.length) }} of {{ filteredLicenses.length }}
+            </div>
+            <el-pagination
+               v-model:current-page="currentPage"
+               v-model:page-size="pageSize"
+               :total="filteredLicenses.length"
+               layout="prev, pager, next"
+               class="glass-pagination"
+            />
          </div>
       </div>
 
@@ -154,11 +210,11 @@
             <div class="grid grid-cols-2 gap-4">
                <div>
                   <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.maxUsers') }}</label>
-                  <el-input-number v-model="licenseForm.maxUsersPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
+                  <el-input-number v-model="licenseForm.maxUsersPerInstance" :min="-1" class="glass-input w-full" controls-position="right" />
                </div>
                <div>
                   <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.maxProjects') }}</label>
-                  <el-input-number v-model="licenseForm.maxProjectsPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
+                  <el-input-number v-model="licenseForm.maxProjectsPerInstance" :min="-1" class="glass-input w-full" controls-position="right" />
                </div>
             </div>
             <div>
@@ -198,11 +254,11 @@
             <div class="grid grid-cols-2 gap-4">
                <div>
                   <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.maxUsers') }}</label>
-                  <el-input-number v-model="previewLicense.maxUsersPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
+                  <el-input-number v-model="previewLicense.maxUsersPerInstance" :min="-1" class="glass-input w-full" controls-position="right" />
                </div>
                <div>
                   <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">{{ t('license.dialog.maxProjects') }}</label>
-                  <el-input-number v-model="previewLicense.maxProjectsPerInstance" :min="1" class="glass-input w-full" controls-position="right" />
+                  <el-input-number v-model="previewLicense.maxProjectsPerInstance" :min="-1" class="glass-input w-full" controls-position="right" />
                </div>
             </div>
              <div class="grid grid-cols-2 gap-4">
@@ -246,6 +302,9 @@ const showLicenseIssueDialog = ref(false);
 const showPreviewDialog = ref(false);
 const isUploading = ref(false);
 
+const currentPage = ref(1);
+const pageSize = ref(10);
+
 const previewLicense = ref<any>({
   owner: '',
   tier: 'trial',
@@ -280,11 +339,29 @@ const licenseTypeOptions = computed(() => [
 
 const filteredLicenses = computed(() => {
   let filtered = licenses.value || [];
+  
+  if (currentLicenseType.value !== 'all') {
+    filtered = filtered.filter(l => l.status === currentLicenseType.value);
+  }
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(r => r.owner?.toLowerCase().includes(query) || r.key?.toLowerCase().includes(query));
+    filtered = filtered.filter(r => 
+      r.owner?.toLowerCase().includes(query) || 
+      r.key?.toLowerCase().includes(query)
+    );
   }
   return filtered;
+});
+
+const paginatedLicenses = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredLicenses.value.slice(start, end);
+});
+
+watch([searchQuery, currentLicenseType], () => {
+  currentPage.value = 1;
 });
 
 const fetchLicenses = () => {
@@ -365,4 +442,39 @@ onMounted(() => fetchLicenses());
    padding: 4px 12px;
 }
 :global(.glass-input .el-input__inner) { color: white !important; font-weight: 600; }
+
+:global(.glass-pagination) {
+   --el-pagination-bg-color: transparent !important;
+   --el-pagination-hover-color: #fbbf24 !important;
+   --el-pagination-button-color: #9ca3af !important;
+   --el-pagination-button-bg-color: transparent !important;
+   --el-pagination-active-color: #000 !important;
+   
+   .el-pager li {
+      background: transparent !important;
+      color: #9ca3af !important;
+      font-weight: 900 !important;
+      border-radius: 8px !important;
+      &.is-active {
+         background: white !important;
+         color: black !important;
+      }
+      &:hover {
+         color: white !important;
+      }
+   }
+   
+   button:disabled {
+      background: transparent !important;
+      opacity: 0.3;
+   }
+   
+   button {
+      background: transparent !important;
+      color: #9ca3af !important;
+      &:hover {
+         color: white !important;
+      }
+   }
+}
 </style>

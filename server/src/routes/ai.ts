@@ -1018,64 +1018,6 @@ router.post('/convert-presentation', upload.single('file'), async (req: AuthRequ
 });
 
 /**
- * POST /api/ai/cookies
- * Update session cookies for browser-based providers (AI Studio, Flow, Gemini Chat)
- */
-router.post('/cookies', adminMiddleware, async (req: AuthRequest, res) => {
-    try {
-        let { providerId, cookies } = req.body;
-
-        // Default to aistudio if not provided
-        providerId = providerId || 'aistudio';
-
-        // Support form-data / stringified cookies from bookmarklet
-        if (typeof cookies === 'string' && (cookies.startsWith('[') || cookies.startsWith('{'))) {
-            try {
-                cookies = JSON.parse(cookies);
-            } catch (e) {
-                Logger.warn('[AI Routes] Failed to parse cookies string as JSON');
-            }
-        }
-
-        if (!cookies) {
-            return res.status(400).json({ success: false, error: 'cookies are required' });
-        }
-
-        Logger.info(`[AI Routes] Updating cookies for provider: ${providerId}`);
-
-        if (providerId === 'aistudio' || providerId === 'gemini-chat') {
-            const { aiStudioClient } = await import('../integrations/aistudio/AIStudioClient.js');
-            await aiStudioClient.updateCookies(cookies);
-        } else if (providerId === 'flow') {
-            const { flowClient } = await import('../integrations/flow/FlowClient.js');
-            await flowClient.updateCookies(cookies);
-        } else {
-            return res.status(400).json({ success: false, error: 'Unsupported provider for cookie update' });
-        }
-
-        res.json({ success: true, message: 'Cookies updated successfully' });
-    } catch (error: any) {
-        Logger.error('Cookie update error:', error);
-        res.status(500).json({ success: false, error: error.message || 'Failed to update cookies' });
-    }
-});
-
-/**
- * POST /api/ai/cookies/sync
- * Trigger server-side browser sync with Google (Manual Login Flow)
- */
-router.post('/cookies/sync', adminMiddleware, async (req: AuthRequest, res) => {
-    try {
-        const { aiStudioClient } = await import('../integrations/aistudio/AIStudioClient.js');
-        const result = await aiStudioClient.syncWithGoogle();
-        res.json({ success: true, message: `Successfully synced ${result.count} cookies!`, data: result });
-    } catch (error: any) {
-        Logger.error('Cookie sync error:', error);
-        res.status(500).json({ success: false, error: error.message || 'Failed to sync with Google' });
-    }
-});
-
-/**
  * TEST AI CONNECTION
  * Verifies if the session for a native provider is active
  */

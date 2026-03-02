@@ -49,10 +49,10 @@ export function useProjectNotifications(projectId: string) {
                         }
                     });
                     projectStore.fetchProject(projectId);
-                } else if (data.type === 'montage_error') {
-                    toast.error('AI Montage failed', {
-                        description: data.error || 'There was an error during video production.'
-                    });
+                } else if (data.type === 'segment_video_ready') {
+                    projectStore.fetchProject(projectId);
+                } else if (data.type === 'segment_video_failed') {
+                    toast.error(`Video generation failed for segment ${data.segmentOrder}`);
                 }
             }
         });

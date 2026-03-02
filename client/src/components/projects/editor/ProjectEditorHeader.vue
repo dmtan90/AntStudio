@@ -121,11 +121,12 @@
         <RobotOne v-else theme="outline" size="18" />
       </GButton>
     </div>
+
+    <SubscriptionPlansDialog
+      v-model="subscriptionDialogVisible"
+      @select="handlePlanSelection"
+    />
   </header>
-  <SubscriptionPlansDialog
-    v-model="subscriptionDialogVisible"
-    @select="handlePlanSelection"
-  />
 </template>
 
 <script setup lang="ts">

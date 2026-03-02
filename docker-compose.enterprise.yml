@@ -6,7 +6,7 @@ services:
   # ==========================================
   mongo-enterprise:
     image: mongo:6.0
-    container_name: antflow-mongo-b2b
+    container_name: antstudio-mongo-b2b
     restart: always
     ports:
       - "27017:27017"
@@ -27,16 +27,16 @@ services:
   # ==========================================
   # BACKEND API (Auto-scaling ready)
   # ==========================================
-  antflow-server-enterprise:
-    image: antflow/server-enterprise:latest
+  antstudio-server-enterprise:
+    image: antstudio/server-enterprise:latest
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: antflow-api-b2b
+    container_name: antstudio-api-b2b
     restart: always
     environment:
       - NODE_ENV=production
-      - MONGO_URI=mongodb://mongo-enterprise:27017/antflow_b2b
+      - MONGO_URI=mongodb://mongo-enterprise:27017/antstudio_b2b
       - BASE_DOMAIN=${BASE_DOMAIN:-localhost}
       - JWT_SECRET=${JWT_SECRET}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -58,12 +58,12 @@ services:
   # ==========================================
   # FRONTEND (Nginx Hardened)
   # ==========================================
-  antflow-client-enterprise:
-    image: antflow/client-enterprise:latest
+  antstudio-client-enterprise:
+    image: antstudio/client-enterprise:latest
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: antflow-ui-b2b
+    container_name: antstudio-ui-b2b
     restart: always
     ports:
       - "80:80"
@@ -71,7 +71,7 @@ services:
     networks:
       - external-web-tier
     depends_on:
-      - antflow-server-enterprise
+      - antstudio-server-enterprise
 
 networks:
   internal-db-tier:

@@ -171,7 +171,11 @@ const KNOWN_PROVIDERS = [
 const fetchSettings = async () => {
     loading.value = true;
     try {
-        await adminStore.fetchSettings();
+        if (activeTab.value === 'license') {
+            await adminStore.syncLicense();
+        } else {
+            await adminStore.fetchSettings();
+        }
         toast.success(t("admin.settings.toasts.syncSuccess"));
     } catch (e) {
         toast.error(t("admin.settings.toasts.syncFailed"));

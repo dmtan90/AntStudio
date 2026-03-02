@@ -1,13 +1,13 @@
-# AntFlow Development Guide
+# AntStudio Development Guide
 
-This guide is intended for developers who want to contribute to AntFlow or build upon it.
+This guide is intended for developers who want to contribute to AntStudio or build upon it.
 
 ## 🏗️ Project Architecture
 
-AntFlow is a monorepo containing both the frontend client and backend server.
+AntStudio is a monorepo containing both the frontend client and backend server.
 
 ```
-AntFlow/
+AntStudio/
 ├── client/              # Frontend Application (Vue 3)
 │   ├── src/
 │   │   ├── components/  # Atomic UI Components
@@ -66,8 +66,8 @@ AntFlow/
 Clone the repository and install dependencies for the entire workspace:
 
 ```bash
-git clone https://github.com/dmtan90/AntFlow.git
-cd AntFlow
+git clone https://github.com/dmtan90/AntStudio.git
+cd AntStudio
 pnpm install
 ```
 
@@ -78,7 +78,7 @@ Copy `server/.env.example` to `server/.env` and configure your keys:
 
 ```ini
 PORT=4000
-MONGODB_URI=mongodb://localhost:27017/antflow
+MONGODB_URI=mongodb://localhost:27017/antstudio
 JWT_SECRET=dev_secret_key_123
 
 # Cloud Services (Optional for local dev, required for full features)
@@ -98,7 +98,7 @@ PAYPAL_CLIENT_SECRET=
 PAYPAL_WEBHOOK_ID=
 
 # License Portal
-LICENSE_PORTAL_URL=https://license.antflow.ai
+LICENSE_PORTAL_URL=https://antstudio.agrhub.com
 LICENSE_VERIFICATION_KEY=
 ```
 

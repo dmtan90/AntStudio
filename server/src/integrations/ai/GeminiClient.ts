@@ -101,17 +101,22 @@ export class GeminiClient {
 
                 if (cred.type === 'apikey' && cred.googleGenAI) {
                     const parts = Array.isArray(prompt) ? prompt : [{ text: String(prompt) }];
-                    const result = await (cred.googleGenAI as any).models.generateContent({ 
+                    
+                    const response = await (cred.googleGenAI as any).models.generateContent({
                         model: modelId,
                         contents: [{ role: 'user', parts }],
-                        systemInstruction: options.systemPrompt ? { parts: [{ text: options.systemPrompt }] } : undefined,
-                        tools: options.grounding ? [{ googleSearch: {} }] : options.tools,
-                        generationConfig: options.generationConfig,
+                        config: {
+                            systemInstruction: options.systemPrompt ? { parts: [{ text: options.systemPrompt }] } : undefined,
+                            tools: options.grounding ? [{ googleSearch: {} }] : options.tools,
+                            ...options.generationConfig,
+                            thinkingConfig: options.thinkingConfig,
+                        }
                     });
-                    const response = result.response;
+
                     if (cred.apiKey) await geminiPool.recordUsage(cred.apiKey, modelId);
+                    
                     return {
-                        text: response.text(),
+                        text: response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || '',
                         usage: response.usageMetadata
                     };
                 }
@@ -174,13 +179,14 @@ export class GeminiClient {
                         throw new Error('No images returned from Imagen API');
                     } else {
                         Logger.info(`[GeminiClient] Using generateContent() for Gemini image model: ${modelId}`, 'GeminiClient');
+                        const parts = Array.isArray(prompt) ? prompt : [{ text: String(prompt) }];
                         const response = await (cred.googleGenAI as any).models.generateContent({
                             model: modelId,
-                            contents: prompt,
+                            contents: [{ role: 'user', parts }],
                             config: { responseModalities: ['IMAGE'] }
                         });
-                        const parts = response?.candidates?.[0]?.content?.parts || [];
-                        for (const part of parts) {
+                        const responseParts = response?.candidates?.[0]?.content?.parts || [];
+                        for (const part of responseParts) {
                             if (part?.inlineData?.data) {
                                 const mimeType = part.inlineData.mimeType || 'image/png';
                                 return { url: `data:${mimeType};base64,${part.inlineData.data}`, mimeType };

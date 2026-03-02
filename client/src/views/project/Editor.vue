@@ -70,6 +70,7 @@ import { useI18n } from 'vue-i18n';
 import { useVideoAssembler } from '@/composables/useVideoAssembler'
 import { useProjectAssetGeneration } from '@/composables/useProjectAssetGeneration'
 import { useProjectChat } from '@/composables/useProjectChat'
+import { useProjectNotifications } from '@/composables/useProjectNotifications'
 
 // Components
 import ProjectEditorHeader from '@/components/projects/editor/ProjectEditorHeader.vue'
@@ -136,6 +137,7 @@ const chatSidebarRef = ref<any>(null)
 // Composables
 const assetGeneration = useProjectAssetGeneration(projectId)
 const chat = useProjectChat(projectId, computed(() => chatSidebarRef.value?.chatContainer))
+useProjectNotifications(projectId)
 
 // Export logic
 const handleExportAction = async (command: string) => {

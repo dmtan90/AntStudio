@@ -1,5 +1,5 @@
 <template>
-  <div class="antflow-page">
+  <div class="antstudio-page">
 
     <!-- Hero Section -->
     <section id="overview" class="hero-cinematic">
@@ -334,7 +334,7 @@ onUnmounted(() => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-.antflow-page {
+.antstudio-page {
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: #000;
   color: #fff;

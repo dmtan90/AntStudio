@@ -41,8 +41,8 @@ export class WebhookService {
                 headers: {
                     'Content-Type': 'application/json',
                     'User-Agent': 'AntStudio-Webhook-Engine/1.0',
-                    'x-antflow-signature': signature,
-                    'x-antflow-event': 'true'
+                    'x-antstudio-signature': signature,
+                    'x-antstudio-event': 'true'
                 },
                 timeout: 10000 // 10s tactical timeout
             });
@@ -52,7 +52,7 @@ export class WebhookService {
                 const signature = this.generateSignature(body, subscription.secret);
                 await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5s
                 await axios.post(subscription.url, body, {
-                    headers: { 'x-antflow-signature': signature },
+                    headers: { 'x-antstudio-signature': signature },
                     timeout: 10000
                 });
             } catch (retryError) { }

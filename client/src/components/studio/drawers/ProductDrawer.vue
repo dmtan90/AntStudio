@@ -188,7 +188,7 @@ const toggleProduct = (product: any) => {
       name: product.name,
       price: product.price,
       image: product.image,
-      link: 'https://antflow.ai/shop/' + product.id
+      link: 'https://antstudio.agrhub.com/p/' + product.id
     });
     toast.info(t('studio.drawers.economy.showcasingName', { name: product.name }));
   } else {
