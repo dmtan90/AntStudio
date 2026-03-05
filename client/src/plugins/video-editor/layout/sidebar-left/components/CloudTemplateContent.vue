@@ -21,13 +21,22 @@ const templeteRef = ref<HTMLDivElement | null>(null);
 // let page = -1;
 // let endOfTemplete = false;
 // let loading = false;
+const ratio = computed(() => {
+  if (dimension.value.width / dimension.value.height > 1) {
+    return "landscape";
+  } else if (dimension.value.width / dimension.value.height == 1) {
+    return "square";
+  } else {
+    return "portrait";
+  }
+});
 const fetchNextTemplete = () => {
   if (loading.value || !hasNextPage.value) {
     return;
   }
   const page = currentPage.value + 1;
   console.log("page", page);
-  templateStore.loadCuratedtemplatesAppend(page);
+  templateStore.loadCuratedtemplatesAppend(page, ratio.value);
   // page++;
   // loading = true;
   // fetchVideoTemplates({ limit: limit, is_published: editor.mode === "adapter", offset: page }).then(data => {
@@ -40,7 +49,7 @@ const fetchNextTemplete = () => {
 };
 
 onMounted(() => {
-  templateStore.loadCuratedtemplates();
+  templateStore.loadCuratedtemplates(1, ratio.value);
 });
 
 watch(templeteRef, (elRef) => {

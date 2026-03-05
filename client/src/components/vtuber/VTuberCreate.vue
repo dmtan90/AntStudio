@@ -83,16 +83,17 @@
                             <el-radio-button value="vrm">{{ $t('vtubers.create.vrm3d') }}</el-radio-button>
                             <el-radio-button value="live2d">{{ $t('vtubers.create.live2d') }}</el-radio-button>
                             <el-radio-button value="static">{{ $t('vtubers.create.image') }}</el-radio-button>
+                            <el-radio-button value="video">{{ $t('vtubers.create.video') }}</el-radio-button>
                         </el-radio-group>
                     </div>
                     <StudioUploadZone
                         :title="$t('vtubers.create.deployEntityFile')"
                         :subtitle="$t('vtubers.create.acceptsPhotos')"
                         :activeTitle="$t('vtubers.create.fileSynchronized')"
-                        :activeSubtitle="newVTuber.visual.modelType === 'live2d' ? $t('vtubers.create.live2dAssetSynced') : $t('vtubers.create.vtuberPhotoProcessed')"
+                        :activeSubtitle="newVTuber.visual.modelType === 'live2d' ? $t('vtubers.create.live2dAssetSynced') : (newVTuber.visual.modelType === 'video' ? $t('vtubers.create.videoPhôiSynced') : $t('vtubers.create.vtuberPhotoProcessed'))"
                         :hasFile="!!hasVisualContent"
                         :loading="uploading"
-                        accept="image/*,.zip,.rar,.vrm"
+                        accept="image/*,video/*,.zip,.rar,.vrm"
                         @change="handleFileUpload"
                     />
                 </StudioSection>
@@ -615,6 +616,7 @@ const handleFileUpload = async (e: Event | File) => {
     const isVrm = fileName.endsWith('.vrm');
     const isArchive = fileName.endsWith('.zip') || fileName.endsWith('.rar');
     const isImage = fileName.match(/\.(png|jpg|jpeg|webp)$/);
+    const isVideo = fileName.match(/\.(mp4|webm|mov|avi)$/);
 
     if (isVrm) {
         newVTuber.value.visual.modelType = 'vrm';
@@ -637,6 +639,13 @@ const handleFileUpload = async (e: Event | File) => {
             newVTuber.value.visual.modelUrl = url;
             toast.success(t('vtubers.create.toasts.avatarUploaded'));
             handleRemoveBackground();
+        }
+    } else if (isVideo) {
+        newVTuber.value.visual.modelType = 'video';
+        const url = await handleGenericUpload(file);
+        if (url) {
+            newVTuber.value.visual.modelUrl = url;
+            toast.success(t('vtubers.create.toasts.videoUploaded'));
         }
     } else {
         toast.error(t('vtubers.create.toasts.unsupportedFormat'));

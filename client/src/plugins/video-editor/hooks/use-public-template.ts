@@ -71,17 +71,17 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     }
   };
 
-  const searchTemplates = async (query: string, page = 1) => {
-    const url = `/marketplace/templates?query=${encodeURIComponent(query)}&page=${page}&limit=${DEFAULT_LIMIT}&tab=public`;
+  const searchTemplates = async (query: string, page = 1, ratio: string) => {
+    const url = `/marketplace/templates?query=${encodeURIComponent(query)}&page=${page}&limit=${DEFAULT_LIMIT}&tab=public&ratio=${ratio}`;
     await fetchTemplates(url);
   };
 
-  const searchTemplatesAppend = async (query: string, page = 1) => {
+  const searchTemplatesAppend = async (query: string, page = 1, ratio: string) => {
     loading.value = true;
     error.value = null;
 
     try {
-      const url = `/marketplace/templates?query=${encodeURIComponent(query)}&page=${page}&limit=${DEFAULT_LIMIT}&tab=public`;
+      const url = `/marketplace/templates?query=${encodeURIComponent(query)}&page=${page}&limit=${DEFAULT_LIMIT}&tab=public&ratio=${ratio}`;
       const response = await api.get(url);
       const data = response.data;
 
@@ -98,7 +98,7 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     }
   };
 
-  const loadCuratedtemplates = async (page = 1) => {
+  const loadCuratedtemplates = async (page = 1, ratio: string) => {
     const now = Date.now();
     const isCacheValid = curatedTemplatesCache.data && curatedTemplatesCache.page === page && now - curatedTemplatesCache.timestamp < CACHE_DURATION;
 
@@ -113,7 +113,7 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
       return;
     }
 
-    const url = `/marketplace/templates?page=${page}&limit=${DEFAULT_LIMIT}&public=true`;
+    const url = `/marketplace/templates?page=${page}&limit=${DEFAULT_LIMIT}&public=true&ratio=${ratio}`;
     loading.value = true;
     error.value = null;
 
@@ -139,12 +139,12 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     }
   };
 
-  const loadCuratedtemplatesAppend = async (page = 1) => {
+  const loadCuratedtemplatesAppend = async (page = 1, ratio: string) => {
     loading.value = true;
     error.value = null;
 
     try {
-      const url = `/marketplace/templates?page=${page}&limit=${DEFAULT_LIMIT}&public=true`;
+      const url = `/marketplace/templates?page=${page}&limit=${DEFAULT_LIMIT}&public=true&ratio=${ratio}`;
       const response = await api.get(url);
       const data = response.data;
 
@@ -171,9 +171,9 @@ export const usePublicTemplates = defineStore("publicTemplates", (): any => {
     clearCuratedTemplatesCache();
   };
 
-  const refreshCuratedTemplates = async (page = 1) => {
+  const refreshCuratedTemplates = async (page = 1, ratio: string) => {
     clearCuratedTemplatesCache();
-    await loadCuratedtemplates(page);
+    await loadCuratedtemplates(page, ratio);
   };
 
   return {

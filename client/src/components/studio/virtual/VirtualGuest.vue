@@ -62,6 +62,18 @@
                 :lyrics-enabled="!hideBackground"
                 @ready="handleReady"
             />
+
+            <!-- Video Based 2D Model Viewer -->
+            <VideoViewer
+                v-else-if="isVideo && persona.visual?.modelUrl"
+                ref="viewerVideo"
+                :model-url="persona.visual.modelUrl"
+                :speaking-vol="audioLevel"
+                :lyrics="performanceLyrics"
+                :current-time="performanceLyricsCurrentTime"
+                :lyrics-enabled="!hideBackground"
+                @ready="handleReady"
+            />
         </div>
 
         <!-- Identity Label -->
@@ -87,6 +99,7 @@ import { AIGuestPersona, syntheticGuestManager } from '@/utils/ai/SyntheticGuest
 import VRMViewer from '@/components/vtuber/VRMViewer.vue';
 import Live2DViewer from '@/components/vtuber/Live2DViewer.vue';
 import StaticPhotoViewer from '@/components/vtuber/StaticPhotoViewer.vue';
+import VideoViewer from '@/components/vtuber/VideoViewer.vue';
 import { useMediaStore } from '@/stores/media';
 
 const props = defineProps<{
@@ -138,6 +151,7 @@ const performanceLyricsPosition = computed(() => mediaStore.performanceLyricsPos
 const vrmViewer = ref<InstanceType<typeof VRMViewer> | null>(null);
 const viewerLive2D = ref<InstanceType<typeof Live2DViewer> | null>(null);
 const viewerStatic = ref<InstanceType<typeof StaticPhotoViewer> | null>(null);
+const viewerVideo = ref<InstanceType<typeof VideoViewer> | null>(null);
 const viewerContainer = ref<HTMLElement | null>(null);
 const audioLevel = ref(0);
 const audioLevelOverride = ref<number | null>(null); // For performance mode
@@ -211,6 +225,7 @@ const setLiveVoicePerformance = (style: string, intensity: number) => {
 
 const isLive2D = computed(() => props.persona.visual?.modelType === 'live2d');
 const isStatic = computed(() => props.persona.visual?.modelType === 'static' || props.persona.visual?.modelType === 'image');
+const isVideo = computed(() => (props.persona.visual?.modelType as string) === 'video');
 
 const safeAnimationConfig = computed(() => ({
     gestureIntensity: props.persona.animationConfig?.gestureIntensity ?? 1,
@@ -280,6 +295,9 @@ const captureStream = async () => {
             if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
         } else if (viewerStatic.value) {
             const el = (viewerStatic.value as any).$el;
+            if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
+        } else if (viewerVideo.value) {
+            const el = (viewerVideo.value as any).$el;
             if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
         }
     }

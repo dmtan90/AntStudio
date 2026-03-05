@@ -4,8 +4,12 @@ import { fileURLToPath, URL } from 'node:url'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { VitePWA } from 'vite-plugin-pwa'
+// import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl';
+const HOST = "antstudio.agrhub.com";
+const WEB_URL = `https://${HOST}`;
+// const API_URL = `https://${HOST}/api`;
+// const SOCKET_URL = `wss://${HOST}/socket.io`;
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -120,7 +124,7 @@ export default defineConfig({
         },
         proxy: {
             '/socket.io': {
-                target: 'http://127.0.0.1:4001',
+                target: WEB_URL,
                 ws: true,
                 changeOrigin: true,
                 secure: false,
@@ -131,17 +135,18 @@ export default defineConfig({
                 }
             },
             '/api/socket.io': {
-                target: 'http://127.0.0.1:4001',
+                target: WEB_URL,
                 ws: true,
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path: string) => path.replace(/^\/api\/socket\.io/, '/socket.io')
             },
             '/api': {
-                target: 'http://127.0.0.1:4000',
+                target: WEB_URL,
                 changeOrigin: true,
                 secure: false,
-                ws: true
+                ws: true,
+                // rewrite: (path: string) => path.replace(/^\/api/, '/AntStudio/rest')
             }
         }
     },

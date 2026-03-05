@@ -96,16 +96,17 @@
                             <el-radio-button value="vrm">{{ $t('vtubers.create.vrm3d') }}</el-radio-button>
                             <el-radio-button value="live2d">{{ $t('vtubers.create.live2d') }}</el-radio-button>
                             <el-radio-button value="static">{{ $t('vtubers.create.image') }}</el-radio-button>
+                            <el-radio-button value="video">{{ $t('vtubers.create.video') }}</el-radio-button>
                         </el-radio-group>
                     </div>
                     <StudioUploadZone
                         :title="$t('vtubers.create.updateEntityFile')"
                         :subtitle="$t('vtubers.create.acceptsPhotos')"
                         :activeTitle="$t('vtubers.create.fileSynchronized')"
-                        :activeSubtitle="localVTuber.visual.modelType === 'live2d' ? $t('vtubers.create.live2dAssetConnected') : $t('vtubers.create.vtuberProfileSynchronized')"
+                        :activeSubtitle="localVTuber.visual.modelType === 'live2d' ? $t('vtubers.create.live2dAssetConnected') : (localVTuber.visual.modelType === 'video' ? $t('vtubers.create.videoPhôiSynced') : $t('vtubers.create.vtuberProfileSynchronized'))"
                         :hasFile="!!hasVisualContent"
                         :loading="uploading"
-                        accept="image/*,.zip,.rar,.vrm"
+                        accept="image/*,video/*,.zip,.rar,.vrm"
                         @change="handleFileUpload"
                     />
                 </StudioSection>
@@ -819,6 +820,7 @@ const handleFileUpload = async (e: Event | File) => {
     const isVrm = fileName.endsWith('.vrm');
     const isArchive = fileName.endsWith('.zip') || fileName.endsWith('.rar');
     const isImage = fileName.match(/\.(png|jpg|jpeg|webp)$/);
+    const isVideo = fileName.match(/\.(mp4|webm|mov|avi)$/);
 
     try {
         if (isVrm) {
@@ -835,12 +837,12 @@ const handleFileUpload = async (e: Event | File) => {
                 localVTuber.value.visual.modelUrl = url;
                 toast.success(t('vtubers.create.toasts.live2dUpdated'));
             }
-        } else if (isImage) {
-            localVTuber.value.visual.modelType = 'static';
+        } else if (isVideo) {
+            localVTuber.value.visual.modelType = 'video';
             const url = await handleGenericUpload(file);
             if (url) {
                 localVTuber.value.visual.modelUrl = url;
-                toast.success(t('vtubers.create.toasts.avatarUpdated'));
+                toast.success(t('vtubers.create.toasts.videoUpdated'));
             }
         }
     } catch (e) {

@@ -11,6 +11,14 @@
 
         <canvas ref="canvas" class="w-full h-full"></canvas>
 
+        <!-- Mouth Interior Overlay (Simulating teeth/depth for static photo) -->
+        <div v-if="showMouthInterior" class="absolute pointer-events-none overflow-hidden z-10" :style="mouthInteriorStyle">
+            <div class="w-full h-full bg-[#1a0505] relative">
+                <!-- Faint Teeth Highlight -->
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[25%] bg-white/10 blur-[2px] rounded-b-full"></div>
+            </div>
+        </div>
+
         <!-- Dynamic Lyrics Overlay -->
         <StageLyricsOverlay 
             v-if="lyricsEnabled && lyrics && lyrics.length > 0"
@@ -134,6 +142,18 @@ const currentEmotions = reactive({
     surprised: 0,
     thinking: 0,
     sad: 0
+});
+
+// Mouth Interior State (Streamer-Sales Inspired Reality Trick)
+const showMouthInterior = ref(false);
+const mouthInteriorStyle = reactive({
+    left: '0px',
+    top: '0px',
+    width: '0px',
+    height: '0px',
+    transform: '',
+    opacity: '0',
+    borderRadius: '40% 40% 50% 50%'
 });
 
 // Camera State (Cinematic)
@@ -718,7 +738,13 @@ const update = (delta: number) => {
         if ([70, 107, 336, 300].includes(idx)) ty -= (currentEmotions.sad * eyeHeight * 0.4); 
         if ([105, 334].includes(idx)) ty += (currentEmotions.sad * eyeHeight * 0.2);
 
-        // 4. Full Body Sway
+        // 4. Streamer-Sales inspired micro-jitter (Natural oscillation)
+        const jitterX = Math.sin(breathOffset * 8 + idx) * 0.15;
+        const jitterY = Math.cos(breathOffset * 7 + idx) * 0.15;
+        tx += jitterX;
+        ty += jitterY;
+
+        // 5. Full Body Sway
         const nx = (ox / (textureWidth * displayScale)) + 0.5;
         const ny = (oy / (textureHeight * displayScale)) + 0.5;
         let swayWeight = 1.0; 
@@ -730,6 +756,42 @@ const update = (delta: number) => {
 
         positions[i] = tx;
         positions[i + 1] = ty;
+    }
+
+    // 5. Update Mouth Interior Overlay Position
+    if (clampedVol > 0.1 && lastLandmarks) {
+        const upperCenter = lastLandmarks[13]; 
+        const lowerCenter = lastLandmarks[14];
+        const leftCorner = lastLandmarks[78];
+        const rightCorner = lastLandmarks[308];
+        
+        const centerX = app!.screen.width / 2 + userX + camX;
+        const centerY = app!.screen.height / 2 + userY + camY;
+        
+        // Calculate world coordinates
+        const scale = displayScale * userZoom * camZoom;
+        const worldUpperY = centerY + (upperCenter.y - 0.5) * textureHeight * scale;
+        const worldLowerY = centerY + (lowerCenter.y - 0.5) * textureHeight * scale;
+        const worldX = centerX + (upperCenter.x - 0.5) * textureWidth * scale;
+        
+        const openingHeight = Math.max(0, worldLowerY - worldUpperY);
+        const openingWidth = (rightCorner.x - leftCorner.x) * textureWidth * scale * 0.8;
+
+        if (openingHeight > 1) {
+            showMouthInterior.value = true;
+            Object.assign(mouthInteriorStyle, {
+                left: `${worldX - openingWidth/2}px`,
+                top: `${worldUpperY}px`,
+                width: `${openingWidth}px`,
+                height: `${openingHeight}px`,
+                transform: `rotate(${headTilt}deg)`,
+                opacity: `${Math.min(1, (openingHeight - 1) / 8)}`,
+            });
+        } else {
+            showMouthInterior.value = false;
+        }
+    } else {
+        showMouthInterior.value = false;
     }
 
     // PIXI v7: Properly update geometry buffer

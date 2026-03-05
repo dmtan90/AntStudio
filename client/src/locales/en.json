@@ -37,7 +37,8 @@
         "monitoring": "Monitoring",
         "infrastructure": "Infrastructure",
         "network": "Network Control",
-        "developer": "Developer"
+        "developer": "Developer",
+        "marketplace": "Marketplace"
     },
     "common": {
         "logout": "Logout",
@@ -129,12 +130,12 @@
         "header": {
             "systemOperational": "System Operational",
             "welcomeBack": "Welcome back,",
-            "subtitle": "Your production studio is ready.",
+            "subtitle": "Bring your creative vision to life with AI-powered video production",
             "newProject": "New Project",
             "goLive": "Go Live"
         },
         "stats": {
-            "credits": "Render Credits",
+            "credits": "Credits",
             "plan": "Plan",
             "free": "Free Tier",
             "activeProjects": "Active Projects",
@@ -214,7 +215,8 @@
             "generating": "Generating",
             "storyboard": "Storyboard",
             "completed": "Completed",
-            "failed": "Failed"
+            "failed": "Failed",
+            "analyzing": "Analyzing"
         },
         "placeholders": {
             "noDescription": "No description provided."
@@ -249,6 +251,7 @@
         },
         "editor": {
             "title": "Video Editor",
+            "messagePlaceholder": "Enter your message, @ to mention...",
             "storyboard": {
                 "title": "Storyboard",
                 "keyElements": "Key Elements",
@@ -278,15 +281,38 @@
                 "generateAllAssets": "Generate All Assets",
                 "regenerateAllFrames": "Regenerate All Frames",
                 "regenerateAllVideos": "Regenerate All Videos",
+                "batchStart": "Starting batch regeneration for",
+                "batchComplete": "Batch complete:",
+                "charsUpdated": "characters updated",
+                "framesUpdated": "frames updated",
+                "videosRequested": "videos requested",
+                "videoBatchStart": "Starting batch video generation for",
+                "assetReady": "Asset generated and synced!",
+                "backgroundJobStarted": "Generation started in background...",
                 "segDialog": {
+                    "generalInfo": "General Information",
+                    "description": "Visual Description",
+                    "camera": "Camera Details",
+                    "location": "Location Details",
+                    "character": "Character",
+                    "line": "Line",
+                    "delivery": "Delivery",
+                    "style": "Style",
+                    "timing": "Timing (e.g. 0-2s)",
+                    "lang": "Language",
+                    "suggestions": {
+                        "generateFrames": "Generate Frames",
+                        "generateMotion": "Generate Motion",
+                        "generateAudio": "Generate Audio"
+                    },
                     "videoProcessing": "Video Processing...",
                     "imageProcessing": "Image Processing...",
                     "tabs": {
                         "environment": "Environment",
                         "general": "General",
                         "cinematic": "Cinematic",
-                        "audio": "Audio",
-                        "prompt": "Prompt"
+                        "audio": "Audio & Dialogue",
+                        "prompt": "AI Prompt"
                     },
                     "locationType": "Type",
                     "atmosphere": "Atmosphere",
@@ -458,6 +484,18 @@
                 "voiceoverSuccess": "Voiceover ready",
                 "voiceoverFailed": "Failed to generate voiceover",
                 "transitionSettings": "Transitions",
+                "dialogueSegment": "Dialogue",
+                "volumeUpdated": "Volume updated",
+                "failedUpdateVolume": "Failed to update volume",
+                "speedUpdated": "Speed updated",
+                "failedUpdateSpeed": "Failed to update speed",
+                "durationUpdated": "Duration updated",
+                "failedUpdateDuration": "Failed to update duration",
+                "fadeUpdated": "Fade updated",
+                "transitionUpdated": "Transition updated",
+                "generating": "GENERATING...",
+                "generate": "GENERATE VOICEOVER",
+                "ready": "Ready",
                 "transitions": {
                     "none": "None",
                     "fade": "Fade",
@@ -477,6 +515,9 @@
             },
             "chatAssistant": "AI Assistant",
             "video": {
+                "serverStart": "Starting server-side assembly...",
+                "started": "Video assembly started!",
+                "failedStart": "Failed to start video assembly",
                 "starting": "Initiating render sequence...",
                 "cancelled": "Render sequence aborted",
                 "completed": "Render complete.",
@@ -550,7 +591,23 @@
             "header": {
                 "untitled": "Untitled Project",
                 "credits": "Credits",
-                "studio": "Studio"
+                "studio": "Studio",
+                "title": "Project Editor",
+                "back": "Back",
+                "rename": "Rename Project",
+                "renameSuccess": "Project renamed",
+                "renameError": "Failed to rename project",
+                "export": "Export",
+                "exportMp4": "Full Video (.mp4)",
+                "exportCapcut": "CapCut Project",
+                "exportPremiere": "Premiere Project",
+                "exportAssets": "Assets ZIP (Images, Voice, Music)",
+                "exportComingSoon": "export coming soon",
+                "featureComingSoon": "Feature coming soon in editor view",
+                "renamed": "Project renamed",
+                "renameFailed": "Failed to rename project",
+                "comingSoon": "Coming Soon",
+                "simple": "Flow"
             },
             "publish": {
                 "title": "Title",
@@ -590,7 +647,35 @@
                 "save": "Save",
                 "download": "Download",
                 "discard": "Discard"
-            }
+            },
+            "tabs": {
+                "camera": "Camera",
+                "cameraScreen": "Camera & Screen",
+                "screen": "Screen",
+                "audio": "Audio"
+            },
+            "overlay": {
+                "aslZone": "ASL Capture Zone",
+                "audioLevel": "LEVEL"
+            },
+            "settings": {
+                "blur": "Visual Blur"
+            },
+            "dialog": {
+                "title": "Recording Complete",
+                "desc": "Your recording is ready. What would you like to do?",
+                "download": "Download",
+                "save": "Save to Project"
+            },
+            "status": {
+                "syncing": "Synchronizing recording...",
+                "persistenceSuccess": "Mission persistent.",
+                "persistenceError": "Tactical failure during persistence",
+                "extractionSoon": "Enhanced file extraction coming soon.",
+                "accessError": "Strategic Failure: Could not access neural capture unit",
+                "stopFirst": "Stop recording before switching modes"
+            },
+            "projectDefault": "Neural Session"
         },
         "new": {
             "title": "Start Your Project Creation",
@@ -729,6 +814,7 @@
                     "act1": "Act I",
                     "act2": "Act II",
                     "act3": "Act III",
+                    "segmentsCount": "Production Segments",
                     "scenes": "Scenes",
                     "visualElements": "Visuals & Art Direction",
                     "palette": "Color Palette",
@@ -839,19 +925,54 @@
         "detail": {
             "duration": "Duration",
             "summary": "Summary",
-            "pending": "Pending"
+            "pending": "Pending",
+            "backDashboard": "Back to Dashboard",
+            "continue": "Continue →",
+            "created": "Created",
+            "scriptInput": "Script Input",
+            "ready": "Ready",
+            "topic": "Topic",
+            "uploadedFile": "Uploaded File",
+            "fileType": "File Type",
+            "uploaded": "Uploaded",
+            "noInput": "No script input yet",
+            "analysis": "Script Analysis",
+            "complete": "Complete",
+            "genre": "Genre",
+            "mood": "Mood",
+            "characters": "Characters",
+            "locations": "Locations",
+            "generateImages": "Generate Character & Location Images",
+            "analysisNotStarted": "Analysis not started yet",
+            "startAnalysis": "Start Analysis",
+            "storyboard": "Storyboard",
+            "segments": "Segments",
+            "notCreated": "Not Created",
+            "totalDuration": "Total Duration",
+            "viewStoryboard": "View Storyboard",
+            "generateVideos": "Generate All Videos",
+            "storyboardNotCreated": "Storyboard not created yet",
+            "generateStoryboard": "Generate Storyboard",
+            "finalVideo": "Final Video",
+            "notGenerated": "Not Generated",
+            "assembling": "Assembling...",
+            "resolution": "Resolution",
+            "openEditor": "Open Video Editor",
+            "videoNotAssembled": "Video not assembled yet",
+            "goEditor": "Go to Editor",
+            "notFound": "Project Not Found"
         },
         "list": {
-            "title": "Project Hub",
-            "subtitle": "Manage your rendered entities and active pipelines",
+            "title": "Project Management",
+            "subtitle": "Manage your projects and pipelines",
             "create": "Initiate New Project",
             "search": "Search projects...",
-            "empty": "No active projects detected in this sector.",
+            "empty": "No projects detected.",
             "table": {
                 "title": "Project Name",
-                "createdAt": "Inception",
-                "status": "State",
-                "actions": "Logistics"
+                "createdAt": "Created Time",
+                "status": "Status",
+                "actions": "Actions"
             },
             "status": {
                 "draft": "Draft",
@@ -861,7 +982,7 @@
         },
         "avatarCreator": {
             "title": "Avatar Creator",
-            "selectVTuber": "Select V Tuber",
+            "selectVTuber": "Select VTuber",
             "noDescription": "No Description",
             "availableAvatars": "Available Avatars",
             "search": "Search",
@@ -975,7 +1096,8 @@
     "studio": {
         "accessibility": {
             "translating": "Translating Speech...",
-            "liveAudio": "LIVE AUDIO"
+            "liveAudio": "LIVE AUDIO",
+            "aslTitle": "Hands On ASL"
         },
         "header": {
             "godMode": "God Mode",
@@ -1005,13 +1127,20 @@
             "questStartedText": "Quest Started Text",
             "aiDealTriggeredTitle": "Ai Deal Triggered",
             "checkProductionPanel": "Check Production Panel",
-            "live": "Live",
+            "live": "Broadcast is LIVE!",
             "autoAtmosphereDisabled": "Disable Auto Atmosphere",
             "godModeDisabled": "Disable God Mode",
             "demoModeDisabled": "Disable Demo Mode",
             "autoAtmosphereEnabled": "Enable Auto Atmosphere",
             "godModeEnabled": "Enable God Mode",
-            "demoModeEnabled": "Enable Demo Mode"
+            "demoModeEnabled": "Enable Demo Mode",
+            "stopped": "Broadcast stopped",
+            "recordingStart": "Recording Session...",
+            "recordingSaved": "Recording Saved to Cloud",
+            "godModeOn": "God Mode Engaged",
+            "godModeOff": "Manual Control Restored",
+            "inviteCopied": "Invite Link Copied",
+            "mockChat": "Amazing stream quality!"
         },
         "title": "Untitled Stream",
         "filters": {
@@ -2971,11 +3100,13 @@
             "vrm3d": "VRM 3D",
             "live2d": "Live2D",
             "image": "Static Image",
+            "video": "Video Master",
             "deployEntityFile": "Deploy Entity File",
             "acceptsPhotos": "Accepts .vrm, .zip, or standard image formats",
             "fileSynchronized": "File Synchronized",
             "live2dAssetSynced": "Live2D asset synchronized successfully",
             "vtuberPhotoProcessed": "Photo processed successfully",
+            "videoPhôiSynced": "Video master synchronized successfully",
             "personaIdentity": "Persona Identity",
             "namePlaceholder": "Enter persona name...",
             "vocalSignature": "Vocal Signature",
@@ -3034,6 +3165,8 @@
                 "live2dUploaded": "Live2D asset uploaded",
                 "avatarUploaded": "Avatar image uploaded",
                 "unsupportedFormat": "Unsupported asset format",
+                "videoUploaded": "Video master uploaded",
+                "videoUpdated": "Video master updated",
                 "backgroundUploaded": "Environment asset uploaded",
                 "uploadAvatarFirst": "Upload an avatar subject first",
                 "backgroundRemoved": "Environment removed successfully",

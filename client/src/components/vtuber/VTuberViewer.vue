@@ -41,6 +41,7 @@ import { Box, FullScreen } from '@icon-park/vue-next';
 import VRMViewer from './VRMViewer.vue';
 import Live2DViewer from './Live2DViewer.vue';
 import StaticPhotoViewer from './StaticPhotoViewer.vue';
+import VideoViewer from './VideoViewer.vue';
 
 const { t } = useI18n();
 
@@ -49,7 +50,7 @@ defineOptions({
 });
 
 const props = defineProps<{
-    modelType: 'vrm' | 'live2d' | 'static';
+    modelType: 'vrm' | 'live2d' | 'static' | 'video';
     modelUrl?: string;
     // Explicitly listing config to ensure type safety if needed, 
     // but relying on $attrs for mostly transparent pass-through is cleaner for maintainability.
@@ -66,6 +67,7 @@ const activeComponent = computed(() => {
         case 'vrm': return VRMViewer;
         case 'live2d': return Live2DViewer;
         case 'static': return StaticPhotoViewer;
+        case 'video': return VideoViewer;
         default: return null;
     }
 });

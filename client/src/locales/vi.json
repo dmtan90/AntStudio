@@ -1,1 +1,12 @@
-{}
+{
+    "vtubers": {
+        "create": {
+            "video": "Video Phôi",
+            "videoPhôiSynced": "Video phôi đã đồng bộ thành công",
+            "toasts": {
+                "videoUploaded": "Đã tải lên video phôi",
+                "videoUpdated": "Đã cập nhật video phôi"
+            }
+        }
+    }
+}
