@@ -20,6 +20,12 @@ export class ChromakeyProcessor {
         this.initGL();
     }
 
+    public updateSettings(similarity: number, smoothness: number, spill: number) {
+        this.settings.similarity = similarity;
+        this.settings.smoothness = smoothness;
+        this.settings.spill = spill;
+    }
+
     private initGL() {
         const gl = this.canvas.getContext('webgl', { preserveDrawingBuffer: true });
         if (!gl) return;

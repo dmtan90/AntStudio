@@ -1140,7 +1140,24 @@
             "godModeOn": "God Mode Engaged",
             "godModeOff": "Manual Control Restored",
             "inviteCopied": "Invite Link Copied",
-            "mockChat": "Amazing stream quality!"
+            "mockChat": "Amazing stream quality!",
+            "aiChoice": "AI Director: Switched scene to {payload}",
+            "aiShowingInfoCard": "AI Director: Showing info card",
+            "aiShowcasingProduct": "AI Director: Showcasing product {name}",
+            "aiCelebration": "AI Director: Triggering celebration!",
+            "aiHighlight": "AI Director: Captured a highlight!",
+            "aiVisualEffectsActive": "AI Director: Enhanced visual effects active",
+            "aiCinematicCam": "AI Director: Applying cinematic {path} camera",
+            "aiAtmosphereChange": "AI Director: Changed guest atmosphere to {effect}",
+            "aiGlobalAtmosphere": "AI Director: Applied scene-wide atmosphere: {effect}",
+            "aiGiftEscalation": "AI DIRECTOR: MASSIVE {gift} FROM {user}! SCALATING PRODUCTION!",
+            "aiGiftReaction": "AI Director: Acknowledging {gift} from {user}",
+            "aiHypeBoost": "AI Director: Chat is on fire! Boosting environmental hype!",
+            "aiGroupAction": "AI Director: Triggering group performance!",
+            "aiGestureDrink": "AI Director: {name} is taking a drink",
+            "aiGesturePhone": "AI Director: {name} is checking their phone",
+            "aiGestureLookAround": "AI Director: {name} is observing the environment",
+            "aiAutonomyImpulse": "AI Director: {name} triggered an autonomous impulse"
         },
         "title": "Untitled Stream",
         "filters": {
@@ -1766,6 +1783,8 @@
         },
         "godMode": {
             "title": "God Mode",
+            "humanFreeMode": "HUMAN FREE MODE",
+            "humanFreeModeDesc": "Disable host webcam & mic. Fully AI VTuber driven show to conserve resources.",
             "directorStatus": "Director Status",
             "active": "Active",
             "silence": "Silence",
@@ -1776,9 +1795,10 @@
             "autoEffectsDesc": "Auto Effects",
             "autoCam": "Auto Camera",
             "autoCamDesc": "Auto Camera",
-            "autoPilot": "Auto Pilot",
-            "autoPilotDesc": "Auto Pilot",
-            "boardConsensus": "Board Consensus",
+            "autoPilot": "AI Auto-Pilot",
+            "autoPilotDesc": "Allow AI to pivot topics and manage guests independently",
+            "hypeMeter": "Audience Hype Level",
+            "boardConsensus": "Board of Directors Consensus",
             "awaitingEvaluation": "Awaiting Evaluation",
             "awaitingEvaluationDesc": "Awaiting Evaluation",
             "decisionLog": "Decision Log",
@@ -2450,17 +2470,17 @@
                 "invalidCookies": "Malformed cookie payload rejected",
                 "syncCookiesSuccess": "Authentication cookies synchronized",
                 "syncCookiesFailed": "Synchronization failed: {error}",
-                "applyConfig": "Apply onfig",
+                "applyConfig": "Apply Config",
                 "abort": "Cancel",
-                "generateProtocol": "Generate rotocol"
+                "generateProtocol": "Generate Protocol"
             },
             "ai": {
-                "providerRegistry": "Provider egistry",
-                "geminiPoolManager": "Gemini ool anager",
-                "addIntelligenceCore": "Add ntelligence ore",
-                "customProvider": "Custom rovider",
-                "bulkAddKeys": "Bulk dd eys",
-                "aiAssist": "Ai ssist",
+                "providerRegistry": "Provider Registry",
+                "geminiPoolManager": "Gemini Pool Manager",
+                "addIntelligenceCore": "Add Intelligence Core",
+                "customProvider": "Custom Provider",
+                "bulkAddKeys": "Bulk Add Keys",
+                "aiAssist": "Ai Assist",
                 "config": {
                     "method": "Method",
                     "endpoint": "Endpoint",
@@ -2486,7 +2506,17 @@
                 },
                 "aiAssistDesc": "Ai ssist esc",
                 "aiAssistTitle": "AI Assistant Settings",
-                "docUrl": "Doc rl"
+                "docUrl": "Doc URL",
+                "ai": {
+                    "capabilities": {
+                        "text": "Text",
+                        "image": "Image",
+                        "video": "Video",
+                        "audio": "Audio",
+                        "music": "Music",
+                        "voice": "Voice"
+                    }
+                }
             },
             "table": {
                 "identity": "Identity",

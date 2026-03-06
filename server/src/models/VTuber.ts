@@ -49,7 +49,7 @@ export interface IVTuber extends Document {
 
     // Visual Presence
     visual?: {
-        modelType?: '3d' | 'live2d' | 'static';  // Model type selector
+        modelType?: '3d' | 'live2d' | 'static' | 'video' | 'aidol';  // Model type selector
         modelUrl?: string;       // Unified model URL (replaces glbUrl, live2dModelUrl, avatarUrl)
         lastGenerated?: Date;
         
@@ -61,6 +61,10 @@ export interface IVTuber extends Document {
             position?: { x: number; y: number }; // Model position offset
         };
         
+        // Aidol Specific Config
+        aidolClips?: Record<string, string>;
+        aidolPrompts?: Record<string, string>;
+
         // Shared Fields
         backgroundUrl?: string;  // Custom or stock background image
         thumbnailUrl?: string;   // Auto-generated preview for model list
@@ -168,7 +172,7 @@ const VTuberSchema = new Schema<IVTuber>({
     },
 
     visual: {
-        modelType: { type: String, enum: ['3d', 'live2d', 'static'], default: '3d' },
+        modelType: { type: String, enum: ['3d', 'live2d', 'static', 'video', 'aidol'], default: '3d' },
         modelUrl: String,
         lastGenerated: Date,
         
@@ -182,6 +186,10 @@ const VTuberSchema = new Schema<IVTuber>({
                 y: { type: Number, default: 0 }
             }
         },
+
+        // Aidol Fields
+        aidolClips: { type: Map, of: String },
+        aidolPrompts: { type: Map, of: String },
         
         // Shared Fields
         backgroundUrl: String,

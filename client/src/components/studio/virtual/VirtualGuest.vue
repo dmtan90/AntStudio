@@ -23,6 +23,9 @@
                 :lyrics="performanceLyrics"
                 :current-time="performanceLyricsCurrentTime"
                 :lyrics-enabled="!hideBackground"
+                :camera-transform="cameraTransform"
+                :active-camera-path="persona.performanceConfig?.activeCameraPath"
+                :camera-intensity="persona.performanceConfig?.cameraIntensity"
                 @ready="handleReady"
             />
 
@@ -37,11 +40,14 @@
                 :emotion="currentEmotion || persona.emotion"
                 :intensity="safeAnimationConfig"
                 :background-url="hideBackground ? null : (persona.visual?.backgroundUrl || backgroundUrl)"
-                :aura-enabled="persona.performanceConfig?.auraEnabled"
-                :aura-color="persona.performanceConfig?.auraColor"
+                :aura-enabled="persona.performanceConfig?.auraEnabled || isThinking || hypeLevel > 1.0"
+                :aura-color="hypeLevel > 1.5 ? '#ff0055' : (persona.performanceConfig?.auraColor || '#00f2ff')"
+                :particle-type="persona.performanceConfig?.particleType || (isThinking ? 'glitter' : (hypeLevel > 0.8 ? 'glitter' : null))"
+                :particle-density="(persona.performanceConfig?.particleDensity || 0.4) + (hypeLevel * 0.5)"
                 :lyrics="performanceLyrics"
                 :current-time="performanceLyricsCurrentTime"
                 :lyrics-enabled="!hideBackground"
+                :camera-transform="cameraTransform"
                 @ready="handleReady"
             />
 
@@ -55,11 +61,14 @@
                 :emotion="currentEmotion || persona.emotion"
                 :intensity="safeAnimationConfig"
                 :background-url="hideBackground ? null : (persona.visual?.backgroundUrl || backgroundUrl)"
-                :aura-enabled="persona.performanceConfig?.auraEnabled"
-                :aura-color="persona.performanceConfig?.auraColor"
+                :aura-enabled="persona.performanceConfig?.auraEnabled || isThinking || hypeLevel > 1.0"
+                :aura-color="hypeLevel > 1.5 ? '#ff0055' : (persona.performanceConfig?.auraColor || '#00f2ff')"
+                :particle-type="persona.performanceConfig?.particleType || (isThinking ? 'glitter' : (hypeLevel > 0.8 ? 'glitter' : null))"
+                :particle-density="(persona.performanceConfig?.particleDensity || 0.4) + (hypeLevel * 0.5)"
                 :lyrics="performanceLyrics"
                 :current-time="performanceLyricsCurrentTime"
                 :lyrics-enabled="!hideBackground"
+                :camera-transform="cameraTransform"
                 @ready="handleReady"
             />
 
@@ -72,9 +81,27 @@
                 :lyrics="performanceLyrics"
                 :current-time="performanceLyricsCurrentTime"
                 :lyrics-enabled="!hideBackground"
+                :camera-transform="cameraTransform"
+                :aura-enabled="persona.performanceConfig?.auraEnabled || isThinking || hypeLevel > 1.0"
+                :aura-color="hypeLevel > 1.5 ? '#ff0055' : (persona.performanceConfig?.auraColor || '#00f2ff')"
+                :particle-type="persona.performanceConfig?.particleType || (isThinking ? 'glitter' : (hypeLevel > 0.8 ? 'glitter' : null))"
+                :particle-density="(persona.performanceConfig?.particleDensity || 0.4) + (hypeLevel * 0.5)"
+                :emotion="currentEmotion || persona.emotion"
+                :gesture="currentGesture || persona.gesture"
+                @ready="handleReady"
+            />
+
+            <!-- AIDOL State Machine Viewer -->
+            <AidolVideoPlayer
+                v-else-if="isAidol"
+                ref="viewerAidol"
+                :video-clips="(persona.visual as any)?.aidolClips"
+                :active-state="aidolState as any"
+                :hype-level="hypeLevel"
                 @ready="handleReady"
             />
         </div>
+
 
         <!-- Identity Label -->
         <div class="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded text-[10px] font-bold text-white z-10 flex items-center gap-1">
@@ -100,6 +127,8 @@ import VRMViewer from '@/components/vtuber/VRMViewer.vue';
 import Live2DViewer from '@/components/vtuber/Live2DViewer.vue';
 import StaticPhotoViewer from '@/components/vtuber/StaticPhotoViewer.vue';
 import VideoViewer from '@/components/vtuber/VideoViewer.vue';
+import AidolVideoPlayer from '@/components/vtuber/AidolVideoPlayer.vue';
+import { useCameraMotion } from '@/composables/vtuber/useCameraMotion';
 import { useMediaStore } from '@/stores/media';
 
 const props = defineProps<{
@@ -131,7 +160,6 @@ const isPerforming = computed(() => {
     return match;
 });
 
-// Performance lyrics props (from media store)
 const performanceLyrics = computed(() => {
     const lyrics = isPerforming.value ? mediaStore.performanceLyrics : [];
     if (isPerforming.value && lyrics.length === 0) {
@@ -140,6 +168,34 @@ const performanceLyrics = computed(() => {
     return lyrics;
 });
 const performanceLyricsCurrentTime = computed(() => isPerforming.value ? mediaStore.performanceLyricsCurrentTime : 0);
+
+// Camera Motion Logic
+const { cameraTransform, updateProgress, setPath } = useCameraMotion();
+
+// Drive camera motion
+watch(() => props.persona.performanceConfig?.activeCameraPath, (newPath) => {
+    if (newPath) {
+        setPath(newPath as any, props.persona.performanceConfig?.cameraIntensity || 1.0);
+    } else {
+        setPath(null);
+    }
+}, { immediate: true });
+
+onMounted(() => {
+    // Drive camera animation loop
+    let lastTime = performance.now();
+    const animateCamera = (time: number) => {
+        const dt = (time - lastTime) / 16.666; // Normalize to 60fps
+        lastTime = time;
+        
+        if (props.persona.performanceConfig?.activeCameraPath && (props.persona.performanceConfig.activeCameraPath as any) !== 'none') {
+            updateProgress(dt);
+        }
+        
+        requestAnimationFrame(animateCamera);
+    };
+    requestAnimationFrame(animateCamera);
+});
 const performanceLyricsVisible = computed(() => {
     const visible = isPerforming.value ? mediaStore.performanceLyricsVisible : false;
     // if (isPerforming.value) console.log(`[VirtualGuest] ${props.persona.name} lyrics visible:`, visible);
@@ -152,6 +208,7 @@ const vrmViewer = ref<InstanceType<typeof VRMViewer> | null>(null);
 const viewerLive2D = ref<InstanceType<typeof Live2DViewer> | null>(null);
 const viewerStatic = ref<InstanceType<typeof StaticPhotoViewer> | null>(null);
 const viewerVideo = ref<InstanceType<typeof VideoViewer> | null>(null);
+const viewerAidol = ref<InstanceType<typeof AidolVideoPlayer> | null>(null);
 const viewerContainer = ref<HTMLElement | null>(null);
 const audioLevel = ref(0);
 const audioLevelOverride = ref<number | null>(null); // For performance mode
@@ -226,6 +283,25 @@ const setLiveVoicePerformance = (style: string, intensity: number) => {
 const isLive2D = computed(() => props.persona.visual?.modelType === 'live2d');
 const isStatic = computed(() => props.persona.visual?.modelType === 'static' || props.persona.visual?.modelType === 'image');
 const isVideo = computed(() => (props.persona.visual?.modelType as string) === 'video');
+const isAidol = computed(() => (props.persona.visual?.modelType as string) === 'aidol');
+
+const aidolState = computed(() => {
+    // 1. High-priority reactions
+    if (currentGesture.value === 'react_gift') return 'gift_react';
+    if (hypeLevel.value > 0.8) return 'hype';
+    
+    // 2. Specific performance actions
+    if (currentGesture.value === 'product_intro') return 'product';
+    if (currentGesture.value === 'checkout') return 'checkout';
+    if (currentGesture.value === 'wave') return 'wave';
+    if (currentGesture.value === 'dance') return 'dance';
+    
+    // 3. Dialogue
+    if (isTalking.value || props.isHostSpeaking) return 'speaking';
+    
+    // 4. Fallback
+    return 'idle';
+});
 
 const safeAnimationConfig = computed(() => ({
     gestureIntensity: props.persona.animationConfig?.gestureIntensity ?? 1,
@@ -298,6 +374,9 @@ const captureStream = async () => {
             if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
         } else if (viewerVideo.value) {
             const el = (viewerVideo.value as any).$el;
+            if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
+        } else if (viewerAidol.value) {
+            const el = (viewerAidol.value as any).$el;
             if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
         }
     }

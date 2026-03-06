@@ -112,6 +112,34 @@ async function resolveMediaInput(file?: Express.Multer.File, mediaId?: string): 
 // AI MEDIA GENERATION
 // ============================================================================
 
+// POST /api/ai/generate-broll
+router.post('/generate-broll', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { prompt, topic } = req.body;
+        const userId = req.user!.userId;
+
+        // Credit Deduction
+        try {
+            await deductCredits(userId, 'image', CREDIT_PRICES.IMAGE_GEN, `Generate B-Roll: ${topic || prompt.substring(0, 30)}`);
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
+
+        const { s3Key } = await generateImage(
+            prompt,
+            userId,
+            `broll_${Date.now()}`,
+            { aspectRatio: '16:9' }
+        );
+
+        res.json({ success: true, data: { url: s3Key, topic } });
+    } catch (error: any) {
+        Logger.error('B-Roll generation error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate B-Roll' });
+    }
+});
+
 // POST /api/ai/generate-image
 router.post('/generate-image', async (req: AuthRequest, res) => {
     try {

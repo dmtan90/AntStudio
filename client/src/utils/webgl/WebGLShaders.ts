@@ -230,6 +230,133 @@ export function createBrightnessShader(gl: WebGLRenderingContext): ShaderProgram
 }
 
 /**
+ * Creates high-end Skin Smoothing shader (Beauty 2.0)
+ * Uses a more advanced multi-pass or optimized single-pass approach
+ */
+export function createBeauty20Shader(gl: WebGLRenderingContext): ShaderProgram {
+    const fragmentSource = `
+        precision mediump float;
+        uniform sampler2D u_texture;
+        uniform vec2 u_resolution;
+        uniform float u_smoothing;    // 0.0 to 1.0
+        uniform float u_brighten;     // 1.0 is neutral
+        uniform float u_denoise;      // 0.0 to 1.0
+        varying vec2 v_texCoord;
+        
+        // RGB to Gray
+        float luminance(vec3 color) {
+            return dot(color, vec3(0.299, 0.587, 0.114));
+        }
+        
+        void main() {
+            vec2 texelSize = 1.0 / u_resolution;
+            vec4 centralColor = texture2D(u_texture, v_texCoord);
+            
+            if (u_smoothing < 0.01) {
+                gl_FragColor = vec4(centralColor.rgb * u_brighten, centralColor.a);
+                return;
+            }
+
+            // High-Pass Filter based Smoothing (Frequency Separation style)
+            // 1. Calculate blur
+            vec3 blur = vec3(0.0);
+            float count = 0.0;
+            for(int i = -2; i <= 2; i++) {
+                for(int j = -2; j <= 2; j++) {
+                    blur += texture2D(u_texture, v_texCoord + vec2(float(i), float(j)) * texelSize * 2.0).rgb;
+                    count += 1.0;
+                }
+            }
+            blur /= count;
+            
+            // 2. High pass
+            vec3 highPass = centralColor.rgb - blur;
+            
+            // 3. Smooth only skin-like colors or low-contrast areas
+            // Simple skin detection (heuristic)
+            float r = centralColor.r; float g = centralColor.g; float b = centralColor.b;
+            bool isSkin = (r > 0.35 && g > 0.15 && b > 0.1 && r > g && r > b && (r - min(g, b)) > 0.05);
+            
+            vec3 result = centralColor.rgb;
+            if (isSkin) {
+                // Soften high frequency noise on skin
+                result = blur + highPass * (1.0 - u_smoothing * 0.8);
+            }
+            
+            // Brighten
+            result *= u_brighten;
+            
+            // Subtle Saturation boost for healthy look
+            float l = luminance(result);
+            result = mix(vec3(l), result, 1.05);
+
+            gl_FragColor = vec4(result, centralColor.a);
+        }
+    `;
+
+    return compileShaderProgram(gl, fragmentSource, ['u_texture', 'u_resolution', 'u_smoothing', 'u_brighten', 'u_denoise']);
+}
+
+/**
+ * Creates AntAR Face Morphing Shader
+ * Distorts UVs based on face landmarks for slimming, eye enlargement, etc.
+ */
+export function createFaceMorphShader(gl: WebGLRenderingContext): ShaderProgram {
+    const fragmentSource = `
+        precision mediump float;
+        uniform sampler2D u_texture;
+        uniform vec2 u_resolution;
+        
+        // Morph Parameters
+        uniform float u_slimming;    // 0.0 to 1.0
+        uniform float u_eyeEnlarge;  // 0.0 to 1.0
+        
+        // Landmarks (Normalized 0-1)
+        uniform vec2 u_leftEye;
+        uniform vec2 u_rightEye;
+        uniform vec2 u_chin;
+        uniform vec2 u_nose;
+        
+        varying vec2 v_texCoord;
+        
+        void main() {
+            vec2 uv = v_texCoord;
+            
+            // 1. Eye Enlargement (Sphere distortion around eyes)
+            float eyeRadius = 0.08;
+            float eyeStrength = u_eyeEnlarge * 0.15;
+            
+            // Left Eye
+            float distL = distance(uv, u_leftEye);
+            if (distL < eyeRadius) {
+                float f = (1.0 - pow(distL / eyeRadius, 2.0)) * eyeStrength;
+                uv = mix(uv, u_leftEye, -f);
+            }
+            
+            // Right Eye
+            float distR = distance(uv, u_rightEye);
+            if (distR < eyeRadius) {
+                float f = (1.0 - pow(distR / eyeRadius, 2.0)) * eyeStrength;
+                uv = mix(uv, u_rightEye, -f);
+            }
+            
+            // 2. Face Slimming (Squeeze towards vertical midline of face)
+            float slimmingStrength = u_slimming * 0.05;
+            float distToNoseX = abs(uv.x - u_nose.x);
+            if (uv.y > u_nose.y - 0.1 && uv.y < u_chin.y + 0.1) {
+                // Squeeze inward
+                float pull = smoothstep(0.3, 0.0, distToNoseX);
+                uv.x = mix(uv.x, u_nose.x, pull * slimmingStrength);
+            }
+            
+            gl_FragColor = texture2D(u_texture, uv);
+        }
+    `;
+
+    return compileShaderProgram(gl, fragmentSource, ['u_texture', 'u_resolution', 'u_slimming', 'u_eyeEnlarge', 'u_leftEye', 'u_rightEye', 'u_chin', 'u_nose']);
+}
+
+/**
  * Creates a virtual background shader (replaces background with image/video)
  */
 export function createVirtualBackgroundShader(gl: WebGLRenderingContext): ShaderProgram {
@@ -584,4 +711,102 @@ export function createAlphaBlendShader(gl: WebGLRenderingContext): ShaderProgram
     `;
 
     return compileShaderProgram(gl, fragmentSource, ['u_foreground', 'u_background']);
+}
+
+/**
+ * TikTok-style Glitch Transition Shader
+ */
+export function createGlitchTransitionShader(gl: WebGLRenderingContext): ShaderProgram {
+    const fragmentSource = `
+        precision mediump float;
+        uniform sampler2D u_from;
+        uniform sampler2D u_to;
+        uniform float u_progress;
+        varying vec2 v_texCoord;
+
+        float rand(vec2 co) {
+            return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+        }
+
+        void main() {
+            float p = u_progress;
+            vec2 uv = v_texCoord;
+            
+            float strength = sin(p * 3.1415) * 0.1;
+            
+            vec2 distort = uv;
+            if (rand(vec2(floor(uv.y * 20.0), p)) > 0.8) {
+                distort.x += (rand(vec2(p)) - 0.5) * strength;
+            }
+            
+            vec4 c1 = texture2D(u_from, distort);
+            vec4 c2 = texture2D(u_to, distort);
+            
+            // RGB Split
+            float r = texture2D(mix(u_from, u_to, p), distort + vec2(strength * 0.1, 0.0)).r;
+            float g = texture2D(mix(u_from, u_to, p), distort).g;
+            float b = texture2D(mix(u_from, u_to, p), distort - vec2(strength * 0.1, 0.0)).b;
+            
+            gl_FragColor = vec4(r, g, b, 1.0);
+        }
+    `;
+
+    return compileShaderProgram(gl, fragmentSource, ['u_from', 'u_to', 'u_progress']);
+}
+
+/**
+ * Zoom/Pop Transition Shader
+ */
+export function createZoomTransitionShader(gl: WebGLRenderingContext): ShaderProgram {
+    const fragmentSource = `
+        precision mediump float;
+        uniform sampler2D u_from;
+        uniform sampler2D u_to;
+        uniform float u_progress;
+        varying vec2 v_texCoord;
+
+        void main() {
+            float p = u_progress;
+            vec2 uv = v_texCoord;
+            
+            float zoom = 1.0 + (p < 0.5 ? p : 1.0 - p) * 0.5;
+            vec2 zoomedUV = (uv - 0.5) / zoom + 0.5;
+            
+            vec4 c1 = texture2D(u_from, zoomedUV);
+            vec4 c2 = texture2D(u_to, zoomedUV);
+            
+            gl_FragColor = mix(c1, c2, smoothstep(0.4, 0.6, p));
+        }
+    `;
+
+    return compileShaderProgram(gl, fragmentSource, ['u_from', 'u_to', 'u_progress']);
+}
+
+/**
+ * Slide/Swipe Transition Shader
+ */
+export function createSlideTransitionShader(gl: WebGLRenderingContext): ShaderProgram {
+    const fragmentSource = `
+        precision mediump float;
+        uniform sampler2D u_from;
+        uniform sampler2D u_to;
+        uniform float u_progress;
+        varying vec2 v_texCoord;
+
+        void main() {
+            float p = u_progress;
+            vec2 uv = v_texCoord;
+            
+            vec2 uvFrom = uv + vec2(p, 0.0);
+            vec2 uvTo = uv - vec2(1.0 - p, 0.0);
+            
+            if (uvFrom.x <= 1.0) {
+                gl_FragColor = texture2D(u_from, uvFrom);
+            } else {
+                gl_FragColor = texture2D(u_to, uvTo);
+            }
+        }
+    `;
+
+    return compileShaderProgram(gl, fragmentSource, ['u_from', 'u_to', 'u_progress']);
 }

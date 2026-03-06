@@ -302,6 +302,11 @@ class ShowRunnerService extends EventEmitter {
 
         // Check if finished
         if (this.activeScript.currentIndex >= this.activeScript.steps.length) {
+            if (this.activeScript.profileId === 'infinite_podcast') {
+                Logger.info('[ShowRunner] Infinite Podcast block reached end. Regenerating next block...');
+                this.loopInfinitePodcast();
+                return;
+            }
             this.activeScript.isRunning = false;
             this.broadcastState();
             return;
@@ -312,18 +317,44 @@ class ShowRunnerService extends EventEmitter {
         
         // Execute Action
         this.broadcastState();
-        this.broadcastState();
         socketServer.getIO()?.emit('show:execution_step', currentStep);
 
         // Auto-advance timer?
-
-        // Auto-advance timer?
-        // Ideally, we wait for the duration OR a manual trigger. 
-        // For 'Auto-Pilot', we use the duration.
         if (this.timer) clearTimeout(this.timer);
         this.timer = setTimeout(() => {
             this.nextStep();
         }, currentStep.durationSeconds * 1000);
+    }
+
+    private async loopInfinitePodcast() {
+        if (!this.activeScript) return;
+
+        const lastStep = this.activeScript.steps[this.activeScript.steps.length - 1];
+        const lastContext = lastStep.dialogue || lastStep.description;
+
+        // Fetch fresh trends to keeping it dynamic
+        const trends = await TrendFetchService.getTopTrends('general');
+        
+        const inputs = {
+            initial_topic: `Follow-up on: ${lastContext.substring(0, 100)}...`,
+            loop_context: `Continuing the debate. Trends to consider: ${trends.join(', ')}`,
+            title: this.activeScript.title
+        };
+
+        try {
+            const nextScript = await this.generateScript('infinite_podcast', inputs);
+            // Append steps from next script instead of replacing entirely, or just replace for clean state
+            // For infinite loop, we replace the active blocks but keep the ID/Title
+            this.activeScript.steps = nextScript.steps;
+            this.activeScript.currentIndex = -1;
+            this.activeScript.isRunning = true;
+            
+            Logger.info('[ShowRunner] Infinite Podcast loop successful. New steps generated.');
+            this.nextStep();
+        } catch (error) {
+            Logger.error('[ShowRunner] Looping failed. Stopping show.', error);
+            this.stopShow();
+        }
     }
 
     private broadcastState() {

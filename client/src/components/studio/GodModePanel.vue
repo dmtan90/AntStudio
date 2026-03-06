@@ -29,6 +29,17 @@
           </div>
         </div>
 
+        <!-- Hype Meter (Phase 10) -->
+        <div class="status-indicator mt-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-[10px] font-bold text-white/40 uppercase">{{ $t('studio.godMode.hypeMeter') }}</span>
+            <span class="text-[10px] font-black text-orange-400">{{ (chatHypeLevel * 100).toFixed(0) }}%</span>
+          </div>
+          <div class="progress-bar bg-white/5">
+            <div class="progress-fill bg-gradient-to-r from-orange-500 to-red-500 shadow-[0_0_10px_rgba(249,115,22,0.3)]" :style="{ width: `${Math.min(100, chatHypeLevel * 50)}%` }"></div>
+          </div>
+        </div>
+
         <!-- Controls -->
         <div class="space-y-4 mt-6">
           <div class="control-group">
@@ -48,6 +59,27 @@
           </div>
 
           <div class="divider"></div>
+
+          <div class="toggle-group">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black text-white/60 uppercase">{{ $t('studio.godMode.humanFreeMode') || 'HUMAN FREE MODE' }}</span>
+              <button @click="studioStore.humanFreeMode = !studioStore.humanFreeMode" class="studio-toggle" :class="{ active: studioStore.humanFreeMode }">
+                <div class="toggle-inner"></div>
+              </button>
+            </div>
+            <p class="text-[9px] text-white/30 mt-1">{{ $t('studio.godMode.humanFreeModeDesc') || 'Disable host webcam & mic. Fully AI VTuber driven show.' }}</p>
+          </div>
+
+          <div class="toggle-group">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-black text-white/60 uppercase">{{ $t('studio.godMode.autoPublishViral') || 'AUTO PUBLISH VIRAL' }}</span>
+              <button @click="studioStore.autoDirectorSettings.autoPublishViral = !studioStore.autoDirectorSettings.autoPublishViral" 
+                class="studio-toggle" :class="{ active: studioStore.autoDirectorSettings.autoPublishViral }">
+                <div class="toggle-inner"></div>
+              </button>
+            </div>
+            <p class="text-[9px] text-white/30 mt-1">{{ $t('studio.godMode.autoPublishViralDesc') || 'Automatically clip and publish viral moments to TikTok/Shorts.' }}</p>
+          </div>
 
           <div class="toggle-group">
             <div class="flex items-center justify-between">
@@ -120,13 +152,17 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { Magic, Minus, FullScreen } from '@icon-park/vue-next';
 import { studioDirector } from '@/utils/ai/StudioDirector';
+import { syntheticGuestManager } from '@/utils/ai/SyntheticGuestManager';
+import { useI18n } from 'vue-i18n';
 
 const studioStore = useStudioStore();
+const { t } = useI18n();
 const isMinimized = ref(false);
 const sensitivity = ref(0.05);
 const cooldown = ref(8000);
 const autoEffects = ref(true);
 const voiceLevel = ref(0);
+const chatHypeLevel = computed(() => syntheticGuestManager.chatHypeScore);
 
 // Dragging Logic
 const position = ref({ x: 20, y: 150 });
@@ -170,9 +206,12 @@ onMounted(() => {
     const { type, payload } = e.detail;
     if (payload.consensus) {
       lastConsensus.value = payload.consensus;
-      addLog(`${type}: ${payload.title}`, payload.consensus.result === 'rejected');
+      addLog(`${type}: ${t('studio.godMode.' + payload.title)}`, payload.consensus.result === 'rejected');
     } else if (payload.boardFeedback) {
       addLog(`REJECTED: ${payload.title}`, true);
+    } else if (type === 'autonomous_gesture') {
+      const translatedAction = t(`studio.messages.${payload.title}`, { name: payload.name });
+      addLog(translatedAction);
     }
   });
 });

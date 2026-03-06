@@ -17,6 +17,7 @@ import { Live2DModel, ZipLoader } from 'pixi-live2d-display-advanced';
 import JSZip from 'jszip';
 import { getFileUrl } from '@/utils/api';
 import { STUDIO_ENVIRONMENTS, StudioEnvironment } from '@/constants/StudioEnvironments';
+import { AtmosphereManager, ParticleType } from '@/utils/ai/AtmosphereManager';
 
 // Configure ZipLoader
 if (typeof window !== 'undefined') {
@@ -42,6 +43,9 @@ const props = defineProps<{
     guests: any[]; 
     guestVideos: Record<string, HTMLVideoElement>;
     environmentId: string;
+    speakingVol?: number;
+    hypeLevel?: number;
+    globalParticleOverride?: string | null;
     debug?: boolean;
 }>();
 
@@ -50,7 +54,7 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 
 let app: PIXI.Application | null = null;
 let backgroundSprite: PIXI.Sprite | null = null;
-let particleContainer: PIXI.Container | null = null;
+let atmosphere: AtmosphereManager | null = null;
 const videoSprites = new Map<string, PIXI.Sprite>();
 const models = new Map<string, any>(); // Retain map for potential future native needs, currently unused
 const particles: any[] = [];
@@ -71,10 +75,19 @@ const currentEnv = computed(() => STUDIO_ENVIRONMENTS[props.environmentId] || ST
 
 const environmentStyle = computed(() => {
     const env = currentEnv.value;
+    const vol = props.speakingVol || 0;
+    const hype = props.hypeLevel || 0;
+    
+    // Scale intensity and bloom based on both volume and hype
+    const intensity = 1.0 + (vol * 0.3) + (hype * 0.4);
+    const bloom = 1.0 + (vol * 0.2) + (hype * 0.3);
+    const saturate = 100 + (hype * 50);
+
     return {
-        filter: env.vfx.colorGrading || 'none',
-        backdropFilter: env.vfx.bloom ? 'blur(1px) brightness(1.1)' : 'none',
-        boxShadow: env.vfx.bloom ? 'inset 0 0 100px rgba(255,255,255,0.05)' : 'none'
+        filter: `${env.vfx.colorGrading || 'none'} saturate(${saturate}%)`,
+        backdropFilter: env.vfx.bloom ? `blur(${1 * bloom}px) brightness(${1.1 * intensity})` : 'none',
+        boxShadow: env.vfx.bloom ? `inset 0 0 ${100 * intensity}px rgba(255,255,255,${0.05 * intensity})` : 'none',
+        transition: 'all 0.1s linear'
     };
 });
 
@@ -102,9 +115,8 @@ const initApp = async () => {
         antialias: true
     });
 
-    // Create particle container (below models)
-    particleContainer = new PIXI.Container();
-    app.stage.addChild(particleContainer);
+    // Create Atmosphere Manager
+    atmosphere = new AtmosphereManager(app);
 
     await updateEnvironment();
     await syncGuests();
@@ -137,48 +149,14 @@ const updateEnvironment = async () => {
         console.warn('[VirtualStudioStage] Failed to load background:', e);
     }
 
-    // Particles reset
-    if (particleContainer) {
-        particleContainer.removeChildren();
-        particles.length = 0;
-        if (env.vfx.particles && env.vfx.particles !== 'none') {
-            initParticles(env.vfx.particles);
-        }
+    // Atmosphere reset
+    if (atmosphere) {
+        const rawType = props.globalParticleOverride || env.vfx.particles;
+        const pType = rawType === 'petals' ? 'sakura' : (rawType as any);
+        atmosphere.setEffect(pType === 'none' ? null : pType, 30);
     }
 };
 
-const initParticles = (type: string) => {
-    if (!particleContainer || !app) return;
-
-    const count = type === 'fireflies' ? 30 : 50;
-    for (let i = 0; i < count; i++) {
-        const p = new PIXI.Graphics();
-        
-        if (type === 'fireflies') {
-            p.beginFill(0xffffaa, 0.4);
-            p.drawCircle(0, 0, Math.random() * 2 + 1);
-            p.endFill();
-        } else if (type === 'petals') {
-            p.beginFill(0xffcccc, 0.6);
-            p.drawEllipse(0, 0, 4, 6);
-            p.endFill();
-            p.rotation = Math.random() * Math.PI;
-        }
-
-        p.x = Math.random() * app.screen.width;
-        p.y = Math.random() * app.screen.height;
-        
-        const data = {
-            sprite: p,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: type === 'petals' ? Math.random() * 0.5 + 0.2 : (Math.random() - 0.5) * 0.5,
-            va: (Math.random() - 0.5) * 0.02
-        };
-
-        particles.push(data);
-        particleContainer.addChild(p);
-    }
-};
 
 const syncGuests = async () => {
     if (!app) return;
@@ -259,19 +237,12 @@ const updateLoop = (delta: number) => {
     // Update Camera (Phase 64)
     updateCamera(delta);
 
-    // Update Particles
-    particles.forEach(p => {
-        p.sprite.x += p.vx * delta;
-        p.sprite.y += p.vy * delta;
-        p.sprite.rotation += p.va * delta;
-
-        // Wrap around
-        if (p.sprite.x < -20) p.sprite.x = (app?.screen.width || 0) + 20;
-        if (p.sprite.x > (app?.screen.width || 0) + 20) p.sprite.x = -20;
-        if (p.sprite.y < -20) p.sprite.y = (app?.screen.height || 0) + 20;
-        if (p.sprite.y > (app?.screen.height || 0) + 20) p.sprite.y = -20;
-    });
-
+    // Update Atmosphere
+    if (atmosphere) {
+        const volumeFactor = 1.0 + (props.speakingVol || 0) * 2;
+        const hypeFactor = 1.0 + (props.hypeLevel || 0) * 1.5;
+        atmosphere.update(delta, volumeFactor * hypeFactor);
+    }
     // Update all video sprites for smooth movements or interactions if needed
     // (Most logic is handled inside VirtualGuest streams now)
 };
@@ -346,6 +317,7 @@ watch(() => props.guestVideos, () => {
     syncGuests();
 }, { deep: true });
 watch(() => props.environmentId, updateEnvironment);
+watch(() => props.globalParticleOverride, updateEnvironment);
 
 // Expose methods for spatial tracking and emotions
 defineExpose({

@@ -273,6 +273,7 @@ export const useUserStore = defineStore('user', () => {
         isInitialized,
         lastFetch,
         systemMode: computed(() => user.value?.systemMode || 'edge'),
+        preferredLanguage: computed(() => user.value?.preferredLanguage || 'en-US'),
         setToken,
         setUser,
         clearAuth,

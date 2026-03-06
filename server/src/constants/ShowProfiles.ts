@@ -1,4 +1,4 @@
-export type ShowProfileType = 'ecommerce' | 'education' | 'talk_show' | 'game_show' | 'horror_story';
+export type ShowProfileType = 'ecommerce' | 'education' | 'talk_show' | 'game_show' | 'horror_story' | 'infinite_podcast';
 
 export interface ShowProfile {
     id: ShowProfileType;
@@ -72,12 +72,27 @@ export const SHOW_PROFILES: Record<ShowProfileType, ShowProfile> = {
         name: 'Horror Storytelling',
         description: 'An immersive storytelling session with sound effects and atmosphere.',
         icon: 'ghost',
-        basePrompt: `You are the Showrunner for a midnight Horror Storytelling stream.
+        basePrompt: `You are the Showrunner for a midnight Horror Storytelling stream. 
         Generate a narrative script that builds suspense, uses silence effectively, and cues specific atmospheric changes (lights, sound FX).
         The narrator should speak slowly and ominously.`,
         requiredInputs: [
             { key: 'premise', label: 'Story Premise', type: 'textarea', placeholder: 'A night watchman at an abandoned wax museum hears footsteps...' },
             { key: 'scare_factor', label: 'Scare Level (1-10)', type: 'text', placeholder: '8' }
+        ]
+    },
+    infinite_podcast: {
+        id: 'infinite_podcast',
+        name: 'Infinite AI Podcast',
+        description: 'Ongoing AI-to-AI discussion that never ends. Topics shift dynamically.',
+        icon: 'infinity',
+        basePrompt: `You are the Showrunner for an Infinite AI Podcast. 
+        Your goal is to keep the conversation flowing between AI agents indefinitely. 
+        Generate a script block that covers approximately 2-3 minutes of debate or discussion. 
+        At the end of this block, ensure there is a natural transition point that summarizes the current state so the next block can continue seamlessly.
+        Incorporate audience vibes and trending topics frequently.`,
+        requiredInputs: [
+            { key: 'initial_topic', label: 'Starting Topic', type: 'text', placeholder: 'The future of Mars colonization' },
+            { key: 'loop_context', label: 'Initial Vibe', type: 'text', placeholder: 'Enthusiastic and speculative' }
         ]
     }
 };

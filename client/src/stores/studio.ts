@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
-import { ref, reactive, onMounted, onUnmounted, watch, type Ref } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, watch, type Ref } from 'vue';
 import { useLocalStorage } from '@/composables/useLocalStorage';
 import api from '@/utils/api';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
+import { VisualConceptService } from '@/utils/ai/VisualConceptService';
 import { toast } from 'vue-sonner';
 import { generateUUID } from '@/utils/uuid';
 import { useProjectStore } from './project.js';
@@ -23,6 +24,8 @@ export interface Scene {
     description: string;
     layout: SceneLayout;
     hotkey?: string;
+    media?: string;
+    video?: string;
 }
 
 export interface SceneLayout {
@@ -92,12 +95,19 @@ export interface CoHost {
 }
 
 export interface Product {
+    _id: string;
     id: string;
     name: string;
+    description?: string;
     price: number;
     image: string;
     link: string;
     stock?: number;
+    video?: string;          // TVC or Preview Video
+    category?: string;
+    showQR?: boolean;
+    intentScore?: number;
+    eventClip?: Record<string, string>;
 }
 
 export interface EngagementMetrics {
@@ -134,6 +144,7 @@ export interface AutoDirectorConfig {
     autoPivotEnabled: boolean;
     autoEmotionEnabled: boolean;
     autoAtmosphereEnabled: boolean;
+    autoPublishViral: boolean;
     effectTriggers: { keyword: string; effectId: string }[];
 }
 
@@ -160,6 +171,7 @@ export interface UserProgress {
 export const DEFAULT_VISUAL_SETTINGS = {
     streamQuality: 'high',
     aiEnabled: true,
+    arEnabled: false,
     activeFilter: 'none',
     beauty: {
         smoothing: 0,
@@ -219,7 +231,23 @@ export const DEFAULT_VISUAL_SETTINGS = {
         smoothness: 0.1,
         keyColor: '#00ff00'
     },
-    lensProfile: 'none'
+    lensProfile: 'none',
+    ar: {
+        beauty: {
+            smoothing: 0,
+            brighten: 1.0,
+            denoise: 0,
+            slimming: 0,
+            eyeEnlarge: 0
+        },
+        active3DMask: null as string | null,
+        activeFaceMorph: null as string | null,
+        landmarks: null as any[] | null
+    },
+    ai: {
+        autonomousProduction: true,
+        autoDirector: true
+    }
 };
 
 export interface EconomyItem {
@@ -237,6 +265,17 @@ export interface UserWallet {
     balance: number;
     inventory: string[];
 }
+
+export interface ARFilterSettings {
+    beauty20: { smoothing: number; brightening: number; denoise: number; };
+    faceMorph: { slimming: number; eyeEnlargement: number; };
+    activeMask: string | null;
+}
+export const DEFAULT_AR_SETTINGS: ARFilterSettings = {
+    beauty20: { smoothing: 0, brightening: 0, denoise: 0 },
+    faceMorph: { slimming: 0, eyeEnlargement: 0 },
+    activeMask: null
+};
 
 // ============================================
 // Scene Presets
@@ -423,6 +462,16 @@ export const useStudioStore = defineStore('studio', () => {
     // State
     // ============================================
 
+    // God Mode
+    const godModeEnabled = ref(false);
+    const humanFreeMode = ref(false);
+    const liveSubtitlesEnabled = ref(false);
+    const currentCaption = ref<any>(null);
+    const streamRatio = ref<'16:9' | '9:16' | 'both'>('16:9');
+    const highlightedProduct = ref<Product | null>(null);
+    const v2cMatch = ref<any>(null);
+    const assetGeneration = ref<Record<string, 'pending' | 'success' | 'failed'>>({});
+
     // Scene Management
     const activeScene = useLocalStorage<Scene>('antstudio_studio_active_scene', SCENE_PRESETS[0]);
     const nextScene = ref<Scene | null>(null);
@@ -496,7 +545,10 @@ export const useStudioStore = defineStore('studio', () => {
     const activePeak = ref<any>(null);
 
     // God Mode
-    const godModeEnabled = ref(false);
+    const aiEnabled = ref(true);
+    const isInfiniteMode = ref(false);
+    const bRollLibrary = ref<any[]>([]); // Phase 17: Generated B-Roll assets
+    const activeFilter = ref('none');
     const autoDirectorSettings = useLocalStorage<AutoDirectorConfig>('antstudio_studio_auto_director', {
         enabled: false,
         sensitivity: 0.5,
@@ -507,15 +559,19 @@ export const useStudioStore = defineStore('studio', () => {
         autoPivotEnabled: true,
         autoEmotionEnabled: true,
         autoAtmosphereEnabled: true,
+        autoPublishViral: false,
         effectTriggers: []
     });
 
     // AI Director & Speaker Focus
     const currentSpeakerId = ref<string | null>(null);
     const studioVibe = ref<string>('neutral');
+    const vibeScore = ref(85);
+    const chatVelocity = ref(0);
+    const intentScore = ref(0);
     const autoCameraEnabled = ref(false);
     const activeGraphicContent = ref({ title: '', subtitle: '' });
-    const bRollLibrary = ref<{ id: string; url: string; topic: string }[]>([]);
+
     
     // AI ShowRunner
     const activePoll = ref<any>(null);
@@ -1018,7 +1074,7 @@ export const useStudioStore = defineStore('studio', () => {
 
     // ShowRunner Actions
     async function createShowScript(profileId: string, inputs: Record<string, string>) {
-        const res: any = await api.post('/show/generate', { profileId, inputs });
+        const res: any = await api.post('/show/generate', { profileId, inputs, isInfiniteMode: isInfiniteMode.value });
         activeScript.value = res.data;
         scriptIndex.value = -1;
     }
@@ -1040,9 +1096,105 @@ export const useStudioStore = defineStore('studio', () => {
         await api.post('/show/next');
     }
 
+    function updateIntentScore(score: number) {
+        intentScore.value = score;
+    }
+
+    function updateMetrics(metrics: { chatVelocity?: number, vibeScore?: number }) {
+        if (metrics.chatVelocity !== undefined) chatVelocity.value = metrics.chatVelocity;
+        if (metrics.vibeScore !== undefined) vibeScore.value = metrics.vibeScore;
+    }
+
+    function updateV2CMatch(match: any) {
+        v2cMatch.value = match;
+    }
+
     function updateScriptState(script: any) {
         activeScript.value = script;
         scriptIndex.value = script.currentIndex;
+    }
+
+    async function executeShowStep(step: any) {
+        if (!step) return;
+
+        console.log('[StudioStore] Executing Show Step:', step);
+
+        // 1. Handle Dialogue
+        if (step.dialogue && step.agentId) {
+            console.log(`[StudioStore] Agent ${step.agentId} says:`, step.dialogue);
+
+            // Map agentId ('host', 'guest_1', etc.) to an actual entityId in the studio
+            // We assume 'host' is the main AI (or real person).
+            // For now, let's emit a global event that SyntheticGuestManager can pick up
+            // or directly set a 'speaking' state if the main VTuber is active.
+            window.dispatchEvent(new CustomEvent('showrunner:dialogue', {
+                detail: {
+                    agentId: step.agentId,
+                    text: step.dialogue,
+                    emotion: step.emotion
+                }
+            }));
+
+            // Phase 17: Real-time B-Roll Trigger
+            VisualConceptService.processDialogue(step.dialogue, studioVibe.value);
+        }
+
+        // 2. Handle Actions
+        if (step.action) {
+            const params = step.actionParams || {};
+            switch (step.action) {
+                case 'switch_scene':
+                    if (params.actionPayload && activeScene.value) {
+                        activeScene.value.layout = params.actionPayload;
+                        broadcastCurrentState();
+                    }
+                    break;
+                case 'set_camera_transform':
+                    // This is meant for 2D/3D camera. We can trigger an event that VideoViewer/VRMViewer listens to
+                    window.dispatchEvent(new CustomEvent('director:camera_motion', { detail: params }));
+                    break;
+                case 'trigger_visual_fx':
+                    if (params.type) {
+                        // Dispatch event for existing particle/aura managers
+                        window.dispatchEvent(new CustomEvent('show:event', {
+                            detail: { type: `visual_${params.type}` }
+                        }));
+                    }
+                    break;
+                case 'show_product':
+                    if (params.id) {
+                        showcaseProduct({ id: params.id });
+                    }
+                    break;
+                case 'trigger_sponsorship':
+                    // Phase 65 overlay
+                    activeGraphicContent.value = {
+                        title: params.sponsorName || 'Sponsored',
+                        subtitle: params.slogan || ''
+                    };
+                    break;
+                case 'trigger_data_overlay':
+                    // Phase 65 dynamic data overlay
+                    window.dispatchEvent(new CustomEvent('show:event', {
+                        detail: { type: 'data_overlay', payload: params }
+                    }));
+                    break;
+                case 'assemble_highlights':
+                    import('vue-sonner').then(({ toast }) => {
+                        toast.info("ShowRunner is assembling live highlights!");
+                    });
+                    break;
+                case 'trigger_ad_break':
+                    activeGraphicContent.value = {
+                        title: "We'll be right back!",
+                        subtitle: "Commercial Break"
+                    };
+                    break;
+                default:
+                    console.log('[StudioStore] Unhandled ShowRunner Action:', step.action);
+                    break;
+            }
+        }
     }
 
     async function fetchCommerceProducts() {
@@ -1392,6 +1544,12 @@ export const useStudioStore = defineStore('studio', () => {
         }
     };
 
+    const arSettings = computed(() => visualSettings.value.ar);
+    function updateARSettings(settings: Partial<ARFilterSettings>) {
+        visualSettings.value.ar = { ...visualSettings.value.ar, ...settings };
+        broadcastCurrentState();
+    }
+
     return {
         currentProjectId,
         projectTeam,
@@ -1425,6 +1583,9 @@ export const useStudioStore = defineStore('studio', () => {
         autoDirectorSettings,
         myGuestId,
         backgroundAssets,
+        vibeScore,
+        chatVelocity,
+        intentScore,
 
         // Computed
         guestSlotMap,
@@ -1481,15 +1642,19 @@ export const useStudioStore = defineStore('studio', () => {
         updateHealth,
         toggleGodMode,
         updateAutoDirector,
+        isInfiniteMode,
         sessionInfra,
         fetchSessionInfra,
         appendHighlightChunk,
         broadcastCurrentState,
         applyRemoteState,
         updateVisualSettings,
+        arSettings,
+        updateARSettings,
         resetVisualSettings,
         addCustomBackground,
         activePeak,
+        humanFreeMode,
 
         // Screen Sharing & Resources
         isScreenSharing,
@@ -1510,9 +1675,57 @@ export const useStudioStore = defineStore('studio', () => {
         studioVibe,
         setSpeakerFocus,
         updateStudioVibe,
+        updateMetrics,
         autoCameraEnabled,
         activeGraphicContent,
         bRollLibrary,
+        liveSubtitlesEnabled,
+        currentCaption,
+        streamRatio,
+        highlightedProduct,
+        v2cMatch,
+        updateV2CMatch,
+        assetGeneration,
+        linkProductToAidolClip(productId: string, clipUrl: string, eventName?: string) {
+            // Update the live products library mapping
+            // This would normally be persisted to the DB
+            const product = liveProducts.value.find(p => p.id === productId);
+            if (product) {
+                if (eventName) {
+                    product.eventClip = product.eventClip || {};
+                    product.eventClip[eventName] = clipUrl;
+                } else {
+                    product.video = clipUrl;
+                }
+            }
+            toast.success('Product linked to AI clip!');
+        },
+
+        highlightProduct(productId: string | null) {
+            if (!productId) {
+                highlightedProduct.value = null;
+                return;
+            }
+            const product = liveProducts.value.find(p => p.id === productId);
+            if (product) {
+                highlightedProduct.value = product;
+            }
+        },
+
+        setProductQRVisibility(productId: string, visible: boolean) {
+            const product = liveProducts.value.find(p => p.id === productId);
+            if (product) {
+                product.showQR = visible;
+            }
+        },
+
+        updateIntentScore(score: number) {
+            // Logic to automatically show QR if intent is high
+            const threshold = 0.7;
+            if (score > threshold && highlightedProduct.value) {
+                highlightedProduct.value.showQR = true;
+            }
+        },
         setAutoCamera,
         activeScript,
         scriptIndex,
@@ -1520,6 +1733,7 @@ export const useStudioStore = defineStore('studio', () => {
         createShowScript,
         startShow,
         nextShowStep,
+        executeShowStep,
         updateScriptState,
         activePoll,
         castVote,

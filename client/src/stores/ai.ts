@@ -36,6 +36,30 @@ export const useAIStore = defineStore('ai', () => {
         }
     }
 
+    // Generate Generic Video (Veo3/Kling)
+    async function generateVideo(payload: {
+        prompt: string
+        duration?: number
+        aspectRatio?: string
+    }) {
+        loading.value = true
+        try {
+            const res: any = await api.post('/ai/generate-video', payload, {
+                timeout: GENERATE_ASSET_TIMEOUT
+            });
+            const jobId = res.data?.data?.jobId || res.data?.jobId
+            if (jobId) {
+                processingJobs.value.set(jobId, { status: 'processing', type: 'video' })
+            }
+            return res.data?.data || res.data
+        } catch (error: any) {
+            toast.error('Failed to start video generation: ' + (error.response?.data?.error || error.message))
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
     // Check Video Status
     async function checkVideoStatus(jobId: string) {
         try {
@@ -151,13 +175,14 @@ export const useAIStore = defineStore('ai', () => {
     return {
         loading,
         processingJobs,
+        fetchPerformanceInsights,
+        optimizePerformance,
+        analyzeProduct,
+        generateVideo,
         generateAvatarVideo,
         checkVideoStatus,
         pollVideoStatus,
         generateVoice,
-        enhanceAudio,
-        fetchPerformanceInsights,
-        optimizePerformance,
-        analyzeProduct
+        enhanceAudio
     }
 })

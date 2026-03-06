@@ -2,10 +2,11 @@ import { ref, type Ref, reactive, onUnmounted, watch, onMounted } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { QRCodeGenerator } from '@/utils/ai/QRCodeGenerator';
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
+import { arEngine } from '@/utils/ar/AREngine';
 import { useMediaStore } from '@/stores/media';
 import { getFileUrl } from '@/utils/api';
 // @ts-ignore
-import StudioWorker from '@/workers/StudioRender.worker?worker';
+import StudioWorker from '@/workers/render/RenderWorker?worker';
 
 export function useStudioCanvas(
     outputCanvas: Ref<HTMLCanvasElement | null>,
@@ -129,11 +130,10 @@ export function useStudioCanvas(
         window.removeEventListener('studio-worker-command', handleWorkerCommand);
     });
 
-    const bridgeStream = (id: string, element: HTMLVideoElement) => {
-        if (!worker || !element.srcObject || bridgedStreams.has(id)) return;
+    const bridgeStream = (id: string, stream: MediaStream | null) => {
+        if (!worker || !stream || bridgedStreams.has(id)) return;
 
         try {
-            const stream = element.srcObject as MediaStream;
             const track = stream.getVideoTracks()[0];
             if (!track) return;
 
@@ -157,16 +157,42 @@ export function useStudioCanvas(
         const currentActiveIds = new Set<string>();
 
         // 1. Identify what SHOULD be bridged
-        if (sourceVideo.value) {
+        if (sourceVideo.value && sourceVideo.value.srcObject) {
             if (!options.isGuest?.value) {
                 currentActiveIds.add('host');
-                bridgeStream('host', sourceVideo.value);
+                let streamToBridge = sourceVideo.value.srcObject as MediaStream;
+
+                if ((studioStore.visualSettings as any).arEnabled) {
+                    if (!arEngine.stream) {
+                        arEngine.init(streamToBridge).then(arStream => {
+                            arEngine.setEnabled(true);
+                            if (bridgedStreams.has('host')) {
+                                worker?.postMessage({ type: 'remove-stream', payload: { id: 'host' } });
+                                bridgedStreams.delete('host');
+                            }
+                            bridgeStream('host', arStream);
+                        });
+                    } else {
+                        streamToBridge = arEngine.stream;
+                        bridgeStream('host', streamToBridge);
+                    }
+                } else {
+                    if (arEngine.stream) {
+                        arEngine.setEnabled(false);
+                        arEngine.destroy();
+                        if (bridgedStreams.has('host')) {
+                            worker?.postMessage({ type: 'remove-stream', payload: { id: 'host' } });
+                            bridgedStreams.delete('host');
+                        }
+                    }
+                    bridgeStream('host', streamToBridge);
+                }
             } else if (options.myGuestId?.value) {
                 const myGuest = studioStore.liveGuests.find(g => g.uuid === options.myGuestId?.value);
                 if (myGuest && myGuest.slotIndex !== undefined) {
                     const id = `guest${myGuest.slotIndex + 1}`;
                     currentActiveIds.add(id);
-                    bridgeStream(id, sourceVideo.value);
+                    bridgeStream(id, sourceVideo.value.srcObject as MediaStream);
                 }
             }
         }
@@ -174,25 +200,25 @@ export function useStudioCanvas(
         Object.entries(guestVideos.value).forEach(([key, video]) => {
             console.log(`[Studio Canvas] Bridging guest video: ${key}, hasVideo: ${!!video}, readyState: ${video.readyState}`);
             currentActiveIds.add(key);
-            bridgeStream(key, video);
+            bridgeStream(key, video.srcObject as MediaStream);
         });
 
         // 1.5 Bridge Screen Share
         if (options.screenVideo?.value && studioStore.isScreenSharing) {
             currentActiveIds.add('screen');
-            bridgeStream('screen', options.screenVideo.value);
+            bridgeStream('screen', options.screenVideo.value.srcObject as MediaStream);
         }
 
         // 1.6 Bridge Active Media
         if (options.activeMediaVideo?.value && studioStore.activeMediaId) {
             currentActiveIds.add('media');
-            bridgeStream('media', options.activeMediaVideo.value);
+            bridgeStream('media', options.activeMediaVideo.value.srcObject as MediaStream);
         }
 
         // 1.7 Bridge Cinematic Stage
         if (options.cinematicVideo?.value) {
             currentActiveIds.add('cinematic');
-            bridgeStream('cinematic', options.cinematicVideo.value);
+            bridgeStream('cinematic', options.cinematicVideo.value.srcObject as MediaStream);
         }
 
         // 2. Remove what is no longer active
@@ -212,18 +238,31 @@ export function useStudioCanvas(
         }
     }, { deep: true });
 
-    watch(() => studioStore.visualSettings, (newSettings) => {
+    watch([
+        () => studioStore.visualSettings,
+        () => studioStore.vibeScore,
+        () => studioStore.chatVelocity
+    ], ([newSettings, vibe, chatVelocity]) => {
         if (isWorkerEnabled && worker) {
             const token = localStorage.getItem('auth-token');
             worker.postMessage({ 
                 type: 'update-settings', 
                 payload: {
                     ...JSON.parse(JSON.stringify(newSettings)),
-                    authToken: token 
+                    authToken: token,
+                    vibeScore: vibe,
+                    chatVelocity: chatVelocity,
+                    streamRatio: studioStore.streamRatio
                 } 
             });
         }
     }, { deep: true, immediate: true });
+
+    watch(() => studioStore.streamRatio, (ratio) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({ type: 'update-ratio', payload: { ratio } });
+        }
+    });
     
     watch(() => studioStore.guestSlotMap, (newSlots) => {
         if (isWorkerEnabled && worker) {
@@ -239,7 +278,8 @@ export function useStudioCanvas(
         () => options.activeMediaVideo?.value,
         () => options.cinematicVideo?.value,
         () => studioStore.isScreenSharing,
-        () => studioStore.activeMediaId
+        () => studioStore.activeMediaId,
+        () => (studioStore.visualSettings as any).arEnabled
     ], () => {
         if (isWorkerEnabled) checkNewStreams();
     }, { deep: true, immediate: true });
@@ -348,6 +388,67 @@ export function useStudioCanvas(
         updateBrandLogo(url);
     }, { immediate: true });
 
+    // Commerce State Sync Watcher
+    const sendCommerceState = async () => {
+        if (!isWorkerEnabled || !worker) return;
+
+        const flashSaleActive = studioStore.activeFlashSale;
+        let activeProduct = null;
+        let qrCodeBitmap: ImageBitmap | null = null;
+        
+        if (studioStore.activeProductId) {
+            activeProduct = studioStore.liveProducts.find((p: any) => p.id === studioStore.activeProductId || p._id === studioStore.activeProductId);
+            
+            if (activeProduct) {
+                const productId = activeProduct.id || activeProduct._id;
+                let qrImg = qrCodeImages.get(productId);
+
+                if (!qrImg) {
+                    qrImg = new Image();
+                    qrImg.crossOrigin = 'anonymous';
+                    qrImg.src = QRCodeGenerator.getProductQR(activeProduct.inventoryUrl || `https://antstudio.agrhub.com/p/${productId}`);
+                    qrCodeImages.set(productId, qrImg);
+                    
+                    await new Promise(resolve => {
+                        qrImg!.onload = resolve;
+                        qrImg!.onerror = resolve; // Continue on error
+                    });
+                }
+                
+                try {
+                    if (qrImg.complete && qrImg.naturalWidth > 0) {
+                        qrCodeBitmap = await createImageBitmap(qrImg);
+                    }
+                } catch (e) {
+                    console.error("Failed to create QR code bitmap", e);
+                }
+            }
+        }
+
+        const notifications = JSON.parse(JSON.stringify(options.purchaseNotifications.value));
+
+        let transfer: Transferable[] = [];
+        if (qrCodeBitmap) transfer.push(qrCodeBitmap);
+
+        worker.postMessage({
+            type: 'update-commerce',
+            payload: {
+                flashSaleActive,
+                activeProduct,
+                purchaseNotifications: notifications,
+                qrCodeBitmap
+            }
+        }, transfer);
+    };
+
+    watch([
+        () => studioStore.activeProductId,
+        () => studioStore.activeFlashSale,
+        () => options.purchaseNotifications.value.length
+    ], () => {
+        sendCommerceState();
+    }, { deep: true, immediate: true });
+
     // Initialize AI Engine
     onMounted(async () => {
         // Phase 89: Listen for metadata on these elements so we bridge as soon as stream exists
@@ -449,7 +550,7 @@ export function useStudioCanvas(
             }
 
             // Hybrid Rendering: Draw Overlays on Main Thread ONLY if dirty
-            const hasNotifications = options.purchaseNotifications.value.length > 0;
+            const hasNotifications = !isWorkerEnabled && options.purchaseNotifications.value.length > 0;
             const isGuestWithHost = options.isGuest?.value && guestVideos.value['host'];
 
             if (overlayCanvas?.value && (overlayDirty.value || hasNotifications)) {
@@ -480,7 +581,6 @@ export function useStudioCanvas(
                     // Phase 93: Global Lyrics Burn-in removed from overlay canvas to prevent duplication
                     // Per-slot lyrics are handled in drawActualRegion
 
-                    renderCommerceOverlays(ctx, canvas);
                     if (!hasNotifications) overlayDirty.value = false;
                 }
             }

@@ -64,7 +64,7 @@ export class FaceLandmarkService {
         return this.initPromise;
     }
 
-    public async detect(image: ImageBitmap | HTMLImageElement | HTMLCanvasElement, cacheKey?: string): Promise<FaceLandmarkerResult | null> {
+    public async detect(image: ImageBitmap | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, cacheKey?: string): Promise<FaceLandmarkerResult | null> {
         // 1. Check in-memory cache
         if (cacheKey && this.detectionCache.has(cacheKey)) {
             console.log('[FaceLandmarkService] Returning cached result for:', cacheKey);

@@ -29,6 +29,8 @@ import { ref, onMounted, onBeforeUnmount, watch, onActivated, onDeactivated, sha
 import * as PIXI from 'pixi.js';
 import { Live2DModel, ZipLoader } from 'pixi-live2d-display-advanced';
 import JSZip from 'jszip';
+import { AtmosphereManager, ParticleType } from '@/utils/ai/AtmosphereManager';
+import { useVTuberStore } from '@/stores/vtuber';
 import { getFileUrl } from '@/utils/api';
 import { getCachedFile, cacheFile } from '@/utils/ModelCache';
 import { isSingingAtTime } from '@/utils/lyricUtils';
@@ -118,6 +120,17 @@ const props = defineProps<{
     lyricsStyle?: 'neon' | 'minimal' | 'kinetic';
     lyricsPosition?: 'top' | 'bottom';
     lyricsEnabled?: boolean;
+    gesture?: string | null;
+    cameraTransform?: {
+        x: number;
+        y: number;
+        zoom: number;
+        rotation: number;
+    };
+    auraEnabled?: boolean;
+    auraColor?: string;
+    particleType?: string | null;
+    particleDensity?: number;
 }>();
 
 const emit = defineEmits<{
@@ -139,6 +152,8 @@ let backgroundSprite: PIXI.Sprite | null = null;
 const createdBlobUrls: string[] = [];
 let manualEyeControlUntil = 0;
 let manualPoseControlUntil = 0;
+let auraSprite: PIXI.Sprite | null = null;
+let atmosphere: AtmosphereManager | null = null;
 const manualPoseParams: Record<string, number> = {};
 const performanceQueue: { style: string, intensity: number, duration: number }[] = [];
 let isPerforming = false;
@@ -244,6 +259,10 @@ const initValue = async () => {
             
             console.log(`[Live2DViewer] PIXI App created: ${width}x${height}, ratio=${window.devicePixelRatio}`);
 
+            if (app) {
+                atmosphere = new AtmosphereManager(app);
+            }
+
             // Load Live2D Model
             await loadModel();
 
@@ -324,6 +343,28 @@ onBeforeUnmount(() => {
 const init = initValue;
 
 // Load Live2D Model
+// Helper to create the Aura sprite
+const createAuraSprite = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+        const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+        grad.addColorStop(0, 'rgba(64, 158, 255, 0.6)');
+        grad.addColorStop(0.5, 'rgba(64, 158, 255, 0.2)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 256, 256);
+    }
+    const tex = PIXI.Texture.from(canvas);
+    const sprite = new PIXI.Sprite(tex);
+    sprite.anchor.set(0.5);
+    sprite.blendMode = PIXI.BLEND_MODES.ADD;
+    sprite.alpha = 0;
+    return sprite;
+};
+
 const loadModel = async () => {
     if (!app || !props.modelUrl) return;
 
@@ -347,7 +388,10 @@ const loadModel = async () => {
 
     try {
         console.log('[Live2DViewer] Loading model:', props.modelUrl);
-        const url = getFileUrl(props.modelUrl);
+            auraSprite = createAuraSprite();
+            app.stage.addChildAt(auraSprite, backgroundSprite ? 1 : 0);
+
+            const url = getFileUrl(props.modelUrl);
         
         // Unified Archive Loader (ZIP/RAR)
         const isZip = props.modelUrl.toLowerCase().endsWith('.zip');
@@ -671,7 +715,40 @@ const loadModel = async () => {
             const emp = props.emphasis || 0;
             const multipliers = props.intensity || { gestureIntensity: 1, headTiltRange: 1, nodIntensity: 1 };
             
-            // 0. CINEMATIC CAMERA
+            // 0.5 AURA EFFECT
+            if (auraSprite && model) {
+                if (props.auraEnabled) {
+                    auraSprite.alpha = auraSprite.alpha * 0.8 + 0.2;
+                    const pulse = 1.0 + (syncVol * 0.4) + (Math.sin(Date.now() * 0.005) * 0.05);
+                    auraSprite.scale.set(model.scale.x * 2.5 * pulse); // Live2D models often have diff scale base
+                    auraSprite.x = model.x;
+                    auraSprite.y = model.y;
+                    
+                    if (props.auraColor) {
+                        auraSprite.tint = parseInt(props.auraColor.replace('#', ''), 16);
+                    } else {
+                        auraSprite.tint = 0x409eff;
+                    }
+                } else {
+                    auraSprite.alpha *= 0.8;
+                }
+            }
+
+            // 0.6 ATMOSPHERE EFFECT
+            if (atmosphere) {
+                atmosphere.setEffect(props.particleType as ParticleType, props.particleDensity || 20);
+                atmosphere.update(1.0, 1.0 + (syncVol * 2.0)); // Live2D ticker uses a bit diff delta?
+            }
+            
+            // 0. CINEMATIC CAMERA (Dynamic Path)
+            if (props.cameraTransform && app && app.stage) {
+                app.stage.scale.set(props.cameraTransform.zoom);
+                app.stage.x = props.cameraTransform.x * app.screen.width;
+                app.stage.y = props.cameraTransform.y * app.screen.height;
+                app.stage.rotation = props.cameraTransform.rotation;
+            }
+
+            // 1. CINEMATIC CAMERA (Legacy/Static)
             if (props.cinematicMode && model) {
                 const targetZoom = 1.0 + (emp * 0.1) + (props.emotion === 'thinking' ? 0.05 : 0);
                 camZoom = camZoom * 0.9 + targetZoom * 0.1;
@@ -747,6 +824,27 @@ const loadModel = async () => {
                 for (const [id, val] of Object.entries(manualPoseParams)) {
                     try { coreModel.setParamValue(id, val); } catch(e) {}
                 }
+            }
+
+            // 5. Apply Autonomous Gesture (Look Around)
+            if (props.gesture === 'look_around' && !isSpeaking) {
+                const now = Date.now() * 0.001;
+                const phaseX = Math.sin(now * 0.8) * 15;
+                const phaseY = Math.cos(now * 0.6) * 10;
+                
+                if (paramAngleX >= 0) coreModel.setParameterValueById(paramAngleX, headX + phaseX);
+                if (paramAngleY >= 0) coreModel.setParameterValueById(paramAngleY, headY + phaseY);
+                
+                const eyeX = coreModel.getParameterIndex('ParamEyeBallX');
+                const eyeY = coreModel.getParameterIndex('ParamEyeBallY');
+                if (eyeX >= 0) coreModel.setParameterValueById(eyeX, phaseX / 15);
+                if (eyeY >= 0) coreModel.setParameterValueById(eyeY, phaseY / 10);
+            }
+
+            if (props.gesture === 'nod_emphasis') {
+                const now = Date.now() * 0.001;
+                const nod = Math.sin(now * 12) * 5; // Fast double nod
+                if (paramAngleY >= 0) coreModel.setParameterValueById(paramAngleY, headY + nod);
             }
 
             // 3. LIP SYNC

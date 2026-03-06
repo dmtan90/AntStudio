@@ -62,6 +62,29 @@
                         :placeholder="field.placeholder"
                     />
                 </div>
+
+                <!-- Infinite Mode Toggle -->
+                <div v-if="selectedProfileId === 'infinite_podcast'" class="p-3 bg-purple-500/5 border border-purple-500/20 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                            <refresh theme="outline" size="18" />
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold">Infinite Podcast Mode</h4>
+                            <p class="text-[10px] text-white/40">Keep the loop running autonomously</p>
+                        </div>
+                    </div>
+                    <button 
+                        class="w-10 h-6 rounded-full transition-colors relative"
+                        :class="studioStore.isInfiniteMode ? 'bg-purple-600' : 'bg-white/10'"
+                        @click="studioStore.isInfiniteMode = !studioStore.isInfiniteMode"
+                    >
+                        <div 
+                            class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform"
+                            :class="studioStore.isInfiniteMode ? 'translate-x-4' : ''"
+                        ></div>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -112,7 +135,7 @@ import { useStudioStore } from '@/stores/studio';
 import { toast } from 'vue-sonner';
 import { 
     Movie, Close, CheckOne, Edit, Cpu, LoadingFour,
-    ShoppingBag, BookOpen, Microphone, Trophy, Ghost
+    ShoppingBag, BookOpen, Microphone, Trophy, Ghost, Refresh
 } from '@icon-park/vue-next';
 
 defineEmits(['close']);
@@ -158,6 +181,7 @@ const getIcon = (name: string) => {
         case 'microphone': return Microphone;
         case 'trophy': return Trophy;
         case 'ghost': return Ghost;
+        case 'infinity': return Refresh;
         default: return Movie;
     }
 };

@@ -57,6 +57,7 @@ const props = defineProps<{
     activeCameraPath?: string | null;
     cameraIntensity?: number;
     autoDirectorEnabled?: boolean;
+    gesture?: string | null;
     lyrics?: any[];
     currentTime?: number;
     lyricsEnabled?: boolean;
@@ -70,6 +71,12 @@ const props = defineProps<{
         scale?: number; // distance/zoom factor
     };
     is360?: boolean;
+    cameraTransform?: {
+        x: number;
+        y: number;
+        zoom: number;
+        rotation: number;
+    };
 }>();
 
 const emit = defineEmits<{
@@ -141,6 +148,9 @@ const animate = () => {
         // Update VRM (Spring bones, etc.)
         currentVrm.update(deltaTime);
         
+        // Apply Gestures (Autonomous Actions)
+        applyGestures(deltaTime);
+
         // Apply Lip Sync if speaking
         applyLipSync();
         
@@ -175,6 +185,27 @@ const animate = () => {
             }
         } else {
             controls.enabled = true;
+        }
+
+        // Apply Director Camera Transform (External useCameraMotion)
+        if (props.cameraTransform && camera) {
+            const dx = props.cameraTransform.x * 0.05; // Map pixels to Three units
+            const dy = props.cameraTransform.y * -0.05; 
+            const dz = props.cameraTransform.zoom;
+            const dr = props.cameraTransform.rotation;
+
+            // Use camera.zoom for FoV effect or move position
+            camera.zoom = dz;
+            camera.updateProjectionMatrix();
+
+            // We apply offsets to position relative to current pos (from controls or path)
+            camera.position.x += dx;
+            camera.position.y += dy;
+            camera.rotation.z = dr; // Roll effect
+        } else if (camera) {
+            camera.zoom = 1.0;
+            camera.updateProjectionMatrix();
+            camera.rotation.z = 0;
         }
 
         // Centralized Smart Sync Logic
@@ -628,25 +659,131 @@ const loadModel = async () => {
     }
 };
 
+const gestureState = reactive({
+    current: null as string | null,
+    startTime: 0
+});
+
+const applyGestures = (deltaTime: number) => {
+    if (!currentVrm || !currentVrm.humanoid) return;
+
+    if (props.gesture !== gestureState.current) {
+        if (!props.gesture) {
+            propManager.detachProp();
+        } else {
+            if (props.gesture === 'drink') propManager.attachProp(currentVrm!, 'water_bottle');
+            if (props.gesture === 'check_phone') propManager.attachProp(currentVrm!, 'smartphone');
+        }
+        gestureState.current = props.gesture || null;
+        gestureState.startTime = clock.getElapsedTime();
+    }
+
+    if (!props.gesture) return;
+
+    const t = clock.getElapsedTime() - gestureState.startTime;
+    const humanoid = currentVrm.humanoid;
+
+    if (props.gesture === 'drink') {
+        const rArm = humanoid.getNormalizedBoneNode('rightUpperArm');
+        const rForearm = humanoid.getNormalizedBoneNode('rightLowerArm');
+        const head = humanoid.getNormalizedBoneNode('head');
+        
+        if (t < 1.5) {
+            const alpha = t / 1.5;
+            if (rArm) rArm.rotation.z = 1.2 - (alpha * 0.8);
+            if (rForearm) {
+                rForearm.rotation.y = alpha * 1.2;
+                rForearm.rotation.x = alpha * 0.5;
+            }
+        } else if (t < 3.5) {
+            if (head) head.rotation.x = -0.15;
+        } else if (t < 5) {
+            const alpha = (t - 3.5) / 1.5;
+            if (rArm) rArm.rotation.z = 0.4 + (alpha * 0.8);
+            if (rForearm) {
+                rForearm.rotation.y = 1.2 - (alpha * 1.2);
+                rForearm.rotation.x = 0.5 - (alpha * 0.5);
+            }
+            if (head) head.rotation.x = -0.15 + (alpha * 0.15);
+        }
+    }
+
+    if (props.gesture === 'check_phone') {
+        const lArm = humanoid.getNormalizedBoneNode('leftUpperArm');
+        const lForearm = humanoid.getNormalizedBoneNode('leftLowerArm');
+        const head = humanoid.getNormalizedBoneNode('head');
+
+        if (t < 1.2) {
+            const alpha = t / 1.2;
+            if (lArm) lArm.rotation.z = -1.2 + (alpha * 0.3);
+            if (lForearm) {
+                lForearm.rotation.y = -alpha * 1.2;
+                lForearm.rotation.x = alpha * 0.4;
+            }
+            if (head) head.rotation.x = alpha * 0.25;
+        } else if (t < 4) {
+            // Hold
+        } else if (t < 5.2) {
+            const alpha = (t - 4) / 1.2;
+            if (lArm) lArm.rotation.z = -0.9 - (alpha * 0.3);
+            if (lForearm) {
+                lForearm.rotation.y = -1.2 + (alpha * 1.2);
+                lForearm.rotation.x = 0.4 - (alpha * 0.4);
+            }
+            if (head) head.rotation.x = 0.25 - (alpha * 0.25);
+        }
+    }
+
+    if (props.gesture === 'look_around') {
+        const head = humanoid.getNormalizedBoneNode('head');
+        const neck = humanoid.getNormalizedBoneNode('neck');
+
+        // Random head movements
+        if (t < 2) {
+            const alpha = t / 2;
+            if (head) head.rotation.y = Math.sin(alpha * Math.PI) * 0.4;
+            if (neck) neck.rotation.y = Math.sin(alpha * Math.PI) * 0.2;
+        } else if (t < 4) {
+            const alpha = (t - 2) / 2;
+            if (head) head.rotation.y = -Math.sin(alpha * Math.PI) * 0.3;
+            if (neck) neck.rotation.y = -Math.sin(alpha * Math.PI) * 0.15;
+        }
+    }
+
+    if (props.gesture === 'nod_emphasis') {
+        const head = humanoid.getNormalizedBoneNode('head');
+        const neck = humanoid.getNormalizedBoneNode('neck');
+        
+        // Reactive double-nod
+        const speed = 6.0;
+        const dip = Math.sin(t * speed);
+        if (head) head.rotation.x = Math.max(0, dip * 0.15);
+        if (neck) neck.rotation.x = Math.max(0, dip * 0.05);
+
+        if (t > 1.2) {
+            gestureState.current = null; // Auto-end
+        }
+    }
+};
+
 const applyIdleAnimation = (deltaTime: number) => {
     if (!currentVrm || !currentVrm.humanoid) return;
     
     const t = clock.elapsedTime;
     const vol = props.speakingVol || 0;
     const isSpeaking = vol > 0.01;
+    const isGesturing = !!props.gesture;
     
     // ========================================
     // Layer 1: Breathing (Spine/Chest, slow)
     // ========================================
     const spine = currentVrm.humanoid.getNormalizedBoneNode('spine');
     if (spine) {
-        // Gentle breathing on X-axis, ~4s cycle
         spine.rotation.x = Math.sin(t * 1.5) * 0.015;
     }
     
     const chest = currentVrm.humanoid.getNormalizedBoneNode('chest');
     if (chest) {
-        // Chest breathe slightly offset from spine for organic feel
         chest.rotation.x = Math.sin(t * 1.5 + 0.5) * 0.02;
     }
 
@@ -656,19 +793,15 @@ const applyIdleAnimation = (deltaTime: number) => {
     const head = currentVrm.humanoid.getNormalizedBoneNode('head');
     const neck = currentVrm.humanoid.getNormalizedBoneNode('neck');
     
-    if (neck) {
-        // Slow lateral sway (~6s cycle)
+    if (neck && !isGesturing) {
         neck.rotation.z = Math.sin(t * 1.0) * 0.02;
-        // Slight forward/back (~8s cycle)
         neck.rotation.x = Math.sin(t * 0.8 + 1.0) * 0.01;
     }
     
-    if (head) {
-        // Head has its own sway, slightly faster and layered on top of neck
+    if (head && !isGesturing) {
         head.rotation.z = Math.sin(t * 1.3 + 2.0) * 0.025;
-        head.rotation.y = Math.sin(t * 0.7) * 0.03; // Slow look left/right
+        head.rotation.y = Math.sin(t * 0.7) * 0.03;
         
-        // Speech-driven head nod: small downward nod when speaking
         if (isSpeaking) {
             head.rotation.x = Math.sin(t * 4.0) * 0.03 * Math.min(1, vol * 3);
         } else {
@@ -680,13 +813,13 @@ const applyIdleAnimation = (deltaTime: number) => {
     // Layer 3: Relaxed A-Pose (Arms Down)
     // ========================================
     const lArm = currentVrm.humanoid.getNormalizedBoneNode('leftUpperArm');
-    if (lArm) {
+    if (lArm && !(isGesturing && props.gesture === 'check_phone')) {
         lArm.rotation.z = 1.2 + Math.sin(t * 0.6) * 0.02;
         lArm.rotation.y = 0.1;
     }
     
     const rArm = currentVrm.humanoid.getNormalizedBoneNode('rightUpperArm');
-    if (rArm) {
+    if (rArm && !(isGesturing && props.gesture === 'drink')) {
         rArm.rotation.z = -1.2 + Math.sin(t * 0.6 + 1.0) * 0.02;
         rArm.rotation.y = -0.1;
     }

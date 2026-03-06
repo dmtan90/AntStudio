@@ -26,9 +26,11 @@
         :backgrounds="backgrounds"
         :enable-chromakey="enableChromakey" 
         :chroma-settings="chromaSettings"
+        :ar-settings="arSettings"
         @update:active-filter="$emit('update:currentFilter', $event)" 
         @update:enable-chromakey="$emit('update:enableChromakey', $event)"
-        @select-background="$emit('select-background', $event)" 
+        @select-background="$emit('select-background', $event)"
+        @update:ar-settings="$emit('update:arSettings', $event)"
       />
 
       <AIPersonaSettings v-else-if="activeTab === 'ai' || activeTab === 'virtual'" 
@@ -192,6 +194,7 @@ const props = defineProps<{
   activeCollaborators: any[];
   currentUserId: string;
   activeScript: any;
+  arSettings: any;
 }>();
 
 defineEmits([
@@ -202,7 +205,7 @@ defineEmits([
   'trigger-flash-deal', 'toggle-product', 'start-poll', 'feature-question',
   'update:autoAtmosphere', 'apply-preset', 'invite-cohost', 'open-script-generator',
   'set-emotion', 'update-animation', 'update-performance', 'set-background',
-  'open-music-selector', 'start-performance'
+  'open-music-selector', 'start-performance', 'update:arSettings'
 ]);
 
 const currentTabName = computed(() => {

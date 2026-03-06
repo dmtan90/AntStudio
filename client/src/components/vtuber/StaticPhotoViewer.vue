@@ -11,11 +11,13 @@
 
         <canvas ref="canvas" class="w-full h-full"></canvas>
 
-        <!-- Mouth Interior Overlay (Simulating teeth/depth for static photo) -->
+        <!-- Mouth Interior Overlay (Simulating teeth/depth/tongue for static photo) -->
         <div v-if="showMouthInterior" class="absolute pointer-events-none overflow-hidden z-10" :style="mouthInteriorStyle">
-            <div class="w-full h-full bg-[#1a0505] relative">
-                <!-- Faint Teeth Highlight -->
-                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[25%] bg-white/10 blur-[2px] rounded-b-full"></div>
+            <div class="w-full h-full relative" style="background: radial-gradient(circle at center 30%, #2a0a0a 0%, #120505 100%);">
+                <!-- Upper Teeth (Curved) -->
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[85%] h-[20%] bg-gradient-to-b from-white/20 to-white/5 blur-[1px] rounded-b-[40%]"></div>
+                <!-- Lower Teeth/Tongue (Subtle) -->
+                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[15%] bg-gradient-to-t from-[#4a1a1a]/40 to-transparent blur-[2px] rounded-t-full"></div>
             </div>
         </div>
 
@@ -41,6 +43,7 @@ import { faceLandmarkService } from '@/utils/ai/FaceLandmarkService';
 // @ts-ignore
 import Delaunator from 'delaunator';
 import { getFileUrl } from '@/utils/api';
+import { AtmosphereManager, ParticleType } from '@/utils/ai/AtmosphereManager';
 import { isSingingAtTime } from '@/utils/lyricUtils';
 
 const props = defineProps<{
@@ -69,6 +72,20 @@ const props = defineProps<{
     lyricsStyle?: 'neon' | 'minimal' | 'kinetic';
     lyricsPosition?: 'top' | 'bottom';
     lyricsEnabled?: boolean;
+    gesture?: string | null;
+    cameraTransform?: {
+        x: number;
+        y: number;
+        zoom: number;
+        rotation: number;
+    };
+    auraEnabled?: boolean;
+    auraColor?: string;
+    particleType?: string | null;
+    particleDensity?: number;
+    atmosphereEnabled?: boolean;
+    atmosphereColor?: string;
+    atmosphereIntensity?: number;
 }>();
 
 const emit = defineEmits<{
@@ -121,7 +138,7 @@ let breathOffset = 0;
 let smoothedVolume = 0;
 const VOLUME_SMOOTHING = 0.92; // High viscosity for silky-smooth movement
 
-// Face metrics for adaptive animations
+let atmosphere: AtmosphereManager | null = null;
 let faceScale = 1.0;
 let eyeHeight = 10; // Default
 let mouthHeight = 20; // Default
@@ -135,6 +152,8 @@ let displayScale = 1.0;
 let headTilt = 0;
 let bodyLean = 0;
 let shoulderShrug = 0;
+let gestureX = 0;
+let gestureY = 0;
 
 // Emotion Blending
 const currentEmotions = reactive({
@@ -160,6 +179,7 @@ const mouthInteriorStyle = reactive({
 let camZoom = 1.0;
 let camX = 0;
 let camY = 0;
+let camRotation = 0;
 let shakeIntensity = 0;
 
 // Interaction State
@@ -171,6 +191,7 @@ let dragData: any = null;
 let userX = 0;
 let userY = 0;
 let userZoom = 1.0;
+let userRotation = 0;
 
 // Reliability cache
 let lastLandmarks: any[] | null = null;
@@ -510,17 +531,9 @@ const calculateFaceMetrics = (landmarks: any[], tex: PIXI.Texture, scale: number
     );
     faceScale = eyeDistance / 100; // Normalize to ~1.0 for average face
 
-    // ENSURE ROBUSTNESS: Use a minimum baseline if mouth/eyes are closed in the photo
+    // Base baseline if mouth/eyes are closed in the photo
     mouthHeight = Math.max(detectedMouthHeight, faceScale * 20); 
     eyeHeight = Math.max(eyeHeight, faceScale * 8);
-    
-    console.log('[StaticPhotoViewer] Face metrics:', {
-        eyeHeight: eyeHeight.toFixed(1) + 'px',
-        mouthHeight: mouthHeight.toFixed(1) + 'px',
-        faceScale: faceScale.toFixed(2),
-        textureSize: `${tex.width}x${tex.height}`,
-        displayScale: scale.toFixed(2)
-    });
 };
 
 
@@ -555,6 +568,14 @@ const createAuraSprite = (app: PIXI.Application) => {
 };
 
 const update = (delta: number) => {
+    const vol = props.speakingVol || 0;
+    
+    // Unified Atmosphere
+    if (atmosphere) {
+        atmosphere.setEffect(props.particleType as ParticleType, props.particleDensity || 20);
+        atmosphere.update(delta, 1.0 + (vol * 1.5));
+    }
+    
     if (!mesh || !originalVertices) return;
 
     // Access positions buffer - PIXI v8 compatibility
@@ -590,12 +611,79 @@ const update = (delta: number) => {
     // Clamp volume to prevent extreme deformation
     const clampedVol = Math.min(smoothedVolume, 0.55); // Slightly increased max for O-shape
     
+    // 0. Smooth Gesture Coordinates for Perspective
+    if (props.gesture === 'look_around') {
+        const t = Date.now() * 0.001;
+        const targetX = Math.sin(t * 0.5) * 20;
+        const targetY = Math.cos(t * 0.3) * 10;
+        gestureX = gestureX * 0.9 + targetX * 0.1;
+        gestureY = gestureY * 0.9 + targetY * 0.1;
+    } else {
+        gestureX *= 0.9;
+        gestureY *= 0.9;
+    }
+
     // Emotion Blending (Damped)
     const targetEmotion = props.emotion?.toLowerCase() || 'neutral';
     currentEmotions.happy = currentEmotions.happy * 0.9 + (targetEmotion === 'happy' ? 1.0 : 0) * 0.1;
     currentEmotions.surprised = currentEmotions.surprised * 0.9 + (targetEmotion === 'surprised' ? 1.0 : 0) * 0.1;
     currentEmotions.thinking = currentEmotions.thinking * 0.9 + (targetEmotion === 'thinking' ? 1.0 : 0) * 0.1;
     currentEmotions.sad = currentEmotions.sad * 0.9 + (targetEmotion === 'sad' ? 1.0 : 0) * 0.1;
+
+    // Director Camera Transform
+    const dx = props.cameraTransform ? (props.cameraTransform.x * app.screen.width) : 0;
+    const dy = props.cameraTransform ? (props.cameraTransform.y * app.screen.height) : 0;
+    const dz = props.cameraTransform ? props.cameraTransform.zoom : 1.0;
+    const dr = props.cameraTransform ? props.cameraTransform.rotation : 0;
+
+    if (app && mesh) {
+        const centerX = app.screen.width / 2;
+        const centerY = app.screen.height / 2;
+        
+        // Consolidate Autonomous Gesture
+        let autoGX = 0;
+        let autoGY = 0;
+        if (props.gesture === 'look_around' && clampedVol < 0.05) {
+            const now = Date.now() * 0.001;
+            autoGX = Math.sin(now * 0.8) * 30;
+            autoGY = Math.cos(now * 0.6) * 15;
+        }
+
+        if (props.gesture === 'nod_emphasis') {
+            const now = Date.now() * 0.001;
+            autoGY = Math.max(0, Math.sin(now * 12)) * 20;
+        }
+
+        gestureX = gestureX * 0.9 + autoGX * 0.1;
+        gestureY = gestureY * 0.9 + autoGY * 0.1;
+
+        // Apply to Mesh
+        mesh.scale.set(userZoom * camZoom * dz);
+        mesh.x = centerX + userX + camX + dx + (gestureX * 0.5);
+        mesh.y = centerY + userY + camY + dy + (gestureY * 0.5);
+        mesh.rotation = userRotation + camRotation + dr;
+
+        // Apply to Aura
+        if (auraSprite) {
+            if (props.auraEnabled) {
+                auraSprite.alpha = auraSprite.alpha * 0.8 + 0.2;
+                // Pulsate with audio level for "wow" effect
+                const pulse = 1.0 + (smoothedVolume * 0.4) + (Math.sin(Date.now() * 0.005) * 0.05);
+                auraSprite.scale.set(mesh.scale.x * 1.8 * pulse);
+                auraSprite.x = mesh.x;
+                auraSprite.y = mesh.y;
+                auraSprite.rotation = mesh.rotation + (Math.sin(Date.now() * 0.002) * 0.1);
+                
+                if (props.auraColor) {
+                    auraSprite.tint = parseInt(props.auraColor.replace('#', ''), 16);
+                } else {
+                    auraSprite.tint = 0x409eff; // Default Blue
+                }
+            } else {
+                auraSprite.alpha *= 0.8;
+            }
+        }
+    }
 
     // Dynamic Camera Logic
     if (props.cinematicMode) {
@@ -621,10 +709,9 @@ const update = (delta: number) => {
             const shakeX = (Math.random() - 0.5) * shakeIntensity;
             const shakeY = (Math.random() - 0.5) * shakeIntensity;
             
-            // Combine User Transformation + Cinematic Offsets
-            mesh.scale.set(userZoom * camZoom);
-            mesh.x = centerX + userX + camX + shakeX;
-            mesh.y = centerY + userY + camY + shakeY;
+            // Re-apply with shake (Punt to mesh update handles this above, but for cinematic logic we update camX/Y)
+            mesh.x += shakeX;
+            mesh.y += shakeY;
         }
     } else {
         // Reset camera if not in cinematic mode
@@ -632,12 +719,7 @@ const update = (delta: number) => {
         camX *= 0.9;
         camY *= 0.9;
         if (app && mesh) {
-            const centerX = app.screen.width / 2;
-            const centerY = app.screen.height / 2;
-
-            mesh.scale.set(userZoom * camZoom);
-            mesh.x = centerX + userX + camX;
-            mesh.y = centerY + userY + camY;
+            // Already handled in the main mesh transform block above since dx, dy, dz are calculated at start of update
         }
     }
 
@@ -677,6 +759,17 @@ const update = (delta: number) => {
         
         let tx = ox; 
         let ty = oy; 
+
+        // 0.5 Perspective Distortion (Head Rotation Simulation)
+        const faceCenterX = textureWidth * displayScale * 0.5;
+        const faceCenterY = textureHeight * displayScale * 0.4; // Face roughly upper-center
+        const dx = (ox - faceCenterX) / (textureWidth * displayScale);
+        const dy = (oy - faceCenterY) / (textureHeight * displayScale);
+        
+        // Vertices further from center move MORE to simulate 3D rotation
+        // Plus a constant shift for the whole head
+        tx += gestureX * 0.8 + (gestureX * Math.abs(dx) * 15);
+        ty += gestureY * 0.8 + (gestureY * Math.abs(dy) * 10);
         
         // 1. Improved Lip Sync (Vertical + Horizontal Compression)
         if (smoothedVolume > 0.005) {
@@ -1067,6 +1160,9 @@ const initValue = async () => {
             });
 
             // Start Render Loop
+            if (app) {
+                atmosphere = new AtmosphereManager(app);
+            }
             app.ticker.add((ticker: any) => {
                 const delta = ticker.deltaTime || (ticker.deltaMS ? ticker.deltaMS / 16.67 : 1);
                 update(delta);
@@ -1194,6 +1290,10 @@ const initValue = async () => {
             lastDimensions = { w: img.width, h: img.height };
             
             // Calculate final scale before creating mesh
+            if (app) {
+                atmosphere = new AtmosphereManager(app);
+            }
+
             const width = app!.screen.width;
             const height = app!.screen.height;
             const scaleX = width / texture.width;
@@ -1202,6 +1302,16 @@ const initValue = async () => {
             
             // Create hybrid mesh (Face Landmarks + Grid) allows full body display + facial animation
             setupMesh(landmarks, texture, finalScale);
+
+            // Setup Aura
+            if (app) {
+                if (auraSprite) {
+                    app.stage.removeChild(auraSprite);
+                }
+                auraSprite = createAuraSprite(app);
+                // Insert behind mesh (bg is at 0, mesh usually at current end)
+                app.stage.addChildAt(auraSprite, bgSprite ? 1 : 0);
+            }
         } else {
             throw new Error("No face detected in image. Please use a clearer portrait.");
         }
@@ -1286,7 +1396,6 @@ onDeactivated(() => {
 });
 
 onBeforeUnmount(() => {
-    console.log('[StaticPhotoViewer] Cleaning up PIXI app...');
     initCounter++; // Prevent any pending init from finishing
     if (app) {
         app.destroy(true, { children: true, texture: true, baseTexture: true });

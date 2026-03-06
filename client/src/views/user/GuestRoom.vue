@@ -2,6 +2,13 @@
    <div class="guest-room dark-theme min-h-screen flex flex-col items-center p-6 sm:p-12 overflow-y-auto">
       <!-- Site Logo for Guests -->
       <div class="brand-header mt-4 mb-12 animate-fade-in">
+         <el-image :src="getFileUrl(useUIStore().logo)" :alt="useUIStore().appName" class="h-8 w-auto object-contain mr-2">
+            <template #error>
+              <el-icon>
+                <img src="/logo.png" alt="" />
+              </el-icon>
+            </template>
+         </el-image>
          <span class="text-2xl font-black tracking-tighter text-white">{{ useUIStore().appName }}</span>
       </div>
 
@@ -26,8 +33,38 @@
          <div class="preview-section glass-card p-6 flex flex-col gap-6">
             <div
                class="preview-video aspect-video bg-black rounded-2xl overflow-hidden relative border border-white/10">
-               <video ref="localVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
-               <div class="audio-visualizer absolute bottom-4 left-4 right-4 h-1 flex gap-1">
+               <canvas ref="previewCanvas" class="w-full h-full object-cover"></canvas>
+               <video ref="localVideo" autoplay muted playsinline class="hidden"></video>
+               
+               <!-- AR Quick Settings Overlay -->
+               <div class="absolute top-4 right-4 flex flex-col gap-2">
+                  <button class="icon-btn-sm" :class="{ active: showArSettings }" @click="showArSettings = !showArSettings" title="AR Settings">
+                     <magic theme="outline" size="18" />
+                  </button>
+               </div>
+
+               <div v-if="showArSettings" class="ar-settings-panel absolute bottom-4 left-4 right-4 glass-card p-4 animate-slide-up">
+                  <div class="flex flex-col gap-4">
+                     <div class="setting-item">
+                        <label class="text-[10px] font-black uppercase opacity-50 mb-2 block">Skin Smoothing</label>
+                        <el-slider v-model="arSettings.smoothing" :min="0" :max="5" :step="1" @input="updateArSettings" />
+                     </div>
+                     <div class="setting-item">
+                        <label class="text-[10px] font-black uppercase opacity-50 mb-2 block">Brighten</label>
+                        <el-slider v-model="arSettings.brighten" :min="1" :max="1.5" :step="0.05" @input="updateArSettings" />
+                     </div>
+                     <div class="mask-selector flex gap-2 overflow-x-auto pb-2">
+                        <div v-for="mask in availableMasks" :key="mask.id" 
+                           class="mask-item w-12 h-12 rounded-xl border border-white/10 flex-shrink-0 cursor-pointer overflow-hidden transition-all"
+                           :class="{ active: activeMaskId === mask.id }"
+                           @click="selectMask(mask)">
+                           <img :src="mask.thumbnail" class="w-full h-full object-cover" />
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <div class="audio-visualizer absolute bottom-0 left-0 right-0 h-1 flex gap-1">
                   <div v-for="i in 20" :key="i" class="flex-1 bg-blue-500/30 rounded-full"
                      :style="{ height: '100%', opacity: Math.random() }"></div>
                </div>
@@ -119,15 +156,18 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
    Connection, Close, Camera, CameraFive,
-   Microphone, Broadcast
+   Microphone, Broadcast, Magic
 } from '@icon-park/vue-next';
-import api from '@/utils/api';
+import api, { getFileUrl } from '@/utils/api';
 import { toast } from 'vue-sonner';
 import { useUserStore } from '@/stores/user';
 import { useStreamingStore } from '@/stores/streaming';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { useI18n } from 'vue-i18n';
 import { useUIStore } from '@/stores/ui';
+import { arEngine } from '@/utils/ar/AREngine';
+import { faceLandmarkService } from '@/utils/ai/FaceLandmarkService';
+import * as THREE from 'three';
 
 const { t } = useI18n()
 const route = useRoute();
@@ -153,12 +193,87 @@ watch(camOn, (val) => {
    }
 });
 const localVideo = ref<HTMLVideoElement | null>(null);
+const previewCanvas = ref<HTMLCanvasElement | null>(null);
 const joining = ref(false);
 const isApproved = ref(false);
 const sessionId = ref<string | null>(null);
 let localStream: MediaStream | null = null;
+let arStream: MediaStream | null = null;
 let p2pConnection: RTCPeerConnection | null = null;
 const currentWebRTCUrl = ref<string | null>(null); // Keep for host-to-viewer stream info if needed
+
+// AR State
+const showArSettings = ref(false);
+const arSettings = ref({
+   smoothing: 0,
+   brighten: 1.0
+});
+const activeMaskId = ref<string | null>(null);
+const availableMasks = [
+   { id: 'none', name: 'None', thumbnail: '/masks/none.png' },
+   { id: 'cyber_neon', name: 'Cyber Neon', modelUrl: '/models/masks/cyber_neon.glb', thumbnail: '/masks/cyber_neon.jpg', scale: 0.1, offset: new THREE.Vector3(0, 0, 0), rotation: new THREE.Euler(0, 0, 0), anchorLandmark: 1 },
+   { id: 'kitsune', name: 'Kitsune', modelUrl: '/models/masks/kitsune.glb', thumbnail: '/masks/kitsune.jpg', scale: 0.15, offset: new THREE.Vector3(0, 0.2, 0), rotation: new THREE.Euler(0, 0, 0), anchorLandmark: 1 }
+];
+
+const updateArSettings = () => {
+   arEngine.smoothing.value = arSettings.value.smoothing;
+   arEngine.brighten.value = arSettings.value.brighten;
+};
+
+const selectMask = async (mask: any) => {
+   if (mask.id === 'none') {
+      activeMaskId.value = null;
+      arEngine.setEnabled(false);
+      return;
+   }
+   activeMaskId.value = mask.id;
+   await arEngine.loadMask(mask);
+   arEngine.setEnabled(true);
+};
+
+// AR Processing Loop
+let arLoopId: number | null = null;
+const startArLoop = () => {
+   const loop = async () => {
+      if (!camOn.value || !localVideo.value) {
+         arLoopId = requestAnimationFrame(loop);
+         return;
+      }
+
+      // 1. Update landmarks for masks
+      if (arEngine.enabled.value && localVideo.value.readyState >= 2) {
+         try {
+            const result = await faceLandmarkService.detect(localVideo.value);
+            if (result && result.faceLandmarks && result.faceLandmarks[0]) {
+               arEngine.updateLandmarks(result.faceLandmarks[0]);
+            }
+         } catch (e) {
+            // Ignore detection errors during preview
+         }
+      }
+
+      arLoopId = requestAnimationFrame(loop);
+   };
+   arLoopId = requestAnimationFrame(loop);
+};
+
+// Host control handler (named for cleanup)
+const handleControl = (e: any) => {
+   const { action, value } = e.detail;
+   console.log(`[Guest] Host command: ${action} = ${value}`);
+
+   if (action === 'audio') {
+      micOn.value = value;
+      toast.info(value ? t('guestRoom.toasts.hostUnmutedMic') : t('guestRoom.toasts.hostMutedMic'));
+   } else if (action === 'video') {
+      camOn.value = value;
+      toast.info(value ? t('guestRoom.toasts.hostEnabledCam') : t('guestRoom.toasts.hostDisabledCam'));
+   } else if (action === 'kick') {
+      toast.error(t('guestRoom.toasts.kicked'));
+      handleLeave();
+      setTimeout(() => router.push('/'), 3000);
+   }
+};
 
 const validateToken = async () => {
    const token = route.query.token as string;
@@ -191,10 +306,37 @@ const validateToken = async () => {
 const initMedia = async () => {
    try {
       localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (localVideo.value) {
-         localVideo.value.srcObject = localStream;
+      
+      // Initialize AR Engine
+      arStream = await arEngine.init(localStream);
+      
+      if (previewCanvas.value && arStream) {
+         const previewCtx = previewCanvas.value.getContext('2d');
+         if (previewCtx) {
+             const track = arStream.getVideoTracks()[0];
+             const settings = track.getSettings();
+             previewCanvas.value.width = settings.width || 1280;
+             previewCanvas.value.height = settings.height || 720;
+             
+             // Bridge the AR stream to the preview video element or just play it
+             if (localVideo.value) {
+                localVideo.value.srcObject = arStream;
+                
+                // Draw loop for the preview canvas
+                const drawPreview = () => {
+                   if (previewCanvas.value && localVideo.value) {
+                      previewCtx.drawImage(localVideo.value, 0, 0, previewCanvas.value.width, previewCanvas.value.height);
+                      requestAnimationFrame(drawPreview);
+                   }
+                };
+                drawPreview();
+             }
+         }
       }
+
+      startArLoop();
    } catch (e) {
+      console.error('[GuestRoom] Media init failed:', e);
       toast.error(t('guestRoom.toasts.mediaPermissionDenied'));
    }
 };
@@ -265,22 +407,7 @@ const handleJoin = () => {
       });
    }
 
-   window.addEventListener('guest:control', (e: any) => {
-      const { action, value } = e.detail;
-      console.log(`[Guest] Host command: ${action} = ${value}`);
-
-      if (action === 'audio') {
-         micOn.value = value;
-         toast.info(value ? t('guestRoom.toasts.hostUnmutedMic') : t('guestRoom.toasts.hostMutedMic'));
-      } else if (action === 'video') {
-         camOn.value = value;
-         toast.info(value ? t('guestRoom.toasts.hostEnabledCam') : t('guestRoom.toasts.hostDisabledCam'));
-      } else if (action === 'kick') {
-         toast.error(t('guestRoom.toasts.kicked'));
-         handleLeave();
-         setTimeout(() => router.push('/'), 3000);
-      }
-   });
+   window.addEventListener('guest:control', handleControl);
 
    // Sync to potential storage if needed
    if (!userStore.isAuthenticated) {
@@ -355,9 +482,21 @@ const handleLeave = () => {
 onMounted(validateToken);
 onUnmounted(() => {
    localStream?.getTracks().forEach(t => t.stop());
+   arStream?.getTracks().forEach(t => t.stop());
+   if (arLoopId) cancelAnimationFrame(arLoopId);
+   arEngine.destroy();
+   
    if (p2pConnection) {
       p2pConnection.close();
       p2pConnection = null;
+   }
+   window.removeEventListener('guest:control', handleControl);
+   
+   const socket = ActionSyncService.getSocket();
+   if (socket) {
+      socket.off('guest:approved');
+      socket.off('guest:signal');
+      socket.off('guest:rejected');
    }
 });
 </script>
@@ -392,11 +531,78 @@ onUnmounted(() => {
 }
 
 .glass-card {
-   background: rgba(20, 20, 25, 0.6);
-   border: 1px solid rgba(255, 255, 255, 0.08);
+   background: rgba(20, 20, 25, 0.7);
+   border: 1px solid rgba(255, 255, 255, 0.1);
    border-radius: 24px;
-   backdrop-filter: blur(24px) saturate(180%);
-   box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+   backdrop-filter: blur(32px) saturate(180%);
+   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.icon-btn-sm {
+   width: 36px;
+   height: 36px;
+   border-radius: 12px;
+   background: rgba(255, 255, 255, 0.05);
+   border: 1px solid rgba(255, 255, 255, 0.1);
+   color: white;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   cursor: pointer;
+   transition: all 0.2s;
+
+   &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.05);
+   }
+
+   &.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+   }
+}
+
+.ar-settings-panel {
+   z-index: 20;
+   border-radius: 20px;
+   
+   .setting-item {
+      :deep(.el-slider__runway) {
+         background-color: rgba(255, 255, 255, 0.05);
+      }
+      :deep(.el-slider__bar) {
+         background-color: #3b82f6;
+      }
+      :deep(.el-slider__button) {
+         border-color: #3b82f6;
+         background-color: #fff;
+         width: 12px;
+         height: 12px;
+      }
+   }
+}
+
+.mask-selector {
+   scrollbar-width: none;
+   &::-webkit-scrollbar { display: none; }
+}
+
+.mask-item {
+   position: relative;
+   border: 2px solid transparent;
+   opacity: 0.6;
+   
+   &:hover {
+      opacity: 1;
+      transform: translateY(-2px);
+   }
+
+   &.active {
+      opacity: 1;
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+   }
 }
 
 .ctrl-btn {

@@ -1,6 +1,6 @@
 import { ref, type Ref, onUnmounted, watch, onMounted } from 'vue';
 // @ts-ignore
-import StudioWorker from '@/workers/StudioRender.worker?worker';
+import StudioWorker from '@/workers/render/RenderWorker?worker';
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
 
 export function useRecorderCanvas(
@@ -186,12 +186,18 @@ export function useRecorderCanvas(
             beauty: {
                 smoothing: options.enableBeauty.value ? options.beautySettings.value.smoothing : 0,
                 brightness: options.enableBeauty.value ? options.beautySettings.value.brightness : 1.0,
-                sharpen: options.enableBeauty.value ? 0.2 : 0, // Default sharpening if beauty is on
+                sharpen: options.enableBeauty.value ? 0.2 : 0, 
                 denoise: options.enableBeauty.value ? 0.1 : 0
             },
             background: {
                 mode: options.camSettings.value.enableBlur ? 'blur' : 'none',
                 blurLevel: options.camSettings.value.blurStrength > 15 ? 'high' : 'medium'
+            },
+            // NEW: AntAR Settings
+            ar: (options as any).arSettings?.value || {
+                beauty: { smoothing: 0, brighten: 1, denoise: 0, slimming: 0, eyeEnlarge: 0 },
+                active3DMask: null,
+                activeFaceMorph: null
             }
         };
 

@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { useEditorStore } from 'video-editor/store/editor';
 import { toast } from 'vue-sonner';
+import { studioVibeAnalyzer } from './StudioVibeAnalyzer';
 
 /**
  * Service for real-time collaboration and state synchronization.
@@ -250,7 +251,13 @@ export class ActionSyncService {
 
         this.socket.on('hive:sentiment', (data: { score: number }) => {
             console.log('[ActionSync] Sentiment Update:', data.score);
-            studio.studioVibe = data.score > 60 ? 'happy' : data.score < 40 ? 'tense' : 'neutral';
+            
+            // Phase 18: Pipe into granular analyzer
+            studioVibeAnalyzer.update({
+                voiceLevel: 0, 
+                chatVelocity: 0, 
+                userSentiment: (data.score - 50) / 50 
+            });
         });
 
         this.socket.on('show:event', (event: { type: string, payload: any }) => {
@@ -263,6 +270,17 @@ export class ActionSyncService {
                  studio.visualSettings.specialOverlays.confetti = true;
                  setTimeout(() => studio.visualSettings.specialOverlays.confetti = false, 5000);
              }
+        });
+
+        // --- ShowRunner Sync ---
+        this.socket.on('show:state_update', (scriptState: any) => {
+            console.log('[ActionSync] Show State Update:', scriptState);
+            studio.updateScriptState(scriptState);
+        });
+
+        this.socket.on('show:execution_step', (step: any) => {
+            console.log('[ActionSync] Show Execution Step:', step);
+            studio.executeShowStep(step);
         });
 
         // --- Phase 88: Gamification ---

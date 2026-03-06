@@ -93,6 +93,36 @@ const PROP_PRESETS: Record<string, PropConfig> = {
             dimensions: [0.03],
             color: '#00f2ff'
         }
+    },
+    'water_bottle': {
+        id: 'water_bottle',
+        url: '',
+        targetBone: 'rightHand',
+        offset: {
+            position: { x: 0, y: 0.05, z: 0 },
+            rotation: { x: 0, y: 0, z: 0 },
+            scale: 1.0
+        },
+        meshConfig: {
+            type: 'cylinder',
+            dimensions: [0.03, 0.2],
+            color: '#7bd5ff'
+        }
+    },
+    'smartphone': {
+        id: 'smartphone',
+        url: '',
+        targetBone: 'leftHand',
+        offset: {
+            position: { x: 0, y: 0.05, z: 0 },
+            rotation: { x: 0, y: 0, z: 0 },
+            scale: 1.0
+        },
+        meshConfig: {
+            type: 'box',
+            dimensions: [0.07, 0.14, 0.01],
+            color: '#222222'
+        }
     }
 };
 

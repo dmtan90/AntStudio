@@ -102,13 +102,14 @@ export interface IAdminSettings extends Document {
             image: { providerId: string; modelId: string; creditCost: number }
             video: { providerId: string; modelId: string; creditCost: number }
             audio: { providerId: string; modelId: string; creditCost: number } // TTS
-            music: { providerId: string; modelId: string; creditCost: number }
+            music: { providerId: string; modelId: string; creditCost: number },
+            voice: { providerId: string; modelId: string; creditCost: number },// LiveAPI
         }
         models: Array<{
             id: string
             name: string
             providerId: string
-            type: 'image' | 'video' | 'audio' | 'text' | 'music'
+            type: 'image' | 'video' | 'audio' | 'text' | 'music' | 'voice'
             creditCost: number
             isActive: boolean
         }>
@@ -213,7 +214,7 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 secure: { type: Boolean, default: false },
                 user: { type: String, default: '' },
                 pass: { type: String, default: '' },
-                fromEmail: { type: String, default: 'noreply@flova.ai' },
+                fromEmail: { type: String, default: 'noreply@antstudio.ai' },
                 fromName: { type: String, default: 'AntStudio' }
             },
             oauth: {
@@ -300,11 +301,12 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 }
             ],
             defaults: {
-                text: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-pro' }, creditCost: { type: Number, default: 1 } },
-                image: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-pro-vision' }, creditCost: { type: Number, default: 4 } },
-                video: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'veo-2.0' }, creditCost: { type: Number, default: 10 } },
-                audio: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'tts-1' }, creditCost: { type: Number, default: 1 } },
-                music: { providerId: { type: String, default: 'suno' }, modelId: { type: String, default: 'v3.5' }, creditCost: { type: Number, default: 5 } }
+                text: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-2.5-flash' }, creditCost: { type: Number, default: 1 } },
+                image: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-2.5-flash-image' }, creditCost: { type: Number, default: 4 } },
+                video: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'veo-3.1-generate-preview' }, creditCost: { type: Number, default: 10 } },
+                audio: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-2.5-flash-preview-tts' }, creditCost: { type: Number, default: 1 } },
+                music: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'lyria-realtime-exp' }, creditCost: { type: Number, default: 5 } },
+                voice: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-2.5-flash-native-audio-preview-12-2025' }, creditCost: { type: Number, default: 1 } }
             },
             models: [
                 {

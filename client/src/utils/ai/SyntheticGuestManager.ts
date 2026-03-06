@@ -53,11 +53,13 @@ export interface AIGuestPersona {
         traits?: string[];
     };
     visual?: {
-        modelType?: 'vrm' | 'live2d' | 'image' | 'static' | '3d';
+        modelType?: 'vrm' | 'live2d' | 'image' | 'static' | '3d' | 'aidol';
         modelUrl?: string;
         backgroundUrl?: string;
         thumbnailUrl?: string;
         activePropId?: string;
+        aidolClips?: Record<string, string>;
+        aidolPrompts?: Record<string, string>;
         live2dConfig?: {
             zoom?: number;
             offset?: { x: number; y: number };
@@ -129,13 +131,19 @@ export interface AIGuestPersona {
     isMaster?: boolean;
     personality?: string;
     customization?: any;
+
+    // Added for VirtualStudioStage compatibility (Phase 64)
+    visualIdentity?: {
+        modelUrl?: string;
+        thumbnailUrl?: string;
+    };
 }
 
 /**
  * Service to manage virtual AI guests (VTubers) in the Studio.
  */
 export class SyntheticGuestManager {
-    private activeGuests = reactive(new Map<string, { 
+    public activeGuests = reactive(new Map<string, { 
         persona: AIGuestPersona, 
         isSpeaking: boolean, 
         isThinking: boolean,
@@ -151,17 +159,49 @@ export class SyntheticGuestManager {
     private studioStore: any = null;
     private activeArchiveId: string | null = null;
     private dialogueLock: string | null = null; // ID of the guest currently speaking
+    
+    private currentDirective: string = '';
+    private currentVibe: string = 'neutral';
+
+    private banterTimer: any = null;
+    private lastActivityTimestamp: number = Date.now();
+    public chatHypeScore: number = 0;
+    private recentChatSentiment: string[] = [];
+    private hypeDecayTimer: any = null;
+    public guestEngagementScores = reactive(new Map<string, number>());
+    private engagementDecayTimer: any = null;
 
     constructor() {
         this.relationshipManager = new RelationshipManager();
         this.setupSocketListeners();
+        this.setupDirectiveListeners();
     }
 
-    private banterTimer: any = null;
-    private lastActivityTimestamp: number = Date.now();
-    private chatHypeScore: number = 0;
-    private recentChatSentiment: string[] = [];
-    private hypeDecayTimer: any = null;
+    private setupDirectiveListeners() {
+        window.addEventListener('showrunner:directive', (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            console.log(`[VTuberManager] Received Neural Directive: [${detail.type}] - ${detail.directive}`);
+            
+            // Influence the next autonomous banter or response
+            this.currentDirective = detail.directive;
+            this.currentVibe = detail.vibe;
+
+            // Immediately trigger an opening line if it's an intro
+            if (detail.type === 'intro') {
+                this.triggerAutonomousIntervention(detail.directive);
+            }
+
+            // Phase 35: Autonomous Product Pitch
+            if (detail.type === 'product_showcase' && detail.productContext) {
+                this.handleAutonomousProductPitch(detail.productContext, detail.directive);
+            }
+
+            // Phase 36: Neural Knowledge Injection
+            if (detail.type === 'research_injection' && detail.knowledgeContext) {
+                this.handleKnowledgeInjection(detail.knowledgeContext, detail.directive);
+            }
+        });
+    }
 
     private setupSocketListeners() {
         const socket = ActionSyncService.getSocket();
@@ -181,8 +221,39 @@ export class SyntheticGuestManager {
                 this.handleViralPeakReaction(data);
             });
         }
+
+        // --- ShowRunner Integration ---
+        window.addEventListener('showrunner:dialogue', (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            if (!detail || !detail.text) return;
+
+            let targetGuest: { uuid: string, persona: AIGuestPersona } | null = null;
+            
+            for (const [uuid, state] of this.activeGuests.entries()) {
+                if (detail.agentId === 'host' && state.persona.role === 'host') {
+                    targetGuest = { uuid, persona: state.persona };
+                    break;
+                } else if (state.persona.name?.toLowerCase().includes(detail.agentId.toLowerCase())) {
+                    targetGuest = { uuid, persona: state.persona };
+                    break;
+                }
+            }
+
+            // Fallback to the first available guest
+            if (!targetGuest && this.activeGuests.size > 0) {
+                const firstKey = Array.from(this.activeGuests.keys())[0];
+                targetGuest = { uuid: firstKey, persona: this.activeGuests.get(firstKey)!.persona };
+            }
+
+            if (targetGuest) {
+                console.log(`[VTuberManager] ShowRunner directing ${targetGuest.persona.name} to speak: ${detail.text}`);
+                this.talk(targetGuest.uuid, `[DIRECTOR INSTRUCTION: Say exactly this line, do not add anything else] "${detail.text}"`, { vibe: detail.emotion });
+            }
+        });
+
         this.resetBanterTimer();
         this.startHypeDecay();
+        this.startEngagementDecay();
     }
 
     public init(studioStore: any) {
@@ -196,12 +267,139 @@ export class SyntheticGuestManager {
             if (this.chatHypeScore > 0) {
                 this.chatHypeScore = Math.max(0, this.chatHypeScore - 0.05);
                 this.notifyWorker('update-hype-level', { level: this.chatHypeScore });
+                
+                // Phase 33: Autonomous Viral Peak
+                if (this.chatHypeScore > 1.8) {
+                    const socket = ActionSyncService.getSocket();
+                    if (socket) {
+                        socket.emit('studio:viral_peak', {
+                            reason: 'Extreme Chat Hype! 🚀',
+                            intensity: this.chatHypeScore
+                        });
+                        // Reset score slightly to avoid spamming
+                        this.chatHypeScore = 1.2;
+                    }
+                }
             }
         }, 2000);
+        
+        this.startAutonomyLoop();
+    }
+
+    private autonomyTimer: any = null;
+    private startAutonomyLoop() {
+        if (this.autonomyTimer) clearInterval(this.autonomyTimer);
+        this.autonomyTimer = setInterval(() => {
+            this.processAutonomousImpulses();
+        }, 10000); // Check every 10s
+    }
+
+    private lastActionTime: Map<string, number> = new Map();
+
+    private async processAutonomousImpulses() {
+        const activeIds = Array.from(this.activeGuests.keys());
+        if (activeIds.length === 0) return;
+
+        const now = Date.now();
+        const anySpeaking = this.isAnyGuestSpeaking();
+
+        // Phase 33: Autonomous Interruption Logic
+        if (anySpeaking) {
+            for (const guestId of activeIds) {
+                const guest = this.activeGuests.get(guestId);
+                if (!guest || guest.isSpeaking || guest.isThinking) continue;
+
+                const traits = guest.persona.traits || [];
+                // Only "Energetic" or "Dominant" guests interrupt
+                if (traits.includes('ENERGETIC') || traits.includes('DOMINANT')) {
+                    if (Math.random() < 0.05) { // 5% chance per tick to interrupt
+                        console.log(`[VTuberManager] ${guest.persona.name} is INTERRUPTING!`);
+                        this.generateResponse(guestId, `[INTERRUPTION] Someone else is talking, but you have something urgent to say! Jump in and take control of the conversation.`, {
+                            vibe: 'assertive'
+                        } as any);
+                        return; // One interruption at a time
+                    }
+                }
+            }
+            return; // Don't do other impulses if someone is speaking
+        }
+
+        for (const guestId of activeIds) {
+            const guest = this.activeGuests.get(guestId);
+            if (!guest || guest.isSpeaking || guest.isThinking) continue;
+
+            const traits = guest.persona.traits || [];
+            const isEnergetic = traits.includes('ENERGETIC');
+            const isCalm = traits.includes('CALM');
+            
+            const lastTime = this.lastActionTime.get(guestId) || 0;
+            const cooldown = isEnergetic ? 15000 : (isCalm ? 45000 : 25000);
+            
+            if (now - lastTime < cooldown) continue;
+
+            const chance = isEnergetic ? 0.4 : (isCalm ? 0.15 : 0.25);
+            if (Math.random() > chance) continue;
+
+            const actionWeights: Record<string, number> = {
+                'look_around': 1.0,
+                'drink': 0.5,
+                'check_phone': 0.5
+            };
+
+            if (traits.includes('MYSTERIOUS')) actionWeights['look_around'] += 1.0;
+            if (traits.includes('FRIENDLY')) actionWeights['look_around'] += 0.5;
+
+            const totalWeight = Object.values(actionWeights).reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+            let selectedAction = 'look_around';
+            
+            for (const [action, weight] of Object.entries(actionWeights)) {
+                if (random < weight) {
+                    selectedAction = action;
+                    break;
+                }
+                random -= weight;
+            }
+            
+            this.triggerGesture(guestId, selectedAction);
+            this.lastActionTime.set(guestId, now);
+
+            // Notify UI for logging
+            const actionKeyMap: Record<string, string> = {
+                'drink': 'aiGestureDrink',
+                'check_phone': 'aiGesturePhone',
+                'look_around': 'aiGestureLookAround'
+            };
+
+            window.dispatchEvent(new CustomEvent('producer:action', {
+                detail: {
+                    type: 'autonomous_gesture',
+                    payload: {
+                        id: guestId,
+                        name: guest.persona.name,
+                        action: selectedAction,
+                        title: actionKeyMap[selectedAction] || 'aiAutonomyImpulse'
+                    }
+                }
+            }));
+            
+            // Limit to one guest action per tick to avoid chaos
+            break;
+        }
+
+        // Reactive Listening
+        if (this.isAnyGuestSpeaking() || (window as any).isHostSpeaking) {
+            for (const guestId of activeIds) {
+                const guest = this.activeGuests.get(guestId);
+                if (!guest || guest.isSpeaking || guest.isThinking) continue;
+                if (Math.random() < 0.1) {
+                    this.triggerGesture(guestId, 'nod_emphasis');
+                }
+            }
+        }
     }
 
     private isHost(): boolean {
-        // Simple role check based on URL, or could use studio store
         return !window.location.search.includes('role=guest');
     }
 
@@ -211,7 +409,6 @@ export class SyntheticGuestManager {
         
         if (!this.isHost()) return;
 
-        // Autonomous banter every 45-90 seconds of silence
         const delay = 45000 + Math.random() * 45000;
         this.banterTimer = setTimeout(() => {
             this.triggerRandomBanter();
@@ -222,7 +419,7 @@ export class SyntheticGuestManager {
         const check = () => {
             const guest = this.activeGuests.get(guestId);
             if (guest && !guest.isSpeaking && !guest.isThinking) {
-                setTimeout(callback, 1000); // Small pause between speakers
+                setTimeout(callback, 1000);
             } else {
                 setTimeout(check, 500);
             }
@@ -242,23 +439,17 @@ export class SyntheticGuestManager {
              return;
         }
 
-        // Pick two guests for a quick exchange
         const idA = activeIds[Math.floor(Math.random() * activeIds.length)];
-        let idB = activeIds[Math.floor(Math.random() * activeIds.length)];
-        while (idA === idB) {
-            idB = activeIds[Math.floor(Math.random() * activeIds.length)];
-        }
+        let idB = activeIds.find(id => id !== idA) || activeIds[0];
 
         const guestA = this.activeGuests.get(idA)!;
         const guestB = this.activeGuests.get(idB)!;
 
-        // Phase 93: Relationship-aware banter
+        // Relationship-aware banter
         const affinity = this.relationshipManager.getGuestAffinity(idA, idB);
         let socialContext = 'casual';
         if (affinity < -0.5) socialContext = 'rivalry';
         else if (affinity > 0.5) socialContext = 'friendship';
-
-        console.log(`[VTuberBanter] Social Dialogue (${socialContext}): ${guestA.persona.name} -> ${guestB.persona.name}`);
 
         const resA = await this.generateResponse(idA, `Say something to ${guestB.persona.name}. (Relationship: ${socialContext}).`, {
             vibe: socialContext,
@@ -266,9 +457,7 @@ export class SyntheticGuestManager {
         } as any);
 
         if (resA) {
-            // Update relationship after interaction
             this.relationshipManager.recordGuestInteraction(idA, idB, 'friendly');
-            
             this.pollForSilence(idA, async () => {
                 await this.generateResponse(idB, `${guestA.persona.name} said: "${resA.text}". Reply to them. (Relationship: ${socialContext}).`, {
                     vibe: socialContext,
@@ -286,15 +475,13 @@ export class SyntheticGuestManager {
         const text = data.text.toLowerCase();
         const userName = data.userName || data.author || 'Viewer';
         
-        // Phase 93: Recognise Frequent Viewers
+        // Recognise Frequent Viewers
         const viewerAffinity = this.relationshipManager.getViewerAffinity(userName);
         let socialNote = '';
         if (viewerAffinity > 0.8) socialNote = `(This is a legendary fan!)`;
         else if (viewerAffinity > 0.4) socialNote = `(This is a regular viewer.)`;
 
-        // 1. Update Hype Score (Poggers Detection)
-        
-        // 1. Update Hype Score (Poggers Detection)
+        // Poggers Detection
         const hypeKeywords = ['lol', 'lmfao', 'pog', 'wow', 'gg', 'hype', 'lfg', 'omg', 'holy', 'fire'];
         const trollKeywords = ['stfu', 'bad', 'suck', 'dumb', 'fake', 'scam', 'hate', 'ratio', 'garbage'];
         
@@ -305,37 +492,58 @@ export class SyntheticGuestManager {
         this.chatHypeScore = Math.min(2.0, this.chatHypeScore + hypeInc);
         this.notifyWorker('update-hype-level', { level: this.chatHypeScore });
 
-        // 2. Troll Management (Deflection)
+        // Phase 34: Update Engagement Scores based on mentions
+        for (const [guestId, guest] of this.activeGuests.entries()) {
+            const name = guest.persona.name.toLowerCase();
+            if (text.includes(name)) {
+                const current = this.guestEngagementScores.get(guestId) || 50;
+                this.guestEngagementScores.set(guestId, Math.min(100, current + 5));
+                console.log(`[VTuberManager] Engagement Boost for ${guest.persona.name}: ${this.guestEngagementScores.get(guestId)}`);
+            }
+        }
+
+        // Troll Management
         const isTroll = trollKeywords.some(k => text.includes(k));
         if (isTroll && Math.random() > 0.5 && !this.isAnyGuestSpeaking()) {
              const activeIds = Array.from(this.activeGuests.keys());
              if (activeIds.length > 0) {
                  const speakerId = activeIds[Math.floor(Math.random() * activeIds.length)];
-                 console.log(`[VTuberManager] Troll detected, ${speakerId} deflecting: "${data.text}"`);
-                 this.generateResponse(speakerId, `(Someone is being negative in chat: "${data.text}"). Deflect them with humor or kill them with kindness. Stay in character but don't let it ruin the vibe.`, {
-                     vibe: 'witty',
-                     isTrollDeflection: true
+                 this.generateResponse(speakerId, `(Someone is being negative in chat: "${data.text}"). Deflect them with humor. Stay in character.`, {
+                     vibe: 'witty'
                  } as any);
                  return;
              }
         }
 
-        // 3. Autonomous Interjection (Hype Response)
+        // Autonomous Interjection
         if (this.chatHypeScore > 1.2 && Math.random() > 0.7 && !this.isAnyGuestSpeaking()) {
              const activeIds = Array.from(this.activeGuests.keys());
              if (activeIds.length > 0) {
                  const speakerId = activeIds[Math.floor(Math.random() * activeIds.length)];
-                 console.log(`[VTuberManager] Hype detected! ${speakerId} interjecting.`);
                  this.generateResponse(speakerId, `${socialNote} The chat is going wild! Join the hype! React to: "${data.text}"`, {
-                     vibe: 'excited',
-                     isHypeInterjection: true,
-                     viewerName: userName
+                     vibe: 'excited'
                  } as any);
                  return;
              }
         }
 
-        // 4. Probabilistic standard response (Existing)
+        // Sentiment Analysis
+        const sentiment = isTroll ? 'negative' : (hypeInc > 0 ? 'positive' : 'neutral');
+        this.recentChatSentiment.push(sentiment);
+        if (this.recentChatSentiment.length > 20) this.recentChatSentiment.shift();
+
+        // Phase 33: Neural Pivot Trigger
+        const negCount = this.recentChatSentiment.filter(s => s === 'negative').length;
+        if (negCount > 10) {
+            const { neuralShowrunner } = await import('./NeuralShowrunner');
+            neuralShowrunner.pivotSegment('Negative Room Sentiment detected. 📉');
+            this.recentChatSentiment = []; // Reset
+        } else if (this.chatHypeScore > 1.9) {
+            const { neuralShowrunner } = await import('./NeuralShowrunner');
+            neuralShowrunner.pivotSegment('Extreme Hype detected! 🔥');
+        }
+
+        // Probabilistic standard response
         if (Math.random() > 0.2) return;
         if (this.isAnyGuestSpeaking()) return;
 
@@ -343,69 +551,54 @@ export class SyntheticGuestManager {
         if (activeIds.length === 0) return;
 
         const speakingId = activeIds[Math.floor(Math.random() * activeIds.length)];
-        this.generateResponse(speakingId, `${socialNote} Answer chat: "${data.text}"`, {
+        
+        let responsePrompt = `${socialNote} Answer chat: "${data.text}"`;
+        if (this.currentDirective) {
+            responsePrompt = `${socialNote} ShowRunner Directive: ${this.currentDirective}. Context: User said "${data.text}". React while following the directive.`;
+        }
+
+        this.generateResponse(speakingId, responsePrompt, {
             type: 'chat',
             userName: userName,
-            content: data.text
+            content: data.text,
+            vibe: this.currentVibe
         } as any);
     }
 
-    private personaLibrary: AIGuestPersona[] = reactive([
-        {
-            uuid: 'sh_nexus_uuid',
-            id: 'sh_nexus', // Legacy support if needed, or remove if interface strict
-            name: 'Nexus Prime',
-            avatarId: 'nexus',
-            voiceId: 'en-US-Neural2-F',
-            description: 'You are a highly technical AI expert.',
-            traits: ['analytical', 'direct', 'brilliant'],
-            role: 'guest',
-            visual: { modelUrl: '/assets/models/ai_guest_base.glb', modelType: '3d' }
-        }
-    ]);
-
-    /**
-     * Set persona library from VTuber data array.
-     */
-    public setLibrary(vtubers: any[]) {
-        console.log(`[VTuberManager] Setting library with ${vtubers.length} items...`);
-        try {
-            const synced = vtubers.map((vtuber: any) => this.mapVTuberToPersona(vtuber));
-            
-            // Clear and update reactive array
-            this.personaLibrary.length = 0;
-            this.personaLibrary.push(...synced);
-            console.log(`[VTuberManager] Successfully set ${this.personaLibrary.length} VTubers.`);
-        } catch (e) {
-            console.error('[VTuberManager] Failed to set library:', e);
-        }
+    private async triggerAutonomousIntervention(directive: string) {
+        if (this.isAnyGuestSpeaking()) return;
+        
+        const activeIds = Array.from(this.activeGuests.keys());
+        if (activeIds.length === 0) return;
+        
+        const speakerId = activeIds[0];
+        this.generateResponse(speakerId, `[ShowRunner Directive: ${directive}]. Start the conversation now.`, {
+            vibe: this.currentVibe
+        } as any);
     }
 
-    /**
-     * Synchronize library with VTuber Library API
-     */
+    private personaLibrary: AIGuestPersona[] = reactive([]);
+
+    public setLibrary(vtubers: any[]) {
+        try {
+            const synced = vtubers.map((vtuber: any) => this.mapVTuberToPersona(vtuber));
+            this.personaLibrary.length = 0;
+            this.personaLibrary.push(...synced);
+        } catch (e) {}
+    }
+
     public async syncLibrary() {
-        console.log('[VTuberManager] Synchronizing library via API...');
         try {
             const response = await api.get('/vtuber/list');
             const data = response.data;
-            console.log('[VTuberManager] Raw API response:', data);
-            
             const list = data.data || (Array.isArray(data) ? data : []);
-            
             if (Array.isArray(list)) {
                 this.setLibrary(list);
-            } else {
-                console.warn('[VTuberManager] API returned non-array data:', list);
             }
-        } catch (e) {
-            console.error('[VTuberManager] Failed to sync library:', e);
-        }
+        } catch (e) {}
     }
 
     private mapVTuberToPersona(vtuber: any): AIGuestPersona {
-        console.log('[VTuberManager] Mapping VTuber:', vtuber.name || vtuber.identity?.name);
-        // Helper to safely get nested values
         const getName = () => vtuber.identity?.name || vtuber.name || 'Unnamed VTuber';
         const getDescription = () => vtuber.identity?.description || vtuber.description || '';
         const getTraits = () => vtuber.identity?.traits || vtuber.traits || [];
@@ -416,35 +609,29 @@ export class SyntheticGuestManager {
             language: 'en-US'
         };
 
-        // Generate UUID for this persona
         const uuid = vtuber.uuid || generateUUID();
         const entityId = vtuber.entityId || vtuber._id || uuid;
 
         return {
-            // Primary identifier
             uuid: uuid,
-            id: uuid, // Added for UI compatibility (AIPersonaSettings.vue)
-            
-            // New VTuber Schema
             entityId: entityId,
             identity: {
                 name: getName(),
                 description: getDescription(),
                 backstory: vtuber.identity?.backstory,
-                role: getRole() as 'host' | 'guest' | 'moderator',
+                role: getRole() as any,
                 traits: getTraits()
             },
             visual: {
-                modelType: vtuber.visual?.modelType || (vtuber.visual?.modelUrl?.endsWith('.vrm') || vtuber.visual?.modelUrl?.endsWith('.glb') ? 'vrm' : (vtuber.visual?.modelUrl?.endsWith('.zip') || vtuber.visual?.modelUrl?.endsWith('.json') ? 'live2d' : 'image')),
+                modelType: vtuber.visual?.modelType || '3d',
                 modelUrl: vtuber.visual?.modelUrl || '/assets/models/ai_guest_base.glb',
                 backgroundUrl: vtuber.visual?.backgroundUrl,
                 thumbnailUrl: vtuber.visual?.thumbnailUrl,
                 activePropId: vtuber.visual?.activePropId,
                 live2dConfig: vtuber.visual?.live2dConfig || {}
             },
-            // Added for VirtualStudioStage compatibility (Phase 64)
             visualIdentity: {
-                live2dModelUrl: vtuber.visual?.modelUrl,
+                modelUrl: vtuber.visual?.modelUrl,
                 thumbnailUrl: vtuber.visual?.thumbnailUrl
             },
             meta: {
@@ -473,17 +660,17 @@ export class SyntheticGuestManager {
             memory: vtuber.memory || { knowledgeEntries: [] },
             social: vtuber.social || { relationships: [] },
 
-            // Legacy compatibility fields (display only)
+            // Legacy
             name: getName(),
             avatarId: uuid,
             voiceId: getVoiceConfig().voiceId,
             voiceConfig: getVoiceConfig(),
             description: getDescription(),
             traits: getTraits(),
-            role: getRole() as 'host' | 'guest' | 'moderator',
+            role: getRole() as any,
             avatarUrl: vtuber.visual?.thumbnailUrl,
 
-            // Runtime state (default values)
+            // Runtime
             emotion: 'neutral',
             gesture: undefined,
             active: false,
@@ -500,24 +687,12 @@ export class SyntheticGuestManager {
     }
 
     public async summonGuest(persona: AIGuestPersona) {
-        // Generate UUID if not present
-        if (!persona.uuid) {
-            persona.uuid = generateUUID();
-        }
-        
+        if (!persona.uuid) persona.uuid = generateUUID();
         if (this.activeGuests.has(persona.uuid)) return;
 
         this.activeGuests.set(persona.uuid, { persona, isSpeaking: false, isThinking: false });
-        
-        // NOTE: We intentionally do NOT call studioStore.addGuest() here.
-        // The guest will be added to layout slots only when VirtualGuest emits
-        // @stream-ready (model loaded + canvas captured), preventing black screen
-        // in guest slots during model loading. See handleVirtualGuestStream in LiveStudio.vue.
-
         toast.success(`AI Orchestrator: Summoning ${persona.name || persona.identity?.name}...`);
-        console.log('[VTuberManager] Summoning guest visual state:', persona.visual);
 
-        // Notify rendering worker to add 3D model ONLY if it is a 3D type (VRM)
         if (persona.visual?.modelType === 'vrm' || persona.visual?.modelType === '3d') {
             this.notifyWorker('add-3d-guest', {
                 id: persona.uuid,
@@ -533,35 +708,22 @@ export class SyntheticGuestManager {
         if (this.studioStore) {
             this.studioStore.removeGuest(id);
         }
-
-        // Notify rendering worker to clean up 3D model resources
         this.notifyWorker('remove-stream', { id });
     }
 
-    /**
-     * Stop the guest from speaking immediately (Interruption)
-     */
     public interrupt(id: string) {
         this.stopSpeaking(id);
         const guest = this.activeGuests.get(id);
         if (guest) {
              guest.isThinking = false;
-             // Also notify worker to stop any ongoing viseme animations if possible
              this.notifyWorker('update-3d-audio', { id: id, audioLevel: 0 });
         }
     }
 
-    /**
-     * Triggers a synthetic guest response based on a prompt.
-     * Unified with talk() to use pure WebSocket transport.
-     */
     public async generateResponse(guestId: string, prompt: string, context?: any): Promise<{ text: string, audioUrl: string, action?: string, actionPayload?: any } | null> {
         return this.talk(guestId, prompt, context);
     }
 
-    /**
-     * Core dialogue generation logic via WebSocket (Unified Transport)
-     */
     public async talk(guestId: string, prompt: string, context?: any): Promise<{ text: string, audioUrl: string, action?: string, actionPayload?: any } | null> {
         const guest = this.activeGuests.get(guestId);
         if (!guest) return null;
@@ -582,29 +744,21 @@ export class SyntheticGuestManager {
             const connection = connections[guestId];
 
             if (connection && connection.isConnected) {
-                console.log(`[SyntheticGuest] Using WebSocket transport for ${guestId}`);
-                
-                // Get the original callback securely (Phase 8: Frontend Fix)
                 const originalCallback = (connection.geminiLive as any).getTextResponseCallback 
                     ? (connection.geminiLive as any).getTextResponseCallback() 
                     : null;
                 
                 return new Promise((resolve) => {
                     connection.geminiLive.setTextResponseCallback((text: string, metadata?: any) => {
-                        console.log(`[SyntheticGuest] Received WS response for ${guestId}:`, text.substring(0, 30));
-                        
-                        // Update Memory
                         this.conversationHistory.push({ role: 'user', content: prompt });
                         this.conversationHistory.push({ role: 'assistant', content: text });
                         if (this.conversationHistory.length > this.MAX_HISTORY * 2) {
                             this.conversationHistory = this.conversationHistory.slice(-this.MAX_HISTORY * 2);
                         }
 
-                        // Update State & Worker
                         guest.isThinking = false;
                         this.notifyWorker('update-3d-thinking', { id: guestId, isThinking: false });
 
-                        // Handle Metadata (Emotions/Gestures)
                         if (metadata?.isConsolidated) {
                             const { emotion, gesture } = metadata;
                             if (emotion) {
@@ -621,35 +775,26 @@ export class SyntheticGuestManager {
                             if (gesture) guest.gesture = gesture;
                         }
 
-                        // Restore original callback
                         if (typeof originalCallback === 'function') originalCallback(text, metadata);
                         
-                        // Release lock after a short delay to allow audio to finish 
-                        // Actually, isAudioPlaying will handle the "is speaking" check next time
                         if (this.dialogueLock === guestId) {
                             setTimeout(() => {
                                 if (this.dialogueLock === guestId) this.dialogueLock = null;
-                            }, 5000); // 5s buffer or wait for audio?
+                            }, 5000);
                         }
 
-                        resolve({ 
-                            text, 
-                            audioUrl: '', 
-                            action: 'none'
-                        });
+                        resolve({ text, audioUrl: '', action: 'none' });
                     });
 
                     this.dialogueLock = guestId;
-                    connection.geminiLive.sendPrompt(prompt, enrichedContext);
+                    connection.geminiLive.sendPrompt(prompt, { ...context, history: this.conversationHistory });
                 });
             } else {
-                console.warn(`[SyntheticGuest] WebSocket connection not available for ${guestId}. Skipping dialogue generation.`);
                 guest.isThinking = false;
                 this.notifyWorker('update-3d-thinking', { id: `${guestId}`, isThinking: false });
                 return { text: "...", audioUrl: '', action: 'none' };
             }
         } catch (error: any) {
-            console.error(`[SyntheticGuest] Talk failed for ${guestId}:`, error.message);
             if (this.dialogueLock === guestId) this.dialogueLock = null;
             guest.isThinking = false;
             this.notifyWorker('update-3d-thinking', { id: `${guestId}`, isThinking: false });
@@ -661,19 +806,26 @@ export class SyntheticGuestManager {
      * Directly trigger a gesture animation for a guest.
      */
     public triggerGesture(id: string, gesture: string) {
-        this.manualGesture(id, gesture);
-    }
-
-    public manualGesture(id: string, gesture: string) {
         const guest = this.activeGuests.get(id);
         if (guest) {
             guest.gesture = gesture;
             this.notifyWorker('update-3d-expression', { id, gesture });
-            
-            // Auto-clear gesture after a few seconds or keep it until next interaction
             setTimeout(() => {
                 if (guest.gesture === gesture) guest.gesture = '';
-            }, 5000);
+            }, 3000);
+        }
+    }
+
+    public manualGesture(id: string, gesture: string) {
+        this.triggerGesture(id, gesture);
+    }
+
+    /**
+     * Synchronize a gesture across all active guests.
+     */
+    public triggerGroupGesture(gesture: string) {
+        for (const guestId of this.activeGuests.keys()) {
+            this.manualGesture(guestId, gesture);
         }
     }
 
@@ -708,26 +860,17 @@ export class SyntheticGuestManager {
      */
     public updatePerformance(id: string, config: any) {
         const guest = this.activeGuests.get(id);
-        if (guest && guest.persona.performanceConfig) {
+        if (guest) {
             guest.persona.performanceConfig = { ...guest.persona.performanceConfig, ...config };
-            this.notifyWorker('update-3d-performance', { 
-                id: id, 
-                config: guest.persona.performanceConfig 
-            });
+            this.notifyWorker('update-3d-performance', { id, config: guest.persona.performanceConfig });
         }
     }
 
-    /**
-     * Set background for a guest
-     */
     public setBackground(id: string, backgroundUrl: string) {
         const guest = this.activeGuests.get(id);
         if (guest && guest.persona.visual) {
             guest.persona.visual.backgroundUrl = backgroundUrl;
-            this.notifyWorker('update-3d-background', { 
-                id: id, 
-                backgroundUrl 
-            });
+            this.notifyWorker('update-3d-background', { id, backgroundUrl });
         }
     }
 
@@ -759,48 +902,42 @@ export class SyntheticGuestManager {
         if (guest) guest.isSpeaking = false;
     }
 
-    private notifyWorker(type: string, payload: any) {
-        window.dispatchEvent(new CustomEvent('studio-worker-command', { detail: { type, payload } }));
+    public setSpeaking(id: string, speaking: boolean) {
+        const guest = this.activeGuests.get(id);
+        if (guest) guest.isSpeaking = speaking;
     }
 
     public getGuests() {
         return Array.from(this.activeGuests.values());
     }
 
-    public setSpeaking(id: string, speaking: boolean) {
-        const guest = this.activeGuests.get(id);
-        if (guest) guest.isSpeaking = speaking;
-    }
-
     public isAnyGuestSpeaking(): boolean {
-        // 1. Check thinking/local speaking states
         const anyActiveState = Array.from(this.activeGuests.values()).some(g => g.isSpeaking || g.isThinking);
         if (anyActiveState || this.dialogueLock) return true;
-
-        // 2. Check WebSocket audio playback states from shared connections
         if (connections) {
             return Object.values(connections).some((conn: any) => 
                 conn.isConnected && (conn.isSpeaking || conn.isAudioPlaying)
             );
         }
-
         return false;
     }
 
-    private handleGlobalGiftReaction(data: any) {
-        // 1. All guests celebrate visually
+    private async handleGlobalGiftReaction(data: any) {
         for (const guestId of this.activeGuests.keys()) {
             this.triggerVisualGiftEffect(guestId, data.item);
         }
+        const director = (await import('./StudioDirector')).studioDirector;
+        director.requestAction('react_to_gift', {
+            userName: data.userName,
+            giftName: data.item.name,
+            cost: data.item.cost
+        }, data.item.cost >= 1000 ? 10 : 5);
 
-        // 2. Pick ONE guest to react vocally if nobody is speaking
         if (!this.isAnyGuestSpeaking()) {
             const activeIds = Array.from(this.activeGuests.keys());
             if (activeIds.length > 0) {
-                // Prioritize Master/Host if available
                 const masterId = activeIds.find(id => this.activeGuests.get(id)?.persona.isMaster);
                 const speakingId = masterId || activeIds[Math.floor(Math.random() * activeIds.length)];
-                
                 const affinity = this.relationshipManager.getViewerAffinity(data.userName);
                 let socialPrompt = `Thank you for the ${data.item.name}!`;
                 if (affinity > 0.7) socialPrompt = `Our legendary fan ${data.userName} just sent a ${data.item.name}! Give them a massive special shoutout!`;
@@ -871,23 +1008,11 @@ export class SyntheticGuestManager {
 
     private async handleViralPeakReaction(data: any) {
         if (this.isAnyGuestSpeaking()) return;
-
         const activeIds = Array.from(this.activeGuests.keys());
         if (activeIds.length === 0) return;
-
-        // Pick the master guest if available, else random
         const speakerId = activeIds.find(id => this.activeGuests.get(id)?.persona.isMaster) || activeIds[0];
-        const guest = this.activeGuests.get(speakerId)!;
-
-        console.log(`[VTuberProducer] Reaction to Peak: ${data.reason}`);
-
-        // AI Producer Vocal Response
-        const prompt = `That was an incredible moment! People are saying: "${data.reason}". announce that you are clipping this for the highlights! Be energetic and excited.`;
-        
-        await this.generateResponse(speakerId, prompt, { 
-            vibe: 'excited',
-            peakReason: data.reason
-        } as any);
+        const prompt = `That was an incredible moment! People are saying: "${data.reason}". announce that you are clipping this for the highlights!`;
+        await this.generateResponse(speakerId, prompt, { vibe: 'excited' } as any);
     }
 
     public async handleManualHighlight() {
@@ -917,10 +1042,7 @@ export class SyntheticGuestManager {
     private broadcastGroupMood(sourceId: string, emotion: string) {
         for (const [id, guest] of this.activeGuests.entries()) {
             if (id === sourceId || guest.isSpeaking) continue;
-            
-            // 30% chance to catch the vibe
             if (Math.random() > 0.7) {
-                console.log(`[VTuberSocial] ${guest.persona.name} caught the ${emotion} vibe from ${sourceId}`);
                 this.setEmotion(id, emotion);
             }
         }
@@ -932,8 +1054,74 @@ export class SyntheticGuestManager {
     public requestVisionSnapshot(guestId: string) {
         this.notifyWorker('vision:request_snapshot', { id: guestId });
     }
+
+    private notifyWorker(type: string, payload: any) {
+        window.dispatchEvent(new CustomEvent('studio-worker-command', { detail: { type, payload } }));
+    }
+
+    private startEngagementDecay() {
+        if (this.engagementDecayTimer) clearInterval(this.engagementDecayTimer);
+        this.engagementDecayTimer = setInterval(() => {
+            for (const [id, score] of this.guestEngagementScores.entries()) {
+                if (score > 0) {
+                    this.guestEngagementScores.set(id, Math.max(0, score - 0.5));
+                }
+            }
+        }, 10000); // Slow decay every 10s
+    }
+
+    private async handleAutonomousProductPitch(product: any, directive: string) {
+        const { ProductPitchService } = await import('./ProductPitchService');
+        const activeIds = Array.from(this.activeGuests.keys());
+        if (activeIds.length === 0) return;
+
+        // Pick a speaker (master guest or random)
+        const speakerId = activeIds.find(id => this.activeGuests.get(id)?.persona.isMaster) || activeIds[0];
+        
+        const pitch = ProductPitchService.generateScript({
+            product,
+            vibe: this.currentVibe || 'hype',
+            language: 'vi-VN'
+        });
+
+        console.log(`[VTuberManager] Autonomous Product Pitch for ${product.name}`);
+        await this.generateResponse(speakerId, `${directive} | SCRIPT: ${pitch}`, { vibe: 'hype' } as any);
+        
+        if (this.studioStore) {
+            this.studioStore.highlightProduct(product.id);
+        }
+    }
+
+    private async handleKnowledgeInjection(fact: string, directive: string) {
+        const activeIds = Array.from(this.activeGuests.keys());
+        if (activeIds.length === 0) return;
+
+        // Choose a guest with "SMART" or "CURIOSITY" traits if possible (simulated here with random)
+        const speakerId = activeIds[Math.floor(Math.random() * activeIds.length)];
+        
+        console.log(`[VTuberManager] Knowledge Injection Speaker choosing fact: ${fact.substring(0, 30)}...`);
+        
+        // Use standard response generation with the research directive
+        await this.generateResponse(speakerId, directive, { vibe: 'curious' } as any);
+    }
+
+    public evaluateCastPerformance(): string | null {
+        let lowestId: string | null = null;
+        let lowestScore = 101;
+
+        for (const [id, score] of this.guestEngagementScores.entries()) {
+            if (score < lowestScore) {
+                lowestScore = score;
+                lowestId = id;
+            }
+        }
+
+        // Only rotate if score is low enough (e.g. < 30) and we have more than 1 guest
+        if (lowestId && lowestScore < 30 && this.activeGuests.size > 1) {
+            return lowestId;
+        }
+        return null;
+    }
 }
-
-
 
 export const syntheticGuestManager = new SyntheticGuestManager();

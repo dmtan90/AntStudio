@@ -14,6 +14,12 @@
         </div>
         <div class="flex items-center gap-4">
           <button
+            @click="showAiGenerator = true"
+            class="px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl text-[10px] font-black uppercase text-purple-400 tracking-widest transition-all flex items-center gap-2">
+            <cpu theme="outline" size="14" />
+            {{ $t('studio.drawers.economy.manageAiAssets') || 'AI Assets' }}
+          </button>
+          <button
             class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase text-white/60 tracking-widest transition-all">
             {{ $t('studio.drawers.economy.syncStore') }}
           </button>
@@ -117,15 +123,18 @@
       </div>
     </template>
   </el-dialog>
+
+  <ProductContentGenerator v-model="showAiGenerator" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Close, Shopping, Lightning, Flashlamp, ShoppingCart, Share, PreviewOpen, DeleteOne as Trash, Check, Ranking } from '@icon-park/vue-next';
+import { Close, Shopping, Lightning, Flashlamp, ShoppingCart, Share, PreviewOpen, DeleteOne as Trash, Check, Ranking, Cpu } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
 import { useUIStore } from '@/stores/ui';
 import { toast } from 'vue-sonner';
+import ProductContentGenerator from '@/components/studio/modals/ProductContentGenerator.vue';
 
 const { t } = useI18n();
 
@@ -146,6 +155,7 @@ const isLive = ref(false);
 const activeTab = ref('products');
 const flashTimer = ref<any>(null);
 const flashTimeLeft = ref('00:00');
+const showAiGenerator = ref(false);
 
 const updateFlashTimer = () => {
   if (!studioStore.activeFlashSale) return;

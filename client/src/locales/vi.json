@@ -8,5 +8,28 @@
                 "videoUpdated": "Đã cập nhật video phôi"
             }
         }
+    },
+    "studio": {
+        "messages": {
+            "aiChoice": "AI Director: Đã chuyển cảnh sang {payload}",
+            "aiShowingInfoCard": "AI Director: Đang hiển thị thẻ thông tin",
+            "aiShowcasingProduct": "AI Director: Đang giới thiệu sản phẩm {name}",
+            "aiCelebration": "AI Director: Bắt đầu ăn mừng!",
+            "aiHighlight": "AI Director: Đã ghi lại một khoảnh khắc nổi bật!",
+            "aiVisualEffectsActive": "AI Director: Đang bật hiệu ứng hình ảnh nâng cao",
+            "aiCinematicCam": "AI Director: Đang áp dụng chuyển động camera {path}",
+            "aiAtmosphereChange": "AI Director: Đang thay đổi bầu không khí thành {effect}",
+            "aiGestureDrink": "AI Director: {name} đang uống nước",
+            "aiGesturePhone": "AI Director: {name} đang kiểm tra điện thoại",
+            "aiGestureLookAround": "AI Director: {name} đang quan sát xung quanh",
+            "aiAutonomyImpulse": "AI Director: {name} đã kích hoạt một hành động tự trị"
+        },
+        "virtual": {
+            "aiSuffix": "AI"
+        },
+        "godMode": {
+            "humanFreeMode": "CHẾ ĐỘ TỰ TRỊ (KHÔNG HOST)",
+            "humanFreeModeDesc": "Tắt webcam và mic của host. Show diễn hoàn toàn do VTuber AI tự điều khiển và tương tác để tiết kiệm tài nguyên."
+        }
     }
 }

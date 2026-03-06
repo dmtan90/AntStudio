@@ -60,16 +60,30 @@ export class StudioVibeAnalyzer {
     }
 
     private calculateMood(chatVelocity: number) {
+        const prevMood = this.state.mood;
+        
         if (this.state.energy > 0.8 || chatVelocity > 30) {
             this.state.mood = 'hype';
-        } else if (this.state.energy > 0.5 || chatVelocity > 15) {
-            this.state.mood = 'professional';
         } else if (this.state.sentiment < -0.4) {
             this.state.mood = 'tense';
         } else if (this.state.sentiment > 0.4) {
-            this.state.mood = 'chill'; // or 'happy' if we had it
+            this.state.mood = 'chill';
+        } else if (this.state.energy > 0.5 || chatVelocity > 15) {
+            this.state.mood = 'professional';
+        } else if (this.state.energy < 0.2 && chatVelocity < 5) {
+            this.state.mood = 'chill';
         } else {
             this.state.mood = 'chill';
+        }
+
+        if (prevMood !== this.state.mood) {
+            window.dispatchEvent(new CustomEvent('show:atmosphere_shift', { 
+                detail: { 
+                    mood: this.state.mood,
+                    sentiment: this.state.sentiment,
+                    energy: this.state.energy
+                } 
+            }));
         }
     }
 
