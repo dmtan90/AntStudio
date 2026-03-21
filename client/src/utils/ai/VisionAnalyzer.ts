@@ -44,9 +44,22 @@ export class VisionAnalyzer {
 
             // 1. Capture Frame as Base64
             const snapshot = canvas.toDataURL('image/jpeg', 0.7);
-            
+
             // 2. Send to Backend Vision API
-            const prompt = "Analyze this live stream frame. Identify any products being shown or held by the host. Return a JSON list of identified objects with names and short descriptions.";
+            const studioStore = useStudioStore();
+            const context = studioStore.streamingContext;
+
+            let prompt = "Analyze this live stream frame. Identify any products being shown or held by the host. Return a JSON list of identified objects with names and short descriptions.";
+            
+            if (context === 'game_streaming') {
+                prompt = "Analyze this gameplay frame. Identify the game, key items on screen, current score or status, and any notable events. Focus on reacting to the game state.";
+            } else if (context === 'sport') {
+                prompt = "Analyze this sports broadcast frame. Identify the sport, teams/players, current score, and game clock. Focus on providing tactical commentary.";
+            } else if (context === 'sales') {
+                prompt = "Analyze this shopping stream. Identify products, prices, and host gestures towards items. Focus on sales conversion opportunities.";
+            } else if (context === 'talkshow' || context === 'commentary') {
+                prompt = "Analyze the people and their expressions in this frame. Identify the emotional vibe and topics being discussed visually.";
+            }
             
             const res = await api.post('/ai/vision/analyze', {
                 image: snapshot,

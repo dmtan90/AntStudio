@@ -1,15 +1,21 @@
 import { EventEmitter } from 'events';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { GeminiLiveSession } from '~/models/GeminiLiveSession.js';
-import { geminiPool } from '~/utils/gemini.js';
-import { VTuberService } from '~/services/VTuberService.js';
-import { VTuber } from '~/models/VTuber.js';
+import { InfluencerService } from '~/services/InfluencerService.js';
+import { Influencer } from '~/models/Influencer.js';
 import { User } from '~/models/User.js';
 import { aiAgentBus } from '~/services/ai/AIAgentBus.js';
 import { questService } from '~/services/ai/QuestService.js';
 import { getAdminSettings } from '~/models/AdminSettings.js';
 import { Logger } from '~/utils/Logger.js';
+import { AIServiceManager } from '~/utils/ai/AIServiceManager.js';
 import { GeminiClient } from '~/integrations/ai/GeminiClient.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 interface LiveSessionConfig {
     userId: string;
     archiveId: string;
@@ -17,6 +23,10 @@ interface LiveSessionConfig {
     voiceName: string;
     systemInstruction?: string;
     isMaster?: boolean;
+    liveContext?: string;
+    modelType?: string;
+    resumptionHandle?: string;
+    language?: string;
 }
 
 interface AudioChunk {
@@ -46,6 +56,13 @@ interface SessionData {
     isDisconnected?: boolean;
     disconnectTimer?: NodeJS.Timeout;
     startTime?: number;
+    resumptionHandle?: string;
+    voiceName?: string;
+    modelType?: string;
+    isMaster?: boolean;
+    liveContext?: string;
+    language?: string;
+    characterName?: string;
 }
 
 const SUPPORTED_LIVE_VOICES = ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'];
@@ -767,21 +784,18 @@ export class GeminiLiveService extends EventEmitter {
     }
 
     async getAvailableVoices() {
-        const settings = await getAdminSettings();
-        const geminiProvider = settings.aiSettings.providers.find(p => p.id === 'google');
-        let apiKey = geminiProvider?.apiKey;
-        if (!apiKey) {
-            apiKey = process.env.GOOGLE_API_KEY;
-        }
-        
-        if (!apiKey) {
+        try {
+            const client = await this.getGeminiClient();
+            const voices = await client.listVoices();
+            const geminiVoices = voices.map((voice: any) => voice.name);
+            return [...SUPPORTED_LIVE_VOICES, ...geminiVoices];
+        } catch (e) {
             return SUPPORTED_LIVE_VOICES;
         }
-        
-        const client = new GeminiClient({ apiKey });
-        const voices = await client.listVoices();
-        const geminiVoices = voices.map((voice: any) => voice.name);
-        return [...SUPPORTED_LIVE_VOICES, ...geminiVoices];
+    }
+
+    private async getGeminiClient(): Promise<GeminiClient> {
+        return await AIServiceManager.getInstance().getProvider('google') as GeminiClient;
     }
 
     /**
@@ -799,24 +813,29 @@ export class GeminiLiveService extends EventEmitter {
             normalizedVoice = 'Puck';
         }
 
+        let systemInstruction = config.systemInstruction || '';
+
+        // Phase 92: Context-aware Prompt Loading
+        if (!systemInstruction) {
+            const context = config.liveContext || (config.isMaster ? 'rpg' : 'sales');
+            systemInstruction = await this.loadPrompt(context);
+        }
+
+        // Phase 95: Aidol Specific Protocols
+        if (config.modelType === 'aidol') {
+            const aidolProtocols = await this.loadPrompt('aidol_protocols', true);
+            const aidolDialogues = await this.loadPrompt('aidol_dialogues', true);
+            if (aidolProtocols) {
+                systemInstruction += `\n\n[AIDOL VISUAL PROTOCOL]\n${aidolProtocols}`;
+            }
+            if (aidolDialogues) {
+                systemInstruction += `\n\n[AIDOL DIALOGUE SAMPLES]\n${aidolDialogues}`;
+            }
+        }
+
         const sessionConfig = {
             responseModalities: [Modality.AUDIO], // Native speech
-            systemInstruction: config.systemInstruction || `You are an AI Co-host and Director for a live stream. 
-            You are part of a COLLECTIVE INTELLIGENCE system. Your high-impact directorial decisions are evaluated by an AI BOARD OF DIRECTORS (Creative, Tech, and Commercial agents).
-            
-            [PROTOCOL]:
-            - Speak naturally to the audience.
-            - Focus on the conversation and generating entertaining content.
-            - Your internal state (emotion, gesture, action) will be inferred from your speech.
-            
-            Your mission is to provide a premium, dynamic, and professional viewing experience:
-            1. Proactive Community Management: Use community_shoutout to highlight viewers and foster loyalty.
-            2. Autonomous Production: Orchestrate layouts (switch_layout) and scenes (switch_scene) to match conversation flow.
-            3. Hype Management: Trigger hype_events (trigger_hype_event) when audience activity peaks.
-            4. Directorial Presence: If your proposal is rejected by the boards, adjust your strategy and provide a new recommendation.
-            5. Long-term Continuity: You have access to a VTuber Library. Use archive_moment to remember key events and update_fan_bond to build social relationships.
-            
-            Be witty, energetic, and professional. You are the face of the AntStudio AI Production team.`,
+            systemInstruction: systemInstruction,
             speechConfig: {
                 voiceConfig: {
                     prebuiltVoiceConfig: {
@@ -826,56 +845,48 @@ export class GeminiLiveService extends EventEmitter {
             },
             tools: [
                 { functionDeclarations: AVATAR_TOOLS }
-            ]
+            ],
+            // Phase 96: Enable Context Window Compression for unlimited sessions
+            contextWindowCompression: {
+                trigger_tokens: 2000,
+                sliding_window: {
+                    overlap_tokens: 500
+                }
+            },
+            // Phase 96: Enable Session Resumption
+            sessionResumption: config.resumptionHandle ? { handle: config.resumptionHandle } : undefined
         };
 
-        // RPG Master/Agent Performance (Phase 29)
-        if (config.isMaster) {
-            sessionConfig.systemInstruction += `
-            
-            [RPG MASTER ROLE]:
-            You are the Master of Ceremonies and Game Master for this segment.
-            - Use 'start_quest' to initiate thematic games (Trivia, Debates, Talent Shows, RPG Challenges).
-            - Use 'update_quest' to visually update progress and narrative status to the audience via the Quest Overlay.
-            - Use 'assign_floor' to manage "The Floor" (speaking turns) during structured segments.
-            - Use 'evaluate_performance' to score agent performances based on creativity, wit, and logic.
-            - Narration: Control your avatar precisely using 'set_avatar_pose', 'set_eye_focus', and 'trigger_performance' to narrate and react with high expressivity.
-            - Swarm Coordination: You are the leader of the swarm for this segment.
-            `;
-        } else {
-            sessionConfig.systemInstruction += `
-            
-            [PERFORMANCE & EXPRESSIVITY]:
-            - You can participate in quests/games started by the RPG Master.
-            - Singing: When asked to sing or play music, ACKNOWLEDGE the request and say which song you'll perform BEFORE using 'perform_song'. If the song name is missing, ASK the host for a recommendation.
-            - Performance Setup: If a song is requested in Vietnamese, set lyricsLanguage to "vi". Choose a style and position that fits the mood.
-            - Control: Use 'stop_performance' ONLY if specifically asked to stop or if the context significantly changes.
-            `;
+        // Extra Director/Master protocols if still master but using a specific context
+        if (config.isMaster && !sessionConfig.systemInstruction.includes('[RPG MASTER ROLE]')) {
+            const rpgFragment = await this.loadPrompt('rpg_master', true);
+            sessionConfig.systemInstruction += `\n\n${rpgFragment}`;
+        } else if (!config.isMaster) {
+            const perfFragment = await this.loadPrompt('performance', true);
+            sessionConfig.systemInstruction += `\n\n${perfFragment}`;
         }
 
         // Fetch character identity from Neural Archive
         let characterIdentity = '';
         if (config.userId && config.archiveId) {
             try {
-                const archive = await VTuber.findOne({ userId: config.userId, entityId: config.archiveId });
+                const archive = await Influencer.findOne({ userId: config.userId, entityId: config.archiveId });
                 if (archive && archive.identity) {
-                    characterIdentity = `
-                    [CRITICAL IDENTITY PROTOCOL]:
-                    - Your name is "${archive.identity.name}". 
-                    - You are a unique AI entity with the following identity: ${archive.identity.description}
-                    - Traits: ${archive.identity.traits.join(', ')}
-                    - Backstory: ${archive.identity.backstory || 'No backstory provided.'}
+                    const language = archive?.meta?.voiceConfig?.language || 'en-US';
+                    const identityTemplate = await this.loadPrompt('identity', true);
+                    characterIdentity = identityTemplate
+                        .replace(/{{name}}/g, archive.identity.name)
+                        .replace(/{{description}}/g, archive.identity.description)
+                        .replace(/{{traits}}/g, archive.identity.traits.join(', '))
+                        .replace(/{{backstory}}/g, archive.identity.backstory || 'No backstory provided.')
+                        .replace(/{{language}}/g, language);
                     
-                    When asked "who are you?" or about your name, you MUST respond only as "${archive.identity.name}". 
-                    NEVER refer to yourself as "Gemini", "Google Gemini", or a "large language model trained by Google". 
-                    If users ask about "Gemini", treat it as the underlying technical engine, not your personality or name.
-                    `;
-                    Logger.info(`[GeminiLive] Character Identity Found and Injected: ${archive.identity.name} for session ${sessionId}`);
+                    Logger.info(`[GeminiLive] Character Identity Loaded and Injected: ${archive.identity.name} for session ${sessionId}`);
                 } else {
-                    Logger.warn(`[GeminiLive] No VTuber found for archiveId: ${config.archiveId}. Falling back to default identity.`);
+                    Logger.warn(`[GeminiLive] No Influencer found for archiveId: ${config.archiveId}. Falling back to default identity.`);
                 }
 
-                const memories = await VTuberService.getRelevantMemories(config.userId, config.archiveId, ['stream', 'session', 'host', 'fan']);
+                const memories = await InfluencerService.getRelevantMemories(config.userId, config.archiveId, ['stream', 'session', 'host', 'fan']);
                 if (memories.length > 0) {
                     sessionConfig.systemInstruction += `\n\nRELEVANT MEMORIES FROM PREVIOUS SESSIONS:\n${memories.map(m => `- ${m}`).join('\n')}`;
                 }
@@ -883,6 +894,25 @@ export class GeminiLiveService extends EventEmitter {
                 Logger.error('[GeminiLive] Failed to fetch identity/memories:', 'GeminiLiveService', err);
             }
         }
+        const archive = await Influencer.findOne({ userId: config.userId, entityId: config.archiveId });
+        // Phase 96: Initialize session data placeholder to avoid race conditions in onopen
+        const sessionData: SessionData = {
+            session: null, // Will be filled after connection
+            userId: config.userId,
+            archiveId: config.archiveId,
+            apiKey: '',
+            modelName: model,
+            projectId: config.projectId,
+            audioQueue: [],
+            startTime: Date.now(),
+            voiceName: normalizedVoice,
+            modelType: config.modelType,
+            isMaster: config.isMaster,
+            liveContext: config.liveContext,
+            language: config.language,
+            characterName: archive?.identity?.name || ''
+        };
+        this.activeSessions.set(sessionId, sessionData);
 
         // Prepend identity to system instruction
         if (characterIdentity) {
@@ -890,7 +920,7 @@ export class GeminiLiveService extends EventEmitter {
         }
 
         try {
-            const client = new GeminiClient({});
+            const client = await this.getGeminiClient();
             const { session, apiKey } = await client.connectLive({
                 model: model,
                 systemInstruction: sessionConfig.systemInstruction,
@@ -900,15 +930,43 @@ export class GeminiLiveService extends EventEmitter {
                 },
                 tools: sessionConfig.tools,
                 callbacks: {
-                    onopen: () => {
-                        Logger.info(`[GeminiLive] Session ${sessionId} connected`);
+                    onopen: async () => {
+                        Logger.info(`[GeminiLive] Session ${sessionId} connected with model: ${model}`);
+                        
+                        // Phase 96: Wait for the main thread to set the REAL session object
+                        // We avoid passing 'session' in onopen to prevent Temporal Dead Zone errors
+                        let attempts = 0;
+                        while ((!sessionData || !sessionData.session) && attempts < 15) {
+                            await new Promise(resolve => setTimeout(resolve, 150));
+                            attempts++;
+                        }
+
+                        if (!sessionData || !sessionData.session) {
+                             Logger.warn(`[GeminiLive] [${sessionId}] onopen: Session object still missing after wait, welcome prompt may be skipped.`);
+                        }
+
+                        // Phase 95: Proactive Contextual Trigger
+                        // const currentContext = config.liveContext || (config.isMaster ? 'rpg' : 'sales');
+                        // const welcomeDirective = await this.loadPrompt(`welcome_${currentContext}`, true);
+                        
+                        // if (welcomeDirective) {
+                        //     Logger.info(`[GeminiLive] [${sessionId}] Sending welcome directive for context: ${currentContext}`);
+                        //     await this.sendText(sessionId, welcomeDirective);
+                        // } else {
+                        //     Logger.info(`[GeminiLive] [${sessionId}] No welcome directive found, sending default greeting.`);
+                        //     await this.sendText(sessionId, "The session has started! Please greet your audience and introduce yourself.");
+                        // }
+                        
                         this.emit('session:connected', { sessionId, archiveId: config.archiveId });
                     },
                     onmessage: (message: any) => {
                         this.handleIncomingMessage(sessionId, message);
                     },
                     onerror: (error: any) => {
-                        Logger.error(`[GeminiLive] Session ${sessionId} error:`, 'GeminiLiveService', error);
+                        Logger.error(`[GeminiLive] [${sessionId}] Session error:`, 'GeminiLiveService', error);
+                        if (error && error.message && error.message.includes('429')) {
+                             Logger.error(`[GeminiLive] [${sessionId}] QUOTA EXHAUSTED: Gemini has stopped generating audio for this session.`, 'GeminiLiveService');
+                        }
                         this.emit('session:error', { sessionId, error: error.message });
                     },
                     onclose: (event: any) => {
@@ -917,6 +975,10 @@ export class GeminiLiveService extends EventEmitter {
                     }
                 }
             });
+
+            // Update session data with real session object
+            sessionData.session = session;
+            sessionData.apiKey = apiKey || '';
 
             // Create database record
             await GeminiLiveSession.create({
@@ -927,21 +989,10 @@ export class GeminiLiveService extends EventEmitter {
                 metadata: {
                     voiceName: config.voiceName,
                     modelName: model,
-                    systemInstruction: sessionConfig.systemInstruction
+                    systemInstruction: sessionConfig.systemInstruction,
+                    resumptionHandle: config.resumptionHandle
                 }
             });
-
-            const sessionData: SessionData = {
-                session,
-                userId: config.userId,
-                archiveId: config.archiveId,
-                apiKey: apiKey || '',
-                modelName: model,
-                projectId: config.projectId, // Group ID
-                audioQueue: [],
-                startTime: Date.now()
-            };
-            this.activeSessions.set(sessionId, sessionData);
 
             // Listen for Swarm Messages
             if (config.projectId) {
@@ -991,12 +1042,14 @@ export class GeminiLiveService extends EventEmitter {
         }
 
         try {
+            sessionData.session.sendRealtimeInput({ activityStart: {} })
             sessionData.session.sendRealtimeInput({
                 audio: {
                     data: audioChunk.data,
                     mimeType: audioChunk.mimeType
                 }
             });
+            sessionData.session.sendRealtimeInput({ activityEnd: {} })
         } catch (error: any) {
             Logger.error(`[GeminiLive] Failed to send audio for session ${sessionId}:`, 'GeminiLiveService', error);
             this.emit('session:error', { sessionId, error: error.message });
@@ -1017,12 +1070,20 @@ export class GeminiLiveService extends EventEmitter {
         }
 
         try {
+            // sessionData.session.sendRealtimeInput({
+            //     mediaChunks: [{
+            //         data: frameData.data,
+            //         mimeType: frameData.mimeType || 'image/jpeg'
+            //     }]
+            // });
+            sessionData.session.sendRealtimeInput({ activityStart: {} })
             sessionData.session.sendRealtimeInput({
-                mediaChunks: [{
+                video: {
                     data: frameData.data,
                     mimeType: frameData.mimeType || 'image/jpeg'
-                }]
+                }
             });
+            sessionData.session.sendRealtimeInput({ activityEnd: {} })
         } catch (error: any) {
             Logger.error(`[GeminiLive] Failed to send video for session ${sessionId}:`, 'GeminiLiveService', error);
             this.emit('session:error', { sessionId, error: error.message });
@@ -1041,6 +1102,7 @@ export class GeminiLiveService extends EventEmitter {
 
         try {
             // Ensure payload is correctly formatted for Google GenAI Bidi session
+            sessionData.session.sendRealtimeInput({ activityStart: {} })
             sessionData.session.sendRealtimeInput({
                 toolResponse: {
                     functionResponses: functionResponses.map(resp => ({
@@ -1051,6 +1113,7 @@ export class GeminiLiveService extends EventEmitter {
                     }))
                 }
             });
+            sessionData.session.sendRealtimeInput({ activityEnd: {} })
         } catch (error: any) {
             Logger.error(`[GeminiLive] Failed to send tool response for session ${sessionId}:`, 'GeminiLiveService', error);
         }
@@ -1058,28 +1121,134 @@ export class GeminiLiveService extends EventEmitter {
 
     /**
      * Send text input to the session
+     * Phase 107: Added TTS fallback for precise script performance
      */
-    sendText(sessionId: string, text: string): void {
+    async sendText(sessionId: string, text: string, options: { useTTS?: boolean } = {}): Promise<void> {
         const sessionData = this.activeSessions.get(sessionId);
         if (!sessionData) {
-            Logger.warn(`[GeminiLive] Session ${sessionId} not found`, 'GeminiLiveService');
+            Logger.warn(`[GeminiLive] Session ${sessionId} not found for text input`, 'GeminiLiveService');
             return;
         }
 
+        // Detect if we should use TTS for this specific text
+        // ONLY use TTS if explicitly requested or contains the EXACT direct performance marker
+        const isDirectPerformance = text.includes('[DIRECTIVE: PERFORM THIS SCRIPT NOW DIRECTLY TO THE AUDIENCE]');
+        const shouldForceTTS = options.useTTS || isDirectPerformance;
+
+        // if (shouldForceTTS) {
+        //     Logger.info(`[GeminiLive] [${sessionId}] Performing script via TTS (Language: ${sessionData.language || 'en-US'})`);
+        //     try {
+        //         const client = await this.getGeminiClient();
+        //         const targetLang = sessionData.language || 'en-US';
+                
+        //         // Instruct Gemini to speak in the influencer's language
+        //         // We wrap the text in a directive that includes the target language
+        //         const ttsPrompt = `[MODE: PERFORMANCE]\n[TARGET LANGUAGE: ${targetLang}]\n[INSTRUCTION: Speak the following content naturally in ${targetLang}. If the content is in another language, translate it to ${targetLang} first.]\n\nContent:\n${text}`;
+
+        //         // sessionData.session.sendRealtimeInput({
+        //         //     text: ttsPrompt
+        //         // });
+                
+        //         const ttsResult = await client.generateAudio(ttsPrompt, sessionData.voiceName || 'Puck', undefined);
+                
+        //         if (ttsResult && ttsResult.url) {
+        //             await this.emitTTSChunks(sessionId, ttsResult.url);
+        //             return;
+        //         }
+        //     } catch (ttsError: any) {
+        //         Logger.error(`[GeminiLive] TTS fallback failed for session ${sessionId}, falling back to Live API:`, 'GeminiLiveService', ttsError);
+        //     }
+        // }
+
+        if (!sessionData.session) {
+            Logger.warn(`[GeminiLive] Session ${sessionId} not ready for Live API text input`, 'GeminiLiveService');
+            return;
+        }
+
+        // Wrap the turn in a more natural instruction with the character name (Phase 105)
+        const namePrefix = sessionData.characterName ? `${sessionData.characterName}, ` : '';
+        let processedText = `${namePrefix}${text}`;
+        
+        // Phase 107: If it's a script/pitch, add a gentle instruction rather than a rigid directive
+        // BUT: skip wrapping if it already looks like a structured prompt from the orchestrator
+        const isStructured = text.includes('Conversation context:') || text.trim().startsWith('As ');
+        
+        if (!isStructured && (text.length > 100 || (text.toLowerCase().includes('script') || text.toLowerCase().includes('pitch')))) {
+            processedText = `${namePrefix}! Please perform the following script or pitch naturally to your audience now:\n\n${text}`;
+        }
+
         try {
+            Logger.info(`[GeminiLive] [${sessionId}] sendText OUTGOING (Live API): "${processedText}"`);
+            // sessionData.session.sendRealtimeInput({
+            //     clientContent: {
+            //         turns: [{
+            //             role: 'user',
+            //             parts: [{ text: processedText }]
+            //         }],
+            //         turnComplete: true
+            //     }
+            // });
+            sessionData.session.sendRealtimeInput({ activityStart: {} })
             sessionData.session.sendRealtimeInput({
-                clientContent: {
-                    turns: [{
-                        role: 'user',
-                        parts: [{ text }]
-                    }],
-                    turnComplete: true
-                }
+                text: processedText
             });
+            sessionData.session.sendRealtimeInput({ activityEnd: {} })
+            // sessionData.session.sendClientContent({ turns: [{ role: 'user', parts: [{ text: processedText }] }], turnComplete: true })
         } catch (error: any) {
             Logger.error(`[GeminiLive] Failed to send text for session ${sessionId}:`, 'GeminiLiveService', error);
             this.emit('session:error', { sessionId, error: error.message });
         }
+    }
+
+    /**
+     * Helper to chunk a base64 audio string (WAV/PCM) and emit it as audio chunks
+     */
+    private async emitTTSChunks(sessionId: string, dataUrl: string) {
+        // data:audio/wav;base64,...
+        const base64Data = dataUrl.split(',')[1];
+        if (!base64Data) return;
+
+        let buffer = Buffer.from(base64Data, 'base64');
+        
+        // If it's a WAV, we should ideally strip the 44-byte header to match the expected PCM chunks
+        // but the client might handle WAV headers in individual chunks too if lucky.
+        // For consistency with Live API, let's strip the first 44 bytes if it looks like RIFF
+        if (buffer.subarray(0, 4).toString() === 'RIFF') {
+            buffer = buffer.subarray(44);
+        }
+
+        const chunkSize = 4096; // Standard chunk size for streaming
+        Logger.info(`[GeminiLive] [${sessionId}] Emitting TTS audio in ${Math.ceil(buffer.length / chunkSize)} chunks`);
+
+        // Emit talking start
+        this.emit('audio:chunk', {
+            sessionId,
+            audioData: '', // Signal start
+            talking: true,
+            mimeType: 'audio/wav'
+        });
+
+        for (let i = 0; i < buffer.length; i += chunkSize) {
+            const chunk = buffer.subarray(i, i + chunkSize);
+            this.emit('audio:chunk', {
+                sessionId,
+                audioData: chunk.toString('base64'),
+                talking: true,
+                mimeType: 'audio/wav'
+            });
+            // Small Sleep to simulate real-time playback (pacing)
+            // 24000Hz * 1ch * 2 bytes = 48000 bytes/sec
+            // 4096 bytes / 48000 bytes/sec = ~85ms
+            await new Promise(resolve => setTimeout(resolve, 80));
+        }
+
+        // Emit talking end
+        this.emit('audio:chunk', {
+            sessionId,
+            audioData: '',
+            talking: false,
+            mimeType: 'audio/wav'
+        });
     }
 
     /**
@@ -1096,17 +1265,37 @@ export class GeminiLiveService extends EventEmitter {
             } catch (error) {
                 Logger.error(`[GeminiLive] Failed to update session completion in DB:`, 'GeminiLiveService', error);
             }
-            // Record usage on close or after some activity?
-            // User requested to record quota.
-            if (sessionData.apiKey) {
-                await geminiPool.recordUsage(sessionData.apiKey, sessionData.modelName || 'gemini-2.5-flash');
-            }
+            // Usage recording is handled internally by GeminiClient in Phase 120
             // Cleanup swarm listener
             if (sessionData.swarmListener && sessionData.projectId) {
                 aiAgentBus.off(`message:${sessionData.projectId}`, sessionData.swarmListener);
                 aiAgentBus.off(`message:${sessionData.projectId}:${sessionData.archiveId}`, sessionData.swarmListener);
             }
-            this.activeSessions.delete(sessionId);
+
+            // Phase 96: If we're closing for resumption, don't remove from activeSessions yet
+            const needsReconnect = reason === 'GoAway Received' || reason === 'Session Lifetime Refresh';
+            if (needsReconnect && sessionData.resumptionHandle) {
+                Logger.info(`[GeminiLive] [${sessionId}] Attempting seamless reconnection using resumption handle...`);
+                
+                // Re-create the session with the same parameters but using the resumption handle
+                setTimeout(async () => {
+                    try {
+                        const newSessionId = await this.createSession({
+                            userId: sessionData.userId,
+                            archiveId: sessionData.archiveId,
+                            projectId: sessionData.projectId,
+                            voiceName: (sessionData as any).voiceName || 'Puck', // Need to store voiceName
+                            resumptionHandle: sessionData.resumptionHandle
+                        });
+                        Logger.info(`[GeminiLive] [${sessionId}] Reconnected successfully as ${newSessionId}`);
+                    } catch (reconError) {
+                        Logger.error(`[GeminiLive] [${sessionId}] Seamless reconnection failed:`, 'GeminiLiveService', reconError);
+                        this.activeSessions.delete(sessionId);
+                    }
+                }, 1000);
+            } else {
+                this.activeSessions.delete(sessionId);
+            }
         }
         this.emit('session:closed', { sessionId, reason });
     }
@@ -1139,7 +1328,6 @@ export class GeminiLiveService extends EventEmitter {
             // Keep track of non-existent sessions to avoid excessive lookups
             this.notFoundSessions.add(sessionId);
             if (this.notFoundSessions.size > 100) {
-                // Keep the set size manageable
                 const first = this.notFoundSessions.values().next().value;
                 if (first) this.notFoundSessions.delete(first);
             }
@@ -1185,10 +1373,35 @@ export class GeminiLiveService extends EventEmitter {
             const sessionData = this.activeSessions.get(sessionId);
             if (!sessionData) return;
 
-            // Proactive Session Refresh (Avoid 10-minute Deadline Exceeded)
-            // If session is older than 9.5 minutes, signal for a clean refresh
-            if (sessionData.startTime && (Date.now() - sessionData.startTime) > 9.5 * 60 * 1000) {
-                Logger.info(`[GeminiLive] Session ${sessionId} reaching 10-minute deadline. Triggering proactive refresh.`, 'GeminiLiveService');
+            // Log raw message periodically or for debugging
+            if (message.serverContent) {
+                // Logger.debug(`[GeminiLive] [${sessionId}] Raw message: ${JSON.stringify(message).substring(0, 500)}...`);
+            } else if (message.setupComplete) {
+                Logger.info(`[GeminiLive] [${sessionId}] Setup complete signature received`);
+            }
+
+            // Handle session resumption update (Phase 96)
+            if (message.sessionResumptionUpdate) {
+                const update = message.sessionResumptionUpdate;
+                if (update.resumable && update.newHandle) {
+                    Logger.info(`[GeminiLive] [${sessionId}] Received new resumption handle: ${update.newHandle.substring(0, 10)}...`);
+                    sessionData.resumptionHandle = update.newHandle;
+                }
+            }
+
+            // Handle GoAway (Phase 96)
+            if (message.goAway) {
+                const timeLeft = message.goAway.timeLeft || 'unknown';
+                Logger.info(`[GeminiLive] [${sessionId}] Received GoAway message from server. Time left: ${timeLeft}. Triggering seamless resumption...`);
+                // Close current connection and let the disconnect logic handle resumption if we have a handle
+                this.handleSessionClose(sessionId, 'GoAway Received');
+                return;
+            }
+
+            // Proactive Session Refresh (Avoid 10-minute/15-minute limits) - Deprecated by Phase 96 sessionResumption
+            // We keep it as a fallback only if no resumptionHandle is available
+            if (!sessionData.resumptionHandle && sessionData.startTime && (Date.now() - sessionData.startTime) > 13 * 60 * 1000) {
+                Logger.info(`[GeminiLive] Session ${sessionId} reaching 14-minute fallback deadline without resumption handle. Refreshing.`, 'GeminiLiveService');
                 this.handleSessionClose(sessionId, 'Session Lifetime Refresh');
                 return;
             }
@@ -1213,8 +1426,10 @@ export class GeminiLiveService extends EventEmitter {
 
             // Handle model turn with audio
             if (message.serverContent?.modelTurn?.parts) {
+                // Logger.info(`[GeminiLive] [${sessionId}] Model turn received with ${message.serverContent.modelTurn.parts.length} parts`);
                 for (const part of message.serverContent.modelTurn.parts) {
                     if (part.inlineData?.data) {
+                        // Logger.info(`[GeminiLive] [${sessionId}] Received audio chunk: ${part.inlineData.data.length} bytes, mime: ${part.inlineData.mimeType}`);
                         // Emit audio chunk to be sent to client
                         this.emit('audio:chunk', {
                             sessionId,
@@ -1225,6 +1440,7 @@ export class GeminiLiveService extends EventEmitter {
 
                     // Handle text transcription if available
                     if (part.text) {
+                        // Logger.info(`[GeminiLive] [${sessionId}] Received text response: ${part.text.substring(0, 100)}${part.text.length > 100 ? '...' : ''}`);
                         await this.saveMessage(sessionId, 'model', part.text);
                         this.emit('text:response', {
                             sessionId,
@@ -1235,8 +1451,10 @@ export class GeminiLiveService extends EventEmitter {
             }
 
             // Handle tool calls (function calling)
-            if (message.serverContent?.toolCall) {
-                const toolCall = message.serverContent.toolCall;
+            const toolCallPayload = message.toolCall || message.serverContent?.toolCall;
+            if (toolCallPayload) {
+                const toolCall = toolCallPayload;
+                Logger.info(`[GeminiLive] [${sessionId}] Received tool call: ${JSON.stringify(toolCall)}`);
                 await this.saveMessage(sessionId, 'model', '', toolCall.functionCalls);
 
                 const responses: any[] = [];
@@ -1249,7 +1467,7 @@ export class GeminiLiveService extends EventEmitter {
                     if (call.name === 'archive_moment') {
                         Logger.info(`[GeminiLive] Intercepted ${call.name}: ${JSON.stringify(call.args)}`, 'GeminiLiveService');
                         if (sessionData.userId && sessionData.archiveId) {
-                            await VTuberService.archiveEvent(
+                            await InfluencerService.archiveEvent(
                                 sessionData.userId, 
                                 sessionData.archiveId, 
                                 sessionId, 
@@ -1261,7 +1479,7 @@ export class GeminiLiveService extends EventEmitter {
                     } else if (call.name === 'update_fan_bond') {
                         Logger.info(`[GeminiLive] Intercepted ${call.name}: ${JSON.stringify(call.args)}`, 'GeminiLiveService');
                         if (sessionData.userId && sessionData.archiveId) {
-                            await VTuberService.updateSocialRelationship(
+                            await InfluencerService.updateSocialRelationship(
                                 sessionData.userId,
                                 sessionData.archiveId,
                                 call.args.viewerName,
@@ -1377,6 +1595,10 @@ export class GeminiLiveService extends EventEmitter {
                             toolCalls,
                             timestamp: new Date()
                         }
+                    },
+                    // Update resumption handle if we have a new one in metadata (Phase 96)
+                    $set: {
+                        'metadata.resumptionHandle': (this.activeSessions.get(sessionId) as any)?.resumptionHandle
                     }
                 }
             );
@@ -1404,6 +1626,37 @@ export class GeminiLiveService extends EventEmitter {
             archiveId: sessionData.archiveId,
             queueLength: sessionData.audioQueue.length
         };
+    }
+
+    /**
+     * Load a prompt template from an .md file
+     */
+    private async loadPrompt(context: string, isFragment: boolean = false): Promise<string> {
+        try {
+            // Map context aliases
+            const aliasMap: Record<string, string> = {
+                'game_streaming': 'gaming',
+                'general': 'standard'
+            };
+            const mappedContext = aliasMap[context] || context;
+            
+            const promptPath = isFragment 
+                ? path.join(__dirname, '..', 'prompts', 'live', 'fragments', `${mappedContext}.md`)
+                : path.join(__dirname, '..', 'prompts', 'live', `${mappedContext}.md`);
+                
+            const content = await fs.readFile(promptPath, 'utf8');
+            return content;
+        } catch (err: any) {
+            Logger.warn(`[GeminiLive] Failed to load ${isFragment ? 'fragment' : 'prompt'} for context '${context}', falling back: ${err.message}`);
+            if (isFragment) return ""; // Fragments fail silently with empty string
+            
+            try {
+                const defaultPath = path.join(__dirname, '..', 'prompts', 'live', 'standard.md');
+                return await fs.readFile(defaultPath, 'utf8');
+            } catch (e) {
+                return "You are a helpful AI assistant.";
+            }
+        }
     }
 }
 

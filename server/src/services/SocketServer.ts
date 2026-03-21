@@ -15,6 +15,7 @@ import { virtualEconomyService } from './economy/VirtualEconomyService.js';
 import { analyticsService } from './analytics/AnalyticsService.js';
 import { autoDirectorService } from './ai/AutoDirectorService.js';
 import { Logger } from '../utils/Logger.js';
+import { tiktokLiveService } from './social/TikTokLiveService.js';
 
 const SOCKET_PORT = process.env.SOCKET_PORT || 4001;
 
@@ -62,6 +63,13 @@ export class SocketServer {
         // Chat and engagement sync workers will be started on-demand when sessions go live
 
         Logger.info(`🚀 [SocketServer] Unified Socket.io running at /socket.io port ${SOCKET_PORT}`);
+    }
+
+    /**
+     * Get the underlying socket.io server instance.
+     */
+    public getIO(): Server | null {
+        return this.io;
     }
 
     /**
@@ -456,10 +464,6 @@ export class SocketServer {
         return this.userSockets.has(userId);
     }
 
-    public getIO() {
-        return this.io;
-    }
-
     /** Internal service listeners & workers **/
 
     private setupServiceListeners() {
@@ -484,6 +488,8 @@ export class SocketServer {
         geminiLiveService.on('session:error', (data) => this.io?.to(data.sessionId).emit('ai:error', data));
     }
 
+    private chatSyncLock: boolean = false;
+
     /**
      * Starts the chat sync worker if not already running.
      * Only polls when there are active live sessions.
@@ -497,7 +503,8 @@ export class SocketServer {
 
         Logger.info('[ChatSync] Starting chat sync worker', 'SocketServer');
         this.chatSyncInterval = setInterval(async () => {
-            if (!this.io) return;
+            if (!this.io || this.chatSyncLock) return;
+            this.chatSyncLock = true;
             try {
                 const activeSessions = await StreamSessionModel.find({
                     status: 'live',
@@ -537,7 +544,8 @@ export class SocketServer {
 
                             // Set next allowed poll time (Default to 15s for YouTube if not provided, 8s for others)
                             const defaultDelay = account.platform === 'youtube' ? 15000 : 8000;
-                            const delay = pollingIntervalMillis || defaultDelay;
+                            // Add a small 200ms padding to pollingIntervalMillis to ensure we don't accidentally overstep YouTube limits
+                            const delay = (pollingIntervalMillis ? pollingIntervalMillis + 200 : defaultDelay);
                             this.chatNextPollTimes.set(tokenKey, now + delay);
 
                             // Detect Offline/Stale Chat for YouTube
@@ -576,6 +584,13 @@ export class SocketServer {
                                     messages
                                 });
                             }
+
+                            // Phase 15: Step 3 - Real-time TikTok WebSocket Sync
+                            // If TikTok target found, ensure WebSocket connection is active instead of polling
+                            if (account.platform === 'tiktok' && target.externalChatId) {
+                                // We use externalChatId as the TikTok username (@username)
+                                tiktokLiveService.connect(session.sessionId, target.externalChatId);
+                            }
                         } catch (err: any) {
                             Logger.error(`[ChatSync] Error fetching chat for ${target.platform}: ${err.message}`, 'SocketServer', err);
                         }
@@ -583,8 +598,10 @@ export class SocketServer {
                 }
             } catch (error: any) {
                 Logger.error('[ChatSync] Global worker error:', 'SocketServer', error);
+            } finally {
+                this.chatSyncLock = false;
             }
-        }, 8000);
+        }, 2000); // Changed from 8000ms to 2000ms loop to allow dynamic polling pacing
     }
 
     /**
@@ -596,6 +613,10 @@ export class SocketServer {
             this.chatSyncInterval = null;
             Logger.info('[ChatSync] Chat sync worker stopped', 'SocketServer');
         }
+        // Cleanup specialty connections (TikTok)
+        StreamSessionModel.find({ status: { $ne: 'live' } }).then(sessions => {
+            sessions.forEach(s => tiktokLiveService.disconnect(s.sessionId));
+        });
     }
 
     /**

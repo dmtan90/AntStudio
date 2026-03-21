@@ -142,7 +142,7 @@ const activeTests = ref([
     { id: '2', name: 'Pricing Page Tactical Layout', status: 'Running', startDate: '2026-01-22', conversionA: 4.1, conversionB: 3.8 }
 ]);
 
-const keywords = ref(['AI Studio', 'Autonomous Streaming', 'VEO 3.1', 'VTuber Production', 'Live AI Translation', 'Virtual Media Hub']);
+const keywords = ref(['AI Studio', 'Autonomous Streaming', 'VEO 3.1', 'Influencer Production', 'Live AI Translation', 'Virtual Media Hub']);
 </script>
 
 <style lang="scss" scoped>

@@ -1,5 +1,6 @@
 import { IDetailedCharacter } from '../models/Project.js'
 import { Logger } from './Logger.js';
+import { promptService } from '../services/PromptService.js';
 
 /**
  * PROMPT BUILDER UTILITIES
@@ -18,7 +19,7 @@ export const translateToEnglish = async (text: string, language?: string, transl
         Logger.warn('[PromptBuilder] No translator provided, returning original text', 'PromptBuilder');
         return text;
     }
-    const prompt = `Translate the following text to English. Only return the translation, nothing else:\n\n${text}`
+    const prompt = await promptService.get('common/translation', { text });
     try {
         const translation = await translator(prompt)
         return translation.trim()
@@ -57,6 +58,7 @@ export interface CharacterContext {
     personality_traits?: string;
     overall_energy?: string;
     voice_personality?: string;
+    nationality?: string;
     loras?: Array<{ id: string; trigger?: string; weight: number }>;
 }
 
@@ -120,18 +122,21 @@ export const buildCharacterSheetPrompt = async (
     style: string = 'Cinematic, Photo-realistic',
     projectAnalysis?: any,
     language?: string,
-    translator?: (prompt: string) => Promise<string>
+    translator?: (prompt: string) => Promise<string>,
+    views: string = 'portrait, front full body, side profile',
+    greenScreen: boolean = false,
 ): Promise<string> => {
-    // For character sheets, we skip the main character list in grounding to avoid model confusion/duplication
-    const grounding = "";//getProjectGroundingPrompt(projectAnalysis, { skipCharacters: true });
+    const grounding = "";
     const translatedDesc = await translateToEnglish(character.description, language, translator)
     
     // Global context
     const worldRules = projectAnalysis?.visuals?.visualWorldRules || {};
-    const lighting = projectAnalysis?.visuals?.visualWorldRules?.lighting || 'Studio lighting';
-    const physics = projectAnalysis?.visuals?.visualWorldRules?.physics || 'Realistic';
+    const lighting = worldRules.lighting || 'Studio lighting';
+    const physics = worldRules.physics || 'Realistic';
 
     const traitsArr = [
+        // Nationality first — most specific identity signal for the AI
+        character.nationality ? `Nationality: ${character.nationality}` : '',
         character.species ? `Species: ${character.species}` : '',
         character.gender ? `Gender: ${character.gender}` : '',
         character.age ? `Age: ${character.age}` : '',
@@ -149,28 +154,24 @@ export const buildCharacterSheetPrompt = async (
     ].filter(Boolean);
 
     let traits = traitsArr.join(', ');
-    
-    // Fallback: If traits are too sparse, try to use the description or personality to add flavor
     if (traitsArr.length < 3 && translatedDesc) {
         traits += `. Context: ${translatedDesc.substring(0, 100)}`;
     }
 
     const styleInstructions = character.loras?.map(l => l.trigger).filter(Boolean).join(', ') || style;
 
-
-    return `
-${grounding}
-
-### CHARACTER REFERENCE SHEET ###
-**VISUAL STYLE**: ${style}
-**SUBJECT**: ${character.name}
-**DESCRIPTION**: ${translatedDesc}
-**TRAITS**: ${traits}
-**GLOBAL STYLE RULES**: Physics: ${physics}, Lighting: ${lighting}
-**STYLE INSTRUCTIONS**: ${styleInstructions}
-
-Generate 3 views: portrait, front full body, side profile. Neutral background. High fidelity.
-`.trim();
+    return await promptService.get('image_generation/character_sheet', {
+        grounding,
+        style,
+        name: character.name,
+        description: translatedDesc,
+        traits,
+        physics,
+        lighting,
+        styleInstructions,
+        views,
+        backgroundInstructions: greenScreen ? 'Green screen background.' : 'Neutral background.'
+    });
 };
 
 export const buildScenePrompt = async (
@@ -211,18 +212,15 @@ export const buildScenePrompt = async (
 
     const grounding = getProjectGroundingPrompt(projectAnalysis);
 
-    return `
-${grounding}
-
-### CINEMATIC SCENE ###
-**DESCRIPTION**: ${translatedScene}
-**STYLE**: ${translatedStyle}
-**GLOBAL RULES**: Physics: ${physics}, Lighting: ${lighting}
-**PALETTE**: ${palette || 'Natural colors'}
-${charRules}
-Generate high-quality cinematic frame. STRICT ADHERENCE TO VISUAL STYLE IS MANDATORY.
-
-`.trim();
+    return await promptService.get('image_generation/scene', {
+        grounding,
+        sceneDescription: translatedScene,
+        style: translatedStyle,
+        physics,
+        lighting,
+        palette: palette || 'Natural colors',
+        charRules
+    });
 };
 
 // ============================================================================
@@ -234,52 +232,20 @@ export const buildStoryboardPrompt = async (
     projectAnalysis: any,
     targetDuration: number = 60,
     language: string = 'English',
-    translator?: (prompt: string) => Promise<string>
+    translator?: (prompt: string) => Promise<string>,
+    useGreenScreen?: boolean
 ): Promise<string> => {
     const grounding = getProjectGroundingPrompt(projectAnalysis);
     const translatedInput = await translateToEnglish(scriptOrTopic, language, translator);
 
-    return `
-${grounding}
-
-### CINEMATIC STORYBOARD GENERATION ###
-**INPUT SCRIPT/TOPIC**: ${translatedInput}
-**TARGET DURATION**: ${targetDuration} seconds
-**OUTPUT LANGUAGE**: ${language}
-
-Task: Break down the input into a high-fidelity cinematic storyboard. 
-Each segment must be designed for professional production.
-
-### STRICT JSON STRUCTURE ###
-Return ONLY a valid JSON object with the following structure:
-{
-  "segments": [
-    {
-      "order": 1,
-      "title": "Short descriptive title",
-      "description": "Vivid visual description of the action and characters",
-      "duration": 5.0,
-      "location": "Location name",
-      "cameraAngle": "e.g., Close-up, Wide shot, tracking",
-      "mood": "Emotional tone",
-      "visualKeywords": ["keyword1", "keyword2"],
-      "audioKeywords": ["sfx1", "music_mood"],
-      "characters": ["Name1", "Name2"],
-      "voiceover": "Spoken dialogue or narration if any",
-      "detailedDialogue": [
-        { "characterName": "Name", "line": "Exact text", "delivery": "tone" }
-      ]
-    }
-  ],
-  "totalDuration": 60.0
-}
-
-### PRODUCTION REQUIREMENTS ###
-1. **Consistency**: Use characters and locations defined in the GROUNDING section if they match.
-2. **Pacing**: Ensure segments total approximately the TARGET DURATION.
-3. **Detail**: Visual descriptions must be sufficient for image/video generation models.
-4. **Resilience**: Ensure all JSON property names are exactly as specified.
-`.trim();
+    return await promptService.get('video_creation/storyboard_gen', {
+        grounding,
+        translatedInput,
+        targetDuration,
+        language,
+        useGreenScreen,
+        greenScreenEnforcement: useGreenScreen ? '\n### GREEN SCREEN ENFORCEMENT ###\n- ALL visual descriptions and prompts MUST specify a pure, flat, evenly lit GREEN SCREEN background (#00FF00).' : ''
+    });
 };
 
 // ============================================================================
@@ -291,7 +257,8 @@ export const buildVeoVideoPrompt = async (
     allCharacters: any[], // Use any to allow full IDetailedCharacter + actor_background fields
     projectAnalysis: any,
     language?: string,
-    translator?: (prompt: string) => Promise<string>
+    translator?: (prompt: string) => Promise<string>,
+    useGreenScreen?: boolean
 ) => {
     const projectStyle = projectAnalysis?.creativeBrief?.visualStyle || projectAnalysis?.visuals?.visualStyle?.label || 'Cinematic, high fidelity';
     const translatedStyle = await translateToEnglish(projectStyle, language, translator);
@@ -375,36 +342,20 @@ export const buildVeoVideoPrompt = async (
 
     const grounding = getProjectGroundingPrompt(projectAnalysis);
 
-    return `
-${grounding}
-
-### HIGH FIDELITY VIDEO GENERATION PROMPT ###
-[SEGMENT ${segment.order}] [DURATION: ${segment.duration}s]
-
-${globalContextPrompt}
-
-${locationPrompt}
-
-${cameraPrompt}
-
-**CHARACTERS**
-${charSection}
-
-${audioPrompt}
-
-**DIALOGUE**
-${dialogues || segment.voiceover || 'None'}
-
-**VISUAL KEYWORDS**
-${segment.visualKeywords?.join(', ') || 'Cinematic, High Fidelity'}
-
-**INSTRUCTIONS**
-- NO TEXT OVERLAYS.
-- High cinematic fidelity.
-- Style: ${translatedStyle}.
-- Strict adherence to World Physics and Lighting Model.
-- Maintain character consistency based on Physical traits defined.
-`.trim();
+    return await promptService.get('video_generation/high_fidelity', {
+        grounding,
+        order: segment.order,
+        duration: segment.duration,
+        globalContextPrompt,
+        locationPrompt,
+        cameraPrompt,
+        charSection,
+        audioPrompt,
+        dialogues: dialogues || segment.voiceover || 'None',
+        visualKeywords: segment.visualKeywords?.join(', ') || 'Cinematic, High Fidelity',
+        style: translatedStyle,
+        greenScreenEnforcement: useGreenScreen ? '- MANDATORY: Use a pure flat GREEN SCREEN background (Hex #00FF00) for this segment.' : ''
+    });
 
 };
 
@@ -431,15 +382,11 @@ export const buildVoiceoverPrompt = async (
         voiceProfile.description ? `Description: ${voiceProfile.description}` : ''
     ].filter(Boolean).join('. ');
 
-    return `
-### VOICEOVER SCRIPT ###
-**CHARACTER**: ${characterName}
-**VOICE PROFILE**: ${context || 'Natural, expressive'}
-**TEXT**: ${translatedText}
-
-IMPORTANT: Only generate the audio for the content in the TEXT section. Do not read the metadata headers (CHARACTER, VOICE PROFILE, TEXT) or labels.
-Generate a clear, high-quality voiceover following the character's profile and delivery notes.
-`.trim();
+    return await promptService.get('audio_generation/voiceover', {
+        characterName,
+        voiceProfile: context || 'Natural, expressive',
+        text: translatedText
+    });
 };
 
 export const buildMusicPrompt = async (
@@ -452,71 +399,354 @@ export const buildMusicPrompt = async (
     const themes = projectAnalysis?.overview?.themes || 'Atmospheric';
     const translatedMood = await translateToEnglish(moodDescription, language, translator);
 
-    return `
-### BACKGROUND MUSIC PROMPT ###
-**GENRE**: ${genre}
-**THEMES**: ${themes}
-**MOOD**: ${translatedMood}
-
-Generate a high-quality cinematic background track that matches the project's genre and mood.
-`.trim();
+    return await promptService.get('audio_generation/music', {
+        genre,
+        themes,
+        mood: translatedMood
+    });
 };
 
 // ============================================================================
 // CONTENT ANALYSIS & METADATA
 // ============================================================================
 
-export const buildHighlightsPrompt = (context: string): string => {
-    return `
-### VIRAL HIGHLIGHT EXTRACTION ###
-Analyze the provided transcript or visual description to identify the most engaging, "viral", or impactful segments.
+export const buildHighlightsPrompt = async (context: string): Promise<string> => {
+    return await promptService.get('analysis/highlights', { context });
+};
 
-**CONTEXT**: ${context}
+export const buildSocialMetaPrompt = async (contentSummary: string): Promise<string> => {
+    return await promptService.get('analysis/social_meta', { contentSummary });
+};
 
-### OUTPUT FORMAT (JSON) ###
-{
-  "highlights": [
-    {
-      "start": 0.0,
-      "end": 15.0,
-      "title": "Catchy segment title",
-      "description": "Why this is a highlight",
-      "viralScore": 0.95,
-      "platform": "TikTok/YouTube Shorts"
+export const buildTranslationPrompt = async (text: string, targetLanguage: string): Promise<string> => {
+    return await promptService.get('common/language_translation', { text, targetLanguage });
+};
+
+// ============================================================================
+// STUDIO & INTERACTIVE AI PROMPTS
+// ============================================================================
+
+export const buildVeoProductPrompt = async (config: {
+    productName: string,
+    metadata: { style: string, category: string },
+    vibe: string,
+    customEvent?: string
+}): Promise<string> => {
+    const { productName, metadata, vibe, customEvent } = config;
+    let basePrompt = '';
+
+    if (customEvent && customEvent.startsWith('product')) {
+        basePrompt = `A charming woman wearing the ${productName}, showing off the ${metadata.style} detail.`;
+    } else if (customEvent && customEvent.startsWith('checkout')) {
+        basePrompt = `A charming woman pointing at the ${productName} with excitement, encouraging viewers to buy.`;
+    } else {
+        switch (metadata.category) {
+            case 'clothing':
+                basePrompt = `A stunning young woman wearing a ${metadata.style} ${productName}, showcasing the fabric detail and fit.`;
+                break;
+            case 'tech':
+                basePrompt = `Close-up cinematic shot of the ${productName}, showing its sleek design and advanced features.`;
+                break;
+            case 'beauty':
+                basePrompt = `Professional close-up of a model applying ${productName}, focusing on the smooth texture and vibrant color.`;
+                break;
+            default:
+                basePrompt = `A lifestyle preview of the ${productName} in a ${vibe} studio setting.`;
+        }
     }
-  ]
-}
-`.trim();
+
+    const lighting = vibe === 'hype' ? 'dynamic flashing neon lights' :
+                     vibe === 'chill' ? 'soft warm morning light' :
+                     vibe === 'professional' ? 'clean studio lighting' : 'natural light';
+
+    return await promptService.get('studio/veo_video', {
+        base_prompt: basePrompt,
+        lighting
+    });
 };
 
-export const buildSocialMetaPrompt = (contentSummary: string): string => {
-    return `
-### SOCIAL MEDIA OPTIMIZATION ###
-Generate optimized metadata for social media distribution based on the provided content.
+export const buildOrchestratorTurnPrompt = async (data: {
+    name: string,
+    instruction: string,
+    history: string,
+    vibeMood?: string,
+    vision?: string
+}): Promise<string> => {
+    const vibeLead = data.vibeMood ? `[Environment Vibe: ${data.vibeMood}] ` : '';
+    const visionContext = data.vision ? `[Visual Context: ${data.vision}] ` : '';
 
-**CONTENT SUMMARY**: ${contentSummary}
-
-### OUTPUT FORMAT (JSON) ###
-{
-  "headlines": ["Option 1", "Option 2"],
-  "descriptions": ["Short version", "Long version"],
-  "tags": ["tag1", "tag2"],
-  "ctas": ["Call to action 1"],
-  "thumbnailPrompts": ["Text-to-image prompt for a viral thumbnail"]
-}
-`.trim();
+    return await promptService.get('studio/orchestrator_turn', {
+        vibe_lead: vibeLead,
+        vision_context: visionContext,
+        history: data.history,
+        name: data.name,
+        instruction: data.instruction
+    });
 };
 
-export const buildTranslationPrompt = (text: string, targetLanguage: string): string => {
-    return `
-### CREATIVE TRANSLATION & LOCALIZATION ###
-Translate and localize the following text into ${targetLanguage}. 
-Maintain the original emotional tone, technical depth, and cultural nuances.
+export const buildVisionReactionPrompt = async (data: {
+    visionData: any,
+    context: string
+}): Promise<string> => {
+    return await promptService.get('studio/vision_reaction', {
+        vision_data: JSON.stringify(data.visionData),
+        context: data.context
+    });
+};
 
-**TEXT**: ${text}
+export const buildChatReactionPrompt = async (data: {
+    chatText: string,
+    socialNote?: string,
+    directive?: string
+}): Promise<string> => {
+    return await promptService.get('studio/chat_reaction', {
+        chat_text: data.chatText,
+        social_note: data.socialNote || '',
+        directive_context: data.directive ? `ShowRunner Directive: ${data.directive}.` : ''
+    });
+};
 
-### INSTRUCTIONS ###
-1. Respond ONLY with the translated text.
-2. If it's a technical script, maintain the structural tags (e.g., [CHAR_X]).
-`.trim();
+export const buildBanterPrompt = async (data: {
+    type: 'init' | 'reply',
+    targetName: string,
+    socialContext: string,
+    otherName?: string,
+    text?: string
+}): Promise<string> => {
+    if (data.type === 'init') {
+        return await promptService.get('studio/banter_init', {
+            target_name: data.targetName,
+            social_context: data.socialContext
+        });
+    } else {
+        return await promptService.get('studio/banter_reply', {
+            other_name: data.otherName || 'The other guest',
+            text: data.text || '',
+            social_context: data.socialContext
+        });
+    }
+};
+
+export const buildResearchTopicPrompt = async (data: {
+    topic: string
+}): Promise<string> => {
+    return await promptService.get('studio/research_topic', {
+        topic: data.topic
+    });
+};
+
+export const buildKnowledgeExplanationPrompt = async (data: {
+    topic: string,
+    facts: any
+}): Promise<string> => {
+    return await promptService.get('studio/knowledge_explanation', {
+        topic: data.topic,
+        facts: JSON.stringify(data.facts)
+    });
+};
+
+// ============================================================================
+// CORE AI ROUTE PROMPTS (ai.ts)
+// ============================================================================
+
+export const buildKnowledgeSearchPrompt = async (data: {
+    query: string,
+    context?: string,
+    historicalContext?: string,
+    language?: string
+}): Promise<string> => {
+    return await promptService.get('ai/knowledge_search', {
+        query: data.query,
+        context: data.context || '',
+        historicalContext: data.historicalContext || '',
+        language: data.language || 'en'
+    });
+};
+
+export const buildGeneratePollPrompt = async (data: {
+    topic: string,
+    context?: string,
+    directive?: string
+}): Promise<string> => {
+    return await promptService.get('ai/generate_poll', {
+        topic: data.topic,
+        context: data.context || '',
+        directive: data.directive || ''
+    });
+};
+
+export const buildVerifyFactPrompt = async (data: {
+    claim: string,
+    context?: string,
+    strictness?: string
+}): Promise<string> => {
+    return await promptService.get('ai/verify_fact', {
+        claim: data.claim,
+        context: data.context || '',
+        strictness: data.strictness || 'normal'
+    });
+};
+
+export const buildAdHeadlinesPrompt = async (data: {
+    product_name: string,
+    description: string
+}): Promise<string> => {
+    return await promptService.get('ai/ad_headlines', {
+        product_name: data.product_name,
+        description: data.description
+    });
+};
+
+export const buildAdSubheadlinesPrompt = async (data: {
+    product_name: string,
+    description: string
+}): Promise<string> => {
+    return await promptService.get('ai/ad_subheadlines', {
+        product_name: data.product_name,
+        description: data.description
+    });
+};
+
+export const buildAdCTAPrompt = async (data: {
+    name: string,
+    description: string,
+    objective: string
+}): Promise<string> => {
+    return await promptService.get('ai/ad_cta', {
+        name: data.name,
+        description: data.description,
+        objective: data.objective
+    });
+};
+
+export const buildVisionAnalyzePrompt = async (data: {
+    prompt: string
+}): Promise<string> => {
+    return await promptService.get('ai/vision_analyze', {
+        prompt: data.prompt
+    });
+};
+
+export const buildVisionOCRPrompt = async (): Promise<string> => {
+    return await promptService.get('ai/vision_ocr');
+};
+
+export const buildVisionFacesPrompt = async (): Promise<string> => {
+    return await promptService.get('ai/vision_faces');
+};
+
+export const buildVisionObjectsPrompt = async (): Promise<string> => {
+    return await promptService.get('ai/vision_objects');
+};
+
+export const buildVisionCaptionPrompt = async (): Promise<string> => {
+    return await promptService.get('ai/vision_caption');
+};
+
+export const buildGuestSystemPrompt = async (data: {
+    influencer: any,
+    input: any,
+    flashbacks: string[]
+}): Promise<string> => {
+    const getSystemInstruction = (input: any) => {
+        switch (input.type) {
+            case 'chat':
+                return `A viewer named ${input.userName} said: "${input.content}". Reply directly to them. Be concise and engaging.`;
+            case 'gift':
+                return `A viewer named ${input.userName} sent a gift: ${input.content}. Express gratitude and excitement! High energy!`;
+            case 'poll':
+                return `React to the poll results: ${input.content}. Share your opinion on the winner.`;
+            case 'dialogue':
+                let inst = input.content;
+                if (input.context?.vibe) inst += ` [Vibe: ${input.context.vibe}]`;
+                if (input.context?.vision) inst += ` [Visual: ${input.context.vision}]`;
+                return inst;
+            default:
+                return input.content;
+        }
+    };
+
+    return await promptService.get('ai/guest_system', {
+        name: data.influencer.identity.name,
+        description: data.influencer.identity.description,
+        traits: data.influencer.identity.traits.join(', '),
+        relationships: data.influencer.social?.relationships.map((r: any) => `- ${r.targetName} (${r.type}): Level ${r.level}/100 - ${r.description || 'No established bond'}`).join('\n') || 'No established relationships.',
+        vibe: data.input.context?.vibe || 'Neutral',
+        vision: data.input.context?.vision || 'Normal room setup',
+        flashbacks: data.flashbacks.length > 0 ? `CONTEXTUAL FLASHBACKS (Long-term Memory):\n${data.flashbacks.map(f => `- ${f}`).join('\n')}` : '',
+        systemInstruction: getSystemInstruction(data.input),
+        keyEvents: data.influencer.memory.keyEvents.slice(-5).map((e: any) => `- ${e.description} (${new Date(e.date).toLocaleDateString()})`).join('\n'),
+        summary: data.influencer.memory.summaries.slice(-1)[0] || 'No summary available.'
+    });
+};
+
+export const buildGuestNormalizePrompt = async (data: {
+    text: string,
+    vibe?: string
+}): Promise<string> => {
+    return await promptService.get('ai/guest_normalize', {
+        text: data.text,
+        vibe: data.vibe || 'Neutral'
+    });
+};
+
+export const buildAnalyzeProductPrompt = async (data: {
+    contextType: string,
+    contentToAnalyze: string,
+    sourceUrl?: string
+}): Promise<string> => {
+    return await promptService.get('analysis/analyze_product', {
+        contextType: data.contextType,
+        contentToAnalyze: data.contentToAnalyze,
+        sourceUrl: data.sourceUrl || ''
+    });
+};
+
+export const buildAvatarVideoPrompt = async (data: {
+    script: string,
+    background?: string,
+}): Promise<string> => {
+    return await promptService.get('video_generation/avatar_video', {
+        script: data.script,
+        background: data.background || 'Professional studio background, neutral lighting'
+    });
+};
+
+export const buildPresentationAnalyzePrompt = async (data: {
+    slideNumber: number,
+    slideText: string
+}): Promise<string> => {
+    return await promptService.get('analysis/presentation_analyze', {
+        slideNumber: data.slideNumber,
+        slideText: data.slideText
+    });
+};
+
+export const buildTranslateTextPrompt = async (data: {
+    sourceLang?: string,
+    targetLang?: string
+}): Promise<string> => {
+    return await promptService.get('common/translate_text', {
+        sourceLang: data.sourceLang || 'auto',
+        targetLang: data.targetLang || 'English'
+    });
+};
+
+export const buildTrendingTopicsPrompt = async (data: {
+    context: string,
+    lang: string
+}): Promise<string> => {
+    return await promptService.get('ai/trending_topics', {
+        context: data.context,
+        lang: data.lang
+    });
+};
+export const buildFlowVideoNormalizePrompt = async (prompt: string): Promise<string> => {
+    return await promptService.get('video_generation/normalize_flow_prompt', {
+        prompt
+    });
+};
+
+export const getFlowVideoConstraints = async (): Promise<string> => {
+    return await promptService.get('video_generation/flow_constraints');
 };

@@ -1,9 +1,9 @@
-import { reactive, markRaw } from 'vue';
-import api, { getFileUrl } from '@/utils/api';
+import api from '@/utils/api';
+import { reactive, watch } from 'vue';
+import { generateUUID } from '@/utils/uuid';
 import { aiAudioAnalyzer } from './AIAudioAnalyzer';
 import { connections } from '@/composables/studio/useLiveChatManager';
 import { ActionSyncService } from './ActionSyncService';
-import { generateUUID } from '@/utils/uuid';
 import { toast } from 'vue-sonner';
 
 /**
@@ -36,14 +36,14 @@ class RelationshipManager {
 }
 
 /**
- * Interface for a Synthetic AI Guest persona (VTuber).
- * Supports full VTuber schema with backward compatibility.
+ * Interface for a Synthetic AI Guest persona (Influencer).
+ * Supports full Influencer schema with backward compatibility.
  */
 export interface AIGuestPersona {
     // Primary identifier
     uuid: string; // Primary unique identifier (generated on creation)
     
-    // New VTuber Schema
+    // New Influencer Schema
     entityId?: string;
     identity?: {
         name: string;
@@ -140,7 +140,7 @@ export interface AIGuestPersona {
 }
 
 /**
- * Service to manage virtual AI guests (VTubers) in the Studio.
+ * Service to manage virtual AI guests (Influencers) in the Studio.
  */
 export class SyntheticGuestManager {
     public activeGuests = reactive(new Map<string, { 
@@ -178,29 +178,165 @@ export class SyntheticGuestManager {
     }
 
     private setupDirectiveListeners() {
-        window.addEventListener('showrunner:directive', (e: Event) => {
+        // Bind and store for removal
+        this.onShowrunnerDirective = (e: Event) => {
             const detail = (e as CustomEvent).detail;
-            console.log(`[VTuberManager] Received Neural Directive: [${detail.type}] - ${detail.directive}`);
+            console.log(`[InfluencerManager] Received Neural Directive: [${detail.type}] - ${detail.directive}`);
             
-            // Influence the next autonomous banter or response
             this.currentDirective = detail.directive;
             this.currentVibe = detail.vibe;
 
-            // Immediately trigger an opening line if it's an intro
-            if (detail.type === 'intro') {
-                this.triggerAutonomousIntervention(detail.directive);
+            // Phase 112: Identify Targeted Guest
+            const activeIds = Array.from(this.activeGuests.keys());
+            let targetGuestId = activeIds.find(id => {
+                const g = this.activeGuests.get(id);
+                return g?.persona.identity.name === detail.originSpeaker;
+            });
+
+            if (!targetGuestId && activeIds.length > 0) {
+                targetGuestId = activeIds.find(id => this.activeGuests.get(id)?.persona.isMaster) || activeIds[0];
             }
 
-            // Phase 35: Autonomous Product Pitch
-            if (detail.type === 'product_showcase' && detail.productContext) {
-                this.handleAutonomousProductPitch(detail.productContext, detail.directive);
+            if (targetGuestId) {
+                // Trigger Gesture if provided
+                if (detail.gesture) {
+                    this.triggerGesture(targetGuestId, detail.gesture);
+                }
+
+                // Phase 112: AIDOL Dynamic Clip Triggering via Segment Type
+                const guest = this.activeGuests.get(targetGuestId);
+                if (guest?.persona.visual?.modelType === 'aidol') {
+                    // Logic: segment.type now contains the exact mapping key (speaking, product, or PRODUCT_ID)
+                    this.notifyWorker('update-3d-expression', { 
+                        id: targetGuestId, 
+                        gesture: detail.type,
+                        productId: detail.productContext?._id || detail.productContext?.id || null
+                    });
+                }
             }
 
-            // Phase 36: Neural Knowledge Injection
-            if (detail.type === 'research_injection' && detail.knowledgeContext) {
-                this.handleKnowledgeInjection(detail.knowledgeContext, detail.directive);
-            }
+            // if (detail.type === 'intro' || detail.type === 'promotion' || detail.type === 'scarcity' || detail.type === 'recap') {
+            //     this.triggerAutonomousIntervention(detail.directive);
+            // }
+
+            // if (detail.type === 'product_showcase' && detail.productContext) {
+            //     this.handleAutonomousProductPitch(detail.productContext, detail.directive);
+            // }
+
+            // if (detail.type === 'research_injection' && detail.knowledgeContext) {
+            //     this.handleKnowledgeInjection(detail.knowledgeContext, detail.directive);
+            // }
+        };
+
+        this.onVisionResult = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            this.handleVisionAnalysis(detail.raw);
+        };
+
+        this.onGlobalGift = (e: Event) => {
+            this.handleGlobalGiftReaction((e as CustomEvent).detail);
+        };
+
+        this.onViralPeak = (e: Event) => {
+            this.handleViralPeakReaction((e as CustomEvent).detail);
+        };
+
+        window.addEventListener('showrunner:directive', this.onShowrunnerDirective);
+        window.addEventListener('vision:detection_result', this.onVisionResult);
+        window.addEventListener('economy:gift', this.onGlobalGift);
+        window.addEventListener('studio:viral_peak', this.onViralPeak);
+    }
+
+
+
+    private onShowrunnerDirective: (e: Event) => void = () => {};
+    private onVisionResult: (e: Event) => void = () => {};
+    private onGlobalGift: (e: Event) => void = () => {};
+    private onViralPeak: (e: Event) => void = () => {};
+
+    public stop() {
+        console.log('[SyntheticGuestManager] Stopping all background processes...');
+        
+        // 1. Clear all intervals/timers
+        if (this.banterTimer) clearInterval(this.banterTimer);
+        if (this.hypeDecayTimer) clearInterval(this.hypeDecayTimer);
+        if (this.engagementDecayTimer) clearInterval(this.engagementDecayTimer);
+        if (this.autonomyTimer) clearInterval(this.autonomyTimer);
+        
+        this.banterTimer = null;
+        this.hypeDecayTimer = null;
+        this.engagementDecayTimer = null;
+        this.autonomyTimer = null;
+
+        // 2. Remove window listeners
+        window.removeEventListener('showrunner:directive', this.onShowrunnerDirective);
+        window.removeEventListener('vision:detection_result', this.onVisionResult);
+        window.removeEventListener('economy:gift', this.onGlobalGift);
+        window.removeEventListener('studio:viral_peak', this.onViralPeak);
+        
+        // 3. Stop all audio analysers
+        for (const [id, analysis] of this.audioAnalysers.entries()) {
+            analysis.stop();
+        }
+        this.audioAnalysers.clear();
+
+        // 4. Clear state to release memory
+        this.activeGuests.clear();
+        this.guestEngagementScores.clear();
+        this.conversationHistory = [];
+        this.dialogueLock = null;
+        
+        console.log('[SyntheticGuestManager] Successfully neutralized.');
+    }
+
+    private async fetchStudioPrompt(type: string, data: any): Promise<string> {
+        try {
+            const res = await api.post('/prompts/studio', { type, data });
+            return res.data.data.prompt;
+        } catch (error) {
+            console.error(`[SyntheticGuestManager] Failed to fetch prompt: ${type}`, error);
+            return '';
+        }
+    }
+
+    private async handleVisionAnalysis(data: any) {
+        if (this.isAnyGuestSpeaking()) return;
+        
+        const activeIds = Array.from(this.activeGuests.keys());
+        if (activeIds.length === 0) return;
+
+        const context = this.studioStore?.streamingContext;
+        // Only react to vision autonomously in specific contexts
+        if (!['game_streaming', 'sport', 'commentary', 'sales'].includes(context)) return;
+
+        // 30% chance to react autonomously to vision to avoid spamming
+        if (Math.random() > 0.3) return;
+
+        const speakerId = activeIds[Math.floor(Math.random() * activeIds.length)];
+        const guest = this.activeGuests.get(speakerId);
+        if (!guest) return;
+
+        console.log(`[InfluencerManager] AI reacting to vision data for context: ${context}`);
+        
+        // Phase 22: Notify RecapOrchestrator of the event if it's significant
+        if (data.objects?.length > 0) {
+            import('./RecapOrchestrator').then(({ recapOrchestrator }) => {
+                recapOrchestrator.recordMoment(
+                    `AI Reaction to Screen: ${data.objects[0].label}`,
+                    0.8,
+                    `Guest ${guest.persona.name} reacted to detecting ${data.objects[0].label} on the live feed.`
+                );
+            });
+        }
+
+        const prompt = await this.fetchStudioPrompt('vision_reaction', {
+            visionData: data,
+            context
         });
+
+        if (prompt) {
+            await this.generateResponse(speakerId, prompt, { vibe: 'observant' } as any);
+        }
     }
 
     private setupSocketListeners() {
@@ -210,6 +346,10 @@ export class SyntheticGuestManager {
                 this.resetBanterTimer();
                 this.relationshipManager.recordViewerInteraction(data.userName, 'gift', data.item.cost);
                 this.handleGlobalGiftReaction(data);
+            });
+            socket.on('economy:order', (data: any) => {
+                this.resetBanterTimer();
+                this.handleOrderReaction(data);
             });
             socket.on('comment:new', (data: any) => {
                 this.resetBanterTimer();
@@ -246,7 +386,7 @@ export class SyntheticGuestManager {
             }
 
             if (targetGuest) {
-                console.log(`[VTuberManager] ShowRunner directing ${targetGuest.persona.name} to speak: ${detail.text}`);
+                console.log(`[InfluencerManager] ShowRunner directing ${targetGuest.persona.name} to speak: ${detail.text}`);
                 this.talk(targetGuest.uuid, `[DIRECTOR INSTRUCTION: Say exactly this line, do not add anything else] "${detail.text}"`, { vibe: detail.emotion });
             }
         });
@@ -258,7 +398,7 @@ export class SyntheticGuestManager {
 
     public init(studioStore: any) {
         this.studioStore = studioStore;
-        console.log('[VTuberManager] Initialized with StudioStore');
+        console.log('[InfluencerManager] Initialized with StudioStore');
     }
 
     private startHypeDecay() {
@@ -313,8 +453,11 @@ export class SyntheticGuestManager {
                 // Only "Energetic" or "Dominant" guests interrupt
                 if (traits.includes('ENERGETIC') || traits.includes('DOMINANT')) {
                     if (Math.random() < 0.05) { // 5% chance per tick to interrupt
-                        console.log(`[VTuberManager] ${guest.persona.name} is INTERRUPTING!`);
-                        this.generateResponse(guestId, `[INTERRUPTION] Someone else is talking, but you have something urgent to say! Jump in and take control of the conversation.`, {
+                        console.log(`[InfluencerManager] ${guest.persona.name} is INTERRUPTING!`);
+                        
+                        const prompt = `[INTERRUPTION] Someone else is talking, but you have something urgent to say! Jump in and take control of the conversation.`;
+                        
+                        this.generateResponse(guestId, prompt, {
                             vibe: 'assertive'
                         } as any);
                         return; // One interruption at a time
@@ -387,16 +530,41 @@ export class SyntheticGuestManager {
             break;
         }
 
-        // Reactive Listening
+        // Phase 33: Reactive Listening & Collaborative Impulse
         if (this.isAnyGuestSpeaking() || (window as any).isHostSpeaking) {
             for (const guestId of activeIds) {
                 const guest = this.activeGuests.get(guestId);
                 if (!guest || guest.isSpeaking || guest.isThinking) continue;
-                if (Math.random() < 0.1) {
+                
+                // Reaction Gestures: Nod when someone is talking
+                if (Math.random() < 0.15) {
                     this.triggerGesture(guestId, 'nod_emphasis');
+                } else if (Math.random() < 0.05) {
+                    this.triggerGesture(guestId, 'head_tilt');
                 }
             }
         }
+
+        // Phase 33: Collaborative Impulse (High-Five / Look At Each Other)
+        if (activeIds.length >= 2 && Math.random() < 0.02) {
+             this.triggerCollaborativeGesture(activeIds[0], activeIds[1], 'look_at_each_other');
+        }
+    }
+
+    /**
+     * Phase 33: Syncs two Influencers for a shared interaction.
+     */
+    public triggerCollaborativeGesture(idA: string, idB: string, type: 'high_five' | 'look_at_each_other' | 'cheer') {
+        console.log(`[InfluencerManager] Collaborative Impulse: ${type} between ${idA} and ${idB}`);
+        this.triggerGesture(idA, type);
+        this.triggerGesture(idB, type);
+
+        window.dispatchEvent(new CustomEvent('producer:action', {
+            detail: {
+                type: 'collaborative_gesture',
+                payload: { idA, idB, type }
+            }
+        }));
     }
 
     private isHost(): boolean {
@@ -451,7 +619,13 @@ export class SyntheticGuestManager {
         if (affinity < -0.5) socialContext = 'rivalry';
         else if (affinity > 0.5) socialContext = 'friendship';
 
-        const resA = await this.generateResponse(idA, `Say something to ${guestB.persona.name}. (Relationship: ${socialContext}).`, {
+        const promptA = await this.fetchStudioPrompt('banter', {
+            type: 'init',
+            targetName: guestB.persona.name,
+            socialContext
+        });
+
+        const resA = await this.generateResponse(idA, promptA || `Say something to ${guestB.persona.name}.`, {
             vibe: socialContext,
             targetGuest: guestB.persona.name
         } as any);
@@ -459,7 +633,14 @@ export class SyntheticGuestManager {
         if (resA) {
             this.relationshipManager.recordGuestInteraction(idA, idB, 'friendly');
             this.pollForSilence(idA, async () => {
-                await this.generateResponse(idB, `${guestA.persona.name} said: "${resA.text}". Reply to them. (Relationship: ${socialContext}).`, {
+                const promptB = await this.fetchStudioPrompt('banter', {
+                    type: 'reply',
+                    otherName: guestA.persona.name,
+                    text: resA.text,
+                    socialContext
+                });
+
+                await this.generateResponse(idB, promptB || `${guestA.persona.name} said: "${resA.text}". Reply.`, {
                     vibe: socialContext,
                     targetGuest: guestA.persona.name
                 } as any);
@@ -469,6 +650,32 @@ export class SyntheticGuestManager {
         } else {
             this.resetBanterTimer();
         }
+    }
+
+    private async handleOrderReaction(data: any) {
+        if (this.isAnyGuestSpeaking()) return;
+
+        const activeIds = Array.from(this.activeGuests.keys());
+        if (activeIds.length === 0) return;
+
+        const speakingId = activeIds[Math.floor(Math.random() * activeIds.length)];
+        const userName = data.userName || data.buyerName || 'a viewer';
+        const productName = data.productName || data.item?.name || 'an item';
+
+        console.log(`[InfluencerManager] AI reacting to order from ${userName} for ${productName}`);
+        
+        const prompt = `[DIRECTIVE: THANK THE BUYER NOW] ${userName} just purchased ${productName}! Express your extreme gratitude, hype up their purchase, and tell everyone else to buy too! Keep it short and high energy!`;
+        
+        await this.generateResponse(speakingId, prompt, {
+            type: 'reaction',
+            vibe: 'hype'
+        } as any);
+
+        // Phase 15: Physical coordination - trigger a victory gesture
+        this.triggerGesture(speakingId, 'victory', 5000);
+        
+        this.chatHypeScore = Math.min(2.0, this.chatHypeScore + 0.8);
+        this.notifyWorker('update-hype-level', { level: this.chatHypeScore });
     }
 
     private async handleGlobalChatReaction(data: any) {
@@ -498,7 +705,7 @@ export class SyntheticGuestManager {
             if (text.includes(name)) {
                 const current = this.guestEngagementScores.get(guestId) || 50;
                 this.guestEngagementScores.set(guestId, Math.min(100, current + 5));
-                console.log(`[VTuberManager] Engagement Boost for ${guest.persona.name}: ${this.guestEngagementScores.get(guestId)}`);
+                console.log(`[InfluencerManager] Engagement Boost for ${guest.persona.name}: ${this.guestEngagementScores.get(guestId)}`);
             }
         }
 
@@ -552,12 +759,13 @@ export class SyntheticGuestManager {
 
         const speakingId = activeIds[Math.floor(Math.random() * activeIds.length)];
         
-        let responsePrompt = `${socialNote} Answer chat: "${data.text}"`;
-        if (this.currentDirective) {
-            responsePrompt = `${socialNote} ShowRunner Directive: ${this.currentDirective}. Context: User said "${data.text}". React while following the directive.`;
-        }
+        const responsePrompt = await this.fetchStudioPrompt('chat_reaction', {
+            chatText: data.text,
+            socialNote,
+            directive: this.currentDirective
+        });
 
-        this.generateResponse(speakingId, responsePrompt, {
+        this.generateResponse(speakingId, responsePrompt || `${socialNote} Answer: ${data.text}`, {
             type: 'chat',
             userName: userName,
             content: data.text,
@@ -579,9 +787,9 @@ export class SyntheticGuestManager {
 
     private personaLibrary: AIGuestPersona[] = reactive([]);
 
-    public setLibrary(vtubers: any[]) {
+    public setLibrary(influencers: any[]) {
         try {
-            const synced = vtubers.map((vtuber: any) => this.mapVTuberToPersona(vtuber));
+            const synced = influencers.map((influencer: any) => this.mapInfluencerToPersona(influencer));
             this.personaLibrary.length = 0;
             this.personaLibrary.push(...synced);
         } catch (e) {}
@@ -589,7 +797,7 @@ export class SyntheticGuestManager {
 
     public async syncLibrary() {
         try {
-            const response = await api.get('/vtuber/list');
+            const response = await api.get('/influencer/list');
             const data = response.data;
             const list = data.data || (Array.isArray(data) ? data : []);
             if (Array.isArray(list)) {
@@ -598,19 +806,19 @@ export class SyntheticGuestManager {
         } catch (e) {}
     }
 
-    private mapVTuberToPersona(vtuber: any): AIGuestPersona {
-        const getName = () => vtuber.identity?.name || vtuber.name || 'Unnamed VTuber';
-        const getDescription = () => vtuber.identity?.description || vtuber.description || '';
-        const getTraits = () => vtuber.identity?.traits || vtuber.traits || [];
-        const getRole = () => vtuber.identity?.role || vtuber.role || 'guest';
-        const getVoiceConfig = () => vtuber.meta?.voiceConfig || vtuber.voiceConfig || {
+    private mapInfluencerToPersona(influencer: any): AIGuestPersona {
+        const getName = () => influencer.identity?.name || influencer.name || 'Unnamed Influencer';
+        const getDescription = () => influencer.identity?.description || influencer.description || '';
+        const getTraits = () => influencer.identity?.traits || influencer.traits || [];
+        const getRole = () => influencer.identity?.role || influencer.role || 'guest';
+        const getVoiceConfig = () => influencer.meta?.voiceConfig || influencer.voiceConfig || {
             provider: 'gemini',
-            voiceId: vtuber.meta?.voiceId || vtuber.voiceId || 'en-US-Neural2-F',
+            voiceId: influencer.meta?.voiceId || influencer.voiceId || 'en-US-Neural2-F',
             language: 'en-US'
         };
 
-        const uuid = vtuber.uuid || generateUUID();
-        const entityId = vtuber.entityId || vtuber._id || uuid;
+        const uuid = influencer.uuid || generateUUID();
+        const entityId = influencer.entityId || influencer._id || uuid;
 
         return {
             uuid: uuid,
@@ -618,27 +826,29 @@ export class SyntheticGuestManager {
             identity: {
                 name: getName(),
                 description: getDescription(),
-                backstory: vtuber.identity?.backstory,
+                backstory: influencer.identity?.backstory,
                 role: getRole() as any,
                 traits: getTraits()
             },
             visual: {
-                modelType: vtuber.visual?.modelType || '3d',
-                modelUrl: vtuber.visual?.modelUrl || '/assets/models/ai_guest_base.glb',
-                backgroundUrl: vtuber.visual?.backgroundUrl,
-                thumbnailUrl: vtuber.visual?.thumbnailUrl,
-                activePropId: vtuber.visual?.activePropId,
-                live2dConfig: vtuber.visual?.live2dConfig || {}
+                modelType: influencer.visual?.modelType || '3d',
+                modelUrl: influencer.visual?.modelUrl || '/models/female-head.glb',
+                backgroundUrl: influencer.visual?.backgroundUrl,
+                thumbnailUrl: influencer.visual?.thumbnailUrl,
+                activePropId: influencer.visual?.activePropId,
+                aidolClips: influencer.visual?.aidolClips || {},
+                aidolPrompts: influencer.visual?.aidolPrompts || {},
+                live2dConfig: influencer.visual?.live2dConfig || {}
             },
             visualIdentity: {
-                modelUrl: vtuber.visual?.modelUrl,
-                thumbnailUrl: vtuber.visual?.thumbnailUrl
+                modelUrl: influencer.visual?.modelUrl,
+                thumbnailUrl: influencer.visual?.thumbnailUrl
             },
             meta: {
                 voiceConfig: getVoiceConfig(),
-                loras: vtuber.meta?.loras || []
+                loras: influencer.meta?.loras || []
             },
-            performanceConfig: vtuber.performanceConfig || {
+            performanceConfig: influencer.performanceConfig || {
                 auraEnabled: false,
                 auraColor: '#00f2ff',
                 particleType: null,
@@ -652,13 +862,13 @@ export class SyntheticGuestManager {
                 lyricsEnabled: false,
                 lyricsStyle: 'neon'
             },
-            animationConfig: vtuber.animationConfig || {
+            animationConfig: influencer.animationConfig || {
                 gestureIntensity: 0.5,
                 headTiltRange: 0.5,
                 nodIntensity: 0.5
             },
-            memory: vtuber.memory || { knowledgeEntries: [] },
-            social: vtuber.social || { relationships: [] },
+            memory: influencer.memory || { knowledgeEntries: [] },
+            social: influencer.social || { relationships: [] },
 
             // Legacy
             name: getName(),
@@ -668,7 +878,7 @@ export class SyntheticGuestManager {
             description: getDescription(),
             traits: getTraits(),
             role: getRole() as any,
-            avatarUrl: vtuber.visual?.thumbnailUrl,
+            avatarUrl: influencer.visual?.thumbnailUrl,
 
             // Runtime
             emotion: 'neutral',
@@ -693,11 +903,36 @@ export class SyntheticGuestManager {
         this.activeGuests.set(persona.uuid, { persona, isSpeaking: false, isThinking: false });
         toast.success(`AI Orchestrator: Summoning ${persona.name || persona.identity?.name}...`);
 
-        if (persona.visual?.modelType === 'vrm' || persona.visual?.modelType === '3d') {
+        const modelType = persona.visual?.modelType || '3d';
+        const isSupportedByWorker = ['vrm', '3d', 'static', 'video', 'image', 'aidol'].includes(modelType);
+
+        /*
+        // REFACTORED: We now use VirtualGuest component to render AI influencers 
+        // in the main thread and bridge them via MediaStream. 
+        // The worker path is reserved for low-latency P2P 3D streaming (future).
+        if (isSupportedByWorker) {
             this.notifyWorker('add-3d-guest', {
                 id: persona.uuid,
                 modelUrl: persona.visual?.modelUrl ? getFileUrl(persona.visual.modelUrl) : undefined,
-                textureUrl: persona.visual?.thumbnailUrl ? getFileUrl(persona.visual.thumbnailUrl) : undefined
+                textureUrl: persona.visual?.thumbnailUrl ? getFileUrl(persona.visual.thumbnailUrl) : undefined,
+                modelType: modelType
+            });
+        }
+        */
+
+        // Phase 35: Add to store for slot assignment and rendering
+        if (this.studioStore) {
+            this.studioStore.addGuest({
+                uuid: persona.uuid,
+                name: persona.name || persona.identity?.name || 'AI Guest',
+                title: persona.identity?.role || 'Neural Agent',
+                type: 'ai',
+                avatar: persona.visual?.thumbnailUrl || persona.avatarUrl,
+                status: 'live',
+                audioEnabled: true,
+                videoEnabled: true,
+                joinedAt: new Date(),
+                modelType: modelType
             });
         }
     }
@@ -731,11 +966,17 @@ export class SyntheticGuestManager {
         guest.isThinking = true;
         this.notifyWorker('update-3d-thinking', { id: guestId, isThinking: true });
 
+        const contextStatus = this.studioStore?.streamingContext 
+            ? `[LIVE_SEGMENT: ${this.studioStore.streamingContext.toUpperCase()}] ` 
+            : '';
+        const enrichedPrompt = contextStatus + prompt;
+
         const enrichedContext = {
             ...context,
             history: this.conversationHistory,
             guestId,
-            guestName: guest.persona.identity?.name || guest.persona.name || 'AI'
+            guestName: guest.persona.identity?.name || guest.persona.name || 'AI',
+            streamingContext: this.studioStore?.streamingContext
         };
 
         try {
@@ -772,7 +1013,31 @@ export class SyntheticGuestManager {
                                     this.broadcastGroupMood(guestId, emotion);
                                 }
                             }
-                            if (gesture) guest.gesture = gesture;
+                            if (gesture) {
+                                guest.gesture = gesture;
+                                
+                                // Phase 15: Aidol Clip Swapping based on Gesture
+                                if (guest.persona.visual?.modelType === 'aidol') {
+                                    const activeProductId = this.studioStore?.highlightedProduct?.id || this.studioStore?.highlightedProduct?._id;
+                                    if (activeProductId) {
+                                        if (gesture === 'use_product' || gesture === 'handon') {
+                                            const handonClip = guest.persona.visual.aidolClips?.[`${activeProductId}:handon`];
+                                            if (handonClip) {
+                                                this.notifyWorker('update-3d-expression', { id: guestId, gesture: `${activeProductId}:handon` });
+                                            } else {
+                                                this.notifyWorker('update-3d-expression', { id: guestId, gesture: activeProductId });
+                                            }
+                                        } else if (gesture === 'intro_product') {
+                                            const introClip = guest.persona.visual.aidolClips?.[activeProductId];
+                                            if (introClip) {
+                                                this.notifyWorker('update-3d-expression', { id: guestId, gesture: activeProductId });
+                                            } else {
+                                                 this.notifyWorker('update-3d-expression', { id: guestId, gesture: 'product_intro' });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         if (typeof originalCallback === 'function') originalCallback(text, metadata);
@@ -787,7 +1052,7 @@ export class SyntheticGuestManager {
                     });
 
                     this.dialogueLock = guestId;
-                    connection.geminiLive.sendPrompt(prompt, { ...context, history: this.conversationHistory });
+                    connection.geminiLive.sendPrompt(enrichedPrompt,enrichedContext);
                 });
             } else {
                 guest.isThinking = false;
@@ -804,20 +1069,31 @@ export class SyntheticGuestManager {
 
     /**
      * Directly trigger a gesture animation for a guest.
+     * @param durationMs Set to 0 for persistent gesture until manually cleared.
      */
-    public triggerGesture(id: string, gesture: string) {
+    public triggerGesture(id: string, gesture: string, durationMs: number = 3000) {
         const guest = this.activeGuests.get(id);
         if (guest) {
             guest.gesture = gesture;
             this.notifyWorker('update-3d-expression', { id, gesture });
-            setTimeout(() => {
-                if (guest.gesture === gesture) guest.gesture = '';
-            }, 3000);
+            if (durationMs > 0) {
+                setTimeout(() => {
+                    if (guest.gesture === gesture) guest.gesture = '';
+                }, durationMs);
+            }
+        }
+    }
+
+    public clearGesture(id: string) {
+        const guest = this.activeGuests.get(id);
+        if (guest && guest.gesture) {
+            guest.gesture = '';
+            this.notifyWorker('update-3d-expression', { id, gesture: '' });
         }
     }
 
     public manualGesture(id: string, gesture: string) {
-        this.triggerGesture(id, gesture);
+        this.triggerGesture(id, gesture, 0);
     }
 
     /**
@@ -926,6 +1202,10 @@ export class SyntheticGuestManager {
         for (const guestId of this.activeGuests.keys()) {
             this.triggerVisualGiftEffect(guestId, data.item);
         }
+
+        // Phase 120: Interrupt Storyboard for Gift Reaction
+        const { neuralShowrunner } = await import('./NeuralShowrunner');
+        neuralShowrunner.pause();
         const director = (await import('./StudioDirector')).studioDirector;
         director.requestAction('react_to_gift', {
             userName: data.userName,
@@ -948,7 +1228,16 @@ export class SyntheticGuestManager {
                     giftName: data.item.name,
                     amount: data.item.cost
                 } as any);
+
+                // Resume after character finishes speaking the thank you
+                this.pollForSilence(speakingId, () => {
+                    neuralShowrunner.resume();
+                });
+            } else {
+                 neuralShowrunner.resume();
             }
+        } else {
+             neuralShowrunner.resume();
         }
     }
 
@@ -1010,9 +1299,18 @@ export class SyntheticGuestManager {
         if (this.isAnyGuestSpeaking()) return;
         const activeIds = Array.from(this.activeGuests.keys());
         if (activeIds.length === 0) return;
+
+        // Pause storyboard
+        const { neuralShowrunner } = await import('./NeuralShowrunner');
+        neuralShowrunner.pause();
+
         const speakerId = activeIds.find(id => this.activeGuests.get(id)?.persona.isMaster) || activeIds[0];
         const prompt = `That was an incredible moment! People are saying: "${data.reason}". announce that you are clipping this for the highlights!`;
         await this.generateResponse(speakerId, prompt, { vibe: 'excited' } as any);
+
+        this.pollForSilence(speakerId, () => {
+             neuralShowrunner.resume();
+        });
     }
 
     public async handleManualHighlight() {
@@ -1071,35 +1369,60 @@ export class SyntheticGuestManager {
     }
 
     private async handleAutonomousProductPitch(product: any, directive: string) {
-        const { ProductPitchService } = await import('./ProductPitchService');
         const activeIds = Array.from(this.activeGuests.keys());
         if (activeIds.length === 0) return;
 
         // Pick a speaker (master guest or random)
         const speakerId = activeIds.find(id => this.activeGuests.get(id)?.persona.isMaster) || activeIds[0];
+        const guest = this.activeGuests.get(speakerId);
         
-        const pitch = ProductPitchService.generateScript({
-            product,
-            vibe: this.currentVibe || 'hype',
-            language: 'vi-VN'
-        });
+        // Phase 15: Coordinated Pitch Logic
+        // 1. Check for pre-generated storyboard script
+        let pitch = `Các bạn ơi, nhìn xem mình đang có gì nè! Đây là ${product.name}, một sản phẩm cực kỳ xịn sò luôn! Giá chỉ có ${product.price} ${product.currency || 'VNĐ'} thôi. Mọi người nhanh tay nhấn vào link hoặc quét mã QR trên màn hình để sở hữu ngay nhé! 🔥 (Trình bày tự nhiên và hào hứng)`;
+        
+        if (this.studioStore?.activeScript) {
+            const storyboardLine = this.studioStore.activeScript.find((s: any) => 
+                (s.productId === product.id || s.productId === product._id) && 
+                s.type?.toLowerCase().includes('showcase')
+            );
+            if (storyboardLine && storyboardLine.text) {
+                pitch = storyboardLine.text;
+                console.log(`[InfluencerManager] Using pre-generated storyboard script for ${product.name}`);
+            }
+        }
 
-        console.log(`[VTuberManager] Autonomous Product Pitch for ${product.name}`);
+        // 2. If AIDOL, swap to the product-specific gesture/clip
+        if (guest?.persona.visual?.modelType === 'aidol') {
+            const productClip = guest.persona.visual.aidolClips?.[product.id || product._id];
+            if (productClip) {
+                console.log(`[InfluencerManager] Loading product-specific Aidol clip: ${productClip}`);
+                guest.persona.visual.aidolClips['product'] = productClip;
+                this.triggerGesture(speakerId, 'product_intro', 0);
+            }
+        }
+
+        console.log(`[InfluencerManager] Autonomous Product Pitch for ${product.name}`);
         await this.generateResponse(speakerId, `${directive} | SCRIPT: ${pitch}`, { vibe: 'hype' } as any);
         
         if (this.studioStore) {
-            this.studioStore.highlightProduct(product.id);
+            this.studioStore.highlightProduct(product.id || product._id);
         }
     }
 
     private async handleKnowledgeInjection(fact: string, directive: string) {
+        // In sales context, skip knowledge injection entirely — it causes off-topic drift
+        if (this.studioStore?.streamingContext === 'sales') {
+            console.log('[InfluencerManager] Skipping knowledge injection in sales context to prevent content drift.');
+            return;
+        }
+
         const activeIds = Array.from(this.activeGuests.keys());
         if (activeIds.length === 0) return;
 
         // Choose a guest with "SMART" or "CURIOSITY" traits if possible (simulated here with random)
         const speakerId = activeIds[Math.floor(Math.random() * activeIds.length)];
         
-        console.log(`[VTuberManager] Knowledge Injection Speaker choosing fact: ${fact.substring(0, 30)}...`);
+        console.log(`[InfluencerManager] Knowledge Injection Speaker choosing fact: ${fact.substring(0, 30)}...`);
         
         // Use standard response generation with the research directive
         await this.generateResponse(speakerId, directive, { vibe: 'curious' } as any);

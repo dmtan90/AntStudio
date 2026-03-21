@@ -13,31 +13,12 @@
 import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue';
 import * as PIXI from 'pixi.js';
 import { useStudioStore } from '@/stores/studio';
-import { Live2DModel, ZipLoader } from 'pixi-live2d-display-advanced';
-import JSZip from 'jszip';
 import { getFileUrl } from '@/utils/api';
 import { STUDIO_ENVIRONMENTS, StudioEnvironment } from '@/constants/StudioEnvironments';
 import { AtmosphereManager, ParticleType } from '@/utils/ai/AtmosphereManager';
 
-// Configure ZipLoader
-if (typeof window !== 'undefined') {
-    (ZipLoader as any).zipReader = (data: Blob) => JSZip.loadAsync(data);
-    (ZipLoader as any).getFilePaths = (jszip: JSZip) => Promise.resolve(Object.keys(jszip.files));
-    (ZipLoader as any).getFiles = (jszip: JSZip, paths: string[]) => {
-        return Promise.all(paths.map(async path => {
-            const file = jszip.file(path);
-            if (!file) throw new Error('File not found in zip: ' + path);
-            const blob = await file.async('blob');
-            return new File([blob], path.split('/').pop() || 'file');
-        }));
-    };
-    (ZipLoader as any).readText = (jszip: JSZip, path: string) => {
-        const file = jszip.file(path);
-        if (!file) return Promise.reject(new Error('File not found in zip: ' + path));
-        return file.async('text');
-    };
-    (window as any).PIXI = PIXI;
-}
+// Atmosphere manager handles environmental effects like particles
+
 
 const props = defineProps<{
     guests: any[]; 
@@ -172,7 +153,7 @@ const syncGuests = async () => {
         }
     }
 
-    // 2. Add/Update video sprites for all VTubers
+    // 2. Add/Update video sprites for all influencers
     for (let i = 0; i < props.guests.length; i++) {
         const guest = props.guests[i];
         const guestId = guest.uuid || guest.id; // Fallback to id if uuid is missing

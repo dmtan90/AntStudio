@@ -1,5 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
-import { geminiPool } from '../../utils/gemini.js';
+import { generateText } from '../../utils/AIGenerator.js';
 import { vibeEngine } from './VibeEngine.js';
 
 import { Logger } from '../../utils/Logger.js';
@@ -21,9 +20,6 @@ export class MusicFXService {
             this.currentVibe = vibe;
             this.currentIntensity = intensity;
 
-            const modelName = "gemini-2.5-flash";
-            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
-
             const prompt = `
                 Generate a 30-second seamless music loop. 
                 Mood: ${vibe}. 
@@ -34,8 +30,11 @@ export class MusicFXService {
 
             Logger.info(`🎵 [MusicFX] Generating ${vibe} loop (Intensity: ${intensity})`);
 
-            // In real implementation, this would call the Google Music FX (Labs) API
-            // For now, we simulate returning a generated stem URL
+            // In real implementation, this would call AIGenerator.generateMusic
+            // For consistency, we use generateText to log the intent (simulated)
+            await generateText(prompt, undefined);
+
+            // Simulate returning a generated stem URL
             return {
                 url: `/api/media/music/generated/${vibe}_${Date.now()}.mp3`,
                 metadata: { bpm: 80 + (intensity * 40), key: 'Am' }

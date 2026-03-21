@@ -16,7 +16,7 @@ export class TrendFetchService {
                 'Virtual influencers taking over major fashion weeks',
                 'AI-composed soundtrack wins prestigious music award',
                 'Interactive cinematic experiences become the new streaming standard',
-                'Hyper-realistic VTubers hosting major global talk shows'
+                'Hyper-realistic Influencers hosting major global talk shows'
             ],
             general: [
                 'Global shift towards decentralized creator economies',

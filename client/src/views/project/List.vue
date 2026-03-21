@@ -22,6 +22,11 @@
           <plus theme="outline" size="20" />
           {{ t('projects.actions.newProject') }}
         </button>
+
+        <button @click="studioStore.showOnboarding = true" class="whitespace-nowrap group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3">
+          <broadcast theme="outline" size="20" class="text-red-500" />
+          {{ t('dashboard.header.goLive') }}
+        </button>
       </div>
 
       <!-- Tour -->
@@ -197,11 +202,13 @@ import { useUIStore } from '@/stores/ui'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { getFileUrl } from '@/utils/api'
+import { useStudioStore } from '@/stores/studio';
 
 const { t } = useI18n()
 const router = useRouter()
 const projectStore = useProjectStore()
 const uiStore = useUIStore()
+const studioStore = useStudioStore();
 const { projects, loadingList: loading, pagination } = storeToRefs(projectStore)
 const searchQuery = ref('')
 const currentStatus = ref('all')

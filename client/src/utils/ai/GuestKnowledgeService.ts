@@ -8,7 +8,7 @@ export class GuestKnowledgeService {
     private evergreenTopics = [
         "AI Singularity breakthroughs in 2026",
         "Autonomous Media PaaS market expansion",
-        "The rise of Synthetic Real-time Vtubers",
+        "The rise of Synthetic Real-time influencers",
         "AntStudio global deployment milestones"
     ];
 
@@ -22,7 +22,8 @@ export class GuestKnowledgeService {
      * Phase 44: Integrates long-term memory (recall).
      */
     public async retrieveKnowledge(prompt: string, contextId?: string): Promise<{ fact: string, visualData?: any, isHistorical?: boolean }> {
-        console.log(`[KnowledgeService] Searching context for: "${prompt.substring(0, 30)}..."`);
+        const promptPreview = typeof prompt === 'string' ? prompt.substring(0, 30) : 'Non-string prompt';
+        console.log(`[KnowledgeService] Searching context for: "${promptPreview}..."`);
 
         // Phase 44: Recall from long-term memory
         const { neuralMemoryService } = await import('./NeuralMemoryService');
@@ -45,7 +46,8 @@ export class GuestKnowledgeService {
                 prompt,
                 historicalContext, // Phase 44: Inject memory into Gemini prompt
                 language: studioStore.visualSettings.accessibility.targetLang || 'vi-VN',
-                context: 'AntStudio Neural Singularity',
+                context: studioStore.streamingContext || 'AntStudio Neural Singularity',
+                streamingContext: studioStore.streamingContext, // Phase 21: Context-aware RAG
                 extractVisuals: true
             }).catch(() => null);
 
@@ -112,12 +114,16 @@ export class GuestKnowledgeService {
             const res: any = await api.get('/ai/trending-topics', {
                 params: {
                     lang: studioStore.visualSettings.accessibility.targetLang || 'vi-VN',
-                    context: 'local_news_tech_trends'
+                    context: studioStore.streamingContext || 'general'
                 }
             });
 
             if (res?.data?.topics && Array.isArray(res.data.topics)) {
-                this.dynamicTopicsCache = res.data.topics;
+                this.dynamicTopicsCache = res.data.topics.map((t: any) => {
+                    if (typeof t === 'string') return t;
+                    if (t && typeof t === 'object') return t.title || t.topic || t.name || JSON.stringify(t);
+                    return String(t);
+                });
                 this.lastFetchTime = now;
                 return this.dynamicTopicsCache;
             }

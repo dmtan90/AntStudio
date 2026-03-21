@@ -1,0 +1,1 @@
+Give me a list of 5 currently trending topics and their related keywords for a live stream. Context: {{context}}. Language: {{lang}}. Return ONLY a JSON object: { "topics": [{ "title": "Topic Name", "keywords": ["kw1", "kw2"], "heatLevel": 85 }] }

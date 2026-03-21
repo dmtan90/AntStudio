@@ -1,107 +1,110 @@
 import { WebGLUtils } from '@/utils/webgl/WebGLUtils';
 import * as Shaders from '@/utils/webgl/WebGLShaders';
+import { ShaderLibrary } from '@/utils/webgl/ShaderLibrary';
 
 export interface VisualSettings {
     beauty: {
         smoothing: number;
+        brighten: number;
         brightness: number;
-        sharpen: number;
         denoise: number;
+        sharpen: number;
+        slimming: number;
+        eyeEnlarge: number;
     };
     background: {
-        mode: string;
-        blurLevel: string;
+        mode: 'none' | 'blur' | 'virtual';
+        blurLevel: 'low' | 'medium' | 'high';
+        imageUrl?: string;
     };
     chromaKey?: {
         enabled: boolean;
         keyColor: string;
         similarity: number;
         smoothness: number;
+        spill: number;
     };
     ar?: {
-        beauty: {
+        beauty?: {
             smoothing: number;
             brighten: number;
             denoise: number;
             slimming: number;
             eyeEnlarge: number;
         };
-        landmarks?: any; // Face Mesh data
+        active3DMask?: string | null;
+        landmarks?: any;
     };
+    streamRatio: '16:9' | '9:16' | 'both';
+    ai?: {
+        autonomousProduction: boolean;
+        autoDirector: boolean;
+        humanFreeMode?: boolean;
+    };
+    streamingContext?: string;
+    vibeScore?: number;
+    chatVelocity?: number;
 }
 
 export class WebGLCompositor {
     public gl: WebGL2RenderingContext | WebGLRenderingContext | null = null;
+    public shaderLib: ShaderLibrary | null = null;
     
-    // Shaders
-    public compositeProgram: WebGLProgram | null = null;
-    public bilateralShader: any = null;
-    public blurHorizontalShader: any = null;
-    public blurVerticalShader: any = null;
-    public sharpenShader: any = null;
-    public brightnessShader: any = null;
-    public denoiseShader: any = null;
-    public virtualBgShader: any = null;
-    public blurCompositeShader: any = null;
-    public chromaKeyShader: any = null;
-    public colorGradingShader: any = null;
-    public alphaBlendShader: any = null;
-    public glitchTransitionShader: any = null;
-    public zoomTransitionShader: any = null;
-    public slideTransitionShader: any = null;
+    // Program references
+    public compositeProgram: Shaders.ShaderProgram | null = null;
+    public bilateralShader: Shaders.ShaderProgram | null = null;
+    public blurHorizontalShader: Shaders.ShaderProgram | null = null;
+    public blurVerticalShader: Shaders.ShaderProgram | null = null;
+    public sharpenShader: Shaders.ShaderProgram | null = null;
+    public brightnessShader: Shaders.ShaderProgram | null = null;
+    public denoiseShader: Shaders.ShaderProgram | null = null;
+    public virtualBgShader: Shaders.ShaderProgram | null = null;
+    public blurCompositeShader: Shaders.ShaderProgram | null = null;
+    public chromaKeyShader: Shaders.ShaderProgram | null = null;
+    public colorGradingShader: Shaders.ShaderProgram | null = null;
+    public alphaBlendShader: Shaders.ShaderProgram | null = null;
+    public glitchTransitionShader: Shaders.ShaderProgram | null = null;
+    public zoomTransitionShader: Shaders.ShaderProgram | null = null;
+    public slideTransitionShader: Shaders.ShaderProgram | null = null;
 
     // AntAR Shaders
-    public beauty20Shader: any = null;
-    public faceMorphShader: any = null;
+    public beauty20Shader: Shaders.ShaderProgram | null = null;
+    public faceMorphShader: Shaders.ShaderProgram | null = null;
     public antArMaskTexture: WebGLTexture | null = null;
+    public framedHostTexture: WebGLTexture | null = null;
 
-    // Geometry
-    public fullScreenQuad: any = null;
-    public unitQuad: any = null;
-
-    // Uniform Locs
-    public uTranslationLoc: WebGLUniformLocation | null = null;
-    public uScaleLoc: WebGLUniformLocation | null = null;
-    public uTexScaleLoc: WebGLUniformLocation | null = null;
-    public uTexOffsetLoc: WebGLUniformLocation | null = null;
-    public uFlipHorizontalLoc: WebGLUniformLocation | null = null;
-    public uFlipVerticalLoc: WebGLUniformLocation | null = null;
-    public uFlipYLoc: WebGLUniformLocation | null = null;
-    public uShapeLoc: WebGLUniformLocation | null = null;
-    public uAspectLoc: WebGLUniformLocation | null = null;
-    public uBorderRadiusLoc: WebGLUniformLocation | null = null;
-    public uImageLoc: WebGLUniformLocation | null = null;
-
-    // Intermediate Textures
+    // Intermediate Textures & State
     public texPing: WebGLTexture | null = null;
     public texPong: WebGLTexture | null = null;
+    public texEffects: WebGLTexture | null = null;
+    public texMask: WebGLTexture | null = null;
+    public maskTexture: WebGLTexture | null = null;
     public blurBuffer1: WebGLTexture | null = null;
     public blurBuffer2: WebGLTexture | null = null;
-    public framedHostTexture: WebGLTexture | null = null;
-    public framebuffer: WebGLFramebuffer | null = null;
-
-    // Backgrounds & Masks
-    public maskTexture: WebGLTexture | null = null;
     public backgroundTexture: WebGLTexture | null = null;
-    public backgroundMetadata = { width: 0, height: 0 };
+    public backgroundMetadata: { width: number, height: number } = { width: 0, height: 0 };
     
     public lutTexture: WebGLTexture | null = null;
-    public lutEnabled = false;
-
-    // Transition State
-    public transitionStartTime: number = 0;
-    public transitionDuration: number = 500;
-    public transitionType: 'glitch' | 'zoom' | 'slide' | 'fade' = 'fade';
-    public transitionActive: boolean = false;
+    public lutEnabled: boolean = false;
     public oldSceneTexture: WebGLTexture | null = null;
     public currentSceneTexture: WebGLTexture | null = null;
+    
+    // Geometries
+    public unitQuad: any = null;
+    public fullScreenQuad: any = null;
 
-    // Viewport & Ratio
-    public width: number = 0;
-    public height: number = 0;
-    public targetRatio: '16:9' | '9:16' = '16:9';
+    private width: number = 0;
+    private height: number = 0;
+    private framebuffer: WebGLFramebuffer | null = null;
+    private targetRatio: '16:9' | '9:16' | 'both' = '16:9';
 
-    init(canvas: HTMLCanvasElement | OffscreenCanvas) {
+    // Transition State
+    public transitionActive: boolean = false;
+    public transitionStartTime: number = 0;
+    public transitionDuration: number = 500;
+    public transitionType: 'glitch' | 'zoom' | 'slide' | 'fade' = 'glitch';
+
+    init(canvas: HTMLCanvasElement | OffscreenCanvas, shaderLib?: ShaderLibrary) {
         this.width = canvas.width;
         this.height = canvas.height;
 
@@ -112,99 +115,28 @@ export class WebGLCompositor {
         }
 
         const gl = this.gl;
+        this.shaderLib = shaderLib || new ShaderLibrary(gl);
+        const lib = this.shaderLib;
         
-        this.bilateralShader = Shaders.createBilateralFilterShader(gl);
-        this.blurHorizontalShader = Shaders.createGaussianBlurShader(gl, true);
-        this.blurVerticalShader = Shaders.createGaussianBlurShader(gl, false);
-        this.sharpenShader = Shaders.createUnsharpMaskShader(gl);
-        this.brightnessShader = Shaders.createBrightnessShader(gl);
-        this.denoiseShader = Shaders.createDenoiseShader(gl);
-        this.virtualBgShader = Shaders.createVirtualBackgroundShader(gl);
-        this.blurCompositeShader = Shaders.createBlurCompositeShader(gl);
-        this.chromaKeyShader = Shaders.createChromaKeyShader(gl);
-        this.colorGradingShader = Shaders.createColorGradingShader(gl);
-        this.alphaBlendShader = Shaders.createAlphaBlendShader(gl);
-        this.glitchTransitionShader = Shaders.createGlitchTransitionShader(gl);
-        this.zoomTransitionShader = Shaders.createZoomTransitionShader(gl);
-        this.slideTransitionShader = Shaders.createSlideTransitionShader(gl);
+        this.bilateralShader = lib.getOrCompile('bilateral', Shaders.createBilateralFilterShader);
+        this.blurHorizontalShader = lib.getOrCompile('blurH', (gl) => Shaders.createGaussianBlurShader(gl, true));
+        this.blurVerticalShader = lib.getOrCompile('blurV', (gl) => Shaders.createGaussianBlurShader(gl, false));
+        this.sharpenShader = lib.getOrCompile('sharpen', Shaders.createUnsharpMaskShader);
+        this.brightnessShader = lib.getOrCompile('brightness', Shaders.createBrightnessShader);
+        this.denoiseShader = lib.getOrCompile('denoise', Shaders.createDenoiseShader);
+        this.virtualBgShader = lib.getOrCompile('virtualBg', Shaders.createVirtualBackgroundShader);
+        this.blurCompositeShader = lib.getOrCompile('blurComposite', Shaders.createBlurCompositeShader);
+        this.chromaKeyShader = lib.getOrCompile('chromaKey', Shaders.createChromaKeyShader);
+        this.colorGradingShader = lib.getOrCompile('colorGrading', Shaders.createColorGradingShader);
+        this.alphaBlendShader = lib.getOrCompile('alphaBlend', Shaders.createAlphaBlendShader);
+        this.glitchTransitionShader = lib.getOrCompile('glitch', Shaders.createGlitchTransitionShader);
+        this.zoomTransitionShader = lib.getOrCompile('zoom', Shaders.createZoomTransitionShader);
+        this.slideTransitionShader = lib.getOrCompile('slide', Shaders.createSlideTransitionShader);
 
         // AntAR
-        this.beauty20Shader = Shaders.createBeauty20Shader(gl);
-        this.faceMorphShader = Shaders.createFaceMorphShader(gl);
-
-        const compositeVS = `
-        attribute vec2 a_position;
-        attribute vec2 a_texCoord;
-        uniform vec2 u_translation;
-        uniform vec2 u_scale;
-        uniform vec2 u_texScale;
-        uniform vec2 u_texOffset;
-        uniform bool u_flipHorizontal;
-        uniform bool u_flipVertical;
-        uniform bool u_flipY;
-        varying vec2 v_texCoord;
-        varying vec2 v_localCoord;
-        void main() {
-            v_localCoord = a_position;
-            vec2 pos = a_position * u_scale + u_translation;
-            float yPos = u_flipY ? (1.0 - pos.y) : pos.y;
-            gl_Position = vec4(pos.x * 2.0 - 1.0, yPos * 2.0 - 1.0, 0.0, 1.0);
-            
-            vec2 uv = a_texCoord;
-            if (u_flipHorizontal) uv.x = 1.0 - uv.x;
-            if (u_flipVertical)   uv.y = 1.0 - uv.y;
-            v_texCoord = uv * u_texScale + u_texOffset;
-        }
-        `;
-        
-        const compositeFS = `
-        precision mediump float;
-        varying vec2 v_texCoord;
-        varying vec2 v_localCoord;
-        uniform sampler2D u_image;
-        uniform int u_shape;
-        uniform float u_aspect;
-        uniform float u_borderRadius;
-
-        void main() {
-            if (u_shape == 1) {
-                vec2 p = v_localCoord - 0.5;
-                p.x *= u_aspect;
-                float radius = min(u_aspect, 1.0) * 0.5;
-                if (length(p) > radius) discard;
-            } else if (u_shape == 2) {
-                vec2 p = v_localCoord;
-                float r = u_borderRadius / 100.0;
-                if (p.x < r && p.y < r && length(p - vec2(r)) > r) discard;
-                if (p.x > 1.0-r && p.y < r && length(p - vec2(1.0-r, r)) > r) discard;
-                if (p.x < r && p.y > 1.0-r && length(p - vec2(r, 1.0-r)) > r) discard;
-                if (p.x > 1.0-r && p.y > 1.0-r && length(p - vec2(1.0-r, 1.0-r)) > r) discard;
-            }
-            gl_FragColor = texture2D(u_image, v_texCoord);
-        }
-        `;
-
-        const vs = WebGLUtils.createShader(gl, gl.VERTEX_SHADER, compositeVS);
-        const fs = WebGLUtils.createShader(gl, gl.FRAGMENT_SHADER, compositeFS);
-        if (vs && fs) {
-            this.compositeProgram = WebGLUtils.createProgram(gl, vs, fs);
-            this.fullScreenQuad = Shaders.createFullScreenQuad(gl);
-            this.unitQuad = Shaders.createUnitQuad(gl);
-
-            if (this.compositeProgram) {
-                this.uTranslationLoc = gl.getUniformLocation(this.compositeProgram, 'u_translation');
-                this.uScaleLoc = gl.getUniformLocation(this.compositeProgram, 'u_scale');
-                this.uTexScaleLoc = gl.getUniformLocation(this.compositeProgram, 'u_texScale');
-                this.uTexOffsetLoc = gl.getUniformLocation(this.compositeProgram, 'u_texOffset');
-                this.uFlipHorizontalLoc = gl.getUniformLocation(this.compositeProgram, 'u_flipHorizontal');
-                this.uFlipVerticalLoc = gl.getUniformLocation(this.compositeProgram, 'u_flipVertical');
-                this.uFlipYLoc = gl.getUniformLocation(this.compositeProgram, 'u_flipY');
-                this.uShapeLoc = gl.getUniformLocation(this.compositeProgram, 'u_shape');
-                this.uAspectLoc = gl.getUniformLocation(this.compositeProgram, 'u_aspect');
-                this.uBorderRadiusLoc = gl.getUniformLocation(this.compositeProgram, 'u_borderRadius');
-                this.uImageLoc = gl.getUniformLocation(this.compositeProgram, 'u_image');
-            }
-        }
+        this.beauty20Shader = lib.getOrCompile('beauty20', Shaders.createBeauty20Shader);
+        this.faceMorphShader = lib.getOrCompile('faceMorph', Shaders.createFaceMorphShader);
+        this.compositeProgram = lib.getOrCompile('composite', Shaders.createCompositeShader);
 
         gl.disable(gl.DEPTH_TEST);
         gl.disable(gl.CULL_FACE);
@@ -542,125 +474,61 @@ export class WebGLCompositor {
     }
 
     renderToCanvas(inputTexture: WebGLTexture, region: any, meta: {width: number, height: number}, mirrored: boolean, cropToFace: boolean, faceTargetX: number = 0.5, faceTargetY: number = 0.5) {
-        const gl = this.gl;
-        if (!gl || !this.compositeProgram || !this.unitQuad) return;
+        if (!this.gl || !this.shaderLib || !this.compositeProgram) return;
 
-        // Apply Transition if active
-        let progress = 0;
         let program = this.compositeProgram;
+        let progress = 0;
         
         if (this.transitionActive) {
             const now = performance.now();
             progress = (now - this.transitionStartTime) / this.transitionDuration;
-            if (progress >= 1.0) {
-                this.transitionActive = false;
-                progress = 1.0;
-            }
+            if (progress >= 1.0) { this.transitionActive = false; progress = 1.0; }
 
-            if (this.transitionType === 'glitch') program = this.glitchTransitionShader?.program || program;
-            else if (this.transitionType === 'zoom') program = this.zoomTransitionShader?.program || program;
-            else if (this.transitionType === 'slide') program = this.slideTransitionShader?.program || program;
+            if (this.transitionType === 'glitch') program = this.glitchTransitionShader || program;
+            else if (this.transitionType === 'zoom') program = this.zoomTransitionShader || program;
+            else if (this.transitionType === 'slide') program = this.slideTransitionShader || program;
         }
 
-        gl.useProgram(program);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.unitQuad.positionBuffer);
-        const posLoc = gl.getAttribLocation(program, 'a_position');
-        gl.enableVertexAttribArray(posLoc);
-        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.unitQuad.texCoordBuffer);
-        const texLoc = gl.getAttribLocation(program, 'a_texCoord');
-        gl.enableVertexAttribArray(texLoc);
-        gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 0, 0);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, inputTexture);
-
-        let x = region.x / 100.0;
-        let y = region.y / 100.0;
-        let w = region.width / 100.0;
-        let h = region.height / 100.0;
-
-        // Autonomous Re-framing: If target is 9:16 and we are rendering 16:9 regions
-        if (this.targetRatio === '9:16' && this.width / this.height > 1.0) {
-            // This case happens if the buffer is still 16:9 but we want a 9:16 look
-            // or if we are multi-streaming.
-        }
-
-        if (this.targetRatio === '9:16' && cropToFace) {
-            // Priority re-framing for vertical platforms
-            // Ensure we are using 'cover' mode and focusing on face
-        }
-
+        let x = region.x / 100.0, y = region.y / 100.0, w = region.width / 100.0, h = region.height / 100.0;
         const targetAspect = (w * this.width) / (h * this.height);
         const sourceAspect = meta.width / meta.height;
 
-        let texScaleX = 1.0;
-        let texScaleY = 1.0;
-        let texOffsetX = 0.0;
-        let texOffsetY = 0.0;
+        let texScaleX = 1.0, texScaleY = 1.0, texOffsetX = 0.0, texOffsetY = 0.0;
 
         if (region.objectFit === 'contain') {
-            if (sourceAspect > targetAspect) {
-                texScaleY = targetAspect / sourceAspect;
-                texOffsetY = (1.0 - texScaleY) / 2.0;
-            } else {
-                texScaleX = sourceAspect / targetAspect;
-                texOffsetX = (1.0 - texScaleX) / 2.0;
-            }
+            if (sourceAspect > targetAspect) { const scaleY = targetAspect / sourceAspect; y += (h * (1.0 - scaleY)) / 2.0; h *= scaleY; } 
+            else { const scaleX = sourceAspect / targetAspect; x += (w * (1.0 - scaleX)) / 2.0; w *= scaleX; }
         } else {
-            // Cover
             if (sourceAspect > targetAspect) {
-                texScaleX = targetAspect / sourceAspect;
-                texOffsetX = (1.0 - texScaleX) / 2.0;
-                
-                if (cropToFace) {
-                    const maxOffset = 1.0 - texScaleX;
-                    const desiredOffset = faceTargetX - (texScaleX / 2.0);
-                    texOffsetX = Math.max(0, Math.min(maxOffset, desiredOffset));
-                }
+                texScaleX = targetAspect / sourceAspect; texOffsetX = (1.0 - texScaleX) / 2.0;
+                if (cropToFace) { const maxOffset = 1.0 - texScaleX; texOffsetX = Math.max(0, Math.min(maxOffset, faceTargetX - (texScaleX / 2.0))); }
             } else if (sourceAspect < targetAspect) {
-                texScaleY = sourceAspect / targetAspect;
-                texOffsetY = (1.0 - texScaleY) / 2.0;
-                
-                if (cropToFace) {
-                    const maxOffset = 1.0 - texScaleY;
-                    const desiredOffset = faceTargetY - (texScaleY / 2.0);
-                    texOffsetY = Math.max(0, Math.min(maxOffset, desiredOffset));
-                }
+                texScaleY = sourceAspect / targetAspect; texOffsetY = (1.0 - texScaleY) / 2.0;
+                if (cropToFace) { const maxOffset = 1.0 - texScaleY; texOffsetY = Math.max(0, Math.min(maxOffset, faceTargetY - (texScaleY / 2.0))); }
             }
         }
 
-        gl.uniform2f(gl.getUniformLocation(program, 'u_translation'), x, y);
-        gl.uniform2f(gl.getUniformLocation(program, 'u_scale'), w, h);
-        gl.uniform2f(gl.getUniformLocation(program, 'u_texScale'), texScaleX, texScaleY);
-        gl.uniform2f(gl.getUniformLocation(program, 'u_texOffset'), texOffsetX, texOffsetY);
-        gl.uniform1i(gl.getUniformLocation(program, 'u_flipHorizontal'), mirrored ? 1 : 0);
-        gl.uniform1i(gl.getUniformLocation(program, 'u_flipVertical'), 0);
-        gl.uniform1i(gl.getUniformLocation(program, 'u_flipY'), 1);
+        let shape = 0, borderRadius = region.borderRadius || 0;
+        if (region.shape === 'circle') shape = 1;
+        else if (borderRadius > 0) { shape = 2; const sizeInPixels = Math.min(w * this.width, h * this.height); borderRadius = (region.borderRadius / sizeInPixels) * 100.0; }
 
-        let shape = 0;
-        let borderRadius = region.borderRadius || 0;
-        if (region.shape === 'circle') {
-            shape = 1;
-        } else if (borderRadius > 0) {
-            shape = 2;
-            const sizeInPixels = Math.min(w * this.width, h * this.height);
-            borderRadius = (region.borderRadius / sizeInPixels) * 100.0;
-        }
-        
-        gl.uniform1i(gl.getUniformLocation(program, 'u_shape'), shape);
-        gl.uniform1f(gl.getUniformLocation(program, 'u_aspect'), targetAspect);
-        gl.uniform1f(gl.getUniformLocation(program, 'u_borderRadius'), borderRadius);
-        gl.uniform1i(gl.getUniformLocation(program, 'u_image'), 0);
+        this.gl.enable(this.gl.BLEND);
+        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
-        const uProgress = gl.getUniformLocation(program, 'u_progress');
-        if (uProgress) gl.uniform1f(uProgress, progress);
+        this.shaderLib.renderQuad(program, inputTexture, {
+            translation: [x, y],
+            scale: [w, h],
+            texScale: [texScaleX, texScaleY],
+            texOffset: [texOffsetX, texOffsetY],
+            flipHorizontal: mirrored,
+            flipY: true,
+            shape,
+            aspect: targetAspect,
+            borderRadius: borderRadius,
+            extraUniforms: { u_progress: progress },
+            useUnitQuad: true
+        });
 
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.disable(gl.BLEND);
+        this.gl.disable(this.gl.BLEND);
     }
 }

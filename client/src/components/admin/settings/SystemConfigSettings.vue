@@ -1,18 +1,5 @@
 <template>
-    <div class="api-grid grid grid-cols-1 md:grid-cols-3 xl:grid-cols-3 gap-6">
-        <!-- Public Domain -->
-        <el-card class="settings-section">
-            <template #header>{{ $t('admin.settings.system.domain.title') }}</template>
-            <el-form :model="apiConfigs" label-position="top">
-                <el-form-item :label="t('admin.settings.system.domain.label')">
-                    <el-input v-model="apiConfigs.publicDomain" :placeholder="t('admin.settings.system.domain.placeholder')"
-                        class="glass-input" />
-                    <div class="text-[11px] text-gray-500 mt-1">{{ $t('admin.settings.system.domain.info', { url: 'https://your-domain.com/api/platforms/callback/...' }) }}</div>
-                </el-form-item>
-            </el-form>
-        </el-card>
-
-        <!-- Proxy Configuration -->
+    <div class="api-grid grid grid-cols-1 md:grid-cols-3 xl:grid-cols-3 gap-6">        <!-- Proxy Configuration -->
         <el-card class="settings-section" v-if="apiConfigs.proxy">
             <template #header>
                 <div class="flex justify-between items-center w-full">

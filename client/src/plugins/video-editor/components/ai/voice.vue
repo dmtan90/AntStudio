@@ -7,7 +7,7 @@ import { useUserMediaStore } from 'video-editor/hooks/use-user-media';
 import { toast } from 'vue-sonner';
 import { getFileUrl } from '@/utils/api';
 import { Magic, Transform, Close, Plus, Voice } from '@icon-park/vue-next';
-import VoiceLibraryDialog from '@/components/vtuber/VoiceLibraryDialog.vue';
+import VoiceLibraryDialog from '@/components/influencer/VoiceLibraryDialog.vue';
 
 const editor = useEditorStore();
 const canvasStore = useCanvasStore();

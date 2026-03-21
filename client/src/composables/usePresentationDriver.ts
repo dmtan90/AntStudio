@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from 'vue';
-import { useVTuberStore } from '@/stores/vtuber';
+import { useInfluencerStore } from '@/stores/influencer';
 import { getFileUrl } from '@/utils/api';
 import { toast } from 'vue-sonner';
 
@@ -11,7 +11,7 @@ export function usePresentationDriver(options: {
     voiceConfig: Ref<{ provider: string; voiceId: string; language: string }>;
     onVisemeUpdate?: (volume: number) => void;
 }) {
-    const vtuberStore = useVTuberStore();
+    const influencerStore = useInfluencerStore();
     const isAIPresenting = ref(false);
     const isSynthesizing = ref(false);
     const currentAudio = ref<HTMLAudioElement | null>(null);
@@ -61,7 +61,7 @@ export function usePresentationDriver(options: {
 
         isSynthesizing.value = true;
         try {
-            const voiceData = await vtuberStore.generateVoicePreview({
+            const voiceData = await influencerStore.generateVoicePreview({
                 text: script,
                 provider: options.voiceConfig.value.provider,
                 voiceId: options.voiceConfig.value.voiceId,

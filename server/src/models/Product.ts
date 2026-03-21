@@ -23,6 +23,10 @@ export interface IProduct extends Document {
     secondary_colors: string[];
     video?: string;
     metadata: any;
+    // Phase 11: Product Knowledge Base
+    knowledgeBase?: string;          // Distilled text from inventoryUrl scraping
+    knowledgeStatus?: 'pending' | 'processing' | 'ready' | 'error';
+    knowledgeUpdatedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -49,7 +53,11 @@ const ProductSchema = new Schema<IProduct>({
     primary_colors: { type: [String], default: [] },
     secondary_colors: { type: [String], default: [] },
     video: { type: String, default: '' },
-    metadata: { type: Schema.Types.Mixed, default: {} }
+    metadata: { type: Schema.Types.Mixed, default: {} },
+    // Phase 11: Product Knowledge Base
+    knowledgeBase: { type: String, default: null },
+    knowledgeStatus: { type: String, enum: ['pending', 'processing', 'ready', 'error'], default: null },
+    knowledgeUpdatedAt: { type: Date, default: null }
 }, {
     timestamps: true
 });

@@ -36,7 +36,7 @@ export class AudioMixerService {
             // Clean up previous track with same ID
             this.removeTrack(id);
 
-            console.log("AudioMixer addTrack: ", id);
+            // console.log("AudioMixer addTrack: ", id);
 
             const source = ctx.createMediaStreamSource(stream);
             const gain = ctx.createGain();
@@ -48,7 +48,7 @@ export class AudioMixerService {
             analyzer.connect(this.masterGain!);
 
             this.tracks.set(id, { gain, analyzer, source });
-            console.log(`[AudioMixer] Added track: ${id}`, { enabled: stream.getAudioTracks()[0]?.enabled, muted: stream.getAudioTracks()[0]?.muted, readyState: stream.getAudioTracks()[0]?.readyState });
+            // console.log(`[AudioMixer] Added track: ${id}`, { enabled: stream.getAudioTracks()[0]?.enabled, muted: stream.getAudioTracks()[0]?.muted, readyState: stream.getAudioTracks()[0]?.readyState });
         }catch(err){
             console.error("addTrack error: ", err);
         }

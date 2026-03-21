@@ -1,4 +1,6 @@
 import { createApp } from 'vue'
+import * as PIXI from 'pixi.js'
+(window as any).PIXI = PIXI
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'

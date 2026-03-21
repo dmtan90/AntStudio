@@ -1,41 +1,28 @@
-import { GoogleGenAI } from '@google/genai';
-import { geminiPool } from './gemini.js';
+import { generateText } from './AIGenerator.js';
 import { uploadToS3 } from './s3.js';
-import axios from 'axios';
 import { Logger } from './Logger.js';
+import { promptService } from '../services/PromptService.js';
 
 /**
  * Service for AI-powered audio enhancement (denoising, clarity).
- * Utilizes Gemini 1.5 Flash for audio processing.
+ * Utilizes Gemini 2.0 Flash for audio analysis and enhancement instruction.
  */
 export const enhanceAudioFile = async (buffer: Buffer, mimeType: string, userId: string): Promise<{ url: string, key: string }> => {
     try {
-        const { client: ai, key } = await geminiPool.getOptimalClient("gemini-2.5-flash");
-
         const audioBase64 = buffer.toString('base64');
 
-        const prompt = `
-            You are an expert audio engineer. 
-            Clean this audio by:
-            1. Removing background noise, hums, and clicks.
-            2. Enhancing voice clarity and presence.
-            3. Normalizing volume levels.
-            
-            Return the processed audio in the same format.
-        `;
+        const promptTemplate = await promptService.get('ai/audio_enhancement');
 
-        // Note: Gemini API currently returns text or structured data. 
-        // For actual audio-to-audio processing, we might use specialized AI services 
-        // or a simulated enhancement for the demo if a direct binary return isn't supported.
-        // For now, we will simulate the "clean" process by applying FFmpeg filters 
-        // if the AI doesn't support direct binary audio-to-audio yet.
+        const promptParts = [
+            { text: promptTemplate },
+            { inlineData: { data: audioBase64, mimeType } }
+        ];
 
-        // Fallback to FFmpeg filters for denoising if AI isn't available for binary output
-        // (This is more reliable for a real production environment unless using specialized AI audio APIs)
+        await generateText(promptParts, undefined);
 
         const s3Key = `projects/${userId}/audio/enhanced_${Date.now()}.mp3`;
 
-        // Simulating enhancement for now - in a real scenario, we'd pipe through FFmpeg denoise
+        // Simulating enhancement for now
         const upload = await uploadToS3(s3Key, buffer, mimeType);
 
         return {

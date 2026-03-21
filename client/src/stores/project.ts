@@ -21,6 +21,7 @@ export const useProjectStore = defineStore('project', () => {
     const isGenerating = ref(false)
     const loadingList = ref(false)
     const editorMode = ref<'simple' | 'studio'>('simple')
+    const generationLogs = ref<string[]>([])
 
     // Getters
     const projectId = computed(() => currentProject.value?._id)
@@ -540,6 +541,14 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
+    function addLog(log: string) {
+      generationLogs.value.push(log);
+    }
+
+    function clearLogs() {
+      generationLogs.value = [];
+    }
+
     return {
         projects,
         currentProject,
@@ -552,6 +561,7 @@ export const useProjectStore = defineStore('project', () => {
         characters,
         segments,
         scriptAnalysis,
+        generationLogs,
         fetchProjects,
         fetchProject,
         createProject,

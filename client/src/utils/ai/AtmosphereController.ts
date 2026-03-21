@@ -1,5 +1,6 @@
 import { vibeEngine } from './VibeEngine.js';
 import { audioMixerService } from './AudioMixerService.js';
+import { neuralMemoryService } from './NeuralMemoryService.js';
 import { toast } from 'vue-sonner';
 
 /**
@@ -13,6 +14,25 @@ export class AtmosphereController {
         vibeEngine.onVibeChange((vibe, score) => {
             this.adaptAtmosphere(vibe, score);
         });
+
+        // Phase 23: Environmental Shift Listener
+        if (typeof window !== 'undefined') {
+            window.addEventListener('environmental:shift', (e: Event) => {
+                const detail = (e as CustomEvent).detail;
+                this.handleEnvironmentalShift(detail);
+            });
+        }
+    }
+
+    private handleEnvironmentalShift(detail: { context: string, vibe: string, effect: string | null }) {
+        console.log(`[Atmosphere] CONTEXT SHIFT: ${detail.context}. New Effect: ${detail.effect}`);
+        
+        // This will be read by the renderer (AtmosphereManager) via studioStore
+        if (detail.effect) {
+            toast.success(`Atmosphere synced: ${detail.effect.toUpperCase()}`);
+        }
+        
+        neuralMemoryService.recordEvent('ContextShift', `Stream context changed to ${detail.context} with vibe ${detail.vibe}`);
     }
 
     private adaptAtmosphere(vibe: string, score: number) {

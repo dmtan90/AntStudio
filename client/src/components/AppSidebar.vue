@@ -40,6 +40,10 @@
           <dashboard-one theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.dashboard') }}</span>
         </router-link>
+        <router-link to="/influencer" class="nav-item" :class="{ active: route.path === '/influencers' }">
+          <brain theme="outline" size="20" />
+          <span v-if="!collapsed" class="nav-text">{{ t('nav.influencers') }}</span>
+        </router-link>
         <router-link to="/projects" class="nav-item" :class="{ active: route.path.startsWith('/projects') }">
           <folder-open theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.projects') }}</span>
@@ -52,10 +56,6 @@
           <peoples theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.team') }}</span>
         </router-link> -->
-        <router-link to="/vtubers" class="nav-item" :class="{ active: route.path === '/vtubers' }">
-          <brain theme="outline" size="20" />
-          <span v-if="!collapsed" class="nav-text">{{ t('nav.avatars') }}</span>
-        </router-link>
         <router-link to="/platforms" class="nav-item" :class="{ active: route.path === '/platforms' }">
           <connection theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.platforms') }}</span>
@@ -171,6 +171,9 @@
     <!-- Account Dialog -->
     <AccountDialog v-model="accountDialogVisible" :user="user" @update-user="user = $event" @logout="handleLogout"
       fullscreen />
+
+    <!-- Live Streaming Context Selection Onboarding -->
+    <LiveContextSelector />
   </aside>
 </template>
 
@@ -216,6 +219,7 @@ import { type Locale } from '@/i18n'
 import { toast } from 'vue-sonner'
 import AccountDialog from '@/components/AccountDialog.vue'
 import { getFileUrl } from '@/utils/api'
+import LiveContextSelector from '@/components/studio/dialogs/LiveContextSelector.vue';
 
 const props = defineProps<{}>()
 

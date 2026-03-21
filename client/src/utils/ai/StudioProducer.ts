@@ -22,6 +22,11 @@ export interface DirectorNote {
         result: 'approved' | 'rejected';
         debrief: string;
     };
+    logs?: Array<{
+        agent: string;
+        message: string;
+        timestamp: number;
+    }>;
 }
 
 export class StudioProducer {
@@ -89,7 +94,8 @@ Return ONLY raw JSON (no markdown) with this structure:
                     ...suggestion,
                     id: `note_${Date.now()}`,
                     timestamp: Date.now(),
-                    read: false
+                    read: false,
+                    logs: response.data.logs // Capture multi-agent logs from backend
                 });
                 return; // Success
             }

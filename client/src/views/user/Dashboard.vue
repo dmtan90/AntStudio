@@ -4,6 +4,7 @@
     <DashboardHeader 
       :user="user" 
       @create="showCreationDialog = true" 
+      @go-live="studioStore.showOnboarding = true"
     />
 
     <!-- Main Content -->
@@ -34,7 +35,6 @@
 
     <ProjectCreationDialog v-model="showCreationDialog" @create-ad="adDialogVisible = true; showCreationDialog = false" />
     <ProductAdDialog v-model="adDialogVisible" />
-
     <AppTour v-model="showTour" :steps="tourSteps" @finish="onTourFinish" />
   </div>
 </template>
@@ -58,12 +58,14 @@ import StatsOverview from '@/components/dashboard/StatsOverview.vue';
 import RecentProjects from '@/components/dashboard/RecentProjects.vue';
 import ConnectedAccounts from '@/components/dashboard/ConnectedAccounts.vue';
 import SystemStatus from '@/components/dashboard/SystemStatus.vue';
+import { useStudioStore } from '@/stores/studio';
 
 const userStore = useUserStore();
 const projectStore = useProjectStore();
 const platformStore = usePlatformStore();
 const marketplaceStore = useMarketplaceStore();
 const uiStore = useUIStore();
+const studioStore = useStudioStore();
 const { t } = useI18n()
 
 const { user } = storeToRefs(userStore);

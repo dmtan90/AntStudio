@@ -42,11 +42,12 @@ export class LiveHighlightService {
 
     /**
      * Manually or autonomously trigger a highlight capture from the current buffer.
+     * Phase 24: Now supports context and viralityScore in metadata.
      */
-    public async exportHighlight(metadata: { type: string, score: number, title?: string }): Promise<string | null> {
+    public async exportHighlight(metadata: { type: string, score: number, title?: string, context?: string }): Promise<string | null> {
         if (this.chunks.length === 0) return null;
 
-        console.log(`[HighlightService] Exporting Viral Moment: ${metadata.type} (Score: ${metadata.score})`);
+        console.log(`[HighlightService] Exporting Viral Moment: ${metadata.type} (Score: ${metadata.score}, Context: ${metadata.context || 'general'})`);
 
         const blob = new Blob(this.chunks, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
@@ -55,7 +56,8 @@ export class LiveHighlightService {
             this.onHighlightCaptured(url, {
                 ...metadata,
                 timestamp: Date.now(),
-                title: metadata.title || `Viral Highlight ${new Date().toLocaleTimeString()}`
+                title: metadata.title || `Viral Highlight ${new Date().toLocaleTimeString()}`,
+                context: metadata.context || 'general'
             });
         }
 

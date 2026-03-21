@@ -14,11 +14,20 @@ export class CommerceIntelligenceEngine {
     private lastTriggerTime = 0;
     private cooldownMs = 30000; // Prevent spamming overlays
 
-    private intentKeywords = {
-        promotion: ['buy', 'purchase', 'deal', 'get it', 'discount', 'checkout', 'off', 'flash'],
-        educational: ['use', 'how', 'features', 'spec', 'quality', 'better', 'pro'],
-        sale: ['price', 'cost', 'bucks', 'affordable', 'only']
+    private intentKeywords: Record<string, Record<string, string[]>> = {
+        en: {
+            promotion: ['buy', 'purchase', 'deal', 'get it', 'discount', 'checkout', 'off', 'flash', 'limited', 'grab', 'special'],
+            educational: ['use', 'how', 'features', 'spec', 'quality', 'better', 'pro', 'demonstrate', 'works', 'example', 'tutorial'],
+            sale: ['price', 'cost', 'bucks', 'affordable', 'only', 'cheap', 'value', 'save', 'worth', 'investment']
+        },
+        vi: {
+            promotion: ['mua', 'đặt hàng', 'chốt đơn', 'giảm giá', 'khuyến mãi', 'ưu đãi', 'voucher', 'mã giảm', 'nhanh tay', 'siêu sale', 'giá sốc'],
+            educational: ['dùng', 'sử dụng', 'cách dùng', 'tính năng', 'đặc điểm', 'chất lượng', 'hướng dẫn', 'demo', 'ví dụ', 'trải nghiệm'],
+            sale: ['giá', 'nhiêu', 'bao nhiêu', 'tiền', 'rẻ', 'hợp lý', 'đáng tiền', 'tiết kiệm', 'đầu tư']
+        }
     };
+
+    private languages: string[] = ['en', 'vi']; // Supported languages
 
     /**
      * Updates the engine with the current live products for matching.
@@ -59,12 +68,17 @@ export class CommerceIntelligenceEngine {
 
         // 2. Identify Intent
         let intentScore = 0;
-        Object.entries(this.intentKeywords).forEach(([intent, keys]) => {
-            const hits = keys.filter(k => text.includes(k)).length;
-            if (hits > intentScore) {
-                intentScore = hits;
-                detectedIntent = intent;
-            }
+        this.languages.forEach(lang => {
+            const pool = this.intentKeywords[lang];
+            if (!pool) return;
+            
+            Object.entries(pool).forEach(([intent, keys]) => {
+                const hits = keys.filter(k => text.includes(k)).length;
+                if (hits > intentScore) {
+                    intentScore = hits;
+                    detectedIntent = intent;
+                }
+            });
         });
 
         if (intentScore > 0) {

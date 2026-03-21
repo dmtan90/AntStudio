@@ -95,7 +95,7 @@ export class StreamingService extends EventEmitter {
                     {
                         app: 'live',
                         mode: 'static',
-                        edge: 'rtmp://127.0.0.1/live',
+                        edge: `rtmp://localhost:${RTMP_PORT}/live`,
                         name: 'relay'
                     }
                 ]
@@ -138,7 +138,8 @@ export class StreamingService extends EventEmitter {
                         }
 
                         // Local Input URL (RTMP Loopback)
-                        const inputUrl = `rtmp://127.0.0.1:${RTMP_PORT}${cleanPath}`;
+                        // Local Input URL (RTMP Loopback)
+                        const inputUrl = `rtmp://localhost:${RTMP_PORT}${cleanPath}`;
 
                         session.targets.forEach((target, index) => {
                             const remoteUrl = `${target.url}/${target.key}`;
@@ -453,7 +454,8 @@ export class StreamingService extends EventEmitter {
         Logger.info(`[Relay-Config] Session ${sessionId} Quality: ${config.width}x${config.height} @ ${config.videoBitrate}kbps`, 'StreamingService');
 
         // Determine output: Push to local NMS first
-        const localRtmpUrl = `rtmp://127.0.0.1/live/${sessionId}`;
+        // Determine output: Push to local NMS first
+        const localRtmpUrl = `rtmp://localhost:${RTMP_PORT}/live/${sessionId}`;
 
         // Hardware Acceleration Check (Phase 92) - Cross Platform & Hardware Aware
         const videoCodec = await this.getOptimalVideoCodec();

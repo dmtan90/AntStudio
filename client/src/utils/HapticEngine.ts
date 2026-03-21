@@ -1,5 +1,5 @@
 /**
- * Engine for VTuber haptic feedback simulation.
+ * Engine for influencer haptic feedback simulation.
  * Maps stream intensity to physical device vibrations.
  */
 export class HapticEngine {

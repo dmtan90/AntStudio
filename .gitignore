@@ -18,6 +18,10 @@ server/logs
 server/node_modules
 server/server.log
 server/tmp
+flow2api
+flow2api_tupdater
+Flow2API-Token-Updater
+vroid-scripts
 # Node dependencies
 node_modules
 backup

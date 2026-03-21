@@ -1,5 +1,5 @@
 /**
- * Shared utility for VTuber lip-sync synchronization
+ * Shared utility for influencer lip-sync synchronization
  */
 
 export interface LyricLine {

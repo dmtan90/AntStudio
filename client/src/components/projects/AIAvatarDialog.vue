@@ -33,14 +33,14 @@
       <!-- Step Content -->
       <div class="flex-1 relative overflow-hidden">
         <Transition name="slide-fade" mode="out-in">
-          <!-- Step 1: Select VTuber -->
+          <!-- Step 1: Select Influencer -->
           <div v-if="step === 1" key="step1" class="h-full flex flex-col gap-6">
             <div class="grid grid-cols-12 gap-8 h-full">
               <!-- Left: Preview -->
               <div class="col-span-12 lg:col-span-5">
                 <div class="avatar-preview-container glass-card aspect-[3/4] relative overflow-hidden rounded-3xl border border-white/10 group">
                   <div v-if="selectedAvatarData" class="w-full h-full bg-[#050505]">
-                    <VTuberViewer
+                    <InfluencerViewer
                       ref="viewerRef"
                       :modelType="selectedAvatarData.visual.modelType"
                       :modelUrl="selectedAvatarData.visual.modelUrl"
@@ -53,7 +53,7 @@
                   <div v-else class="w-full h-full flex flex-col items-center justify-center bg-black/40">
                     <User theme="outline" size="64" class="text-white/20 mb-4" />
                     <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">
-                      {{ $t('projects.avatarCreator.selectVTuber') }}
+                      {{ $t('projects.avatarCreator.selectInfluencer') }}
                     </p>
                   </div>
                   
@@ -134,10 +134,10 @@
           <!-- Step 2: Script & Voice (Redesigned) -->
           <div v-else-if="step === 2" key="step2" class="h-full flex flex-col gap-6">
             <div class="grid grid-cols-12 gap-8 h-full min-h-0">
-              <!-- Left: Live VTuber Preview -->
+              <!-- Left: Live Influencer Preview -->
               <div class="col-span-12 lg:col-span-5 flex flex-col gap-4">
                 <div class="avatar-preview-container glass-card aspect-[3/4] relative overflow-hidden rounded-3xl border border-white/10 group bg-[#050505] shadow-2xl">
-                  <VTuberViewer
+                  <InfluencerViewer
                     ref="previewViewerRef"
                     v-if="selectedAvatarData"
                     :modelType="selectedAvatarData.visual.modelType"
@@ -279,7 +279,7 @@
               <!-- Left: Live Render Canvas -->
               <div class="col-span-12 lg:col-span-6">
                 <div class="render-canvas-wrapper glass-card aspect-[3/4] relative overflow-hidden rounded-[40px] border border-white/10 shadow-2xl">
-                  <VTuberViewer
+                  <InfluencerViewer
                     ref="renderViewerRef"
                     v-if="selectedAvatarData"
                     :modelType="selectedAvatarData.visual.modelType"
@@ -545,13 +545,13 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
-import { useVTuberStore } from '@/stores/vtuber';
+import { useInfluencerStore } from '@/stores/influencer';
 import { useMediaStore } from '@/stores/media';
 import { useProjectStore } from '@/stores/project';
 import { usePlatformStore } from '@/stores/platform';
 import { useAudioVisualizer } from '@/composables/useAudioVisualizer';
-import VTuberViewer from '@/components/vtuber/VTuberViewer.vue';
-import VoiceLibraryDialog from '@/components/vtuber/VoiceLibraryDialog.vue';
+import InfluencerViewer from '@/components/influencer/InfluencerViewer.vue';
+import VoiceLibraryDialog from '@/components/influencer/VoiceLibraryDialog.vue';
 import StudioSlider from '@/components/studio/shared/StudioSlider.vue';
 import { getFileUrl } from '@/utils/api';
 import { 
@@ -564,7 +564,7 @@ import { storeToRefs } from 'pinia';
 const isVisible = defineModel<boolean>('modelValue', { default: false });
 const { t } = useI18n();
 const router = useRouter();
-const vtuberStore = useVTuberStore();
+const influencerStore = useInfluencerStore();
 const mediaStore = useMediaStore();
 const projectStore = useProjectStore();
 const platformStore = usePlatformStore();
@@ -655,8 +655,8 @@ watch(searchQuery, () => {
 const loadAvatars = async () => {
   loadingAvatars.value = true;
   try {
-    await vtuberStore.fetchLibrary();
-    avatars.value = vtuberStore.vtubers;
+    await influencerStore.fetchInfluencers();
+    avatars.value = influencerStore.influencers;
   } catch (e) {
     toast.error(t('projects.avatarCreator.toasts.loadFailed'));
   } finally {
@@ -684,7 +684,7 @@ const previewVoiceWithSync = async () => {
     let audioUrl = voiceConfig.value.sampleUrl;
 
     if (!audioUrl) {
-      const data = await vtuberStore.generateVoicePreview({
+      const data = await influencerStore.generateVoicePreview({
         text: t('projects.avatarCreator.toasts.voicePreviewDefault'),
         provider: voiceConfig.value.provider,
         voiceId: voiceConfig.value.voiceId,
@@ -780,7 +780,7 @@ const startRendering = async () => {
   
   try {
     // 1. Generate FULL TTS Audio
-    const voiceData = await vtuberStore.generateVoicePreview({
+    const voiceData = await influencerStore.generateVoicePreview({
       text: script.value,
       provider: voiceConfig.value.provider,
       voiceId: voiceConfig.value.voiceId,

@@ -97,10 +97,10 @@
 import { computed } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { useAIStore } from '@/stores/ai';
-import { VeoPromptService } from '@/utils/ai/VeoPromptService';
+import { ProductVideoService } from '@/utils/ai/ProductVideoService';
 import { toast } from 'vue-sonner';
 import { 
-  Close, Cpu, LoadingFour, Flashlamp, Movie, Robot, Magic 
+  Close, Cpu, LoadingFour, Flashlamp as FlashLamp, Movie, Robot, Magic
 } from '@icon-park/vue-next';
 
 const props = defineProps<{
@@ -124,7 +124,7 @@ const generateAsset = async (product: any, type: 'tvc' | 'aidol') => {
   studioStore.assetGeneration[genKey] = 'pending';
   
   try {
-    const prompt = VeoPromptService.generateVeoPrompt({
+    const prompt = await ProductVideoService.generateVideoPrompt({
       hostType: 'aidol', 
       product,
       vibe: studioStore.studioVibe,

@@ -1,6 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
-import { geminiPool } from '../../utils/gemini.js';
+import { generateJSON } from '../../utils/AIGenerator.js';
 import { Logger } from '../../utils/Logger.js';
+import { promptService } from '../../services/PromptService.js';
 
 /**
  * Service for analyzing audio characteristics like rhythm, beats, and energy peaks.
@@ -12,72 +12,34 @@ export class AudioAnalysisService {
      * Detects rhythmic beats or major energy peaks in an audio/video buffer.
      * Returns an array of timestamps in seconds.
      */
-    public async detectBeats(buffer: Buffer, mimeType: string = "audio/mpeg") {
+    public async detectBeats(audioBuffer: Buffer, mimeType: string) {
         try {
-            const modelName = "gemini-2.5-flash";
-            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
+            const prompt = await promptService.get('ai/beat_detection');
 
-            const audioBase64 = buffer.toString('base64');
-
-            const prompt = `
-                Analyze the rhythm and tempo of this audio. 
-                Identify the exact timestamps (in seconds) for every major beat or rhythmic drop where a video cut would feel natural.
-                
-                Focus on:
-                1. The main pulse/kick drum of the track.
-                2. Transition points or drops.
-                
-                Return the result as a JSON array of numbers:
-                [timestamp1, timestamp2, ...]
-                
-                Ensure the timestamps are precise and represent the pulse of the music.
-            `;
-
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        {
-                            inlineData: {
-                                data: audioBase64,
-                                mimeType: mimeType
-                            }
-                        }
-                    ]
-                }],
-                config: {
-                    responseMimeType: "application/json"
+            const promptParts = [
+                { text: prompt },
+                {
+                    inlineData: {
+                        data: audioBuffer.toString('base64'),
+                        mimeType: mimeType
+                    }
                 }
-            });
+            ];
 
-            const response = result.response;
-            const text = response.text();
-            
-            // Record usage
-            await geminiPool.recordUsage(key, modelName);
+            let beats = await generateJSON(promptParts, undefined);
 
-            let beats = JSON.parse(text);
-
+            // Normalize response
             if (!Array.isArray(beats)) {
                 if (beats.beats && Array.isArray(beats.beats)) {
-                    beats = beats.beats;
-                } else if (beats.timestamps && Array.isArray(beats.timestamps)) {
-                    beats = beats.timestamps;
-                } else {
-                    throw new Error('Unexpected AI response format for beats');
+                    return { beats: beats.beats, bpm: beats.bpm || 0 };
                 }
+                return { beats: [], bpm: 0 };
             }
 
-            // Ensure they are numbers and sorted
-            return beats
-                .map((b: any) => parseFloat(b))
-                .filter((b: number) => !isNaN(b))
-                .sort((a: number, b: number) => a - b);
-
+            return { beats: beats, bpm: 0 };
         } catch (error: any) {
-            Logger.error(`[AudioAnalysisService] Analysis failed: ${error.message}`, 'AudioAnalysisService');
-            throw new Error(`Beat detection failed: ${error.message}`);
+            Logger.error('[AudioAnalysis] Beat detection failed:', error.message);
+            return { beats: [], bpm: 0 };
         }
     }
 }

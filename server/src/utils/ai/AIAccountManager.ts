@@ -5,6 +5,7 @@ import { AdminSettings } from '../../models/AdminSettings.js';
 import { AntigravityClient } from '../../integrations/ai/AntigravityClient.js';
 
 import { Logger } from '../Logger.js';
+import { flowSyncService } from './FlowSyncService.js';
 
 // Authorization endpoints
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/auth';
@@ -18,7 +19,9 @@ const SCOPES = [
 export class AIAccountManager {
     private static instance: AIAccountManager;
 
-    private constructor() { }
+    private constructor() { 
+        this.initializeBackgroundSync();
+    }
 
     public static getInstance(): AIAccountManager {
         if (!AIAccountManager.instance) {
@@ -41,6 +44,48 @@ export class AIAccountManager {
     private desanitizeModelId(safeId: string): string {
         // Only convert back patterns like "1_5" to "1.5"
         return safeId.replace(/(\d)_(\d)/g, '$1.$2');
+    }
+
+    /**
+     * Start the background synchronization process
+     */
+    private initializeBackgroundSync() {
+        Logger.info('[AIAccountManager] Initializing background synchronization loop...');
+        
+        // Initial sync after a short delay to let the system settle
+        setTimeout(() => this.runBackgroundSync(), 10000);
+        
+        // Repeat every 15 minutes
+        setInterval(() => this.runBackgroundSync(), 15 * 60 * 1000);
+    }
+
+    /**
+     * Run a full synchronization pass for all active accounts
+     */
+    public async runBackgroundSync() {
+        Logger.info('[AIAccountManager] Starting background synchronization pass...');
+        try {
+            const accounts = await AIAccount.find({ isActive: true });
+            Logger.info(`[AIAccountManager] Syncing ${accounts.length} active accounts...`);
+
+            for (const account of accounts) {
+                try {
+                    if (account.accountType === 'google-flow') {
+                        await this.syncFlowAccount(account);
+                    } else if (account.accountType === 'antigravity') {
+                        await this.refreshAccessToken(account);
+                        await this.syncAvailableModels(account);
+                    } else if (account.accountType === 'standard' && account.providerId === 'google') {
+                        await this.refreshAccessToken(account);
+                    }
+                } catch (err: any) {
+                    Logger.error(`[AIAccountManager] Sync failed for ${account.email}: ${err.message}`);
+                }
+            }
+            Logger.info('[AIAccountManager] Background synchronization pass completed.');
+        } catch (error: any) {
+            Logger.error('[AIAccountManager] Critical error in background sync:', error.message);
+        }
     }
 
     /**
@@ -178,14 +223,15 @@ export class AIAccountManager {
      * Refresh access token for a specific account
      */
     public async refreshAccessToken(account: IAIAccount, customCreds?: { clientId: string, clientSecret: string }): Promise<string> {
-        // 11labs-direct accounts don't use OAuth tokens, they use license keys
-        if (account.accountType === '11labs-direct') {
-            Logger.info(`[AIAccountManager] Skipping OAuth refresh for 11labs-direct account: ${account.email}`);
-            return account.accessToken || '';
-        }
-
         if (account.accessToken && account.accessTokenExpiresAt && account.accessTokenExpiresAt.getTime() > Date.now() + 300000) {
             return account.accessToken;
+        }
+
+        // SPECIAL HANDLING: Google Flow accounts use session-to-token sync
+        if (account.accountType === 'google-flow') {
+            const { flowSyncService } = await import('./FlowSyncService.js');
+            await flowSyncService.refreshAccountTokens(account);
+            return account.flowAT || '';
         }
 
         try {
@@ -309,10 +355,10 @@ export class AIAccountManager {
      * Synchronize detailed account info for 11labs-direct accounts
      */
     public async syncDirectAccountInfo(account: IAIAccount): Promise<void> {
-        if (account.accountType !== '11labs-direct' || !account.serviceKeys || account.serviceKeys.size === 0) {
-            Logger.info(`[AIAccountManager] Skipping sync for ${account.email} - no service keys available`);
-            return;
-        }
+        // if (account.accountType !== '11labs-direct' || !account.serviceKeys || account.serviceKeys.size === 0) {
+        //     Logger.info(`[AIAccountManager] Skipping sync for ${account.email} - no service keys available`);
+        //     return;
+        // }
 
         Logger.info(`[AIAccountManager] Syncing direct account info for ${account.email}...`);
 
@@ -323,7 +369,7 @@ export class AIAccountManager {
         ];
 
         for (const { id, url, params } of serviceInfoUrls) {
-            const licenseKey = account.serviceKeys.get(id);
+            const licenseKey = account.serviceKeys ? account.serviceKeys.get(id) : null;
             if (!licenseKey) continue;
 
             try {
@@ -363,6 +409,21 @@ export class AIAccountManager {
     }
 
     /**
+     * Synchronize Google Flow account tokens
+     */
+    public async syncFlowAccount(account: IAIAccount): Promise<boolean> {
+        if (account.accountType !== 'google-flow') return false;
+        Logger.info(`[AIAccountManager] Syncing Google Flow account: ${account.email}`);
+        try {
+            await flowSyncService.refreshAccountTokens(account);
+            return true;
+        } catch (err: any) {
+            Logger.error(`[AIAccountManager] Sync failed for ${account.email}: ${err.message}`);
+            return false;
+        }
+    }
+
+    /**
      * Get the most optimal account for a task
      */
     public async getOptimalAccount(type: 'text' | 'image' | 'video' | 'audio' | 'music' | 'live', accountType?: string): Promise<IAIAccount | null> {
@@ -370,22 +431,30 @@ export class AIAccountManager {
         const query: any = { isActive: true, status: 'ready' };
         if (accountType) query.accountType = accountType;
 
-        // // Prefer specific account types based on task if needed
-        // if (type === 'video') {
-        //     // For video, 11labs-direct and antigravity are top tier
-        //     // We can search for all then sort
-        // } else if (type === 'text' && !accountType) {
-        //     // 11labs-direct does not support text generation (LLM), so exclude it
-        //     query.accountType = { $ne: '11labs-direct' };
-        // } else if ((type === 'audio' || type === 'music') && !accountType) {
-        //     // Default to standard google for audio if not specified
-        //     const standard = await AIAccount.findOne({ ...query, accountType: 'standard', providerId: 'google' });
-        //     if (standard) return standard;
-        // }
-
         if (!accountType) {
-            const standard = await AIAccount.findOne({ ...query, accountType: 'standard', providerId: 'google' });
-            if (standard) return standard;
+            // Priority: google-flow for specific media tasks if credits available
+            if (type === 'image' || type === 'video') {
+                const flowAccount = await AIAccount.findOne({ 
+                    ...query, 
+                    accountType: 'google-flow',
+                    credits: { $gt: 0 } 
+                }).sort({ lastUsedAt: 1 });
+                
+                if (flowAccount) {
+                    flowAccount.lastUsedAt = new Date();
+                    await flowAccount.save();
+                    return flowAccount;
+                }
+            }
+            const standard = await AIAccount.findOne({ ...query, 
+                accountType: 'standard', 
+                providerId: 'google',
+            }).sort({ lastUsedAt: 1 });
+            if (standard) {
+                standard.lastUsedAt = new Date();
+                await standard.save();
+                return standard;
+            }
         }
 
         const accounts = await AIAccount.find(query);
@@ -396,10 +465,11 @@ export class AIAccountManager {
                 isActive: true,
                 status: 'rate-limited',
                 updatedAt: { $lt: hourAgo }
-            });
+            }).sort({ lastUsedAt: 1 });
 
             if (coolingAccounts.length > 0) {
                 coolingAccounts[0].status = 'ready';
+                coolingAccounts[0].lastUsedAt = new Date();
                 await coolingAccounts[0].save();
                 return coolingAccounts[0];
             }
@@ -407,10 +477,18 @@ export class AIAccountManager {
             return null;
         }
 
+        // Sort by credits (desc) then lastUsedAt (asc) for Google Flow
+        // For others, just by lastUsedAt (asc)
         accounts.sort((a, b) => {
+            if (a.accountType === 'google-flow' && b.accountType === 'google-flow') {
+                const creditsA = a.credits || 0;
+                const creditsB = b.credits || 0;
+                if (creditsA !== creditsB) return creditsB - creditsA; // More credits first
+            }
+            
             const timeA = a.lastUsedAt?.getTime() || 0;
             const timeB = b.lastUsedAt?.getTime() || 0;
-            return timeA - timeB;
+            return timeA - timeB; // Least used first
         });
 
         const selected = accounts[0];
@@ -460,10 +538,10 @@ export class AIAccountManager {
      */
     public async discoverProjectId(account: IAIAccount): Promise<string> {
         // 11labs-direct accounts don't use Google Cloud projects
-        if (account.accountType === '11labs-direct') {
-            Logger.info(`[AIAccountManager] Skipping project discovery for 11labs-direct account: ${account.email}`);
-            return '';
-        }
+        // if (account.accountType === '11labs-direct') {
+        //     Logger.info(`[AIAccountManager] Skipping project discovery for 11labs-direct account: ${account.email}`);
+        //     return '';
+        // }
 
         // Validate cached Project ID for Antigravity accounts
         if (account.accountType === 'antigravity' && account.projectId) {
@@ -478,12 +556,21 @@ export class AIAccountManager {
 
         if (account.projectId && !account.projectId.includes('default')) return account.projectId;
 
-        // Try specialized discovery first (Works for both Antigravity and Standard with right scopes)
-        try {
-            const projectId = await this._discoverAntigravityProject(account);
-            if (projectId) return projectId;
-        } catch (err) {
-            Logger.warn(`[AIAccountManager] Specialized discovery failed for ${account.email}, falling back to standard list`);
+        // Specialized discovery only applies to Antigravity (CloudCode) or Standard with full scopes
+        if (account.accountType === 'antigravity') {
+            try {
+                const projectId = await this._discoverAntigravityProject(account);
+                if (projectId) return projectId;
+            } catch (err) {
+                Logger.warn(`[AIAccountManager] Specialized discovery failed for ${account.email}, falling back to standard list`);
+            }
+        }
+
+        // Only standard accounts can use the Cloud Resource Manager API for discovery.
+        // google-flow and antigravity tokens lack the necessary scopes (results in 403).
+        if (account.accountType !== 'standard') {
+            Logger.info(`[AIAccountManager] Skipping standard project discovery for ${account.accountType} account ${account.email}`);
+            return account.projectId || '';
         }
 
         const token = await this.refreshAccessToken(account);
@@ -677,8 +764,8 @@ export class AIAccountManager {
 
             // Get current quota or default if missing
             let limit = 10;
-            if (account.accountType === '11labs-direct') limit = 999999;
-            else if (account.accountType === 'antigravity') limit = 100;
+            // if (account.accountType === '11labs-direct') limit = 999999;
+            if (account.accountType === 'antigravity') limit = 100;
 
             const quota = account.quotas.get(safeModelName) || { used: 0, limit };
             quota.used++;
@@ -744,16 +831,16 @@ export class AIAccountManager {
         ];
 
         let changed = false;
-        // ONLY apply default model list to Standard accounts
+        // ONLY apply default model list to Standard and Google Flow accounts
         // Antigravity and 11labs accounts use specialized logic
-        if (account.accountType === 'standard' || account.accountType === '11labs-direct') {
-            const limitScale = account.accountType === '11labs-direct' ? 99999 : 1;
+        if (account.accountType === 'standard' || account.accountType === 'google-flow') {
+            const limitScale = 1;
             for (const model of defaultModels) {
                 const safeId = this.sanitizeModelId(model.id);
                 if (!account.quotas.has(safeId)) {
                     account.quotas.set(safeId, {
                         used: 0,
-                        limit: account.accountType === '11labs-direct' ? 999999 : model.limit
+                        limit: model.limit
                     });
                     changed = true;
                 }

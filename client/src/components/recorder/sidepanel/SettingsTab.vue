@@ -52,7 +52,7 @@
                     :target-language="targetLanguage"
                     :cam-settings="camSettings"
                     :resource-pool="resourcePool"
-                    :is-v-tuber-active="isVTuberActive"
+                    :is-influencer-active="isInfluencerActive"
                     :selected-avatar="selectedAvatar"
                     :selected-voice="selectedVoice"
                     :processing-canvas="processingCanvas"
@@ -62,10 +62,10 @@
                     @toggle-captions="v => $emit('toggle-captions', v)"
                     @update:targetLanguage="v => $emit('update:targetLanguage', v)"
                     @update:camSettings="v => $emit('update:cam-settings', v)"
-                    @update:isVTuberActive="val => $emit('update:isVTuberActive', val)"
+                    @update:isInfluencerActive="val => $emit('update:isInfluencerActive', val)"
                     @update:selectedAvatar="val => $emit('update:selected-avatar', val)"
                     @update:selected-voice="val => $emit('update:selected-voice', val)"
-                    @select-vtuber-entity="vt => $emit('select-vtuber-entity', vt)"
+                    @select-influencer-entity="vt => $emit('select-influencer-entity', vt)"
                     @presentation-next="$emit('next-whiteboard-page')"
                     @presentation-prev="$emit('prev-whiteboard-page')"
                     @presentation-go-to="v => $emit('go-to-whiteboard-page', v)"
@@ -161,7 +161,7 @@ const props = defineProps<{
     activeCaptions?: boolean
     targetLanguage?: string
     resourcePool?: any[]
-    isVTuberActive?: boolean
+    isInfluencerActive?: boolean
     selectedAvatar?: string
     selectedVoice?: string
     processingCanvas?: HTMLCanvasElement | null

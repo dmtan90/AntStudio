@@ -28,7 +28,7 @@ export function useTurnTakingCoordinator(connections: Record<string, LiveChatCon
     });
 
     /**
-     * Determine if a VTuber should stay silent to let someone else speak
+     * Determine if an influencer should stay silent to let someone else speak
      */
     const shouldInhibit = (personaId: string): boolean => {
         return currentSpeakerId.value !== null && currentSpeakerId.value !== personaId;

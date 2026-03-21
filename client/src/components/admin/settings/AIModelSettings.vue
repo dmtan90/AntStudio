@@ -50,7 +50,7 @@
                         <div class="col-span-3">
                             <el-select v-model="provider.supportedTypes" multiple collapse-tags size="small"
                                 class="glass-input w-full" :placeholder="t('admin.settings.table.protocols')">
-                                <el-option :label="t('admin.settings.ai.config.models')" value="text" />
+                                <el-option :label="t('admin.settings.ai.capabilities.text')" value="text" />
                                 <el-option :label="t('admin.settings.ai.capabilities.image')" value="image" />
                                 <el-option :label="t('admin.settings.ai.capabilities.video')" value="video" />
                                 <el-option :label="t('admin.settings.ai.capabilities.audio')" value="audio" />
@@ -123,68 +123,89 @@
             </div>
         </el-dialog>
 
-        <!-- AI Account Manager OAuth -->
-        <!-- Move to System config -->
-        <!-- <div class="settings-section cinematic-panel p-6">
+        <!-- Captcha Resolution Network -->
+        <div class="settings-section cinematic-panel p-6 mt-8">
             <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                    <user theme="outline" size="20" />
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <robot theme="outline" size="20" />
                 </div>
                 <div>
-                    <h4 class="text-xs font-black uppercase tracking-widest">AI Account Manager (OAuth)</h4>
-                    <p class="text-[9px] opacity-40">Orchestrate cross-account quotas and identity stability.</p>
+                    <h4 class="text-xs font-black uppercase tracking-widest">{{ $t('admin.settings.ai.captchaService') || 'Captcha Resolution Network' }}</h4>
+                    <p class="text-[9px] opacity-40">{{ $t('admin.settings.ai.captchaSubtitle') || 'Configure automated challenge solving for AI workflows.' }}</p>
                 </div>
             </div>
+            
             <el-form label-position="top">
                 <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="Google Client ID">
-                            <el-input v-model="aiOAuth.google.clientId" placeholder="...apps.googleusercontent.com"
-                                class="glass-input" />
+                    <el-col :span="8">
+                        <el-form-item :label="t('admin.settings.ai.captchaMode') || 'Solving Strategy'">
+                            <el-select v-model="captchaSettings.method" class="glass-input w-full" @change="onCaptchaMethodChange">
+                                <el-option label="YesCaptcha" value="yescaptcha" />
+                                <el-option label="CapSolver" value="capsolver" />
+                                <el-option label="CapMonster" value="capmonster" />
+                                <el-option label="EzCaptcha" value="ezcaptcha" />
+                                <el-option label="Local Browser (Playwright)" value="browser" />
+                                <el-option label="Personal (Manual)" value="personal" />
+                                <el-option label="Remote Browser" value="remote_browser" />
+                            </el-select>
                         </el-form-item>
                     </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="Google Client Secret">
-                            <el-input v-model="aiOAuth.google.clientSecret" type="password" show-password
-                                class="glass-input" />
-                        </el-form-item>
-                    </el-col>
+                    <template v-if="['yescaptcha', 'capsolver', 'capmonster', 'ezcaptcha'].includes(captchaSettings.method)">
+                        <el-col :span="8">
+                            <el-form-item :label="t('admin.settings.ai.yesCaptchaKey') || 'API Key'">
+                                <el-input v-model="captchaSettings.yescaptcha.apiKey" type="password" show-password placeholder="API Key" class="glass-input" />
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="8">
+                            <el-form-item :label="t('admin.settings.ai.yesCaptchaApi') || 'API URL'">
+                                <el-input v-model="captchaSettings.yescaptcha.baseUrl" type="text" placeholder="https://api.yescaptcha.com" class="glass-input" />
+                            </el-form-item>
+                        </el-col>
+                    </template>
                 </el-row>
-                <el-row :gutter="20">
-                    <el-col :span="24">
-                        <div class="p-3 bg-black/40 rounded-2xl border border-white/5 mt-6">
-                            <p class="text-[8px] font-black uppercase opacity-30 mb-1">Redirect URI Handshake</p>
-                            <code class="text-[10px] text-blue-400 font-mono">{{ suggestedRedirectUri }}</code>
-                        </div>
-                    </el-col>
-                </el-row>
-            </el-form>
-        </div> -->
 
-        <!-- Neural Session Sync -->
-        <!-- <div class="settings-section cinematic-panel p-6">
+                <div v-if="captchaSettings.method === 'remote_browser'" class="mt-4 p-4 bg-white/5 rounded-2xl border border-white/10">
+                   <el-form-item label="Remote Browser Endpoint (WSS)">
+                       <el-input v-model="captchaSettings.remoteBrowser.baseUrl" placeholder="wss://browserless.example.com" class="glass-input" />
+                   </el-form-item>
+                </div>
+
+                <div class="mt-6 flex items-center justify-between p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                    <div class="flex items-center gap-3">
+                        <info theme="outline" size="14" class="text-blue-400" />
+                        <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">{{ $t('admin.settings.ai.captchaStatus') || 'Automatic Routing' }}</span>
+                    </div>
+                    <el-tag size="small" effect="dark" type="success" round class="font-black uppercase tracking-widest text-[8px]">
+                        {{ captchaSettings.method === 'personal' ? 'Manual Intervention Required' : 'Fully Autonomous' }}
+                    </el-tag>
+                </div>
+            </el-form>
+        </div>
+
+        <!-- Neural Session Sync (Managed via AI Account Pool) -->
+        <!-- <div class="settings-section cinematic-panel p-6 mt-8">
             <div class="flex items-center gap-3 mb-6">
                 <div class="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
                     <refresh theme="outline" size="20" />
                 </div>
                 <div>
-                    <h4 class="text-xs font-black uppercase tracking-widest">Neural Session Sync</h4>
-                    <p class="text-[9px] opacity-40">Session cookies for AI Studio, Gemini, and Labs Flow.</p>
+                    <h4 class="text-xs font-black uppercase tracking-widest">{{ $t('admin.settings.ai.sessionSync') || 'Neural Session Sync' }}</h4>
+                    <p class="text-[9px] opacity-40">{{ $t('admin.settings.ai.sessionSyncSubtitle') || 'Global cookies for headless AI Studio and Labs Flow authentication.' }}</p>
                 </div>
             </div>
             <el-form label-position="top">
-                <el-form-item label="AIStudio / Gemini Cookies (JSON/Raw)">
+                <el-form-item :label="t('admin.settings.ai.googleCookies') || 'AIStudio / Gemini Cookies (JSON/Raw)'">
                     <el-input v-model="localGoogleCookies" type="textarea" :rows="3"
                         placeholder='Paste Google AI Studio / Gemini session cookies...' class="glass-input code-font"
                         @change="saveCookies" />
                 </el-form-item>
-                <el-form-item label="Labs Flow Cookies (JSON/Raw)" class="mt-4">
+                <el-form-item :label="t('admin.settings.ai.flowCookies') || 'Labs Flow Cookies (JSON/Raw)'" class="mt-4">
                     <el-input v-model="localFlowCookies" type="textarea" :rows="3"
                         placeholder='Paste Labs Flow session cookies...' class="glass-input code-font"
                         @change="saveCookies" />
                 </el-form-item>
                 <div class="flex gap-3">
-                    <el-button type="success" plain bg round @click="$emit('sync-google')">Save Cookies</el-button>
+                    <el-button type="success" plain bg round @click="$emit('sync-google')">{{ $t('admin.settings.ai.applyCookies') || 'Apply Sync Engine' }}</el-button>
                 </div>
             </el-form>
         </div> -->
@@ -192,21 +213,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { SettingTwo, Delete, User, Refresh, Key } from '@icon-park/vue-next';
+import { SettingTwo, Delete, User, Refresh, Key, Robot, Info } from '@icon-park/vue-next';
 
 const { t } = useI18n();
 
 const props = defineProps<{
     providers: any[];
     geminiApiKeys?: any[];
+    aiSettings: any;
+    apiConfigs: any;
     aiOAuth: any;
     googleCookies?: string;
     flowCookies?: string;
     suggestedRedirectUri: string;
     knownProviders: any[];
 }>();
+
+const captchaSettings = computed(() => {
+    if (!props.apiConfigs.captcha) {
+        props.apiConfigs.captcha = { 
+            method: 'browser', 
+            yescaptcha: {apiKey: "", baseUrl: "https://api.yescaptcha.com"},
+            remoteBrowser: {apiKey: "", baseUrl: "", timeout: 60},
+            localBrowser: {launchBackground: true, profileDir: "browser_data"}
+        };
+    }
+    // console.log("captchaSettings", props.apiConfigs.captcha);
+    return props.apiConfigs.captcha;
+});
 
 const emit = defineEmits([
     'add-provider', 'remove-provider', 'configure-provider',
@@ -226,6 +262,18 @@ watch(() => props.flowCookies, (val) => localFlowCookies.value = val || '');
 const handleProviderCommand = (command: any) => {
     if (command === 'custom') emit('add-provider', null);
     else emit('add-provider', command);
+};
+
+const onCaptchaMethodChange = (val: string) => {
+    if (val === 'yescaptcha' && !captchaSettings.value.yescaptcha.baseUrl) {
+        captchaSettings.value.yescaptcha.baseUrl = 'https://api.yescaptcha.com';
+    } else if (val === 'capsolver') {
+        captchaSettings.value.yescaptcha.baseUrl = 'https://api.capsolver.com';
+    } else if (val === 'capmonster') {
+        captchaSettings.value.yescaptcha.baseUrl = 'https://api.capmonster.cloud';
+    } else if (val === 'ezcaptcha') {
+        captchaSettings.value.yescaptcha.baseUrl = 'https://api.ez-captcha.com';
+    }
 };
 
 const saveCookies = () => {

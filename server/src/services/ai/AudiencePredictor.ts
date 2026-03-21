@@ -1,5 +1,5 @@
 import { AIPerformanceService, PerformanceSnapshot } from './AIPerformanceService.js';
-import { geminiPool } from '../../utils/gemini.js';
+import { generateJSON } from '../../utils/AIGenerator.js';
 
 import { Logger } from '../../utils/Logger.js';
 
@@ -22,9 +22,6 @@ export class AudiencePredictor {
                 c: s.chatVelocity
             }));
 
-            const modelName = 'gemini-2.5-flash';
-            const { client: ai } = await geminiPool.getOptimalClient(modelName);
-
             const prompt = `
                 ACT AS: Data Scientist & Audience Retention Specialist.
                 DATA: ${JSON.stringify(dataSummary)}
@@ -33,14 +30,7 @@ export class AudiencePredictor {
                 Return JSON format ONLY: { "trend": "rise" | "drop" | "stable", "confidence": 0-1, "reasoning": "short reason" }
             `;
 
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { responseMimeType: 'application/json' }
-            });
-
-            const text = result.response.text();
-            return JSON.parse(text);
+            return await generateJSON(prompt, undefined);
 
         } catch (error: any) {
             Logger.error('[AudiencePredictor] Forecast failed:', error.message);

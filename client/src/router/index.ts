@@ -82,9 +82,9 @@ const routes: Array<RouteRecordRaw> = [
     //     meta: { requiresAuth: true, layout: 'app' }
     // },
     {
-        path: '/vtubers',
-        name: 'vtubers',
-        component: () => import('@/views/user/VTubers.vue'),
+        path: '/influencer',
+        name: 'influencer',
+        component: () => import('@/views/user/Influencer.vue'),
         meta: { requiresAuth: true, layout: 'app' }
     },
     {
@@ -127,9 +127,69 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/live/studio',
         name: 'live-studio',
-        component: () => import('@/views/user/LiveStudio.vue'),
+        component: () => import('@/views/live/LiveStudio.vue'),
         meta: { requiresAuth: true, layout: 'none' },
         props: true
+    },
+    {
+        path: '/live/sales',
+        name: 'live-sales',
+        component: () => import('@/views/live/SaleStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/talkshow',
+        name: 'live-talkshow',
+        component: () => import('@/views/live/TalkshowStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/news',
+        name: 'live-news',
+        component: () => import('@/views/live/NewsStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/music',
+        name: 'live-music',
+        component: () => import('@/views/live/MusicStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/gameshow',
+        name: 'live-gameshow',
+        component: () => import('@/views/live/GameShowStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/game_streaming',
+        name: 'live-game-streaming',
+        component: () => import('@/views/live/GameStreamingStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/sport',
+        name: 'live-sport',
+        component: () => import('@/views/live/SportStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/education',
+        name: 'live-education',
+        component: () => import('@/views/live/EducationStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/commentary',
+        name: 'live-commentary',
+        component: () => import('@/views/live/CommentaryStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
+        path: '/live/general',
+        name: 'live-general',
+        component: () => import('@/views/live/GeneralStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
     },
     {
         path: '/gemini-live-chat',

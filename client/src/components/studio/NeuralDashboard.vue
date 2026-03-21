@@ -1,6 +1,6 @@
 <template>
-  <div class="neural-dashboard">
-    <div class="header" :class="{ 'planning': showrunner.isPlanning }">
+  <div class="neural-dashboard-wrapper">
+    <div class="neural-dashboard">
       <div class="glow-status" :class="{ 'active': showrunner.isRunning, 'planning': showrunner.isPlanning }"></div>
       <span class="title">{{ showrunner.isPlanning ? 'NEURAL PLANNING IN PROGRESS' : 'NEURAL SINGULARITY MONITOR' }}</span>
       <div class="pulse-indicator"></div>
@@ -17,6 +17,23 @@
                 backgroundColor: showrunner.isRunning ? 'var(--neon-blue)' : 'rgba(255,255,255,0.1)'
               }">
          </div>
+      </div>
+    </div>
+
+    <!-- Context-Specific Metrics (Phase 20 Redesign) -->
+    <div v-if="contextMetrics" class="context-metrics-section">
+      <div class="box-label">{{ contextMetrics.label.toUpperCase() }} MONITOR</div>
+      <div class="metrics-grid">
+        <div v-for="metric in contextMetrics.items" :key="metric.name" class="metric-card">
+          <div class="metric-header">
+            <span class="m-name">{{ metric.name }}</span>
+            <div class="m-trend" :class="metric.trend">
+               <el-icon v-if="metric.trend === 'up'"><CaretTop /></el-icon>
+               <el-icon v-else-if="metric.trend === 'down'"><CaretBottom /></el-icon>
+            </div>
+          </div>
+          <span class="m-value">{{ metric.value }}<span class="m-unit">{{ metric.unit }}</span></span>
+        </div>
       </div>
     </div>
 
@@ -98,6 +115,27 @@
       </div>
     </div>
 
+    <!-- Phase 45: Viral Highlights & Syndication -->
+    <div class="viral-section" v-if="recapOrchestrator.state.moments.length > 0">
+      <div class="box-label">NEURAL VIRAL ASSETS & SYNDICATION</div>
+      <div class="viral-moments">
+        <div v-for="moment in recapOrchestrator.state.moments.slice(-4).reverse()" :key="moment.id" class="moment-card" :class="{ 'viral': moment.viralityScore > 0.8 }">
+          <div class="moment-header">
+            <span class="moment-title">{{ moment.reason }}</span>
+            <span class="virality-badge" v-if="moment.viralityScore > 0.8">VIRAL PEAK</span>
+          </div>
+          <div class="moment-meta">
+            <span>Score: {{ Math.round(moment.viralityScore * 100) }}%</span>
+            <span>Seg: {{ moment.segmentTitle }}</span>
+          </div>
+          <div class="syndication-status" v-if="syndicationLogs[moment.reason]">
+            <span class="platform-tag" v-for="p in syndicationLogs[moment.reason].platforms" :key="p">{{ p }}</span>
+            <span class="status-icon"><Check /></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Phase 41: Neural Evidence Stream -->
     <div class="evidence-stream" v-if="evidenceOverlay.state.activeCards.length > 0">
       <div class="box-label">NEURAL EVIDENCE STREAM</div>
@@ -167,8 +205,54 @@
       </div>
     </div>
 
+    <!-- Phase 33: Neural Reasoning Central (Consensus Visualization) -->
+    <div class="reasoning-section" v-if="latestDirectorLogs.length > 0">
+      <div class="box-label">NEURAL REASONING CENTRAL</div>
+      <div class="reasoning-timeline">
+        <div v-for="(log, lIdx) in latestDirectorLogs" :key="lIdx" class="reasoning-group">
+          <div class="reasoning-header">
+            <span class="reasoning-action">{{ log.action }}</span>
+            <span class="reasoning-time">{{ formatTime(log.timestamp) }}</span>
+          </div>
+          <div class="agent-dialogue">
+            <div v-for="(agentLog, aIdx) in (log.agentLogs || [])" :key="aIdx" class="agent-msg" :class="agentLog.agent.toLowerCase()">
+              <span class="agent-name">{{ agentLog.agent.toUpperCase() }}:</span>
+              <span class="agent-text">{{ agentLog.message }}</span>
+            </div>
+          </div>
+          <div class="reasoning-footer">
+            <p class="final-reason">{{ log.reason }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 28: Neural Audio Director HUD -->
+    <div class="audio-hud">
+      <div class="box-label">{{ $t('studio.audioDirector.title') }}</div>
+      <div class="audio-status">
+        <div class="audio-row">
+          <span class="audio-label">{{ $t('studio.audioDirector.vibe') }}</span>
+          <span class="audio-val vibe-badge">{{ (audioState.currentVibe || 'chill').toUpperCase() }}</span>
+        </div>
+        <div class="audio-row">
+          <span class="audio-label">{{ $t('studio.audioDirector.ducking') }}</span>
+          <span class="audio-val" :class="{ 'text-active': audioState.isDucking }">
+            {{ audioState.isDucking ? $t('studio.audioDirector.engaged') : $t('studio.audioDirector.standby') }}
+          </span>
+        </div>
+        <div class="audio-row">
+          <span class="audio-label">{{ $t('studio.audioDirector.masterVol') }}</span>
+          <div class="aud-bar-wrap">
+            <div class="aud-bar" :style="{ width: audioState.volume + '%', background: '#3b82f6' }"></div>
+          </div>
+          <span class="audio-val text-blue">{{ audioState.volume }}%</span>
+        </div>
+      </div>
+    </div>
+
     <div class="directive-box" v-if="currentSegment">
-      <div class="box-label">CURRENT NEURAL DIRECTIVE</div>
+      <div class="box-label">{{ $t('studio.dashboard.directiveTitle') }}</div>
       <div class="directive-text">
         <el-icon class="is-loading" v-if="showrunner.isRunning"><Loading /></el-icon>
         {{ currentSegment.directive }}
@@ -194,25 +278,100 @@
       >
         GENERATE SESSION RECAP
       </el-button>
+      <el-button 
+        v-if="!showrunner.isRunning"
+        type="info"
+        size="small"
+        class="neural-btn import-btn"
+        @click="showImportDialog = true"
+      >
+        🎬 IMPORT PROJECT
+      </el-button>
     </div>
+    <!-- Phase 7: Import Storyboard Dialog -->
+    <ImportStoryboardDialog 
+      :visible="showImportDialog" 
+      @close="showImportDialog = false"
+      @script-loaded="handleScriptLoaded"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { neuralShowrunner } from '@/utils/ai/NeuralShowrunner';
 import { syntheticGuestManager } from '@/utils/ai/SyntheticGuestManager';
 import { useStudioStore } from '@/stores/studio';
-import { Loading, Search, Check, Collection } from '@element-plus/icons-vue';
+import { Loading, Search, Check, Collection, CaretTop, CaretBottom } from '@element-plus/icons-vue';
 import { evidenceOverlayService as evidenceOverlay } from '@/utils/ai/EvidenceOverlayService';
 import { recapOrchestrator } from '@/utils/ai/RecapOrchestrator';
 import { neuralMemoryService as neuralMemory } from '@/utils/ai/NeuralMemoryService';
+import { neuralAudioDirector } from '@/utils/ai/NeuralAudioDirector';
+import ImportStoryboardDialog from '@/components/studio/ImportStoryboardDialog.vue';
+
+const latestDirectorLogs = computed(() => {
+  // Access directorLog from parent or inject? 
+  // For simplicity, let's assume it's provided or we use a global store update.
+  // In our implementation, we'll use an event or a direct prop.
+  return (window as any)._directorLog || [];
+});
 
 const showrunner = neuralShowrunner.active;
 const studioStore = useStudioStore();
+const showImportDialog = ref(false);
+const latestSignal = ref<any>(null);
+let audioTimer: any = null;
+
+// Phase 28: Audio State
+const audioState = ref({
+  currentVibe: 'chill',
+  isDucking: false,
+  volume: 40
+});
+
+// Phase 45: Syndication Tracking
+const syndicationLogs = ref<Record<string, any>>({});
+
+onMounted(() => {
+  const socket = (window as any).ActionSyncService?.getSocket();
+  if (socket) {
+    socket.on('show:event', (event: any) => {
+      if (event.type === 'social_syndication' || event.type === 'recap_syndication') {
+        const payload = event.payload;
+        syndicationLogs.value[payload.title || payload.reason] = payload;
+      }
+    });
+  }
+  window.addEventListener('audience:signal', (e: Event) => {
+    latestSignal.value = (e as CustomEvent).detail;
+    setTimeout(() => { latestSignal.value = null; }, 12000);
+  });
+
+  audioTimer = setInterval(() => {
+    audioState.value = neuralAudioDirector.getState();
+  }, 200);
+});
+
+import { onUnmounted } from 'vue';
+onUnmounted(() => {
+  if (audioTimer) clearInterval(audioTimer);
+});
+
+const chatVelocityPct = computed(() => Math.min(100, ((studioStore.chatVelocity || 0) / 3) * 100));
+const chatVelocityColor = computed(() => {
+  const v = studioStore.chatVelocity || 0;
+  if (v > 2) return '#ef4444';
+  if (v > 1) return '#f59e0b';
+  return '#22c55e';
+});
 
 function triggerRecap() {
   recapOrchestrator.generateFullRecap();
+}
+
+// Phase 7: Storyboard-to-Live Bridge
+function handleScriptLoaded(script: any) {
+  neuralShowrunner.loadExternalScript(script);
 }
 
 const currentSegment = computed(() => showrunner.segments[showrunner.currentSegmentIndex]);
@@ -264,6 +423,52 @@ function getArcHeight(i: number) {
   const jitter = Math.random() * 10;
   return `${base + jitter}px`;
 }
+
+const contextMetrics = computed(() => {
+  const ctx = studioStore.streamingContext;
+  if (!ctx) return null;
+
+  switch (ctx) {
+    case 'sales':
+      return {
+        label: 'Commerce',
+        items: [
+          { name: 'Conversion', value: '3.2', unit: '%', trend: 'up' },
+          { name: 'Revenue', value: '14.2', unit: 'k', trend: 'up' },
+          { name: 'Cart Inserts', value: '184', unit: '', trend: 'up' }
+        ]
+      };
+    case 'game_streaming':
+      return {
+        label: 'Gaming',
+        items: [
+          { name: 'Avg FPS', value: '144', unit: '', trend: 'neutral' },
+          { name: 'Latency', value: '24', unit: 'ms', trend: 'down' },
+          { name: 'Clips/Min', value: '0.8', unit: '', trend: 'up' }
+        ]
+      };
+    case 'news':
+      return {
+        label: 'Journalism',
+        items: [
+          { name: 'Truth Score', value: '98', unit: '%', trend: 'up' },
+          { name: 'Citations', value: '12', unit: '', trend: 'up' },
+          { name: 'Viral Reach', value: '42.5', unit: 'k', trend: 'up' }
+        ]
+      };
+    case 'sport':
+      return {
+        label: 'Athletics',
+        items: [
+          { name: 'Intensity', value: '85', unit: '%', trend: 'up' },
+          { name: 'Highlights', value: '4', unit: '', trend: 'up' },
+          { name: 'Win Prob.', value: '62', unit: '%', trend: 'up' }
+        ]
+      };
+    default:
+      return null;
+  }
+});
 </script>
 
 <style scoped>
@@ -384,6 +589,63 @@ function getArcHeight(i: number) {
   background: #00f2ff;
   transition: width 1s linear;
 }
+
+/* Phase 20: Context Metrics Styles */
+.context-metrics-section {
+  margin-bottom: 2rem;
+  background: rgba(0, 242, 255, 0.05);
+  border-radius: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(0, 242, 255, 0.1);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.m-name {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-value {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.m-unit {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-left: 2px;
+}
+
+.m-trend {
+  font-size: 0.7rem;
+}
+
+.m-trend.up { color: #2ed573; }
+.m-trend.down { color: #ff4757; }
+.m-trend.neutral { color: #ffa502; }
 
 /* Phase 35: Commerce HUD Styles */
 .commerce-hud {
@@ -776,17 +1038,24 @@ function getArcHeight(i: number) {
 }
 
 .recap-highlights {
+  margin-top: 0.8rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .hl-item {
-  font-size: 0.65rem;
-  color: #2ecc71;
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #a0aec0;
+}
+
+.hl-item .el-icon {
+  color: #10b981;
+  font-size: 0.9rem;
+  margin-top: 0.1rem;
 }
 
 .recap-btn {
@@ -798,5 +1067,217 @@ function getArcHeight(i: number) {
   font-size: 0.55rem;
   color: #2ed573;
   text-transform: uppercase;
+}
+
+/* Neural Reasoning Central Styles */
+.reasoning-section {
+  background: rgba(0, 10, 20, 0.6);
+  border: 1px solid rgba(0, 242, 255, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.05);
+}
+
+.reasoning-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  scrollbar-width: none;
+}
+
+.reasoning-group {
+  border-left: 2px solid rgba(0, 242, 255, 0.2);
+  padding-left: 1rem;
+  position: relative;
+}
+
+.reasoning-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.reasoning-action {
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #00f2ff;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+}
+
+.reasoning-time {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.agent-dialogue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.agent-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border-left: 3px solid transparent;
+}
+
+.agent-msg.creative { border-color: #ff00ff; }
+.agent-msg.technical { border-color: #00f2ff; }
+.agent-msg.commercial { border-color: #00ff00; }
+
+.agent-name {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.agent-text {
+  font-size: 0.65rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.final-reason {
+  font-size: 0.6rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Phase 28: Neural Audio Director */
+.audio-hud {
+  margin-top: 15px;
+  background: rgba(10, 15, 30, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.1);
+}
+
+.audio-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.audio-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.audio-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.audio-val {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.vibe-badge {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.text-active {
+  color: #ef4444 !important;
+  animation: flashPulse 1.5s infinite;
+}
+
+.text-blue {
+  color: #60a5fa !important;
+}
+
+@keyframes flashPulse {
+  0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+  50% { opacity: 0.6; text-shadow: none; }
+}
+
+/* Phase 45: Viral Highlights & Syndication Styles */
+.viral-moments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.moment-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px;
+  transition: all 0.3s ease;
+
+  &.viral {
+    border-color: rgba(255, 71, 87, 0.3);
+    background: rgba(255, 71, 87, 0.05);
+  }
+
+  .moment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .moment-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .virality-badge {
+    font-size: 0.6rem;
+    background: #ff4757;
+    color: #fff;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+
+  .moment-meta {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .syndication-status {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+
+    .platform-tag {
+      font-size: 0.6rem;
+      background: rgba(59, 130, 246, 0.2);
+      color: #3b82f6;
+      padding: 1px 4px;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+
+    .status-icon {
+      margin-left: auto;
+      color: #2ed573;
+      font-size: 0.8rem;
+    }
+  }
 }
 </style>

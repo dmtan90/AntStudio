@@ -56,6 +56,12 @@ export interface IAdminSettings extends Document {
             }
         }
         publicDomain?: string
+        captcha?: {
+            method: 'yescaptcha' | 'capsolver' | 'capmonster' | 'ezcaptcha' | 'browser' | 'personal' | 'remote_browser'
+            yescaptcha?: { apiKey: string; baseUrl: string }
+            remoteBrowser?: { apiKey: string; baseUrl: string; timeout: number }
+            localBrowser?: { launchBackground: boolean; profileDir: string }
+        }
     }
     // settings.oauthProviders is deprecated in favor of apiConfigs.oauth but kept for migration if needed, 
     // but better to remove it now to avoid confusion.
@@ -250,7 +256,23 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                     proxyPort: { type: Number, default: 80 }
                 }
             },
-            publicDomain: { type: String, default: '' }
+            publicDomain: { type: String, default: '' },
+            captcha: {
+                method: { type: String, enum: ['yescaptcha', 'capsolver', 'capmonster', 'ezcaptcha', 'browser', 'personal', 'remote_browser'], default: 'browser' },
+                yescaptcha: {
+                    apiKey: { type: String, default: '' },
+                    baseUrl: { type: String, default: 'https://api.yescaptcha.com' }
+                },
+                remoteBrowser: {
+                    apiKey: { type: String, default: '' },
+                    baseUrl: { type: String, default: '' },
+                    timeout: { type: Number, default: 60 }
+                },
+                localBrowser: {
+                    launchBackground: { type: Boolean, default: true },
+                    profileDir: { type: String, default: 'browser_data' }
+                }
+            }
         },
         logSettings: {
             emailNotificationsEnabled: { type: Boolean, default: false },

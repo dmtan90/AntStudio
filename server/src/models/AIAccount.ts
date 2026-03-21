@@ -8,8 +8,9 @@ export interface IQuota {
 
 export interface IAIAccount extends Document {
     email: string;
+    name?: string; // Display name from provider
     providerId: string; // e.g., 'google', 'anthropic'
-    accountType: 'standard' | 'antigravity' | '11labs-direct'; // Distinction for OAuth credentials
+    accountType: 'standard' | 'antigravity' | 'google-flow'; // Distinction for OAuth credentials
 
     // OAuth Tokens
     refreshToken?: string;
@@ -22,6 +23,12 @@ export interface IAIAccount extends Document {
     serviceKeys?: Map<string, string>; // task specific keys for 11labs-direct (voice, image, video)
     avatarUrl?: string;
 
+    // Google Flow specific
+    flowST?: string; // __Secure-next-auth.session-token
+    flowAT?: string; // Access Token
+    flowATExpiresAt?: Date;
+    lastFingerprint?: Map<string, any>;
+
     // Usage Tracking
     quotas: Map<string, IQuota>; // key: modelId (e.g., 'gemini-1.5-pro')
 
@@ -32,6 +39,7 @@ export interface IAIAccount extends Document {
     isPaid: boolean;
 
     lastUsedAt?: Date;
+    credits?: number; // Available generation credits (e.g., Google Flow)
     createdAt: Date;
     updatedAt: Date;
 }
@@ -39,10 +47,11 @@ export interface IAIAccount extends Document {
 const AIAccountSchema = new Schema<IAIAccount>(
     {
         email: { type: String, required: true },
+        name: String,
         providerId: { type: String, required: true, default: 'google' },
         accountType: {
             type: String,
-            enum: ['standard', 'antigravity', '11labs-direct'],
+            enum: ['standard', 'antigravity', 'google-flow'],
             default: 'standard',
             required: true
         },
@@ -59,6 +68,16 @@ const AIAccountSchema = new Schema<IAIAccount>(
             default: {}
         },
         avatarUrl: String,
+
+        // Google Flow specific
+        flowST: String,
+        flowAT: String,
+        flowATExpiresAt: Date,
+        lastFingerprint: {
+            type: Map,
+            of: Schema.Types.Mixed,
+            default: {}
+        },
 
         quotas: {
             type: Map,
@@ -79,7 +98,8 @@ const AIAccountSchema = new Schema<IAIAccount>(
         isActive: { type: Boolean, default: true },
         isPaid: { type: Boolean, default: false },
 
-        lastUsedAt: Date
+        lastUsedAt: Date,
+        credits: { type: Number, default: 0 }
     },
     {
         timestamps: true

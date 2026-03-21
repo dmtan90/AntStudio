@@ -1,11 +1,12 @@
 import { EventEmitter } from 'events';
-import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { socketServer } from '../SocketServer.js';
 import { SHOW_PROFILES, ShowProfileType, ShowProfile } from '../../constants/ShowProfiles.js';
 import { EmotionAnalysisService } from './EmotionAnalysisService.js';
 import { TrendFetchService } from './TrendFetchService.js';
-
 import { Logger } from '../../utils/Logger.js';
+import { generateJSON } from '../../utils/AIGenerator.js';
+import { promptService } from '../PromptService.js';
+import { aiManager } from '../../utils/ai/AIServiceManager.js';
 
 export interface ScriptStep {
     id: string;
@@ -30,13 +31,11 @@ export interface LiveScript {
 }
 
 class ShowRunnerService extends EventEmitter {
-    private gemini: GeminiClient;
     private activeScript: LiveScript | null = null;
     private timer: NodeJS.Timeout | null = null;
 
     constructor() {
         super();
-        this.gemini = new GeminiClient({});
     }
 
     public getProfiles(): ShowProfile[] {
@@ -80,65 +79,19 @@ class ShowRunnerService extends EventEmitter {
         const profile = SHOW_PROFILES[profileId];
         if (!profile) throw new Error('Invalid profile ID');
 
-        const systemPrompt = `
-        You are an expert TV Showrunner. 
-        ${profile.basePrompt}
-        
-        AVAILABLE ACTIONS:
-        - "trigger_sponsorship": Show a brand sponsorship overlay. Params: { sponsorName: string, slogan: string, logoUrl?: string }
-        - "assemble_highlights": Trigger an AI-driven recap of the session. 
-        - "trigger_visual_fx": Trigger a special visual effect. Params: { type: "confetti" | "fire" | "glitch" | "cash" | "snow" | "hearts" | "balloons" | "rocket" | "coffee" | "rose" }
-        - "trigger_data_overlay": Show a graphic overlay. Params:
-            - type: "stat_card" | "table" | "chart" | "media"
-            - data: 
-                - For "stat_card": { label: "Revenue", value: "$10M", trend: 5.2 }
-                - For "table": { columns: ["Item", "Price"], rows: [["A", "$10"], ["B", "$20"]] }
-                - For "chart": { points: [{ label: "Q1", value: 50 }, { label: "Q2", value: 80 }] }
-                - For "media": { mediaType: "image" | "video", url: "https..." }
-            - duration: number (seconds to show)
-        - "show_product": Show a product card. Params: { id: "product_id" }
-        - "switch_scene": Switch layout. Params: { actionPayload: "grid" | "fullscreen" | "interview" | "showcase_pinned" | "interview_split" | "lecture_pip" | "cinematic_focus" }
-        - "set_camera_transform": Adjust camera. Params: { zoom: number, panX: number, panY: number }
-        - "request_vision": AI Guest asks to see the stage.
-        - "trigger_ad_break": Start a commercial break.
-        
-        TOPICAL TRENDS (Incorporate into dialogue if relevant):
-        {{trends}}
-
-        SOCIAL CONTEXT (Relationship dynamics):
-        {{socialContext}}
-        
-        OUTPUT FORMAT (JSON Array of Steps):
-        [
-            {
-                "description": "Short direction for the director",
-                "agentId": "host" | "guest_1" | "guest_2", 
-                "dialogue": "Spoken text (keep it natural)",
-                "action": "One of the available actions",
-                "actionParams": { ... },
-                "durationSeconds": 10
-            }
-        ]
-
-        USER INPUTS:
-        ${Object.entries(inputs).map(([k, v]) => `${k}: ${v}`).join('\n')}
-        `
-        .replace('{{trends}}', (await TrendFetchService.getTopTrends(profileId === 'ecommerce' ? 'tech' : 'general')).join(', '))
-        .replace('{{socialContext}}', inputs['social_context'] || 'Standard professional relationships.');
+        const finalPrompt = await promptService.get('ai/show_runner_director', {
+            basePrompt: profile.basePrompt,
+            trends: (await TrendFetchService.getTopTrends(profileId === 'ecommerce' ? 'tech' : 'general')).join(', '),
+            socialContext: inputs['social_context'] || 'Standard professional relationships.'
+        });
 
         const userPrompt = "Generate the full run-of-show script now.";
 
         try {
-            const result = await this.gemini.generateContent([{ text: userPrompt }], 'gemini-2.5-flash', { 
-                systemInstruction: systemPrompt,
-                responseMimeType: 'application/json' 
-            });
-            let steps = [];
-            try {
-                steps = JSON.parse(result.text || '[]');
-            } catch (e) {
-                Logger.warn('[ShowRunner] Failed to parse script JSON:', e);
-            }
+            const steps = await generateJSON([
+                { text: finalPrompt },
+                { text: userPrompt }
+            ], undefined);
 
             // Validate and sanitized steps while enriching with emotions and visual FX
             const sanitizedSteps: ScriptStep[] = await Promise.all((Array.isArray(steps) ? steps : []).map(async (s: any, i: number) => {
@@ -247,6 +200,16 @@ class ShowRunnerService extends EventEmitter {
         this.activeScript = null;
         if (this.timer) clearTimeout(this.timer);
         this.broadcastState();
+    }
+
+    /**
+     * Phase 7: Load an externally-generated script (e.g. from a Project storyboard)
+     */
+    public loadScript(script: LiveScript) {
+        this.activeScript = script;
+        this.broadcastState();
+        Logger.info(`[ShowRunner] Loaded external script: "${script.title}" with ${script.steps.length} steps.`);
+        return this.activeScript;
     }
 
     public async handlePollResult(actionType: string, winner: string) {

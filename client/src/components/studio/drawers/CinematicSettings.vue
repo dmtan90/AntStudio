@@ -50,8 +50,8 @@
             <!-- VFX Controls -->
             <div class="space-y-4 pt-4 border-t border-white/5">
                 <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-white/60 uppercase">{{ $t('drawers.cinematic.vtuberLink') }}</span>
-                    <el-switch v-model="studioStore.visualSettings.cinematic.showVTuberLinks" size="small" />
+                    <span class="text-[10px] font-bold text-white/60 uppercase">{{ $t('drawers.cinematic.influencerLink') }}</span>
+                    <el-switch v-model="studioStore.visualSettings.cinematic.showInfluencerLinks" size="small" />
                 </div>
                 
                 <div class="vfx-status flex items-center gap-2 px-3 py-2 bg-blue-500/5 rounded-lg border border-blue-500/10">

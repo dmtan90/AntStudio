@@ -1,37 +1,9 @@
 <template>
     <div class="virtual-guest relative w-full h-full bg-black/20 overflow-hidden rounded-xl">
-        <div ref="viewerContainer" class="absolute inset-0">
-            <!-- VRM Model Viewer (Upgraded from Head3DViewer) -->
-            <VRMViewer
-                v-if="!isLive2D && !isStatic && persona.visual?.modelUrl"
-                ref="vrmViewer"
-                :model-url="persona.visual.modelUrl"
-                :speaking-vol="audioLevel"
-                :aura-enabled="persona.performanceConfig?.auraEnabled || isThinking || hypeLevel > 1.0"
-                :aura-color="hypeLevel > 1.5 ? '#ff0055' : (persona.performanceConfig?.auraColor || '#00f2ff')"
-                :particle-type="persona.performanceConfig?.particleType || (isThinking ? 'glitter' : (hypeLevel > 0.8 ? 'glitter' : null))"
-                :particle-density="(persona.performanceConfig?.particleDensity || 0.4) + (hypeLevel * 0.5)"
-                :background-url="hideBackground ? null : (persona.visual?.backgroundUrl || backgroundUrl)"
-                :is360="is360"
-                :emotion="currentEmotion || persona.emotion"
-                :gesture="currentGesture || persona.gesture"
-                :animation-config="persona.animationConfig"
-                :config="{
-                    zoom: persona.visual.live2dConfig?.zoom || 1.0,
-                    offset: persona.visual.live2dConfig?.offset || { x: 0, y: 0 }
-                }"
-                :lyrics="performanceLyrics"
-                :current-time="performanceLyricsCurrentTime"
-                :lyrics-enabled="!hideBackground"
-                :camera-transform="cameraTransform"
-                :active-camera-path="persona.performanceConfig?.activeCameraPath"
-                :camera-intensity="persona.performanceConfig?.cameraIntensity"
-                @ready="handleReady"
-            />
-
+        <div ref="viewerContainer" class="absolute inset-0" v-if="persona.visual?.modelUrl">
             <!-- Live2D Model Viewer -->
             <Live2DViewer
-                v-else-if="isLive2D && persona.visual?.modelUrl"
+                v-if="isLive2D"
                 ref="viewerLive2D"
                 :model-url="persona.visual.modelUrl"
                 :speaking-vol="audioLevel"
@@ -48,12 +20,13 @@
                 :current-time="performanceLyricsCurrentTime"
                 :lyrics-enabled="!hideBackground"
                 :camera-transform="cameraTransform"
+                :is-portrait="isPortrait"
                 @ready="handleReady"
             />
 
             <!-- Static Photo Viewer (Neural Puppet) -->
             <StaticPhotoViewer
-                v-else-if="isStatic && persona.visual?.modelUrl"
+                v-else-if="isStatic"
                 ref="viewerStatic"
                 :model-url="persona.visual.modelUrl"
                 :speaking-vol="audioLevel"
@@ -69,12 +42,14 @@
                 :current-time="performanceLyricsCurrentTime"
                 :lyrics-enabled="!hideBackground"
                 :camera-transform="cameraTransform"
+                :is-portrait="isPortrait"
+                :uuid="persona.uuid"
                 @ready="handleReady"
             />
 
             <!-- Video Based 2D Model Viewer -->
             <VideoViewer
-                v-else-if="isVideo && persona.visual?.modelUrl"
+                v-else-if="isVideo"
                 ref="viewerVideo"
                 :model-url="persona.visual.modelUrl"
                 :speaking-vol="audioLevel"
@@ -88,6 +63,8 @@
                 :particle-density="(persona.performanceConfig?.particleDensity || 0.4) + (hypeLevel * 0.5)"
                 :emotion="currentEmotion || persona.emotion"
                 :gesture="currentGesture || persona.gesture"
+                :is-portrait="isPortrait"
+                :uuid="persona.uuid"
                 @ready="handleReady"
             />
 
@@ -95,9 +72,42 @@
             <AidolVideoPlayer
                 v-else-if="isAidol"
                 ref="viewerAidol"
+                :uuid="persona.uuid"
+                :model-url="persona.visual.modelUrl"
                 :video-clips="(persona.visual as any)?.aidolClips"
                 :active-state="aidolState as any"
                 :hype-level="hypeLevel"
+                :is-portrait="isPortrait"
+                :is-paused="isPaused"
+                @ready="handleReady"
+                @chroma-ready="(m: any) => $emit('chroma-ready', m)"
+            />
+
+            <!-- VRM Model Viewer (Upgraded from Head3DViewer) -->
+            <VRMViewer v-else
+                ref="vrmViewer"
+                :model-url="persona.visual.modelUrl"
+                :speaking-vol="audioLevel"
+                :aura-enabled="persona.performanceConfig?.auraEnabled || isThinking || hypeLevel > 1.0"
+                :aura-color="hypeLevel > 1.5 ? '#ff0055' : (persona.performanceConfig?.auraColor || '#00f2ff')"
+                :particle-type="persona.performanceConfig?.particleType || (isThinking ? 'glitter' : (hypeLevel > 0.8 ? 'glitter' : null))"
+                :particle-density="(persona.performanceConfig?.particleDensity || 0.4) + (hypeLevel * 0.5)"
+                :background-url="hideBackground ? null : (persona.visual?.backgroundUrl || backgroundUrl)"
+                :is360="is360"
+                :is-portrait="isPortrait"
+                :emotion="currentEmotion || persona.emotion"
+                :gesture="currentGesture || persona.gesture"
+                :animation-config="persona.animationConfig"
+                :config="{
+                    zoom: persona.visual.live2dConfig?.zoom || 1.0,
+                    offset: persona.visual.live2dConfig?.offset || { x: 0, y: 0 }
+                }"
+                :lyrics="performanceLyrics"
+                :current-time="performanceLyricsCurrentTime"
+                :lyrics-enabled="!hideBackground"
+                :camera-transform="cameraTransform"
+                :active-camera-path="persona.performanceConfig?.activeCameraPath"
+                :camera-intensity="persona.performanceConfig?.cameraIntensity"
                 @ready="handleReady"
             />
         </div>
@@ -123,12 +133,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { AIGuestPersona, syntheticGuestManager } from '@/utils/ai/SyntheticGuestManager';
-import VRMViewer from '@/components/vtuber/VRMViewer.vue';
-import Live2DViewer from '@/components/vtuber/Live2DViewer.vue';
-import StaticPhotoViewer from '@/components/vtuber/StaticPhotoViewer.vue';
-import VideoViewer from '@/components/vtuber/VideoViewer.vue';
-import AidolVideoPlayer from '@/components/vtuber/AidolVideoPlayer.vue';
-import { useCameraMotion } from '@/composables/vtuber/useCameraMotion';
+import VRMViewer from '@/components/influencer/VRMViewer.vue';
+import Live2DViewer from '@/components/influencer/Live2DViewer.vue';
+import StaticPhotoViewer from '@/components/influencer/StaticPhotoViewer.vue';
+import VideoViewer from '@/components/influencer/VideoViewer.vue';
+import AidolVideoPlayer from '@/components/influencer/AidolVideoPlayer.vue';
+import { useCameraMotion } from '@/composables/influencer/useCameraMotion';
 import { useMediaStore } from '@/stores/media';
 
 const props = defineProps<{
@@ -137,10 +147,13 @@ const props = defineProps<{
     backgroundUrl?: string | null;
     is360?: boolean;
     hideBackground?: boolean;
+    isPortrait?: boolean;
+    isPaused?: boolean;
 }>();
 
 const emit = defineEmits<{
     'stream-ready': [stream: MediaStream];
+    'chroma-ready': [metadata: any];
 }>();
 
 onMounted(() => {
@@ -149,9 +162,9 @@ onMounted(() => {
 
 const mediaStore = useMediaStore();
 
-// Check if this VTuber is currently performing
+// Check if this influencer is currently performing
 const isPerforming = computed(() => {
-    const performingId = mediaStore.performingVTuberId;
+    const performingId = mediaStore.performingInfluencerId;
     const currentId = props.persona.uuid;
     const match = performingId === currentId;
     if (performingId) {
@@ -181,20 +194,28 @@ watch(() => props.persona.performanceConfig?.activeCameraPath, (newPath) => {
     }
 }, { immediate: true });
 
+// Drive camera animation loop
+let cameraAnimationId: number | null = null;
 onMounted(() => {
-    // Drive camera animation loop
     let lastTime = performance.now();
     const animateCamera = (time: number) => {
         const dt = (time - lastTime) / 16.666; // Normalize to 60fps
         lastTime = time;
         
-        if (props.persona.performanceConfig?.activeCameraPath && (props.persona.performanceConfig.activeCameraPath as any) !== 'none') {
+        if (!props.isPaused && props.persona.performanceConfig?.activeCameraPath && (props.persona.performanceConfig.activeCameraPath as any) !== 'none') {
             updateProgress(dt);
         }
         
-        requestAnimationFrame(animateCamera);
+        cameraAnimationId = requestAnimationFrame(animateCamera);
     };
-    requestAnimationFrame(animateCamera);
+    cameraAnimationId = requestAnimationFrame(animateCamera);
+});
+
+onUnmounted(() => {
+    if (cameraAnimationId) {
+        cancelAnimationFrame(cameraAnimationId);
+        cameraAnimationId = null;
+    }
 });
 const performanceLyricsVisible = computed(() => {
     const visible = isPerforming.value ? mediaStore.performanceLyricsVisible : false;
@@ -216,6 +237,7 @@ const isTalking = ref(false);
 const isThinking = ref(false);
 const currentEmotion = ref('');
 const currentGesture = ref('');
+const currentProductId = ref<string | null>(null);
 const isLiveVoiceActive = ref(false);
 const hypeLevel = ref(0);
 const isLoading = ref(true);
@@ -286,12 +308,22 @@ const isVideo = computed(() => (props.persona.visual?.modelType as string) === '
 const isAidol = computed(() => (props.persona.visual?.modelType as string) === 'aidol');
 
 const aidolState = computed(() => {
-    // 1. High-priority reactions
-    if (currentGesture.value === 'react_gift') return 'gift_react';
-    if (hypeLevel.value > 0.8) return 'hype';
+    // 0. Dynamic mapping via 'type' (which is the segment.type passed as currentGesture)
+    if (currentGesture.value && props.persona.visual?.aidolClips?.[currentGesture.value]) {
+        return currentGesture.value;
+    }
+
+    // 0.1 Fallback to mapping via 'productId'
+    if (currentProductId.value && props.persona.visual?.aidolClips?.[currentProductId.value]) {
+        return currentProductId.value;
+    }
+
+    // 1. High-priority reactions (Gifts / Hype)
+    if (['react_gift', 'victory', 'bashful', 'love', 'surprised', 'clap'].includes(currentGesture.value)) return 'gift_react';
+    if (hypeLevel.value > 0.8 || currentGesture.value === 'hype') return 'hype';
     
     // 2. Specific performance actions
-    if (currentGesture.value === 'product_intro') return 'product';
+    if (['product_intro', 'point'].includes(currentGesture.value)) return 'product';
     if (currentGesture.value === 'checkout') return 'checkout';
     if (currentGesture.value === 'wave') return 'wave';
     if (currentGesture.value === 'dance') return 'dance';
@@ -312,6 +344,7 @@ const safeAnimationConfig = computed(() => ({
 // Listen for audio updates from manager
 const handleWorkerCommand = (e: CustomEvent) => {
     const { type, payload } = e.detail;
+    
     if (payload.id !== props.persona.uuid) return;
 
     if (type === 'update-3d-audio') {
@@ -325,6 +358,7 @@ const handleWorkerCommand = (e: CustomEvent) => {
         if (!isLiveVoiceActive.value) {
             currentEmotion.value = payload.emotion;
             currentGesture.value = payload.gesture;
+            currentProductId.value = payload.productId;
         }
     } else if (type === 'update-hype-level') {
         hypeLevel.value = payload.level;
@@ -362,34 +396,44 @@ const captureStream = async () => {
     }
     
     if (!canvas) {
-        // Fallback for safety
-        if (vrmViewer.value) {
-            const el = (vrmViewer.value as any).$el;
-            if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
-        } else if (viewerLive2D.value) {
-            const el = (viewerLive2D.value as any).$el;
-            if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
-        } else if (viewerStatic.value) {
-            const el = (viewerStatic.value as any).$el;
-            if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
-        } else if (viewerVideo.value) {
-            const el = (viewerVideo.value as any).$el;
-            if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
-        } else if (viewerAidol.value) {
-            const el = (viewerAidol.value as any).$el;
-            if (el && typeof el.querySelector === 'function') canvas = el.querySelector('canvas');
+        // Fallback for safety across different viewer types
+        const viewers = [vrmViewer, viewerLive2D, viewerStatic, viewerVideo, viewerAidol];
+        for (const v of viewers) {
+            if (v.value) {
+                const el = (v.value as any).$el;
+                if (el && typeof el.querySelector === 'function') {
+                    canvas = el.querySelector('canvas');
+                    if (canvas) break;
+                }
+            }
         }
     }
 
     if (canvas) {
-        const stream = canvas.captureStream(30);
-        emit('stream-ready', stream);
-        console.log(`[VirtualGuest] Stream captured for ${props.persona.name}`);
-        return true;
-    } else {
-        console.warn(`[VirtualGuest] Could not find canvas for ${props.persona.name} (Attempting fallback...)`);
-        return false;
+        try {
+            // Optimization: If it's an AIDOL model, prefer the raw video stream to bypass PIXI rendering overhead on main thread
+            if (isAidol.value && viewerAidol.value && (viewerAidol.value as any).captureStreamRaw) {
+                const stream = (viewerAidol.value as any).captureStreamRaw();
+                if (stream) {
+                    console.log(`[VirtualGuest] ${props.persona.name} capturing via RAW VIDEO PATH`);
+                    emit('stream-ready', stream);
+                    return true;
+                }
+            }
+
+            // Fallback: Standardize to 12fps for cinematic but lightweight motion
+            const stream = (canvas as any).captureStream(12);
+            if (stream) {
+                emit('stream-ready', stream);
+                return true;
+            }
+        } catch (e) {
+            console.error(`[VirtualGuest] captureStream failed for ${props.persona.name}:`, e);
+        }
     }
+
+    console.warn(`[VirtualGuest] Could not find or capture canvas for ${props.persona.name}`);
+    return false;
 };
 
 // Re-capture if model type switches

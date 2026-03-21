@@ -29,6 +29,8 @@ AntStudio/
 
 - **Client-Side Assembly**: All video rendering and assembly for project exports **MUST** happen on the client-side via `useVideoAssembler` and `videoAssembly.worker.ts`.
 - **Stateless Rendering**: The backend should not maintain a render queue or state for video assembly. It only accepts final `Blob` uploads via the `/upload-final-video` route.
+- **Main Thread Offloading**: Live Studio WebGL overlays run in a dedicated `RenderWorker`. Avoid running expensive shaders or filters on the main thread.
+- **PIXI GPU Optimization**: The `AidolVideoPlayer` runs PIXI rendering at a capped 15fps with a max resolution of 360x640 to prevent main thread CPU/GPU starvation.
 - **Resource Offloading**: This architecture is designed to scale horizontally without requiring massive GPU instances for the backend.
 
 ## 🛠️ Tech Stack

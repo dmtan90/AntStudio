@@ -34,9 +34,9 @@
                             <id-card theme="filled" size="14" /> {{ t('admin.settings.tabs.license') }}
                         </div>
                     </template>
-                    <div class="space-y-8 animate-in slide-up">
+                    <div class="animate-in slide-up grid grid-cols-1 md:grid-cols-2 gap-6">
                         <LicenseSettings :license="settings.license" />
-                        <WhitelabelSettings :whitelabel="settings.whitelabel" />
+                        <WhitelabelSettings :whitelabel="settings.whitelabel" :api-configs="settings.apiConfigs" />
                     </div>
                 </el-tab-pane>
 
@@ -74,6 +74,8 @@
                     </template>
                     <div class="space-y-8 animate-in slide-up">
                         <AIModelSettings :providers="settings.aiSettings.providers"
+                            :ai-settings="settings.aiSettings"
+                            :api-configs="settings.apiConfigs"
                             :gemini-api-keys="settings.geminiApiKeys"
                             :ai-o-auth="settings.apiConfigs.oauth"
                             :google-cookies="settings.aiSettings.sessionSync?.googleCookies || ''"
@@ -155,12 +157,12 @@ const suggestedRedirectUri = computed(() => {
 
 const KNOWN_PROVIDERS = [
     // { id: 'gemini_chat', name: 'Gemini Chat (Native)', supportedTypes: ['text'] },
-    { id: 'aistudio', name: 'Gemini', supportedTypes: ['text', 'image', 'video', 'audio'] },
-    { id: 'google_gemini', name: 'Google Cloud (Vertex AI)', supportedTypes: ['text', 'image', 'video', 'audio'] },
+    { id: 'google', name: 'Gemini', supportedTypes: ['text', 'image', 'video', 'audio'] },
+    { id: 'vertex', name: 'Google Cloud (Vertex AI)', supportedTypes: ['text', 'image', 'video', 'audio'], baseUrl: 'https://aiplatform.googleapis.com/v1/publishers/google/models/' },
     // { id: 'geminigen_ai', name: 'GeminiGen AI', supportedTypes: ['image', 'video'] },
     // { id: 'labs_flow', name: 'Labs Flow (Native)', supportedTypes: ['image', 'video'] },
     // { id: '11labs_direct', name: '11Labs Direct', supportedTypes: ['image', 'video', 'audio'] },
-    // { id: 'openai_gpt', name: 'OpenAI (GPT-4 / DALL-E)', supportedTypes: ['text', 'image'] },
+    { id: 'openai', name: 'OpenAI (Compatibles)', supportedTypes: ['text', 'image'], baseUrl: 'http://127.0.0.1:8045/v1' },
     // { id: 'anthropic', name: 'Anthropic (Claude)', supportedTypes: ['text'] },
     // { id: 'stability_ai', name: 'Stability AI', supportedTypes: ['image', 'video'] },
     // { id: 'eleven_labs', name: 'Eleven Labs', supportedTypes: ['audio'] },

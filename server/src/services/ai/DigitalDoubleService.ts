@@ -1,16 +1,11 @@
-import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { uploadToS3 } from '../../utils/s3.js';
-import { VTuberService } from '../VTuberService.js';
-import config from '../../utils/config.js';
-
+import { InfluencerService } from '../InfluencerService.js';
 import { Logger } from '../../utils/Logger.js';
+import { generateText, generateImage } from '../../utils/AIGenerator.js';
+import { promptService } from '../PromptService.js';
 
 export class DigitalDoubleService {
-    private gemini: GeminiClient;
-
-    constructor() {
-        this.gemini = new GeminiClient({});
-    }
+    constructor() {}
 
     /**
      * Orchestrates the generation of a Digital Double (3D Texture) from a photo.
@@ -19,12 +14,13 @@ export class DigitalDoubleService {
         Logger.info(`[DigitalDoubleService] Starting generation for entity: ${entityId}`);
 
         // 1. Upload source photo to S3 for persistence
-        const sourcePath = `vtuber/${userId}/${entityId}/source_${Date.now()}.png`;
+        const sourcePath = `influencer/${userId}/${entityId}/source_${Date.now()}.png`;
         const sourceS3 = await uploadToS3(sourcePath, imageBuffer, mimeType);
         const sourceUrl = sourceS3.key;
 
-        // 2. Use Gemini to analyze the photo and generate a technical prompt for Imagen
+        // 2. Use AIGenerator to analyze the photo and generate a technical prompt for Imagen
         const base64Image = imageBuffer.toString('base64');
+        const promptTemplate = await promptService.get('ai/digital_double_analysis');
 
         const analysisPrompt = [
             {
@@ -34,48 +30,39 @@ export class DigitalDoubleService {
                 }
             },
             {
-                text: `Analyze this person's facial features, skin tone, eye color, and hair style. 
-                Then, generate a highly detailed technical prompt for an AI Image Generator (Imagen 3.5) to create a professional 4K UV Head Texture Map.
-                
-                The generated prompt MUST follow this strict technical format:
-                "Texture Type: Professional 3D Albedo Map (UV Unwrapped).
-                Subject: Human Face [Features from photo].
-                Lighting: Flat, Delit, No Shadows, No Specular Highlights, Uniform Ambient Illumination.
-                Layout: Symmetrical UV projection, ears fully unwrapped on sides, neck extension at bottom.
-                Details: 8k resolution, high frequency pore detail, raw photogrammetry scan style, neutral expression, no makeup, no glasses."
-                
-                Return ONLY the generated prompt string.`
+                text: promptTemplate
             }
         ];
 
-        const response = await this.gemini.generateContent(analysisPrompt, 'gemini-2.5-flash');
-        const imagenPrompt = response.text;
+        const imagenPrompt = await generateText(analysisPrompt, undefined);
         Logger.info(`[DigitalDoubleService] Synthesized Imagen Prompt: ${imagenPrompt}`);
 
-        // 3. Call Imagen to generate the actual texture map
+        // 3. Call Imagen to generate the actual texture map via AIGenerator
         const visualPrompt = `(3D Texture Map, Albedo, Flat Lighting, Delit, UV Unwrapped) ${imagenPrompt}`;
 
-        const imageResult = await this.gemini.generateImage(visualPrompt, 'imagen-3.0-generate-001');
+        const { s3Key } = await generateImage(
+            visualPrompt,
+            userId, // Project ID / User ID context
+            `texture_${Date.now()}`,
+            {
+                 s3Key: `influencer/${userId}/${entityId}/texture_${Date.now()}.png`
+            }
+        );
 
-        if (!imageResult || !imageResult.url) {
+        if (!s3Key) {
             throw new Error('Failed to generate texture map via Imagen');
         }
 
-        // 4. Upload the generated texture map to S3
-        const textureBase64 = imageResult.url.split(',')[1];
-        const textureBuffer = Buffer.from(textureBase64, 'base64');
-        const texturePath = `vtuber/${userId}/${entityId}/texture_${Date.now()}.png`;
-        const textureS3 = await uploadToS3(texturePath, textureBuffer, 'image/png');
-        const textureUrl = textureS3.key;
+        const textureUrl = s3Key;
 
-        // 5. Update VTuber with the new visual identity
+        // 4. Update Influencer with the new visual identity
         const visual = {
             modelType: '3d' as const,
             modelUrl: '/assets/models/humanoid_base.glb', // Default base model
             lastGenerated: new Date()
         };
 
-        await VTuberService.updateVisual(userId, entityId, visual);
+        await InfluencerService.updateVisual(userId, entityId, visual);
 
         return visual;
     }

@@ -1,52 +1,26 @@
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
-import { configService } from '../configService.js';
+import { generateJSON } from '../AIGenerator.js';
 import { Logger } from '../Logger.js';
+import { promptService } from '../../services/PromptService.js';
 
 /**
- * Service for self-evolving AI performance optimization.
- * Analyzes WebGPU logs and suggests shader improvements.
+ * Optimizes scene rendering based on AI feedback.
  */
 export class RenderOptimizer {
-    private ai: any;
-
-    constructor() {
-        const apiKey = configService.ai.providers.find((p: any) => p.id === 'google')?.apiKey || process.env.GEMINI_API_KEY || '';
-        this.ai = genkit({
-            plugins: [googleAI({ apiKey })]
-        });
-    }
+    constructor() {}
 
     /**
-     * Analyzes current rendering bottlenecks and suggests WGSL (WebGPU) optimizations.
+     * Analyzes studio scene data to suggest optimizations.
      */
-    public async suggestShaderOptimization(currentShaderCode: string, performanceLogs: string) {
-        Logger.info('🧠 [RenderOptimizer] Analyzing WebGPU performance...', 'RenderOptimizer');
-
+    public async optimizeScene(sceneData: any) {
         try {
-            const response = await this.ai.generate({
-                model: 'googleai/gemini-1.5-pro',
-                prompt: `
-                    ACT AS: Elite Graphics Engineer & WebGPU Specialist.
-                    
-                    CONTEXT: The following WGSL shader is experiencing performance bottlenecks.
-                    PERFORMANCE LOGS: ${performanceLogs}
-                    CURRENT SHADER:
-                    \`\`\`wgsl
-                    ${currentShaderCode}
-                    \`\`\`
-                    
-                    TASK: Suggest a 100% optimized version of this shader. 
-                    Focus on reducing memory bandwidth and increasing occupancy.
-                    Return only the optimized WGSL code.
-                `
+            const prompt = await promptService.get('ai/render_optimize', {
+                sceneData: JSON.stringify(sceneData)
             });
 
-            return response.text;
-
+            return await generateJSON(prompt);
         } catch (error: any) {
-            Logger.error(`[RenderOptimizer] Optimization analysis failed: ${error.message}`, 'RenderOptimizer');
-            return null;
+            Logger.error('[RenderOptimizer] Optimization failed:', error.message);
+            return { optimizations: [], priority: 'low' };
         }
     }
 }

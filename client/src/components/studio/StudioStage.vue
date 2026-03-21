@@ -17,6 +17,24 @@
             <!-- Real-time Render Canvas (Injected via slot from Parent) -->
             <slot name="canvas"></slot>
 
+            <!-- Video Embed Layer (Phase 20 Redesign) -->
+            <div v-if="studioStore.embeddedVideoUrl" 
+                 class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden">
+                <iframe 
+                    v-if="videoEmbedType === 'youtube'"
+                    :src="`https://www.youtube.com/embed/${videoEmbedId}?autoplay=1&mute=1`"
+                    class="w-full h-full border-none"
+                    allow="autoplay; encrypted-media; fullscreen"
+                ></iframe>
+                <iframe
+                    v-else-if="videoEmbedType === 'twitch'"
+                    :src="`https://player.twitch.tv/?channel=${videoEmbedId}&parent=${windowLocationHost}&muted=true`"
+                    class="w-full h-full border-none"
+                    allow="autoplay; fullscreen"
+                ></iframe>
+                <video v-else :src="studioStore.embeddedVideoUrl" autoplay muted loop class="w-full h-full object-contain"></video>
+            </div>
+
             <!-- Floating Interactions Overlay -->
             <div class="interaction-overlay">
                 <transition-group name="float-up">
@@ -127,6 +145,31 @@ const uiStore = useUIStore();
 const appSlug = computed(() => uiStore.appName.toLowerCase().replace(/\s+/g, '-'));
 const guestDndType = computed(() => `application/${appSlug.value}-guest`);
 const activeRegion = ref<string | null>(null);
+
+const videoEmbedType = computed(() => {
+    const url = studioStore.embeddedVideoUrl;
+    if (!url) return 'none';
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+    if (url.includes('twitch.tv')) return 'twitch';
+    return 'generic';
+});
+
+const videoEmbedId = computed(() => {
+    const url = studioStore.embeddedVideoUrl;
+    if (!url) return '';
+    if (videoEmbedType.value === 'youtube') {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : '';
+    }
+    if (videoEmbedType.value === 'twitch') {
+        const match = url.match(/twitch\.tv\/([a-zA-Z0-9_]+)/);
+        return match ? match[1] : '';
+    }
+    return '';
+});
+
+const windowLocationHost = window.location.host;
 
 const isDragging = ref(false);
 

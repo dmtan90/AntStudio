@@ -2,6 +2,8 @@
 @use "./mixins" as *;
 @use "./ui-overrides" as *;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
 // Global Styles using tokens
 html, body {
     height: 100vh;
@@ -13,7 +15,7 @@ html, body {
 body {
     background-color: $bg-dark;
     color: $text-primary;
-    font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+    font-family: 'Inter', 'SF Pro Display', 'Outfit', -apple-system, system-ui, sans-serif;
 }
 
 // Cinematic Container

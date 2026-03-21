@@ -78,6 +78,11 @@ watchEffect(() => {
 onMounted(() => {
   userStore.fetchProfile()
   uiStore.fetchAppConfig()
+  
+  // Pre-initialize AI engines to shift CPU load to startup instead of active usage
+  import('@/utils/ai/LiveAIEngine').then(({ liveAIEngine }) => {
+    liveAIEngine.initialize();
+  });
 })
 </script>
 

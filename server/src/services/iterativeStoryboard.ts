@@ -61,7 +61,8 @@ export const generateStoryboardIteratively = async (
     scriptContent: string,
     scriptAnalysis: any,
     targetDuration: number = 60, // in seconds
-    language: string = 'English'
+    language: string = 'English',
+    useGreenScreen?: boolean
 ): Promise<IterativeStoryboardResult> => {
     let allSegments: StoryboardSegment[] = []
     let currentDuration = 0
@@ -74,7 +75,15 @@ export const generateStoryboardIteratively = async (
     let iteration = 0
 
     const characters = scriptAnalysis.characters || []
-    const characterMap = characters.map((c: any) => `- [${c.char_id || c.name.toUpperCase()}] ${c.name}: ${c.description}. Traits: ${[c.species, c.gender, c.age, c.hair, c.eyes].filter(Boolean).join(', ')}`).join('\n')
+    const characterMap = characters.map((c: any) => {
+        let base = `- [${c.char_id || c.name.toUpperCase()}] ${c.name}: ${c.description}. `;
+        if (c.visualDescription) base += `VISUAL ANCHOR: ${c.visualDescription}. `;
+        if (c.imagePrompt) base += `STABILITY PROMPT: ${c.imagePrompt}. `;
+        return base;
+    }).join('\n')
+
+    const expertFeedback = scriptAnalysis.expertFeedback ? 
+        `### EXPERT BOARD DIRECTIVES ###\n${scriptAnalysis.expertFeedback.map((f: any) => `- [${f.expert}] Suggestion: ${f.suggestion}`).join('\n')}` : '';
 
     // FALLBACK GROUNDING: If scriptContent is too short (likely just approval text),
     // and we have an analysis summary, use the summary to ground the AI.
@@ -104,13 +113,15 @@ export const generateStoryboardIteratively = async (
         Script Analysis (Scenes Roadmap):
         ${JSON.stringify(scriptAnalysis.scenes || [], null, 2)}
         
+        ${expertFeedback}
+        
         Visual Style Context:
         - Genre: ${scriptAnalysis.genre || 'Unknown'}
         - Mood: ${scriptAnalysis.mood || 'Unknown'}
         - Visual Style: ${JSON.stringify(scriptAnalysis.visuals?.visualStyle || {})}
         - World Rules: ${JSON.stringify(scriptAnalysis.visuals?.visualWorldRules || {})}
         
-        ### REQUIRED CHARACTER LIST (Casting) ###
+        ### REQUIRED CHARACTER LIST (Casting & Reference) ###
         ${characterMap}
         
         Context:
@@ -128,6 +139,8 @@ export const generateStoryboardIteratively = async (
         CRITICAL AUDIO & DIALOGUE RULES:
         1. Capture EQUALLY detailed Audio (SFX, Ambience, Music) as the Gold Standard references.
         2. Dialogue MUST be the EXACT lines from the script.
+
+        ${useGreenScreen ? '\n### GREEN SCREEN MANDATE ###\n- EVERY segment MUST be designed for a pure FLAT GREEN SCREEN background (#00FF00).\n- Descriptions should focus on character movement and facial performance against this static green backdrop.' : ''}
 
         Respond in ${currentLanguage}.
         
@@ -153,7 +166,7 @@ export const generateStoryboardIteratively = async (
 
         let result: { segments: any[] }
         try {
-            result = await generateJSON<{ segments: any[] }>(blockPrompt, 'gemini-2.5-flash', {
+            result = await generateJSON<{ segments: any[] }>(blockPrompt, undefined, {
                 generationConfig: {
                     responseMimeType: 'application/json',
                     maxOutputTokens: 32 * 1024
@@ -163,7 +176,7 @@ export const generateStoryboardIteratively = async (
             // If JSON was truncated even at 32K tokens, retry with a smaller batch
             Logger.warn(`[iterativeStoryboard] Block ${iteration + 1} failed (${jsonError.message}). Retrying with smaller batch (2-3 segments)...`)
             const smallerPrompt = blockPrompt.replace('GENERATE THE NEXT 4-6 SEGMENTS', 'GENERATE THE NEXT 2-3 SEGMENTS')
-            result = await generateJSON<{ segments: any[] }>(smallerPrompt, 'gemini-2.5-flash', {
+            result = await generateJSON<{ segments: any[] }>(smallerPrompt, undefined, {
                 generationConfig: {
                     responseMimeType: 'application/json',
                     maxOutputTokens: 16 * 1024

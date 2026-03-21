@@ -91,21 +91,21 @@
                     <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">AI Persona</span>
                     <span class="text-[9px] text-white/40 uppercase font-black tracking-[0.2em]">Avatar & Motion Capture</span>
                 </div>
-                <el-switch :model-value="isVTuberActive" 
-                    @update:model-value="v => $emit('update:isVTuberActive', !!v)"
+                <el-switch :model-value="isInfluencerActive" 
+                    @update:model-value="v => $emit('update:isInfluencerActive', !!v)"
                     size="small" />
             </div>
 
-            <div v-if="isVTuberActive" class="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                <!-- VTuber selection grid -->
+            <div v-if="isInfluencerActive" class="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                <!-- Influencer selection grid -->
                 <div class="grid grid-cols-4 gap-2">
-                    <div v-for="av in vtuberStore.vtubers.slice(0, 8)" :key="av.entityId ?? av._id"
+                    <div v-for="av in influencerStore.influencers.slice(0, 8)" :key="av.entityId ?? av._id"
                         class="av-mini-card p-1 rounded-xl border transition-all cursor-pointer flex flex-col items-center gap-1 group"
                         :class="selectedAvatar === (av.entityId ?? av._id) ? 'bg-blue-500/10 border-blue-500/40' : 'bg-white/5 border-white/5 hover:bg-white/[0.08]'"
-                        @click="selectVTuber(av)">
+                        @click="selectInfluencer(av)">
                         <div class="w-8 h-8 rounded-full overflow-hidden border transition-all"
                             :class="selectedAvatar === (av.entityId ?? av._id) ? 'border-blue-500' : 'border-white/10 group-hover:border-white/20'">
-                            <img :src="getVTuberThumbnail(av)" class="w-full h-full object-cover" />
+                            <img :src="getInfluencerThumbnail(av)" class="w-full h-full object-cover" />
                         </div>
                     </div>
                 </div>
@@ -158,7 +158,7 @@
                                 <span class="text-xs font-bold text-white/90">Voice Swap</span>
                                 <span class="bg-indigo-500/20 text-indigo-400 text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">New</span>
                             </div>
-                            <span class="text-[9px] text-white/40">Change your voice to VTuber profile</span>
+                            <span class="text-[9px] text-white/40">Change your voice to Influencer profile</span>
                         </div>
                         <el-switch :model-value="camSettings.enableVoiceSwap" @update:model-value="v => $emit('update:camSettings', { ...camSettings, enableVoiceSwap: !!v })"
                             size="small" />
@@ -272,11 +272,11 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElSwitch, ElSlider, ElSelect, ElOption } from 'element-plus'
 import { VideoOne, Microphone, Close, VolumeSmall, OffScreen } from '@icon-park/vue-next'
-import { useVTuberStore } from '@/stores/vtuber'
+import { useInfluencerStore } from '@/stores/influencer'
 import { useUserStore } from '@/stores/user'
 import { useGeminiLive } from '@/composables/useGeminiLive'
 import { getFileUrl } from '@/utils/api';
-import VoiceLibraryDialog from '@/components/vtuber/VoiceLibraryDialog.vue';
+import VoiceLibraryDialog from '@/components/influencer/VoiceLibraryDialog.vue';
 
 const props = defineProps<{
     mode: string
@@ -288,7 +288,7 @@ const props = defineProps<{
     targetLanguage: string
     camSettings: any
     resourcePool: any[]
-    isVTuberActive: boolean
+    isInfluencerActive?: boolean
     selectedAvatar: string
     selectedVoice: string
     processingCanvas: HTMLCanvasElement | null
@@ -302,16 +302,16 @@ const emit = defineEmits<{
     (e: 'update:targetLanguage', val: string): void
     (e: 'update:camSettings', val: any): void
     (e: 'trigger-resource-upload'): void
-    (e: 'update:isVTuberActive', val: boolean): void
+    (e: 'update:isInfluencerActive', val: boolean): void
     (e: 'update:selectedAvatar', id: string): void
     (e: 'update:selectedVoice', id: string): void
-    (e: 'select-vtuber-entity', vt: any): void
+    (e: 'select-influencer-entity', vt: any): void
     (e: 'presentation-next'): void
     (e: 'presentation-prev'): void
     (e: 'presentation-go-to', page: number): void
 }>()
 
-const vtuberStore = useVTuberStore()
+const influencerStore = useInfluencerStore()
 const userStore = useUserStore()
 const {
     isConnected,
@@ -345,9 +345,9 @@ const toggleAssistant = async (val: any) => {
 
 const startAssistant = async () => {
     try {
-        const activeVTuber = vtuberStore.vtubers.find(v => (v.entityId ?? v._id) === props.selectedAvatar)
+        const activeInfluencer = influencerStore.influencers.find(v => (v.entityId ?? v._id) === props.selectedAvatar)
         await connect({
-            archiveId: activeVTuber?.entityId || vtuberStore.vtubers[0]?.entityId,
+            archiveId: activeInfluencer?.entityId || influencerStore.influencers[0]?.entityId,
             token: userStore.token || undefined
         })
         await startMicrophone()
@@ -397,13 +397,13 @@ watch([isConnected, assistantEnabled], ([connected, enabled]) => {
 
 onUnmounted(() => stopVisionLoop())
 
-const getVTuberThumbnail = (av: any) => {
+const getInfluencerThumbnail = (av: any) => {
     const url = av.visual?.thumbnailUrl || av.visual?.modelUrl || av.thumbnailUrl || '/avatars/default.jpg'
     return getFileUrl(url)
 }
 
 onMounted(() => {
-    vtuberStore.fetchLibrary();
+    influencerStore.fetchInfluencers();
     setToolCallCallback((toolCall: any) => {
         if (toolCall.name === 'set_presentation_page') {
             const { action, page } = toolCall.args;
@@ -414,10 +414,10 @@ onMounted(() => {
     });
 })
 
-const selectVTuber = (av: any) => {
+const selectInfluencer = (av: any) => {
     const id = av.entityId ?? av._id;
     emit('update:selectedAvatar', id);
-    emit('select-vtuber-entity', av);
+    emit('select-influencer-entity', av);
 }
 
 const filteredResources = computed(() => {

@@ -26,11 +26,14 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { promisify } from 'util';
-import { GeminiClient } from '../integrations/ai/GeminiClient.js';
 import { getAdminSettings } from '../models/AdminSettings.js';
+import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { projectContext } from '../utils/ProjectContext.js';
 import { buildCharacterSheetPrompt } from '../utils/PromptBuilder.js';
 import { configService } from '../utils/configService.js';
+import { promptService } from '../services/PromptService.js';
+import { videoWorkflow } from '../services/ai/VideoWorkflow.js';
+import { GeminiClient } from '~/integrations/ai/GeminiClient.js';
 
 ffmpeg.setFfmpegPath(config.ffmpegPath);
 ffmpeg.setFfprobePath(config.ffprobePath);
@@ -233,246 +236,239 @@ router.put('/:id', rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res
 router.post('/preview', licenseGating('trial'), upload.array('files'), async (req: any, res: Response) => {
     try {
         await connectDB();
-        const { topic, history, targetDuration, stage, script, analysis, language, videoStyle } = req.body;
+        const { topic, targetDuration, stage, script, analysis, language, videoStyle, storyboard } = req.body;
         
-        // Topic is required at minimum for the first stage
         if (!topic && !script && !analysis) return res.status(400).json({ success: false, error: 'Topic, script, or analysis is required' });
 
         const cost = await getCreditCost('text');
-        const hasCredits = await hasSufficientCredits(req.user!.userId, cost);
-        if (!hasCredits) return res.status(402).json({ success: false, error: 'Insufficient credits' });
+        if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
-        let currentLanguage = language;
-        if (!currentLanguage && topic) {
+        let currentLanguage = language || 'English';
+        if (!language && topic) {
             const langPrompt = `Detect the language of the following text. Respond with only the language name in English.\n\nText: ${topic.substring(0, 500)}`;
             currentLanguage = await generateText(langPrompt);
-        } else if (!currentLanguage) {
-            currentLanguage = 'English';
         }
-
-        const technicalGrounding = await projectContext.getTechnicalGroundingPrompt();
 
         // --- STAGE 1: SCRIPT GENERATION ---
         if (stage === 'script' || (!stage && topic && !script)) {
-            const scriptPrompt = `You are a professional Screenwriter and Audio Director. 
-            Create a cinematic screenplay based on the following topic/prompt.
-            Topic: ${topic}
-            Requested Video Style: ${videoStyle || 'Cinematic'}
-            
-            ${technicalGrounding ? `
-            ### FORMAT & STRUCTURE REFERENCE ###
-            ${technicalGrounding}
-            
-            IMPORTANT:
-            - Create NEW characters, locations, and a unique plot for the topic "${topic}".
-            - DO NOT reuse the specific names or personalities from the reference above (e.g., Ông Chính, Bà Chính) unless specifically relevant to your new topic.
-            - Follow the technical DEPTH and ORGANIZATION (e.g., [CHAR_X] placeholders, PBR material descriptions) shown in the reference.
-            ` : ''}
-            
-            The script MUST be structured with:
-            1. "SCENE X: [LOCATION] - [TIME]"
-            2. [ACTION]: Vivid descriptions of world and character movement.
-            3. [DIALOGUE]: Explicit spoken lines for characters. Use [CHARACTER_NAME]: "Line" (delivery style).
-            4. [AUDIO]: Descriptive cues for background music moods and sound effects.
+            const workflowResult = await videoWorkflow.run({
+                topic,
+                videoStyle: videoStyle || 'Cinematic',
+                targetDuration: targetDuration || 60,
+                language: currentLanguage
+            }, 'script');
 
-            Ensure the script is detailed enough for a ${targetDuration || 60} second video.
-            Write the screenplay with the visual language of the ${videoStyle || 'Cinematic'} style in mind.
-            Respond in ${currentLanguage}.
-            
-            Provide only the script content.`;
-
-            const generatedScript = await generateText(scriptPrompt, 'gemini-2.5-flash');
-            
-            // Deduct Credits (Success)
             await deductCredits(req.user!.userId, 'text' as any, cost, 'Project Script Generation');
 
             return res.json({
                 success: true,
                 data: {
                     stage: 'script',
-                    script: generatedScript,
-                    language: currentLanguage
+                    script: workflowResult.script,
+                    language: currentLanguage,
+                    logs: workflowResult.logs
                 }
             });
         }
 
-
-            // --- STAGE 2: ANALYSIS GENERATION ---
-        if (stage === 'analysis' || (!stage && script && !analysis)) {
-            const analysisLanguage = language || currentLanguage || 'en';
-                
-                // Get technical grounding for format and depth
-                const technicalGrounding = await projectContext.getTechnicalGroundingPrompt();
-
-                const analysisPrompt = `You are a professional Creative Director and Casting Agent. 
-                Analyze the following cinematic script to extract a comprehensive project vision. Respond in ${analysisLanguage}.
-                
-                ${technicalGrounding}
-
-                CURRENT SCRIPT TO ANALYZE:
-                """
-                ${script}
-                """
-
-                ### STRICT JSON RULES ###
-                1. Capture every character with high cinematic detail (PBR materials, skin texture, lighting).
-                2. Extract EVERY spoken line into "detailedDialogue".
-                3. Match the TECHNICAL DEPTH shown in the GOLD-STANDARD REFERENCE above.
-                4. Escape all double quotes in strings (e.g., use \\" instead of ").
-                5. Ensure the JSON structure is perfectly balanced. Do not include any text before or after the JSON block.
-                6. DO NOT mention "Ông Chính", "Cờ tướng", or anything from the reference unless it is in the CURRENT SCRIPT.
-
-                Return in JSON format:
-                {
-                  "isComplete": true,
-                  "analysis": {
-                    "summary": "Brief project overview (Update the project description with this)",
-                    "overview": {
-                      "genre": "",
-                      "mood": "",
-                      "duration": "Total playtime in seconds (e.g. 30s)",
-                      "setting": "Primary location and time period",
-                      "themes": "Main themes/messages",
-                      "visualStyle": "Describe the core visual direction",
-                      "soundDesign": "General audio direction"
-                    },
-                    "structure": {
-                        "act1": "Summary of the setup/beginning",
-                        "act2": "Summary of the conflict/middle",
-                        "act3": "Summary of the resolution/ending"
-                    },
-                    "characters": [ {
-                        "char_id": "STRICTLY UNIQUE snake_case ID (e.g. char_main_aya)",
-                        "name": "Full Character Name",
-                        "description": "Short 1-2 sentence summary of the character",
-                        "species": "Human/Robot/etc",
-                        "gender": "Male/Female/Other",
-                        "age": "Approximate age",
-                        "body_build": "E.g., athletic, wiry, stocky",
-                        "face_shape": "E.g., heart-shaped, square jaw",
-                        "hair": "color and style",
-                        "eyes": "color and shape",
-                        "skin_or_fur_color": "E.g., tanned, pale, metallic silver",
-                        "signature_feature": "E.g., a glowing tattoo, a specific scar",
-                        "outfit_top": "Material and style",
-                        "outfit_bottom": "Material and style",
-                        "props": "Key objects they carry",
-                        "personality": "Core traits", 
-                        "voice_profile": "Short summary of voice (e.g. Deep, authoritative)",
-                        "voice_personality": "DETAILED tone/accent description for AI casting",
-                        "tts_config": {
-                            "voice_id": "Zephyr|Puck|Algenib|...",
-                            "pitch": 0.0,
-                            "rate": 1.0
-                        }
-                    } ],
-
-                    "scenes": [
-                        {
-                            "id": 1,
-                            "title": "Scene Name",
-                            "description": "Visual details of the scene (Adhere to the High-Fidelity examples)",
-                            "timestamp": "e.g. 00:00 - 00:10",
-                            "audio_visual_cues": "Specific SFX/Music cues for this scene"
-                        }
-                    ],
-
-                    "visuals": { 
-                        "palette": "Primary colors", 
-                        "characteristics": "Cinematic qualities", 
-                        "camera": "Lenses and movement style",
-                        "visualStyle": { "category": "${videoStyle || 'Cinematic'}", "label": "${videoStyle || 'Cinematic'}", "description": "", "reference": "" },
-                        "visualWorldRules": { 
-                            "physics": "Describe physics compatible with style", 
-                            "lighting": "Describe lighting compatible with style (e.g. Volumetric, High-Contrast)",
-                            "colorHarmony": [ { "hex": "", "name": "", "usage": "" } ]
-                        }
-                    },
-                    "audio": { 
-                        "sfx": "Detailed sound effect requirements", 
-                        "music": "Detailed background music description (mood, tempo, instruments)", 
-                        "ambience": "Background environment sounds" 
-                    },
-                    "detailedDialogue": [ 
-                        { 
-                            "characterId": "char_id from character list",
-                            "characterName": "Full name", 
-                            "line": "EXACT script line", 
-                            "delivery": "e.g., excitedly, whispering",
-                            "context": "Short description of the scene context"
-                        } 
-                    ]
-                  },
-                  "creativeBrief": { 
-                    "title": "", 
-                    "videoType": "e.g., Brand Film, Explainer, etc.", 
-                    "visualStyle": "${videoStyle || 'Cinematic'}",
-                    "narrativeDriver": "Main conflict or goal",
-                    "tone": "Emotional atmosphere",
-                    "pacing": "e.g., fast-cut, slow and rhythmic",
-                    "soundDesign": "Instructions for SFX and music",
-                    "targetAudience": "Who is this for?"
-                  },
-                  "summary": "Brief project overview",
-                  "closingMessage": "Friendly sign-off"
-                }`;
-
-            const finalAnalysis = await generateJSON<any>(analysisPrompt, 'gemini-2.5-flash');
-            
-            // Deduct Credits (Success)
-            await deductCredits(req.user!.userId, 'text' as any, cost, 'Project Vision Analysis');
-
-            return res.json({
-                success: true,
-                data: {
-                    stage: 'analysis',
+        // --- STAGE 2: ANALYSIS & CHARACTER GENERATION ---
+        if (stage === 'analysis' || stage === 'character' || (!stage && script && !analysis)) {
+            const analysisLanguage = language || currentLanguage;
+            try {
+                const workflowResult = await videoWorkflow.run({
+                    topic,
+                    videoStyle: videoStyle || 'Cinematic',
+                    targetDuration: targetDuration || 60,
                     language: analysisLanguage,
-                    isComplete: finalAnalysis.isComplete,
-                    analysis: finalAnalysis.analysis,
-                    creativeBrief: finalAnalysis.creativeBrief,
-                    summary: finalAnalysis.summary,
-                    closingMessage: finalAnalysis.closingMessage
-                }
-            });
+                    script,
+                    analysis // Pass existing analysis if we are just re-running character stage
+                }, stage === 'character' ? 'character' : 'analysis');
+
+                await deductCredits(req.user!.userId, 'text' as any, cost, 'Project Vision & Actor Design');
+
+                return res.json({
+                    success: true,
+                    data: {
+                        stage: workflowResult.currentStage,
+                        language: analysisLanguage,
+                        analysis: workflowResult.analysis,
+                        logs: workflowResult.logs
+                    }
+                });
+            } catch (error: any) {
+                Logger.error('Analysis generation error:', error);
+                return res.status(500).json({ success: false, error: 'Failed to generate analysis' });
+            }
         }
 
         // --- STAGE 3: STORYBOARD GENERATION ---
-        if (stage === 'storyboard' || (!stage && analysis)) {
-            const currentAnalysis = analysis || {};
-            const storyboard = await generateStoryboardIteratively(
-                script || topic,
-                currentAnalysis,
-                targetDuration ? parseInt(targetDuration as string) : 60,
-                currentLanguage
-            );
-
-            // Deduct Credits (Success)
-            await deductCredits(req.user!.userId, 'text' as any, cost, 'Project Storyboard Generation');
-
-            res.json({
-                success: true,
-                data: {
-                    stage: 'storyboard',
+        if (stage === 'storyboard' || (script && analysis && !storyboard)) {
+            try {
+                const workflowResult = await videoWorkflow.run({
+                    topic,
+                    videoStyle: videoStyle || 'Cinematic',
+                    targetDuration: targetDuration || 60,
                     language: currentLanguage,
-                    storyboard: storyboard.segments,
-                    totalDuration: storyboard.totalDuration,
-                    isComplete: true
-                }
-            });
-            return;
+                    script,
+                    analysis
+                }, 'storyboard');
+
+                await deductCredits(req.user!.userId, 'text' as any, cost, 'Project Storyboard Generation');
+
+                return res.json({
+                    success: true,
+                    data: {
+                        stage: 'storyboard',
+                        storyboard: workflowResult.storyboard,
+                        logs: workflowResult.logs
+                    }
+                });
+            } catch (error: any) {
+                Logger.error('Storyboard generation error:', error);
+                return res.status(500).json({ success: false, error: 'Failed to generate storyboard' });
+            }
         }
 
-        // Fallback (legacy or unknown combination)
-        res.status(400).json({ success: false, error: 'Invalid stage or missing data' });
-
+        return res.status(400).json({ success: false, error: 'Invalid stage or missing data' });
 
     } catch (error: any) {
         Logger.error('Preview error:', error);
-        res.status(500).json({ success: false, error: error.message || 'Failed to generate preview' });
+        return res.status(500).json({ success: false, error: error.message || 'Failed to generate preview' });
     }
 });
 
-// POST /api/projects/:id/analyze - Deep analysis
+// POST /projects/:id/convert-to-script  (Phase 7: Storyboard-to-Live Bridge)
+router.post('/:id/convert-to-script', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const project: any = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        const storyboard: any[] = project.storyboard || [];
+        if (!storyboard.length) {
+            return res.status(400).json({ success: false, error: 'Project has no storyboard to convert' });
+        }
+
+        // Map storyboard segments → ScriptStep[]
+        const SCENE_ACTION_MAP: Record<string, string> = {
+            wide: 'switch_scene', close: 'switch_scene', medium: 'switch_scene',
+            product: 'show_product', action: 'trigger_visual_fx',
+        };
+
+        const steps = storyboard.map((seg: any, i: number) => {
+            // Derive smart action from visual keywords
+            const kw = (seg.visualKeywords || []).join(' ').toLowerCase();
+            let action: string | undefined;
+            let actionParams: any;
+
+            if (kw.includes('product') || kw.includes('showcase')) {
+                action = 'switch_scene';
+                actionParams = { actionPayload: 'showcase_pinned' };
+            } else if (kw.includes('wide') || kw.includes('panorama')) {
+                action = 'switch_scene';
+                actionParams = { actionPayload: 'stage_wide' };
+            } else if (kw.includes('close') || kw.includes('face')) {
+                action = 'switch_scene';
+                actionParams = { actionPayload: 'cinematic_focus' };
+            }
+
+            // First segment always sets initial layout
+            if (i === 0) {
+                action = 'switch_scene';
+                actionParams = { actionPayload: 'stage_wide' };
+            }
+
+            return {
+                id: seg.uuid || `seg_${seg.order}`,
+                timestamp: Date.now(),
+                description: `[Scene ${seg.order}] ${seg.title}`,
+                agentId: 'host',
+                dialogue: seg.voiceover || seg.description || '',
+                action,
+                actionParams,
+                durationSeconds: seg.duration || 10,
+                status: 'pending' as const
+            };
+        });
+
+        const liveScript = {
+            id: `proj_${project._id}_${Date.now()}`,
+            profileId: 'custom_import',
+            title: project.title || 'Imported Show',
+            steps,
+            currentIndex: -1,
+            isRunning: false,
+            createdAt: Date.now()
+        };
+
+        return res.json({ success: true, data: { script: liveScript } });
+    } catch (error: any) {
+        Logger.error('Convert-to-script error:', error);
+        return res.status(500).json({ success: false, error: error.message || 'Conversion failed' });
+    }
+});
+
+// POST /api/projects/:id/storyboard/respin-segment
+router.post('/:id/storyboard/respin-segment', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const project: any = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        const cost = await getCreditCost('text');
+        if (!await hasSufficientCredits(req.user!.userId, cost)) {
+            return res.status(402).json({ success: false, error: 'Insufficient credits' });
+        }
+
+        const { segment } = req.body;
+        if (!segment) return res.status(400).json({ success: false, error: 'Segment data required' });
+
+        const prompt = await promptService.get('video_creation/segment_respin', {
+            order: segment.order,
+            title: segment.title,
+            description: segment.description,
+            duration: segment.duration,
+            script: project.description || project.script || '',
+            videoStyle: project.videoStyle || 'Cinematic',
+            language: project.language || 'English'
+        });
+
+        const newSegment = await generateJSON<any>(prompt, undefined);
+        await deductCredits(req.user!.userId, 'text' as any, cost, 'Segment Re-spin');
+
+        return res.json({ success: true, data: { segment: newSegment } });
+    } catch (error: any) {
+        Logger.error('Re-spin error:', error);
+        return res.status(500).json({ success: false, error: error.message || 'Failed to re-spin segment' });
+    }
+});
+
+// PATCH /api/projects/:id/storyboard/update-segment
+router.patch('/:id/storyboard/update-segment', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const project: any = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        const { segment } = req.body;
+        if (!segment?.order) return res.status(400).json({ success: false, error: 'Segment with order required' });
+
+        const storyboard = project.storyboard || [];
+        const idx = storyboard.findIndex((s: any) => s.order === segment.order);
+        if (idx === -1) return res.status(404).json({ success: false, error: 'Segment not found' });
+
+        storyboard[idx] = { ...storyboard[idx], ...segment };
+        project.storyboard = storyboard;
+        project.markModified('storyboard');
+        await project.save();
+
+        return res.json({ success: true, data: { segment: storyboard[idx] } });
+    } catch (error: any) {
+        Logger.error('Update segment error:', error);
+        return res.status(500).json({ success: false, error: error.message || 'Failed to update segment' });
+    }
+});
+
 router.post(['/:id/analyze', '/:id/analysis'], licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
@@ -486,12 +482,9 @@ router.post(['/:id/analyze', '/:id/analysis'], licenseGating('trial'), rbacMiddl
 
         const videoStyle = project.videoStyle || 'Cinematic';
 
-        const settings = await getAdminSettings();
-        const geminiConfig = settings?.aiSettings?.providers?.find((p: any) => p.id === 'google');
-        const apiKey = geminiConfig?.apiKey || process.env.GOOGLE_API_KEY;
-        const client = new GeminiClient({ apiKey });
-        const voices = await client.listVoices();
-        const voiceList = voices.map(v => `- ${v.id}: ${v.description} (${v.gender})`).join('\n');
+        const googleProvider: any = await aiManager.getProvider('google') as GeminiClient;
+        const voices = await googleProvider.listVoices();
+        const voiceList = voices.map((v: any) => `- ${v.id}: ${v.description} (${v.gender})`).join('\n');
 
         const prompt = `Perform a deep cinematic analysis and audio direction of the script for the project: ${project.title}.
         Script Content: ${project.description}
@@ -558,7 +551,7 @@ router.post(['/:id/analyze', '/:id/analysis'], licenseGating('trial'), rbacMiddl
           },
           "detailedDialogue": [ { "characterName": "", "line": "", "delivery": "how they say it", "context": "" } ]
         }`;
-        const analysis = await generateJSON<any>(prompt, 'gemini-2.5-flash');
+        const analysis = await generateJSON<any>(prompt, undefined);
 
         // Enhance Mapping: Sync AI results back to project root fields
         if (analysis.summary || (analysis.analysis && analysis.analysis.summary)) {
@@ -630,7 +623,7 @@ router.post('/:id/generate-visual-plan', licenseGating('trial'), rbacMiddleware(
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const stylePrompt = `Create a detailed visual art direction for ${project.title}. Style: ${project.videoStyle || 'Cinematic'}`;
-        const brief = await generateJSON<any>(stylePrompt, 'gemini-2.5-flash');
+        const brief = await generateJSON<any>(stylePrompt, undefined);
 
         project.creativeBrief = { ...brief, generatedAt: new Date() };
         await project.save();
@@ -993,7 +986,7 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
 
         // ─── HIGH FIDELITY PROMPT RESOLUTION ─────────────────────
         const aiManager = (await import('../utils/ai/AIServiceManager.js')).aiManager;
-        const translator = async (p: string) => await aiManager.generateText(p, 'gemini-2.5-flash');
+        const translator = async (p: string) => await aiManager.generateText(p, undefined);
 
         // Resolve segment if provided (common for image/video/audio scene tasks)
         let segment: any = null;
@@ -1152,7 +1145,7 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
                     project.scriptAnalysis?.characters || [],
                     project.scriptAnalysis,
                     'vi',
-                    async (p) => await mgr.generateText(p, 'gemini-2.5-flash')
+                    async (p) => await mgr.generateText(p, undefined)
                 );
                 Logger.info(`[assets/generate] Enriched prompt for segment ${segment.order}`);
             }
@@ -1441,7 +1434,7 @@ router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddl
                         allCharacters, 
                         project.scriptAnalysis, 
                         'vi', 
-                        async (p) => await mgr.generateText(p, 'gemini-2.5-flash')
+                        async (p) => await mgr.generateText(p, undefined)
                     );
 
                     const result = await mgr.generateVideo(videoPrompt, undefined, undefined, {

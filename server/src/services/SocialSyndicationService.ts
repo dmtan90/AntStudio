@@ -1,8 +1,7 @@
 import { Project } from '../models/Project.js';
 import mongoose, { Types } from 'mongoose';
 import { UserPlatformAccount, SocialPlatform } from '../models/UserPlatformAccount.js';
-import { GoogleGenAI } from '@google/genai';
-import { geminiPool } from '../utils/gemini.js';
+import { generateText, generateJSON } from '../utils/AIGenerator.js';
 import { Logger } from '../utils/Logger.js';
 import { PlatformAuthService } from './PlatformAuthService.js';
 import { SyndicationRecord, ISyndicationRecord } from '../models/SyndicationRecord.js';
@@ -407,18 +406,11 @@ export class SocialSyndicationService {
         // Analyze sentiment using Gemini
         try {
             const commentsText = rawComments.map((c, i) => `${i}: ${c.text}`).join('\n');
-            const modelName = "gemini-2.5-flash";
-            const { client: ai } = await geminiPool.getOptimalClient(modelName);
-            
             const prompt = `Analyze the sentiment of the following social media comments. Return a JSON array of sentiment strings (POSITIVE, NEUTRAL, NEGATIVE) corresponding to each comment index.
 Comments:
 ${commentsText}`;
 
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{ parts: [{ text: prompt }] }]
-            });
-            const sentiments = JSON.parse(result.response.text().match(/\[.*\]/s)?.[0] || '[]');
+            const sentiments = await generateJSON<string[]>(prompt, undefined);
 
             return rawComments.map((c, i) => ({
                 ...c,
@@ -435,20 +427,11 @@ ${commentsText}`;
      */
     public async generateAiReply(commentText: string, context: string) {
         try {
-            const modelName = "gemini-2.5-flash";
-            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
-            
             const prompt = `You are a social media manager. Suggest a short, engaging, and friendly reply to this comment: "${commentText}". 
 Context of the video: ${context}.
 Return only the reply text.`;
 
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{ parts: [{ text: prompt }] }]
-            });
-            
-            await geminiPool.recordUsage(key, modelName);
-            return result.response.text().trim();
+            return await generateText(prompt, undefined);
         } catch (error) {
             return "Thanks for watching! Glad you enjoyed it.";
         }
@@ -541,18 +524,10 @@ Return only the reply text.`;
      */
     public async getBestPostingTime(platform: string) {
         try {
-            const modelName = "gemini-1.5-flash";
-            const { client: ai } = await geminiPool.getOptimalClient(modelName);
-            
             const prompt = `As a viral marketing expert, suggest the single absolute best time of day (including timezone UTC) to post on ${platform} for maximum engagement. 
 Return only the time in format HH:MM (UTC).`;
 
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{ parts: [{ text: prompt }] }]
-            });
-            
-            return result.response.text().trim();
+            return await generateText(prompt, undefined);
         } catch (error) {
             return "18:00"; // fallback
         }
@@ -563,9 +538,6 @@ Return only the time in format HH:MM (UTC).`;
      */
     public async generateHookVariations(projectId: string, context: string) {
         try {
-            const modelName = "gemini-1.5-flash";
-            const { client: ai } = await geminiPool.getOptimalClient(modelName);
-            
             const prompt = `As a viral marketing expert, generate 3 distinct high-engagement "Hooks" (Title and Description) for this video content: "${context}".
 Each hook should have a specific psychological angle:
 1. "Curiosity Gap": Leaves them wanting more.
@@ -579,16 +551,7 @@ Return ONLY a JSON array of objects with the following format:
   { "type": "Educational", "title": "...", "description": "..." }
 ]`;
 
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{ parts: [{ text: prompt }] }]
-            });
-            
-            const text = result.response.text();
-            const jsonMatch = text.match(/\[.*\]/s);
-            if (!jsonMatch) throw new Error('Failed to parse hook variations');
-            
-            return JSON.parse(jsonMatch[0]);
+            return await generateJSON(prompt, undefined);
         } catch (error) {
             Logger.error(`[Syndication] Hook generation failed: ${error}`, 'SocialSyndicationService');
             return [];
@@ -629,20 +592,8 @@ Return ONLY a JSON array of objects with the following format:
 
     public async generateViralMetadata(clipTitle: string, context: string) {
         try {
-            const modelName = "gemini-1.5-flash";
-            const { client: ai, key } = await geminiPool.getOptimalClient(modelName);
             const prompt = `Generate a viral caption and 5 trending hashtags for a short-form video titled "${clipTitle}". Context: ${context}. Return as JSON: { caption: string, hashtags: string[] }`;
-
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{ parts: [{ text: prompt }] }]
-            });
-            const response = result.response;
-            
-            // Record usage
-            await geminiPool.recordUsage(key, modelName);
-            
-            return JSON.parse(response.text().match(/\{.*\}/s)?.[0] || '{}');
+            return await generateJSON(prompt, undefined);
         } catch {
             return { caption: clipTitle, hashtags: ['#viral', '#antstudio', '#ai'] };
         }

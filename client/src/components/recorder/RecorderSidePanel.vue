@@ -23,10 +23,10 @@
                     @toggle-captions="v => $emit('toggle-captions', v)"
                     @update:targetLanguage="v => $emit('update:targetLanguage', v)"
                     @update:cam-settings="v => $emit('update:cam-settings', v)"
-                    @update:isVTuberActive="val => $emit('update:isVTuberActive', val)"
+                    @update:isInfluencerActive="val => $emit('update:isInfluencerActive', val)"
                     @update:selected-avatar="val => $emit('update:selected-avatar', val)"
                     @update:selected-voice="val => $emit('update:selected-voice', val)"
-                    @select-vtuber-entity="vt => $emit('select-vtuber-entity', vt)"
+                    @select-influencer-entity="vt => $emit('select-influencer-entity', vt)"
                     @next-whiteboard-page="$emit('next-whiteboard-page')"
                     @prev-whiteboard-page="$emit('prev-whiteboard-page')"
                     @go-to-whiteboard-page="v => $emit('go-to-whiteboard-page', v)"
@@ -115,7 +115,7 @@ defineProps<{
     annotationColor: string
     annotationSize: number
     recordingQuality: { resolution: string; fps: number }
-    isVTuberActive: boolean
+    isInfluencerActive: boolean
     isWhiteboardLaunchpadActive: boolean
     whiteboardContentType: 'stream' | 'pdf' | 'ppt' | 'video' | null
     currentWhiteboardPage: number
@@ -149,7 +149,7 @@ defineEmits<{
     (e: 'update:cam-settings', val: any): void
     (e: 'update:selected-avatar', val: string): void
     (e: 'update:selected-voice', val: string): void
-    (e: 'select-vtuber-entity', vt: any): void
+    (e: 'select-influencer-entity', vt: any): void
     (e: 'update:selected-camera-id', id: string): void
     (e: 'update:selected-mic-id', id: string): void
     (e: 'update:mic-volume', val: number): void
@@ -166,7 +166,7 @@ defineEmits<{
     (e: 'update:annotation-size', val: number): void
     (e: 'clear-annotations'): void
     (e: 'update:recording-quality', val: any): void
-    (e: 'update:isVTuberActive', val: boolean): void
+    (e: 'update:isInfluencerActive', val: boolean): void
     (e: 'reset-whiteboard'): void
     (e: 'prev-whiteboard-page'): void
     (e: 'next-whiteboard-page'): void

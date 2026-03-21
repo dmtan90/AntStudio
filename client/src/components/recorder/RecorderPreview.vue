@@ -14,15 +14,15 @@
                 @import-file="v => emit('whiteboard-file-import', v)"
             />
 
-            <!-- VTuber Host Overlay - HIDDEN (Only used to generate stream for canvas) -->
-            <div v-if="isVTuberActive" class="absolute bottom-8 right-8 w-64 aspect-square z-20 overflow-hidden rounded-full border-4 border-orange-500/30 shadow-2xl opacity-0 pointer-events-none">
+            <!-- Influencer Host Overlay - HIDDEN (Only used to generate stream for canvas) -->
+            <div v-if="isInfluencerActive" class="absolute bottom-8 right-8 w-64 aspect-square z-20 overflow-hidden rounded-full border-4 border-orange-500/30 shadow-2xl opacity-0 pointer-events-none">
                  <VirtualGuest 
-                    v-if="currentVTuberPersona"
-                    :persona="currentVTuberPersona"
+                    v-if="currentInfluencerPersona"
+                    :persona="currentInfluencerPersona"
                     :is-host-speaking="true" 
                     :speaking-vol="currentDb"
                     class="w-full h-full object-cover transform scale-125"
-                    @stream-ready="emit('vtuber-stream-ready', $event)"
+                    @stream-ready="emit('influencer-stream-ready', $event)"
                  />
             </div>
         </div>
@@ -114,13 +114,13 @@ const props = defineProps<{
     audioLevels: string[]
     currentDb: number
     selectedAvatar?: string
-    isVTuberActive: boolean
+    isInfluencerActive: boolean
     isWhiteboardLaunchpadActive: boolean
 }>()
 
 const emit = defineEmits<{
     (e: 'update:processingCanvas', canvas: HTMLCanvasElement | null): void
-    (e: 'vtuber-stream-ready', stream: MediaStream): void
+    (e: 'influencer-stream-ready', stream: MediaStream): void
     (e: 'whiteboard-screen-share'): void
     (e: 'whiteboard-file-import', type: 'pdf' | 'ppt' | 'video'): void
 }>()
@@ -128,17 +128,17 @@ const emit = defineEmits<{
 import VirtualGuest from '@/components/studio/virtual/VirtualGuest.vue'
 import WhiteboardLaunchpad from './whiteboard/WhiteboardLaunchpad.vue'
 import { computed } from 'vue'
-import { useVTuberStore } from '@/stores/vtuber'
+import { useInfluencerStore } from '@/stores/influencer'
 
 const processingCanvas = ref<HTMLCanvasElement | null>(null)
-const vtuberStore = useVTuberStore()
+const influencerStore = useInfluencerStore()
 
 
-// VTuber Persona Construction
-const currentVTuberPersona = computed(() => {
+// Influencer Persona Construction
+const currentInfluencerPersona = computed(() => {
     if (!props.selectedAvatar) return null;
     
-    const found = vtuberStore.vtubers.find(p => (p.entityId ?? p._id) === props.selectedAvatar);
+    const found = influencerStore.influencers.find(p => (p.entityId ?? p._id) === props.selectedAvatar);
     if (!found) return null;
     
     return {

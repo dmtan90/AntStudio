@@ -12,8 +12,8 @@
             :active-captions="activeCaptions" :current-caption="currentCaption" :translated-caption="translatedCaption"
             :audio-levels="audioLevels" :current-db="currentDb" 
             :selected-avatar="selectedAvatar" 
-            :isVTuberActive="isVTuberActive" :is-whiteboard-launchpad-active="isWhiteboardLaunchpadActive"
-            @vtuber-stream-ready="handleVTuberStreamReady" @whiteboard-screen-share="handleWhiteboardScreenShare"
+            :isInfluencerActive="isInfluencerActive" :is-whiteboard-launchpad-active="isWhiteboardLaunchpadActive"
+            @influencer-stream-ready="handleInfluencerStreamReady" @whiteboard-screen-share="handleWhiteboardScreenShare"
             @whiteboard-file-import="handleWhiteboardFileImport" />
 
         <!-- Teleprompter Overlay -->
@@ -115,7 +115,7 @@
             :podcast-settings="podcastSettings" :selected-avatar="selectedAvatar"
             :selected-voice="selectedVoice" :video-devices="videoDevices" :audio-devices="audioDevices"
             :selected-camera-id="selectedCameraId" :selected-mic-id="selectedMicId" :mic-volume="micVolume"
-            :isVTuberActive="isVTuberActive" :is-whiteboard-launchpad-active="isWhiteboardLaunchpadActive"
+            :isInfluencerActive="isInfluencerActive" :is-whiteboard-launchpad-active="isWhiteboardLaunchpadActive"
             :whiteboard-content-type="typeof whiteboardContent === 'object' && whiteboardContent !== null && 'getTracks' in (whiteboardContent as any) ? 'stream' : (whiteboardPages.length > 0 ? 'pdf' : null)"
             :current-whiteboard-page="currentWhiteboardPage" :whiteboard-pages-count="whiteboardPages.length"
             :whiteboard-scripts="whiteboardScripts"
@@ -129,8 +129,8 @@
             @trigger-presentation-upload="triggerPresentationUpload" @trigger-resource-upload="triggerResourceUpload"
             @toggle-overlay="toggleOverlay" @update:current-slide-index="v => currentSlideIndex = v"
             @update:selected-avatar="v => selectedAvatar = v" @update:selected-voice="v => selectedVoice = v"
-            @select-vtuber-entity="handleSelectVTuberEntity"
-            @update:isVTuberActive="val => isVTuberActive = val"
+            @select-influencer-entity="handleSelectInfluencerEntity"
+            @update:isInfluencerActive="val => isInfluencerActive = val"
             @reset-whiteboard="isWhiteboardLaunchpadActive = true; whiteboardContent = null"
             @next-whiteboard-page="nextPresentationPage"
             @prev-whiteboard-page="prevPresentationPage"
@@ -208,7 +208,7 @@ import { useI18n } from 'vue-i18n'
 import { ElDialog } from 'element-plus'
 import { toast } from 'vue-sonner'
 import { HandleRound, FileAddition } from '@icon-park/vue-next'
-import { useRecorder, videoFilters, type RecordingMode } from '@/composables/useRecorder'
+import { useStudioRecorder, videoFilters, type RecordingMode } from '@/composables/useStudioRecorder'
 
 // Components
 import RecorderHeader from '@/components/recorder/RecorderHeader.vue'
@@ -236,17 +236,17 @@ const {
     triggerResourceUpload, toggleOverlay, enumerateDevices,
     layoutPreset, isTeleprompterActive, isTeleprompterScrolling, teleprompterScript, teleprompterSpeed, teleprompterFontSize, teleprompterScrollPos,
     isAnnotationActive, annotationTool, annotationColor, annotationSize, recordingQuality,
-    isVTuberActive, isWhiteboardLaunchpadActive, whiteboardContent, currentWhiteboardPage, whiteboardPages, whiteboardScripts,
+    isInfluencerActive, isWhiteboardLaunchpadActive, whiteboardContent, currentWhiteboardPage, whiteboardPages, whiteboardScripts,
     isAIPresenting, isSynthesizing,
     bgmVolume, isDuckingEnabled, bgmUrl, bgmLibrary, toggleBGM,
-    handleVTuberStreamReady, handleWhiteboardScreenShare, handleWhiteboardFileImport, generateWhiteboardAIScripts, startAIPresentation,
+    handleInfluencerStreamReady, handleWhiteboardScreenShare, handleWhiteboardFileImport, generateWhiteboardAIScripts, startAIPresentation,
     stopAIPresentation, nextPresentationPage, prevPresentationPage, goToPresentationPage,
     toggleAI, switchMode, initializeStream, toggleRecording, stopRecording, startRecording, startCountdown,
     startDrawing, draw, stopDrawing, clearAnnotations,
     handleFileUpload, handlePresentationUpload, downloadRecording, saveToProject, toggleAIFilter, toggleCaptions, toggleLiveStream, toggleMic, triggerFileUpload, triggerPresentationUpload
-} = useRecorder()
+} = useStudioRecorder()
 
-const handleSelectVTuberEntity = (vt: any) => {
+const handleSelectInfluencerEntity = (vt: any) => {
     selectedAvatar.value = vt.entityId ?? vt._id
 }
 

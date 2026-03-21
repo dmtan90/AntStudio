@@ -13,6 +13,24 @@ import {
     translateContent,
     generateMusic
 } from '../utils/AIGenerator.js';
+import { 
+    buildKnowledgeSearchPrompt,
+    buildGeneratePollPrompt,
+    buildVerifyFactPrompt,
+    buildAdHeadlinesPrompt,
+    buildAdSubheadlinesPrompt,
+    buildAdCTAPrompt,
+    buildVisionAnalyzePrompt,
+    buildVisionOCRPrompt,
+    buildVisionFacesPrompt,
+    buildVisionObjectsPrompt,
+    buildVisionCaptionPrompt,
+    buildAnalyzeProductPrompt,
+    buildAvatarVideoPrompt,
+    buildPresentationAnalyzePrompt,
+    buildTranslateTextPrompt,
+    buildTrendingTopicsPrompt
+} from '../utils/PromptBuilder.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { parseDocument } from '../utils/documentParser.js';
 import { enhanceAudioFile } from '../utils/audioEnhancer.js'; // Added for audio enhancement
@@ -35,8 +53,10 @@ import { silenceDetectionService } from '../services/ai/SilenceDetectionService.
 import { aiGuestService } from '../services/ai/AIGuestService.js';
 import { aiProducerService } from '../services/ai/AIProducerService.js';
 import { ttsService } from '../services/ai/TTSService.js';
+import { videoWorkflow } from '../services/ai/VideoWorkflow.js';
 
 import { Logger } from '../utils/Logger.js';
+import { promptService } from '../services/PromptService.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -116,18 +136,27 @@ async function resolveMediaInput(file?: Express.Multer.File, mediaId?: string): 
 router.post('/generate-broll', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { prompt, topic } = req.body;
+        const { prompt, promptId, variables, topic } = req.body;
         const userId = req.user!.userId;
+
+        let finalPrompt = prompt;
+        if (promptId) {
+            finalPrompt = await promptService.get(promptId, variables || {});
+        }
+
+        if (!finalPrompt) {
+            return res.status(400).json({ success: false, error: 'Prompt or PromptId is required' });
+        }
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'image', CREDIT_PRICES.IMAGE_GEN, `Generate B-Roll: ${topic || prompt.substring(0, 30)}`);
+            await deductCredits(userId, 'image', CREDIT_PRICES.IMAGE_GEN, `Generate B-Roll: ${topic || finalPrompt.substring(0, 30)}`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
 
         const { s3Key } = await generateImage(
-            prompt,
+            finalPrompt,
             userId,
             `broll_${Date.now()}`,
             { aspectRatio: '16:9' }
@@ -144,18 +173,27 @@ router.post('/generate-broll', async (req: AuthRequest, res) => {
 router.post('/generate-image', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { prompt, style, aspectRatio } = req.body;
+        const { prompt, promptId, variables, style, aspectRatio } = req.body;
         const userId = req.user!.userId;
+
+        let basePrompt = prompt;
+        if (promptId) {
+            basePrompt = await promptService.get(promptId, variables || {});
+        }
+
+        if (!basePrompt) {
+            return res.status(400).json({ success: false, error: 'Prompt or PromptId is required' });
+        }
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'image', CREDIT_PRICES.IMAGE_GEN, `Generate AI Image: ${prompt.substring(0, 30)}...`);
+            await deductCredits(userId, 'image', CREDIT_PRICES.IMAGE_GEN, `Generate AI Image: ${basePrompt.substring(0, 30)}...`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
 
         // Enhance prompt with style
-        const fullPrompt = style ? `${style} style. ${prompt}` : prompt;
+        const fullPrompt = style ? `${style} style. ${basePrompt}` : basePrompt;
 
         const { s3Key } = await generateImage(
             fullPrompt,
@@ -168,13 +206,13 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
         const media = await Media.create({
             userId,
             key: s3Key,
-            fileName: `AI Image - ${prompt.substring(0, 20)}...`,
+            fileName: `AI Image - ${basePrompt.substring(0, 20)}...`,
             contentType: 'image/png', // AIGenerator usually returns png or jpg
             size: 0, // We might not know size without head request or from buffer in util
             bucket: config.awsS3Bucket,
             purpose: 'ai-image',
             metadata: {
-                prompt,
+                prompt: basePrompt,
                 style,
                 aspectRatio
             }
@@ -282,7 +320,7 @@ router.post('/generate-music', async (req: AuthRequest, res) => {
 // POST /api/ai/generate-video
 router.post('/generate-video', async (req: AuthRequest, res) => {
     try {
-        const { prompt, duration, aspectRatio } = req.body;
+        const { prompt, duration, aspectRatio, imageStart, imageEnd, characterImages } = req.body;
         const effectiveDuration = duration || 5;
 
         // Credit Deduction
@@ -296,13 +334,47 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
             return res.status(402).json({ success: false, error: creditError.message || 'Insufficient credits' });
         }
 
-        const { jobId } = await generateVideo({
+        const userId = req.user!.userId;
+        const { url, jobId: returnedJobId } = await generateVideo({
             prompt,
             duration: effectiveDuration,
-            aspectRatio: aspectRatio || '16:9'
+            aspectRatio: aspectRatio || '16:9',
+            imageStart: imageStart,
+            imageEnd: imageEnd,
+            characterImages: characterImages,
+            metadata: {
+                projectId: userId,
+                filename: req.body.filename || `gen_vid_${Date.now()}`
+            }
         });
 
-        res.json({ success: true, data: { jobId } });
+        const jobId = returnedJobId || `gen-fallback-${Date.now()}`;
+        const existingMedia = await Media.findOne({
+            $or: [
+                { 'metadata.jobId': jobId },
+                { 'key': url }
+            ]
+        });
+
+        let media = existingMedia;
+        if (!media) {
+            media = await Media.create({
+                userId,
+                key: url,
+                fileName: `AI Video - ${jobId}`,
+                contentType: 'video/mp4',
+                size: 0,
+                bucket: config.awsS3Bucket, // Consistent with images
+                purpose: 'ai-video',
+                metadata: {
+                    jobId,
+                    status: 'completed',
+                    prompt
+                }
+            });
+        }
+
+        return res.json({ success: true, data: { media, url } });
     } catch (error: any) {
         Logger.error('Video generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate video' });
@@ -337,7 +409,7 @@ router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
                 fileName: `AI Video - ${jobId}`,
                 contentType: 'video/mp4',
                 size: 0,
-                bucket: 'external',
+                bucket: config.awsS3Bucket,
                 purpose: 'ai-video',
                 metadata: {
                     jobId,
@@ -466,8 +538,9 @@ router.post(['/generate-caption', '/generate-image-caption'], upload.single('fil
         const { image, mediaId } = req.body;
         const { buffer, mimeType } = await resolveMediaInput(req.file, mediaId || image);
         
-        const prompt = "Describe this image in detail for a blind user. Be concise but descriptive.";
-        const result = await generateText(prompt, 'gemini-2.5-flash', { 
+        
+        const prompt = await buildVisionCaptionPrompt();
+        const result = await generateText(prompt, undefined, { 
             images: [buffer.toString('base64')] 
         });
 
@@ -485,8 +558,9 @@ router.post('/detect-objects', upload.single('file'), async (req: AuthRequest, r
         const { image, mediaId } = req.body;
         const { buffer, mimeType } = await resolveMediaInput(req.file, mediaId || image);
 
-        const prompt = "Detect all major objects in this image and return a JSON list: { \"objects\": [ { \"name\": \"obj_name\", \"confidence\": 0.9, \"box_2d\": [ymin, xmin, ymax, xmax] } ] }";
-        const result = await generateJSON(prompt, 'gemini-2.5-flash', { 
+
+        const prompt = await buildVisionObjectsPrompt();
+        const result = await generateJSON(prompt, undefined, { 
             images: [buffer.toString('base64')] 
         });
 
@@ -504,8 +578,9 @@ router.post('/detect-faces', upload.single('file'), async (req: AuthRequest, res
         const { image, mediaId } = req.body;
         const { buffer, mimeType } = await resolveMediaInput(req.file, mediaId || image);
 
-        const prompt = "Detect all faces in this image and return a JSON list with bounding boxes: { \"faces\": [ { \"box_2d\": [ymin, xmin, ymax, xmax], \"emotion\": \"happy\", \"confidence\": 0.99 } ] }";
-        const result = await generateJSON(prompt, 'gemini-2.5-flash', { 
+
+        const prompt = await buildVisionFacesPrompt();
+        const result = await generateJSON(prompt, undefined, { 
             images: [buffer.toString('base64')] 
         });
 
@@ -523,8 +598,9 @@ router.post('/extract-text', upload.single('file'), async (req: AuthRequest, res
         const { image, mediaId } = req.body;
         const { buffer, mimeType } = await resolveMediaInput(req.file, mediaId || image);
 
-        const prompt = "Extract all text from this image as it appears. Return ONLY the extracted text.";
-        const result = await generateText(prompt, 'gemini-2.5-flash', { 
+
+        const prompt = await buildVisionOCRPrompt();
+        const result = await generateText(prompt, undefined, { 
             images: [buffer.toString('base64')] 
         });
 
@@ -686,10 +762,11 @@ router.post('/vision/analyze', async (req: AuthRequest, res) => {
         const { image, mediaId, prompt } = req.body;
         const { buffer, mimeType } = await resolveMediaInput(undefined, mediaId || image);
 
-        const analysisPrompt = prompt || "Analyze this live stream frame. What is happening? Suggest one director improvement (lighting, framing, or content). Return a concise response.";
+
+        const analysisPrompt = await buildVisionAnalyzePrompt({ prompt: prompt || '' });
         
         // Use AI Manager with image support
-        const result = await aiManager.generateText(analysisPrompt, 'gemini-2.5-flash', 'google', {
+        const result = await aiManager.generateText(analysisPrompt, undefined, 'google', {
             images: [buffer.toString('base64')] // Array of base64 strings
         });
 
@@ -729,9 +806,7 @@ router.post('/generate-captions', upload.single('file'), async (req: AuthRequest
 router.post('/headlines', async (req, res) => {
     try {
         const { product_name, description } = req.body;
-        const prompt = `Generate 5 catchy, professional ad headlines for a product named "${product_name}". 
-        Description: ${description}.
-        Return ONLY a JSON object with this format: { "data": ["Headline 1", "Headline 2", ...] }`;
+        const prompt = await buildAdHeadlinesPrompt({ product_name, description });
 
         const result = await generateJSON<{ data: string[] }>(prompt);
         res.json({ success: true, data: { data: cleanResponse(result.data) } });
@@ -745,9 +820,7 @@ router.post('/headlines', async (req, res) => {
 router.post('/subheadlines', async (req, res) => {
     try {
         const { product_name, description } = req.body;
-        const prompt = `Generate 3 detailed ad descriptions (subheadlines) for a product named "${product_name}". 
-        Description: ${description}.
-        Return ONLY a JSON object with this format: { "data": ["Desc 1", "Desc 2", ...] }`;
+        const prompt = await buildAdSubheadlinesPrompt({ product_name, description });
 
         const result = await generateJSON<{ data: string[] }>(prompt);
         res.json({ success: true, data: { data: cleanResponse(result.data) } });
@@ -761,10 +834,7 @@ router.post('/subheadlines', async (req, res) => {
 router.post('/ad-cta', async (req, res) => {
     try {
         const { name, description, objective } = req.body;
-        const prompt = `Generate 5 short, action-oriented Call-to-Action (CTA) phrases for a product named "${name}".
-        Objective: ${objective}.
-        Description: ${description}.
-        Return ONLY a JSON object with this format: { "data": ["Shop Now", "Learn More", ...] }`;
+        const prompt = await buildAdCTAPrompt({ name, description, objective });
 
         const result = await generateJSON<{ data: string[] }>(prompt);
         res.json({ success: true, data: { data: cleanResponse(result.data) } });
@@ -846,43 +916,11 @@ router.post('/analyze-product', upload.single('file'), async (req, res) => {
         }
 
         // 2. Analyze with AI
-        const prompt = `Analyze the following ${contextType} content and extract product and brand details into a structured JSON format.
-        
-        Content:
-        ${contentToAnalyze}
-
-        Target JSON Structure:
-        {
-            "product": {
-                "name": "Product Name",
-                "description": "Marketing description (with highlights)",
-                "selling_price": 0,
-                "currency": "USD",
-                "tags": ["tag1", "tag2"],
-                "site_url": "${sourceUrl || url || ''}",
-                "features": ["feature 1", "feature 2"],
-                "rating": 5.0,
-                "review_count": 0,
-                "original_price": 0,
-                "sku": "SKU-123",
-                "availability": true,
-                "category": "General"
-            },
-            "brand": {
-                "brand_name": "Brand Name",
-                "brand_description": "Brand story",
-                "primary_colors": ["#000000"],
-                "secondary_colors": ["#ffffff"],
-                "tone_of_voice": "Professional"
-            }
-        }
-
-        Rules:
-        - Infer missing fields reasonably based on context.
-        - If multiple products found, pick the main one.
-        - Price should be a number.
-        - "features" should be a list of key selling points.
-        - Return ONLY JSON.`;
+        const prompt = await buildAnalyzeProductPrompt({
+            contextType,
+            contentToAnalyze,
+            sourceUrl: sourceUrl || url || ''
+        });
 
         const analysis = await generateJSON<any>(prompt);
 
@@ -925,6 +963,7 @@ router.post('/analyze-product', upload.single('file'), async (req, res) => {
     }
 });
 
+// Deprecated use for AI headshot video
 // POST /api/ai/generate-avatar-video
 router.post('/generate-avatar-video', async (req: AuthRequest, res) => {
     try {
@@ -952,11 +991,10 @@ router.post('/generate-avatar-video', async (req: AuthRequest, res) => {
             characterImages.push(avatarImage);
         }
 
-        const prompt = `A cinematic video of a character speaking the following lines: "${script}". 
-        The character should match the provided reference image.
-        Setting: ${background || 'Professional studio background, neutral lighting'}.
-        Action: Speaking naturally to the camera, lip syncing to the dialogue.
-        Style: Highly realistic, 4k, professional cinematography.`;
+        const prompt = await buildAvatarVideoPrompt({
+            script: script,
+            background: background
+        });
 
         // Estimate duration (approx 150 words per minute -> 2.5 words per second)
         const wordCount = script.split(' ').length;
@@ -1103,19 +1141,10 @@ router.post('/presentation/analyze', upload.single('file'), async (req: AuthRequ
         // 3. Generate Scripts & Storyboard for each slide
         // We do this in parallel for speed, but limited to avoid rate limits
         const analysisPromises = slides.map(async (slideText, index) => {
-            const prompt = `You are a professional presenter's scriptwriter. 
-            Analyze the content of Slide ${index + 1} and write a engaging, clear script for a presentation.
-            
-            Slide Content:
-            ${slideText}
-
-            Return ONLY a JSON object:
-            {
-                "script": "The spoken words for this slide...",
-                "captions": "Condensed version for on-screen captions",
-                "estimatedDuration": 15, // in seconds, realistic based on script length
-                "focusPoints": ["bullet point 1", "bullet point 2"]
-            }`;
+            const prompt = await buildPresentationAnalyzePrompt({
+                slideNumber: index + 1,
+                slideText: slideText
+            });
 
             try {
                 const result = await generateJSON<any>(prompt);
@@ -1188,8 +1217,10 @@ router.post('/translate', async (req: AuthRequest, res) => {
         const { text, targetLang, sourceLang } = req.body;
         if (!text) return res.status(400).json({ success: false, error: 'Text is required' });
 
-        const systemPrompt = `You are a professional translator. Translate the following text from ${sourceLang || 'auto'} to ${targetLang || 'English'}. 
-        Maintain the tone and nuances. Return ONLY the translated text, no explanations.`;
+        const systemPrompt = await buildTranslateTextPrompt({
+            sourceLang: sourceLang as string,
+            targetLang: targetLang as string
+        });
 
         const translatedText = await generateText(text, undefined, { systemPrompt });
         res.json({ success: true, data: translatedText.trim() });
@@ -1202,7 +1233,7 @@ router.post('/translate', async (req: AuthRequest, res) => {
 // POST /api/ai/speech-to-speech (Modulator Bridge)
 router.post('/speech-to-speech', async (req: AuthRequest, res) => {
     try {
-        const { text, targetLang, voiceId } = req.body;
+        const { text, targetLang, voiceId, provider } = req.body;
 
         // 1. Translate
         const translationPrompt = `Translate to ${targetLang}: ${text}`;
@@ -1210,11 +1241,35 @@ router.post('/speech-to-speech', async (req: AuthRequest, res) => {
 
         // 2. Generate Audio (TTS)
         const { s3Key } = await generateAudio(translatedText, req.user!.userId, `speech_${Date.now()}`, {
-            voice: voiceId || 'standard'
+            provider: provider || "gemini",
+            voice: voiceId || 'Kore',
+            language: targetLang || 'en-US'
         });
 
         res.json({ success: true, data: { text: translatedText, audioUrl: s3Key } });
     } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/tts/dub - Influencer Dubbing (Voice Cloning + Translation)
+ */
+router.post('/tts/dub', async (req: AuthRequest, res: Response) => {
+    try {
+        const { text, voiceId, language, provider } = req.body;
+        if (!text) return res.status(400).json({ success: false, error: 'Text is required' });
+
+        // Generate Audio (TTS)
+        const { s3Key } = await generateAudio(text, req.user!.userId, `dub_${Date.now()}`, {
+            provider: provider || "gemini",
+            voice: voiceId || 'Kore',
+            language: language || 'en-US'
+        });
+
+        res.json({ success: true, audioUrl: s3Key });
+    } catch (error: any) {
+        Logger.error('[AI] TTS Dub Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -1256,7 +1311,7 @@ router.post('/performance/optimize/start', authMiddleware, adminMiddleware, asyn
 });
 
 // ============================================================================
-// AI GUEST / VTUBER INTERACTION
+// AI GUEST / INFLUENCER INTERACTION
 // ============================================================================
 
 /**
@@ -1314,6 +1369,240 @@ router.post('/guest/tts', async (req: AuthRequest, res: Response) => {
         res.json({ success: true, data: { url: audioResult.media.url } });
     } catch (error: any) {
         Logger.error('[AI/Guest] TTS Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/generate-recap - Generate session recap
+ */
+router.post('/generate-recap', async (req: AuthRequest, res: Response) => {
+    try {
+        const { moments, sessionData } = req.body;
+        const prompt = await promptService.get('studio/recap_gen', {
+            moments: JSON.stringify(moments),
+            duration: sessionData?.durationMs || 0,
+            segments: JSON.stringify(sessionData?.segments || [])
+        });
+
+        const result = await generateJSON<any>(prompt, undefined);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        Logger.error('[AI] Recap Gen Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/generate-caption - Generate social media captions
+ */
+router.post('/generate-caption', async (req: AuthRequest, res: Response) => {
+    try {
+        const { moment, description, context, platforms } = req.body;
+        const prompt = await promptService.get('studio/caption_gen', {
+            moment,
+            description,
+            context,
+            platforms: JSON.stringify(platforms)
+        });
+
+        const result = await generateJSON<any>(prompt, undefined);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        Logger.error('[AI] Caption Gen Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/plan-session - Autonomous show planning
+ */
+router.post('/plan-session', async (req: AuthRequest, res: Response) => {
+    try {
+        const { topic, streamingContext, constraints } = req.body;
+        const prompt = await promptService.get('studio/session_planner', {
+            topic,
+            streamingContext,
+            constraints
+        });
+
+        const result = await generateJSON<any>(prompt, undefined);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        Logger.error('[AI] Session Plan Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/video-workflow - Trigger a cinematic video generation workflow
+ */
+router.post('/video-workflow', async (req: AuthRequest, res: Response) => {
+    try {
+        const { topic, videoStyle, targetDuration, influencerId, productId } = req.body;
+        const result = await videoWorkflow.run({
+            topic,
+            videoStyle,
+            targetDuration: targetDuration || 60,
+            language: req.query.lang as string || 'en-US',
+            influencerId,
+            productId
+        });
+        res.json({ success: true, data: result });
+    } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+/**
+ * GET /api/ai/trending-topics - Retrieve current trending topics and keywords
+ */
+router.get('/trending-topics', async (req: AuthRequest, res: Response) => {
+    try {
+        const lang = req.query.lang || 'en-US';
+        const context = req.query.context || 'general';
+        const prompt = await buildTrendingTopicsPrompt({
+            context: context as string,
+            lang: lang as string
+        });
+        const result = await generateJSON<any>(prompt, undefined);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        Logger.error('[AI] Trending Topics Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/knowledge-search - Search live knowledge
+ */
+router.post('/knowledge-search', async (req: AuthRequest, res: Response) => {
+    try {
+        const { prompt: userPrompt, historicalContext, language, context } = req.body;
+        const queryTerm = userPrompt || req.body.query;
+        const prompt = await buildKnowledgeSearchPrompt({
+            query: queryTerm,
+            context,
+            historicalContext,
+            language
+        });
+        const result = await generateJSON<any>(prompt, undefined);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        Logger.error('[AI] Knowledge Search Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/generate-poll - Generate an engaging poll
+ */
+router.post('/generate-poll', async (req: AuthRequest, res: Response) => {
+    try {
+        const { topic, context, directive } = req.body;
+        const prompt = await buildGeneratePollPrompt({ topic, context, directive });
+        const result = await generateJSON<any>(prompt, undefined);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        Logger.error('[AI] Generate Poll Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/verify-fact - Fact check a statement
+ */
+router.post('/verify-fact', async (req: AuthRequest, res: Response) => {
+    try {
+        const { claim, context, strictness } = req.body;
+        const prompt = await buildVerifyFactPrompt({ claim, context, strictness });
+        const result = await generateJSON<any>(prompt, undefined);
+        res.json({ success: true, data: result });
+    } catch (error: any) {
+        Logger.error('[AI] Verify Fact Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/generate-dynamic-content - Seed initial session context data
+ */
+router.post('/generate-dynamic-content', async (req: AuthRequest, res: Response) => {
+    try {
+        const { context, topic, influencers, initial_stats } = req.body;
+        
+        // Use the generic session planner or a specific dynamic content prompt
+        const prompt = await promptService.get('studio/dynamic_content_seed', {
+            context: context || 'general',
+            topic: topic || 'live show',
+            influencers: JSON.stringify(influencers || []),
+            initial_stats: JSON.stringify(initial_stats || {})
+        });
+
+        // Generate JSON response
+        const result = await generateJSON<any>(prompt, undefined).catch(async () => {
+             // Fallback logic if prompt is missing or generation fails
+             return {
+                 data: {
+                    headlines: [
+                        `Welcome to our ${topic} livestream!`,
+                        `Special deals on ${context} items today`,
+                        `Interact now for exclusive rewards`
+                    ],
+                    ticker: [
+                        `Live from AntStudio | ${new Date().toLocaleDateString()}`,
+                        `Limited time offer: Free shipping on all-in today`,
+                        `New products arriving soon!`
+                    ],
+                    goals: [
+                        `Engage with audience`,
+                        `Highlight key features`
+                    ]
+                 }
+             };
+        });
+
+        res.json({ success: true, data: result.data || result });
+    } catch (error: any) {
+        Logger.error('[AI] Dynamic Content Gen Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/llm/completion
+ * Unified endpoint for LLM completion using prompt templates.
+ * Used by client-side services (FactChecker, VisualConcept, etc.)
+ */
+router.post('/llm/completion', async (req: AuthRequest, res) => {
+    try {
+        const { promptId, variables, systemPrompt, response_format, images } = req.body;
+        
+        let finalPrompt = req.body.prompt;
+        if (promptId) {
+            finalPrompt = await promptService.get(promptId, variables || {});
+        }
+
+        if (!finalPrompt) {
+            return res.status(400).json({ success: false, error: 'Prompt or PromptId is required' });
+        }
+
+        const options = {
+            systemPrompt,
+            images: images || [],
+            mode: response_format?.type === 'json_object' ? 'json' : 'text'
+        };
+
+        let result;
+        if (options.mode === 'json') {
+            result = await generateJSON(finalPrompt, undefined, options);
+        } else {
+            result = await generateText(finalPrompt, undefined, options);
+        }
+
+        res.json({ success: true, completion: typeof result === 'string' ? result : JSON.stringify(result) });
+    } catch (error: any) {
+        Logger.error('[AI/LLM] Completion Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

@@ -32,7 +32,7 @@
               <plus theme="outline" size="20" />
               {{ t('dashboard.header.newProject') }}
             </button>
-            <button @click="router.push('/live/studio')" class="whitespace-nowrap group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3">
+            <button @click="$emit('go-live')" class="whitespace-nowrap group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3">
               <broadcast theme="outline" size="20" class="text-red-500" />
               {{ t('dashboard.header.goLive') }}
             </button>
@@ -52,7 +52,7 @@ const props = defineProps<{
   user: any;
 }>();
 
-defineEmits(['create']);
+defineEmits(['create', 'go-live']);
 
 const router = useRouter();
 </script>

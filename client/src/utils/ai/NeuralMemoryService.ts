@@ -35,6 +35,11 @@ export class NeuralMemoryService {
      * Records a new piece of knowledge learned during a live session.
      */
     public recordLearning(topic: string, takeaway: string, sentiment: any = 'neutral') {
+        if (typeof topic !== 'string') {
+            console.warn('[NeuralMemory] Attempted to record non-string topic:', topic);
+            return;
+        }
+        
         const existing = this.state.learnings.find(l => l.topic.toLowerCase() === topic.toLowerCase());
         
         if (existing) {
@@ -52,6 +57,14 @@ export class NeuralMemoryService {
         }
         
         this.saveToStorage();
+    }
+
+    /**
+     * Phase 23: Records major production events for AI awareness.
+     */
+    public recordEvent(type: string, description: string) {
+        console.log(`[NeuralMemory] RECORDING EVENT: ${type} - ${description}`);
+        this.recordLearning(`Production: ${type}`, description, 'neutral');
     }
 
     /**
@@ -75,10 +88,36 @@ export class NeuralMemoryService {
      * Search memory for a specific topic.
      */
     public recall(topic: string): NeuralLearning | undefined {
-        return this.state.learnings.find(l => 
-            topic.toLowerCase().includes(l.topic.toLowerCase()) || 
-            l.topic.toLowerCase().includes(topic.toLowerCase())
-        );
+        if (typeof topic !== 'string') return undefined;
+        
+        const lowerTopic = topic.toLowerCase();
+        return this.state.learnings.find(l => {
+            if (typeof l.topic !== 'string') return false;
+            const lowerLTopic = l.topic.toLowerCase();
+            return lowerTopic.includes(lowerLTopic) || lowerLTopic.includes(lowerTopic);
+        });
+    }
+
+    /**
+     * Phase 44: Synthesizes a context-aware memory string for AI Directive injection.
+     * Looks for 2-3 most relevant past learnings.
+     */
+    public getDeepRecallContext(currentTopic: string): string | null {
+        if (typeof currentTopic !== 'string' || this.state.learnings.length === 0) return null;
+
+        const lowerCurrent = currentTopic.toLowerCase();
+        const related = this.state.learnings
+            .filter(l => {
+                if (typeof l.topic !== 'string') return false;
+                const lowerLTopic = l.topic.toLowerCase();
+                return lowerCurrent.includes(lowerLTopic) || lowerLTopic.includes(lowerCurrent);
+            })
+            .sort((a, b) => b.mentions - a.mentions)
+            .slice(0, 2);
+
+        if (related.length === 0) return null;
+
+        return `Recall from past sessions: ${related.map(r => `${r.topic} (${r.keyTakeaway})`).join('. ')}`;
     }
 
     private saveToStorage() {

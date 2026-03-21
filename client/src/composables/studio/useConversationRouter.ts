@@ -44,7 +44,7 @@ export function useConversationRouter() {
     };
 
     /**
-     * Analyze message content to match with VTuber expertise/personality
+     * Analyze message content to match with influencer expertise/personality
      * (Placeholder for more advanced NLP or keyword matching)
      */
     const detectTopicMatch = (message: string, connections: Record<string, LiveChatConnection>): string | null => {
@@ -72,7 +72,7 @@ export function useConversationRouter() {
     };
 
     /**
-     * Decide which VTuber should respond to a message
+     * Decide which influencer should respond to a message
      */
     const routeMessage = (
         message: string, 

@@ -40,12 +40,12 @@
                             <span class="user">{{ msg.user }}:</span>
                         </div>
                         
-                        <!-- VTuber Reply Action -->
-                        <button v-if="activeVTuber" 
-                            @click="handleVTuberReply(msg)"
+                        <!-- Influencer Reply Action -->
+                        <button v-if="activeInfluencer" 
+                            @click="handleInfluencerReply(msg)"
                             class="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded hover:bg-purple-500/40"
                             :disabled="isProcessingReply">
-                            {{ $t('studio.interactions.replyAs') }} {{ activeVTuberName }}
+                            {{ $t('studio.interactions.replyAs') }} {{ activeInfluencerName }}
                         </button>
                     </div>
                     <span class="text">
@@ -55,9 +55,9 @@
                         </template>
                     </span>
                     
-                    <!-- VTuber Response Display (Optional) -->
-                    <div v-if="msg.vtuberResponse" class="mt-2 pl-2 border-l-2 border-purple-500 text-[10px] text-purple-300/80 italic">
-                        {{ msg.vtuberResponse }}
+                    <!-- Influencer Response Display (Optional) -->
+                    <div v-if="msg.influencerResponse" class="mt-2 pl-2 border-l-2 border-purple-500 text-[10px] text-purple-300/80 italic">
+                        {{ msg.influencerResponse }}
                     </div>
                 </div>
             </template>
@@ -183,7 +183,7 @@
             </div>
             
             <!-- Dev/Simulate Tools -->
-            <div v-if="!isGuest && activeVTuber" class="mt-2 pt-2 border-t border-white/5">
+            <div v-if="!isGuest && activeInfluencer" class="mt-2 pt-2 border-t border-white/5">
                 <p class="text-[9px] uppercase opacity-40 font-black mb-2">{{ $t('studio.interactions.simulateInteraction') }}</p>
                 <div class="grid grid-cols-3 gap-2">
                     <button @click="simulateGift('Rocket', 500)" class="gift-btn">
@@ -211,7 +211,7 @@ import AnimatedEmoji from '@/components/studio/AnimatedEmoji.vue';
 import LayoutSettings from '@/components/studio/drawers/LayoutSettings.vue';
 import GuestSettings from '@/components/studio/drawers/GuestSettings.vue';
 import { useProjectStore } from '@/stores/project';
-import { useVTuberStore } from '@/stores/vtuber';
+import { useInfluencerStore } from '@/stores/influencer';
 import { storeToRefs } from 'pinia';
 import { useStudioStore } from '@/stores/studio';
 import { toast } from 'vue-sonner';
@@ -222,8 +222,8 @@ const { t } = useI18n();
 const studioStore = useStudioStore();
 
 const projectStore = useProjectStore();
-const vtuberStore = useVTuberStore();
-const { currentVTuber } = storeToRefs(vtuberStore);
+const influencerStore = useInfluencerStore();
+const { currentInfluencer } = storeToRefs(influencerStore);
 const { health, engagement, viewerCount: viewers } = storeToRefs(studioStore);
 
 const props = defineProps<{
@@ -284,23 +284,23 @@ const chatFlow = ref<HTMLElement | null>(null);
 const chatInput = ref('');
 const isProcessingReply = ref(false);
 
-const activeVTuber = computed(() => currentVTuber.value);
-const activeVTuberName = computed(() => currentVTuber.value?.identity?.name || 'VTuber');
+const activeInfluencer = computed(() => currentInfluencer.value);
+const activeInfluencerName = computed(() => currentInfluencer.value?.identity?.name || 'Influencer');
 
-const handleVTuberReply = async (msg: any) => {
-    if (!activeVTuber.value || isProcessingReply.value) return;
+const handleInfluencerReply = async (msg: any) => {
+    if (!activeInfluencer.value || isProcessingReply.value) return;
     
     isProcessingReply.value = true;
     try {
-        const result = await vtuberStore.reactToChat(
-            activeVTuber.value.entityId, 
+        const result = await influencerStore.reactToChat(
+            activeInfluencer.value.entityId, 
             msg.user, 
             msg.text
         );
         
         // Optimistically update UI
-        msg.vtuberResponse = result.text;
-        toast.success(`${t('studio.interactions.toast.repliedAs')} ${activeVTuberName.value}`);
+        msg.influencerResponse = result.text;
+        toast.success(`${t('studio.interactions.toast.repliedAs')} ${activeInfluencerName.value}`);
     } catch (e) {
         toast.error(t('studio.interactions.toast.replyFailed'));
     } finally {
@@ -309,10 +309,10 @@ const handleVTuberReply = async (msg: any) => {
 };
 
 const simulateGift = async (giftName: string, amount: number) => {
-    if (!activeVTuber.value) return;
+    if (!activeInfluencer.value) return;
     try {
-        await vtuberStore.reactToGift(
-            activeVTuber.value.entityId,
+        await influencerStore.reactToGift(
+            activeInfluencer.value.entityId,
             'Simulated User',
             giftName,
             amount
@@ -323,10 +323,10 @@ const simulateGift = async (giftName: string, amount: number) => {
 };
 
 const simulatePoll = async () => {
-    if (!activeVTuber.value) return;
+    if (!activeInfluencer.value) return;
     try {
-        await vtuberStore.reactToPoll(
-            activeVTuber.value.entityId,
+        await influencerStore.reactToPoll(
+            activeInfluencer.value.entityId,
             'Best Pizza Topping?',
             'Pineapple 🍍'
         );

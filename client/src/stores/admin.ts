@@ -477,6 +477,17 @@ export const useAdminStore = defineStore('admin', () => {
         }
     }
 
+    async function updateFlowToken(id: string, flowST: string) {
+        try {
+            const res : any = await api.post(`/admin/ai/accounts/${id}/update-token`, { flowST })
+            toast.success('Token updated and synced successfully')
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
     async function deleteAIAccount(id: string) {
         try {
             await api.delete(`/admin/ai/accounts/${id}`)
@@ -546,6 +557,7 @@ export const useAdminStore = defineStore('admin', () => {
         getAuthUrl,
         addDirectAccount,
         syncAccount,
+        updateFlowToken,
         deleteAIAccount,
         handleAIAuthCallback,
         createProject,

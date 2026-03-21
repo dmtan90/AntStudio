@@ -145,7 +145,7 @@ Fields to extract:
             primary_colors: string[];
             secondary_colors: string[];
             video: string;
-        }>(prompt, 'gemini-2.5-flash');
+        }>(prompt, undefined);
 
         res.json({ success: true, data: result });
     } catch (error: any) {
@@ -486,6 +486,51 @@ router.delete('/products/:id', async (req: AuthRequest, res: Response) => {
     } catch (error: any) {
         Logger.error('Delete product error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to delete product' });
+    }
+});
+
+// POST /api/commerce/products/:id/ingest-knowledge — Phase 11
+// Trigger async product knowledge ingestion from inventoryUrl
+router.post('/products/:id/ingest-knowledge', async (req: AuthRequest, res: Response) => {
+    try {
+        await connectDB();
+        const product = await Product.findOne({ _id: req.params.id, userId: req.user!.userId });
+        if (!product) return res.status(404).json({ success: false, error: 'Product not found or unauthorized' });
+        if (!product.inventoryUrl) return res.status(400).json({ success: false, error: 'Product has no inventoryUrl set' });
+
+        const { productKnowledgeService } = await import('../services/ai/ProductKnowledgeService.js');
+
+        // Fire and forget — update status to 'pending' immediately
+        await Product.findByIdAndUpdate(req.params.id, { knowledgeStatus: 'pending' });
+        productKnowledgeService.ingestProduct(req.params.id).catch(() => {});
+
+        res.json({ success: true, message: 'Knowledge ingestion started', status: 'pending' });
+    } catch (error: any) {
+        Logger.error('Ingest knowledge error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/commerce/products/:id/knowledge — Phase 11
+// Get current knowledge status and snippet
+router.get('/products/:id/knowledge', async (req: AuthRequest, res: Response) => {
+    try {
+        await connectDB();
+        const product = await Product.findOne({ _id: req.params.id, userId: req.user!.userId })
+            .select('name knowledgeBase knowledgeStatus knowledgeUpdatedAt');
+        if (!product) return res.status(404).json({ success: false, error: 'Not found' });
+
+        res.json({
+            success: true,
+            data: {
+                status: product.knowledgeStatus,
+                updatedAt: product.knowledgeUpdatedAt,
+                snippetLength: product.knowledgeBase?.length || 0,
+                snippet: (product.knowledgeBase || '').substring(0, 200)
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

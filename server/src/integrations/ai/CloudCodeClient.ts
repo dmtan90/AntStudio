@@ -5,13 +5,17 @@ import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
 
 import { Logger } from '../../utils/Logger.js';
 
+export const ANTIGRAVITY_ENDPOINT_DAILY = "https://daily-cloudcode-pa.sandbox.googleapis.com";
+export const ANTIGRAVITY_ENDPOINT_AUTOPUSH = "https://autopush-cloudcode-pa.sandbox.googleapis.com";
+export const ANTIGRAVITY_ENDPOINT_PROD = "https://cloudcode-pa.googleapis.com";
+
 /**
  * Client for interacting with Google Cloud Code Assist API.
  * This is a more stable alternative to browser-based scraping.
  * Supports direct media generation (Video, Audio, Music) via standard sandbox endpoint.
  */
 export class CloudCodeClient {
-    private static AGENT_ENDPOINT = 'https://daily-cloudcode-pa.sandbox.googleapis.com';
+    private static AGENT_ENDPOINT = ANTIGRAVITY_ENDPOINT_PROD;//'https://daily-cloudcode-pa.sandbox.googleapis.com';
     private static CLOUDCODE_ENDPOINT = 'https://daily-cloudcode-pa.googleapis.com'; // Fallback for legacy
 
     private account: IAIAccount;

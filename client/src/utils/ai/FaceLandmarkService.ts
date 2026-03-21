@@ -1,11 +1,14 @@
 import { FaceLandmarkerResult } from '@mediapipe/tasks-vision';
-//import FaceLandmarkWorker from '../../workers/AITrackingStatic.worker.ts?worker';
 
+/**
+ * FaceLandmarkService
+ *
+ * Reuses the shared AITracking worker from LiveAIEngine instead of spawning
+ * its own worker — avoids loading 3 duplicate MediaPipe models (Face, Hand,
+ * Segmenter) a second time, which was the root cause of high idle CPU.
+ */
 export class FaceLandmarkService {
     private static instance: FaceLandmarkService | null = null;
-    private worker: Worker | null = null;
-    private isInitializing = false;
-    private initPromise: Promise<void> | null = null;
     
     // Simple cache for detection results (indexed by URL)
     private detectionCache: Map<string, FaceLandmarkerResult> = new Map();
@@ -20,48 +23,49 @@ export class FaceLandmarkService {
         return FaceLandmarkService.instance;
     }
 
-    public async initialize(): Promise<void> {
-        if (this.isInitializing || this.worker) return;
-        if (this.initPromise) return this.initPromise;
+    /**
+     * Get the shared worker from LiveAIEngine. The worker is initialized
+     * lazily only when detection is actually needed.
+     */
+    private async getWorker(): Promise<Worker | null> {
+        const { liveAIEngine } = await import('@/utils/ai/LiveAIEngine');
 
-        this.initPromise = new Promise((resolve, reject) => {
-            console.log('[FaceLandmarkService] Initializing FaceLandmarker Static Worker...');
-            // this.worker = new FaceLandmarkWorker();
-			// this.worker = new AITrackingWorker();
-            // In your main file
-            this.worker = new Worker(new URL('@/workers/AITrackingStatic.worker.ts', import.meta.url), {
-                type: 'classic' // Specify type as classic
-            });
+        // Initialize the shared worker if not already done
+        if (!liveAIEngine.isInitialized) {
+            // await liveAIEngine.initialize();
+        }
 
-            this.worker.onmessage = (event) => {
+        const worker = liveAIEngine.getWorker();
+
+        if (!worker) return null;
+
+        // Attach our message handler if not already done
+        // We check for our flag to avoid double-attaching
+        if (!(worker as any).__faceLandmarkServiceAttached) {
+            (worker as any).__faceLandmarkServiceAttached = true;
+
+            // Wrap the existing onmessage so we can intercept DETECT_RESULT
+            const originalOnMessage = worker.onmessage?.bind(worker);
+            worker.onmessage = (event: MessageEvent) => {
                 const { type, result, error, id } = event.data;
 
-                if (type === 'INIT_COMPLETE') {
-                    console.log('[FaceLandmarkService] Static Worker initialized.');
-                    this.isInitializing = false;
-                    resolve();
-                } else if (type === 'DETECT_RESULT') {
+                if (type === 'DETECT_RESULT') {
                     const pending = this.pendingRequests.get(id);
                     if (pending) {
                         pending.resolve(result);
                         this.pendingRequests.delete(id);
                     }
-                } else if (type === 'ERROR') {
-                    console.error('[FaceLandmarkService] Worker error:', error);
-                    const pending = id ? this.pendingRequests.get(id) : null;
-                    if (pending) {
-                        pending.reject(new Error(error));
-                        this.pendingRequests.delete(id);
-                    } else {
-                        reject(new Error(error));
-                    }
+                } else if (type === 'ERROR' && id && this.pendingRequests.has(id)) {
+                    const pending = this.pendingRequests.get(id)!;
+                    pending.reject(new Error(error));
+                    this.pendingRequests.delete(id);
+                } else if (originalOnMessage) {
+                    originalOnMessage(event);
                 }
             };
+        }
 
-            this.worker.postMessage({ type: 'INIT' });
-        });
-
-        return this.initPromise;
+        return worker;
     }
 
     public async detect(image: ImageBitmap | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, cacheKey?: string): Promise<FaceLandmarkerResult | null> {
@@ -84,8 +88,8 @@ export class FaceLandmarkService {
             } catch (e) { /* IndexedDB not available, continue with detection */ }
         }
 
-        await this.initialize();
-        if (!this.worker) return null;
+        const worker = await this.getWorker();
+        if (!worker) return null;
 
         return new Promise(async (resolve, reject) => {
             const id = Math.random().toString(36).substr(2, 9);
@@ -106,13 +110,28 @@ export class FaceLandmarkService {
 
             try {
                 let bitmap: ImageBitmap;
-                if (image instanceof ImageBitmap) {
-                    bitmap = image;
+                
+                // Downscale to ~360p for much faster detection if GPU delegate is missing/failed 
+                // in worker (which seems to be the case on some systems)
+                const MAX_SIZE = 360;
+                let w = (image as any).videoWidth || (image as any).width || 0;
+                let h = (image as any).videoHeight || (image as any).height || 0;
+
+                if (w > MAX_SIZE || h > MAX_SIZE) {
+                    const scale = Math.min(1.0, MAX_SIZE / Math.max(w, h));
+                    const sw = Math.floor(w * scale);
+                    const sh = Math.floor(h * scale);
+                    bitmap = await createImageBitmap(image, {
+                        resizeWidth: sw,
+                        resizeHeight: sh,
+                        resizeQuality: 'medium'
+                    });
+                    console.log(`[FaceLandmarkService] Downscaled to ${sw}x${sh} for detection`);
                 } else {
                     bitmap = await createImageBitmap(image);
                 }
 
-                this.worker!.postMessage({
+                worker.postMessage({
                     type: 'DETECT',
                     id,
                     payload: bitmap
@@ -128,15 +147,14 @@ export class FaceLandmarkService {
         this.detectionCache.clear();
     }
 
+    /**
+     * No-op: The shared worker is managed by LiveAIEngine, not by this service.
+     * Call liveAIEngine.close() if you need to shut down the worker.
+     */
     public async close() {
-        if (this.worker) {
-            this.worker.terminate();
-            this.worker = null;
-            this.initPromise = null;
-            this.isInitializing = false;
-        }
+        // Worker lifecycle is managed by LiveAIEngine
+        console.log('[FaceLandmarkService] close() called — shared worker is managed by LiveAIEngine.');
     }
 }
 
 export const faceLandmarkService = FaceLandmarkService.getInstance();
-

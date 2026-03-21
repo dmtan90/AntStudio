@@ -159,10 +159,7 @@ Return your storyboard in the following JSON format:
   "totalDuration": 120
 }`
 
-    const result = await generateJSON<{ segments: any[] }>(
-        prompt,
-        'gemini-2.5-flash'
-    )
+    const result = await generateJSON<{ segments: any[] }>(prompt, undefined)
 
     // Map segments with duration and metadata
     const segmentsWithDuration: StoryboardSegment[] = result.segments.map((segment, index) => ({

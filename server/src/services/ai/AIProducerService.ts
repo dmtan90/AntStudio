@@ -1,17 +1,10 @@
-import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
 import { audiencePredictor } from './AudiencePredictor.js';
 import { aiPerformanceService } from './AIPerformanceService.js';
-import { consensusService } from './ConsensusService.js';
-import { VTuberService } from '../VTuberService.js';
+import { InfluencerService } from '../InfluencerService.js';
 import { Logger } from '../../utils/Logger.js';
+import { directorWorkflow } from './DirectorWorkflow.js';
 
 export class AIProducerService {
-    private gemini: GeminiClient;
-
-    constructor() {
-        this.gemini = new GeminiClient({});
-    }
-
     /**
      * Generate "Director Notes" based on the current studio state.
      */
@@ -21,7 +14,7 @@ export class AIProducerService {
         chatSummary: string,
         activeScene: string,
         projectId?: string,
-        vtuberId?: string,
+        influencerId?: string,
         vision?: string
     }): Promise<{ 
         title: string, 
@@ -30,7 +23,8 @@ export class AIProducerService {
         actionLabel?: string, 
         actionType?: string,
         boardFeedback?: string,
-        consensus?: any
+        consensus?: any,
+        logs?: string[]
     }> {
         
         let predictiveContext = '';
@@ -45,9 +39,9 @@ export class AIProducerService {
         }
 
         let memoryContext = '';
-        if (userId && studioState.vtuberId) {
+        if (userId && studioState.influencerId) {
             try {
-                const memories = await VTuberService.getRelevantMemories(userId, studioState.vtuberId, ['engagement', 'vibe', 'scene', 'hype']);
+                const memories = await InfluencerService.getRelevantMemories(userId, studioState.influencerId, ['engagement', 'vibe', 'scene', 'hype']);
                 if (memories.length > 0) {
                     memoryContext = `HISTORICAL CONTEXT (Relevant memories from past sessions):\n${memories.map(m => `- ${m}`).join('\n')}`;
                 }
@@ -56,66 +50,20 @@ export class AIProducerService {
             }
         }
 
-        const systemPrompt = `
-You are the AI Studio Producer for a live stream. Your goal is to monitor the studio health, engagement, and atmosphere, and give the human streamer "Director Notes" to improve the broadcast.
-
-PREDICTIVE INTELLIGENCE:
-${predictiveContext || 'Stable trends predicted.'}
-
-${memoryContext || 'No relevant historical memories found.'}
-
-CURRENT STUDIO STATE:
-- Vibe: ${JSON.stringify(studioState.vibe)}
-- Engagement: ${JSON.stringify(studioState.engagement)}
-- Active Scene: ${studioState.activeScene}
-- Visual Context: ${studioState.vision || 'Normal stage setup'}
-- Chat Recent History: 
-${studioState.chatSummary}
-
-DIRECTIVES:
-1. Be proactive but professional.
-2. If engagement is low, suggest an interaction (Poll, Flash Sale, Question).
-3. If the vibe is high (Hype), suggest a cinematic change (Scene switch, Effect).
-4. If the streamer is missing a question in chat, highlight it.
-5. Keep descriptions very short and punchy (under 20 words).
-
-OUTPUT FORMAT (JSON):
-{
-  "title": "Actionable Title (e.g., 'Hype the Chat')",
-  "description": "Short explanation (e.g., 'Viewers are asking about your gear. Start a poll about it!')",
-  "priority": "low" | "medium" | "high",
-  "actionLabel": "Optional button text (e.g., 'Start Poll')",
-  "actionType": "Optional action trigger (e.g., 'start_poll', 'flash_sale', 'scene_switch')"
-}
-`;
-
-        const userPrompt = "Analyze the studio state and provide the single most important Director Note right now.";
-
         try {
-            const rawResult = await this.gemini.generateContent(userPrompt, 'gemini-2.5-flash', { 
-                systemPrompt,
-                generationConfig: { responseMimeType: "application/json" } 
-            });
-            let result: any = {};
-            try { result = JSON.parse(rawResult.text); } catch(e) {}
-
-            // Board Consensus for High-Priority Actions
-            if (result.priority === 'high' && studioState.projectId) {
-                const boardDecision = await consensusService.reachConsensus(studioState.projectId, `Producer suggests: ${result.title}. ${result.description}`);
-                
-                if (boardDecision.result === 'rejected') {
-                    return {
-                        title: "AI Board Feedback",
-                        description: "The AI Board rejected the previous proposal. Creative and Technical alignment needed.",
-                        priority: "low",
-                        boardFeedback: boardDecision.debrief
-                    };
+            const workflowResult = await directorWorkflow.run({
+                userId,
+                projectId: studioState.projectId,
+                studioState: {
+                    ...studioState,
+                    predictiveContext,
+                    memoryContext
                 }
-                
-                result.title = `[Board Approved] ${result.title}`;
-                (result as any).consensus = boardDecision;
-            }
+            });
 
+            const result = workflowResult.finalDecision;
+            result.logs = workflowResult.logs; // Attach workflow execution logs
+            
             return result;
         } catch (error) {
             Logger.error(`[AIProducer] Suggestion generation failed: ${error}`, 'AIProducer');

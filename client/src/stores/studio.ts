@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, reactive, computed, onMounted, onUnmounted, watch, type Ref } from 'vue';
 import { useLocalStorage } from '@/composables/useLocalStorage';
 import api from '@/utils/api';
+import { useI18n } from 'vue-i18n';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { VisualConceptService } from '@/utils/ai/VisualConceptService';
 import { toast } from 'vue-sonner';
@@ -13,8 +14,9 @@ import { useUserStore } from './user.js';
 // Types & Interfaces
 // ============================================
 
-export type SceneType = 'standard' | 'interview' | 'grid' | 'shoutout' | 'fullscreen' | 'pip' | 'sidebyside';
+export type SceneType = 'standard' | 'interview' | 'grid' | 'shoutout' | 'sale_duo' | 'sale_trio' | 'fullscreen' | 'pip' | 'sidebyside';
 export type TransitionType = 'fade' | 'slide' | 'zoom' | 'wipe' | 'instant';
+export type StreamingContext = 'sales' | 'commentary' | 'talkshow' | 'news' | 'gameshow' | 'music' | 'general' | 'game_streaming' | 'sport' | 'education';
 
 export interface Scene {
     id: string;
@@ -44,6 +46,7 @@ export interface LayoutRegion {
     borderRadius?: number;
     border?: { width: number; color: string };
     shadow?: { blur: number; color: string; x: number; y: number };
+    objectFit?: 'contain' | 'cover';
 }
 
 export interface Effect {
@@ -68,6 +71,8 @@ export interface Overlay {
     bRollLibrary: { id: string; url: string; topic: string }[];
     activeScript: any;
     scriptIndex: number;
+    guestPermissions: { autoApprove: boolean; micEnabled: boolean; camEnabled: boolean };
+    showOnboarding: boolean;
 }
 
 export interface Guest {
@@ -100,6 +105,7 @@ export interface Product {
     name: string;
     description?: string;
     price: number;
+    currency?: string;
     image: string;
     link: string;
     stock?: number;
@@ -108,6 +114,7 @@ export interface Product {
     showQR?: boolean;
     intentScore?: number;
     eventClip?: Record<string, string>;
+    features?: string[];
 }
 
 export interface EngagementMetrics {
@@ -170,6 +177,7 @@ export interface UserProgress {
 
 export const DEFAULT_VISUAL_SETTINGS = {
     streamQuality: 'high',
+    performanceMode: false,
     aiEnabled: true,
     arEnabled: false,
     activeFilter: 'none',
@@ -203,12 +211,13 @@ export const DEFAULT_VISUAL_SETTINGS = {
     },
     specialOverlays: {
         showSponsorship: false,
-        sponsorName: 'AntStudio VTuber',
+        sponsorName: 'AntStudio',
         confetti: false,
         fireworks: false
     },
     showLowerThird: false,
     showTicker: false,
+    showChat: true,
     tickerText: 'Breaking News • Latest Updates • ',
     accessibility: {
         translationEnabled: false,
@@ -223,7 +232,7 @@ export const DEFAULT_VISUAL_SETTINGS = {
     cinematic: {
         enabled: false,
         environmentId: 'standard',
-        showVTuberLinks: true
+        showInfluencerLinks: true
     },
     chromaKey: {
         enabled: false,
@@ -247,7 +256,8 @@ export const DEFAULT_VISUAL_SETTINGS = {
     ai: {
         autonomousProduction: true,
         autoDirector: true
-    }
+    },
+    atmosphereEffect: null as string | null // Phase 23
 };
 
 export interface EconomyItem {
@@ -319,9 +329,9 @@ const SCENE_PRESETS: Scene[] = [
         layout: {
             regions: [
                 { id: 'host', x: 0, y: 0, width: 50, height: 50, source: 'host', zIndex: 1 },
-                { id: 'guest1', x: 50, y: 0, width: 50, height: 50, source: 'guest1', zIndex: 1 },
-                { id: 'guest2', x: 0, y: 50, width: 50, height: 50, source: 'guest2', zIndex: 1 },
-                { id: 'guest3', x: 50, y: 50, width: 50, height: 50, source: 'guest3', zIndex: 1 }
+                { id: 'guest1', x: 50, y: 0, width: 50, height: 50, source: 'guest1', zIndex: 1, objectFit: 'contain' },
+                { id: 'guest2', x: 0, y: 50, width: 50, height: 50, source: 'guest2', zIndex: 1, objectFit: 'contain' },
+                { id: 'guest3', x: 50, y: 50, width: 50, height: 50, source: 'guest3', zIndex: 1, objectFit: 'contain' }
             ]
         }
     },
@@ -334,7 +344,34 @@ const SCENE_PRESETS: Scene[] = [
         hotkey: '4',
         layout: {
             regions: [
-                { id: 'guest1', x: 0, y: 0, width: 100, height: 100, source: 'guest1', zIndex: 1 }
+                { id: 'guest1', x: 0, y: 0, width: 100, height: 100, source: 'guest1', zIndex: 1, objectFit: 'contain' }
+            ]
+        }
+    },
+    {
+        id: 'sale_duo',
+        type: 'shoutout',
+        name: 'Sale Duo',
+        icon: 'People',
+        description: 'Two influencers side-by-side',
+        layout: {
+            regions: [
+                { id: 'g1', x: 0, y: 0, width: 50, height: 100, source: 'guest1', zIndex: 1, objectFit: 'contain' },
+                { id: 'g2', x: 50, y: 0, width: 50, height: 100, source: 'guest2', zIndex: 1, objectFit: 'contain' }
+            ]
+        }
+    },
+    {
+        id: 'sale_trio',
+        type: 'shoutout',
+        name: 'Sale Trio',
+        icon: 'EveryUser',
+        description: 'Three influencers side-by-side',
+        layout: {
+            regions: [
+                { id: 'g1', x: 0, y: 0, width: 33.3, height: 100, source: 'guest1', zIndex: 1, objectFit: 'contain' },
+                { id: 'g2', x: 33.3, y: 0, width: 33.3, height: 100, source: 'guest2', zIndex: 1, objectFit: 'contain' },
+                { id: 'g3', x: 66.6, y: 0, width: 33.4, height: 100, source: 'guest3', zIndex: 1, objectFit: 'contain' }
             ]
         }
     },
@@ -458,6 +495,7 @@ const SCENE_PRESETS: Scene[] = [
 // ============================================
 
 export const useStudioStore = defineStore('studio', () => {
+    const { t } = useI18n();
     // ============================================
     // State
     // ============================================
@@ -465,12 +503,15 @@ export const useStudioStore = defineStore('studio', () => {
     // God Mode
     const godModeEnabled = ref(false);
     const humanFreeMode = ref(false);
+    const streamingContext = ref(null);//useLocalStorage<StreamingContext | null>('antstudio_studio_streaming_context', null);
+    const embeddedVideoUrl = ref<string | null>(null);
     const liveSubtitlesEnabled = ref(false);
     const currentCaption = ref<any>(null);
     const streamRatio = ref<'16:9' | '9:16' | 'both'>('16:9');
     const highlightedProduct = ref<Product | null>(null);
     const v2cMatch = ref<any>(null);
     const assetGeneration = ref<Record<string, 'pending' | 'success' | 'failed'>>({});
+    const showOnboarding = ref(false);
 
     // Scene Management
     const activeScene = useLocalStorage<Scene>('antstudio_studio_active_scene', SCENE_PRESETS[0]);
@@ -502,7 +543,9 @@ export const useStudioStore = defineStore('studio', () => {
         camEnabled: true
     });
 
-    const visualSettings = useLocalStorage('antstudio_studio_visual_settings', { ...DEFAULT_VISUAL_SETTINGS });
+    // const visualSettings = useLocalStorage('antstudio_studio_visual_settings', { ...DEFAULT_VISUAL_SETTINGS });
+	// const visualSettings = { ...DEFAULT_VISUAL_SETTINGS };
+    const visualSettings = ref(DEFAULT_VISUAL_SETTINGS);
 
     const backgroundAssets = ref([
         // { id: 'none', name: 'None', url: '', thumbnail: '', isVideo: false },
@@ -516,7 +559,7 @@ export const useStudioStore = defineStore('studio', () => {
     // Commerce
     const featuredProducts = ref<Product[]>([]);
     const liveProducts = ref<any[]>([]);
-    const activeProductId = ref<string | null>(null);
+    const activeProductId = computed(() => highlightedProduct.value?._id || highlightedProduct.value?.id || null);
     const activeFlashSale = ref<any>(null);
     const currentSessionId = ref<string | null>(null);
     const showPostStreamSynthesis = ref(false);
@@ -541,6 +584,8 @@ export const useStudioStore = defineStore('studio', () => {
     const clientHighlightBuffer = ref<{ data: Blob, timestamp: number }[]>([]);
     const MAX_HIGHLIGHT_BUFFER_MS = 30000; // 30 seconds
     const myGuestId = ref<string | null>(null);
+    const isLive = ref(false);
+    const liveTime = ref(0);
     const viralMoments = ref<any[]>([]);
     const activePeak = ref<any>(null);
 
@@ -580,6 +625,14 @@ export const useStudioStore = defineStore('studio', () => {
     const activeScript = ref<any>(null);
     const scriptIndex = ref(-1);
     const showProfiles = ref<any[]>([]);
+    
+    // RPG Gamification (Phase 29)
+    const activeQuest = ref<Quest | null>(null);
+
+    // AI Singularity - Advanced Metrics & Facts (Phase 32)
+    const metricsHistory = ref<{ time: number, value: number }[]>([]);
+    const verifiedFacts = ref<any[]>([]);
+    const activeRecap = ref<any>(null);
 
     // Gamification
     const userProgress = ref<UserProgress>({
@@ -588,6 +641,26 @@ export const useStudioStore = defineStore('studio', () => {
         level: 1,
         activeQuests: [],
         achievements: []
+    });
+
+    // Context-Specific Data (Phase 34.5)
+    const contextData = reactive<Record<string, any>>({
+        sport: { homeScore: 3, awayScore: 1, homeTeam: 'LIV', awayTeam: 'MNC', league: 'Premier League', time: '82:44', period: '2nd Half', possessionA: 54, xgA: 2.44, shotsOnTargetA: 8, shotsOnTargetB: 3 },
+        news: { ticker: ['Breaking: AI Singularity achieved in AntStudio', 'Global markets react to new digital economy', 'Stock media APIs integrated'], breaking: 'Massive AI Leap', location: 'Tokyo, Japan' },
+        education: { 
+            currentLesson: 'Introduction to AI', 
+            studentCount: 1240, 
+            activeSlide: 0, 
+            slides: [] as Array<{ title: string; bullets: string[]; imageUrl?: string; keywords: string[] }>,
+            isGenerating: false 
+        },
+        sales: { totalSold: 0, stockLeft: 0, nextProductIn: 0 },
+        gameshow: { prize: 5000, currentQuestion: 'How many params in GPT-4?', timer: 30, players: [] },
+        commentary: { reactions: [], momentum: 0 },
+        music: { currentTrack: 'Neural Pulse', artist: 'AI Composer', upNext: 'Digital Dreams' },
+        talkshow: { sessionTitle: 'AI & Future Tech', startTime: '11:00 AM', script: [] },
+        gaming: { gameName: 'Cyber Strike', fps: 144, viewers: 8400, excitement: 85 },
+        general: { engagement: 92, activePoll: null }
     });
 
     // Economy
@@ -609,6 +682,19 @@ export const useStudioStore = defineStore('studio', () => {
     // Resource Pool
     const resourcePool = ref<ResourceAsset[]>([]);
     const activeMediaId = ref<string | null>(null);
+    const bgmId = ref<string | null>(null);
+
+    // ============================================
+    // Actions: Audio & Performance
+    // ============================================
+
+    function setBgm(id: string | null) {
+        bgmId.value = id;
+        console.log(`[Studio] Background music set to: ${id}`);
+        if (!isRemoteUpdate.value) {
+            broadcastCurrentState();
+        }
+    }
 
     // ============================================
     // Computed
@@ -749,6 +835,23 @@ export const useStudioStore = defineStore('studio', () => {
         const effect = activeEffects.value.find(e => e.id === effectId);
         if (effect) effect.enabled = !effect.enabled;
     }
+
+    // // Phase 29: Audience Quest Actions
+    // function triggerQuest(quest: Quest) {
+    //     // Prevent concurrent quests
+    //     if (activeQuest.value && !activeQuest.value.completed) return;
+    //     activeQuest.value = quest;
+    // }
+
+    // function updateQuestProgress(amount: number) {
+    //     if (!activeQuest.value || activeQuest.value.completed) return;
+        
+    //     activeQuest.value.current += amount;
+    //     if (activeQuest.value.current >= activeQuest.value.target) {
+    //         activeQuest.value.current = activeQuest.value.target;
+    //         activeQuest.value.completed = true;
+    //     }
+    // }
 
     // ============================================
     // Actions: Overlays
@@ -1126,7 +1229,7 @@ export const useStudioStore = defineStore('studio', () => {
             // Map agentId ('host', 'guest_1', etc.) to an actual entityId in the studio
             // We assume 'host' is the main AI (or real person).
             // For now, let's emit a global event that SyntheticGuestManager can pick up
-            // or directly set a 'speaking' state if the main VTuber is active.
+            // or directly set a 'speaking' state if the main influencer is active.
             window.dispatchEvent(new CustomEvent('showrunner:dialogue', {
                 detail: {
                     agentId: step.agentId,
@@ -1197,10 +1300,13 @@ export const useStudioStore = defineStore('studio', () => {
         }
     }
 
-    async function fetchCommerceProducts() {
+    async function fetchCommerceProducts(syncToFeatured: boolean = true) {
         try {
             const res: any = await api.get('/commerce/products');
             liveProducts.value = res.data;
+            if (syncToFeatured) {
+                featuredProducts.value = res.data; // Sync to ensure overlays have data
+            }
             return res.data;
         } catch (error) {
             console.error('[StudioStore] Failed to fetch products:', error);
@@ -1221,7 +1327,7 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function showcaseProduct(product: any) {
-        activeProductId.value = product.id || product._id;
+        highlightedProduct.value = product;
         if (!isRemoteUpdate.value) {
             broadcastCurrentState();
         }
@@ -1232,7 +1338,7 @@ export const useStudioStore = defineStore('studio', () => {
         // Compare against both string forms to handle MongoDB _id vs synthetic id
         const current = activeProductId.value ? String(activeProductId.value) : null;
         if (current === String(productId)) {
-            activeProductId.value = null;
+            highlightedProduct.value = null;
             if (!isRemoteUpdate.value) {
                 broadcastCurrentState();
             }
@@ -1255,7 +1361,7 @@ export const useStudioStore = defineStore('studio', () => {
         visualSettings.value.accessibility.targetLang = target;
         
         if (enabled) {
-            toast.success(`VTuber Dubbing Active: ${source} → ${target}`);
+            toast.success(`Influencer Dubbing Active: ${source} → ${target}`);
         } else {
             toast.info("Real-time translation disabled");
         }
@@ -1364,11 +1470,23 @@ export const useStudioStore = defineStore('studio', () => {
 
     async function startFlashSale(saleData: any) {
         try {
+            // Standardize sale data
+            const startTime = saleData.startTime || Date.now();
+            const durationMinutes = Number(saleData.durationMinutes || Math.round(saleData.duration / 60) || 5);
+            const expiresAt = new Date(startTime + durationMinutes * 60000).toISOString();
+
+            const standardizedData = {
+                ...saleData,
+                startTime,
+                durationMinutes,
+                expiresAt
+            };
+
             // Forward to API to trigger global notification (Host only)
             if (!isRemoteUpdate.value) {
-                await api.post('/commerce/flash-sale', saleData);
+                await api.post('/commerce/flash-sale', standardizedData);
             }
-            activeFlashSale.value = saleData;
+            activeFlashSale.value = standardizedData;
 
             if (!isRemoteUpdate.value) {
                 broadcastCurrentState();
@@ -1427,6 +1545,138 @@ export const useStudioStore = defineStore('studio', () => {
         Object.assign(autoDirectorSettings.value, settings);
     }
 
+    // Phase 29: Quest Actions
+    function triggerQuest(quest: Quest) {
+        // Prevent concurrent quests
+        if (activeQuest.value && !activeQuest.value.completed) return;
+        activeQuest.value = { ...quest, current: 0, completed: false };
+        console.log(`[Studio] Triggering Quest: ${quest.title}`);
+    }
+
+    function updateQuestProgress(amount: number) {
+        if (!activeQuest.value || activeQuest.value.completed) return;
+        
+        activeQuest.value.current = Math.min(activeQuest.value.target, activeQuest.value.current + amount);
+        
+        if (activeQuest.value.current >= activeQuest.value.target) {
+            activeQuest.value.completed = true;
+            userProgress.value.xp += activeQuest.value.rewardXp;
+            
+            // Wire i18n for quest completion toast
+            const i18n = useI18n();
+            toast.success(i18n.t('studio.quests.success'), {
+                description: i18n.t('studio.quests.rewardUnlocked', { reward: `${activeQuest.value.rewardXp} XP` })
+            });
+
+            // Auto-clear quest display after 15 seconds
+            setTimeout(() => {
+                if (activeQuest.value?.completed) activeQuest.value = null;
+            }, 15000);
+        }
+    }
+
+    function applyContextPreset(context: StreamingContext) {
+        streamingContext.value = context;
+        console.log(`[Studio] Applying Context Preset: ${context}`);
+
+        // Default: Enable Human Free Mode for everything except 'general'
+        humanFreeMode.value = context !== 'general';
+        godModeEnabled.value = context !== 'general';
+        autoDirectorSettings.value.enabled = context !== 'general';
+
+        switch (context) {
+            case 'sales':
+                updateStudioVibe('hype');
+                visualSettings.value.ai.autonomousProduction = true;
+                visualSettings.value.specialOverlays.showSponsorship = true;
+                visualSettings.value.atmosphereEffect = 'glitter';
+                
+                // Phase 34: Ensure default background is set for Sales
+                if (!visualSettings.value.background.assetUrl) {
+                    visualSettings.value.background.mode = 'virtual';
+                    visualSettings.value.background.assetUrl = '/bg/pro-studio.jpg';
+                    visualSettings.value.background.isAssetVideo = false;
+                }
+
+                switchScene('standard');
+                // Auto-showcase first product if available to match "front and center" design
+                if (liveProducts.value.length > 0) {
+                    showcaseProduct(liveProducts.value[0]);
+                }
+                break;
+            case 'talkshow':
+                updateStudioVibe('professional');
+                autoDirectorSettings.value.autoSwitchOnSpeaker = true;
+                visualSettings.value.atmosphereEffect = 'fireflies';
+                switchScene('interview');
+                break;
+            case 'news':
+                updateStudioVibe('professional');
+                visualSettings.value.showTicker = true;
+                visualSettings.value.accessibility.captions = true;
+                visualSettings.value.atmosphereEffect = null;
+                switchScene('standard');
+                break;
+            case 'music':
+                updateStudioVibe('hype');
+                visualSettings.value.arEnabled = true;
+                visualSettings.value.atmosphereEffect = 'bubbles';
+                switchScene('standard');
+                break;
+            case 'gameshow':
+                updateStudioVibe('hype');
+                visualSettings.value.specialOverlays.confetti = true;
+                visualSettings.value.atmosphereEffect = 'glitter';
+                switchScene('supergrid');
+                break;
+            case 'game_streaming':
+                updateStudioVibe('hype');
+                switchScene('screen_focus'); // Game/Screen main, Host in PiP
+                autoDirectorSettings.value.autoPivotEnabled = true;
+                visualSettings.value.atmosphereEffect = 'sakura';
+                break;
+            case 'sport':
+                updateStudioVibe('dramatic');
+                switchScene('screen_focus'); // Match/Screen main, Host in PiP
+                visualSettings.value.showLowerThird = true;
+                autoDirectorSettings.value.autoPublishViral = true;
+                visualSettings.value.atmosphereEffect = 'glitter';
+                break;
+            case 'commentary':
+                updateStudioVibe('chill');
+                switchScene('screen_focus'); // Content main, Host in PiP
+                visualSettings.value.atmosphereEffect = 'fireflies';
+                break;
+            case 'education':
+                updateStudioVibe('professional');
+                visualSettings.value.showLowerThird = true;
+                visualSettings.value.accessibility.captions = true;
+                switchScene('screen_focus'); // Slides/Screen main, Teacher in PiP
+                visualSettings.value.atmosphereEffect = null;
+                break;
+            case 'general':
+            default:
+                updateStudioVibe('neutral');
+                visualSettings.value.atmosphereEffect = 'snow'; // Phase 23: Default subtle atmosphere
+                switchScene('standard');
+                break;
+        }
+
+        // Phase 23: Emit environmental shift for AI awareness
+        window.dispatchEvent(new CustomEvent('environmental:shift', {
+            detail: {
+                context,
+                vibe: studioVibe.value,
+                effect: visualSettings.value.atmosphereEffect
+            }
+        }));
+        
+        broadcastCurrentState();
+        
+        const modeName = t(`studio.contextSelector.modes.${context}.name`);
+        toast.success(t('studio.messages.contextApplied', { mode: modeName }));
+    }
+
     // ============================================
     // Actions: Synchronization
     // ============================================
@@ -1463,7 +1713,13 @@ export const useStudioStore = defineStore('studio', () => {
                 switchScene(state.activeSceneId);
             }
             if (state.activeProductId !== undefined) {
-                activeProductId.value = state.activeProductId;
+                if (!state.activeProductId) {
+                    highlightedProduct.value = null;
+                } else {
+                    const product = liveProducts.value.find(p => p.id === state.activeProductId || p._id === state.activeProductId) ||
+                                  featuredProducts.value.find((p: any) => p.id === state.activeProductId || p._id === state.activeProductId);
+                    if (product) highlightedProduct.value = product;
+                }
             }
             if (state.activeFlashSale !== undefined) {
                 activeFlashSale.value = state.activeFlashSale;
@@ -1491,7 +1747,7 @@ export const useStudioStore = defineStore('studio', () => {
     }
 
     function updateHealth(stats: Partial<StreamHealth>) {
-        console.log("[Store] Updating health with stats:", stats);
+        //console.log("[Store] Updating health with stats:", stats);
         health.value = { 
             ...health.value, 
             ...stats 
@@ -1568,6 +1824,7 @@ export const useStudioStore = defineStore('studio', () => {
         coHosts,
         maxGuests,
         guestPermissions,
+        showOnboarding,
         visualSettings,
         featuredProducts,
         liveProducts,
@@ -1580,12 +1837,17 @@ export const useStudioStore = defineStore('studio', () => {
         engagement,
         health,
         godModeEnabled,
+        activeQuest,
+        triggerQuest,
+        updateQuestProgress,
         autoDirectorSettings,
         myGuestId,
         backgroundAssets,
         vibeScore,
         chatVelocity,
         intentScore,
+        streamingContext,
+        embeddedVideoUrl,
 
         // Computed
         guestSlotMap,
@@ -1655,22 +1917,28 @@ export const useStudioStore = defineStore('studio', () => {
         addCustomBackground,
         activePeak,
         humanFreeMode,
+        applyContextPreset,
 
         // Screen Sharing & Resources
         isScreenSharing,
         screenStreamId,
         resourcePool,
         activeMediaId,
+        bgmId,
         addResource(resource: ResourceAsset) {
             resourcePool.value.unshift(resource);
         },
         removeResource(id: string) {
             resourcePool.value = resourcePool.value.filter(r => r.id !== id);
         },
+        metricsHistory,
+        verifiedFacts,
+        activeRecap,
         setMedia(id: string | null) {
             activeMediaId.value = id;
             broadcastCurrentState();
         },
+        setBgm,
         currentSpeakerId,
         studioVibe,
         setSpeakerFocus,
@@ -1706,14 +1974,24 @@ export const useStudioStore = defineStore('studio', () => {
                 highlightedProduct.value = null;
                 return;
             }
-            const product = liveProducts.value.find(p => p.id === productId);
+            // Search liveProducts first, then fall back to featuredProducts
+            let product = liveProducts.value.find(p => p.id === productId || p._id === productId);
+            if (!product) {
+                product = featuredProducts.value.find((p: any) => p.id === productId || p._id === productId);
+            }
             if (product) {
                 highlightedProduct.value = product;
+                // Also ensure liveProducts is in sync so NeuralShowrunner commerce works
+                if (!liveProducts.value.find(p => p.id === productId || p._id === productId)) {
+                    liveProducts.value = [...featuredProducts.value];
+                }
+
+                this.setProductQRVisibility(productId, true);
             }
         },
 
         setProductQRVisibility(productId: string, visible: boolean) {
-            const product = liveProducts.value.find(p => p.id === productId);
+            const product = liveProducts.value.find(p => p.id === productId || p._id === productId);
             if (product) {
                 product.showQR = visible;
             }
@@ -1736,6 +2014,9 @@ export const useStudioStore = defineStore('studio', () => {
         executeShowStep,
         updateScriptState,
         activePoll,
+        contextData,
+        isLive,
+        liveTime,
         castVote,
         userProgress,
         userWallet,
@@ -1853,6 +2134,82 @@ export const useStudioStore = defineStore('studio', () => {
                 console.error('Failed to publish moment:', error);
                 toast.error('Failed to publish viral moment');
             }
+        },
+
+        // ============================================
+        // Actions: AI Co-Host Layout Management (Phase 6)
+        // ============================================
+
+        /**
+         * Returns the ideal "base" scene based on guest count, context, and human presence.
+         */
+        getAutoBaseScene(countOverride?: number): SceneType {
+            const count = countOverride !== undefined ? countOverride : liveGuests.value.length;
+            const context = (streamingContext.value as string);
+            
+            if (humanFreeMode.value) {
+                // Side-by-Side layouts are specifically for Sales context
+                if (context === 'sales' || context === 'music') {
+                    if (count <= 1) return 'shoutout';
+                    if (count === 2) return 'sale_duo';
+                    return 'sale_trio';
+                }
+                else if(context === 'education' || context === 'gaming' || context === 'sport'){
+                    return 'pip';
+                }
+                else if(context === 'talkshow'){
+                    return 'interview';
+                }
+                else if(context === 'news'){
+                    return 'standard';
+                }
+                else if(context === 'gameshow'){
+                    return 'grid';
+                }
+                
+                
+                // Generic Human-Free fallbacks
+                if (count === 0) return 'standard';
+                if (count === 1) return 'shoutout';
+                return 'interview';
+            }
+            
+            return 'standard';
+        },
+
+        /**
+         * Add an AI Influencer as a co-host guest and auto-adapt the scene layout.
+         */
+        addAICoHostToStudio(coHostEntityId: string, coHostName: string) {
+            const existing = liveGuests.value.find(g => g.uuid === coHostEntityId);
+            if (existing) return; // Already present
+
+            const aiGuest: Guest = {
+                uuid: coHostEntityId,
+                name: coHostName,
+                type: 'ai',
+                status: 'live',
+                audioEnabled: true,
+                videoEnabled: true,
+            };
+
+            this.addGuest(aiGuest);
+
+            // Auto-adapt to Side-by-Side layouts
+            const ideal = this.getAutoBaseScene();
+            this.switchScene(ideal);
+
+            toast.success(`${coHostName} joined the session`);
+        },
+
+        /**
+         * Remove an AI co-host and restore appropriate layout.
+         */
+        removeAICoHostFromStudio(coHostEntityId: string) {
+            this.removeGuest(coHostEntityId);
+
+            const ideal = this.getAutoBaseScene();
+            this.switchScene(ideal);
         }
     };
 });

@@ -78,6 +78,10 @@ export class AIServiceManager {
                     providerConfig.taskConfigs
                 );
                 Logger.info(`[AIServiceManager] Custom Provider "${providerId}" initialized.`);
+            } else if (providerId === 'google-flow') {
+                const { flowAdapter } = await import('./providers/FlowAdapter.js');
+                providerInstances['google-flow'] = flowAdapter;
+                Logger.info('[AIServiceManager] Google Flow Adapter initialized.');
             }
         } catch (error: any) {
             Logger.error(`[AIServiceManager] Failed to initialize provider "${providerId}":`, error.message);
@@ -90,14 +94,15 @@ export class AIServiceManager {
     private async resolveProvider(type: 'text' | 'image' | 'video' | 'audio' | 'music', requestedProviderId?: string, requestedModelId?: string) {
         // Ensure settings are loaded
         if (!currentSettings) await this.initialize()
-
-        let providerId = requestedProviderId;
+        
+        let providerId = requestedProviderId || "google";
         let modelId = requestedModelId;
-
+        const defaultConfig = currentSettings?.defaults?.[type];
+        // Logger.debug("resolveProvider", 'AIServiceManager', {type, requestedProviderId, requestedModelId, defaultConfig: JSON.stringify(defaultConfig)});
         // 1. If not requested, check DB defaults for this type
-        if (!providerId && currentSettings?.defaults?.[type]) {
-            providerId = currentSettings.defaults[type].providerId;
-            modelId = modelId || currentSettings.defaults[type].modelId;
+        if (defaultConfig) {
+            providerId = providerId || defaultConfig.providerId;
+            modelId = modelId || defaultConfig.modelId;
             Logger.info(`[AIServiceManager] Resolved default for ${type}: ${providerId}/${modelId}`);
         }
 
@@ -108,16 +113,16 @@ export class AIServiceManager {
         }
 
         // 3. PRIORITY: Fallbacks if still no provider specified
-        if (!providerId) {
-            if (providerInstances['google']) {
-                providerId = 'google'
-                modelId = modelId || (type === 'image' ? 'imagen-3.0' : type === 'video' ? 'veo-2.0' : 'gemini-2.5-flash')
-            } else {
-                // Last resort fallback
-                providerId = Object.keys(providerInstances).find(k => k !== 'private') || 'google';
-            }
-            Logger.info(`[AIServiceManager] Using resolved fallback for ${type}: ${providerId}/${modelId}`);
-        }
+        // if (!providerId) {
+        //     if (providerInstances['google']) {
+        //         providerId = 'google'
+        //         modelId = modelId || (type === 'image' ? 'imagen-3.0' : type === 'video' ? 'veo-2.0' : 'gemini-2.5-flash')
+        //     } else {
+        //         // Last resort fallback
+        //         providerId = Object.keys(providerInstances).find(k => k !== 'private') || 'google';
+        //     }
+        //     Logger.info(`[AIServiceManager] Using resolved fallback for ${type}: ${providerId}/${modelId}`);
+        // }
 
         // Get Provider Instance
         const provider = await this.getProvider(providerId)
@@ -180,12 +185,39 @@ export class AIServiceManager {
             let result: any;
             if (providerId === 'google') {
                 result = await provider.generateImage(prompt, finalModelName, options);
+                if(!result){
+                    const account = await aiAccountManager.getOptimalAccount('image', 'google-flow');
+                    if(account){
+                        ({ provider, providerId, modelId } = await this.resolveProvider('image', 'google-flow', finalModelName));
+                        Logger.info(`[AIServiceManager] Using Google Flow account for image generation: ${account.email}`);
+                        if(provider){
+                            result = await provider.generateImage(account, prompt, modelId, options);
+                        }
+                    }
+                }
+            } else if (providerId === 'google-flow') {
+                const account = await aiAccountManager.getOptimalAccount('image', 'google-flow');
+                if (!account) throw new Error('No active Google Flow account found');
+                result = await provider.generateImage(account, prompt, finalModelName, options);
             } else {
                 result = await provider.generateImage(prompt, finalModelName, options);
             }
 
+            if(!result){
+                throw new Error('No image generated');
+            }
+
+            // Handle async/jobId return from Flow
+            if (result.jobId || result.status === 'pending') {
+                return result;
+            }
+
             const media = result.media || result;
-            if (!media || !media.url) throw new Error('No image generated');
+            if (!media || (!media.url && !media.buffer)) throw new Error('No image generated');
+
+            if (media.buffer) {
+                return { buffer: media.buffer, mimeType: media.mimeType || 'image/png' };
+            }
 
             if (typeof media.url === 'string' && media.url.startsWith('http')) {
                 const { getFileBuffer } = await import('../AIGenerator.js');
@@ -217,9 +249,32 @@ export class AIServiceManager {
             let result: any;
             if (providerId === 'google') {
                 result = await provider.generateVideo(prompt, finalModelName, options);
+                if(!result){
+                    const account = await aiAccountManager.getOptimalAccount('video', 'google-flow');
+                    if(account){
+                        ({ provider, providerId, modelId } = await this.resolveProvider('video', 'google-flow', finalModelName));
+                        if(provider){
+                            Logger.info(`[AIServiceManager] Using Google Flow account for video generation: ${account.email}`);
+                            result = await provider.generateVideo(account, prompt, finalModelName, options);
+                        }
+                    }
+                }
+            } else if (providerId === 'google-flow') {
+                const account = await aiAccountManager.getOptimalAccount('video', 'google-flow');
+                if (!account) throw new Error('No active Google Flow account found');
+                result = await provider.generateVideo(account, prompt, finalModelName, options);
             } else {
                 if (typeof provider.generateVideo !== 'function') throw new Error(`Provider ${providerId} does not support video generation`);
                 result = await provider.generateVideo(prompt, finalModelName, options);
+            }
+
+            if(!result){
+                throw new Error('No video generated');
+            }
+
+            // Handle async/jobId return
+            if (result.jobId || result.status === 'pending') {
+                return result;
             }
 
             const media = result.media || result;
@@ -250,7 +305,8 @@ export class AIServiceManager {
      * Generate Audio (TTS) using a specific model
      */
     public async generateAudio(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
-        let { provider, providerId, modelId } = await this.resolveProvider('audio', inputProviderId, inputModelName)
+        // gemini will inherit modelId from google setting in admin
+        let { provider, providerId, modelId } = await this.resolveProvider('audio', (inputProviderId && inputProviderId == 'gemini') ? 'google' : inputProviderId, inputModelName)
         const finalModelName = modelId || inputModelName || 'tts-1'
 
         if (providerId === 'google') {

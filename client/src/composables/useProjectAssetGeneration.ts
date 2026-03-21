@@ -147,18 +147,20 @@ export function useProjectAssetGeneration(projectId: string) {
             })
 
             const data = res.data || res
-            const jobId = data.jobId || data.video?.veoJobId
 
-            if (data.s3Key) {
+            if (data.url) {
                 if (!seg.generatedVideo) seg.generatedVideo = {}
-                seg.generatedVideo.s3Key = data.s3Key
-                projectStore.syncAssetToElements(`segment_${seg.order}.mp4`, data.s3Key)
+                seg.generatedVideo.s3Key = data.url
+                projectStore.syncAssetToElements(`segment_${seg.order}.mp4`, data.url)
                 await projectStore.fetchProject(projectId)
                 generatingStates.value[id] = false
                 return true
-            } else if (jobId) {
-                toast.info(t('projects.editor.storyboard.backgroundJobStarted'))
-                pollAssetStatus(jobId, id)
+            } else if (data.media?.key) {
+                 if (!seg.generatedVideo) seg.generatedVideo = {}
+                seg.generatedVideo.s3Key = data.media.key
+                projectStore.syncAssetToElements(`segment_${seg.order}.mp4`, data.media.key)
+                await projectStore.fetchProject(projectId)
+                generatingStates.value[id] = false
                 return true
             }
         } catch (error: any) {

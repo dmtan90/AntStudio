@@ -1,7 +1,61 @@
+import { WebGLUtils } from './WebGLUtils';
+
 /**
  * WebGL Shader Library for Visual Effects
  * Provides reusable shader programs for beauty filters, background effects, and segmentation
  */
+
+export const COMPOSITE_VS = `
+    attribute vec2 a_position;
+    attribute vec2 a_texCoord;
+    uniform vec2 u_translation;
+    uniform vec2 u_scale;
+    uniform vec2 u_texScale;
+    uniform vec2 u_texOffset;
+    uniform bool u_flipHorizontal;
+    uniform bool u_flipVertical;
+    uniform bool u_flipY;
+    varying vec2 v_texCoord;
+    varying vec2 v_localCoord;
+    void main() {
+        v_localCoord = a_position;
+        vec2 pos = a_position * u_scale + u_translation;
+        float yPos = u_flipY ? (1.0 - pos.y) : pos.y;
+        gl_Position = vec4(pos.x * 2.0 - 1.0, yPos * 2.0 - 1.0, 0.0, 1.0);
+        
+        vec2 uv = a_texCoord;
+        if (u_flipHorizontal) uv.x = 1.0 - uv.x;
+        if (u_flipVertical)   uv.y = 1.0 - uv.y;
+        v_texCoord = uv * u_texScale + u_texOffset;
+    }
+`;
+
+export const COMPOSITE_FS = `
+    precision mediump float;
+    varying vec2 v_texCoord;
+    varying vec2 v_localCoord;
+    uniform sampler2D u_image;
+    uniform int u_shape;
+    uniform float u_aspect;
+    uniform float u_borderRadius;
+
+    void main() {
+        if (u_shape == 1) {
+            vec2 p = v_localCoord - 0.5;
+            p.x *= u_aspect;
+            float radius = min(u_aspect, 1.0) * 0.5;
+            if (length(p) > radius) discard;
+        } else if (u_shape == 2) {
+            vec2 p = v_localCoord;
+            float r = u_borderRadius / 100.0;
+            if (p.x < r && p.y < r && length(p - vec2(r)) > r) discard;
+            if (p.x > 1.0-r && p.y < r && length(p - vec2(1.0-r, r)) > r) discard;
+            if (p.x < r && p.y > 1.0-r && length(p - vec2(r, 1.0-r)) > r) discard;
+            if (p.x > 1.0-r && p.y > 1.0-r && length(p - vec2(1.0-r, 1.0-r)) > r) discard;
+        }
+        gl_FragColor = texture2D(u_image, v_texCoord);
+    }
+`;
 
 export interface ShaderProgram {
     program: WebGLProgram;
@@ -487,6 +541,32 @@ function compileShaderProgram(
 }
 
 /**
+ * Creates the standard composite shader program
+ */
+export function createCompositeShader(gl: WebGLRenderingContext): ShaderProgram {
+    const vs = WebGLUtils.createShader(gl, gl.VERTEX_SHADER, COMPOSITE_VS);
+    const fs = WebGLUtils.createShader(gl, gl.FRAGMENT_SHADER, COMPOSITE_FS);
+    if (!vs || !fs) throw new Error('Failed to create composite shader');
+    
+    const program = WebGLUtils.createProgram(gl, vs, fs)!;
+    const uniforms = [
+        'u_translation', 'u_scale', 'u_texScale', 'u_texOffset', 
+        'u_flipHorizontal', 'u_flipVertical', 'u_flipY', 
+        'u_shape', 'u_aspect', 'u_borderRadius', 'u_image'
+    ];
+    
+    const uniformLocs: Record<string, WebGLUniformLocation | null> = {};
+    uniforms.forEach(name => uniformLocs[name] = gl.getUniformLocation(program, name));
+    
+    const attributes = {
+        a_position: gl.getAttribLocation(program, 'a_position'),
+        a_texCoord: gl.getAttribLocation(program, 'a_texCoord')
+    };
+
+    return { program, uniforms: uniformLocs, attributes };
+}
+
+/**
  * Creates a full-screen quad (-1 to 1) for rendering full-texture effects
  */
 export function createFullScreenQuad(gl: WebGLRenderingContext): {
@@ -743,9 +823,10 @@ export function createGlitchTransitionShader(gl: WebGLRenderingContext): ShaderP
             vec4 c2 = texture2D(u_to, distort);
             
             // RGB Split
-            float r = texture2D(mix(u_from, u_to, p), distort + vec2(strength * 0.1, 0.0)).r;
-            float g = texture2D(mix(u_from, u_to, p), distort).g;
-            float b = texture2D(mix(u_from, u_to, p), distort - vec2(strength * 0.1, 0.0)).b;
+            vec2 rOffset = vec2(strength * 0.1, 0.0);
+            float r = mix(texture2D(u_from, distort + rOffset), texture2D(u_to, distort + rOffset), p).r;
+            float g = mix(texture2D(u_from, distort), texture2D(u_to, distort), p).g;
+            float b = mix(texture2D(u_from, distort - rOffset), texture2D(u_to, distort - rOffset), p).b;
             
             gl_FragColor = vec4(r, g, b, 1.0);
         }

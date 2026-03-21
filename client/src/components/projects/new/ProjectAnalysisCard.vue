@@ -48,6 +48,14 @@
             <div class="char-sub-details" v-if="char.physical_traits">
               <span class="sub-label">{{ t('projects.new.results.analysis.physical') }}:</span> {{ Object.values(char.physical_traits).filter(Boolean).join(', ') }} | <span class="sub-label">{{ t('projects.new.results.analysis.voice') }}:</span> {{ char.voice_profile }}
             </div>
+            <!-- Actor Consistency: Visual Reference Sheets (Phase 5) -->
+            <div class="character-reference-sheet" v-if="char.visualDescription || char.imagePrompt">
+              <div class="ref-label">VISUAL ANCHOR POINTS:</div>
+              <p class="ref-text">{{ char.visualDescription }}</p>
+              <div class="ref-prompt-box">
+                <span class="prompt-label">STABILITY PROMPT:</span> {{ char.imagePrompt }}
+              </div>
+            </div>
           </li>
         </ul>
       </div>
@@ -109,6 +117,26 @@
           <li><strong>{{ t('projects.new.results.analysis.music') }}:</strong> {{ msg.result.cumulative?.analysis?.audio?.music }}</li>
           <li v-if="msg.result.cumulative?.analysis?.audio?.ambience"><strong>{{ t('projects.new.results.analysis.ambience') }}:</strong> {{ msg.result.cumulative?.analysis?.audio?.ambience }}</li>
         </ul>
+      </div>
+
+      <!-- Expert Board Review (Phase 5) -->
+      <div v-if="msg.result.cumulative?.analysis?.expertFeedback?.length" class="doc-section expert-review-section">
+        <div class="section-title-row">
+          <h4 class="text-brand-secondary">7. BOARD OF EXPERTS REVIEW</h4>
+          <div class="inline-comment-icon" @click.stop="$emit('comment', 'Board Review')"><comment theme="outline" size="12"/></div>
+        </div>
+        <div class="expert-messages">
+          <div v-for="fb in msg.result.cumulative?.analysis?.expertFeedback" :key="fb.expert" class="expert-card" :class="fb.expert.toLowerCase().replace(' ', '-')">
+            <div class="expert-header">
+              <span class="expert-name">{{ fb.expert.toUpperCase() }}</span>
+              <span class="expert-badge">CRITICAL INSIGHT</span>
+            </div>
+            <p class="expert-msg">{{ fb.message }}</p>
+            <div class="expert-suggestion" v-if="fb.suggestion">
+              <strong>SUGGESTION:</strong> {{ fb.suggestion }}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="approval-footer mt-8 pt-8 border-t border-white/5 flex justify-center pb-4" v-if="!approved">
@@ -271,6 +299,7 @@ defineEmits(['text-selection', 'comment', 'approve'])
     font-size: 12px;
     color: rgba(255, 255, 255, 0.4);
     margin-top: 6px;
+    margin-bottom: 8px;
     
     .sub-label {
       color: rgba(255, 255, 255, 0.6);
@@ -278,6 +307,100 @@ defineEmits(['text-selection', 'comment', 'approve'])
       text-transform: uppercase;
       font-size: 10px;
       letter-spacing: 0.05em;
+    }
+  }
+
+  .character-reference-sheet {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px dashed rgba(59, 130, 246, 0.3);
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 10px;
+
+    .ref-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: #3b82f6;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .ref-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    .ref-prompt-box {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: rgba(255, 255, 255, 0.4);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 10px;
+      border-radius: 6px;
+      
+      .prompt-label {
+        color: rgba(255, 255, 255, 0.2);
+        font-weight: 800;
+        margin-right: 4px;
+      }
+    }
+  }
+
+  .expert-review-section {
+    border: 1px solid rgba(0, 242, 255, 0.2) !important;
+    background: linear-gradient(to bottom right, rgba(0, 242, 255, 0.05), transparent) !important;
+  }
+
+  .expert-card {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid #3b82f6;
+
+    &.cinematographer { border-color: #3b82f6; }
+    &.script-editor { border-color: #f59e0b; }
+
+    .expert-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .expert-name {
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.05em;
+    }
+
+    .expert-badge {
+      font-size: 9px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .expert-msg {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .expert-suggestion {
+      font-size: 12px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      
+      strong { color: #3b82f6; margin-right: 6px; }
     }
   }
 

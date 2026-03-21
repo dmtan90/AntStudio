@@ -4,13 +4,13 @@
         <div class="max-w-7xl mx-auto mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-black text-white mb-2">🎙️ {{ t('vtubers.geminiChat.title') }}</h1>
-                    <p class="text-sm text-white/60">{{ t('vtubers.geminiChat.subtitle') }}</p>
+                    <h1 class="text-3xl font-black text-white mb-2">🎙️ {{ t('influencers.geminiChat.title') }}</h1>
+                    <p class="text-sm text-white/60">{{ t('influencers.geminiChat.subtitle') }}</p>
                 </div>
                 <div class="flex items-center gap-4">
                     <el-radio-group v-model="viewMode" size="large" class="glass-radio">
-                        <el-radio-button value="chat">{{ t('vtubers.geminiChat.tabs.liveChat') }}</el-radio-button>
-                        <el-radio-button value="history">{{ t('vtubers.geminiChat.tabs.history') }}</el-radio-button>
+                        <el-radio-button value="chat">{{ t('influencers.geminiChat.tabs.liveChat') }}</el-radio-button>
+                        <el-radio-button value="history">{{ t('influencers.geminiChat.tabs.history') }}</el-radio-button>
                     </el-radio-group>
                 </div>
             </div>
@@ -21,7 +21,7 @@
             <!-- Left: Archive Selection -->
             <div class="lg:col-span-1">
                 <div class="glass-panel p-6">
-                    <h2 class="text-lg font-black text-white mb-4">{{ t('vtubers.geminiChat.sidebar.selectVtuber') }}</h2>
+                    <h2 class="text-lg font-black text-white mb-4">{{ t('influencers.geminiChat.sidebar.selectInfluencer') }}</h2>
                     
                     <!-- Filter Info -->
                     <el-alert 
@@ -30,14 +30,14 @@
                         class="mb-4 bg-blue-500/10 border-blue-500/20"
                     >
                         <template #title>
-                            <span class="text-xs">{{ t('vtubers.geminiChat.sidebar.geminiOnly') }}</span>
+                            <span class="text-xs">{{ t('influencers.geminiChat.sidebar.geminiOnly') }}</span>
                         </template>
                     </el-alert>
 
                     <!-- Archive List -->
                     <div class="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar">
                         <div 
-                            v-for="archive in liveCompatibleVTubers" 
+                            v-for="archive in liveCompatibleInfluencers" 
                             :key="archive.entityId"
                             @click="selectArchive(archive)"
                             :class="[
@@ -59,12 +59,12 @@
                                     <div class="flex items-center gap-2 mb-1">
                                         <h3 class="text-sm font-bold text-white truncate">{{ archive.name }}</h3>
                                         <span class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
-                                            🎙️ {{ t('vtubers.geminiChat.sidebar.liveReady') }}
+                                            🎙️ {{ t('influencers.geminiChat.sidebar.liveReady') }}
                                         </span>
                                     </div>
                                     <p class="text-xs text-white/60 line-clamp-2">{{ archive.description }}</p>
                                     <div class="flex items-center gap-2 mt-2">
-                                        <span class="text-xs text-white/40">{{ t('vtubers.geminiChat.sidebar.voiceLabel') }}</span>
+                                        <span class="text-xs text-white/40">{{ t('influencers.geminiChat.sidebar.voiceLabel') }}</span>
                                         <span class="text-xs text-blue-400">{{ archive.voiceConfig?.voiceId || 'Puck' }}</span>
                                     </div>
                                 </div>
@@ -72,11 +72,11 @@
                         </div>
 
                         <!-- Empty State -->
-                        <div v-if="liveCompatibleVTubers.length === 0" class="text-center py-12">
+                        <div v-if="liveCompatibleInfluencers.length === 0" class="text-center py-12">
                             <el-icon class="text-4xl text-white/20 mb-4"><info /></el-icon>
-                            <p class="text-sm text-white/60 mb-4">{{ t('vtubers.geminiChat.sidebar.empty.title') }}</p>
-                            <router-link to="/vtubers" class="text-xs text-blue-400 hover:text-blue-300">
-                                {{ t('vtubers.geminiChat.sidebar.empty.action') }}
+                            <p class="text-sm text-white/60 mb-4">{{ t('influencers.geminiChat.sidebar.empty.title') }}</p>
+                            <router-link to="/influencers" class="text-xs text-blue-400 hover:text-blue-300">
+                                {{ t('influencers.geminiChat.sidebar.empty.action') }}
                             </router-link>
                         </div>
                     </div>
@@ -89,9 +89,9 @@
                     <!-- Not Connected State -->
                     <div v-if="!isConnected" class="text-center py-20">
                         <el-icon class="text-6xl text-white/20 mb-6"><microphone /></el-icon>
-                        <h2 class="text-2xl font-black text-white mb-4">{{ t('vtubers.geminiChat.session.ready.title') }}</h2>
+                        <h2 class="text-2xl font-black text-white mb-4">{{ t('influencers.geminiChat.session.ready.title') }}</h2>
                         <p class="text-sm text-white/60 mb-8">
-                            {{ selectedArchive ? t('vtubers.geminiChat.session.ready.connectTo', { name: selectedArchive.name }) : t('vtubers.geminiChat.session.ready.selectToBegin') }}
+                            {{ selectedArchive ? t('influencers.geminiChat.session.ready.connectTo', { name: selectedArchive.name }) : t('influencers.geminiChat.session.ready.selectToBegin') }}
                         </p>
                         <el-button 
                             type="primary" 
@@ -101,7 +101,7 @@
                             class="px-8"
                         >
                             <el-icon class="mr-2"><play-one /></el-icon>
-                            {{ t('vtubers.geminiChat.session.ready.startAction') }}
+                            {{ t('influencers.geminiChat.session.ready.startAction') }}
                         </el-button>
                     </div>
 
@@ -131,7 +131,7 @@
                             <!-- Camera Preview Overlay -->
                             <div v-if="isCameraActive" class="absolute bottom-4 right-4 w-40 aspect-video rounded-xl border-2 border-blue-500 overflow-hidden shadow-2xl z-30 bg-black">
                                 <video ref="previewVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-                                <div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-blue-500 text-[8px] font-black text-white uppercase">{{ t('vtubers.geminiChat.session.visionActive') }}</div>
+                                <div class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-blue-500 text-[8px] font-black text-white uppercase">{{ t('influencers.geminiChat.session.visionActive') }}</div>
                             </div>
 
                             <!-- Audio Level Indicator -->
@@ -148,7 +148,7 @@
                             <div class="absolute top-4 right-4">
                                 <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm">
                                     <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                    <span class="text-xs text-white font-medium">{{ t('vtubers.geminiChat.session.live') }}</span>
+                                    <span class="text-xs text-white font-medium">{{ t('influencers.geminiChat.session.live') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -172,7 +172,7 @@
                                 size="large"
                                 circle
                                 @click="toggleCamera"
-                                :title="isCameraActive ? t('vtubers.geminiChat.session.controls.stopVision') : t('vtubers.geminiChat.session.controls.startVision')"
+                                :title="isCameraActive ? t('influencers.geminiChat.session.controls.stopVision') : t('influencers.geminiChat.session.controls.startVision')"
                             >
                                 <el-icon class="text-2xl">
                                     <videocamera v-if="!isCameraActive" />
@@ -186,22 +186,22 @@
                                 @click="endSession"
                             >
                                 <el-icon class="mr-2"><close /></el-icon>
-                                {{ t('vtubers.geminiChat.session.controls.endSession') }}
+                                {{ t('influencers.geminiChat.session.controls.endSession') }}
                             </el-button>
                         </div>
 
                         <!-- Session Info -->
                         <div class="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
                             <div class="text-center">
-                                <p class="text-xs text-white/40 mb-1">{{ t('vtubers.geminiChat.session.info.archive') }}</p>
+                                <p class="text-xs text-white/40 mb-1">{{ t('influencers.geminiChat.session.info.archive') }}</p>
                                 <p class="text-sm text-white font-medium">{{ selectedArchive?.name }}</p>
                             </div>
                             <div class="text-center">
-                                <p class="text-xs text-white/40 mb-1">{{ t('vtubers.geminiChat.session.info.voice') }}</p>
+                                <p class="text-xs text-white/40 mb-1">{{ t('influencers.geminiChat.session.info.voice') }}</p>
                                 <p class="text-sm text-white font-medium">{{ selectedArchive?.voiceConfig?.voiceId || 'Puck' }}</p>
                             </div>
                             <div class="text-center">
-                                <p class="text-xs text-white/40 mb-1">{{ t('vtubers.geminiChat.session.info.sessionId') }}</p>
+                                <p class="text-xs text-white/40 mb-1">{{ t('influencers.geminiChat.session.info.sessionId') }}</p>
                                 <p class="text-xs text-white/60 font-mono truncate">{{ sessionId }}</p>
                             </div>
                         </div>
@@ -214,7 +214,7 @@
         <div v-else class="max-w-4xl mx-auto">
             <div class="glass-panel p-8">
                 <div class="flex items-center justify-between mb-8">
-                    <h2 class="text-2xl font-black text-white">{{ t('vtubers.geminiChat.history.title') }}</h2>
+                    <h2 class="text-2xl font-black text-white">{{ t('influencers.geminiChat.history.title') }}</h2>
                     <el-button @click="fetchSessionHistory" :loading="loadingSessionHistory" class="glass-btn">
                         <el-icon class="mr-2"><refresh /></el-icon> {{ t('common.refresh') }}
                     </el-button>
@@ -226,7 +226,7 @@
 
                 <div v-else-if="sessionHistory.length === 0" class="text-center py-20">
                     <el-icon class="text-6xl text-white/20 mb-6"><History /></el-icon>
-                    <p class="text-white/40">{{ t('vtubers.geminiChat.history.empty') }}</p>
+                    <p class="text-white/40">{{ t('influencers.geminiChat.history.empty') }}</p>
                 </div>
 
                 <div v-else class="space-y-4">
@@ -259,7 +259,7 @@
         <!-- Session Detail Dialog -->
         <el-dialog
             v-model="showSessionDialog"
-            :title="t('vtubers.geminiChat.dialogs.transcript.title')"
+            :title="t('influencers.geminiChat.dialogs.transcript.title')"
             width="600px"
             class="glass-dialog custom-dialog"
             destroy-on-close
@@ -284,7 +284,7 @@
                         <div v-if="msg.toolCalls && msg.toolCalls.length > 0" class="mt-2 pt-2 border-t border-white/10">
                             <div v-for="(call, cIndex) in msg.toolCalls" :key="cIndex" class="flex items-center gap-2 text-xs text-white/40 italic">
                                 <el-icon><setting-two /></el-icon>
-                                <span>{{ t('vtubers.geminiChat.dialogs.transcript.usedTool', { name: call.name }) }}</span>
+                                <span>{{ t('influencers.geminiChat.dialogs.transcript.usedTool', { name: call.name }) }}</span>
                             </div>
                         </div>
                     </div>
@@ -299,14 +299,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useVTuberStore } from '@/stores/vtuber';
+import { useInfluencerStore } from '@/stores/influencer';
 import { useUserStore } from '@/stores/user';
 import { useLiveStore } from '@/stores/live';
 import { useGeminiLive } from '@/composables/useGeminiLive';
 import api, { getFileUrl } from '@/utils/api';
-import Live2DViewer from '@/components/vtuber/Live2DViewer.vue';
-import VRMViewer from '@/components/vtuber/VRMViewer.vue';
-import StaticPhotoViewer from '@/components/vtuber/StaticPhotoViewer.vue';
+import Live2DViewer from '@/components/influencer/Live2DViewer.vue';
+import VRMViewer from '@/components/influencer/VRMViewer.vue';
+import StaticPhotoViewer from '@/components/influencer/StaticPhotoViewer.vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { 
@@ -326,7 +326,7 @@ import {
 } from '@icon-park/vue-next';
 
 const { t } = useI18n()
-const vtuberStore = useVTuberStore();
+const influencerStore = useInfluencerStore();
 const userStore = useUserStore();
 const liveStore = useLiveStore();
 const {
@@ -359,10 +359,10 @@ const selectedArchive = ref<any>(null);
 const live2dViewer = ref<any>(null);
 const vrmViewer = ref<any>(null);
 
-// Filter VTubers to show only Gemini TTS compatible ones
-const liveCompatibleVTubers = computed(() => {
-    return (vtuberStore.vtubers || []).filter(vtuber => 
-        vtuber.meta?.voiceConfig?.provider === 'gemini'
+// Filter Influencers to show only Gemini TTS compatible ones
+const liveCompatibleInfluencers = computed(() => {
+    return (influencerStore.influencers || []).filter(influencer => 
+        influencer.meta?.voiceConfig?.provider === 'gemini'
     );
 });
 
@@ -396,7 +396,7 @@ async function viewSessionDetails(session: any) {
             showSessionDialog.value = true;
         }
     } catch (error) {
-        ElMessage.error(t('vtubers.geminiChat.toasts.loadDetailFailed'));
+        ElMessage.error(t('influencers.geminiChat.toasts.loadDetailFailed'));
     }
 }
 
@@ -407,7 +407,7 @@ function formatDate(date: string) {
 // Select archive
 function selectArchive(archive: any) {
     if (isConnected.value) {
-        ElMessage.warning(t('vtubers.geminiChat.toasts.endCurrentSession'));
+        ElMessage.warning(t('influencers.geminiChat.toasts.endCurrentSession'));
         return;
     }
     selectedArchive.value = archive;
@@ -430,7 +430,7 @@ async function startSession() {
         await startMicrophone();
     } catch (error: any) {
         console.error('[GeminiLiveChat] Failed to start session:', error);
-        ElMessage.error(t('vtubers.geminiChat.toasts.startFailed'));
+        ElMessage.error(t('influencers.geminiChat.toasts.startFailed'));
     }
 }
 
@@ -474,26 +474,26 @@ function handleToolCall(toolCall: any) {
                 break;
             case 'switch_scene':
             case 'switch_layout':
-                ElMessage.info(t('vtubers.geminiChat.toasts.switchedScene', { name: args.sceneId || args.layoutId }));
+                ElMessage.info(t('influencers.geminiChat.toasts.switchedScene', { name: args.sceneId || args.layoutId }));
                 break;
             case 'trigger_hype_event':
-                ElMessage.success(t('vtubers.geminiChat.toasts.hypeEvent', { reason: args.reason }));
+                ElMessage.success(t('influencers.geminiChat.toasts.hypeEvent', { reason: args.reason }));
                 break;
             case 'shoutout_viewer':
-                ElMessage.success(t('vtubers.geminiChat.toasts.shoutout', { name: args.viewerName }));
+                ElMessage.success(t('influencers.geminiChat.toasts.shoutout', { name: args.viewerName }));
                 break;
             case 'start_quest':
-                ElMessage.warning(t('vtubers.geminiChat.toasts.questStarted', { title: args.title }));
+                ElMessage.warning(t('influencers.geminiChat.toasts.questStarted', { title: args.title }));
                 break;
             case 'trigger_dynamic_deal':
-                ElMessage.success(t('vtubers.geminiChat.toasts.aiDeal', { reason: args.reason }));
+                ElMessage.success(t('influencers.geminiChat.toasts.aiDeal', { reason: args.reason }));
                 break;
             case 'generate_background':
-                ElMessage.info(t('vtubers.geminiChat.toasts.generatingBg', { prompt: args.prompt }));
+                ElMessage.info(t('influencers.geminiChat.toasts.generatingBg', { prompt: args.prompt }));
                 break;
             case 'capture_moment':
             case 'archive_moment':
-                ElMessage.info(t('vtubers.geminiChat.toasts.momentCaptured', { description: args.description }));
+                ElMessage.info(t('influencers.geminiChat.toasts.momentCaptured', { description: args.description }));
                 break;
             default:
                 console.warn('[GeminiLiveChat] Unknown tool:', functionName);
@@ -521,7 +521,7 @@ function changeExpression(expression: string) {
         vrmViewer.value.setExpression(expression);
     }
     
-    ElMessage.info(t('vtubers.geminiChat.toasts.expression', { name: expression }));
+    ElMessage.info(t('influencers.geminiChat.toasts.expression', { name: expression }));
 }
 
 function playAnimation(animation: string) {
@@ -537,7 +537,7 @@ function playAnimation(animation: string) {
         vrmViewer.value.playAnimation(animation);
     }
     
-    ElMessage.info(t('vtubers.geminiChat.toasts.animation', { name: animation }));
+    ElMessage.info(t('influencers.geminiChat.toasts.animation', { name: animation }));
 }
 
 function changeMood(mood: string) {
@@ -553,13 +553,13 @@ function changeMood(mood: string) {
         vrmViewer.value.setMood(mood);
     }
     
-    ElMessage.info(t('vtubers.geminiChat.toasts.mood', { name: mood }));
+    ElMessage.info(t('influencers.geminiChat.toasts.mood', { name: mood }));
 }
 
 // End live session
 function endSession() {
     disconnect();
-    ElMessage.info(t('vtubers.geminiChat.toasts.sessionEnded'));
+    ElMessage.info(t('influencers.geminiChat.toasts.sessionEnded'));
 }
 
 // Toggle microphone

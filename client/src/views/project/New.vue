@@ -46,6 +46,14 @@
                   @approve="approveStage(idx, 'analysis')"
                 />
 
+                <!-- Step 4.5: Character Roster -->
+                <ProjectCharacterRoster
+                  v-if="msg.result.cumulative?.analysis?.analysis?.characters && msg.result.stage === 'character-roster'"
+                  :characters="msg.result.cumulative.analysis.analysis.characters"
+                  :loading="loading"
+                  @approve="approveStage(idx, 'character-roster')"
+                />
+
                 <ProjectBriefCard 
                   v-if="msg.result.cumulative?.creativeBrief && msg.result.stage === 'analysis'"
                   :msg="msg" 
@@ -59,9 +67,12 @@
                   v-if="msg.result.cumulative?.storyboard && msg.result.stage === 'storyboard'" 
                   :msg="msg" 
                   :approved="msg.result.approved && msg.result.stage === 'storyboard'"
+                  :respinning="respinningSegment"
                   @text-selection="handleTextSelection" 
                   @comment="commentOn" 
                   @approve="approveStage(idx, 'storyboard')"
+                  @respin="handleRespinSegment(idx, $event)"
+                  @segment-update="handleSegmentUpdate(idx, $event)"
                 />
 
                 <ProjectClosingMessage 
@@ -79,7 +90,7 @@
           <div class="message-row" v-if="loading">
             <div class="ai-content-wrapper">
               <!-- Thinking -->
-              <ProjectThinking :message="statusMessage" />
+              <ProjectThinking :message="statusMessage" :logs="generationLogs" />
             </div>
           </div>
         </div>
@@ -115,6 +126,7 @@ import ProjectAnalysisCard from '@/components/projects/new/ProjectAnalysisCard.v
 import ProjectBriefCard from '@/components/projects/new/ProjectBriefCard.vue'
 import ProjectStoryboardCard from '@/components/projects/new/ProjectStoryboardCard.vue'
 import ProjectScriptCard from '@/components/projects/new/ProjectScriptCard.vue'
+import ProjectCharacterRoster from '@/components/projects/new/ProjectCharacterRoster.vue'
 import ProjectBlankSetup from '@/components/projects/new/ProjectBlankSetup.vue'
 import ProjectProductAdsSetup from '@/components/projects/new/ProjectProductAdsSetup.vue'
 import ProjectAvatarSetup from '@/components/projects/new/ProjectAvatarSetup.vue'
@@ -127,7 +139,7 @@ const router = useRouter()
 const route = useRoute()
 const projectStore = useProjectStore()
 
-const { isGenerating: loading, isProcessing: creating } = storeToRefs(projectStore)
+const { isGenerating: loading, isProcessing: creating, generationLogs } = storeToRefs(projectStore)
 
 const mode = computed(() => route.query.mode as string || 'chat')
 
@@ -151,6 +163,7 @@ const containerRef = ref<HTMLElement | null>(null)
 const chatInputRef = ref<any>(null)
 const selectedFiles = ref<File[]>([])
 const showMentions = ref(false)
+const respinningSegment = ref<number | null>(null)
 
 // Commenting State
 const floatingComment = reactive({
@@ -199,6 +212,41 @@ const onFileSelected = (e: Event) => {
 
 const removeFile = (idx: number) => {
   selectedFiles.value.splice(idx, 1)
+}
+
+const handleRespinSegment = async (msgIdx: number, segment: any) => {
+  const msg = messages.value[msgIdx];
+  const projectId = msg?.result?.projectId || cumulativeResult.value?.projectId;
+  if (!projectId) return;
+  respinningSegment.value = segment.order;
+  try {
+    const api = (await import('@/utils/api')).default;
+    const res: any = await api.post(`/projects/${projectId}/storyboard/respin-segment`, { segment });
+    if (res?.data?.success && res.data.data?.segment) {
+      const storyboard = (msg.result.cumulative?.storyboard || msg.result.storyboard || []) as any[];
+      const segIdx = storyboard.findIndex((s: any) => s.order === segment.order);
+      if (segIdx !== -1) storyboard[segIdx] = res.data.data.segment;
+    }
+  } catch (err) {
+    console.error('[Respin] Failed:', err);
+  } finally {
+    respinningSegment.value = null;
+  }
+}
+
+const handleSegmentUpdate = async (msgIdx: number, updatedSegment: any) => {
+  const msg = messages.value[msgIdx];
+  const projectId = msg?.result?.projectId || cumulativeResult.value?.projectId;
+  const storyboard = (msg?.result?.cumulative?.storyboard || msg?.result?.storyboard || []) as any[];
+  const segIdx = storyboard.findIndex((s: any) => s.order === updatedSegment.order);
+  if (segIdx !== -1) storyboard[segIdx] = updatedSegment;
+  if (!projectId) return;
+  try {
+    const api = (await import('@/utils/api')).default;
+    await api.patch(`/projects/${projectId}/storyboard/update-segment`, { segment: updatedSegment });
+  } catch (err) {
+    console.error('[SegmentUpdate] Failed:', err);
+  }
 }
 
 const applySuggestion = (sug: string) => {
@@ -297,6 +345,14 @@ const approveStage = async (idx: number, stage: string) => {
   if (!msg || !msg.result) return
 
   msg.result.approved = true
+  
+  if (stage === 'analysis') {
+    // Inject Character Roster stage
+    msg.result.stage = 'character-roster'
+    msg.result.approved = false
+    scrollToBottom()
+    return
+  }
   
   if (stage === 'script') {
     await startAnalysis('analysis', msg.result.script, undefined, t('projects.new.flow.approve_script'))

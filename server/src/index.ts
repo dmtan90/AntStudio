@@ -23,7 +23,7 @@ import broadcasterRouter from './routes/broadcaster.js';
 import networkRouter from './routes/network.js';
 import organizationRoutes from './routes/organizations.js';
 import developerRoutes from './routes/developer.js';
-import vtuberRouter from './routes/vtuber.js';
+import influencerRouter from './routes/influencer.js';
 import liveRouter from './routes/live.js';
 
 import releaseRouter from './routes/release.js';
@@ -69,6 +69,8 @@ import { fileURLToPath } from 'url';
 import { initializeLiveWebSocket } from './routes/live.js';
 import { streamingService } from './services/StreamingService.js';
 import envRouter from './routes/env.js';
+import { flowSyncService } from './utils/ai/FlowSyncService.js';
+import webhooksRouter from './routes/webhooks.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -170,7 +172,7 @@ app.use('/api/affiliate', affiliateRouter);
 app.use('/api/sub-tenant', subTenantRouter);
 app.use('/api/marketplace', marketplaceRouter);
 app.use('/api/developer', developerRoutes);
-app.use('/api/vtuber', vtuberRouter);
+app.use('/api/influencer', influencerRouter);
 app.use('/api/headless', headlessRouter);
 app.use('/api/mobile', mobileRouter);
 app.use('/api/analytics', analyticsRouter);
@@ -183,6 +185,7 @@ app.use('/api/versions', versionsRouter);
 app.use('/api/syndication', syndicationRouter);
 app.use('/api/live', liveRouter);
 app.use('/api/show', showRouter);
+app.use('/api/webhooks', webhooksRouter);
 app.use('/api/admin/env', envRouter);
 app.use('/api/economy', economyRouter);
 app.use('/api/gamification', gamificationRouter);
@@ -272,6 +275,9 @@ const startServer = async () => {
 
         // Initialize Streaming Service (NMS) - Async to prevent blocking startup
         await streamingService.initialize();
+
+        // Start Google Flow token synchronization service
+        flowSyncService.start();
 
         const httpServer = createServer(app);
         socketServer.initialize(httpServer);

@@ -112,6 +112,9 @@ interface GenerateVideoParams {
   prompt: string;
   duration?: number;
   aspectRatio?: string;
+  startFrame?: string;
+  endFrame?: string;
+  characterImages?: string[];
 }
 
 interface GenerateMusicParams {
@@ -130,7 +133,7 @@ async function generateVoice(params: GenerateVoiceParams) {
 }
 
 async function generateVideo(params: GenerateVideoParams) {
-  const res = await api.post<{ success: boolean; data: { jobId: string } }>(`/ai/generate-video`, params);
+  const res = await api.post<{ success: boolean; data: { media: any; url: string } }>(`/ai/generate-video`, params);
   return res.data?.data ?? res.data;
 }
 

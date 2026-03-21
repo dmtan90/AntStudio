@@ -6,8 +6,14 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 // import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl';
-const HOST = "antstudio.agrhub.com";
-const WEB_URL = `https://${HOST}`;
+//local dev server
+const HOST = "localhost:4000";
+const WEB_URL = `http://localhost:4000`;
+const SOCKET_URL = `ws://localhost:4001/socket.io`;
+//production server
+// const HOST = "antstudio.agrhub.com"
+// const WEB_URL = `https://${HOST}`;
+// const WEB_URL = `http://${HOST}`;
 // const API_URL = `https://${HOST}/api`;
 // const SOCKET_URL = `wss://${HOST}/socket.io`;
 
@@ -124,7 +130,7 @@ export default defineConfig({
         },
         proxy: {
             '/socket.io': {
-                target: WEB_URL,
+                target: SOCKET_URL,
                 ws: true,
                 changeOrigin: true,
                 secure: false,
@@ -135,7 +141,7 @@ export default defineConfig({
                 }
             },
             '/api/socket.io': {
-                target: WEB_URL,
+                target: SOCKET_URL,
                 ws: true,
                 changeOrigin: true,
                 secure: false,

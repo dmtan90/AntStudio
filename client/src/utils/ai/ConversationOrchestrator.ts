@@ -1,4 +1,6 @@
+import api from '@/utils/api';
 import { syntheticGuestManager } from './SyntheticGuestManager';
+import { neuralShowrunner } from './NeuralShowrunner';
 
 /**
  * Manages the "Floor" (who is speaking) and orchestrates conversation flow.
@@ -18,6 +20,62 @@ export class ConversationOrchestrator {
 
     constructor() {
         this.silenceStart = Date.now();
+
+        // Phase 109: Listen for ShowRunner directives to shift segments proactively
+        if (typeof window !== 'undefined') {
+            window.addEventListener('showrunner:directive', async (e: Event) => {
+                const detail = (e as CustomEvent).detail;
+                console.log(`[Orchestrator] RECEIVED SHOWRUNNER DIRECTIVE: [${detail.type}]`);
+                
+                const { useStudioStore } = await import('@/stores/studio');
+                const studioStore = useStudioStore();
+
+                this.setTopic(detail.directive);
+                if (detail.vibe) this.vibe = { mood: detail.vibe };
+                
+                // Phase 110: Auto-highlight product if provided in directive
+                if (detail.productContext && studioStore) {
+                    console.log(`[Orchestrator] Auto-highlighting product from directive: ${detail.productContext.name}`);
+                    studioStore.highlightProduct(detail.productContext.id || detail.productContext._id);
+                }
+                
+                // Proactively trigger a turn if we aren't currently speaking
+                const guests = syntheticGuestManager.getGuests();
+                const isAnyoneSpeaking = guests.some(g => g.isSpeaking || g.isThinking) || this.floorHolder === 'human';
+                
+                // Phase 16: SaleRunner handles directives exclusively in sales context
+                if (studioStore.streamingContext === 'sales') {
+                    console.log('[Orchestrator] Sales context: Skipping proactive turn trigger (delegated to SaleRunner)');
+                    return;
+                }
+
+                if (!isAnyoneSpeaking) {
+                    console.log(`[Orchestrator] Proactively triggering turn for new segment: ${detail.type}`);
+                    this.decideNextTurn(guests, true);
+                    this.silenceStart = Date.now() + 5000; // Cooldown
+                }
+            });
+
+            // Phase 25: Listen for audience intelligence signals to shift topic
+            window.addEventListener('audience:signal', (e: Event) => {
+                const signal = (e as CustomEvent).detail;
+                this.handleAudienceSignal(signal);
+            });
+        }
+    }
+
+    private handleAudienceSignal(signal: any) {
+        if (signal.type === 'velocity_surge' && signal.triggerText) {
+            const newTopic = `What the audience is talking about: "${signal.triggerText}"`;
+            this.setTopic(newTopic);
+            console.log(`[Orchestrator] AUDIENCE PIVOT: Topic shifted to "${signal.triggerText}"`);
+        } else if (signal.type === 'intent_spike') {
+            const newTopic = `High audience intent detected: ${signal.reason}`;
+            this.setTopic(newTopic);
+            console.log(`[Orchestrator] INTENT PIVOT: Forcing ShowRunner segment pivot due to: ${signal.reason}`);
+            // Phase 25: Force the ShowRunner to pivot the narrative segment
+            neuralShowrunner.pivotSegment(signal.reason);
+        }
     }
 
     public setTopic(topic: string) {
@@ -28,7 +86,14 @@ export class ConversationOrchestrator {
     /**
      * Main Tick Loop called by StudioDirector
      */
-    public tick(context: { voiceLevel: number, activeGuests: number, vibe?: any, vision?: string, autoEmotionEnabled?: boolean }) {
+    public async tick(context: { voiceLevel: number, activeGuests: number, vibe?: any, vision?: string, autoEmotionEnabled?: boolean }) {
+        const { useStudioStore } = await import('@/stores/studio');
+        const studioStore = useStudioStore();
+        if (!studioStore.isLive) {
+            this.silenceStart = Date.now();
+            return;
+        }
+
         const now = Date.now();
         if (context.vibe) this.vibe = context.vibe;
         if (context.vision) this.vision = context.vision;
@@ -84,7 +149,21 @@ export class ConversationOrchestrator {
         // 1. Build Social Context
         const lastSpeaker = this.conversationHistory[this.conversationHistory.length - 1]?.speaker || 'No one';
         const otherAIs = guests.map(g => g.persona.name).join(', ');
-        const historyText = this.conversationHistory.map(h => `${h.speaker}: ${h.text}`).join('\n');
+        
+        // Phase 107: Sanitize history by stripping reasoning/planning blocks (**...)
+        const historyText = this.conversationHistory
+            .map(h => {
+                // Remove reasoning headers like **Crafting...** or **Initiating...**
+                const sanitizedText = h.text
+                    .split('\n')
+                    // Filter out lines that look like planning headers
+                    .filter(line => !line.trim().startsWith('**') && !line.includes('**'))
+                    .join('\n')
+                    .trim();
+                return sanitizedText ? `${h.speaker}: ${sanitizedText}` : '';
+            })
+            .filter(Boolean)
+            .join('\n');
         
         const host = guests.find(g => g.persona.role === 'host');
         const activeAIs = guests.filter(g => !g.isThinking && !g.isSpeaking);
@@ -95,10 +174,20 @@ export class ConversationOrchestrator {
         let selectedAI = null;
         let instruction = "";
 
+        // Phase 107: Context-Aware Topic Enforcement
+        const { useStudioStore } = await import('@/stores/studio');
+        const studioStore = useStudioStore();
+        const isSalesMode = studioStore.streamingContext === 'sales';
+        const productName = studioStore.highlightedProduct?.name || 'the current product';
+
         // Strategy: 40% Host lead, 60% Random interaction
         if (host && Math.random() < 0.4 && lastSpeaker !== host.persona.name) {
             selectedAI = host;
-            instruction = `facilitate the conversation. Mention the current topic "${this.currentTopic}" and maybe ask a specific guest (from: ${otherAIs}) for their opinion.`;
+            if (isSalesMode) {
+                instruction = `facilitate the sales pitch. Emphasize the urgency to buy ${productName} and maybe ask a specific guest (from: ${otherAIs}) to share a quick benefit.`;
+            } else {
+                instruction = `facilitate the conversation. Mention the current topic "${this.currentTopic}" and maybe ask a specific guest (from: ${otherAIs}) for their opinion.`;
+            }
         } else {
             // Pick an AI that didn't just speak
             const candidates = activeAIs.filter(g => g.persona.name !== lastSpeaker);
@@ -107,29 +196,44 @@ export class ConversationOrchestrator {
             // Randomly decide to address another AI or just chime in
             if (guests.length > 2 && Math.random() > 0.5) {
                 const target = guests.find(g => g.persona.uuid !== selectedAI.persona.uuid);
-                instruction = `react to what was just said by ${lastSpeaker}. If appropriate, address ${target.persona.name} directly to get their thoughts.`;
+                if (isSalesMode) {
+                    instruction = `react to what was just said by ${lastSpeaker} about ${productName}. Agree and add another strong selling point. If appropriate, address ${target.persona.name} directly to get their thoughts.`;
+                } else {
+                    instruction = `react to what was just said by ${lastSpeaker}. If appropriate, address ${target.persona.name} directly to get their thoughts.`;
+                }
             } else {
-                instruction = `provide a brief, personality-driven thought on the current topic "${this.currentTopic}". Keep it natural and conversational.`;
+                if (isSalesMode) {
+                    instruction = `provide a brief, high-energy sales pitch about ${productName}. Keep it natural and urgency-driven.`;
+                } else {
+                    instruction = `provide a brief, personality-driven thought on the current topic "${this.currentTopic}". Keep it natural and conversational.`;
+                }
             }
         }
 
         if (selectedAI) {
             console.log(`[Orchestrator] ${selectedAI.persona.name} taking the floor: ${instruction}`);
             
-            const vibeLead = this.vibe ? `[Environment Vibe: ${this.vibe.mood}] ` : '';
-            const visionContext = this.vision ? `[Visual Context: ${this.vision}] ` : '';
-            
-            const prompt = `
-${vibeLead}${visionContext}
-CONVERSATION HISTORY:
-${historyText}
-
-INSTRUCTION: 
-As ${selectedAI.persona.name}, ${instruction}
-Keep your response short (15-30 words).
-            `.trim();
-            
             const contextualVibe = this.vibe ? `Vibe: ${this.vibe.mood}` : 'Neutral';
+            
+            let prompt = '';
+            try {
+                const promptRes = await api.post('/prompts/studio', {
+                    type: 'orchestrator_turn',
+                    data: {
+                        name: selectedAI.persona.name,
+                        instruction,
+                        history: historyText,
+                        vibeMood: this.vibe?.mood,
+                        vision: this.vision
+                    }
+                });
+                prompt = promptRes.data?.prompt || promptRes.data?.data?.prompt || '';
+            } catch (error) {
+                console.error('[Orchestrator] Failed to fetch prompt from server', error);
+                // Fallback
+                prompt = `As ${selectedAI.persona.name}, ${instruction}. Keep it short.`;
+            }
+            
             const res = await syntheticGuestManager.generateResponse(
                 selectedAI.persona.uuid, 
                 prompt, 

@@ -171,6 +171,54 @@ router.post('/:id/sync', async (req: AuthRequest, res) => {
 });
 
 /**
+ * POST /api/admin/ai/accounts/:id/update-token
+ * Update the session token (flowST) for a Google Flow account and force re-sync
+ */
+router.post('/:id/update-token', async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { flowST } = req.body;
+
+        if (!flowST) {
+            return res.status(400).json({ success: false, data: null, error: 'Session token (flowST) is required' });
+        }
+
+        const account = await AIAccount.findById(req.params.id);
+        if (!account) {
+            return res.status(404).json({ success: false, data: null, error: 'Account not found' });
+        }
+
+        if (account.accountType !== 'google-flow') {
+            return res.status(400).json({ success: false, data: null, error: 'This endpoint is only for Google Flow accounts' });
+        }
+
+        // Update the session token
+        account.flowST = flowST;
+        account.flowAT = undefined; // Force fresh AT retrieval
+        account.flowATExpiresAt = undefined;
+        account.status = 'ready';
+        await account.save();
+
+        // Immediately sync to get a fresh AT and credits
+        const syncSuccess = await aiAccountManager.syncFlowAccount(account);
+        if (!syncSuccess) {
+            return res.json({ 
+                success: false, 
+                data: account, 
+                error: 'Token saved but synchronization failed. The new session token might be invalid.' 
+            });
+        }
+
+        // Return updated account
+        const updated = await AIAccount.findById(req.params.id);
+        res.json({ success: true, data: updated, error: null });
+    } catch (error: any) {
+        Logger.error('[AIAccount API] Update token error:', error.message);
+        res.status(500).json({ success: false, data: null, error: error.message });
+    }
+});
+
+/**
  * PATCH /api/admin/ai/accounts/:id
  * Update account settings (projectId, isActive)
  */
@@ -242,16 +290,47 @@ router.delete('/:id', async (req: AuthRequest, res) => {
 router.post('/direct', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { email, licenseKey, accessToken, accountType, providerId } = req.body;
-        const finalAccountType = accountType || '11labs-direct';
+        const { email, licenseKey, accessToken, accountType, providerId, flowST, flowAT } = req.body;
+        const finalAccountType = accountType || 'standard';
 
-        if (!email) {
+        if (!email && finalAccountType !== 'google-flow') {
             return res.status(400).json({ success: false, data: null, error: 'Email is required' });
         }
 
-        // Automatic onboarding if it's 11labs-direct and license key is missing
-        if (finalAccountType === '11labs-direct' && !licenseKey) {
-            const account = await aiAccountManager.onboard11LabsDirectAccount(email);
+        // Google Flow manual addition
+        if (finalAccountType === 'google-flow') {
+            if (!flowST) {
+                return res.status(400).json({ success: false, data: null, error: 'Session Token (flowST) is required' });
+            }
+
+            let account = await AIAccount.findOne({ flowST, accountType: 'google-flow' });
+            if (account) {
+                account.flowST = flowST;
+                account.flowAT = flowAT || account.flowAT;
+                account.email = email || account.email;
+                account.status = 'ready';
+                await account.save();
+            } else {
+                account = await AIAccount.create({
+                    email: email || 'pending@flow.google.com',
+                    flowST,
+                    flowAT,
+                    accountType: 'google-flow',
+                    providerId: 'google-flow',
+                    status: 'ready',
+                    isActive: true
+                });
+            }
+
+            // Trigger sync to get email and initial tokens
+            const syncSuccess = await aiAccountManager.syncFlowAccount(account);
+            if (!syncSuccess) {
+                return res.json({ 
+                    success: false, 
+                    data: account, 
+                    error: 'Account added but synchronization failed. Please check your session token.' 
+                });
+            }
             return res.json({ success: true, data: account, error: null });
         }
 

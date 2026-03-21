@@ -20,7 +20,7 @@
         "resources": "Resources",
         "merchant": "Merchant",
         "viral": "Viral Hub",
-        "vtubers": "VTubers",
+        "influencers": "Influencers",
         "templates": "Templates",
         "platforms": "Platforms",
         "subscription": "Subscription",
@@ -124,7 +124,13 @@
         "top": "Top",
         "bottom": "Bottom",
         "center": "Center",
-        "unlimited": "Unlimited"
+        "unlimited": "Unlimited",
+        "add": "Add",
+        "remove": "Remove",
+        "generate": "Generate",
+        "generateImage": "Generate Image",
+        "generateVideo": "Generate Video"
+
     },
     "dashboard": {
         "header": {
@@ -692,8 +698,8 @@
                 "flow": "Project Flow",
                 "template": "Legacy Template",
                 "avatar": {
-                    "selectVtuber": "Select Vtuber",
-                    "selectVtuberDesc": "Select Vtuber Desc",
+                    "selectInfluencer": "Select influencer",
+                    "selectInfluencerDesc": "Select influencer Desc",
                     "uploadCustom": "Upload Custom",
                     "uploadSupport": "Upload Support",
                     "scriptVoice": "Script Voice",
@@ -982,7 +988,7 @@
         },
         "avatarCreator": {
             "title": "Avatar Creator",
-            "selectVTuber": "Select VTuber",
+            "selectInfluencer": "Select influencer",
             "noDescription": "No Description",
             "availableAvatars": "Available Avatars",
             "search": "Search",
@@ -1094,6 +1100,31 @@
         }
     },
     "studio": {
+        "quests": {
+            "audienceQuest": "Audience Quest",
+            "timeRemaining": "Time Remaining",
+            "success": "Quest Completed!",
+            "failure": "Quest Failed",
+            "rewardUnlocked": "Reward Unlocked: {reward}",
+            "types": {
+                "hype_train": "Hype Train: Reach {target} messages/min!",
+                "sentiment_surge": "Positivity Surge: Send {target} positive vibes!",
+                "gift_goal": "Gift Goal: Collect {target} support tokens!"
+            }
+        },
+        "audio": {
+            "director": "Neural Audio Director",
+            "bgm": "BGM Level",
+            "sfx": "SFX Engine",
+            "autoDucking": "Auto-Ducking Active",
+            "currentVibe": "Current Vibe: {vibe}"
+        },
+        "context": {
+            "sales": "Commerce Mode",
+            "game_streaming": "Gaming Mode",
+            "general": "General Chat",
+            "shift": "Context Shift Detected: Setting stage for {context}"
+        },
         "accessibility": {
             "translating": "Translating Speech...",
             "liveAudio": "LIVE AUDIO",
@@ -1157,7 +1188,11 @@
             "aiGestureDrink": "AI Director: {name} is taking a drink",
             "aiGesturePhone": "AI Director: {name} is checking their phone",
             "aiGestureLookAround": "AI Director: {name} is observing the environment",
-            "aiAutonomyImpulse": "AI Director: {name} triggered an autonomous impulse"
+            "aiAutonomyImpulse": "AI Director: {name} triggered an autonomous impulse",
+            "contextApplied": "AI Director: Context applied",
+            "selectPlatform": "Select your streaming platform",
+            "aiDealTriggered": "Deal Triggered",
+            "aiShowcase": "AI Director: Showcasing product {name}"
         },
         "title": "Untitled Stream",
         "filters": {
@@ -1471,7 +1506,7 @@
                 "status": {
                     "prod": "Prod"
                 },
-                "vtuberLink": "Vtuber Link",
+                "influencerLink": "Influencer Link",
                 "activeVfx": "Active Vfx",
                 "options": {
                     "none": "None",
@@ -1784,7 +1819,7 @@
         "godMode": {
             "title": "God Mode",
             "humanFreeMode": "HUMAN FREE MODE",
-            "humanFreeModeDesc": "Disable host webcam & mic. Fully AI VTuber driven show to conserve resources.",
+            "humanFreeModeDesc": "Disable host webcam & mic. Fully AI influencer driven show to conserve resources.",
             "directorStatus": "Director Status",
             "active": "Active",
             "silence": "Silence",
@@ -1802,7 +1837,8 @@
             "awaitingEvaluation": "Awaiting Evaluation",
             "awaitingEvaluationDesc": "Awaiting Evaluation",
             "decisionLog": "Decision Log",
-            "decisionLogDesc": "Decision Log"
+            "decisionLogDesc": "Decision Log",
+            "autoPublishViral": "Auto Publish Viral"
         },
         "director": {
             "roomVibe": "Room Vibe",
@@ -1920,6 +1956,70 @@
         },
         "virtual": {
             "aiSuffix": "AI"
+        },
+        "influencerSelector": {
+            "title": "Select influencer for your live stream",
+            "subtitle": "Maximum 3 influencers for a live streaming",
+            "launch": "Launch",
+            "agentsSelected": "Agents Selected"
+        },
+        "audioDirector": {
+            "title": "Audio Director",
+            "vibe": "Vibe",
+            "ducking": "Ducking",
+            "standby": "Standby",
+            "masterVol": "Master Volume"
+        },
+        "contextSelector": {
+            "greeting": "Which context are you streaming for?",
+            "question": "Select your main streaming category below to tailer your experience",
+            "modes": {
+                "sales": {
+                    "name": "Sales",
+                    "desc": "E-commerce, Product demo, Auction"
+                },
+                "talkshow": {
+                    "name": "Talk Show",
+                    "desc": "Interview, Panel Discussion, Debate"
+                },
+                "news": {
+                    "name": "News",
+                    "desc": "Breaking News, Weather, Stock Market"
+                },
+                "education": {
+                    "name": "Education",
+                    "desc": "Online Class, Lecture, Webinar"
+                },
+                "music": {
+                    "name": "Music",
+                    "desc": "Live Concert, Music Video, Music Show"
+                },
+                "sport": {
+                    "name": "Sports",
+                    "desc": "Live Match, Sports Analysis, Sports Show"
+                },
+                "gameshow": {
+                    "name": "Game Show",
+                    "desc": "Quiz Show, Game Tournament, Game Competition"
+                },
+                "game_streaming": {
+                    "name": "Game Streaming",
+                    "desc": "Live Game Streaming, Game Tournament, Game Competition"
+                },
+                "commentary": {
+                    "name": "Commentary",
+                    "desc": "Live Commentary, Game Commentary, Sports Commentary"
+                },
+                "general": {
+                    "name": "General",
+                    "desc": "General Streaming, Live Event, Vlogs"
+                }
+            },
+            "skip": "Skip",
+            "continue": "Continue"
+        },
+        "dashboard": {
+            "directiveTitle": "Directives"
         }
     },
     "subscription": {
@@ -2475,6 +2575,17 @@
                 "generateProtocol": "Generate Protocol"
             },
             "ai": {
+                "captchaService": "Captcha Resolution Network",
+                "captchaSubtitle": "Configure automated challenge solving for AI workflows.",
+                "captchaMode": "Solving Strategy",
+                "yesCaptchaKey": "API Key",
+                "yesCaptchaApi": "API URL",
+                "captchaStatus": "Automatic Routing",
+                "sessionSync": "Neural Session Sync",
+                "sessionSyncSubtitle": "Global cookies for headless AI Studio and Labs Flow authentication.",
+                "googleCookies": "AIStudio / Gemini Cookies (JSON/Raw)",
+                "flowCookies": "Labs Flow Cookies (JSON/Raw)",
+                "applyCookies": "Apply Sync Engine",
                 "providerRegistry": "Provider Registry",
                 "geminiPoolManager": "Gemini Pool Manager",
                 "addIntelligenceCore": "Add Intelligence Core",
@@ -2507,23 +2618,25 @@
                 "aiAssistDesc": "Ai ssist esc",
                 "aiAssistTitle": "AI Assistant Settings",
                 "docUrl": "Doc URL",
-                "ai": {
-                    "capabilities": {
-                        "text": "Text",
-                        "image": "Image",
-                        "video": "Video",
-                        "audio": "Audio",
-                        "music": "Music",
-                        "voice": "Voice"
-                    }
-                }
+                "capabilities": {
+                    "text": "Text",
+                    "image": "Image",
+                    "video": "Video",
+                    "audio": "Audio",
+                    "music": "Music",
+                    "voice": "Voice"
+                },
+                "protocol": "Protocol"
             },
             "table": {
                 "identity": "Identity",
                 "security": "Security",
                 "capabilities": "Capabilities",
                 "status": "Status",
-                "actions": "Actions"
+                "actions": "Actions",
+                "apiKey": "API Key",
+                "baseUrl": "Base API URL",
+                "protocols": "Protocol"
             },
             "license": {
                 "activation": "Activation",
@@ -2540,34 +2653,62 @@
             "media": {
                 "giphy": {
                     "title": "Giphy",
-                    "info": "Search and share GIFs"
+                    "info": "Search and share GIFs",
+                    "apiKey": "API Key",
+                    "placeholder": "Input API Key"
                 },
                 "pexels": {
                     "title": "Pexels",
-                    "info": "Search and share photos"
+                    "info": "Search and share photos",
+                    "apiKey": "API Key",
+                    "placeholder": "Input API Key"
                 },
                 "unsplash": {
                     "title": "Unsplash",
-                    "info": "Search and share photos"
+                    "info": "Search and share photos",
+                    "apiKey": "API Key",
+                    "placeholder": "Input API Key"
                 }
             },
             "system": {
                 "domain": {
-                    "title": "Domain"
+                    "title": "Domain",
+                    "label": "Your Domain",
+                    "placeholder": "Input your domain. e.g. https://antstudio.com",
+                    "info": ""
                 },
                 "proxy": {
                     "title": "Proxy",
-                    "integration": "Integration"
+                    "integration": "Integration",
+                    "user": "User",
+                    "pass": "Password",
+                    "domain": "Proxy Domain",
+                    "port": "Port"
                 },
                 "smtp": {
-                    "title": "SMTP"
+                    "title": "SMTP",
+                    "user": "User",
+                    "pass": "Password",
+                    "host": "Host",
+                    "port": "Port",
+                    "fromEmail": "From Email",
+                    "fromName": "From Name"
                 },
                 "payment": {
                     "title": "Payment",
                     "webhookInfo": "Webhook nfo",
                     "sandbox": "Sandbox",
                     "live": "Live",
-                    "modeInfo": "Mode nfo"
+                    "modeInfo": "Mode nfo",
+                    "stripe": "Stripe",
+                    "paypal": "Paypal",
+                    "publicKey": "Public Key",
+                    "secretKey": "Secret Key",
+                    "webhookSecret": "Webhook Secret",
+                    "clientId": "Client ID",
+                    "clientSecret": "Client Secret",
+                    "webhookSecretOptional": "Webhook Secret Optional",
+                    "mode": "Mode"
                 },
                 "storage": {
                     "title": "Storage",
@@ -2575,13 +2716,27 @@
                     "googleDrive": "Google rive",
                     "amazonS3": "Amazon 3",
                     "s3Info": "S3 nfo",
-                    "driveInfo": "Drive nfo"
+                    "driveInfo": "Drive nfo",
+                    "customEndpoint": "Custom Endpoint",
+                    "accessKeyId": "Access Key",
+                    "secretAccessKey": "Secret Key",
+                    "region": "Region",
+                    "bucketName": "Bucket Name",
+                    "serviceAccountEmail": "Service Account Email",
+                    "privateKey": "Private Key",
+                    "rootFolderId": "Root Folder"
                 },
                 "oauth": {
                     "title": "OAuth",
                     "googleIdentity": "Google ID",
                     "facebook": "Facebook",
-                    "tiktok": "Tiktok"
+                    "tiktok": "Tiktok",
+                    "redirectUriOverride": "Redirect URI Override",
+                    "redirectInfo": "Redirect URI Info",
+                    "appId": "App ID",
+                    "appSecret": "App Secret",
+                    "clientKey": "Client Key",
+                    "clientSecret": "Client Secret"
                 }
             },
             "taskDefaults": {
@@ -2592,13 +2747,24 @@
                     "neuralModelId": "Neural Model ID",
                     "costConfig": "Cost Config"
                 },
-                "perSec": "Per Sec"
+                "perSec": "Per Sec",
+                "selectProvider": "Select Provider",
+                "selectModel": "Select model"
             },
             "whitelabel": {
                 "title": "White Label",
                 "core": "Core",
                 "logoPreview": "Logo review",
-                "faviconPreview": "Favicon review"
+                "faviconPreview": "Favicon review",
+                "appName": "App Name",
+                "appLogo": "App Logo",
+                "favicon": "Favicon",
+                "placeholders": {
+                    "appName": "Input your app name. e.g. AntStudio",
+                    "appLogo": "Upload your app logo. e.g. AntStudio.png",
+                    "favicon": "Upload your favicon. e.g. AntStudio.ico",
+                    "logo": "Upload your logo. e.g. AntStudio.png"
+                }
             }
         },
         "support": {
@@ -2723,20 +2889,23 @@
             }
         },
         "aiAccounts": {
-            "title": "AI Nodes",
-            "subtitle": "Manage intelligent nodes & quotas",
-            "addAntigravity": "Add AntStudio Node",
-            "addGoogle": "Connect Google Workspace",
+            "title": "AI Account Pool",
+            "subtitle": "Manage intelligent accounts & quotas",
+            "addAntigravity": "Add Antigravity",
+            "addGoogle": "Add Google Cloud",
+            "addGoogleFlow": "Add Google Flow",
+            "sessionToken": "Session Token (flowST)",
+            "howToGetToken": "How to get this token?",
             "stats": {
                 "totalAccounts": "Total Accounts",
-                "activeNodes": "Active Nodes",
+                "activeNodes": "Active Accounts",
                 "rateLimited": "Rate Limited",
                 "systemsDown": "Systems Down"
             },
             "account": {
                 "disabled": "Disabled",
                 "syncQuota": "Sync Quota",
-                "remove": "Remove Node",
+                "remove": "Remove Account",
                 "showLess": "Collapse",
                 "moreModels": "View {n} more models",
                 "noQuotaData": "No Quota Data Acquired",
@@ -2747,7 +2916,12 @@
                 "enableApi": "Enable Api",
                 "enableBilling": "Enable Billing",
                 "never": "Never",
-                "justNow": "Just Now"
+                "justNow": "Just Now",
+                "credits": "Credits",
+                "minsAgo": "minutes ago",
+                "hoursAgo": "hours ago",
+                "daysAgo": "days ago",
+                "updateToken": "Update Token"
             },
             "toasts": {
                 "loadFailed": "Failed to load fleet data",
@@ -2757,16 +2931,20 @@
                 "syncFailed": "Failed to sync node",
                 "deleted": "Node removed from fleet",
                 "deleteFailed": "Failed to remove node",
-                "deleteConfirm": "Are you sure you want to remove this intelligent node?"
+                "deleteConfirm": "Are you sure you want to remove this intelligent node?",
+                "syncing": "Syncing..."
             },
             "empty": {
-                "title": "No AI Nodes",
-                "description": "Add AI nodes to use AI features"
+                "title": "No AI Accounts",
+                "description": "Add AI accounts to use AI features"
             },
             "toast": {
                 "enabled": "Enabled",
-                "disabled": "Disabled"
-            }
+                "disabled": "Disabled",
+                "stRequired": "Session token is required"
+            },
+            "updateToken": "Update Token",
+            "tokenExpiredHelp": "How to get Google Flow session token?"
         },
         "activation": {
             "title": "System Activation",
@@ -2857,7 +3035,8 @@
             "import": "Import",
             "calls": "Calls",
             "unlimited": "Unlimited",
-            "never": "Never"
+            "never": "Never",
+            "label": "Admin Settings"
         },
         "subscription": {
             "plans": {
@@ -2873,7 +3052,8 @@
                 "addPack": "Add Pack",
                 "creditsVolume": "Credits Volume",
                 "price": "Price",
-                "packageActive": "Package Active"
+                "packageActive": "Package Active",
+                "packageName": "Package Name"
             }
         }
     },
@@ -3091,7 +3271,7 @@
             }
         }
     },
-    "vtubers": {
+    "influencers": {
         "badge": "Digital Personas",
         "avatars": "Avatars",
         "collection": "& Collection",
@@ -3099,15 +3279,15 @@
         "syncing": "Syncing...",
         "sync": "Sync Library",
         "tabs": {
-            "myVtubers": "Active Personas",
             "live2d": "Live2D Presets",
-            "static": "Static Presets"
+            "static": "Static Presets",
+            "myInfluencers": "My Influencers"
         },
         "search": "Search personas...",
         "all": "All",
         "empty": {
-            "noVtubers": "No VTubers Found",
-            "myVtubersDesc": "You haven't added any VTuber personas yet.",
+            "noInfluencers": "No Influencers Found",
+            "myInfluencersDesc": "You haven't added any Influencer personas yet.",
             "presetsDesc": "No presets match your criteria."
         },
         "confirmDelete": "Terminate neural link for {name}? This cannot be undone.",
@@ -3117,25 +3297,64 @@
             "cloneFailed": "Failed to clone preset",
             "previewSoon": "Preview module coming soon"
         },
-        "newVTuber": "New VTuber",
+        "newInfluencer": "New Influencer",
+        "dashboard": {
+            "title": "Dashboard",
+            "activeSession": "Active Live Session",
+            "stats": {
+                "activeHours": "Active Hours",
+                "sessions": "Total Sessions",
+                "salesGenerated": "Sales Generated",
+                "audienceReach": "Audience Reach"
+            },
+            "engines": {
+                "content": "24/7 Content Engine",
+                "live": "24/7 Live Engine",
+                "status": "ENGINE STATUS",
+                "operational": "Operational",
+                "processing": "Processing",
+                "idle": "Idle"
+            },
+            "videoPool": {
+                "title": "Product Video Pool",
+                "desc": "Automated product reviews & guides for this influencer.",
+                "generateForProduct": "Generate Review",
+                "empty": "No product videos generated yet."
+            },
+            "memory": {
+                "title": "Persona Memory",
+                "desc": "Active knowledge entries and historical context.",
+                "activeKnowledge": "Active Knowledge",
+                "history": "Interaction History"
+            },
+            "collaborators": {
+                "title": "Collaboration Network",
+                "invite": "Invite Co-Host",
+                "connected": "Neural Bond established with {name}"
+            }
+        },
         "create": {
-            "title": "Initialize VTuber",
+            "title": "Initialize Influencer",
             "projectionPending": "AWAITING PROJECTION",
             "liveLinkTooltip": "Toggle Live WebRTC Tracking",
             "isolatingSilhouette": "Isolating Subject...",
             "synthesizingVisuals": "Synthesizing Visuals...",
-            "generateSnapshot": "Capture Neural Snapshot",
+            "generateSnapshot": "Capture Thumbnail",
+            "uploadPortrait": "Upload Portrait",
+            "generateVideo": "Generate Video",
             "visionSource": "Vision Source",
             "projectionType": "Projection Type",
-            "vrm3d": "VRM 3D",
+            "vrm3d": "VRM",
             "live2d": "Live2D",
-            "image": "Static Image",
-            "video": "Video Master",
+            "static": "Static Photo",
+            "aidol": "AI KOL",
+            "video": "Video",
+            "videoPhoi": "Context video-based",
             "deployEntityFile": "Deploy Entity File",
             "acceptsPhotos": "Accepts .vrm, .zip, or standard image formats",
             "fileSynchronized": "File Synchronized",
             "live2dAssetSynced": "Live2D asset synchronized successfully",
-            "vtuberPhotoProcessed": "Photo processed successfully",
+            "influencerPhotoProcessed": "Photo processed successfully",
             "videoPhôiSynced": "Video master synchronized successfully",
             "personaIdentity": "Persona Identity",
             "namePlaceholder": "Enter persona name...",
@@ -3185,8 +3404,53 @@
                 "voicePreview": "Voice preview initialized",
                 "updatedPreview": "Updated Preview"
             },
+            "wizard": {
+                "step1": {
+                    "title": "Visuals & Voice",
+                    "desc": "Synthesis & Tuning",
+                    "header": "Bio-Characteristic & Visual Synthesis"
+                },
+                "step2": {
+                    "title": "AI Brain",
+                    "desc": "Personality & Persona",
+                    "header": "Neural Architecture & Backstory"
+                },
+                "step3": {
+                    "title": "Environment",
+                    "desc": "Background & Props",
+                    "header": "Environment"
+                },
+                "step4": {
+                    "title": "Finalize",
+                    "desc": "Finalize & Initialize",
+                    "header": "Finalize & Initialize"
+                },
+                "title": "Wizard",
+                "desc": "Create an avatar using AI.",
+                "actions": {
+                    "back": "Back",
+                    "next": "Next",
+                    "finish": "Finish",
+                    "nextStep": "Next Step",
+                    "initializeEntity": "Initialization"
+                },
+                "fields": {
+                    "liveAutomation": "Automatic Live Streaming",
+                    "liveAutomationDesc": "Enable automatic live streaming",
+                    "vodGeneration": "Automatic VOD Generation",
+                    "vodGenerationDesc": "Enable automatic VOD generation",
+                    "socialConnections": "Social Connections",
+                    "connect": "Connect",
+                    "jobRole": "Job Role",
+                    "selectRole": "Select Role",
+                    "everyday": "Everyday",
+                    "activeScheduleSlots": "Active Schedule Slots"
+                }
+            },
             "toasts": {
                 "musicSynced": "Audio track synced: {title}",
+                "generateSuccess": "Influencer image synthesized successfully.",
+                "generateFailed": "AI Synthesis failed.",
                 "voicePreviewFailed": "Failed to generate voice preview",
                 "linkEstablished": "Tracking link established",
                 "cameraAccessFailed": "Failed to access camera equipment",
@@ -3194,6 +3458,7 @@
                 "vrmUploaded": "VRM asset uploaded",
                 "live2dUploaded": "Live2D asset uploaded",
                 "avatarUploaded": "Avatar image uploaded",
+                "portraitUploaded": "Portrait uploaded successfully",
                 "unsupportedFormat": "Unsupported asset format",
                 "videoUploaded": "Video master uploaded",
                 "videoUpdated": "Video master updated",
@@ -3204,7 +3469,13 @@
                 "removalFailed": "Subject isolation failed: {error}",
                 "loadModelFirst": "Please load a visual model first",
                 "thumbnailGenerated": "Manifest thumbnail registered",
-                "syncFailed": "Sync Failed"
+                "syncFailed": "Sync Failed",
+                "previewFailed": "Failed to generate preview video",
+                "videoAudioGenerated": "Preview video is generated",
+                "visemeSynthesisStarted": "Generating viseme spritesheet...",
+                "visemeSynthesisFailed": "Failed to generate viseme spritesheet",
+                "visemeSynthesisComplete": "Viseme spritesheet generated successfully",
+                "voiceConfigMissing": "Select your influencer voice first"
             },
             "emotions": {
                 "happy": "Happy",
@@ -3219,7 +3490,7 @@
             "uploadingData": "Uploading Data",
             "updateEntityFile": "Update Entity File",
             "live2dAssetConnected": "Live2d Asset Connected",
-            "vtuberProfileSynchronized": "Vtuber Profile Synchronized",
+            "influencerProfileSynchronized": "Influencer Profile Synchronized",
             "synchronized": "Synchronized",
             "corePersonalityPlaceholder": "Core Personality Placeholder",
             "performanceTest": "Performance Test",
@@ -3251,7 +3522,7 @@
             "changeMusic": "Change Music",
             "selectStageMusic": "Select Stage Music",
             "digitalInstruments": "Digital Instruments",
-            "synchronizeVTuber": "Synchronize VTuber",
+            "synchronizeInfluencer": "Synchronize Influencer",
             "particles": {
                 "title": "Particles",
                 "sakura": "Sakura",
@@ -3292,7 +3563,235 @@
                 "top": "Top",
                 "bottom": "Bottom"
             },
-            "weight": "Weight"
+            "weight": "Weight",
+            "selection": {
+                "title": "Create AI Influencer",
+                "desc": "Build your influencer avatar using AI.",
+                "upload": {
+                    "title": "Upload",
+                    "desc": "Upload VRM/Live2D/Avatar/Video from your computer."
+                },
+                "ai": {
+                    "title": "AI Synthesis",
+                    "desc": "Generate an avatar using AI."
+                }
+            },
+            "aiGenerator": {
+                "title": "AI Generator",
+                "bgPromptMemory": "Background Prompt Memory",
+                "animationIntelligence": "Animation Intelligence",
+                "characterStyle": "Character Style",
+                "characterType": "Character Type",
+                "gender": "Gender",
+                "ethnicity": "Ethnicity",
+                "nationality": "Nationality",
+                "skinColor": "Skin Color",
+                "eyeColor": "Eye Color",
+                "eyesSubtype": "Eyes Subtype",
+                "builder": "Builder",
+                "prompt": "AI Prompt",
+                "generateAI": "Generate",
+                "buildKOL": "Build KOL",
+                "ageProfile": "Age",
+                "visualPrompt": "Visual Prompt",
+                "visualPromptPlaceholder": "Input visual character to generate an influencer",
+                "architecting": "Architecting",
+                "bendingLatent": "Bending Latent",
+                "options": {
+                    "styles": {
+                        "realistic": "Realistic",
+                        "anime": "Anime",
+                        "cartoon": "Cartoon",
+                        "2d": "2D"
+                    },
+                    "roles": {
+                        "sales": "Sales",
+                        "news": "News",
+                        "talkshow": "Talk Show",
+                        "entertainer": "Entertainer",
+                        "educator": "Educator",
+                        "influencer": "Influencer",
+                        "custom": "Custom",
+                        "gamer": "Gamer"
+                    },
+                    "characterTypes": {
+                        "human": "Human",
+                        "alien": "Alien",
+                        "mechanical": "Mechanical",
+                        "elf": "Elf",
+                        "amphibian": "Amphibian",
+                        "ant": "Ant",
+                        "bee": "Bee",
+                        "bird": "Bird",
+                        "cat": "Cat",
+                        "dog": "Dog",
+                        "dragon": "Dragon",
+                        "fish": "Fish",
+                        "fox": "Fox",
+                        "rabbit": "Rabbit",
+                        "reptile": "Reptile",
+                        "lyzard": "Lyzard",
+                        "mantis": "Mantis",
+                        "octopus": "Octopus",
+                        "panda": "Panda",
+                        "pig": "Pig",
+                        "shark": "Shark",
+                        "spider": "Spider",
+                        "tiger": "Tiger",
+                        "wolf": "Wolf",
+                        "bear": "Bear",
+                        "cow": "Cow",
+                        "goat": "Goat",
+                        "horse": "Horse",
+                        "sheep": "Sheep",
+                        "chicken": "Chicken",
+                        "duck": "Duck",
+                        "eagle": "Eagle",
+                        "owl": "Owl",
+                        "penguin": "Penguin",
+                        "parrot": "Parrot",
+                        "swan": "Swan",
+                        "turkey": "Turkey",
+                        "lion": "Lion",
+                        "monkey": "Monkey",
+                        "mouse": "Mouse",
+                        "crocodile": "Crocodile",
+                        "iguana": "Iguana",
+                        "beetle": "Beetle"
+                    },
+                    "genders": {
+                        "female": "Female",
+                        "male": "Male",
+                        "neutral": "Neutral"
+                    },
+                    "ethnicities": {
+                        "asian": "Asian",
+                        "white": "White",
+                        "black": "Black",
+                        "latino": "Latino",
+                        "middle_eastern": "Middle Eastern",
+                        "european": "European",
+                        "african": "African",
+                        "indian": "Indian",
+                        "mixed": "Mixed"
+                    },
+                    "nationalities": {
+                        "vietnamese": "Vietnamese",
+                        "japanese": "Japanese",
+                        "chinese": "Chinese",
+                        "korean": "Korean",
+                        "thai": "Thai",
+                        "indian": "Indian",
+                        "british": "British",
+                        "french": "French",
+                        "german": "German",
+                        "american": "American",
+                        "brazilian": "Brazilian",
+                        "nigerian": "Nigerian",
+                        "egyptian": "Egyptian"
+                    },
+                    "ages": {
+                        "child": "Child",
+                        "teen": "Teen",
+                        "adult": "Adult",
+                        "mature": "Mature",
+                        "senior": "Senior"
+                    },
+                    "eyeTypes": {
+                        "human": "Human",
+                        "reptile": "Reptile",
+                        "mechanical": "Mechanical",
+                        "void": "Void",
+                        "glow": "Glow",
+                        "cartoon": "Cartoon",
+                        "glowing": "Glowing",
+                        "blink": "Blink",
+                        "differentColor": "Diff Color",
+                        "scarred": "Scarred"
+                    },
+                    "eyeColors": {
+                        "amber": "Amber",
+                        "black": "Black",
+                        "blue": "Blue",
+                        "brown": "Brown",
+                        "deepBrown": "Deep Brown",
+                        "green": "Green",
+                        "grey": "Grey",
+                        "purple": "Purple",
+                        "red": "Red",
+                        "white": "White",
+                        "blackVoid": "Black Void",
+                        "whiteVoid": "White Void"
+                    },
+                    "skinTypes": {
+                        "human": "Human",
+                        "fur": "fur",
+                        "fish": "fish",
+                        "amphibian": "amphibian",
+                        "scales": "scales",
+                        "metallic": "metallic"
+                    },
+                    "skinConditions": {
+                        "albinism": "Albinism",
+                        "birthmarks": "birthmarks",
+                        "burns": "burns",
+                        "cracked": "cracked",
+                        "freckles": "freckles",
+                        "pigmentation": "pigmentation",
+                        "scars": "scars",
+                        "vitiligo": "vitiligo",
+                        "wrinkled": "wrinkled"
+                    },
+                    "hairTypes": {
+                        "afro": "afro",
+                        "bald": "bald",
+                        "fur": "fur",
+                        "long": "long",
+                        "punk": "punk",
+                        "short": "short",
+                        "spines": "spines",
+                        "tentacles": "tentacles"
+                    }
+                },
+                "toasts": {
+                    "generateFailed": "AI Synthesis failed.",
+                    "generateSuccess": "AI Synthesis successfully."
+                },
+                "skinType": "Skin Type",
+                "hairType": "Hair Type",
+                "eyeType": "Eye Type",
+                "age": "Age",
+                "skinCondition": "Skin Condition"
+            },
+            "aidols": {
+                "clipLibrary": {
+                    "title": "Neural Video Library",
+                    "desc": "Generate and upload green-screen videos for each character state to enable high-fidelity neural switching.",
+                    "copyPrompt": "Copy Veo/Sora Prompt",
+                    "generate": "Generate",
+                    "uploadSuccess": "Upload Success",
+                    "promptCopied": "Prompt Copied",
+                    "initialIdle": "Initial Idle",
+                    "mandatoryDesc": "Generate the foundation video before proceeding.",
+                    "ready": "Ready",
+                    "regenerate": "regenerate",
+                    "customPromptPlaceholder": "Input custom prompt"
+                },
+                "states": {
+                    "idle": "Idle",
+                    "speaking": "Speaking",
+                    "product": "Product Intro",
+                    "checkout": "Checkout/CTA",
+                    "hype": "Hype/High Energy",
+                    "gift_react": "Gift Reaction",
+                    "dance": "Singing/Dancing",
+                    "wave": "Wave/Outro"
+                }
+            }
+        },
+        "edit": {
+            "title": "Edit Influencer",
+            "desc": "Edit your influencer avatar using AI."
         },
         "preset": {
             "live2d": "Live2D",
@@ -3304,7 +3803,7 @@
         "live": "Live",
         "startLiveVoice": "Start Live",
         "identityAwaitingSync": "Identity Awaiting Sync",
-        "neuralLinkEstablishing": "VTuber Loading",
+        "neuralLinkEstablishing": "influencer Loading",
         "music": {
             "title": "Music Selection",
             "searchPlaceholder": "Search YouTube for songs...",
@@ -3375,7 +3874,7 @@
         },
         "geminiChat": {
             "title": "Gemini Chat",
-            "subtitle": "Chat with your VTuber",
+            "subtitle": "Chat with your influencer",
             "placeholder": "Type your message...",
             "send": "Send",
             "loading": "Loading...",
@@ -3387,20 +3886,20 @@
                 "history": "History"
             },
             "sidebar": {
-                "selectVtuber": "Select VTuber",
+                "selectInfluencer": "Select influencer",
                 "geminiOnly": "Gemini Only",
                 "liveReady": "Live Ready",
                 "voiceLabel": "Voice",
                 "empty": {
-                    "title": "No Live Compatible VTubers",
-                    "action": "Go to VTuber Library"
+                    "title": "No Live Compatible Influencers",
+                    "action": "Go to Influencer Library"
                 }
             },
             "session": {
                 "ready": {
                     "title": "Ready to Chat",
                     "connectTo": "Connect to {name}",
-                    "selectToBegin": "Select a VTuber to begin",
+                    "selectToBegin": "Select an influencer to begin",
                     "startAction": "Start Session"
                 },
                 "live": "LIVE",
@@ -3494,7 +3993,7 @@
                     "title": "Filters",
                     "searchPlaceholder": "Search sessions...",
                     "dateRange": "Date Range",
-                    "vtuber": "VTuber",
+                    "influencer": "Influencer",
                     "all": "All"
                 },
                 "sessionCard": {
@@ -3520,7 +4019,7 @@
                     "title": "Filters",
                     "searchPlaceholder": "Search sessions...",
                     "dateRange": "Date Range",
-                    "vtuber": "VTuber",
+                    "influencer": "Influencer",
                     "all": "All"
                 },
                 "sessionCard": {
@@ -3582,7 +4081,7 @@
         "magic": "Magic",
         "template": "Template",
         "hub": "Hub",
-        "subtitle": "Discover and import pre-built creative flows, custom VTubers, and smart structures.",
+        "subtitle": "Discover and import pre-built creative flows, custom influencers, and smart structures.",
         "importUrl": "Import URL",
         "importPptx": "Import PPTX",
         "importingPptx": "Importing PPTX...",
@@ -4044,7 +4543,7 @@
                 "title": "System Calibration",
                 "desc": "Configuring core modules and preparing your workspace.",
                 "cloudStorage": "Cloud Storage",
-                "vtuberUnits": "VTuber Units",
+                "influencerUnits": "Influencer Units",
                 "deployHub": "Deploy Control Hub"
             },
             "toasts": {
@@ -4162,7 +4661,7 @@
             "status": {
                 "prod": "Prod"
             },
-            "vtuberLink": "Vtuber Link",
+            "influencerLink": "Influencer Link",
             "activeVfx": "Active Vfx",
             "options": {
                 "none": "None",
@@ -4532,7 +5031,7 @@
         "viewSubscription": "View Subscription"
     },
     "platformCallback": {
-        "waitDesc": "Wait Desc",
+        "waitDesc": "Connecting to your platform...",
         "error": {
             "title": "Error",
             "action": "Action"
@@ -4542,7 +5041,10 @@
         "errors": {
             "paymentCancelled": "Payment Cancelled",
             "exchangeFailed": "Exchange Failed"
-        }
+        },
+        "connecting": "Connecting...",
+        "connected": "Connected",
+        "disconnected": "Disconnected"
     },
     "platformCMS": {
         "header": {
@@ -4621,7 +5123,8 @@
     "platforms": {
         "status": {
             "connected": "Connected",
-            "disconnected": "Disconnected"
+            "disconnected": "Disconnected",
+            "expired": "Expired"
         },
         "actions": {
             "goLive": "Go Live",
@@ -4663,7 +5166,8 @@
             "title": "No Platforms",
             "desc": "No platforms found"
         },
-        "noEmail": "No Email"
+        "noEmail": "No Email",
+        "confirmDisconnect": "Are you sure you want to disconnect this platform?"
     },
     "remoteCam": {
         "header": {
@@ -4939,7 +5443,7 @@
             "stop": "Stop",
             "scroll": "Scroll",
             "selectAvatar": "Select Presentation Avatar",
-            "avatarPrompt": "Would you like an AI VTuber to host your whiteboard presentation? You can also skip this and present with just your voice.",
+            "avatarPrompt": "Would you like an AI influencer to host your whiteboard presentation? You can also skip this and present with just your voice.",
             "noAvatar": "No Avatar",
             "voiceOnly": "Voice Only",
             "cancel": "Cancel",
@@ -5487,6 +5991,13 @@
                 "step1": "Design Visual Strategy to determine the most suitable technical methods and artistic models.",
                 "step2": "Create Characters and Key Items. This is a mandatory step to ensure visual consistency before we design motion scenes.",
                 "step3": "Generate Background Music and Voiceover to establish the atmosphere."
+            }
+        },
+        "settings": {
+            "ai": {
+                "capabilities": {
+                    
+                }
             }
         }
     }

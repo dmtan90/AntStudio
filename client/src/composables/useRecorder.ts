@@ -6,7 +6,7 @@ import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n';
 import { usePlatformStore } from '@/stores/platform'
 import { toast } from 'vue-sonner'
-import { useVTuberStore } from '@/stores/vtuber'
+import { useInfluencerStore } from '@/stores/influencer'
 import { arFilterEngine } from '@/utils/ai/ARFilterEngine'
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine'
 import { liveSpeechAPI } from '@/utils/ai/LiveSpeechAPI'
@@ -63,7 +63,7 @@ export function useRecorder() {
     const ai = useRecorderAI()
     const recording = useRecorderRecording()
     const userStore = useUserStore()
-    const vtuberStore = useVTuberStore()
+    const influencerStore = useInfluencerStore()
     const platformStore = usePlatformStore()
     const streamingStore = useStreamingStore()
 
@@ -108,16 +108,16 @@ export function useRecorder() {
     const resourcePool = ref<Array<any>>([])
     const activeOverlays = ref<string[]>([])
 
-    // Whiteboard/VTuber State
-    const isVTuberActive = ref(false)
-    const vtuberStream = ref<MediaStream | null>(null)
+    // Whiteboard/Influencer State
+    const isInfluencerActive = ref(false)
+    const influencerStream = ref<MediaStream | null>(null)
     const whiteboardContent = ref<MediaStream | ImageBitmap | null>(null)
     const whiteboardPages = ref<ImageBitmap[]>([])
     const whiteboardScripts = ref<string[]>([])
     const currentWhiteboardPage = ref(0)
     const presentationViseme = ref(0)
     const isWhiteboardLaunchpadActive = ref(true)
-    const showVTuberSelectDialog = ref(false)
+    const showInfluencerSelectDialog = ref(false)
 
     // Teleprompter
     const isTeleprompterActive = ref(false)
@@ -197,8 +197,8 @@ export function useRecorder() {
             enableBeauty,
             beautySettings,
             isRecording: recording.isRecording,
-            isVTuberActive,
-            vtuberStream,
+            isInfluencerActive,
+            influencerStream,
             whiteboardContent
         }
     );
@@ -272,9 +272,9 @@ export function useRecorder() {
                 
                 // 3. Cleanup additional hidden streams
                 stopAndNull(whiteboardContent, false); 
-                stopAndNull(vtuberStream);
+                stopAndNull(influencerStream);
                 if (mode.value === 'audio' || mode.value === 'screen') {
-                    isVTuberActive.value = false;
+                    isInfluencerActive.value = false;
                     liveAIEngine.close();
                 }
 
@@ -460,9 +460,9 @@ export function useRecorder() {
             media.stopAllTracks(media.secondaryStream.value)
             media.secondaryStream.value = null
         }
-        if (vtuberStream.value) {
-            media.stopAllTracks(vtuberStream.value)
-            vtuberStream.value = null
+        if (influencerStream.value) {
+            media.stopAllTracks(influencerStream.value)
+            influencerStream.value = null
         }
         
         canvasResults.destroy()
@@ -484,7 +484,7 @@ export function useRecorder() {
         processingCanvas, displayCanvas, sourceVideo, webcamVideo, isStreaming, streamConfig, streamStats, publisher,
         selectedPlatforms, availableAccounts, togglePlatform,
         fileInput, presentationInput, resourcePool, activeOverlays, layoutPreset,
-        isVTuberActive, vtuberStream, whiteboardContent, whiteboardPages, currentWhiteboardPage, isWhiteboardLaunchpadActive,
+        isInfluencerActive, influencerStream, whiteboardContent, whiteboardPages, currentWhiteboardPage, isWhiteboardLaunchpadActive,
         isTeleprompterActive, isTeleprompterScrolling, teleprompterScript, teleprompterSpeed, teleprompterFontSize, teleprompterScrollPos,
         isAnnotationActive, annotationTool, annotationColor, annotationSize, podcastSettings, camSettings, avatarPresets, tabs,
         selectedAvatar, selectedVoice, showMiniPreview,
@@ -564,7 +564,7 @@ export function useRecorder() {
             const oldMode = mode.value; mode.value = newMode
             if (newMode === 'whiteboard') {
                 isWhiteboardLaunchpadActive.value = true
-                showVTuberSelectDialog.value = true // Prompt user to select VTuber
+                showInfluencerSelectDialog.value = true // Prompt user to select influencer
             }
             await initializeStream(oldMode)
         },
@@ -608,7 +608,7 @@ export function useRecorder() {
                 }, 1000);
             } catch (err: any) { toast.error(err.message || 'Processing failed', { id: toastId }) }
         },
-        handleVTuberStreamReady: (stream: MediaStream) => { vtuberStream.value = stream; isVTuberActive.value = true; toast.success('VTuber Avatar Active') },
+        handleInfluencerStreamReady: (stream: MediaStream) => { influencerStream.value = stream; isInfluencerActive.value = true; toast.success('Influencer Avatar Active') },
         handleWhiteboardScreenShare: async () => {
             try {
                 const stream = await (navigator.mediaDevices as any).getDisplayMedia({ video: true })
@@ -696,8 +696,8 @@ export function useRecorder() {
         whiteboardScripts: ai.whiteboardScripts,
         isAIPresenting: presentation.isAIPresenting,
         isSynthesizing: presentation.isSynthesizing,
-        showVTuberSelectDialog,
-        vtuberStore,
+        showInfluencerSelectDialog,
+        influencerStore,
         formatTime: (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`,
         t, router, projectStore
     }

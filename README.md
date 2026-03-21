@@ -1,8 +1,8 @@
-# AntStudio - Autonomous AI Entertainment Platform
+# AntStudio - Autonomous AI Streamer for Live Commerce
 
 ![Landing Page](./docs/images/landing-page.png)
 
-> Transform your ideas into cinematic videos with AI. The world's first fully autonomous entertainment and commerce engine.
+> The world's first fully autonomous AI Streamer built specifically for Live Commerce and E-Commerce sales. Transform your products into viral 24/7 sales livestreams.
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://opensource.org/licenses/AGPL-3.0)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
@@ -18,40 +18,38 @@
 
 ## 🎬 Overview
 
-AntStudio is the world's first **fully autonomous AI-powered entertainment platform** that combines video production, live streaming, and commerce intelligence into a unified ecosystem.
+AntStudio is redefining live commerce with our **fully autonomous AI Streamer**. It combines real-time video generation, intelligent sales orchestration, and interactive commerce tools into a unified platform built to drive conversions 24/7.
 
-### 🌟 Singularity Features (NEW)
+### 🌟 AI Streamer for Sales (Core Features)
 
-- 🤖 **AI Director (God Mode)**:
-  - Autonomous scene switching based on context
-  - Real-time decision making (<100ms latency)
-  - Adaptive lighting and cinematography
-  - Synthetic AI guest management
+- 🤖 **AI Streamer (Sales Mode)**:
+  - 24/7 Autonomous Live Selling
+  - Dynamic product pitching based on real-time viewer interaction
+  - Script-driven `Aidol` (AI Idol) video clip mapping for seamless product showcases
+  - Natural conversational sales flow with context awareness
 
 - 💰 **Commerce Intelligence Engine**:
-  - Automatic product mention detection in speech
-  - Dynamic QR code generation (real scannable codes)
-  - Autonomous overlay triggering
-  - Conversion tracking and analytics
+  - Automatic product mention detection and synchronization
+  - Dynamic QR code generation for instant checkout (real scannable codes)
+  - Autonomous flash-sale and scarcity overlay triggering
+  - Live conversion tracking and engagement analytics
 
-- 🎤 **Neural Audio Dubbing**:
-  - Real-time voice translation with cloning
-  - Maintains host's vocal characteristics
-  - Sequential audio queue management
-  - Multi-language support
+- 🎤 **Neural Audio & Sales Dubbing**:
+  - Expressive, sales-optimized text-to-speech
+  - Multi-language support to sell globally
+  - Instant translation of viewer questions
 
 - 🎥 **Live Highlight Service**:
-  - Autonomous viral moment capture
-  - Rolling 15-20 second buffer
-  - AI-driven engagement analysis
-  - Instant social-ready exports
+  - Autonomous capture of viral sales moments
+  - AI-driven engagement analysis to find the best pitches
+  - Instant social-ready exports for TikTok/Reels marketing
 
 - 🌍 **Multi-Modal Accessibility**:
   - Visual subtitles + Audio dubbing
   - Interactive QR codes
   - Global reach with local authenticity
 
-### 🎨 Core Features
+### 🎨 Additional Features
 
 - 🤖 **AI-Powered Workflow**:
   - **Script to Video**: Automated analysis and storyboard generation
@@ -69,7 +67,7 @@ AntStudio is the world's first **fully autonomous AI-powered entertainment platf
   - Mobile camera ingest
   - WebRTC guest integration
 
-![VTubers & Live Studio](./docs/images/vtubers.png)
+![Influencers & Live Studio](./docs/images/influencers.png)
 *Live Studio & Virtual Production Management*
 
 - 🎨 **Advanced Video Editor**:
@@ -263,7 +261,7 @@ pnpm dev
 
 ### World's First Features
 
-1. **Autonomous AI Broadcast Director** - Fully autonomous scene management
+1. **Autonomous AI Live Streamer** - Fully autonomous 24/7 sales orchestration
 2. **Live Commerce Intelligence** - Real-time product detection and QR generation
 3. **Neural Voice Translation** - Voice cloning with live translation
 4. **Autonomous Viral Capture** - AI-driven highlight recording
@@ -272,7 +270,7 @@ pnpm dev
 ### Production Ready
 
 - ✅ 0 lint errors, 100% TypeScript
-- ✅ 60 FPS rendering performance
+- ✅ High-Performance Smart Rendering (Optimized WebGL)
 - ✅ Multi-tenant architecture
 - ✅ Global CDN integration
 - ✅ Real-time monitoring

@@ -56,6 +56,10 @@ The "God Mode" of the editor. It can automatically:
 - **Clone Voice**: Upload a 1-minute sample to create a digital twin.
 - **Text-to-Speech**: Choose from 100+ premium voices.
 
+### Live Studio & Commerce
+- **Smart Aidol Clips**: When using video-based characters (Aidols) in Live Studio, the AI Showrunner automatically maps the script's product mentions and gestures to your custom video clips.
+- **Flash Sales & QR**: Highlighting a product instantly generates a scannable QR code and, if a Flash Sale is active, a real-time countdown overlay.
+
 ## 📢 Publishing & Exporting
 
 1. Click **Export** in the top right.

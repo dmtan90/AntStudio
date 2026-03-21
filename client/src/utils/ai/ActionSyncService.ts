@@ -12,6 +12,7 @@ export class ActionSyncService {
     private static roomId: string | null = null;
     private static relayQueue: { sessionId: string, chunk: any }[] = [];
     private static latency: number = 0;
+    private static latencyInterval: any = null;
 
     /**
      * Connects to the collaboration server for a specific room.
@@ -63,7 +64,8 @@ export class ActionSyncService {
         });
 
         // Add periodic latency test for stats
-        setInterval(() => {
+        if (this.latencyInterval) clearInterval(this.latencyInterval);
+        this.latencyInterval = setInterval(() => {
             if (this.socket?.connected) {
                 const start = Date.now();
                 this.socket.emit('ping_heartbeat', {}, () => {
@@ -118,6 +120,25 @@ export class ActionSyncService {
         this.socket.on('comment:new', (comment: any) => {
             console.log('[ActionSync] Received Chat Message:', comment);
             window.dispatchEvent(new CustomEvent('studio:chat', { detail: comment }));
+        });
+
+        // Sync External Multi-Platform Chat Messages
+        this.socket.on('chat:external', (data: { platform: string, messages: any[] }) => {
+            data.messages.forEach(m => {
+                const comment = {
+                    id: m.id,
+                    userId: m.author,
+                    userName: `${m.author} (${data.platform})`,
+                    content: m.text,
+                    text: m.text,
+                    isSocial: true,
+                    platform: data.platform,
+                    timestamp: new Date(m.timestamp).getTime(),
+                    createdAt: m.timestamp
+                };
+                console.log('[ActionSync] Received External Chat:', comment);
+                window.dispatchEvent(new CustomEvent('studio:chat', { detail: comment }));
+            });
         });
 
         // Sync Layer Selection (Presence)
@@ -425,6 +446,10 @@ export class ActionSyncService {
      * Disconnects from the current room.
      */
     public static disconnect() {
+        if (this.latencyInterval) {
+            clearInterval(this.latencyInterval);
+            this.latencyInterval = null;
+        }
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;

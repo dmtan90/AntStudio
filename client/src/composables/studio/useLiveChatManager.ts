@@ -19,7 +19,7 @@ export interface LiveChatConnection {
 }
 
 export const connections = reactive<Record<string, LiveChatConnection>>({});
-const activeVTuberIds = ref<Set<string>>(new Set());
+const activeInfluencerIds = ref<Set<string>>(new Set());
 const connectingIds = new Set<string>();
 
 export function useLiveChatManager() {
@@ -33,15 +33,15 @@ export function useLiveChatManager() {
         eventBus.registerHandler(callback);
     };
 
-    const connectedVTubers = computed(() => 
+    const connectedInfluencers = computed(() => 
         Object.values(connections).filter(c => c.isConnected)
     );
 
-    const isAnyVTuberSpeaking = computed(() => 
+    const isAnyInfluencerSpeaking = computed(() => 
         Object.values(connections).some(c => c.isSpeaking || c.isAudioPlaying)
     );
 
-    const connectVTuber = async (personaId: string, persona: any, hostStream?: MediaStream) => {
+    const connectInfluencer = async (personaId: string, persona: any, hostStream?: MediaStream, liveContext?: string, productIds?: string) => {
         if (connections[personaId]?.isConnected || connectingIds.has(personaId)) {
             return;
         }
@@ -57,14 +57,16 @@ export function useLiveChatManager() {
         }
 
         try {
-            console.log(`[LiveChatManager] Connecting ${persona.name} to LiveChat...`);
+            console.log(`[LiveChatManager] Connecting ${persona.name} to LiveChat with context ${liveContext}...`);
 
             const geminiLive = useGeminiLive();
 
             await geminiLive.connect({
                 archiveId: archiveId,
                 projectId: route.params.id as string,
-                token: userStore.token || undefined
+                token: userStore.token || undefined,
+                liveContext: liveContext,
+                productIds: productIds
             });
 
             if (hostStream) {
@@ -75,9 +77,21 @@ export function useLiveChatManager() {
                 eventBus.dispatchToolCall(personaId, toolCall);
             });
 
-            geminiLive.setTextResponseCallback((text: string, metadata?: any) => {
+            geminiLive.setTextResponseCallback(async (text: string, metadata?: any) => {
                 if (metadata) {
                     eventBus.parseMetadataToToolCalls(personaId, metadata);
+                }
+
+                // Phase 9: Autonomous Commerce Pivot on high intent
+                if (liveContext === 'sales') {
+                    const { commerceIntelligenceEngine } = await import('@/utils/ai/CommerceIntelligenceEngine');
+                    const intentResult = await commerceIntelligenceEngine.analyzeSpeech(text);
+                    
+                    if (intentResult.confidence > 0.9) {
+                        console.log(`[LiveChatManager] 🔥 HIGH COMMERCE INTENT DETECTED (${intentResult.intent}). Triggering pivot to closing.`);
+                        const { neuralShowrunner } = await import('@/utils/ai/NeuralShowrunner');
+                        neuralShowrunner.pivotSegment('closing');
+                    }
                 }
             });
 
@@ -128,7 +142,7 @@ export function useLiveChatManager() {
         }
     };
 
-    const disconnectVTuber = (personaId: string) => {
+    const disconnectInfluencer = (personaId: string) => {
         const connection = connections[personaId];
         if (!connection) return;
 
@@ -143,7 +157,7 @@ export function useLiveChatManager() {
 
     const disconnectAll = () => {
         Object.keys(connections).forEach(personaId => {
-            disconnectVTuber(personaId);
+            disconnectInfluencer(personaId);
         });
     };
 
@@ -155,7 +169,7 @@ export function useLiveChatManager() {
         return connections[personaId]?.isConnected || false;
     };
 
-    const broadcastToVTubers = (message: string) => {
+    const broadcastToInfluencers = (message: string) => {
         Object.values(connections).forEach(connection => {
             if (connection.isConnected) {
                 connection.geminiLive.sendText(message);
@@ -163,8 +177,8 @@ export function useLiveChatManager() {
         });
     };
 
-    const syncConnections = async (guestSlotMap: any, allPersonas: any[], hostStream?: MediaStream) => {
-        const currentVTuberIds = new Set<string>();
+    const syncConnections = async (guestSlotMap: any, allPersonas: any[], hostStream?: MediaStream, liveContext?: string, productIds?: string) => {
+        const currentInfluencerIds = new Set<string>();
         const sanitizeId = (id: string) => id.startsWith('guest_') ? id.replace('guest_', '') : id;
 
         for (const [slotId, guestData] of Object.entries(guestSlotMap)) {
@@ -176,11 +190,11 @@ export function useLiveChatManager() {
             const persona = allPersonas.find(p => p.uuid === guestId || p.id === guestId);
             if (!persona || (persona as any).isRealHuman) continue;
 
-            currentVTuberIds.add(guestId);
+            currentInfluencerIds.add(guestId);
             const existingConnection = connections[guestId];
 
             if (!existingConnection) {
-                await connectVTuber(guestId, persona, hostStream);
+                await connectInfluencer(guestId, persona, hostStream, liveContext, productIds);
             } else if (!existingConnection.isMicrophoneStarted && hostStream) {
                 try {
                     await existingConnection.geminiLive.startMicrophone(hostStream);
@@ -191,27 +205,27 @@ export function useLiveChatManager() {
             }
         }
 
-        const previousVTuberIds = activeVTuberIds.value;
-        for (const personaId of previousVTuberIds) {
-            if (!currentVTuberIds.has(personaId)) {
-                disconnectVTuber(personaId);
+        const previousInfluencerIds = activeInfluencerIds.value;
+        for (const personaId of previousInfluencerIds) {
+            if (!currentInfluencerIds.has(personaId)) {
+                disconnectInfluencer(personaId);
             }
         }
 
-        activeVTuberIds.value = currentVTuberIds;
+        activeInfluencerIds.value = currentInfluencerIds;
     };
 
     return {
         connections,
-        connectedVTubers,
-        isAnyVTuberSpeaking,
-        activeVTuberIds,
-        connectVTuber,
-        disconnectVTuber,
+        connectedInfluencers,
+        isAnyInfluencerSpeaking,
+        activeInfluencerIds,
+        connectInfluencer,
+        disconnectInfluencer,
         disconnectAll,
         getConnection,
         isConnected,
-        broadcastToVTubers,
+        broadcastToInfluencers,
         syncConnections,
         setToolCallCallback
     };

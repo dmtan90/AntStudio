@@ -103,7 +103,7 @@ export class GrowthService {
             ];
 
             // 6. Top Keywords (Placeholder/Mock Keywords)
-            const keywords = ['AI Studio', 'Autonomous Streaming', 'VEO 3.1', 'VTuber Production', 'Live AI Translation', 'Virtual Media Hub'];
+            const keywords = ['AI Studio', 'Autonomous Streaming', 'VEO 3.1', 'Influencer Production', 'Live AI Translation', 'Virtual Media Hub'];
 
             return {
                 impressions: {

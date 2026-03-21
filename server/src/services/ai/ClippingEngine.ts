@@ -5,8 +5,10 @@ import fs from 'fs';
 import { Project } from '../../models/Project.js';
 import { Logger } from '../../utils/Logger.js';
 import { socialSyndicationService } from '../SocialSyndicationService.js';
-import { GeminiClient } from '../../integrations/ai/GeminiClient.js';
-import { uploadToS3, deleteFromS3 } from '../../utils/s3.js';
+import { generateJSON } from '../../utils/AIGenerator.js';
+import { aiManager } from '../../utils/ai/AIServiceManager.js';
+import { promptService } from '../PromptService.js';
+import { uploadToS3 } from '../../utils/s3.js';
 
 // FFmpeg setup - use portable installer from config
 ffmpeg.setFfmpegPath(config.ffmpegPath);
@@ -16,10 +18,15 @@ ffmpeg.setFfprobePath(config.ffprobePath);
  * Service for autonomous short-form clipping of live sessions.
  */
 export class ClippingEngine {
-    private gemini: GeminiClient;
+    private gemini: any;
 
-    constructor() {
-        this.gemini = new GeminiClient({});
+    constructor() {}
+
+    private async getGemini() {
+        if (!this.gemini) {
+            this.gemini = await aiManager.getProvider('google');
+        }
+        return this.gemini;
     }
 
     /**
@@ -70,7 +77,7 @@ export class ClippingEngine {
                                             description: seg.description || 'AI-Generated Viral Clip',
                                             type: 'video',
                                             status: 'ready',
-                                            s3Key: s3Key, // Use s3Key instead of local URL
+                                            s3Key: s3Key, 
                                             metadata: { 
                                                 isViralClip: true, 
                                                 segment: seg, 
@@ -120,47 +127,26 @@ export class ClippingEngine {
         try {
             Logger.info(`📤 [ClippingEngine] Uploading video to Gemini File API for analysis...`, 'ClippingEngine');
             
+            const gemini = await this.getGemini();
+
             // 1. Upload file to Gemini File API
-            const file: any = await this.gemini.uploadFile(videoPath, 'video/mp4', `clip_analysis_${path.basename(videoPath)}`);
+            const file: any = await gemini.uploadFile(videoPath, 'video/mp4', `clip_analysis_${path.basename(videoPath)}`);
             if (!file || !file.uri) throw new Error("File upload failed or missing URI");
             fileUri = file.uri;
 
             // 2. Wait for file to be active
             Logger.info(`⏳ [ClippingEngine] Waiting for video processing (File API)...`, 'ClippingEngine');
-            await this.gemini.waitForFileActive(fileUri);
+            await gemini.waitForFileActive(fileUri);
 
-            // 3. Generate Analysis
-            const modelName = "gemini-2.5-flash";
-            const prompt = `
-                Analyze this video recording.
-                Identify 1-3 distinct "viral" or highly engaging segments suitable for TikTok/Shorts (15-60 seconds each).
-                Look for:
-                - High energy moments
-                - Funny interactions
-                - Key insights or "mic drop" moments
-                - Intense gameplay or action (if applicable)
+            // 3. Generate Analysis via AIGenerator and unified promptService
+            const promptTemplate = await promptService.get('ai/clipping_analysis');
 
-                Return a JSON array:
-                [{
-                    "start": number (seconds from start),
-                    "duration": number (seconds),
-                    "title": string (catchy title),
-                    "description": string (why this is viral),
-                    "score": number (0-10 predictability of virality)
-                }]
-            `;
-
-            const result = await this.gemini.generateContent([
-                { text: prompt },
+            const content = [
+                { text: promptTemplate },
                 { fileData: { fileUri, mimeType: 'video/mp4' } }
-            ], modelName, {
-                generationConfig: {
-                    responseMimeType: "application/json"
-                }
-            });
+            ];
 
-            const text = result.text;
-            let segments = JSON.parse(text);
+            let segments = await generateJSON(content, undefined);
 
             if (!Array.isArray(segments)) {
                  if (segments.segments) segments = segments.segments;
@@ -168,7 +154,7 @@ export class ClippingEngine {
             }
 
             // Cleanup File API (Optional, but good practice)
-            this.gemini.deleteFile(fileUri).catch(e => Logger.warn(`Failed to delete Gemini file ${fileUri}: ${e.message}`));
+            gemini.deleteFile(fileUri).catch((e: any) => Logger.warn(`Failed to delete Gemini file ${fileUri}: ${e.message}`));
 
             // Validate and sanitize
             return segments.map((s: any) => ({
@@ -181,7 +167,8 @@ export class ClippingEngine {
 
         } catch (error: any) {
              Logger.error(`[ClippingEngine] AI Analysis failed. Error: ${error.message}`, 'ClippingEngine');
-             if (fileUri) this.gemini.deleteFile(fileUri).catch(() => {});
+             const gemini = await this.getGemini();
+             if (fileUri) gemini.deleteFile(fileUri).catch(() => {});
              return [];
         }
     }

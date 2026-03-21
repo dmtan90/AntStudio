@@ -2,6 +2,9 @@ import { syntheticGuestManager } from './SyntheticGuestManager.js';
 import { conversationOrchestrator } from './ConversationOrchestrator.js';
 import { neuralShowrunner } from './NeuralShowrunner.js';
 import { ActionSyncService } from './ActionSyncService.js';
+import { useStudioStore } from '@/stores/studio';
+import { contextDataOrchestrator } from './ContextDataOrchestrator';
+import api from '@/utils/api';
 
 /**
  * Agentic service for autonomous live production management.
@@ -67,11 +70,27 @@ export class StudioDirector {
             return { action: 'show_overlay', payload: { type: 'particles', effect: 'celebration' } };
         }
 
-        // Phase 40: B-Roll / Visual Concept Priority
+        // Phase 40 & Phase 34: Media Integration priority
         if (this.aiRequestQueue.length > 0 && this.aiRequestQueue[0].action === 'show_overlay' && this.aiRequestQueue[0].payload.type === 'b_roll_generated') {
              const highPriorityReq = this.aiRequestQueue.shift();
-             // If AI produces B-Roll, Director MUST prioritize it
              this.lastSwitchTime = now;
+
+             // Phase 34: Overwrite generated B-Roll with real Stock Video if applicable
+             const query = highPriorityReq?.payload.topic || highPriorityReq?.payload.prompt || 'live stream';
+             this.fetchStockMedia('video', query).then(stockMedia => {
+                 if (stockMedia && stockMedia.url) {
+                    highPriorityReq!.payload.url = stockMedia.url;
+                    highPriorityReq!.payload.source = 'pexels';
+                 }
+                 // Dispatch via event so the render worker can pick up the B-Roll URL
+                 if (typeof window !== 'undefined') {
+                     window.dispatchEvent(new CustomEvent('studio:broll_ready', {
+                         detail: { id: `broll_${Date.now()}`, url: highPriorityReq!.payload.url, topic: query }
+                     }));
+                 }
+                 console.log(`[StudioDirector] B-Roll dispatched: ${highPriorityReq!.payload.url || 'no URL'} (source: ${highPriorityReq!.payload.source || 'ai-generated'})`);
+             });
+
              return { action: 'switch_scene', payload: 'fullscreen' }; // Focus on the visual
         }
 
@@ -94,28 +113,10 @@ export class StudioDirector {
 
         // 5. Dynamic Guest Camera & Atmosphere
         if (activeGuests > 0 && now - this.lastSwitchTime > 5000) {
-            // Chance to trigger a camera motion or atmosphere change
+            // Chance to trigger a cinematic camera path or atmosphere change
             if (chatVelocity > 15 || voiceLevel > 0.3) {
-                const paths: any[] = ['orbit', 'slow_zoom', 'side_sweep', 'dramatic_low'];
-                const selectedPath = paths[Math.floor(Math.random() * paths.length)];
-                
-                // Trigger camera path on the most active guest
-                const loudestIdx = guestLevels.findIndex(l => l > 0.1);
-                const targetId = loudestIdx !== -1 ? `guest${loudestIdx + 1}` : 'host';
-
-                this.lastSwitchTime = now; // Count as a "production action"
-                
-                if (Math.random() > 0.7) {
-                    return { action: 'trigger_celebration', payload: { type: 'camera_path', path: selectedPath, target: targetId } };
-                } else if (Math.random() > 0.4) {
-                    const atmospheres = ['sakura', 'snow', 'glitter'];
-                    const selectedAtmo = atmospheres[Math.floor(Math.random() * atmospheres.length)];
-                    return { action: 'trigger_celebration', payload: { type: 'atmosphere', effect: selectedAtmo, target: targetId } };
-                } else {
-                    const globalAtmospheres = ['sakura', 'snow', 'glitter', 'fireflies'];
-                    const selectedAtmo = globalAtmospheres[Math.floor(Math.random() * globalAtmospheres.length)];
-                    return { action: 'change_global_atmosphere', payload: { effect: selectedAtmo } };
-                }
+                this.lastSwitchTime = now;
+                return this.triggerCinematicPath(context);
             }
         }
 
@@ -131,16 +132,59 @@ export class StudioDirector {
                     this.lastSwitchTime = now;
                     return { action: 'switch_scene', payload: 'grid' };
                 }
-                if (segmentType === 'outro' && currentSceneId !== 'standard') {
+                if (segmentType === 'product_showcase' && currentSceneId !== 'pip') {
+                    this.lastSwitchTime = now;
+                    return { action: 'switch_scene', payload: 'pip' };
+                }
+                if (segmentType === 'closing' && currentSceneId !== 'standard') {
                     this.lastSwitchTime = now;
                     return { action: 'switch_scene', payload: 'standard' };
                 }
             }
 
+            // Context-Aware Overrides (Phase 21)
+            const studioStore = useStudioStore();
+            const ctx = studioStore.streamingContext;
+
+            switch(ctx) {
+                case 'game_streaming':
+                case 'sport':
+                case 'commentary':
+                    // Prefer PiP to keep the visual content dominant
+                    if (voiceLevel > 0.15 && currentSceneId !== 'pip') {
+                        this.lastSwitchTime = now;
+                        return { action: 'switch_scene', payload: 'pip' };
+                    }
+                    break;
+                case 'sales':
+                case 'education':
+                    // Focus on the presenter or the slides/product
+                    if (voiceLevel > 0.3 && currentSceneId !== studioStore.getAutoBaseScene() && currentSceneId !== 'pip') {
+                        this.lastSwitchTime = now;
+                        return { action: 'switch_scene', payload: studioStore.getAutoBaseScene() };
+                    }
+                    break;
+                case 'talkshow':
+                    // Prefer side-by-side or interview for guests
+                    if (activeGuests > 0 && currentSceneId !== 'interview' && currentSceneId !== 'sidebyside') {
+                        this.lastSwitchTime = now;
+                        return { action: 'switch_scene', payload: 'interview' };
+                    }
+                    break;
+                case 'news':
+                case 'gameshow':
+                    // Professional center shot or full graphics
+                    if (voiceLevel > 0.25 && currentSceneId !== studioStore.getAutoBaseScene()) {
+                        this.lastSwitchTime = now;
+                        return { action: 'switch_scene', payload: studioStore.getAutoBaseScene() };
+                    }
+                    break;
+            }
+
             // IF: Host is talking loud and not centered
-            if (voiceLevel > 0.25 && currentSceneId !== 'standard' && currentSceneId !== 'fullscreen') {
+            if (voiceLevel > 0.25 && currentSceneId !== studioStore.getAutoBaseScene() && currentSceneId !== 'fullscreen') {
                 this.lastSwitchTime = now;
-                return { action: 'switch_scene', payload: 'standard' };
+                return { action: 'switch_scene', payload: studioStore.getAutoBaseScene() };
             }
 
             // IF: A guest is speaking and host is silent
@@ -152,15 +196,16 @@ export class StudioDirector {
                 }
 
                 // If multiple people speaking or just general discussion
-                if (currentSceneId !== 'sidebyside' && currentSceneId !== 'interview') {
+                if (currentSceneId !== 'sidebyside' && currentSceneId !== 'interview' && currentSceneId !== 'sale_duo') {
                     this.lastSwitchTime = now;
-                    return { action: 'switch_scene', payload: 'interview' };
+                    return { action: 'switch_scene', payload: studioStore.getAutoBaseScene() };
                 }
             }
 
             // IF: Silence/Quiet (Reaction/Wide Shot)
             if (voiceLevel < 0.02 && (activeGuests === 0 || guestLevels.every(l => l < 0.02))) {
-                if (currentSceneId !== 'fullscreen' && currentSceneId !== 'grid') {
+                const base = studioStore.getAutoBaseScene();
+                if (currentSceneId !== 'fullscreen' && currentSceneId !== base) {
                     this.lastSwitchTime = now;
                     return { action: 'switch_scene', payload: 'fullscreen' };
                 }
@@ -182,8 +227,42 @@ export class StudioDirector {
         return { action: 'none' };
     }
 
+    /**
+     * Phase 33: Autonomous Cinematic Camera Orchestration.
+     * Selects a dramatic camera path based on performance metrics and narrative context.
+     */
+    private triggerCinematicPath(context: any): { action: any, payload?: any } {
+        const paths: any[] = ['orbit', 'slow_zoom', 'side_sweep', 'dramatic_low'];
+        const vibe = this.vibe || 'neutral';
+        
+        // Weighting logic: Certain paths fit certain vibes better
+        let selectedPath = paths[Math.floor(Math.random() * paths.length)];
+        
+        if (vibe === 'hype') selectedPath = Math.random() > 0.5 ? 'orbit' : 'side_sweep';
+        if (vibe === 'dramatic') selectedPath = 'dramatic_low';
+        if (vibe === 'chill') selectedPath = 'slow_zoom';
+
+        // Identify target (most active speaker)
+        const loudestIdx = (context.guestLevels || []).findIndex((l: number) => l > 0.1);
+        const targetId = loudestIdx !== -1 ? `guest${loudestIdx + 1}` : 'host';
+
+        console.log(`[StudioDirector] Cinematic Orchestration: [${selectedPath}] on [${targetId}] for vibe [${vibe}]`);
+
+        // Variety choice: Either a camera path or a targeted atmosphere effect
+        if (Math.random() > 0.3) {
+            return { action: 'trigger_celebration', payload: { type: 'camera_path', path: selectedPath, target: targetId } };
+        } else {
+            const atmospheres = ['sakura', 'snow', 'glitter', 'fireflies'];
+            const effect = atmospheres[Math.floor(Math.random() * atmospheres.length)];
+            return { action: 'trigger_celebration', payload: { type: 'atmosphere', effect, target: targetId } };
+        }
+    }
+
     public setActive(active: boolean) {
         this.isActive = active;
+        if (active) {
+            contextDataOrchestrator.initialize();
+        }
         console.log(`[StudioDirector] God Mode: ${active ? 'ENGAGED' : 'DISENGAGED'}`);
     }
 
@@ -220,6 +299,80 @@ export class StudioDirector {
         
         // Limit queue size
         if (this.aiRequestQueue.length > 5) this.aiRequestQueue.sort((a, b) => (b.priority || 0) - (a.priority || 0)).slice(0, 5);
+    }
+
+    /**
+     * Phase 34: Fetches real stock media from integrated APIs to save AI generation costs.
+     */
+    public async fetchStockMedia(type: 'image' | 'video' | 'gif' | 'sound', query: string): Promise<any> {
+        try {
+            let endpoint = '';
+            if (type === 'video') endpoint = `/media/pexels/videos?query=${encodeURIComponent(query)}&per_page=1`;
+            else if (type === 'image') endpoint = `/media/unsplash/images?query=${encodeURIComponent(query)}&per_page=1`;
+            else if (type === 'gif') endpoint = `/media/giphy/gifs?query=${encodeURIComponent(query)}&per_page=1`;
+            
+            if (endpoint) {
+                const res = await api.get(endpoint);
+                const items = res.data?.photos || [];
+                if (items && items.length > 0) {
+                    const item = items[0];
+                    return {
+                        id: item.id,
+                        url: item.details.src,
+                        preview: item.preview
+                    };
+                }
+            }
+            return null;
+        } catch (err) {
+            console.error('[StudioDirector] Fallback: Failed to fetch stock media', err);
+            return null;
+        }
+    }
+
+    /**
+     * Phase 51: Applies a thematic visual layout based on the streaming context.
+     * Moves guests to specific "thematic" slots instead of standard grid.
+     */
+    public applyThematicLayout(context: string) {
+        const studioStore = useStudioStore();
+        console.log(`[StudioDirector] Applying THEMATIC LAYOUT for: ${context}`);
+
+        switch(context) {
+            case 'news':
+                // Anchor Desk: Host center, Guests in sidebar/circles
+                studioStore.switchScene('standard');
+                break;
+            case 'sport':
+                // Match Focus: Screen main, Commentators (Host+AI) in sidebar
+                studioStore.switchScene('screen_focus');
+                break;
+            case 'sales':
+                // Product Spotlight: Product/Screen center, Host side-by-side
+                studioStore.switchScene('pip'); 
+                break;
+            case 'talkshow':
+                // Circular layout (interview/grid)
+                studioStore.switchScene('interview');
+                break;
+            case 'education':
+                // Slide focus
+                studioStore.switchScene('screen_focus');
+                break;
+            case 'gameshow':
+                // High-energy grid
+                studioStore.switchScene('supergrid');
+                break;
+            default:
+                studioStore.switchScene('standard');
+        }
+
+        // Phase 51: Auto-assign slots for active guests to match the theme
+        const activeGuests = studioStore.liveGuests;
+        activeGuests.forEach((guest, index) => {
+            // Logic to position guests based on their role or importance could go here
+            studioStore.assignGuestToSlot(guest.uuid, index);
+        });
     }
 }
 

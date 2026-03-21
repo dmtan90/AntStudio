@@ -16,8 +16,8 @@ export function useRecorderCanvas(
         enableBeauty: Ref<boolean>;
         beautySettings: Ref<any>;
         isRecording: Ref<boolean>;
-        isVTuberActive: Ref<boolean>;
-        vtuberStream: Ref<MediaStream | null>;
+        isInfluencerActive: Ref<boolean>;
+        influencerStream: Ref<MediaStream | null>;
         whiteboardContent: Ref<MediaStream | ImageBitmap | null>;
     }
 ) {
@@ -163,7 +163,7 @@ export function useRecorderCanvas(
                 x: 0, y: 0, width: 100, height: 100
             });
             
-            if (options.isVTuberActive.value || options.camSettings.value.enableCamInWhiteboard === true) {
+            if (options.isInfluencerActive.value || options.camSettings.value.enableCamInWhiteboard === true) {
                 scene.layout.regions.push({
                     source: 'host',
                     x: 75, 
@@ -227,12 +227,12 @@ export function useRecorderCanvas(
 
         const currentActiveIds = new Set<string>();
 
-        // 1. Host Source (Cam or VTuber)
-        if (options.isVTuberActive.value && options.vtuberStream.value) {
+        // 1. Host Source (Cam or influencer)
+        if (options.isInfluencerActive.value && options.influencerStream.value) {
             currentActiveIds.add('host');
-            // Bridge VTuber stream
+            // Bridge influencer stream
             if (worker && !bridgedStreams.has('host')) {
-                const track = options.vtuberStream.value.getVideoTracks()[0];
+                const track = options.influencerStream.value.getVideoTracks()[0];
                 if (track && track.readyState === 'live') {
                     const processor = new MediaStreamTrackProcessor({ track });
                     const readable = processor.readable;
@@ -335,7 +335,7 @@ export function useRecorderCanvas(
             }
 
             const modeValue = options.mode.value;
-            const needsSegmentation = options.camSettings.value.enableBlur || options.enableBeauty.value || options.isVTuberActive.value;
+            const needsSegmentation = options.camSettings.value.enableBlur || options.enableBeauty.value || options.isInfluencerActive.value;
             if (needsSegmentation && (modeValue === 'camera' || modeValue === 'camera-screen') && (webcamVideo.value || sourceVideo.value)) {
                 const aiSource = (options.mode.value === 'camera' ? sourceVideo.value : webcamVideo.value) as HTMLVideoElement;
                 if (aiSource && aiSource.videoWidth > 0 && (forceFirstMask || time - lastAIProcessTime > AI_PROCESS_INTERVAL)) {
@@ -353,8 +353,8 @@ export function useRecorderCanvas(
     const processAISegmentation = async (video: HTMLVideoElement, timestamp: number) => {
         if (!worker || !video.videoWidth) return;
 
-        // Skip segmentation if beauty/blur is off and vtuber is not active
-        if (!options.camSettings.value.enableBlur && !options.isVTuberActive.value && !options.enableBeauty.value) {
+        // Skip segmentation if beauty/blur is off and influencer is not active
+        if (!options.camSettings.value.enableBlur && !options.isInfluencerActive.value && !options.enableBeauty.value) {
             return;
         }
 

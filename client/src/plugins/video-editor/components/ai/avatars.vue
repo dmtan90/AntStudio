@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useEditorStore } from 'video-editor/store/editor';
-import { useVTuberStore } from '@/stores/vtuber';
+import { useInfluencerStore } from '@/stores/influencer';
 import { useMediaStore } from '@/stores/media';
 import { toast } from 'vue-sonner';
 import { 
   User, Magic, Loading, CheckOne, Play, PauseOne, 
   MusicOne, Video, Download, Plus, Search
 } from '@icon-park/vue-next';
-import VTuberViewer from '@/components/vtuber/VTuberViewer.vue';
-import VoiceLibraryDialog from '@/components/vtuber/VoiceLibraryDialog.vue';
+import InfluencerViewer from '@/components/influencer/InfluencerViewer.vue';
+import VoiceLibraryDialog from '@/components/influencer/VoiceLibraryDialog.vue';
 import StudioSlider from '@/components/studio/shared/StudioSlider.vue';
 import { getFileUrl, uploadFile } from '@/utils/api';
 import { storeToRefs } from 'pinia';
 
 const editor = useEditorStore();
-const vtuberStore = useVTuberStore();
+const influencerStore = useInfluencerStore();
 const mediaStore = useMediaStore();
 
-const { vtubers } = storeToRefs(vtuberStore);
+const { influencers } = storeToRefs(influencerStore);
 
 // State
 const loadingAvatars = ref(false);
@@ -50,7 +50,7 @@ let previewAnimationId: number | null = null;
 onMounted(async () => {
     loadingAvatars.value = true;
     try {
-        await vtuberStore.fetchLibrary();
+        await influencerStore.fetchInfluencers();
     } catch (e) {
         toast.error("Failed to load avatars");
     } finally {
@@ -110,7 +110,7 @@ const onPreviewVoice = async () => {
 
   try {
     toast.info("Generating voice preview...");
-    const data = await vtuberStore.generateVoicePreview({
+    const data = await influencerStore.generateVoicePreview({
       text: script.value || "This is a preview of the selected voice profile.",
       provider: voiceConfig.value.provider,
       voiceId: voiceConfig.value.voiceId,
@@ -155,7 +155,7 @@ const onRenderAndAdd = async () => {
 
     try {
         // 1. Generate Voice
-        const voiceData = await vtuberStore.generateVoicePreview({
+        const voiceData = await influencerStore.generateVoicePreview({
             text: script.value,
             provider: voiceConfig.value.provider,
             voiceId: voiceConfig.value.voiceId,
@@ -237,7 +237,7 @@ const onRenderAndAdd = async () => {
     <div class="flex flex-col gap-6">
         <!-- Preview & Selector -->
         <div class="relative aspect-[3/4] rounded-2xl overflow-hidden bg-black/40 border border-white/10 group shadow-2xl">
-            <VTuberViewer
+            <InfluencerViewer
                 v-if="selectedAvatarData"
                 ref="renderViewerRef"
                 :modelType="selectedAvatarData.visual.modelType"
@@ -261,7 +261,7 @@ const onRenderAndAdd = async () => {
                 </div>
                 <div class="flex-1 overflow-y-auto custom-scrollbar pr-1">
                     <div class="grid grid-cols-2 gap-2">
-                        <div v-for="av in vtubers" :key="av._id" 
+                        <div v-for="av in influencers" :key="av._id" 
                              @click="selectAvatar(av)"
                              class="aspect-square rounded-xl bg-white/5 border border-white/10 overflow-hidden cursor-pointer hover:border-brand-primary active:scale-95 transition-all"
                              :class="selectedAvatarId === av._id ? 'border-brand-primary ring-1 ring-brand-primary' : ''"

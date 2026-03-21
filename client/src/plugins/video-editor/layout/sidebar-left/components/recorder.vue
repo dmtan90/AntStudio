@@ -32,14 +32,14 @@ const {
     triggerResourceUpload, toggleOverlay, enumerateDevices,
     layoutPreset, isTeleprompterActive, isTeleprompterScrolling, teleprompterScript, teleprompterSpeed, teleprompterFontSize, teleprompterScrollPos,
     isAnnotationActive, annotationTool, annotationColor, annotationSize, recordingQuality,
-    isVTuberActive, isWhiteboardLaunchpadActive, whiteboardContent, currentWhiteboardPage, whiteboardPages, whiteboardScripts,
+    isInfluencerActive, isWhiteboardLaunchpadActive, whiteboardContent, currentWhiteboardPage, whiteboardPages, whiteboardScripts,
     isAIPresenting, isSynthesizing,
     bgmVolume, isDuckingEnabled, bgmUrl, bgmLibrary, toggleBGM,
-    handleVTuberStreamReady, handleWhiteboardScreenShare, handleWhiteboardFileImport, generateWhiteboardAIScripts, startAIPresentation,
+    handleInfluencerStreamReady, handleWhiteboardScreenShare, handleWhiteboardFileImport, generateWhiteboardAIScripts, startAIPresentation,
     stopAIPresentation, nextPresentationPage, prevPresentationPage, goToPresentationPage,
     toggleAI, switchMode, initializeStream, toggleRecording, stopRecording, startRecording, startCountdown,
     handleFileUpload, handlePresentationUpload, downloadRecording, saveToProject, displayCanvas, toggleCaptions, toggleLiveStream, toggleMic, triggerFileUpload, triggerPresentationUpload,
-    showVTuberSelectDialog, vtuberStore, showPlatformSelector
+    showInfluencerSelectDialog, influencerStore, showPlatformSelector
 } = useRecorder();
 
 const visibleTabs = tabs.value.filter((t) => {
@@ -79,14 +79,14 @@ onMounted(async () => {
     await initializeStream();
 });
 
-const selectVTuber = (vtuberId: string | null) => {
-    if (vtuberId) {
-        selectedAvatar.value = vtuberId;
-        isVTuberActive.value = true;
+const selectInfluencer = (influencerId: string | null) => {
+    if (influencerId) {
+        selectedAvatar.value = influencerId;
+        isInfluencerActive.value = true;
     } else {
-        isVTuberActive.value = false;
+        isInfluencerActive.value = false;
     }
-    showVTuberSelectDialog.value = false;
+    showInfluencerSelectDialog.value = false;
 };
 </script>
 
@@ -266,7 +266,7 @@ const selectVTuber = (vtuberId: string | null) => {
                 :annotation-color="annotationColor"
                 :annotation-size="annotationSize"
                 :recording-quality="recordingQuality"
-                :isVTuberActive="isVTuberActive"
+                :isInfluencerActive="isInfluencerActive"
                 :is-whiteboard-launchpad-active="isWhiteboardLaunchpadActive"
                 :whiteboard-content-type="typeof whiteboardContent === 'object' && whiteboardContent !== null && 'getTracks' in (whiteboardContent as any) ? 'stream' : (whiteboardPages.length > 0 ? 'pdf' : null)"
                 :current-whiteboard-page="currentWhiteboardPage"
@@ -288,7 +288,7 @@ const selectVTuber = (vtuberId: string | null) => {
                 @update:asl-mode="v => aslMode = v"
                 @toggle-captions="toggleCaptions()"
                 @update:cam-settings="v => Object.assign(camSettings, v)"
-                @update:isVTuberActive="val => isVTuberActive = val"
+                @update:isInfluencerActive="val => isInfluencerActive = val"
                 @update:selected-avatar="val => selectedAvatar = val"
                 @update:selected-voice="val => selectedVoice = val"
                 @trigger-resource-upload="triggerResourceUpload"
@@ -326,9 +326,9 @@ const selectVTuber = (vtuberId: string | null) => {
             />
         </el-drawer>
 
-        <!-- VTuber Selection Dialog for Whiteboard Mode -->
+        <!-- Influencer Selection Dialog for Whiteboard Mode -->
         <el-dialog 
-            v-model="showVTuberSelectDialog" 
+            v-model="showInfluencerSelectDialog" 
             :title="t('videoEditor.recorder.selectAvatar')" 
             width="500px" 
             center
@@ -343,7 +343,7 @@ const selectVTuber = (vtuberId: string | null) => {
             <div class="grid grid-cols-3 gap-4 mb-6">
                 <!-- Skip Option -->
                 <button 
-                    @click="selectVTuber(null)"
+                    @click="selectInfluencer(null)"
                     class="p-4 rounded-xl border transition-all duration-300 flex flex-col items-center gap-3 group bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:border-white/20"
                 >
                     <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
@@ -352,11 +352,11 @@ const selectVTuber = (vtuberId: string | null) => {
                     <span class="text-[9px] font-bold uppercase tracking-wider">{{ t('videoEditor.recorder.noAvatar') }}<br/><span class="text-[8px] font-normal text-white/30">({{ t('videoEditor.recorder.voiceOnly') }})</span></span>
                 </button>
 
-                <!-- VTuber Options -->
+                <!-- Influencer Options -->
                 <button 
-                    v-for="v in vtuberStore.vtubers.slice(0, 5)" 
+                    v-for="v in influencerStore.influencers.slice(0, 5)" 
                     :key="v._id"
-                    @click="selectVTuber(v.entityId ?? v._id)"
+                    @click="selectInfluencer(v.entityId ?? v._id)"
                     class="p-4 rounded-xl border transition-all duration-300 flex flex-col items-center gap-3 group"
                     :class="selectedAvatar === (v.entityId ?? v._id) ? 'bg-brand-primary/10 border-brand-primary text-brand-primary' : 'bg-white/5 border-white/5 text-white/60 hover:bg-white/10 hover:border-brand-primary/30'"
                 >
@@ -369,7 +369,7 @@ const selectVTuber = (vtuberId: string | null) => {
             
             <template #footer>
                 <div class="flex justify-end gap-2">
-                    <el-button class="cinematic-button !h-10 !rounded-xl !bg-white/5 !border-none !text-white hover:!bg-white/10" @click="showVTuberSelectDialog = false">{{ t('videoEditor.recorder.cancel') }}</el-button>
+                    <el-button class="cinematic-button !h-10 !rounded-xl !bg-white/5 !border-none !text-white hover:!bg-white/10" @click="showInfluencerSelectDialog = false">{{ t('videoEditor.recorder.cancel') }}</el-button>
                 </div>
             </template>
         </el-dialog>

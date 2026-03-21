@@ -18,7 +18,7 @@ export const useMediaStore = defineStore('media', () => {
     })
 
     // Performance State (for lyrics display)
-    const performingVTuberId = ref<string | null>(null)
+    const performingInfluencerId = ref<string | null>(null)
     const performanceLyrics = ref<any[]>([])
     const performanceLyricsCurrentTime = ref(0)
     const performanceLyricsVisible = ref(true)
@@ -118,15 +118,15 @@ export const useMediaStore = defineStore('media', () => {
         loading,
         pagination,
         // Performance State
-        performingVTuberId,
+        performingInfluencerId,
         performanceLyrics,
         performanceLyricsCurrentTime,
         performanceLyricsVisible,
         performanceLyricsStyle,
         performanceLyricsPosition,
         // Performance Actions
-        startPerformance(vTuberId: string, lyrics: any[], style?: string, position?: string) {
-            performingVTuberId.value = vTuberId
+        startPerformance(influencerId: string, lyrics: any[], style?: string, position?: string) {
+            performingInfluencerId.value = influencerId
             performanceLyrics.value = lyrics
             performanceLyricsCurrentTime.value = 0
             performanceLyricsVisible.value = true
@@ -140,7 +140,7 @@ export const useMediaStore = defineStore('media', () => {
             performanceLyricsVisible.value = visible
         },
         stopPerformance() {
-            performingVTuberId.value = null
+            performingInfluencerId.value = null
             performanceLyrics.value = []
             performanceLyricsCurrentTime.value = 0
             performanceLyricsVisible.value = true

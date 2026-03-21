@@ -42,7 +42,7 @@ export class AntAREngine {
             antialias: true,
             alpha: true
         });
-        this.renderer.setSize(512, 512);
+        this.renderer.setSize(512, 512, false);
         this.renderer.setClearColor(0x000000, 0);
     }
 

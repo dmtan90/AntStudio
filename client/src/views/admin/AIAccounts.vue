@@ -14,10 +14,10 @@
           <google-ads theme="filled" size="14" />
           {{ t('admin.aiAccounts.addAntigravity') }}
         </button>
-        <!-- <button class="px-5 py-3 rounded-xl bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group text-purple-400" @click="add11LabsAccount">
-          <brain theme="filled" size="14" />
-          11Labs
-        </button> -->
+        <button class="px-5 py-3 rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group text-blue-400" @click="showAddFlowDialog = true">
+          <robot theme="filled" size="14" />
+          {{ t('admin.aiAccounts.addGoogleFlow') || 'Google Flow' }}
+        </button>
         <button class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center gap-2" @click="addAccount(false)">
           <google theme="outline" size="14" />
           {{ t('admin.aiAccounts.addGoogle') }}
@@ -75,12 +75,20 @@
               </div>
               
               <div>
-                <div class="text-sm font-bold text-white mb-1 truncate max-w-[150px]" :title="account.email">{{ account.email }}</div>
+                <div class="text-sm font-bold text-white mb-0.5 truncate max-w-[150px]" :title="account.email">
+                   {{ account.name || account.email }}
+                </div>
+                <div v-if="account.name" class="text-[9px] font-medium text-gray-500 truncate max-w-[150px] mb-1">
+                   {{ account.email }}
+                </div>
                 <div class="flex items-center gap-2">
                    <div :class="['w-1.5 h-1.5 rounded-full animate-pulse', 
                       account.status === 'ready' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 
                       account.status === 'rate-limited' ? 'bg-amber-500' : 'bg-red-500']"></div>
                    <span class="text-[9px] font-black opacity-40 uppercase tracking-widest">{{ account.isActive !== false ? account.status : t('admin.aiAccounts.account.disabled') }}</span>
+                   <span v-if="account.credits !== undefined && account.accountType === 'google-flow'" class="ml-2 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[8px] font-black uppercase tracking-tighter border border-blue-500/20 whitespace-nowrap">
+                      {{ account.credits }} {{ t('admin.aiAccounts.account.credits') || 'Credits' }}
+                   </span>
                 </div>
               </div>
             </div>
@@ -89,6 +97,9 @@
                <button :class="['w-8 h-8 rounded-lg flex items-center justify-center transition-colors', account.isActive !== false ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-white/5 text-gray-500 hover:bg-white/10']"
                 @click="toggleActive(account)" :title="account.isActive !== false ? t('common.disable') : t('common.enable')">
                 <power theme="outline" size="14" />
+              </button>
+              <button v-if="account.accountType === 'google-flow'" class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 flex items-center justify-center transition-colors" @click="openUpdateTokenDialog(account)" :title="t('admin.aiAccounts.account.updateToken') || 'Update Session Token'">
+                <key-one theme="outline" size="14" />
               </button>
               <button class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center justify-center transition-colors" @click="syncAccount(account._id)" :title="t('admin.aiAccounts.account.syncQuota')">
                 <refresh theme="outline" size="14" />
@@ -153,7 +164,7 @@
                <!-- <span class="px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-black text-gray-500 uppercase tracking-widest">
                   {{ account.accountType === '11labs-direct' ? '11LABS' : account.accountType === 'antigravity' ? 'ANTIGRAVITY' : 'GOOGLE' }}
                </span> -->
-               <template v-if="account.projectId && (account.accountType == 'google' || account.accountType == 'standard')">
+               <template v-if="account.projectId && (account.accountType == 'google' || account.accountType == 'standard' || account.accountType == 'google-flow')">
                   <el-dropdown trigger="hover">
                     <div class="group/pid flex items-center gap-1 cursor-pointer" @click="copyText(account.projectId)">
                       <span class="text-[9px] font-mono text-gray-600 group-hover/pid:text-blue-400 transition-colors truncate max-w-[80px]">{{ account.projectId }}</span>
@@ -194,7 +205,75 @@
       </div>
     </div>
     
-    <!-- Ambient Glow -->
+    <!-- Add Flow Account Dialog -->
+    <el-dialog v-model="showAddFlowDialog" :title="t('admin.aiAccounts.addGoogleFlow')" width="500px" class="cinematic-dialog rounded-[2rem]">
+      <div class="p-4 space-y-6">
+        <div class="space-y-4">
+          <div class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+            <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+              <info theme="outline" size="12" />
+              {{ t('admin.aiAccounts.howToGetToken') || 'How to obtain tokens' }}
+            </p>
+            <p class="text-[11px] text-gray-400 leading-relaxed">
+              Open <a href="https://labs.google/fx/vi/tools/flow" target="_blank" class="text-blue-400 underline italic">Labs Flow</a>, 
+              open DevTools (F12) -> Application -> Cookies -> URL Labs -> Find <b>__Secure-next-auth.session-token</b>.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 pl-1">{{ t('admin.aiAccounts.sessionToken') || 'Session Token (flowST)' }}</label>
+            <el-input v-model="newFlowAccount.flowST" type="textarea" :rows="3" placeholder="Paste __Secure-next-auth.session-token here..." class="glass-input no-border" />
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 pl-1">{{ t('profile.email') }} ({{ t('common.optional') }})</label>
+            <el-input v-model="newFlowAccount.email" placeholder="email@example.com" class="glass-input" />
+          </div>
+        </div>
+
+        <div class="flex gap-4 pt-4">
+          <el-button class="flex-1 h-12 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest hover:bg-white/10 transition-all" @click="showAddFlowDialog = false">
+            {{ t('common.cancel') }}
+          </el-button>
+          <el-button class="flex-1 h-12 rounded-xl bg-blue-600 border-none text-white font-black uppercase tracking-widest hover:bg-blue-500 shadow-lg shadow-blue-600/20 transition-all" :loading="addingFlow" @click="submitAddFlowAccount">
+             {{ t('common.add') }}
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- Update Flow Token Dialog -->
+    <el-dialog v-model="showUpdateTokenDialog" :title="t('admin.aiAccounts.updateToken') || 'Update Session Token'" width="500px" class="cinematic-dialog rounded-[2rem]">
+      <div class="p-4 space-y-6">
+        <div class="space-y-4">
+          <div class="p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
+            <p class="text-[10px] text-amber-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+              <info theme="outline" size="12" />
+              {{ t('admin.aiAccounts.tokenExpiredHelp') || 'Session token expired' }}
+            </p>
+            <p class="text-[11px] text-gray-400 leading-relaxed">
+              Open <a href="https://labs.google/fx/signin" target="_blank" class="text-blue-400 underline italic">Labs Flow</a>,
+              open DevTools (F12) → Application → Cookies → <b>__Secure-next-auth.session-token</b>. Copy and paste the value below.
+            </p>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 pl-1">{{ t('admin.aiAccounts.sessionToken') || 'New Session Token (flowST)' }}</label>
+            <el-input v-model="updateTokenData.flowST" type="textarea" :rows="4" placeholder="Paste __Secure-next-auth.session-token here..." class="glass-input no-border" />
+          </div>
+        </div>
+
+        <div class="flex gap-4 pt-2">
+          <el-button class="flex-1 h-12 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest hover:bg-white/10 transition-all" @click="showUpdateTokenDialog = false">
+            {{ t('common.cancel') }}
+          </el-button>
+          <el-button class="flex-1 h-12 rounded-xl bg-amber-500 border-none text-black font-black uppercase tracking-widest hover:bg-amber-400 shadow-lg shadow-amber-500/20 transition-all" :loading="updatingToken" @click="submitUpdateToken">
+            {{ t('admin.aiAccounts.updateToken') || 'Update Token' }}
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
+
     <div class="fixed top-0 left-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
   </div>
 </template>
@@ -205,7 +284,7 @@ import { useI18n } from 'vue-i18n';
 import { Plus, User, Refresh, Delete, Wallet, 
   Copy, Loading, Gemini, Brain, VideoTwo, Pic, 
   Down, Up, Power, Edit, LoadingFour, Google, GoogleAds,
-  Bill, Check , Robot
+  Bill, Check , Robot, Info, KeyOne
 } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 import { getFileUrl } from '@/utils/api';
@@ -227,6 +306,63 @@ const limitedAccounts = computed(() => accounts.value.filter(a => a.status === '
 const errorAccounts = computed(() => accounts.value.filter(a => a.status === 'error' || a.status === 'unauthorized'));
 
 const isCreatingProject = ref<string | null>(null);
+
+const showAddFlowDialog = ref(false);
+const addingFlow = ref(false);
+const newFlowAccount = ref({
+  email: '',
+  flowST: ''
+});
+
+const showUpdateTokenDialog = ref(false);
+const updatingToken = ref(false);
+const updateTokenData = ref({ accountId: '', flowST: '' });
+
+const openUpdateTokenDialog = (account: any) => {
+  updateTokenData.value = { accountId: account._id, flowST: '' };
+  showUpdateTokenDialog.value = true;
+};
+
+const submitUpdateToken = async () => {
+  if (!updateTokenData.value.flowST) {
+    toast.error(t('admin.aiAccounts.toast.stRequired') || 'Session token is required');
+    return;
+  }
+  updatingToken.value = true;
+  try {
+    await adminStore.updateFlowToken(updateTokenData.value.accountId, updateTokenData.value.flowST);
+    showUpdateTokenDialog.value = false;
+    await fetchAccounts(true);
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Failed to update token');
+  } finally {
+    updatingToken.value = false;
+  }
+};
+
+const submitAddFlowAccount = async () => {
+  if (!newFlowAccount.value.flowST) {
+    toast.error(t('admin.aiAccounts.toast.stRequired') || 'Session token is required');
+    return;
+  }
+
+  addingFlow.value = true;
+  try {
+    await adminStore.addDirectAccount({
+      email: newFlowAccount.value.email || undefined,
+      flowST: newFlowAccount.value.flowST,
+      accountType: 'google-flow',
+      providerId: 'google-flow'
+    });
+    showAddFlowDialog.value = false;
+    newFlowAccount.value = { email: '', flowST: '' };
+    await fetchAccounts(true);
+  } catch (e: any) {
+    toast.error(e.response?.data?.error || 'Failed to add Google Flow account');
+  } finally {
+    addingFlow.value = false;
+  }
+};
 
 const toggleActive = async (account: any) => {
   try {

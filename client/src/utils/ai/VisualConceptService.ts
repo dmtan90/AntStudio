@@ -11,13 +11,8 @@ export class VisualConceptService {
     private static isProcessing = false;
     private static lastQuery = '';
 
-    /**
-     * Extracts keywords from dialogue and triggers image generation.
-     */
     public static async processDialogue(text: string, studioVibe: string) {
         if (this.isProcessing || !text || text.length < 20) return null;
-        
-        // Simple heuristic: don't process if too similar to previous
         if (text.startsWith(this.lastQuery.substring(0, 10))) return null;
 
         this.isProcessing = true;
@@ -25,17 +20,18 @@ export class VisualConceptService {
 
         try {
             console.log('[VisualConcept] Extracting semantic concepts from:', text);
-            
-            // 1. Extract Keywords using LLM/Regex
             const keywords = this.extractKeywords(text);
             if (keywords.length === 0) return null;
 
             const primaryTopic = keywords[0];
             
-            // 2. Trigger Generative Image API
-            // Note: In a production AntStudio environment, this would call /ai/generate-image
+            // Refactored to use backend promptId
             const res = await api.post('/ai/generate-broll', {
-                prompt: `A cinematic, high-quality B-Roll image reflecting the concept: ${primaryTopic}. Style: ${studioVibe}.`,
+                promptId: 'ai/visual_concept',
+                variables: {
+                    topic: primaryTopic,
+                    style: studioVibe
+                },
                 topic: primaryTopic
             });
 
@@ -47,7 +43,6 @@ export class VisualConceptService {
                     timestamp: Date.now()
                 };
                 
-                // Notify the studio store to display the B-Roll
                 window.dispatchEvent(new CustomEvent('show:b_roll_generated', { detail: asset }));
                 return asset;
             }
@@ -65,15 +60,12 @@ export class VisualConceptService {
     }
 
     private static extractKeywords(text: string): string[] {
-        // Mock semantic extraction for now. 
-        // In reality, this would use a small local model or Gemini-Flash.
         const stopWords = ['the', 'and', 'with', 'this', 'that', 'from'];
         const words = text.toLowerCase()
             .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"")
             .split(/\s+/)
             .filter(w => w.length > 4 && !stopWords.includes(w));
         
-        // Return unique sorted by length as a proxy for 'informational density'
         return [...new Set(words)].sort((a, b) => b.length - a.length);
     }
 }

@@ -1,5 +1,6 @@
-import { geminiPool } from '../../utils/gemini.js';
+import { generateText, generateJSON } from '../../utils/AIGenerator.js';
 import { Logger } from '../../utils/Logger.js';
+import { promptService } from '../PromptService.js';
 
 
 export interface ChatMessage {
@@ -18,64 +19,33 @@ export class CommunityAgent {
     /**
      * Processes an incoming chat message and generates an autonomous response.
      */
-    public async handleMessage(projectId: string, message: ChatMessage) {
-        Logger.info(`💬 [CommunityAgent] Processing message from ${message.user}: ${message.text}`, 'CommunityAgent');
-
+    public async handleMessage(message: string, history: any[], projectContext: string) {
         try {
-            const modelName = 'gemini-2.5-flash';
-            const { client: ai } = await geminiPool.getOptimalClient(modelName);
-
-            const prompt = `
-                USER: ${message.user}
-                MESSAGE: ${message.text}
-                
-                You are a helpful, witty, and energetic stream moderator for AntStudio.
-                Respond to this message. Keep it under 100 characters.
-            `;
-
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{ parts: [{ text: prompt }] }]
+            const prompt = await promptService.get('ai/community_agent', {
+                projectContext,
+                message,
+                history: JSON.stringify(history)
             });
 
-            return {
-                user: "AntBot",
-                text: result.response.text(),
-                shouldSpeak: true
-            };
+            return await generateText(prompt);
         } catch (error: any) {
-            Logger.error('[CommunityAgent] Interaction failed:', error.message);
-            return null;
+            Logger.error('[CommunityAgent] Message handling failed:', error.message);
+            return "I'm sorry, I'm having trouble responding right now.";
         }
     }
 
     /**
-     * Analyzes overall audience sentiment from a batch of messages.
+     * Analyzes sentiment from a collection of audience messages.
      */
     public async analyzeAudienceSentiment(messages: string[]) {
-        if (messages.length === 0) return { score: 0.5, status: 'neutral' };
-
         try {
-            const modelName = 'gemini-2.5-flash';
-            const { client: ai } = await geminiPool.getOptimalClient(modelName);
-
-            const prompt = `
-                Analyze the sentiment of the following stream chat messages:
-                ${messages.join('\n')}
-                
-                Return JSON ONLY: { "score": 0-1, "status": "positive" | "negative" | "neutral", "summary": "One sentence summary" }
-            `;
-
-            const result = await (ai as any).models.generateContent({
-                model: modelName,
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { responseMimeType: 'application/json' }
+            const prompt = await promptService.get('ai/sentiment', {
+                comments: messages.join('\n')
             });
-
-            return JSON.parse(result.response.text());
+            return await generateJSON(prompt);
         } catch (error: any) {
             Logger.error('[CommunityAgent] Sentiment analysis failed:', error.message);
-            return { score: 0.5, status: 'neutral' };
+            return { sentiment: 0, label: 'neutral' };
         }
     }
 }

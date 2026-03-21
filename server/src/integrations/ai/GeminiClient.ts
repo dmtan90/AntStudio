@@ -6,6 +6,9 @@ import { geminiPool } from '~/utils/gemini.js';
 import { aiAccountManager } from '~/utils/ai/AIAccountManager.js';
 import { CloudCodeClient } from './CloudCodeClient.js';
 import { AntigravityClient } from './AntigravityClient.js';
+import { VertexClient } from './VertexClient.js';
+import { OpenAIClient } from './OpenAIClient.js';
+import { getAdminSettings } from '~/models/AdminSettings.js';
 import { Logger } from '~/utils/Logger.js';
 import { getFromS3 } from '~/utils/s3.js';
 import { Readable } from 'stream';
@@ -39,42 +42,77 @@ export class GeminiClient {
      * 
      * If the caller provided an explicit account or apiKey, only that is used.
      */
-    private async resolveCredentialsChain(modality: 'text' | 'image' | 'video' | 'audio' | 'music' | 'live'): Promise<Array<{ type: 'antigravity' | 'standard' | 'apikey'; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI }>> {
-        const chain: Array<{ type: 'antigravity' | 'standard' | 'apikey'; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI }> = [];
+    private async resolveCredentialsChain(modality: 'text' | 'image' | 'video' | 'audio' | 'music' | 'live'): Promise<Array<{ type: 'antigravity' | 'standard' | 'apikey' | 'vertex' | 'openai' | 'custom'; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any }>> {
+        const chain: Array<{ type: 'antigravity' | 'standard' | 'apikey' | 'vertex' | 'openai' | 'custom'; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any }> = [];
 
         // If caller provided explicit credentials, use only those
-        if (this.account) {
-            const t = this.account.accountType === 'antigravity' ? 'antigravity' as const : 'standard' as const;
-            chain.push({ type: t, account: this.account });
-            return chain;
+        // if (this.account) {
+        //     const t = this.account.accountType === 'antigravity' ? 'antigravity' as const : 'standard' as const;
+        //     chain.push({ type: t, account: this.account });
+        //     return chain;
+        // }
+        let types = [];
+        if(modality == "text"){
+            types = ['antigravity', 'standard', 'vertex', 'openai', 'custom', 'apikey'];
         }
-        if (this.apiKey) {
-            chain.push({ type: 'apikey', apiKey: this.apiKey, googleGenAI: this.googleGenAI });
-            return chain;
+        else{
+            types = ['vertex', 'openai', 'custom', 'apikey'];
         }
 
         // Auto-resolve: build full chain from account pool
         // Step 1: Antigravity accounts
-        const antigravityAccount = await aiAccountManager.getOptimalAccount(modality, 'antigravity');
-        if (antigravityAccount) {
-            chain.push({ type: 'antigravity', account: antigravityAccount });
+        if(types.includes('antigravity')){
+            const antigravityAccount = await aiAccountManager.getOptimalAccount(modality, 'antigravity');
+            if (antigravityAccount) {
+                chain.push({ type: 'antigravity', account: antigravityAccount });
+            }
         }
 
         // Step 2: Standard Google OAuth accounts
-        const standardAccount = await aiAccountManager.getOptimalAccount(modality, 'standard');
-        if (standardAccount) {
-            chain.push({ type: 'standard', account: standardAccount });
+        if(types.includes("standard")){
+            const standardAccount = await aiAccountManager.getOptimalAccount(modality, 'standard');
+            if (standardAccount) {
+                chain.push({ type: 'standard', account: standardAccount });
+            }
         }
 
-        // Step 3: API Key pool
-        try {
-            const { key } = await geminiPool.getOptimalClient();
-            if (key) {
-                chain.push({ type: 'apikey', apiKey: key, googleGenAI: new GoogleGenAI({ apiKey: key }) });
+        if(types.includes("vertex") || types.includes("openai") || types.includes("custom")){
+            const settings = await getAdminSettings();
+            if (settings?.aiSettings?.providers) {
+                for (const p of settings.aiSettings.providers) {
+                    if (p.isActive && p.supportedTypes.includes(modality)) {
+                        if (p.id === 'vertex' || p.id.includes('google-cloud')) {
+                            if(p.supportedTypes.includes(modality)){
+                                chain.push({ type: 'vertex', provider: p });
+                            }
+                        } else if (p.id === 'openai' || p.id === 'custom' || p.baseUrl) {
+                            if(p.supportedTypes.includes(modality)){
+                                chain.push({ type: p.id === 'openai' ? 'openai' : 'custom', provider: p });
+                            }
+                        }
+                    }
+                }
             }
-        } catch (e) {
-            // No API keys available
         }
+        
+        if(types.includes("apikey")){
+            if (this.apiKey) {
+                chain.push({ type: 'apikey', apiKey: this.apiKey, googleGenAI: this.googleGenAI });
+                // return chain;
+            }
+            
+            // Step 3: API Key pool
+            try {
+                const { key } = await geminiPool.getOptimalClient();
+                if (key) {
+                    chain.push({ type: 'apikey', apiKey: key, googleGenAI: new GoogleGenAI({ apiKey: key }) });
+                }
+            } catch (e) {
+                // No API keys available
+            }
+        }
+
+        
 
         return chain;
     }
@@ -100,8 +138,17 @@ export class GeminiClient {
                 }
 
                 if (cred.type === 'apikey' && cred.googleGenAI) {
-                    const parts = Array.isArray(prompt) ? prompt : [{ text: String(prompt) }];
+                    const parts: any[] = Array.isArray(prompt) ? prompt : [{ text: String(prompt) }];
                     
+                    if (options.image) {
+                        parts.push({
+                            inlineData: {
+                                data: Buffer.isBuffer(options.image) ? options.image.toString('base64') : options.image,
+                                mimeType: options.mimeType || 'image/png'
+                            }
+                        });
+                    }
+
                     const response = await (cred.googleGenAI as any).models.generateContent({
                         model: modelId,
                         contents: [{ role: 'user', parts }],
@@ -120,6 +167,22 @@ export class GeminiClient {
                         usage: response.usageMetadata
                     };
                 }
+
+                if (cred.type === 'vertex' && (cred.account || cred.provider)) {
+                    const client = new VertexClient({
+                        apiKey: cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey'),
+                        baseUrl: cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl')
+                    });
+                    return await client.generateContent(prompt, modelId, options);
+                }
+
+                if ((cred.type === 'openai' || cred.type === 'custom') && (cred.account || cred.provider)) {
+                    const client = new OpenAIClient({
+                        apiKey: cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey') || '',
+                        baseUrl: cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl')
+                    });
+                    return await client.generateContent(prompt, modelId, options);
+                }
             } catch (error: any) {
                 const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
                 Logger.warn(`[GeminiClient] generateContent failed via ${label}: ${error.message}`, 'GeminiClient');
@@ -137,72 +200,95 @@ export class GeminiClient {
      * - Gemini native image models (gemini-*-image) → generateContent() with responseModalities: ['IMAGE']
      * - Imagen dedicated models (imagen-*) → generateImages() dedicated API
      */
-    public async generateImage(prompt: string, modelId: string = 'gemini-2.5-flash-image', options: any = {}): Promise<{ url: string; mimeType: string }> {
-        const chain = await this.resolveCredentialsChain('image');
-        const errors: string[] = [];
+    public async generateImage(prompt: string, modelId: string = 'gemini-2.5-flash-image', options: any = {}): Promise<{ url: string; mimeType: string } | null> {
+        try{
+            const chain = await this.resolveCredentialsChain('image');
+            const errors: string[] = [];
 
-        for (const cred of chain) {
-            try {
-                if (cred.type === 'antigravity' && cred.account) {
-                    const client = new AntigravityClient(cred.account);
-                    const result = await client.generateImage(prompt, modelId);
-                    return { url: result.url, mimeType: 'image/png' };
-                }
-
-                if (cred.type === 'standard' && cred.account) {
-                    const client = new CloudCodeClient(cred.account);
-                    const result = await client.generateImage(prompt, modelId) as any;
-                    return {
-                        url: result.media?.url || result.url,
-                        mimeType: result.media?.mimeType || result.mimeType || 'image/png'
-                    };
-                }
-
-                if (cred.type === 'apikey' && cred.googleGenAI) {
-                    const isImagenModel = modelId.startsWith('imagen-');
-
-                    if (isImagenModel) {
-                        Logger.info(`[GeminiClient] Using generateImages() for Imagen model: ${modelId}`, 'GeminiClient');
-                        const response = await (cred.googleGenAI as any).models.generateImages({
-                            model: modelId,
-                            prompt: prompt,
-                            config: {
-                                numberOfImages: 1,
-                                outputMimeType: 'image/png',
-                                aspectRatio: options.aspectRatio || '1:1'
-                            }
-                        });
-                        if (response.generatedImages?.length > 0) {
-                            const img = response.generatedImages[0];
-                            return { url: `data:image/png;base64,${img.image.imageBytes}`, mimeType: 'image/png' };
-                        }
-                        throw new Error('No images returned from Imagen API');
-                    } else {
-                        Logger.info(`[GeminiClient] Using generateContent() for Gemini image model: ${modelId}`, 'GeminiClient');
-                        const parts = Array.isArray(prompt) ? prompt : [{ text: String(prompt) }];
-                        const response = await (cred.googleGenAI as any).models.generateContent({
-                            model: modelId,
-                            contents: [{ role: 'user', parts }],
-                            config: { responseModalities: ['IMAGE'] }
-                        });
-                        const responseParts = response?.candidates?.[0]?.content?.parts || [];
-                        for (const part of responseParts) {
-                            if (part?.inlineData?.data) {
-                                const mimeType = part.inlineData.mimeType || 'image/png';
-                                return { url: `data:${mimeType};base64,${part.inlineData.data}`, mimeType };
-                            }
-                        }
-                        throw new Error('No image data in Gemini response');
+            for (const cred of chain) {
+                try {
+                    if (cred.type === 'antigravity' && cred.account) {
+                        const client = new AntigravityClient(cred.account);
+                        const result = await client.generateImage(prompt, modelId);
+                        return { url: result.url, mimeType: 'image/png' };
                     }
-                }
-            } catch (error: any) {
-                const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
-                Logger.warn(`[GeminiClient] generateImage failed via ${label}: ${error.message}`, 'GeminiClient');
-                errors.push(`${label}: ${error.message}`);
-            }
-        }
 
-        throw new Error(`All credential sources failed for generateImage: ${errors.join(' | ')}`);
+                    if (cred.type === 'standard' && cred.account) {
+                        const client = new CloudCodeClient(cred.account);
+                        const result = await client.generateImage(prompt, modelId) as any;
+                        return {
+                            url: result.media?.url || result.url,
+                            mimeType: result.media?.mimeType || result.mimeType || 'image/png'
+                        };
+                    }
+
+                    if (cred.type === 'apikey' && cred.googleGenAI) {
+                        const isImagenModel = modelId.startsWith('imagen-');
+
+                        if (isImagenModel) {
+                            Logger.info(`[GeminiClient] Using generateImages() for Imagen model: ${modelId}`, 'GeminiClient');
+                            const response = await (cred.googleGenAI as any).models.generateImages({
+                                model: modelId,
+                                prompt: prompt,
+                                config: {
+                                    numberOfImages: 1,
+                                    outputMimeType: 'image/png',
+                                    aspectRatio: options.aspectRatio || '1:1'
+                                }
+                            });
+                            if (response.generatedImages?.length > 0) {
+                                const img = response.generatedImages[0];
+                                return { url: `data:image/png;base64,${img.image.imageBytes}`, mimeType: 'image/png' };
+                            }
+                            throw new Error('No images returned from Imagen API');
+                        } else {
+                            Logger.info(`[GeminiClient] Using generateContent() for Gemini image model: ${modelId}`, 'GeminiClient');
+                            const parts = Array.isArray(prompt) ? prompt : [{ text: String(prompt) }];
+                            const response = await (cred.googleGenAI as any).models.generateContent({
+                                model: modelId,
+                                contents: [{ role: 'user', parts }],
+                                config: { responseModalities: ['IMAGE'] }
+                            });
+                            const responseParts = response?.candidates?.[0]?.content?.parts || [];
+                            for (const part of responseParts) {
+                                if (part?.inlineData?.data) {
+                                    const mimeType = part.inlineData.mimeType || 'image/png';
+                                    return { url: `data:${mimeType};base64,${part.inlineData.data}`, mimeType };
+                                }
+                            }
+                            throw new Error('No image data in Gemini response');
+                        }
+                    }
+
+                    if (cred.type === 'vertex' && (cred.account || cred.provider)) {
+                        const client = new VertexClient({
+                            apiKey: cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey'),
+                            baseUrl: cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl')
+                        });
+                        const result = await client.generateImage(prompt, modelId, options);
+                        return { url: result.url, mimeType: result.mimeType || 'image/png' };
+                    }
+
+                    if ((cred.type === 'openai' || cred.type === 'custom') && (cred.account || cred.provider)) {
+                        const client = new OpenAIClient({
+                            apiKey: cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey') || '',
+                            baseUrl: cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl')
+                        });
+                        const result = await client.generateImage(prompt, modelId, options);
+                        return { url: result.url, mimeType: result.mimeType || 'image/png' };
+                    }
+                } catch (error: any) {
+                    const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
+                    Logger.warn(`[GeminiClient] generateImage failed via ${label}: ${error.message}`, 'GeminiClient');
+                    errors.push(`${label}: ${error.message}`);
+                }
+            }
+        }catch(error: any){
+            Logger.error(`[GeminiClient] generateImage failed: ${error.message}`, 'GeminiClient');
+            // throw error;
+        }
+        return null;
+        // throw new Error(`All credential sources failed for generateImage: ${errors.join(' | ')}`);
     }
 
     /**
@@ -210,173 +296,198 @@ export class GeminiClient {
      * Fallback chain: Antigravity → Standard Google → API Key
      * API Key path uses generateVideos() + async polling
      */
-    public async generateVideo(prompt: string, modelId: string = 'veo-2.0-generate-001', options: any = {}): Promise<{ url: string; mimeType?: string; sceneId?: string; statusUrl?: string }> {
-        const chain = await this.resolveCredentialsChain('video');
-        const errors: string[] = [];
+    public async generateVideo(prompt: string, modelId: string = 'veo-3.0-generate-001', options: any = {}): Promise<{ url?: string; mimeType?: string; sceneId?: string; statusUrl?: string; jobId?: string; status?: string } | null> {
+        try{
+            const chain = await this.resolveCredentialsChain('video');
+            const errors: string[] = [];
 
-        // Helper to resolve images for Veo API structure
-        const resolveToVeoImage = async (input: any) => {
-            if (!input) return undefined;
-            if (typeof input !== 'string') return input; // Already resolved or object
+            // Helper to resolve images for Veo API structure
+            const resolveToVeoImage = async (input: any) => {
+                if (!input) return undefined;
+                if (typeof input !== 'string') return input; // Already resolved or object
 
-            try {
-                let buffer: Buffer;
-                let mimeType = 'image/png';
+                try {
+                    let buffer: Buffer;
+                    let mimeType = 'image/png';
 
-                if (input.startsWith('https://') || input.startsWith('http://')) {
-                    const response = await axios.get(input, { responseType: 'arraybuffer' });
-                    buffer = Buffer.from(response.data);
-                    mimeType = response.headers['content-type'] || 'image/png';
-                } else {
-                    // Assume S3 Key
-                    const s3Stream = await getFromS3(input) as Readable;
-                    const chunks = [];
-                    for await (const chunk of s3Stream) {
-                        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-                    }
-                    buffer = Buffer.concat(chunks);
-                    
-                    if (input.endsWith('.jpg') || input.endsWith('.jpeg')) mimeType = 'image/jpeg';
-                    else if (input.endsWith('.webp')) mimeType = 'image/webp';
-                }
-
-                Logger.info(`[GeminiClient] Resolved image reference ${input} to ${buffer.length} bytes, mime: ${mimeType}`, 'GeminiClient');
-
-                return {
-                    imageBytes: buffer.toString('base64'),
-                    mimeType
-                };
-            } catch (err: any) {
-                Logger.warn(`[GeminiClient] Failed to resolve reference image ${input}: ${err.message}`, 'GeminiClient');
-                return undefined;
-            }
-        };
-
-        // RESOLVE ALL IMAGES UPFRONT
-        const resolvedOptions = { ...options };
-        Logger.info(`[GeminiClient] Starting image resolution for video generation...`, 'GeminiClient');
-        
-        if (options.imageStart || options.image) {
-            Logger.info(`[GeminiClient] Resolving imageStart/image: ${options.imageStart || options.image}`, 'GeminiClient');
-            resolvedOptions.imageStart = await resolveToVeoImage(options.imageStart || options.image);
-            resolvedOptions.image = resolvedOptions.imageStart;
-        }
-
-        if (options.imageEnd) {
-            Logger.info(`[GeminiClient] Resolving imageEnd: ${options.imageEnd}`, 'GeminiClient');
-            resolvedOptions.imageEnd = await resolveToVeoImage(options.imageEnd);
-        }
-
-        const charRefs = options.characterImages || options.characterReferences || [];
-        Logger.info(`[GeminiClient] Found ${charRefs.length} character references to resolve.`, 'GeminiClient');
-        if (Array.isArray(charRefs) && charRefs.length > 0) {
-            const resolvedChars = await Promise.all(charRefs.map(async (img, idx) => {
-                Logger.info(`[GeminiClient] Resolving character image [${idx}]: ${img}`, 'GeminiClient');
-                return await resolveToVeoImage(img);
-            }));
-            resolvedOptions.characterImages = resolvedChars.filter(img => !!img);
-            resolvedOptions.characterReferences = resolvedOptions.characterImages;
-            Logger.info(`[GeminiClient] Successfully resolved ${resolvedOptions.characterImages.length} character images.`, 'GeminiClient');
-        }
-
-        for (const cred of chain) {
-            try {
-                if (cred.type === 'antigravity' && cred.account) {
-                    // const client = new AntigravityClient(cred.account);
-                    // if (typeof client.generateVideo === 'function') {
-                    //     return await client.generateVideo(prompt, modelId, resolvedOptions);
-                    // }
-                    // // If AntigravityClient has no generateVideo, fall through to next
-                    // throw new Error('AntigravityClient does not support generateVideo');
-                } else if (cred.type === 'standard' && cred.account) {
-                    // const client = new CloudCodeClient(cred.account);
-                    // return await client.generateVideo(prompt, modelId, resolvedOptions);
-                } else if (cred.type === 'apikey' && cred.googleGenAI) {
-                    const genConfig: any = {};
-                    if (options.aspectRatio) genConfig.aspectRatio = options.aspectRatio;
-                    if (options.resolution) genConfig.resolution = options.resolution;
-                    if (options.durationSeconds) genConfig.durationSeconds = String(options.durationSeconds);
-                    if (options.personGeneration) genConfig.personGeneration = options.personGeneration;
-                    if (options.negativePrompt) genConfig.negativePrompt = options.negativePrompt;
-
-                    // Interpolation (lastFrame)
-                    if (resolvedOptions.imageEnd) {
-                        genConfig.lastFrame = resolvedOptions.imageEnd;
-                    }
-
-                    // Reference Images
-                    // if (resolvedOptions.characterImages && Array.isArray(resolvedOptions.characterImages) && resolvedOptions.characterImages.length > 0) {
-                    //     genConfig.referenceImages = resolvedOptions.characterImages.map((img: any) => ({
-                    //         image: img,
-                    //         referenceType: 'asset'
-                    //     }));
-                    // }
-
-                    const generateParams: any = { 
-                        model: modelId, 
-                        prompt,
-                        image: resolvedOptions.imageStart || resolvedOptions.image
-                    };
-
-                    // Logger.info("generateParams: ", generateParams);
-
-                    // Logger.info("genConfig", JSON.stringify(genConfig));
-                    // Logger.info(modelId, prompt);
-                    
-                    if (Object.keys(genConfig).length > 0) generateParams.config = genConfig;
-
-                    Logger.info(`[GeminiClient] Final API Key Payload structure: hasImage=${!!generateParams.image}, hasLastFrame=${!!generateParams.config?.lastFrame}, referenceImageCount=${generateParams.config?.referenceImages?.length || 0}`, 'GeminiClient');
-
-                    const ai = new GoogleGenAI({ apiKey: cred.apiKey, apiVersion: "v1alpha" } as any);
-
-                    let operation = await ai.models.generateVideos(generateParams);
-
-                    const maxPolls = 60;
-                    let pollCount = 0;
-                    while (!operation.done && pollCount < maxPolls) {
-                        Logger.debug(`[GeminiClient] Waiting for video generation... (poll ${pollCount + 1}/${maxPolls})`, 'GeminiClient');
-                        await new Promise(resolve => setTimeout(resolve, 10000));
-                        operation = await (cred.googleGenAI as any).operations.getVideosOperation({ operation });
-                        pollCount++;
-                    }
-
-                    if (!operation.done) throw new Error('Video generation timed out after 10 minutes');
-
-                    const generatedVideos = operation.response?.generatedVideos || [];
-                    if (generatedVideos.length === 0) throw new Error('No videos returned from Veo API');
-
-                    const videoFile = generatedVideos[0].video;
-                    if (videoFile?.uri) {
-                        let videoUrl = videoFile.uri;
-                        if (videoUrl.includes('generativelanguage.googleapis.com') && cred.apiKey) {
-                            videoUrl += (videoUrl.includes('?') ? '&' : '?') + `key=${cred.apiKey}`;
+                    if (input.startsWith('https://') || input.startsWith('http://')) {
+                        const response = await axios.get(input, { responseType: 'arraybuffer' });
+                        buffer = Buffer.from(response.data);
+                        mimeType = response.headers['content-type'] || 'image/png';
+                    } else {
+                        // Assume S3 Key
+                        const s3Stream = await getFromS3(input) as Readable;
+                        const chunks = [];
+                        for await (const chunk of s3Stream) {
+                            chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
                         }
-                        Logger.info(`[GeminiClient] Video generated successfully: ${videoUrl}`, 'GeminiClient');
-                        return { url: videoUrl, mimeType: videoFile.mimeType || 'video/mp4', sceneId: options.sceneId };
+                        buffer = Buffer.concat(chunks);
+                        
+                        if (input.endsWith('.jpg') || input.endsWith('.jpeg')) mimeType = 'image/jpeg';
+                        else if (input.endsWith('.webp')) mimeType = 'image/webp';
                     }
-                    throw new Error('No video URI in Veo response');
-                }
-            } catch (error: any) {
-                const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
-                
-                // Detailed logging for Google API Errors (like 403 Service Disabled)
-                let detail = error.message;
-                if (error.response?.data?.error) {
-                    const apiError = error.response.data.error;
-                    detail = `[${apiError.code} ${apiError.status}] ${apiError.message}`;
-                    if (apiError.details) {
-                        Logger.error(`[GeminiClient] Full API Error Details: ${JSON.stringify(apiError.details, null, 2)}`, 'GeminiClient');
-                    }
-                } else if (error.details) {
-                    detail = `${error.message} - ${JSON.stringify(error.details)}`;
-                }
 
-                Logger.warn(`[GeminiClient] generateVideo failed via ${label}: ${detail}`, 'GeminiClient');
-                errors.push(`${label}: ${detail}`);
+                    Logger.info(`[GeminiClient] Resolved image reference ${input} to ${buffer.length} bytes, mime: ${mimeType}`, 'GeminiClient');
+
+                    return {
+                        imageBytes: buffer.toString('base64'),
+                        mimeType
+                    };
+                } catch (err: any) {
+                    Logger.warn(`[GeminiClient] Failed to resolve reference image ${input}: ${err.message}`, 'GeminiClient');
+                    return undefined;
+                }
+            };
+
+            // RESOLVE ALL IMAGES UPFRONT
+            const resolvedOptions = { ...options };
+            Logger.info(`[GeminiClient] Starting image resolution for video generation...`, 'GeminiClient');
+            
+            if (options.imageStart || options.image) {
+                Logger.info(`[GeminiClient] Resolving imageStart/image: ${options.imageStart || options.image}`, 'GeminiClient');
+                resolvedOptions.imageStart = await resolveToVeoImage(options.imageStart || options.image);
+                resolvedOptions.image = resolvedOptions.imageStart;
             }
-        }
 
-        throw new Error(`All credential sources failed for generateVideo: ${errors.join(' | ')}`);
+            if (options.imageEnd) {
+                Logger.info(`[GeminiClient] Resolving imageEnd: ${options.imageEnd}`, 'GeminiClient');
+                resolvedOptions.imageEnd = await resolveToVeoImage(options.imageEnd);
+            }
+
+            const charRefs = options.characterImages || options.characterReferences || [];
+            Logger.info(`[GeminiClient] Found ${charRefs.length} character references to resolve.`, 'GeminiClient');
+            if (Array.isArray(charRefs) && charRefs.length > 0) {
+                const resolvedChars = await Promise.all(charRefs.map(async (img, idx) => {
+                    Logger.info(`[GeminiClient] Resolving character image [${idx}]: ${img}`, 'GeminiClient');
+                    return await resolveToVeoImage(img);
+                }));
+                resolvedOptions.characterImages = resolvedChars.filter(img => !!img);
+                resolvedOptions.characterReferences = resolvedOptions.characterImages;
+                Logger.info(`[GeminiClient] Successfully resolved ${resolvedOptions.characterImages.length} character images.`, 'GeminiClient');
+            }
+
+            for (const cred of chain) {
+                try {
+                    if (cred.type === 'antigravity' && cred.account) {
+                        // const client = new AntigravityClient(cred.account);
+                        // if (typeof client.generateVideo === 'function') {
+                        //     return await client.generateVideo(prompt, modelId, resolvedOptions);
+                        // }
+                        // // If AntigravityClient has no generateVideo, fall through to next
+                        // throw new Error('AntigravityClient does not support generateVideo');
+                    } else if (cred.type === 'standard' && cred.account) {
+                        // const client = new CloudCodeClient(cred.account);
+                        // return await client.generateVideo(prompt, modelId, resolvedOptions);
+                    } else if (cred.type === 'apikey' && cred.googleGenAI) {
+                        const genConfig: any = {};
+                        if (options.aspectRatio) genConfig.aspectRatio = options.aspectRatio;
+                        if (options.resolution) genConfig.resolution = options.resolution;
+                        if (options.durationSeconds) genConfig.durationSeconds = String(options.durationSeconds);
+                        if (options.personGeneration) genConfig.personGeneration = options.personGeneration;
+                        if (options.negativePrompt) genConfig.negativePrompt = options.negativePrompt;
+                        // genConfig.includeAudio = false;
+
+                        // Interpolation (lastFrame)
+                        if (resolvedOptions.imageEnd) {
+                            genConfig.lastFrame = resolvedOptions.imageEnd;
+                        }
+
+                        // Reference Images (R2V) - Only if not using I2V interpolation (lastFrame)
+                        if (!genConfig.lastFrame && resolvedOptions.characterImages && Array.isArray(resolvedOptions.characterImages) && resolvedOptions.characterImages.length > 0) {
+                            genConfig.referenceImages = resolvedOptions.characterImages.map((img: any) => ({
+                                image: img,
+                                referenceType: 'asset'
+                            }));
+                        }
+
+                        const generateParams: any = { 
+                            model: modelId, 
+                            prompt,
+                            image: resolvedOptions.imageStart || resolvedOptions.image
+                        };
+
+                        // Currently Veo3 doesn't support both image and referenceImages
+                        if(genConfig.referenceImages){
+                            delete generateParams.image;
+                        }
+
+                        // Logger.info("generateParams: ", generateParams);
+
+                        // Logger.info("genConfig", JSON.stringify(genConfig));
+                        // Logger.info(modelId, prompt);
+                        
+                        if (Object.keys(genConfig).length > 0) generateParams.config = genConfig;
+
+                        Logger.info(`[GeminiClient] Final API Key Payload structure: hasImage=${!!generateParams.image}, hasLastFrame=${!!generateParams.config?.lastFrame}, referenceImageCount=${generateParams.config?.referenceImages?.length || 0}`, 'GeminiClient');
+
+                        const ai = new GoogleGenAI({ apiKey: cred.apiKey, apiVersion: "v1alpha" } as any);
+
+                        let operation;
+                        if (options.jobId) {
+                            Logger.info(`[GeminiClient] Checking existing operation: ${options.jobId}`, 'GeminiClient');
+                            operation = { name: options.jobId };
+                            operation = await (cred.googleGenAI as any).operations.getVideosOperation({ operation });
+                        } else {
+                            operation = await ai.models.generateVideos(generateParams);
+                        }
+
+                        if (options.async) {
+                            Logger.info(`[GeminiClient] Async generation requested. Returning jobId: ${operation.name}`, 'GeminiClient');
+                            return { jobId: operation.name, status: 'pending' };
+                        }
+
+                        const maxPolls = 60;
+                        let pollCount = 0;
+                        while (!operation.done && pollCount < maxPolls) {
+                            Logger.debug(`[GeminiClient] Waiting for video generation... (poll ${pollCount + 1}/${maxPolls})`, 'GeminiClient');
+                            await new Promise(resolve => setTimeout(resolve, 10000));
+                            operation = await (cred.googleGenAI as any).operations.getVideosOperation({ operation });
+                            pollCount++;
+                        }
+
+                        if (!operation.done) throw new Error('Video generation timed out after 10 minutes');
+
+                        const generatedVideos = operation.response?.generatedVideos || [];
+                        if (generatedVideos.length === 0) throw new Error('No videos returned from Veo API');
+
+                        const videoFile = generatedVideos[0].video;
+                        if (videoFile?.uri) {
+                            let videoUrl = videoFile.uri;
+                            if (videoUrl.includes('generativelanguage.googleapis.com') && cred.apiKey) {
+                                videoUrl += (videoUrl.includes('?') ? '&' : '?') + `key=${cred.apiKey}`;
+                            }
+                            Logger.info(`[GeminiClient] Video generated successfully: ${videoUrl}`, 'GeminiClient');
+                            return { url: videoUrl, mimeType: videoFile.mimeType || 'video/mp4', sceneId: options.sceneId };
+                        }
+                        throw new Error('No video URI in Veo response');
+                    }
+                } catch (error: any) {
+                    const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
+                    
+                    // Detailed logging for Google API Errors (like 403 Service Disabled)
+                    let detail = error.message;
+                    if (error.response?.data?.error) {
+                        const apiError = error.response.data.error;
+                        detail = `[${apiError.code} ${apiError.status}] ${apiError.message}`;
+                        if (apiError.details) {
+                            Logger.error(`[GeminiClient] Full API Error Details: ${JSON.stringify(apiError.details, null, 2)}`, 'GeminiClient');
+                        }
+                    } else if (error.details) {
+                        detail = `${error.message} - ${JSON.stringify(error.details)}`;
+                    }
+
+                    Logger.warn(`[GeminiClient] generateVideo failed via ${label}: ${detail}`, 'GeminiClient');
+                    errors.push(`${label}: ${detail}`);
+                }
+            }
+
+        }
+        catch(error: any){
+            Logger.error(`[GeminiClient] generateVideo failed: ${error.message}`, 'GeminiClient');
+            // throw error;
+        }
+        return null;
+        // throw new Error(`All credential sources failed for generateVideo: ${errors.join(' | ')}`);
     }
 
     /**
@@ -679,9 +790,11 @@ export class GeminiClient {
         model?: string;
         systemInstruction?: string;
         generationConfig?: any;
+        contextWindowCompression?: any;
+        sessionResumption?: any;
         tools?: any[];
         callbacks: {
-            onopen?: () => void;
+            onopen?: (session?: any) => void | Promise<void>;
             onmessage?: (msg: any) => void;
             onerror?: (err: any) => void;
             onclose?: (event: any) => void;
@@ -705,15 +818,25 @@ export class GeminiClient {
             }
             if (!token) continue;
 
-            const ai = new GoogleGenAI({ apiKey: isApiKey ? token : undefined }); 
-
+            const ai = new GoogleGenAI({ apiKey: isApiKey ? token : undefined, httpOptions: {"apiVersion": "v1alpha"} }); 
+            // const ai = new GoogleGenAI({ apiKey: isApiKey ? token : undefined }); 
             try {
                 const session = await (ai as any).live.connect({
                     model: model,
                     config: {
                         systemInstruction: config.systemInstruction,
-                        generationConfig: config.generationConfig,
-                        tools: config.tools
+                        responseModalities: config.generationConfig?.responseModalities,
+                        speechConfig: config.generationConfig?.speechConfig,
+                        tools: config.tools,
+                        // proactivity: { proactiveAudio: false },
+                        enableAffectiveDialog: true,
+                        contextWindowCompression: config.contextWindowCompression,
+                        sessionResumption: config.sessionResumption,
+                        realtimeInputConfig: {
+                            automaticActivityDetection: {
+                                disabled: true,
+                            }
+                        }
                     },
                     callbacks: config.callbacks
                 });

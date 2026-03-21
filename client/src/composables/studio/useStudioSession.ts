@@ -1,4 +1,4 @@
-import { ref, watch, onUnmounted, type Ref } from 'vue';
+import { ref, watch, onUnmounted, type Ref, unref } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { useUserStore } from '@/stores/user.js';
 import { usePlatformStore } from '@/stores/platform';
@@ -124,7 +124,8 @@ export function useStudioSession(
                 }
 
                 const qualityKey = options.streamQuality.value === 'auto' ? abr.currentQuality : options.streamQuality.value;
-                const quality = options.qualityPresets[qualityKey];
+                const presets = unref(options.qualityPresets);
+                const quality = presets[qualityKey];
                 
                 if (!quality) {
                     throw new Error(`Invalid quality preset: ${qualityKey}`);
@@ -177,7 +178,11 @@ export function useStudioSession(
                     }
 
                     isLive.value = true;
-                    timerInterval = setInterval(() => liveTime.value++, 1000);
+                    studioStore.isLive = true;
+                    timerInterval = setInterval(() => {
+                        liveTime.value++;
+                        studioStore.liveTime = liveTime.value;
+                    }, 1000);
                     toast.success(t('studio.messages.live'));
                     return 'started';
                 }
@@ -193,6 +198,7 @@ export function useStudioSession(
 
     const stopLive = async () => {
         isLive.value = false;
+        studioStore.isLive = false;
         clearInterval(timerInterval);
         toast.info(t('studio.messages.stopped'));
         cleanupPublishers();
@@ -228,7 +234,8 @@ export function useStudioSession(
             currentWebRTCUrl.value = websocketUrl;
 
             const qualityKey = options.streamQuality.value === 'auto' ? abr.currentQuality : options.streamQuality.value;
-            const quality = options.qualityPresets[qualityKey];
+            const presets = unref(options.qualityPresets);
+            const quality = presets[qualityKey];
             
             rtcPublisher.value = new WebRTCPublisher({
                 websocketUrl,

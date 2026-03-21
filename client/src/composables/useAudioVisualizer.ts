@@ -10,6 +10,9 @@ export function useAudioVisualizer(options: AudioVisualizerOptions = {}) {
     const analyser = ref<AnalyserNode | null>(null);
     const source = ref<MediaElementAudioSourceNode | null>(null);
     const speakingVol = ref(0);
+    const audioLevel = ref(0);
+    const peakLevel = ref(0);
+    const isSpeaking = ref(false);
     const pitchFactor = ref(0); // 0 = low, 1 = high
     const emphasis = ref(0); // Spikes on sudden volume increase
     const isPlaying = ref(false);
@@ -74,6 +77,10 @@ export function useAudioVisualizer(options: AudioVisualizerOptions = {}) {
             }
             
             const rms = Math.sqrt(sum / dataArray.length);
+            audioLevel.value = rms;
+            peakLevel.value = Math.max(peakLevel.value * 0.95, rms); // Simple peak tracking
+            isSpeaking.value = rms > (options.fftSize ? 0.05 : 0.05);
+
             // Boost low volumes
             const currentVol = Math.min(1.0, rms * 3.0);
             speakingVol.value = currentVol;
@@ -260,6 +267,9 @@ export function useAudioVisualizer(options: AudioVisualizerOptions = {}) {
     return {
         speakingVol,
         volume: speakingVol, // Alias for component compatibility
+        audioLevel,
+        peakLevel,
+        isSpeaking,
         pitchFactor,
         emphasis,
         initAudioContext,

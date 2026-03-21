@@ -9,6 +9,8 @@ interface GeminiLiveConfig {
     projectId?: string;
     token?: string;
     isMaster?: boolean;
+    liveContext?: string;
+    productIds?: string;
     onToolCall?: (toolCall: any) => void; // Callback for avatar control
     onTextResponse?: (text: string, metadata?: { 
         emotion?: string, 
@@ -104,7 +106,7 @@ export function useGeminiLive() {
 
         // Phase 87: Check for existing session ID to resume
         const storedSessionId = localStorage.getItem(`gemini_live_session_${config.archiveId}`);
-        const wsUrl = `${domain}/api/live?archiveId=${config.archiveId}${config.projectId ? `&projectId=${config.projectId}` : ''}${config.token ? `&token=${config.token}` : ''}${config.isMaster ? `&isMaster=true` : ''}${storedSessionId ? `&resumeSessionId=${storedSessionId}` : ''}`;
+        const wsUrl = `${domain}/api/live?archiveId=${config.archiveId}${config.projectId ? `&projectId=${config.projectId}` : ''}${config.token ? `&token=${config.token}` : ''}${config.isMaster ? `&isMaster=true` : ''}${config.liveContext ? `&liveContext=${config.liveContext}` : ''}${config.productIds ? `&productIds=${config.productIds}` : ''}${storedSessionId ? `&resumeSessionId=${storedSessionId}` : ''}`;
         
         console.log('[GeminiLive] Connecting to:', wsUrl);
         
@@ -185,7 +187,7 @@ export function useGeminiLive() {
                     
                     // User feedback for first few attempts
                     if (reconnectAttempts.value <= 3) {
-                        toast.warning(`VTuber connection lost. Reconnecting... (Attempt ${reconnectAttempts.value})`, { duration: 2000 });
+                        toast.warning(`Influencer connection lost. Reconnecting... (Attempt ${reconnectAttempts.value})`, { duration: 2000 });
                     }
 
                     setTimeout(() => {
@@ -195,7 +197,7 @@ export function useGeminiLive() {
                     }, delay);
                 } else if (event.code !== 1000) {
                      console.error('[GeminiLive] Connection lost permanently or max attempts reached.');
-                     toast.error('VTuber connection lost permanently.', { duration: 2000 });
+                     toast.error('Influencer connection lost permanently.', { duration: 2000 });
                      stopMicrophone(); // Fully stop if we can't reconnect
                      stopCamera();
                 }
@@ -604,6 +606,8 @@ export function useGeminiLive() {
      * Play audio chunk from Gemini
      */
     async function playAudioChunk(base64Data: string, mimeType: string): Promise<void> {
+        if (!base64Data) return; // Skip empty signaling chunks
+
         if (!audioContext) {
             audioContext = new AudioContext({ sampleRate: 24000 });
             nextStartTime = audioContext.currentTime;
@@ -622,7 +626,7 @@ export function useGeminiLive() {
 
             let audioBuffer: AudioBuffer;
 
-            if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+            if (mimeType && (mimeType.includes('mpeg') || mimeType.includes('mp3'))) {
                 // Decode full compressed audio (like MP3 from TTS)
                 audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
             } else {

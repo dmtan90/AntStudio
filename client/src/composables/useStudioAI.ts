@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { studioDirector } from '@/utils/ai/StudioDirector';
 import { conversationOrchestrator } from '@/utils/ai/ConversationOrchestrator';
-import { useAudioAnalysis } from '@/composables/useAudioAnalysis';
+import { useAudioVisualizer } from '@/composables/useAudioVisualizer';
 import { studioVibeAnalyzer } from '@/utils/ai/StudioVibeAnalyzer';
 
 export function useStudioAI(studioStore: any) {
@@ -11,8 +11,13 @@ export function useStudioAI(studioStore: any) {
     const activeCollaborators = ref<any[]>([]); // Placeholder for now
     let loopId: number | null = null;
 
-    // Audio Analysis for context
-    const { audioLevel, isSpeaking } = useAudioAnalysis(null);
+    // Audio Analysis for context (Shared with visualizers)
+    const { audioLevel, isSpeaking, attachToStream } = useAudioVisualizer();
+
+    // Watch for mic stream changes in studio store to connect analysis
+    watch(() => studioStore.microphoneStream, (stream) => {
+        if (stream) attachToStream(stream);
+    }, { immediate: true });
 
     const startAILoop = () => {
         if (isRunning.value) return;

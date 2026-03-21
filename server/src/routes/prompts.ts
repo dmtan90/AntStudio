@@ -2,7 +2,18 @@ import { Router, Response } from 'express';
 import { Project } from '../models/Project.js';
 import { connectDB } from '../utils/db.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { buildCharacterSheetPrompt, buildScenePrompt, buildVeoVideoPrompt } from '../utils/PromptBuilder.js';
+import { 
+    buildCharacterSheetPrompt, 
+    buildScenePrompt, 
+    buildVeoVideoPrompt,
+    buildVeoProductPrompt,
+    buildOrchestratorTurnPrompt,
+    buildVisionReactionPrompt,
+    buildChatReactionPrompt,
+    buildBanterPrompt,
+    buildResearchTopicPrompt,
+    buildKnowledgeExplanationPrompt
+} from '../utils/PromptBuilder.js';
 import { AIServiceManager } from '../utils/ai/AIServiceManager.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
@@ -14,6 +25,49 @@ const router = Router();
 
 // All prompt routes require authentication
 router.use(authMiddleware);
+
+// POST /api/prompts/studio - Get studio-specific prompts
+router.post('/studio', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+    try {
+        const { type, data } = req.body;
+        let prompt = '';
+
+        if (!type || !data) {
+            return res.status(400).json({ success: false, error: 'Type and data are required' });
+        }
+
+        switch (type) {
+            case 'veo_product':
+                prompt = await buildVeoProductPrompt(data);
+                break;
+            case 'orchestrator_turn':
+                prompt = await buildOrchestratorTurnPrompt(data);
+                break;
+            case 'vision_reaction':
+                prompt = await buildVisionReactionPrompt(data);
+                break;
+            case 'chat_reaction':
+                prompt = await buildChatReactionPrompt(data);
+                break;
+            case 'banter':
+                prompt = await buildBanterPrompt(data);
+                break;
+            case 'research_topic':
+                prompt = await buildResearchTopicPrompt(data);
+                break;
+            case 'knowledge_explanation':
+                prompt = await buildKnowledgeExplanationPrompt(data);
+                break;
+            default:
+                return res.status(400).json({ success: false, error: 'Invalid studio prompt type' });
+        }
+
+        res.json({ success: true, data: { prompt } });
+    } catch (error: any) {
+        Logger.error(`Studio prompt error (${req.body.type}):`, error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate studio prompt' });
+    }
+});
 
 // GET /api/prompts/character/:projectId/:charIndex - Get character generation prompt
 router.get('/character/:projectId/:charIndex', async (req: any, res: Response) => {
@@ -37,7 +91,7 @@ router.get('/character/:projectId/:charIndex', async (req: any, res: Response) =
         const language = project.scriptAnalysis?.language;
 
         const aiManager = AIServiceManager.getInstance();
-        const translator = async (p: string) => await aiManager.generateText(p, 'gemini-2.5-flash');
+        const translator = async (p: string) => await aiManager.generateText(p, undefined);
 
         const prompt = await buildCharacterSheetPrompt(character, style, project.scriptAnalysis, language, translator);
 
@@ -87,7 +141,7 @@ router.get('/scene/:projectId/:segmentId', async (req: any, res: Response) => {
         const style = project.creativeBrief?.visualStyle || project.videoStyle || 'Cinematic';
         
         const aiManager = AIServiceManager.getInstance();
-        const translator = async (p: string) => await aiManager.generateText(p, 'gemini-2.5-flash');
+        const translator = async (p: string) => await aiManager.generateText(p, undefined);
 
         const prompt = await buildScenePrompt(segment.description, characterContext, style, project.scriptAnalysis, project.scriptAnalysis?.language, translator);
 
@@ -134,7 +188,7 @@ router.get('/video/:projectId/:segmentId', async (req: any, res: Response) => {
         const language = project.scriptAnalysis?.language;
 
         const aiManager = AIServiceManager.getInstance();
-        const translator = async (p: string) => await aiManager.generateText(p, 'gemini-2.5-flash');
+        const translator = async (p: string) => await aiManager.generateText(p, undefined);
 
         const prompt = await buildVeoVideoPrompt(segment, allCharacters, project, language, translator);
 

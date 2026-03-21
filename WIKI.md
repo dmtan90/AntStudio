@@ -125,6 +125,18 @@ AntStudio is an AI-powered video production platform that transforms scripts and
 - Add title, description, tags
 - Publish
 
+### Live Studio & Commerce
+
+**Smart Showrunner & Aidol Clips:**
+- Live Studio uses an AI Director (Showrunner) to orchestrate scenes and dialogues.
+- For `Aidol` (Video-based) characters, you can map specific video clips to script gestures or product IDs. 
+- When the script mentions a product or a custom gesture, the AI automatically triggers the corresponding `aidolClip` for a seamless video transition.
+
+**Live Commerce Overlays:**
+- Products highlighted during the broadcast will automatically display a **Product Spotlight** card.
+- A dynamic, scannable **QR Code** is generated in <500ms and displayed alongside the product.
+- **Flash Sales**: If a flash sale is active, a real-time countdown timer overlay will appear to drive urgency.
+
 ### Profile Settings
 
 **Update Profile:**

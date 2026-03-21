@@ -110,24 +110,24 @@
                     </div>
                 </div>
 
-                <!-- VTuber Presenter Selection (Integrated) -->
+                <!-- Influencer Presenter Selection (Integrated) -->
                 <div class="space-y-4 pt-4 border-t border-white/5">
                     <span class="text-[10px] font-bold text-blue-400 uppercase block">AI Presenter</span>
 
                     <!-- Loading state -->
-                    <div v-if="vtuberStore.isLoading" class="flex items-center justify-center py-4 gap-3">
+                    <div v-if="influencerStore.isLoading" class="flex items-center justify-center py-4 gap-3">
                         <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
                     </div>
 
-                    <!-- VTuber selection -->
+                    <!-- Influencer selection -->
                     <div v-else class="grid grid-cols-4 gap-2">
-                        <div v-for="vt in vtuberStore.vtubers.slice(0, 4)" :key="vt.entityId ?? vt._id"
+                        <div v-for="vt in influencerStore.influencers.slice(0, 4)" :key="vt.entityId ?? vt._id"
                             class="av-mini-card p-1 rounded-xl border transition-all cursor-pointer flex flex-col items-center gap-1 group"
                             :class="selectedAvatar === (vt.entityId ?? vt._id) ? 'bg-blue-500/10 border-blue-500/40' : 'bg-white/5 border-white/5'"
-                            @click="selectVTuber(vt)">
+                            @click="selectInfluencer(vt)">
                             <div class="w-8 h-8 rounded-full overflow-hidden border transition-all"
                                 :class="selectedAvatar === (vt.entityId ?? vt._id) ? 'border-blue-500' : 'border-white/10'">
-                                <img :src="getVTuberThumbnail(vt)" class="w-full h-full object-cover" />
+                                <img :src="getInfluencerThumbnail(vt)" class="w-full h-full object-cover" />
                             </div>
                         </div>
                     </div>
@@ -178,9 +178,9 @@
 import { Refresh, Monitor, FilePdf, FilePpt, VideoOne, Left, Right, Robot, Loading, FileAddition } from '@icon-park/vue-next'
 import { ElSwitch, ElSelect, ElOption } from 'element-plus'
 import { onMounted, ref } from 'vue'
-import { useVTuberStore } from '@/stores/vtuber'
+import { useInfluencerStore } from '@/stores/influencer'
 import { getFileUrl } from '@/utils/api'
-import VoiceLibraryDialog from '@/components/vtuber/VoiceLibraryDialog.vue'
+import VoiceLibraryDialog from '@/components/influencer/VoiceLibraryDialog.vue'
 
 const props = defineProps<{
     isLaunchpadActive: boolean
@@ -208,10 +208,10 @@ const emit = defineEmits<{
     (e: 'stop-ai-presentation'): void
     (e: 'update:selectedAvatar', id: string): void
     (e: 'update:selectedVoice', id: string): void
-    (e: 'select-vtuber-entity', vt: any): void
+    (e: 'select-influencer-entity', vt: any): void
 }>()
 
-const vtuberStore = useVTuberStore()
+const influencerStore = useInfluencerStore()
 const showVoiceLibrary = ref(false)
 
 const handleVoiceSelect = (voice: any) => {
@@ -220,20 +220,20 @@ const handleVoiceSelect = (voice: any) => {
 }
 
 onMounted(async () => {
-    if (vtuberStore.vtubers.length === 0) {
-        await vtuberStore.fetchLibrary(1, 20)
+    if (influencerStore.influencers.length === 0) {
+        await influencerStore.fetchInfluencers(1, 20)
     }
 })
 
-const getVTuberThumbnail = (vt: any) => {
+const getInfluencerThumbnail = (vt: any) => {
     const url = vt.visual?.thumbnailUrl || vt.visual?.modelUrl || vt.thumbnailUrl || '/avatars/default.jpg'
     return getFileUrl(url)
 }
 
-const selectVTuber = (vt: any) => {
+const selectInfluencer = (vt: any) => {
     const id = vt.entityId ?? vt._id
     emit('update:selectedAvatar', id)
-    emit('select-vtuber-entity', vt)
+    emit('select-influencer-entity', vt)
 }
 </script>
 

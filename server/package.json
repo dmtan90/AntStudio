@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "dev": "tsx watch src/index.ts",
-        "build": "tsc && tsc-alias",
+        "build": "tsc && tsc-alias && node -e \"require('fs-extra').copySync('src/prompts', 'dist/prompts')\"",
         "build:standalone": "node scripts/build-standalone.cjs",
         "start": "node dist/index.js"
     },

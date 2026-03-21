@@ -67,7 +67,10 @@
                     </div>
                     <div class="log-list max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                         <div v-for="(log, i) in directorLog" :key="i" class="log-item mb-2 last:mb-0">
-                            <div class="flex justify-between items-start mb-0.5">
+                            <div v-for="(agentLog, aIdx) in (log.agentLogs || [])" :key="'a'+aIdx" class="agent-line text-[8px] opacity-70 mb-1">
+                                <span class="font-bold text-blue-300">{{ agentLog.agent }}:</span> {{ agentLog.message }}
+                            </div>
+                            <div class="flex justify-between items-start mb-0.5 pt-1 border-t border-white/5">
                                 <span class="text-[10px] font-bold text-white/80">{{ log.action }}</span>
                                 <span class="text-[8px] text-white/30">{{ formatLogTime(log.timestamp) }}</span>
                             </div>
@@ -136,6 +139,10 @@ interface DirectorLogEntry {
     action: string;
     reason: string;
     timestamp: number;
+    agentLogs?: Array<{
+        agent: string;
+        message: string;
+    }>;
 }
 
 const props = defineProps<{

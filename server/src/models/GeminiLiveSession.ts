@@ -18,6 +18,7 @@ export interface IGeminiLiveSession extends Document {
         voiceName?: string;
         modelName?: string;
         systemInstruction?: string;
+        resumptionHandle?: string;
     };
     createdAt: Date;
     updatedAt: Date;
@@ -59,7 +60,8 @@ const GeminiLiveSessionSchema = new Schema<IGeminiLiveSession>(
         metadata: {
             voiceName: String,
             modelName: String,
-            systemInstruction: String
+            systemInstruction: String,
+            resumptionHandle: String
         }
     },
     {

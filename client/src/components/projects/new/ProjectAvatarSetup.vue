@@ -14,8 +14,8 @@
                 <!-- Step 1: Select Avatar -->
                 <div v-if="currentStep === 1" class="step-content">
                     <div class="header-section">
-                        <h2>{{ t('projects.new.setup.avatar.selectVtuber') }}</h2>
-                        <p>{{ t('projects.new.setup.avatar.selectVtuberDesc') }}</p>
+                        <h2>{{ t('projects.new.setup.avatar.selectInfluencer') }}</h2>
+                        <p>{{ t('projects.new.setup.avatar.selectInfluencerDesc') }}</p>
                     </div>
 
                     <div class="avatar-grid">
@@ -365,7 +365,7 @@ const onFileSelected = async (e: Event) => {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('purpose', 'avatar')
-        // Automatically mark as static VTuber puppet for now if uploaded via this flow
+        // Automatically mark as static influencer puppet for now if uploaded via this flow
         formData.append('modelType', 'static')
 
         const data = await mediaStore.uploadMedia(formData);

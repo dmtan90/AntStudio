@@ -1,7 +1,7 @@
-import { Avatar3DEngine } from './services/Avatar3DEngine';
 import { WebGLCompositor, VisualSettings } from './services/WebGLCompositor';
 import { UIOverlayRenderer } from './services/UIOverlayRenderer';
 import { AntAREngine } from './services/AntAREngine';
+import { ShaderLibrary } from '@/utils/webgl/ShaderLibrary';
 
 let canvas: HTMLCanvasElement | OffscreenCanvas | null = null;
 let activeScene: any = null;
@@ -9,9 +9,9 @@ let authToken: string | null = null;
 
 // Core Engines
 let compositor: WebGLCompositor;
-let avatarEngine: Avatar3DEngine;
 let uiOverlay: UIOverlayRenderer;
 let antArEngine: AntAREngine;
+let shaderLib: ShaderLibrary;
 
 // Data States
 const frameMap = new Map<string, VideoFrame>();
@@ -19,6 +19,7 @@ const streamReaders = new Map<string, ReadableStreamDefaultReader<VideoFrame>>()
 const videoMetadata = new Map<string, { width: number, height: number }>();
 const textureMap = new Map<string, WebGLTexture>();
 const textureDirtyMap = new Map<string, boolean>();
+const snapshotInProgress = new Map<string, boolean>();
 
 // Face Tracking State
 const faceTracking = {
@@ -32,7 +33,7 @@ let latestFaceData: any = null;
 // Lyrics State
 let performanceLyrics: any[] = [];
 let performanceLyricsCurrentTime: number = 0;
-let performingVTuberId: string | null = null;
+let performingInfluencerId: string | null = null;
 let performanceLyricsVisible: boolean = false;
 let performanceLyricsStyle: string = 'neon';
 
@@ -40,7 +41,14 @@ let performanceLyricsStyle: string = 'neon';
 let logoImage: ImageBitmap | null = null;
 let currentSubtitle: string = '';
 let currentCaption: any = null;
+let currentQuest: any = null;
+let activeFacts: any[] = [];
+let vizData: any[] = [];
+let activeRecap: any = null;
 let cinematicMode: boolean = false;
+let hypeLevel: number = 0;
+let contextData: Record<string, any> = {};
+let isLiveState: boolean = false;
 const slotMap = new Map<string, { id: string, name: string, title: string }>();
 
 // Settings
@@ -80,13 +88,19 @@ self.onmessage = async (e: MessageEvent) => {
         case 'init':
             canvas = payload.canvas;
             if (canvas) {
+                const gl = canvas.getContext('webgl2', { alpha: false, desynchronized: true, premultipliedAlpha: false }) as WebGL2RenderingContext || 
+                           canvas.getContext('webgl', { alpha: false, desynchronized: true, premultipliedAlpha: false }) as WebGLRenderingContext;
+                
+                if (!gl) throw new Error('WebGL not supported');
+
+                shaderLib = new ShaderLibrary(gl);
+                
                 compositor = new WebGLCompositor();
-                compositor.init(canvas);
+                compositor.init(canvas, shaderLib);
                 
                 uiOverlay = new UIOverlayRenderer();
-                uiOverlay.init(compositor.gl!, canvas.width, canvas.height, compositor.compositeProgram!, compositor.unitQuad, compositor.fullScreenQuad);
+                uiOverlay.init(gl, canvas.width, canvas.height, shaderLib);
 
-                avatarEngine = new Avatar3DEngine(() => { sceneDirty = true; requestRender(); });
                 antArEngine = new AntAREngine();
                 requestRender();
             }
@@ -111,7 +125,6 @@ self.onmessage = async (e: MessageEvent) => {
                 }
                 if (payload.authToken) {
                     authToken = payload.authToken;
-                    avatarEngine?.setAuthToken(authToken);
                 }
                 
                 // Update AntAR Mask if specified
@@ -155,6 +168,7 @@ self.onmessage = async (e: MessageEvent) => {
 
         case 'update-background':
             if (payload.backgroundData) {
+                // console.log(`[RenderWorker] Updating background texture: ${payload.backgroundData.width}x${payload.backgroundData.height}`);
                 compositor?.updateBackgroundTexture(payload.backgroundData);
                 requestRender();
             }
@@ -162,6 +176,12 @@ self.onmessage = async (e: MessageEvent) => {
 
         case 'update-overlay':
             // Logic for pre-rendered full-screen overlays like PNG frames
+            break;
+
+        case 'update-guest-texture':
+            if (payload.bitmap) {
+                payload.bitmap.close(); // Immediate cleanup as engine is removed
+            }
             break;
 
         case 'update-guest-slots':
@@ -177,15 +197,9 @@ self.onmessage = async (e: MessageEvent) => {
             break;
 
         case 'add-3d-guest':
-            avatarEngine?.initGuest(payload.id, payload.modelUrl, payload.textureUrl);
-            break;
-
         case 'update-3d-audio':
-            avatarEngine?.updateGuestAudioTracking(payload.id, payload.audioLevel);
-            break;
-
         case 'update-3d-thinking':
-            avatarEngine?.updateGuestThinking(payload.id, payload.isThinking);
+            // Logic handled by VirtualGuest component in main thread now.
             break;
 
         case 'SETUP_AI_CHANNEL':
@@ -232,7 +246,7 @@ self.onmessage = async (e: MessageEvent) => {
         case 'update-lyrics':
             performanceLyrics = payload.lyrics || [];
             performanceLyricsCurrentTime = payload.currentTime || 0;
-            performingVTuberId = payload.performingVTuberId || null;
+            performingInfluencerId = payload.performingInfluencerId || null;
             performanceLyricsVisible = payload.visible !== undefined ? payload.visible : false;
             performanceLyricsStyle = payload.style || 'neon';
             sceneDirty = true;
@@ -259,15 +273,21 @@ self.onmessage = async (e: MessageEvent) => {
             currentCaption = payload;
             sceneDirty = true;
             break;
+            
+        case 'update-quest':
+            currentQuest = payload;
+            sceneDirty = true;
+            break;
 
         case 'update-commerce':
+            console.log("update-commerce", payload);
             if (commerceState.qrCodeBitmap && payload.qrCodeBitmap) {
                 commerceState.qrCodeBitmap.close(); // Clean up old bitmap
             }
-            if (payload.qrCodeBitmap) commerceState.qrCodeBitmap = payload.qrCodeBitmap;
-            commerceState.activeProduct = payload.activeProduct;
-            commerceState.flashSaleActive = payload.flashSaleActive;
-            commerceState.purchaseNotifications = payload.purchaseNotifications;
+            if (payload.qrCodeBitmap !== undefined) commerceState.qrCodeBitmap = payload.qrCodeBitmap;
+            if (payload.activeProduct !== undefined) commerceState.activeProduct = payload.activeProduct;
+            if (payload.flashSaleActive !== undefined) commerceState.flashSaleActive = payload.flashSaleActive;
+            if (payload.purchaseNotifications !== undefined) commerceState.purchaseNotifications = payload.purchaseNotifications;
             sceneDirty = true;
             requestRender();
             break;
@@ -280,6 +300,26 @@ self.onmessage = async (e: MessageEvent) => {
             }
             break;
             
+        case 'update-facts':
+            activeFacts = payload.facts || [];
+            sceneDirty = true;
+            break;
+
+        case 'update-viz':
+            vizData = payload.data || [];
+            sceneDirty = true;
+            break;
+
+        case 'show-recap':
+            activeRecap = payload.recap;
+            sceneDirty = true;
+            break;
+
+        case 'update-hype-level':
+            hypeLevel = payload.level || 0;
+            sceneDirty = true;
+            break;
+
         case 'update-ratio':
             if (payload.ratio) {
                 (visualSettings as any).streamRatio = payload.ratio;
@@ -288,6 +328,22 @@ self.onmessage = async (e: MessageEvent) => {
                 sceneDirty = true;
                 requestRender();
             }
+            break;
+            
+        case 'videoMetadata':
+            videoMetadata.set(payload.id, payload.metadata);
+            sceneDirty = true;
+            break;
+
+        case 'update-context-data':
+            contextData = { ...contextData, ...payload.data };
+            sceneDirty = true;
+            break;
+
+        case 'update-live-status':
+            isLiveState = !!payload.isLive;
+            sceneDirty = true;
+            requestRender();
             break;
     }
 };
@@ -351,18 +407,13 @@ function cleanupStream(id: string) {
         compositor?.gl?.deleteTexture(textureMap.get(id)!);
         textureMap.delete(id);
     }
-    if (avatarEngine?.getGuest(id)) {
-        // Assume renderer/mixer cleanup is handled or memory leaked manually? 
-        // Need to add explicit cleanup in AvatarEngine if needed long term
-        avatarEngine.getAllGuests().delete(id);
-    }
 
     textureDirtyMap.delete(id);
     sceneDirty = true;
 }
 
 function renderLoop(time: number = 0) {
-    if (!compositor || !compositor.gl || !canvas || !uiOverlay || !avatarEngine) return;
+    if (!compositor || !compositor.gl || !canvas || !uiOverlay) return;
     const gl = compositor.gl;
 
     const delta = lastTime ? (time - lastTime) / 1000 : 0.016;
@@ -380,20 +431,18 @@ function renderLoop(time: number = 0) {
         sceneDirty = true; 
     }
 
-    const hasActiveVideo = textureMap.size > 0;
-    const hasActiveModel = avatarEngine.getAllGuests().size > 0;
+    const hasVisualOutput = (textureMap.size > 0) || (activeScene && activeScene.layout);
     let hasNewFrames = false;
     textureDirtyMap.forEach((dirty) => { if (dirty) hasNewFrames = true; });
 
-    const hasVisualOutput = hasActiveVideo || hasActiveModel || (activeScene && activeScene.layout);
     const hasDynamicElements = performanceLyricsVisible || (visualSettings as any).showTicker || (visualSettings as any).breakMode?.enabled || commerceState.purchaseNotifications.length > 0;
 
-    if (!sceneDirty && !hasNewFrames && !hasDynamicElements && !hasActiveModel && hasVisualOutput) {
+    if (!sceneDirty && !hasNewFrames && !hasDynamicElements && hasVisualOutput) {
         requestAnimationFrame(renderLoop);
         return;
     }
 
-    if (!sceneDirty && (!hasVisualOutput || !hasDynamicElements) && !hasActiveVideo && !hasActiveModel && !hasNewFrames) {
+    if (!sceneDirty && (!hasVisualOutput || !hasDynamicElements) && textureMap.size === 0 && !hasNewFrames) {
         isRendering = false;
         lastTime = 0;
         return;
@@ -419,13 +468,25 @@ function renderLoop(time: number = 0) {
         }
     });
 
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.viewport(0, 0, (canvas as any).width, (canvas as any).height);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // 0. Base Layer: Virtual Background (Robustness Fix Phase 35)
+    if (visualSettings.background?.mode === 'virtual') {
+        if (compositor.backgroundTexture && compositor.backgroundMetadata.width > 0) {
+            const bgMeta = compositor.backgroundMetadata;
+            compositor.renderToCanvas(compositor.backgroundTexture, { x: 0, y: 0, width: 100, height: 100 }, bgMeta, false, false);
+        } else {
+            // Fallback: Use a moody studio depth color if texture is loading
+            gl.clearColor(0.02, 0.02, 0.05, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+    }
+
     // 1. Process 3D Guests
-    const isHostActive = activeScene?.layout?.regions?.some((r: any) => r.source === 'host') || false;
-    avatarEngine.renderAll(time, isHostActive, latestFaceData);
+    // const isHostActive = activeScene?.layout?.regions?.some((r: any) => r.source === 'host') || false;
+    // avatarEngine.renderAll(time, isHostActive, latestFaceData);
     
     // 1b. Process AntAR Masks
     if (antArEngine && latestFaceData) {
@@ -439,18 +500,6 @@ function renderLoop(time: number = 0) {
         }
     }
 
-    avatarEngine.getAllGuests().forEach((guest, id) => {
-        let texture = textureMap.get(id);
-        if (!texture) {
-            texture = compositor.createEmptyTexture(512, 512);
-            if (texture) textureMap.set(id, texture);
-        }
-        if (texture) {
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, (gl as any).RGBA, (gl as any).RGBA, gl.UNSIGNED_BYTE, guest.renderer.domElement);
-            videoMetadata.set(id, { width: 512, height: 512 });
-        }
-    });
 
     // 2. Base Compositor rendering
     if (cinematicMode && textureMap.has('cinematic')) {
@@ -470,9 +519,10 @@ function renderLoop(time: number = 0) {
             const meta = id ? videoMetadata.get(id) : null;
 
             if (sourceTexture && meta) {
+                
                 if (id === 'host') {
                     // Pre-calculate aspects for effects
-                    const targetAspect = (canvas?.width || 0) / (canvas?.height || 1); // Fullscreen framing pass
+                    const targetAspect = (canvas?.width || 0) / (canvas?.height || 1); 
                     const sourceAspect = meta.width / meta.height;
                     let texScaleX = 1.0, texScaleY = 1.0, texOffsetX = 0.0, texOffsetY = 0.0;
                     if (sourceAspect > targetAspect) { texScaleX = targetAspect / sourceAspect; texOffsetX = (1.0 - texScaleX) / 2.0; } 
@@ -482,8 +532,14 @@ function renderLoop(time: number = 0) {
                     if (visualSettings.beauty.smoothing > 0.01 || visualSettings.beauty.brightness !== 1.0 || visualSettings.beauty.sharpen > 0.01 || visualSettings.beauty.denoise > 0.01 || visualSettings.background.mode !== 'none' || visualSettings.chromaKey?.enabled) {
                         finalTexture = compositor.applyVisualEffects(sourceTexture, meta.width, meta.height, visualSettings, true, [texScaleX, texScaleY], [texOffsetX, texOffsetY]);
                     }
-                    const mirroredCenterX = 1.0 - faceTracking.currentX;
-                    compositor.renderToCanvas(finalTexture, region, canvas!, true, true, mirroredCenterX, faceTracking.currentY);
+                    
+                    if (id === 'host') {
+                        const mirroredCenterX = 1.0 - faceTracking.currentX;
+                        compositor.renderToCanvas(finalTexture, region, canvas!, true, true, mirroredCenterX, faceTracking.currentY);
+                    } else {
+                        // For guest, render directly to scene region using the effect-processed texture
+                        compositor.renderToCanvas(finalTexture, region, meta, false, false);
+                    }
                 } else {
                     compositor.renderToCanvas(sourceTexture, region, meta, false, false);
                 }
@@ -495,13 +551,13 @@ function renderLoop(time: number = 0) {
     if (performanceLyricsVisible && performanceLyrics.length > 0) {
         if (cinematicMode) {
             uiOverlay.renderLyricsInRegion(0, 0, 1, 1, performanceLyrics, performanceLyricsCurrentTime, performanceLyricsStyle);
-        } else if (activeScene?.layout?.regions && performingVTuberId) {
+        } else if (activeScene?.layout?.regions && performingInfluencerId) {
             activeScene.layout.regions.forEach((region: any) => {
                 let isTarget = false;
-                if (region.source === 'host' && performingVTuberId === 'host') isTarget = true;
+                if (region.source === 'host' && performingInfluencerId === 'host') isTarget = true;
                 else if (region.source.startsWith('guest')) {
                     const guestData = slotMap.get(region.source);
-                    if (guestData && guestData.id === performingVTuberId) isTarget = true;
+                    if (guestData && guestData.id === performingInfluencerId) isTarget = true;
                 }
                 if (isTarget) {
                     const x = region.x / 100.0, y = region.y / 100.0, w = region.width / 100.0, h = region.height / 100.0;
@@ -520,33 +576,111 @@ function renderLoop(time: number = 0) {
         sceneDirty = true; // Animate pop-in and highlights
     }
 
+    // Prepare 2D Canvas for Context & Global Overlays
+    uiOverlay.clearGraphics();
+
     if (logoImage && (visualSettings as any).branding?.logoUrl) {
-        uiOverlay.renderBrandLogo(logoImage, (visualSettings as any).branding);
+        uiOverlay.drawBrandLogo(logoImage, (visualSettings as any).branding);
     }
 
     if ((visualSettings as any).breakMode?.enabled) {
-        uiOverlay.renderBreakOverlay(time, (visualSettings as any).breakMode?.message);
+        uiOverlay.drawBreakOverlay(time, (visualSettings as any).breakMode?.message);
     }
 
     if ((visualSettings as any).showLowerThird && !cinematicMode) {
-        uiOverlay.renderLowerThird((visualSettings as any).branding || {}, activeScene, slotMap);
+        uiOverlay.drawLowerThird((visualSettings as any).branding || {}, activeScene, slotMap);
     }
 
-    if ((visualSettings as any).showTicker && !cinematicMode) {
-        uiOverlay.renderTicker((visualSettings as any).tickerText);
+    if ((visualSettings as any).showTicker && !cinematicMode && isLiveState) {
+        uiOverlay.drawTicker((visualSettings as any).tickerText);
         sceneDirty = true; // Animate
     }
 
-    if ((visualSettings as any).specialOverlays?.showSponsorship && !cinematicMode) {
-        uiOverlay.renderSponsorshipBadge((visualSettings as any).specialOverlays.sponsorName);
+    if ((visualSettings as any).specialOverlays?.showSponsorship && !cinematicMode && isLiveState) {
+        uiOverlay.drawSponsorshipBadge((visualSettings as any).specialOverlays.sponsorName);
     }
 
-    if (!cinematicMode && (commerceState.flashSaleActive || commerceState.activeProduct || commerceState.purchaseNotifications.length > 0)) {
+    if (!cinematicMode && isLiveState && (commerceState.flashSaleActive || commerceState.activeProduct || commerceState.purchaseNotifications.length > 0)) {
         const vibe = (visualSettings as any).vibeScore || 85;
         const velocity = (visualSettings as any).chatVelocity || 0;
-        uiOverlay.renderCommerceOverlays(commerceState.flashSaleActive, commerceState.activeProduct, commerceState.qrCodeBitmap, commerceState.purchaseNotifications, time, vibe, velocity);
+        
+        const ctxType = (visualSettings as any).streamingContext;
+        if (ctxType === 'sales') {
+            // Sales context has its own overlay for product/timer, so only draw notifications here
+            uiOverlay.drawCommerceOverlays(null, null, null, commerceState.purchaseNotifications, time, vibe, velocity);
+        } else {
+            uiOverlay.drawCommerceOverlays(commerceState.flashSaleActive, commerceState.activeProduct, commerceState.qrCodeBitmap, commerceState.purchaseNotifications, time, vibe, velocity);
+        }
         sceneDirty = true; // Keep animating for notifications
     }
+
+    if (currentQuest && !cinematicMode && isLiveState) {
+        uiOverlay.drawQuestOverlay(currentQuest, time);
+        sceneDirty = true; // Keep animating for shimmers/pulses
+    }
+
+    if (activeFacts.length > 0 && !cinematicMode && isLiveState) {
+        uiOverlay.drawFactCheckHub(activeFacts, 40, canvas.height - (activeFacts.length * 60 + 60));
+        sceneDirty = true;
+    }
+
+    if (vizData.length > 0 && !cinematicMode && isLiveState) {
+        uiOverlay.drawDataVizWidget(vizData, 'Live Engagement', 40, 150);
+        sceneDirty = true;
+    }
+
+    // Context-Specific Overlays
+    const ctxType = (visualSettings as any).streamingContext;
+    if (ctxType && !cinematicMode && isLiveState) {
+        if (ctxType === 'education' && visualSettings.streamRatio !== '9:16') {
+            uiOverlay.drawEducationOverlay(contextData.education);
+            sceneDirty = true;
+        } else if (ctxType === 'news') {
+            uiOverlay.drawNewsOverlay(contextData.news);
+        } else if (ctxType === 'sport') {
+            uiOverlay.drawSportOverlay(contextData.sport);
+        } else if (ctxType === 'sales') {
+            uiOverlay.drawSalesOverlay(contextData.sales);
+            // // FORCE DEBUG MOCK: Render product even if none is selected
+            // const activeProduct = commerceState.activeProduct || {
+            //     name: "LIMITED EDITION E-COMMERCE MOCK PRODUCT",
+            //     price: 1337.99,
+            //     features: ["Anti-Gravity Tech", "Super Fast Delivery", "Zero Latency AI"],
+            //     showQR: true
+            // };
+            // const flashSale = commerceState.flashSaleActive || {
+            //     startTime: Date.now() - 60000,
+            //     durationMinutes: 60
+            // };
+            
+            // const salesData = { 
+            //     ...contextData.sales, 
+            //     activeProduct: activeProduct, 
+            //     flashSale: flashSale 
+            // };
+            // // Uses a default placeholder QR if qrCodeBitmap is missing
+            // uiOverlay.drawSalesOverlay(salesData, commerceState.qrCodeBitmap);
+            sceneDirty = true;
+        } else if (ctxType === 'gameshow') {
+            uiOverlay.drawGameShowOverlay(contextData.gameshow);
+        } else if (ctxType === 'talkshow') {
+            uiOverlay.drawTalkShowOverlay(contextData.talkshow);
+        }
+    }
+
+    if (activeRecap && !cinematicMode && isLiveState) {
+        uiOverlay.drawFinalRecapCard(activeRecap, canvas.width, canvas.height);
+        sceneDirty = true;
+    }
+
+    // Phase 33: Neural Singularity Aura Effect
+    if (hypeLevel > 0.5) {
+        uiOverlay.drawSingularityAura(hypeLevel);
+        sceneDirty = true;
+    }
+
+    // FLUSH 2D GRAPHICS CONTEXT TO WEBGL TEXTURE
+    uiOverlay.uploadAndRenderGraphics();
 
     sceneDirty = false;
     requestAnimationFrame(renderLoop);

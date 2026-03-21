@@ -1,5 +1,5 @@
 /**
- * ModelCache - IndexedDB-based cache for VTuber model files and face landmarks.
+ * ModelCache - IndexedDB-based cache for influencer model files and face landmarks.
  * Avoids re-downloading large model files and re-running expensive face detection.
  */
 

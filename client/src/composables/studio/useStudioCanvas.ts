@@ -1,10 +1,14 @@
-import { ref, type Ref, reactive, onUnmounted, watch, onMounted } from 'vue';
+import { ref, type Ref, reactive, onUnmounted, watch, onMounted, nextTick } from 'vue';
 import { useStudioStore } from '@/stores/studio';
 import { QRCodeGenerator } from '@/utils/ai/QRCodeGenerator';
 import { liveAIEngine } from '@/utils/ai/LiveAIEngine';
 import { arEngine } from '@/utils/ar/AREngine';
 import { useMediaStore } from '@/stores/media';
+import { useI18n } from 'vue-i18n';
 import { getFileUrl } from '@/utils/api';
+import { factCheckingService } from '@/utils/ai/FactCheckingService';
+import { recapOrchestrator } from '@/utils/ai/RecapOrchestrator';
+import { syntheticGuestManager } from '@/utils/ai/SyntheticGuestManager';
 // @ts-ignore
 import StudioWorker from '@/workers/render/RenderWorker?worker';
 
@@ -25,11 +29,13 @@ export function useStudioCanvas(
         screenVideo?: Ref<HTMLVideoElement | null>;
         activeMediaVideo?: Ref<HTMLVideoElement | null>;
         cinematicVideo?: Ref<HTMLVideoElement | null>;
+        isLive?: Ref<boolean>;
     },
     overlayCanvas?: Ref<HTMLCanvasElement | null>
 ) {
     const studioStore = useStudioStore();
     const mediaStore = useMediaStore();
+    const { t } = useI18n();
     const frameCount = ref(0);
     const lastRenderTime = ref(0);
     const transitionStartTime = ref(0);
@@ -37,6 +43,7 @@ export function useStudioCanvas(
     const faceFrame = reactive({ x: 0.5, y: 0.5, w: 1, h: 1, targetX: 0.5, targetY: 0.5 });
     
     let isAIProcessing = false;
+    const currentModelType = ref('');
 
     const transitionProgress = ref(0);
     const qrCodeImages = new Map<string, HTMLImageElement>();
@@ -57,6 +64,31 @@ export function useStudioCanvas(
     let cachedMaskImageData: ImageData | null = null;
     let forceFirstMask = true;
     let lastBackgroundSyncTime = 0;
+
+    const handleWorkerCommand = (e: any) => {
+        if (isWorkerEnabled && worker) {
+            const { type, payload } = e.detail;
+            const transfer = [];
+            if (payload?.bitmap instanceof ImageBitmap) {
+                transfer.push(payload.bitmap);
+            }
+            worker.postMessage(e.detail, transfer as any);
+        }
+    };
+
+    const handleFactCheck = (e: any) => {
+        if (isWorkerEnabled && worker) {
+            studioStore.verifiedFacts.unshift(e.detail);
+            worker.postMessage({ type: 'update-facts', payload: { facts: JSON.parse(JSON.stringify(studioStore.verifiedFacts.slice(0, 5))) } });
+        }
+    };
+
+    onUnmounted(() => {
+        window.removeEventListener('studio-worker-command', handleWorkerCommand);
+        window.removeEventListener('fact_check:new_result', handleFactCheck);
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        isRendering = false;
+    });
 
     const initWorker = () => {
         if (!outputCanvas.value || options.useWebGL?.value === false || options.isGuest?.value) return false;
@@ -95,6 +127,21 @@ export function useStudioCanvas(
                     worker.postMessage({ type: 'update-scene', payload: { scene: JSON.parse(JSON.stringify(studioStore.activeScene)) } });
                 }
 
+                // Phase 35: Proactively push current settings including auth token
+                const token = localStorage.getItem('auth-token');
+                worker.postMessage({ 
+                    type: 'update-settings', 
+                    payload: {
+                        ...JSON.parse(JSON.stringify(studioStore.visualSettings)),
+                        authToken: token,
+                        vibeScore: studioStore.vibeScore,
+                        chatVelocity: studioStore.chatVelocity,
+                        streamRatio: studioStore.streamRatio,
+                        streamingContext: studioStore.streamingContext,
+                        ai: { ...studioStore.visualSettings.ai, humanFreeMode: studioStore.humanFreeMode }
+                    } 
+                });
+
                 // Push current background asset if any immediately
                 if (studioStore.visualSettings.background.assetUrl) {
                     updateBackgroundAsset(studioStore.visualSettings.background.assetUrl);
@@ -104,13 +151,48 @@ export function useStudioCanvas(
                 console.log("Studio Rendering Worker Initialized");
 
                 // Listen for guest commands and forward to worker
-                const handleWorkerCommand = (e: any) => {
-                    if (isWorkerEnabled && worker) {
-                        worker.postMessage(e.detail);
-                    }
-                };
                 window.addEventListener('studio-worker-command', handleWorkerCommand);
-                // Listener management is now handled at top-level to avoid lifecycle warnings
+
+                // Phase 32: Listen for fact-check results
+                window.addEventListener('fact_check:new_result', handleFactCheck);
+
+                /* 
+                // Phase 31: Sync quest state to worker
+                // Bridge AI influencers via MediaStream. 
+                syntheticGuestManager.activeGuests.forEach((guest, id) => {
+                    const persona = guest.persona;
+                    worker?.postMessage({
+                        type: 'add-3d-guest',
+                        payload: {
+                            id,
+                            modelUrl: persona.visual?.modelUrl ? getFileUrl(persona.visual.modelUrl) : undefined,
+                            textureUrl: persona.visual?.thumbnailUrl ? getFileUrl(persona.visual.thumbnailUrl) : undefined,
+                            modelType: persona.visual?.modelType || '3d'
+                        }
+                    });
+                    console.log(`[Studio Canvas] Resyncing AI Guest to worker: ${id}`);
+                });
+                */
+
+                // Resync guest slot mapping
+                worker?.postMessage({ 
+                    type: 'update-guest-slots', 
+                    payload: { slots: JSON.parse(JSON.stringify(studioStore.guestSlotMap)) } 
+                });
+
+                watch(() => studioStore.guestSlotMap, (newMap) => {
+                    worker?.postMessage({
+                        type: 'update-guest-slots',
+                        payload: { slots: JSON.parse(JSON.stringify(newMap)) }
+                    });
+                }, { deep: true });
+
+                watch(() => studioStore.activeScene, (newScene) => {
+                    worker?.postMessage({
+                        type: 'update-scene',
+                        payload: { scene: JSON.parse(JSON.stringify(newScene)) }
+                    });
+                }, { deep: true });
 
                 return true;
             }
@@ -119,16 +201,6 @@ export function useStudioCanvas(
         }
         return false;
     };
-
-    // Cleanup worker commands on unmount (hoisted)
-    onUnmounted(() => {
-        const handleWorkerCommand = (e: any) => {
-            if (isWorkerEnabled && worker) {
-                worker.postMessage(e.detail);
-            }
-        };
-        window.removeEventListener('studio-worker-command', handleWorkerCommand);
-    });
 
     const bridgeStream = (id: string, stream: MediaStream | null) => {
         if (!worker || !stream || bridgedStreams.has(id)) return;
@@ -195,6 +267,13 @@ export function useStudioCanvas(
                     bridgeStream(id, sourceVideo.value.srcObject as MediaStream);
                 }
             }
+        } else if (studioStore.humanFreeMode) {
+            // Bridge first AI guest as 'host' for visual continuity in host-based scenes
+            const keys = Object.keys(guestVideos.value);
+            if (keys.length > 0 && guestVideos.value[keys[0]]?.srcObject) {
+                currentActiveIds.add('host');
+                bridgeStream('host', guestVideos.value[keys[0]].srcObject as MediaStream);
+            }
         }
 
         Object.entries(guestVideos.value).forEach(([key, video]) => {
@@ -252,7 +331,9 @@ export function useStudioCanvas(
                     authToken: token,
                     vibeScore: vibe,
                     chatVelocity: chatVelocity,
-                    streamRatio: studioStore.streamRatio
+                    streamRatio: studioStore.streamRatio,
+                    streamingContext: studioStore.streamingContext,
+                    ai: { ...newSettings.ai, humanFreeMode: studioStore.humanFreeMode }
                 } 
             });
         }
@@ -288,20 +369,96 @@ export function useStudioCanvas(
     watch([
         () => mediaStore.performanceLyrics,
         () => mediaStore.performanceLyricsCurrentTime,
-        () => mediaStore.performingVTuberId,
+        () => mediaStore.performingInfluencerId,
         () => mediaStore.performanceLyricsVisible,
         () => mediaStore.performanceLyricsStyle
-    ], ([lyrics, currentTime, vtuberId, visible, style]) => {
+    ], ([lyrics, currentTime, influencerId, visible, style]) => {
         if (isWorkerEnabled && worker) {
             worker.postMessage({
                 type: 'update-lyrics',
                 payload: {
                     lyrics: JSON.parse(JSON.stringify(lyrics)),
                     currentTime,
-                    performingVTuberId: vtuberId,
+                    performingInfluencerId: influencerId,
                     visible,
                     style
                 }
+            });
+        }
+    }, { immediate: true });
+
+    // Phase 31: Sync quest state to worker
+    watch(() => studioStore.activeQuest, (quest) => {
+        if (isWorkerEnabled && worker) {
+            const payload = quest ? {
+                ...JSON.parse(JSON.stringify(quest)),
+                localized: {
+                    label: t('studio.quests.label'),
+                    timer: t('studio.quests.timer', { time: '59s' }),
+                    progress: t('studio.quests.progress'),
+                    success: t('studio.quests.success')
+                }
+            } : null;
+            
+            worker.postMessage({
+                type: 'update-quest',
+                payload
+            });
+        }
+    }, { deep: true, immediate: true });
+
+    // Phase 32: Sync Facts, Viz and Recap to worker
+    watch(() => studioStore.verifiedFacts, (facts) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({ type: 'update-facts', payload: { facts: JSON.parse(JSON.stringify(facts.slice(0, 5))) } });
+        }
+    }, { deep: true });
+
+    // Phase 52.1: Sync all context data to worker
+    watch(() => studioStore.contextData, (data) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({
+                type: 'update-context-data',
+                payload: {
+                    data: JSON.parse(JSON.stringify(data))
+                }
+            });
+        }
+    }, { deep: true, immediate: true });
+
+    watch(() => studioStore.activeRecap, (recap) => {
+        if (isWorkerEnabled && worker && recap) {
+            worker.postMessage({ type: 'show-recap', payload: { recap: JSON.parse(JSON.stringify(recap)) } });
+        }
+    }, { deep: true });
+
+    // Performance: Metrics Viz data collection
+    let metricsInterval: any = null;
+    onMounted(() => {
+        metricsInterval = setInterval(() => {
+            const score = studioStore.vibeScore + (Math.random() * 10 - 5);
+            studioStore.metricsHistory.push({ time: Date.now(), value: Math.round(score) });
+            if (studioStore.metricsHistory.length > 20) studioStore.metricsHistory.shift();
+            
+            if (isWorkerEnabled && worker) {
+                worker.postMessage({ 
+                    type: 'update-viz', 
+                    payload: { data: JSON.parse(JSON.stringify(studioStore.metricsHistory)) } 
+                });
+            }
+        }, 3000);
+    });
+
+    onUnmounted(() => {
+        if (metricsInterval) clearInterval(metricsInterval);
+    });
+
+    // Phase 101: Sync isLive status to worker
+    watch(() => options.isLive?.value, (live) => {
+        if (isWorkerEnabled && worker) {
+            worker.postMessage({
+                type: 'update-live-status',
+                payload: { isLive: !!live }
             });
         }
     }, { immediate: true });
@@ -328,7 +485,9 @@ export function useStudioCanvas(
             try {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
-                img.src = getFileUrl(url);
+                // Do not prepend /api/s3/ for local public assets like /bg/
+                const finalUrl = (url.startsWith('http') || url.startsWith('/bg/')) ? url : getFileUrl(url);
+                img.src = finalUrl;
                 await new Promise((resolve, reject) => {
                     img.onload = resolve;
                     img.onerror = reject;
@@ -391,12 +550,13 @@ export function useStudioCanvas(
     // Commerce State Sync Watcher
     const sendCommerceState = async () => {
         if (!isWorkerEnabled || !worker) return;
-
+		console.log("sendCommerceState", studioStore.activeFlashSale, studioStore.activeProductId);
         const flashSaleActive = studioStore.activeFlashSale;
         let activeProduct = null;
         let qrCodeBitmap: ImageBitmap | null = null;
         
         if (studioStore.activeProductId) {
+			console.log("sendCommerceState", studioStore.liveProducts);
             activeProduct = studioStore.liveProducts.find((p: any) => p.id === studioStore.activeProductId || p._id === studioStore.activeProductId);
             
             if (activeProduct) {
@@ -429,16 +589,30 @@ export function useStudioCanvas(
 
         let transfer: Transferable[] = [];
         if (qrCodeBitmap) transfer.push(qrCodeBitmap);
-
-        worker.postMessage({
+		console.log("sendCommerceState", flashSaleActive, activeProduct, notifications);
+        // Send non-transferable state first (without the bitmap key so worker doesn't reset it)
+        worker.postMessage(JSON.parse(JSON.stringify({
             type: 'update-commerce',
             payload: {
                 flashSaleActive,
                 activeProduct,
                 purchaseNotifications: notifications,
-                qrCodeBitmap
             }
-        }, transfer);
+        })));
+
+        // Transfer the QR bitmap separately so it's not lost via JSON serialization
+        if (qrCodeBitmap) {
+            worker.postMessage({
+                type: 'update-commerce',
+                payload: { qrCodeBitmap }
+            }, [qrCodeBitmap]);
+        } else {
+            // Explicitly clear if no product is active
+            worker.postMessage({
+                type: 'update-commerce',
+                payload: { qrCodeBitmap: null }
+            });
+        }
     };
 
     watch([
@@ -460,20 +634,36 @@ export function useStudioCanvas(
         }
 
         try {
-            await liveAIEngine.initialize();
-            console.log('[Studio Canvas] AI Engine initialized');
+            // ONLY initialize AI Engine if Host influencer requires live tracking/segmentation
+            // Restricted to: static, image, video models (per user feedback)
+            // Wait slightly for guests to be summoned if not immediately available
+            if (syntheticGuestManager.activeGuests.size === 0) {
+                console.log('[Studio Canvas] Waiting for guests to populate...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
 
-            // --- LATENCY FIX: Worker-to-Worker Direct Channel ---
-            if (isWorkerEnabled && worker && liveAIEngine.getWorker()) {
-                const channel = new MessageChannel();
-                
-                // Send port1 to Render Worker
-                worker.postMessage({ type: 'SETUP_AI_CHANNEL' }, [channel.port1]);
-                
-                // Send port2 to AI Tracking Worker
-                liveAIEngine.getWorker()!.postMessage({ type: 'SETUP_CHANNEL' }, [channel.port2]);
-                
-                console.log('[Studio Canvas] Worker-to-Worker Direct Channel Established');
+            const hostGuest = Array.from(syntheticGuestManager.activeGuests.values()).find(g => 
+                studioStore.guestSlotMap['host']?.uuid === g.persona.uuid || 
+                studioStore.liveGuests.find(lg => lg.uuid === g.persona.uuid && lg.slotIndex === 0)
+            );
+            
+            const modelType = hostGuest?.persona?.visual?.modelType || '';
+            currentModelType.value = modelType as string;
+            const requiresAI = ['static', 'image', 'video'].includes(currentModelType.value);
+
+            if (requiresAI) {
+                // await liveAIEngine.initialize();
+                console.log(`[Studio Canvas] AI Engine initialized for modelType: ${currentModelType.value}`);
+
+                // --- LATENCY FIX: Worker-to-Worker Direct Channel ---
+                if (isWorkerEnabled && worker && liveAIEngine.getWorker()) {
+                    const channel = new MessageChannel();
+                    worker.postMessage({ type: 'SETUP_AI_CHANNEL' }, [channel.port1]);
+                    liveAIEngine.getWorker()!.postMessage({ type: 'SETUP_CHANNEL' }, [channel.port2]);
+                    console.log('[Studio Canvas] Worker-to-Worker Direct Channel Established');
+                }
+            } else {
+                console.log(`[Studio Canvas] AI Engine skipped for modelType: ${modelType || 'unknown'} (isAidol: ${modelType === 'aidol'})`);
             }
         } catch (error) {
             console.error('[Studio Canvas] Failed to initialize AI engine:', error);
@@ -752,7 +942,7 @@ export function useStudioCanvas(
         }
 
         // Phase 93: Lyrics Rendering per-slot
-        const guestId = mediaStore.performingVTuberId;
+        const guestId = mediaStore.performingInfluencerId;
         if (guestId && mediaStore.performanceLyricsVisible) {
             let isTarget = false;
             if (region.source === 'host' && guestId === 'host') isTarget = true;
@@ -1090,7 +1280,16 @@ export function useStudioCanvas(
     let lastMaskTimestamp = -1;
 
     const processAISegmentation = async (video: HTMLVideoElement, timestamp: number, skipSegmentation = false) => {
-        if (!worker || !video.videoWidth || isAIProcessing || !studioStore.aiEnabled) return;
+        if (!studioStore.visualSettings.aiEnabled || (studioStore.visualSettings as any).performanceMode) return;
+        if (isAIProcessing || skipSegmentation) return;
+        if (!worker || !video.videoWidth) return;
+        if (!liveAIEngine || !liveAIEngine.isInitialized) return;
+
+        // Skip AI processing if current model is AIDOL (pre-rendered performance)
+        if (currentModelType.value === 'aidol') {
+            if (timestamp % 500 === 0) console.log("[Studio Canvas] Skipping AI processing for AIDOL model");
+            return;
+        }
 
         isAIProcessing = true;
 		if(liveAIEngine && liveAIEngine.isInitialized){
