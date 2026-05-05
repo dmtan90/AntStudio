@@ -92,6 +92,18 @@ export class AudioMixerService {
         this.masterGain?.connect(destination);
         return destination.stream;
     }
+
+    /**
+     * Stop all tracks and close the audio context.
+     */
+    public stopAll() {
+        this.tracks.forEach((_, id) => this.removeTrack(id));
+        if (this.audioCtx && this.audioCtx.state !== 'closed') {
+            this.audioCtx.close();
+            this.audioCtx = null;
+            this.masterGain = null;
+        }
+    }
 }
 
 export const audioMixerService = new AudioMixerService();

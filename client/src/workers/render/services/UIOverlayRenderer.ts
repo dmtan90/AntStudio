@@ -578,6 +578,7 @@ export class UIOverlayRenderer {
         if (!this.gl) return;
         const ctx = this.ensureGraphicsCanvas();
         if (!ctx) return;
+        ctx.save();
         const barHeight = 50;
         const y = this.canvasHeight - barHeight;
         
@@ -601,6 +602,7 @@ export class UIOverlayRenderer {
         for (let i = 0; i < repeatCount; i++) {
             ctx.fillText(text, this.tickerOffset + (textWidth * i), y + barHeight / 2);
         }
+        ctx.restore();
     }
 
     drawSponsorshipBadge(sponsorName: string) {
@@ -637,13 +639,14 @@ export class UIOverlayRenderer {
         if (!ctx) return;
 
         const bannerH = 40;
+        const y = 80;
         ctx.fillStyle = '#ef4444';
-        ctx.fillRect(0, 0, this.canvasWidth, bannerH);
+        ctx.fillRect(0, y, this.canvasWidth, bannerH);
         ctx.fillStyle = 'white';
         ctx.font = '900 14px "Inter", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`🔥 FLASH SALE ENDS IN: ${timerStr} 🔥`, this.canvasWidth / 2, bannerH / 2 + 2);
+        ctx.fillText(`🔥 FLASH SALE ENDS IN: ${timerStr} 🔥`, this.canvasWidth / 2, y + bannerH / 2 + 2);
     }
 
     drawCommerceOverlays(flashSale: any, product: any, qrCodeImage: ImageBitmap | null, notifications: any[], time: number, vibeScore: number = 85, chatVelocity: number = 0) {
@@ -724,7 +727,11 @@ export class UIOverlayRenderer {
                 ctx.roundRect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 4);
                 ctx.fill();
 
-                ctx.drawImage(qrCodeImage, qrX, qrY, qrSize, qrSize);
+                try {
+                    ctx.drawImage(qrCodeImage, qrX, qrY, qrSize, qrSize);
+                } catch (e) {
+                    // Ignore DOMExceptions for closed/transferring ImageBitmaps
+                }
 
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.font = '900 7px "Inter", sans-serif';
@@ -1352,6 +1359,7 @@ export class UIOverlayRenderer {
 
         // 2. Product Spotlight Card
         if (data.activeProduct) {
+            ctx.save();
             const sw = 280, sh = 380;
             const sx = this.canvasWidth - sw - margin;
             const sy = 120;
@@ -1377,8 +1385,9 @@ export class UIOverlayRenderer {
                 ctx.fillText(`• ${f}`, sx + 30, sy + 170 + (i * 25));
             });
 
-            // Draw QR Code if provided
-            if (qrCodeImage) {
+            // ALWAYS Draw QR Code Box (even if placeholder)
+            const showQR = data.activeProduct.showQR !== false;
+            if (showQR) {
                 const qrSize = 100;
                 const qrX = sx + sw - qrSize - 30;
                 const qrY = sy + sh - qrSize - 30;
@@ -1388,13 +1397,26 @@ export class UIOverlayRenderer {
                 ctx.roundRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 10);
                 ctx.fill();
                 
-                ctx.drawImage(qrCodeImage, qrX, qrY, qrSize, qrSize);
+                if (qrCodeImage) {
+                    try {
+                        ctx.drawImage(qrCodeImage, qrX, qrY, qrSize, qrSize);
+                    } catch (e) { }
+                } else {
+                    // Draw a placeholder pattern so the user sees the QR code mockup
+                    ctx.fillStyle = '#111';
+                    ctx.fillRect(qrX + 10, qrY + 10, qrSize - 20, qrSize - 20);
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 12px "Inter", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('QR MOCK', qrX + qrSize / 2, qrY + qrSize / 2);
+                }
                 
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.font = '900 10px "Inter", sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('SCAN TO BUY', qrX + qrSize / 2, qrY + qrSize + 15);
             }
+            ctx.restore();
         }
     }
 

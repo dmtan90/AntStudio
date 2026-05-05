@@ -323,7 +323,8 @@ const launchStudio = async (extraData?: any) => {
   // Navigate
   const query: any = extraData?.platforms ? { platforms: extraData.platforms.join(',') } : {};
   console.log("selectedContextId", selectedContextId.value, "query", query);
-  router.push({ path: `/live/${selectedContextId.value}`, query });
+  // router.push({ path: `/live/${selectedContextId.value}`, query });
+  router.push({ name: 'live-sales', query });
 };
 
 const handleWizardComplete = async (data?: any) => {

@@ -132,9 +132,15 @@ const routes: Array<RouteRecordRaw> = [
         props: true
     },
     {
+        path: '/live/sales-legacy',
+        name: 'live-sales-legacy',
+        component: () => import('@/views/live/SaleStudio.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
         path: '/live/sales',
         name: 'live-sales',
-        component: () => import('@/views/live/SaleStudio.vue'),
+        component: () => import('@/views/live/SaleStudioV2.vue'),
         meta: { requiresAuth: true, layout: 'none' }
     },
     {

@@ -12,9 +12,9 @@ export class AgentEventBus {
     }
 
     public registerHandler(handler: (personaId: string, toolCall: any) => void) {
-        if (!this.toolCallHandlers.includes(handler)) {
-            this.toolCallHandlers.push(handler);
-        }
+        // Always replace — prevents stale HMR duplicates from accumulating.
+        // In production a single handler per session is all that's needed.
+        this.toolCallHandlers = [handler];
     }
 
     public removeHandler(handler: (personaId: string, toolCall: any) => void) {

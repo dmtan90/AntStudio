@@ -118,24 +118,28 @@ export class SaleRunner {
 
         if (targetGuestId) {
             const guest = syntheticGuestManager.activeGuests.get(targetGuestId);
-            const context = studioStore.streamingContext;
+            // const context = studioStore.streamingContext;
 
             // Trigger visual gesture if defined (for non-aidol this acts as animation, for aidol we consolidate below)
-            if (step.gesture && guest?.persona.visual?.modelType !== 'aidol') {
-                syntheticGuestManager.triggerGesture(targetGuestId, step.gesture);
-            }
+            // if (step.gesture && guest?.persona.visual?.modelType !== 'aidol') {
+            //     syntheticGuestManager.triggerGesture(targetGuestId, step.gesture);
+            // }
 
             // Phase 112: AIDOL Dynamic Clip Triggering
             if (guest?.persona.visual?.modelType === 'aidol') {
                 // If the step has a productId, we prefer that clip
                 window.dispatchEvent(new CustomEvent('showrunner:directive', {
                     detail: {
-                        type: step.videoClip || step.gesture || step.type || 'product', // Respect custom clip mappings from the script!
+                        type: step.type || step.gesture || 'product', // Respect custom clip mappings from the script!
                         directive: step.text,
                         originSpeaker: step.speaker,
                         productContext: step.productId ? studioStore.liveProducts.find((p: any) => p._id === step.productId || p.id === step.productId) : null
                     }
                 }));
+            }
+            else{
+                const type = step.gesture || step.type || "happy";
+                syntheticGuestManager.triggerGesture(targetGuestId, type);
             }
 
             // Trigger the actual speech

@@ -8,12 +8,9 @@
       <div class="relative flex-1 flex flex-col min-w-0">
         <div class="relative flex-1 overflow-hidden rounded-[2rem] border border-white/10 shadow-3xl bg-black">
 
-          <!-- Canvas outputs -->
           <div class="canvas-wrapper absolute inset-0 overflow-hidden bg-black/60 flex items-center justify-center">
-            <div :style="{ aspectRatio: studioStore.streamRatio === '9:16' ? '9/16' : '16/9' }" class="relative w-full h-full max-w-full max-h-full flex items-center justify-center transition-all duration-500">
-                <canvas ref="outputCanvas" class="w-full h-full object-contain" style="display:block;"></canvas>
-                <canvas ref="overlayCanvas" class="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"></canvas>
-                <video ref="sourceVideo" autoplay muted playsinline class="hidden"></video>
+            <div :style="{ aspectRatio: studioStore.streamRatio === '9:16' ? '9/16' : '16/9' }" class="relative flex items-center justify-center transition-all duration-500 w-full h-full max-w-full max-h-full">
+                <canvas ref="pixiCanvas" class="!w-full !h-full object-contain" style="display:block;"></canvas>
             </div>
           </div>
 
@@ -100,19 +97,7 @@
             </button>
           </div>
 
-          <!-- Deprecation Overlay -->
-          <div class="absolute inset-0 z-[101] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
-            <div class="p-8 rounded-3xl bg-red-900/20 border border-red-500/30 text-center max-w-md">
-              <h2 class="text-2xl font-black text-red-500 uppercase tracking-widest mb-4">Legacy Engine</h2>
-              <p class="text-white/70 text-sm mb-6 leading-relaxed">
-                This version of SaleStudio is being deprecated due to performance limitations. 
-                Please use the high-performance <b>SaleStudioV2</b> for a 30fps+ experience.
-              </p>
-              <router-link to="/live/sales" class="inline-block px-8 py-3 rounded-xl bg-red-600 text-white font-black uppercase tracking-widest hover:bg-red-500 transition-colors shadow-lg shadow-red-500/20">
-                SWITCH TO V2
-              </router-link>
-            </div>
-          </div>
+
 
           <!-- Loading Overlay -->
           <div v-if="!isStudioReady" class="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-[#080810]/95 backdrop-blur-3xl">
@@ -284,28 +269,6 @@
       @toggle-platform="togglePlatform"
     />
 
-    <!-- ── AI Virtual Guests (offscreen, provide canvas streams) ── -->
-    <!-- Each guest renders into a portrait 9:16 slot perfectly scaled to canvas height -->
-    <!-- Optimization: Use lower resolution for hidden background renders to save GPU -->
-    <div class="fixed inset-0 pointer-events-none opacity-[0.01] z-[-10] flex overflow-hidden">
-      <div
-        v-for="guest in activeGuests"
-        :key="guest.persona.uuid"
-        class="h-[640px] aspect-[9/16] overflow-hidden flex-shrink-0"
-      >
-        <VirtualGuest
-          :ref="(el: any) => { if (el) virtualGuestRefs[guest.persona.uuid] = el }"
-          :persona="guest.persona"
-          :is-host-speaking="false"
-          :is-portrait="true"
-          :hide-background="true"
-          :is-paused="!visibleGuestIds.has(guest.persona.uuid)"
-          :background-url="studioStore.visualSettings.background.assetUrl"
-          @stream-ready="(stream: MediaStream) => addSyntheticGuest(guest.persona.uuid, stream)"
-        />
-      </div>
-    </div>
-
     <!-- Sale Setup Wizard -->
     <SaleWizard 
       v-if="showWizard"
@@ -322,8 +285,10 @@ import { useStudioStore } from '@/stores/studio';
 import { useUserStore } from '@/stores/user';
 import { useI18n } from 'vue-i18n';
 import SaleWizard from '@/components/studio/dialogs/SaleWizard.vue';
-import { useStudioAI } from '@/composables/useStudioAI';
-import { useStudioCanvas } from '@/composables/studio/useStudioCanvas';
+import * as PIXI from 'pixi.js';
+import { useSaleRenderer } from '@/composables/studio/useSaleRenderer';
+import { useSaleHUD } from '@/composables/studio/useSaleHUD';
+// import { useStudioAI } from '@/composables/useStudioAI';
 import { useStudioSession } from '@/composables/studio/useStudioSession';
 import { useStudioP2P } from '@/composables/studio/useStudioP2P';
 import { useAudioVisualizer } from '@/composables/useAudioVisualizer';
@@ -332,15 +297,14 @@ import { usePlatformStore } from '@/stores/platform';
 import { toast } from 'vue-sonner';
 import { Hands } from '@icon-park/vue-next';
 import { useRoute } from 'vue-router';
-import VirtualGuest from '@/components/studio/virtual/VirtualGuest.vue';
 import { syntheticGuestManager } from '@/utils/ai/SyntheticGuestManager';
-// import { neuralShowrunner } from '@/utils/ai/NeuralShowrunner';
 import { saleRunner } from '@/utils/ai/SaleRunner';
-import { ActionSyncService } from '@/utils/ai/ActionSyncService';
+// import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { useInfluencerStore } from '@/stores/influencer';
 import { getFileUrl } from '@/utils/api';
 import { useLiveChatManager } from '@/composables/studio/useLiveChatManager';
 import { audioMixerService } from '@/utils/ai/AudioMixerService';
+import { HubertForCTC } from '@huggingface/transformers';
 
 const studioStore = useStudioStore();
 const userStore = useUserStore();
@@ -349,24 +313,31 @@ const route = useRoute();
 const { t } = useI18n();
 
 // UI Refs
-const outputCanvas = ref<HTMLCanvasElement | null>(null);
-const overlayCanvas = ref<HTMLCanvasElement | null>(null);
-const sourceVideo = ref<HTMLVideoElement | null>(null);
+const pixiCanvas = ref<HTMLCanvasElement | null>(null);
 const activeMediaVideo = ref<HTMLVideoElement | null>(null);
 const messagesContainer = ref<HTMLElement | null>(null);
 const hostStream = ref<MediaStream | null>(null);
 const canvasStream = ref<MediaStream | null>(null);
 const isStudioReady = ref(false);
+let pendingStudioInit: (() => Promise<void>) | null = null;
 const virtualGuestRefs = ref<Record<string, any>>({});
 let canvasResizeObserver: ResizeObserver | null = null;
 
 // Local State
 const viewers = ref(0);
 const messages = ref<any[]>([]);
-const micOn = ref(false);
 const streamQuality = computed(() => studioStore.visualSettings.streamQuality);
+const backgroundUrl = computed(() => studioStore.visualSettings.background.assetUrl);
 const isGuest = ref(false);
 let viewerInterval: any = null;
+
+// Microphone Toggle Control
+const micOn = ref(false);
+watch(micOn, (on) => {
+    if (hostStream.value) {
+        hostStream.value.getAudioTracks().forEach(t => t.enabled = on);
+    }
+});
 
 // Platform Selection
 const showPlatformSelector = ref(false);
@@ -400,7 +371,9 @@ const scriptFeed = ref<any[]>([]);
 
 // Purchase Simulation
 const purchaseNotifications = reactive<any[]>([]);
-const activeGuests = computed(() => Array.from(syntheticGuestManager.activeGuests.entries()).map(([, v]) => v));
+const activeGuests = computed(() =>
+    Array.from(syntheticGuestManager.activeGuests.entries()).map(([uuid, v]) => ({ ...v, uuid }))
+);
 
 // Optimization: Detection of guests visible in current scene
 const visibleGuestIds = computed(() => {
@@ -420,9 +393,32 @@ const visibleGuestIds = computed(() => {
 const { audioLevel: hostLevel } = useAudioVisualizer();
 const guestLevels = ref<Record<string, number>>({});
 
+// Orchestration / AI Event Hooks
+const handleWorkerCommand = (e: CustomEvent) => {
+    const { type, payload } = e.detail;
+    if (type === 'update-3d-expression') {
+        console.log("handleWorkerCommand", type, payload);
+        const guestData = syntheticGuestManager.activeGuests.get(payload.id);
+        if (guestData && renderer) {
+            const state = payload.gesture || 'idle';
+            renderer.playState(payload.id, state, guestData.persona, payload.productId);
+        }
+    } else if (type === 'update-3d-audio') {
+        // Forward audio level to PIXI renderer (for future lip-sync)
+        // renderer?.setAudioLevel?.(payload.id, payload.audioLevel);
+        // Also drive speaking state: if audio detected → speaking clip
+        if (payload.audioLevel > 0.01) {
+            const guestData = syntheticGuestManager.activeGuests.get(payload.id);
+            if (guestData && renderer) {
+                renderer.playState(payload.id, 'speaking', guestData.persona);
+            }
+        }
+    }
+};
+
 // Composables
 const { guestVideos, addSyntheticGuest } = useStudioP2P(hostStream, canvasStream, isGuest);
-const { startAILoop, stopAILoop } = useStudioAI(studioStore);
+// const { startAILoop, stopAILoop } = useStudioAI(studioStore);
 
 // Gemini Live Chat Manager (Phase 89 Integration)
 const { 
@@ -433,7 +429,7 @@ const {
 } = useLiveChatManager();
 
 const { isLive, liveTime, toggleLive: baseToggleLive } = useStudioSession(
-    outputCanvas,
+    pixiCanvas,
     hostStream,
     {
         streamQuality,
@@ -466,12 +462,12 @@ const stopProductPitchLoop = () => {
 // Resource Optimization: Start/Stop AI services based on Live status
 watch(isLive, (live) => {
     if (live) {
-        startAILoop();
+        // startAILoop  ();
         // Always start showrunner with sales context for SaleStudio
         studioStore.streamingContext = 'sales' as any;
         saleRunner.start();
     } else {
-        stopAILoop();
+        // stopAILoop();
         saleRunner.stop();
     }
 });
@@ -483,24 +479,59 @@ const toggleLive = async () => {
     }
 };
 
-const { startRendering, stopRendering } = useStudioCanvas(
-    outputCanvas,
-    sourceVideo,
-    guestVideos,
-    {
-        streamQuality,
-        enableAsl: ref(false),
-        purchaseNotifications: ref([]),
-        hostLevel,
-        guestLevels,
-        activeMediaVideo,
-        isGuest,
-        myGuestId: computed(() => studioStore.myGuestId),
-        realChatVelocity: computed(() => 0),
-        isLive
-    },
-    overlayCanvas
-);
+let app: PIXI.Application | null = null;
+let hud: ReturnType<typeof useSaleHUD> | null = null;
+let renderer: ReturnType<typeof useSaleRenderer> | null = null;
+
+const initPixi = async () => {
+    if (!pixiCanvas.value) return;
+
+    // Fixed 1920x1080 internal resolution for broadcast
+    const isVertical = studioStore.streamRatio === '9:16';
+    const targetWidth = isVertical ? 1080 : 1920;
+    const targetHeight = isVertical ? 1920 : 1080;
+
+    app = new PIXI.Application({
+        view: pixiCanvas.value,
+        width: targetWidth,
+        height: targetHeight,
+        backgroundColor: 0x151525,
+        resolution: 1,
+        autoDensity: true,
+        preserveDrawingBuffer: true,
+    });
+
+    hud = useSaleHUD(app);
+    renderer = useSaleRenderer(app, studioStore);
+    renderer.init(app.stage);
+
+    if (backgroundUrl.value) {
+        renderer.updateBackground(backgroundUrl.value);
+    }
+
+    watch(() => backgroundUrl.value, (bg) => {
+        if (renderer) renderer.updateBackground(bg);
+    });
+
+    app.ticker.add((delta: number) => {
+        if (studioStore.activeScene && renderer) {
+            renderer.updateLayouts(activeGuests.value, studioStore.activeScene);
+        }
+    });
+};
+
+const startRendering = async () => {
+    await initPixi();
+    if (app) app.start();
+};
+
+const stopRendering = () => {
+    if (app) {
+        app.stop();
+        app.destroy(true, { children: true, texture: true });
+        app = null;
+    }
+};
 
 // Computed: Product Spotlight
 const activeProduct = computed(() => studioStore.highlightedProduct || studioStore.featuredProducts?.[0]);
@@ -564,24 +595,30 @@ const handleProductHighlight = (productId: string) => {
     toast.success('Product spotlighted to audience');
 };
 
-const handleWizardComplete = (data?: any) => {
+const handleWizardComplete = async (data?: any) => {
     showWizard.value = false;
     if (data?.platforms) {
         selectedPlatforms.value = data.platforms;
     }
     toast.success('Sale Studio configured and ready!');
-    // Trigger any additional setup if needed
+    if (pendingStudioInit) {
+        await pendingStudioInit();
+        pendingStudioInit = null;
+    }
 };
 
 const handleMediaEnded = () => {
     studioStore.setMedia(null);
 };
 
-watch(() => studioStore.activeMediaId, (id) => {
+watch(() => studioStore.activeMediaId, async (id) => {
    if (!id) {
       if (activeMediaVideo.value) {
          activeMediaVideo.value.pause();
          activeMediaVideo.value.src = '';
+      }
+      if (renderer && renderer.updateMedia) {
+         await renderer.updateMedia(null);
       }
       return;
    }
@@ -596,29 +633,36 @@ watch(() => studioStore.activeMediaId, (id) => {
    }
 
    if (url) {
-      if (!activeMediaVideo.value) {
-         activeMediaVideo.value = document.createElement('video');
-         activeMediaVideo.value.autoplay = true;
-         activeMediaVideo.value.loop = true;
-         activeMediaVideo.value.muted = true;
-         activeMediaVideo.value.playsInline = true;
-         activeMediaVideo.value.addEventListener('ended', handleMediaEnded);
+      if (renderer && renderer.updateMedia) {
+          await renderer.updateMedia(url);
+      } else {
+          // Fallback legacy behavior string
+          if (!activeMediaVideo.value) {
+             activeMediaVideo.value = document.createElement('video');
+             activeMediaVideo.value.autoplay = true;
+             activeMediaVideo.value.loop = true;
+             activeMediaVideo.value.muted = true;
+             activeMediaVideo.value.playsInline = true;
+             activeMediaVideo.value.addEventListener('ended', handleMediaEnded);
+          }
+          activeMediaVideo.value.src = url;
+          activeMediaVideo.value.play();
       }
-      activeMediaVideo.value.src = url;
-      activeMediaVideo.value.play();
    }
 });
 
 // Phase 23: Vibe Shop 2.0 - Dynamic Product Pitching & Media Coordination
 watch(() => studioStore.highlightedProduct, async (product) => {
+    console.log("[SaleStudio] Showcasing Product", product);
+    hud?.updateProductSpotlight(product);
     if (!product) {
         studioStore.setMedia(null);
-        const activeAI = activeGuests.value.find(g => g.persona?.visual?.modelType === 'aidol');
-        if (activeAI) syntheticGuestManager.clearGesture(activeAI.persona.uuid);
+        // const activeAI = activeGuests.value.find(g => g.persona?.visual?.modelType === 'aidol');
+        // if (activeAI) syntheticGuestManager.clearGesture(activeAI.persona.uuid);
+        // Clear QR code from PIXI HUD
+        // if (hud) hud.updateQRCode(null);
         return;
     }
-
-    console.log(`[SaleStudio] Showcasing Product: ${product.name}`);
 
     // Get pitch script from storyboard or fallback to natural AI directive
     // let script = '';
@@ -637,11 +681,11 @@ watch(() => studioStore.highlightedProduct, async (product) => {
     
     if (activeAI) {
         // AIDOL: Switch Neural Video clip + Generate Voice
-        const productClip = product.eventClip?.['product'];
-        if (productClip) {
-            if (!activeAI.persona.visual.aidolClips) activeAI.persona.visual.aidolClips = {};
-            activeAI.persona.visual.aidolClips['product'] = productClip;
-        }
+        // const productClip = product.eventClip?.['product'];
+        // if (productClip) {
+        //     if (!activeAI.persona.visual.aidolClips) activeAI.persona.visual.aidolClips = {};
+        //     activeAI.persona.visual.aidolClips['product'] = productClip;
+        // }
 
         syntheticGuestManager.triggerGesture(activeAI.persona.uuid, 'product_intro', 0); // 0 = persistent
         
@@ -671,7 +715,13 @@ watch(() => studioStore.highlightedProduct, async (product) => {
             console.warn(`[SaleStudio] Gemini Live not connected for ${speaker?.persona.name}, skipping pitch.`);
         }
     }
-});
+
+    // Show QR code on PIXI HUD for this product
+    // if (hud) {
+    //     const productUrl = `${window.location.origin}/p/${product._id || product.id}`;
+    //     hud.updateQRCode(productUrl);
+    // }
+}, { deep: true, immediate: true });
 
 const scrollToBottom = () => {
     nextTick(() => {
@@ -683,6 +733,7 @@ const scrollToBottom = () => {
 
 const handleIncomingChat = (event: any) => {
     const comment = event.detail;
+    console.log("handleIncomingChat", comment);
     messages.value.push(comment);
     scrollToBottom();
 
@@ -703,7 +754,7 @@ const handleIncomingChat = (event: any) => {
 
 const handleShowrunnerDirective = (event: any) => {
     const detail = event.detail;
-    
+    console.log("handleShowrunnerDirective", detail);
     // Add to narrative feed
     scriptFeed.value.unshift({
         type: detail.type?.toUpperCase() || 'DIRECTIVE',
@@ -717,20 +768,14 @@ const handleShowrunnerDirective = (event: any) => {
 
     if (scriptFeed.value.length > 20) scriptFeed.value.pop();
 
-    // Simulated Interest / Purchase
-    if (detail.type === 'product_showcase' && detail.productContext) {
-        // Auto-Highlight in spotlight if mode is AUTO
-        if (autoQueueMode.value) {
-            handleProductHighlight(detail.productContext.id || detail.productContext._id);
-        }
-
-        setTimeout(() => {
-            const name = detail.audienceName || `Guest${Math.floor(Math.random() * 9000) + 1000}`;
-            toast.success(`${name} just purchased ${detail.productContext.name}!`, {
-                icon: '🛍️',
-                duration: 5000
-            });
-        }, 3000 + Math.random() * 5000);
+    // Trigger product highlight when directive is explicitly product-focused.
+    // Script types: "product" for generic, or a productId string for specific product steps.
+    const productId = detail.productContext?.id || detail.productContext?._id;
+    const isProductDirective = detail.productContext && (
+        detail.type === 'product' || detail.type === productId
+    );
+    if (isProductDirective && autoQueueMode.value) {
+        handleProductHighlight(productId);
     }
 };
 
@@ -746,8 +791,6 @@ const updateViewerCount = () => {
 
 onMounted(async () => {
     // Context is already applied by LiveContextSelector before navigation.
-    // Only sync products if none are featured yet (e.g. direct navigation)
-    // Otherwise, just fetch the library without overwriting selection.
     if (studioStore.featuredProducts.length === 0) {
         studioStore.fetchCommerceProducts(true);
     } else {
@@ -764,162 +807,193 @@ onMounted(async () => {
     }
 
     // LiveContextSelector already summoned the selected influencers.
-    // Ensure each is registered in liveGuests so assignGuestToSlot works.
-    // (summonGuest only calls studioStore.addGuest if studioStore was initialized
-    //  at that time — which may not be the case in the selector flow.)
-    const activeList = Array.from(syntheticGuestManager.activeGuests.entries());
-    activeList.forEach(([uuid, state]) => {
-        const persona = state.persona;
-        const alreadyInStore = studioStore.liveGuests.find((g: any) => g.uuid === uuid);
-        if (!alreadyInStore) {
-            studioStore.addGuest({
-                uuid,
-                name: persona.name || persona.identity?.name || 'AI Guest',
-                title: persona.identity?.role || 'Neural Agent',
-                type: 'ai',
-                avatar: persona.visual?.thumbnailUrl || persona.avatarUrl,
-                status: 'live',
-                audioEnabled: true,
-                videoEnabled: true,
-                joinedAt: new Date()
-            });
-        }
-    });
+    let activeList = Array.from(syntheticGuestManager.activeGuests.entries());
 
-    // Assign each active guest to a scene slot so the RenderWorker maps
-    // their UUID → guest1/guest2 region → texture drawn on canvas.
-    // Assign each active guest to a scene slot.
-    // In human-free non-sales contexts, the first AI is bridged to 'host', so we shift guest assignments.
-    const isSales = studioStore.streamingContext === 'sales' || studioStore.streamingContext === 'education';
-    activeList.forEach(([uuid], idx) => {
-        if (studioStore.humanFreeMode && !isSales) {
-            // AI 1 (idx 0) -> Host (bridged in useStudioCanvas)
-            // AI 2 (idx 1) -> Guest 1 (idx 0)
-            // AI 3 (idx 2) -> Guest 2 (idx 1)
-            if (idx > 0) {
-                studioStore.assignGuestToSlot(uuid, idx - 1);
-            }
-        } else {
-            studioStore.assignGuestToSlot(uuid, idx);
-        }
-    });
-
-    // Pick a scene that exposes guest regions (Side-by-Side preference).
-    const ideal = studioStore.getAutoBaseScene(activeList.length);
-    studioStore.switchScene(ideal);
-
-    // Start AI conversation/autonomous loop moved to isLive watcher
-    
-    // Sync Chat & Directives
-    window.addEventListener('studio:chat', handleIncomingChat);
-    window.addEventListener('showrunner:directive', handleShowrunnerDirective);
-
-    // Flash sale timer
-    timerInterval = setInterval(updateTimer, 1000);
-    updateTimer();
-
-    // Viewer variance
-    viewerInterval = setInterval(updateViewerCount, 5000);
-
-    // Force 1920x1080 internal resolution for high-quality production preview.
-    // The canvas-wrapper uses object-contain to fit this buffer into the container.
-    const syncCanvasSize = () => {
-        if (!outputCanvas.value) return;
-        const isVertical = studioStore.streamRatio === '9:16';
-        const targetWidth = isVertical ? 1080 : 1920;
-        const targetHeight = isVertical ? 1920 : 1080;
-        
-        if (outputCanvas.value.width !== targetWidth || outputCanvas.value.height !== targetHeight) {
-            outputCanvas.value.width = targetWidth;
-            outputCanvas.value.height = targetHeight;
-            if (overlayCanvas.value) {
-                overlayCanvas.value.width = targetWidth;
-                overlayCanvas.value.height = targetHeight;
-            }
-        }
-    };
-    syncCanvasSize();
-
-    // Keep canvas in sync with any layout changes
-    canvasResizeObserver = new ResizeObserver(syncCanvasSize);
-    if (outputCanvas.value?.parentElement) canvasResizeObserver.observe(outputCanvas.value.parentElement);
-
-    // --- Gemini Live Pipeline (Phase 89) ---
-    const guestPersonas = computed(() => activeGuests.value.map(g => g.persona));
-
-    // Throttled sync to prevent connection bursts
-    let lastSyncTime = 0;
-    const throttledSync = async () => {
-        const now = Date.now();
-        if (now - lastSyncTime < 800) return;
-        lastSyncTime = now;
-        const productIds = studioStore.featuredProducts.map((p: any) => p._id || p.id).join(',');
-        await syncLiveChatConnections(studioStore.guestSlotMap, guestPersonas.value, hostStream.value || undefined, 'sales', productIds);
-    };
-
-    // Watchers for connection syncing
-    watch(() => studioStore.guestSlotMap, throttledSync, { deep: true });
-    watch(() => guestPersonas.value, throttledSync, { deep: true });
-    watch(() => hostStream.value, throttledSync);
-    watch(() => studioStore.streamRatio, syncCanvasSize);
-
-    // Watchers for audio routing to Mixer
-    watch(() => liveChatConnections, (conns) => {
-        Object.values(conns).forEach((conn: any) => {
-            if (conn.isConnected && conn.geminiLive) {
-                const stream = (conn.geminiLive as any).getAudioStream()?.value;
-                if (stream) {
-                    audioMixerService.addTrack(`influencer_${conn.personaId}`, stream);
-                }
-            } else {
-                audioMixerService.removeTrack(`influencer_${conn.personaId}`);
+    const initializeStudioImpl = async () => {
+        // Ensure each is registered in liveGuests so assignGuestToSlot works.
+        activeList.forEach(([uuid, state]) => {
+            const persona = state.persona;
+            const alreadyInStore = studioStore.liveGuests.find((g: any) => g.uuid === uuid);
+            if (!alreadyInStore) {
+                studioStore.addGuest({
+                    uuid,
+                    name: persona.name || persona.identity?.name || 'AI Guest',
+                    title: persona.identity?.role || 'Neural Agent',
+                    type: 'ai',
+                    avatar: persona.visual?.thumbnailUrl || persona.avatarUrl,
+                    status: 'live',
+                    audioEnabled: true,
+                    videoEnabled: true,
+                    joinedAt: new Date()
+                });
             }
         });
-    }, { deep: true, immediate: true });
 
-    // Handle tool calls from Gemini
-    setLiveChatToolCallback(async (personaId, toolCall) => {
-        console.log(`[SaleStudio:Tool] Call from ${personaId}:`, toolCall);
-        
-        for (const call of toolCall.functionCalls || []) {
-            if (call.name === 'showcase_product') {
-                const args = call.args;
-                if (args && args.productId) {
-                    // Triggers the UI to highlight the product and the AI to pitch it
-                    
-					handleProductHighlight(args.productId);
-                    toast.success(t('studio.messages.aiShowcase', { name: args.productId }));
+        const isSales = studioStore.streamingContext === 'sales' || studioStore.streamingContext === 'education';
+        activeList.forEach(([uuid], idx) => {
+            if (studioStore.humanFreeMode && !isSales) {
+                if (idx > 0) studioStore.assignGuestToSlot(uuid, idx - 1);
+            } else {
+                studioStore.assignGuestToSlot(uuid, idx);
+            }
+        });
+
+        // Pick a scene that exposes guest regions
+        if (!studioStore.activeScene) {
+             const ideal = studioStore.getAutoBaseScene(activeList.length);
+             studioStore.switchScene(ideal);
+        }
+
+        // Sync Chat & Directives
+        window.addEventListener('studio:chat', handleIncomingChat);
+        window.addEventListener('showrunner:directive', handleShowrunnerDirective);
+
+        // Flash sale timer
+        timerInterval = setInterval(updateTimer, 1000);
+        updateTimer();
+
+        // Viewer variance
+        viewerInterval = setInterval(updateViewerCount, 5000);
+
+        // Force 1920x1080 internal resolution for high-quality production preview.
+        // The canvas-wrapper uses object-contain to fit this buffer into the container.
+        const syncCanvasSize = () => {
+            if (!pixiCanvas.value) return;
+            const isVertical = studioStore.streamRatio === '9:16';
+            const targetWidth = isVertical ? 1080 : 1920;
+            const targetHeight = isVertical ? 1920 : 1080;
+            
+            if (pixiCanvas.value.width !== targetWidth || pixiCanvas.value.height !== targetHeight) {
+                pixiCanvas.value.width = targetWidth;
+                pixiCanvas.value.height = targetHeight;
+                if (app) app.renderer.resize(targetWidth, targetHeight);
+            }
+        };
+        syncCanvasSize();
+
+        // Keep canvas in sync with any layout changes
+        canvasResizeObserver = new ResizeObserver(syncCanvasSize);
+        if (pixiCanvas.value?.parentElement) canvasResizeObserver.observe(pixiCanvas.value.parentElement);
+
+        // --- Gemini Live Pipeline (Phase 89) ---
+        const guestPersonas = computed(() => activeGuests.value.map(g => g.persona));
+
+        // Throttled sync to prevent connection bursts
+        let lastSyncTime = 0;
+        const throttledSync = async () => {
+            const now = Date.now();
+            if (now - lastSyncTime < 800) return;
+            lastSyncTime = now;
+            const productIds = studioStore.featuredProducts.map((p: any) => p._id || p.id).join(',');
+            // NOTE: hostStream is intentionally NOT passed in Sales/AI-only mode.
+            // Passing the host mic stream to GeminiLive's VAD causes it to trigger
+            // "interrupted" events every time it detects ambient audio, cutting off the AI mid-speech.
+            await syncLiveChatConnections(studioStore.guestSlotMap, guestPersonas.value, undefined, 'sales', productIds);
+        };
+
+        // Watchers for connection syncing
+        watch(() => studioStore.guestSlotMap, throttledSync, { deep: true });
+        watch(() => guestPersonas.value, throttledSync, { deep: true });
+        watch(() => hostStream.value, throttledSync);
+        watch(() => studioStore.streamRatio, syncCanvasSize);
+
+        // Watchers for audio routing to Mixer
+        watch(() => liveChatConnections, (conns) => {
+            Object.values(conns).forEach((conn: any) => {
+                if (conn.isConnected && conn.geminiLive) {
+                    const stream = (conn.geminiLive as any).getAudioStream()?.value;
+                    if (stream) {
+                        audioMixerService.addTrack(`influencer_${conn.personaId}`, stream);
+                    }
+                } else {
+                    audioMixerService.removeTrack(`influencer_${conn.personaId}`);
                 }
-            } else if (call.name === 'trigger_dynamic_deal') {
-                const args = call.args;
-                if (args && args.productId) {
-                    studioStore.startFlashSale({
-                        id: 'ai_deal_' + Date.now(),
-                        productId: args.productId,
-                        discount: args.discount,
-                        durationMinutes: Math.ceil(args.durationSeconds / 60) || 5, // Convert seconds to minutes for consistency
-                        startTime: Date.now(),
-                        title: args.reason || t('studio.messages.aiDealTriggeredTitle')
-                    });
-                    toast.success(t('studio.messages.aiDealTriggered', { reason: args.reason }));
+            });
+        }, { deep: true, immediate: true });
+
+        // Handle tool calls from Gemini
+        setLiveChatToolCallback(async (personaId, toolCall) => {
+            console.log(`[SaleStudio:Tool] Call from ${personaId}:`, toolCall);
+            
+            for (const call of toolCall.functionCalls || []) {
+                if (call.name === 'showcase_product') {
+                    const args = call.args;
+                    if (args && args.productId) {
+                        // Triggers the UI to highlight the product and the AI to pitch it
+                        
+                        handleProductHighlight(args.productId);
+                        toast.success(t('studio.messages.aiShowcase', { name: args.productId }));
+                    }
+                } else if (call.name === 'trigger_dynamic_deal') {
+                    const args = call.args;
+                    if (args && args.productId) {
+                        studioStore.startFlashSale({
+                            id: 'ai_deal_' + Date.now(),
+                            productId: args.productId,
+                            discount: args.discount,
+                            durationMinutes: Math.ceil(args.durationSeconds / 60) || 5, // Convert seconds to minutes for consistency
+                            startTime: Date.now(),
+                            title: args.reason || t('studio.messages.aiDealTriggeredTitle')
+                        });
+                        toast.success(t('studio.messages.aiDealTriggered', { reason: args.reason }));
+                    }
                 }
             }
+        });
+
+        // Initial connection attempt
+        throttledSync();
+
+        // Wait for VirtualGuest DOM elements to mount before starting render
+        await nextTick();
+        startRendering();
+
+        isStudioReady.value = true;
+    };
+
+    // ── BACKEND HYDRATION (F5 RELOAD RECOVERY) ──
+    if (activeList.length === 0) {
+        console.warn("[SaleStudioV2] No active guests found, attempting backend hydration...");
+        const influencerStore = useInfluencerStore();
+        if (influencerStore.influencers.length === 0) {
+            await influencerStore.fetchInfluencers();
         }
-    });
-
-    // Initial connection attempt
-    throttledSync();
-
-    // Wait for VirtualGuest DOM elements to mount before starting render
-    await nextTick();
-    startRendering();
-
-    isStudioReady.value = true;
+        
+        // Restore from store if possible, otherwise summon default active influencers
+        if (studioStore.liveGuests.length > 0) {
+             for (const g of studioStore.liveGuests) {
+                  const dbPersona = influencerStore.influencers.find(i => i.entityId === g.uuid);
+                  if (dbPersona) {
+                      await syntheticGuestManager.summonGuest(dbPersona);
+                  }
+             }
+             activeList = Array.from(syntheticGuestManager.activeGuests.entries());
+             await initializeStudioImpl();
+        } else {
+             // Fallback: Just summon the first Aidol influencer
+             const aidol = influencerStore.influencers.find(i => i.visual?.modelType === 'aidol');
+             if (aidol) {
+                  await syntheticGuestManager.summonGuest(aidol);
+             }
+             activeList = Array.from(syntheticGuestManager.activeGuests.entries());
+             
+             // Open Wizard configuration to prevent blank studio!
+             isStudioReady.value = true; 
+             pendingStudioInit = initializeStudioImpl;
+             // Timeout ensures state settles to prevent Vue dialog race
+             setTimeout(() => { showWizard.value = true; }, 100);
+        }
+    } else {
+        await initializeStudioImpl();
+    }
+    
+    window.addEventListener('studio-worker-command', handleWorkerCommand as EventListener);
 });
 
 onUnmounted(() => {
+    window.removeEventListener('studio-worker-command', handleWorkerCommand as EventListener);
     stopRendering();
-    stopAILoop();
+    // stopAILoop();
     // neuralShowrunner.stop();
     window.removeEventListener('studio:chat', handleIncomingChat);
     window.removeEventListener('showrunner:directive', handleShowrunnerDirective);

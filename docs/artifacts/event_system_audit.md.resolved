@@ -1,0 +1,152 @@
+# SaleStudio Event System Audit
+
+## Full Event Map
+
+### 1. `studio:chat`
+| | |
+|---|---|
+| **Dispatched by** | `ActionSyncService` (lines 122, 140) |
+| **Received by** | `SaleStudioV2.handleIncomingChat`, `SaleStudio.handleIncomingChat` |
+| **Payload** | `{ id, username, content, type, isAI }` |
+| **Purpose** | Real-time viewer chat messages. Used to display chat overlay and forward buyer enquiries to Gemini Live. |
+
+---
+
+### 2. `showrunner:directive`
+| | |
+|---|---|
+| **Dispatched by** | [SaleRunner](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/utils/ai/SaleRunner.ts#10-162) (line 131), `NeuralShowrunner` (lines 371, 390, 438, 517, 593, 693, 728, 752) |
+| **Received by** | `SyntheticGuestManager.onShowrunnerDirective` (line 182), `SaleStudioV2.handleShowrunnerDirective` (line 732) |
+| **Payload** | `{ type, directive, originSpeaker, productContext, gesture?, vibe? }` |
+| **Purpose** | Orchestrates what the AI should **say and do next**. The `type` field drives visual clip selection in aidol mode. |
+
+**⚠️ CONFLICT IDENTIFIED:**
+`showrunner:directive` is received by **two** listeners simultaneously:
+1. `SyntheticGuestManager.onShowrunnerDirective` → calls [notifyWorker('update-3d-expression', { id, gesture: detail.type, productId })](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/utils/ai/SyntheticGuestManager.ts#1356-1359) → dispatches `studio-worker-command`
+2. `SaleStudioV2.handleShowrunnerDirective` → handles narrative feed and product highlight
+
+This is **by design** but creates a relay chain: [SaleRunner](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/utils/ai/SaleRunner.ts#10-162) → `showrunner:directive` → [SyntheticGuestManager](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/utils/ai/SyntheticGuestManager.ts#145-1449) → `studio-worker-command` → `SaleStudioV2.handleWorkerCommand` → `renderer.playState()`
+
+---
+
+### 3. `studio-worker-command`
+| | |
+|---|---|
+| **Dispatched by** | `SyntheticGuestManager.notifyWorker()` (line 1357) |
+| **Received by** | `VirtualGuest.vue.handleWorkerCommand` (line 343), `SaleStudioV2.handleWorkerCommand` (newly added) |
+| **Payload** | `{ type: 'update-3d-expression', payload: { id, gesture, emotion?, productId? } }` or `{ type: 'update-3d-audio', payload: { id, audioLevel } }` or `{ type: 'update-hype-level', payload: { level } }` |
+| **Purpose** | Low-level commands to individual renderers. Originally only [VirtualGuest.vue](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/components/studio/virtual/VirtualGuest.vue) listened. In SaleStudioV2 we now also listen to drive the PIXI renderer. |
+
+**Known sub-types:**
+
+| type | Drives |
+|------|--------|
+| `update-3d-expression` | Sets gesture/emotion/productId on the character |
+| `update-3d-audio` | Updates audio level (lip-sync animation) |
+| `update-3d-thinking` | Shows thinking indicator |
+| `update-hype-level` | Updates hype score for expressions |
+| `vision:request_snapshot` | Requests a camera frame for vision AI |
+
+**⚠️ PROBLEM:** In SaleStudioV2, [VirtualGuest.vue](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/components/studio/virtual/VirtualGuest.vue) components are NOT rendered (we use pure PIXI). So the `studio-worker-command` listener on `VirtualGuest` fires with no effect. The new [handleWorkerCommand](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/components/studio/virtual/VirtualGuest.vue#342-365) in SaleStudioV2 is the only path to update the PIXI renderer. This is correct but needs to work properly.
+
+---
+
+### 4. `studio:viral_peak`
+| | |
+|---|---|
+| **Dispatched by** | `ActionSyncService` (line 169) |
+| **Received by** | `SyntheticGuestManager.onViralPeak` (line 240) |
+| **Payload** | `{ score, messageCount, giftCount }` |
+| **Purpose** | Triggers hype reactions when viewer count or engagement spikes. |
+
+---
+
+### 5. `economy:gift`
+| | |
+|---|---|
+| **Dispatched by** | `ActionSyncService` (line 353) |
+| **Received by** | `SyntheticGuestManager.onGlobalGift` (line 236) |
+| **Payload** | Gift data |
+| **Purpose** | Triggers gift reaction animations on the active character. |
+
+---
+
+### 6. `vision:detection_result`
+| | |
+|---|---|
+| **Dispatched by** | [VisionAnalyzer.ts](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/utils/ai/VisionAnalyzer.ts) (line 73) |
+| **Received by** | `SyntheticGuestManager.onVisionResult` (line 231) |
+| **Payload** | `{ raw: detectionData }` |
+| **Purpose** | Allows the AI to react to what it "sees" through the camera. |
+
+---
+
+### 7. `producer:action`
+| | |
+|---|---|
+| **Dispatched by** | [SyntheticGuestManager](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/utils/ai/SyntheticGuestManager.ts#145-1449) (lines 517, 562) |
+| **Received by** | Unknown (likely `NeuralShowrunner` or legacy Studio.vue) |
+| **Payload** | Action command |
+| **Purpose** | Autonomous producer-level decisions (e.g., change scene, add guest). |
+
+---
+
+## Root Cause: Aidol Stuck at Idle
+
+### The Expected Flow (for aidol)
+```
+SaleRunner.executeCurrentStep()
+  └─► window.dispatchEvent('showrunner:directive', { type: step.type, directive, productContext })
+        └─► SyntheticGuestManager.onShowrunnerDirective()
+              ├─► updates currentDirective, currentVibe
+              └─► (aidol only) notifyWorker('update-3d-expression', { id, gesture: detail.type, productId })
+                    └─► window.dispatchEvent('studio-worker-command', ...)
+                          └─► SaleStudioV2.handleWorkerCommand()
+                                └─► renderer.playState(id, gesture, persona, productId)
+```
+
+### Problem 1: `step.type` values don't match aidolClips keys
+
+[SaleRunner](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/utils/ai/SaleRunner.ts#10-162) sets `type: step.type || step.gesture || 'product'`
+
+Script steps from SaleWizard use types like `"speaking"`, `"excited"`, `"happy"`, `"victory"` (emotion-based names from the storyboard). But `aidolClips` keys are typically `"idle"`, `"speaking"`, `"product"`, `"checkout"`, etc.
+
+**Fix:** ✅ Already applied — `useSaleRenderer.playState()` now uses a normalization map to resolve aliases.
+
+### Problem 2: Duplicate listener registration causes confusing log spam
+
+From the log, the same tool call appears **4 times** from different HMR versions of [SaleStudioV2.vue](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/views/live/SaleStudioV2.vue):
+```
+SaleStudioV2.vue?t=1775101775644:467
+SaleStudioV2.vue?t=1775112938628:467
+SaleStudioV2.vue?t=1775112996475:473
+SaleStudioV2.vue:877
+```
+
+Each hot-module-reload registers a new `setLiveChatToolCallback` handler without deregistering the old one. **This is an HMR artifact and doesn't occur in production.** However in dev, it causes 4x duplicate tool call processing.
+
+**Fix needed:** Register tool callbacks with a cleanup guard.
+
+### Problem 3: [handleShowrunnerDirective](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/views/live/SaleStudioV2.vue#734-766) in SaleStudioV2 triggers [handleProductHighlight](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/views/live/SaleStudio.vue#561-566) too eagerly
+
+After the user's latest change:
+```js
+if (detail.productContext) {
+    handleProductHighlight(...)
+}
+```
+This fires `studioStore.highlightProduct()` on **every** directive that has a product context, even mid-speech. This may cause the `highlightedProduct` watcher to interrupt the AI by sending a new Gemini prompt ("pitch this product!") when the AI is already pitching.
+
+**Fix needed:** Only call [handleProductHighlight](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/views/live/SaleStudio.vue#561-566) when `detail.type === 'product_showcase'` or it's an explicit user action.
+
+---
+
+## Recommended Cleanup Plan
+
+| Priority | Issue | Fix |
+|----------|-------|-----|
+| 🔴 High | [handleShowrunnerDirective](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/client/src/views/live/SaleStudioV2.vue#734-766) triggers product pitch on every directive | Re-add `detail.type === 'product_showcase'` guard |
+| 🔴 High | HMR duplicate tool call handlers | Add deregistration ID / singleton guard in `AgentEventBus` |
+| 🟡 Med | `studio-worker-command` received twice (V2 + no-op VirtualGuest) | No issue in V2 (VirtualGuest not mounted), but wasteful |
+| 🟡 Med | SaleRunner dispatches `showrunner:directive` which re-triggers product highlight | NeuralShowrunner does the same; de-duplicate |
+| 🟢 Low | `update-3d-audio` not forwarded to PIXI renderer | Add audio-level handler for lip-sync |

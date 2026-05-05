@@ -1280,9 +1280,7 @@ export function useStudioCanvas(
     let lastMaskTimestamp = -1;
 
     const processAISegmentation = async (video: HTMLVideoElement, timestamp: number, skipSegmentation = false) => {
-        if (!studioStore.visualSettings.aiEnabled || (studioStore.visualSettings as any).performanceMode) return;
-        if (isAIProcessing || skipSegmentation) return;
-        if (!worker || !video.videoWidth) return;
+        if (!worker || !video.videoWidth || isAIProcessing || !studioStore.aiEnabled) return;
         if (!liveAIEngine || !liveAIEngine.isInitialized) return;
 
         // Skip AI processing if current model is AIDOL (pre-rendered performance)

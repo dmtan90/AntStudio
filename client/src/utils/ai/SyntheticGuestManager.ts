@@ -392,8 +392,8 @@ export class SyntheticGuestManager {
         });
 
         this.resetBanterTimer();
-        this.startHypeDecay();
-        this.startEngagementDecay();
+        //this.startHypeDecay();
+        //this.startEngagementDecay();
     }
 
     public init(studioStore: any) {
@@ -485,8 +485,8 @@ export class SyntheticGuestManager {
 
             const actionWeights: Record<string, number> = {
                 'look_around': 1.0,
-                'drink': 0.5,
-                'check_phone': 0.5
+                //'drink': 0.5,
+                //'check_phone': 0.5
             };
 
             if (traits.includes('MYSTERIOUS')) actionWeights['look_around'] += 1.0;
@@ -509,8 +509,8 @@ export class SyntheticGuestManager {
 
             // Notify UI for logging
             const actionKeyMap: Record<string, string> = {
-                'drink': 'aiGestureDrink',
-                'check_phone': 'aiGesturePhone',
+                //'drink': 'aiGestureDrink',
+                //'check_phone': 'aiGesturePhone',
                 'look_around': 'aiGestureLookAround'
             };
 

@@ -125,7 +125,7 @@ export function useGeminiLive() {
             socket.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
-                    console.log('[GeminiLive] Message received:', message.type);
+                    // console.log('[GeminiLive] Message received:', message.type);
                     handleMessage(message);
 
                     if (message.type === 'connected') {

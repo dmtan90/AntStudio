@@ -568,11 +568,11 @@ function renderLoop(time: number = 0) {
     }
 
     if (currentSubtitle) {
-        uiOverlay.renderSubtitles(0, 0, 1, 1, currentSubtitle);
+        try { uiOverlay.renderSubtitles(0, 0, 1, 1, currentSubtitle); } catch (e) { console.error('[RenderWorker] Subtitle error:', e); }
     }
 
     if (currentCaption) {
-        uiOverlay.renderCapCutSubtitle(0, 0, 1, 1, currentCaption, time);
+        try { uiOverlay.renderCapCutSubtitle(0, 0, 1, 1, currentCaption, time); } catch (e) { console.error('[RenderWorker] Caption error:', e); }
         sceneDirty = true; // Animate pop-in and highlights
     }
 
@@ -580,107 +580,113 @@ function renderLoop(time: number = 0) {
     uiOverlay.clearGraphics();
 
     if (logoImage && (visualSettings as any).branding?.logoUrl) {
-        uiOverlay.drawBrandLogo(logoImage, (visualSettings as any).branding);
+        try { uiOverlay.drawBrandLogo(logoImage, (visualSettings as any).branding); } catch (e) { console.error('[RenderWorker] Logo error:', e); }
     }
 
     if ((visualSettings as any).breakMode?.enabled) {
-        uiOverlay.drawBreakOverlay(time, (visualSettings as any).breakMode?.message);
+        try { uiOverlay.drawBreakOverlay(time, (visualSettings as any).breakMode?.message); } catch (e) { console.error('[RenderWorker] Break overlay error:', e); }
     }
 
     if ((visualSettings as any).showLowerThird && !cinematicMode) {
-        uiOverlay.drawLowerThird((visualSettings as any).branding || {}, activeScene, slotMap);
+        try { uiOverlay.drawLowerThird((visualSettings as any).branding || {}, activeScene, slotMap); } catch (e) { console.error('[RenderWorker] LowerThird error:', e); }
     }
 
     if ((visualSettings as any).showTicker && !cinematicMode && isLiveState) {
-        uiOverlay.drawTicker((visualSettings as any).tickerText);
+        try { uiOverlay.drawTicker((visualSettings as any).tickerText); } catch (e) { console.error('[RenderWorker] Ticker error:', e); }
         sceneDirty = true; // Animate
     }
 
     if ((visualSettings as any).specialOverlays?.showSponsorship && !cinematicMode && isLiveState) {
-        uiOverlay.drawSponsorshipBadge((visualSettings as any).specialOverlays.sponsorName);
+        try { uiOverlay.drawSponsorshipBadge((visualSettings as any).specialOverlays.sponsorName); } catch (e) { console.error('[RenderWorker] Sponsorship error:', e); }
     }
 
     if (!cinematicMode && isLiveState && (commerceState.flashSaleActive || commerceState.activeProduct || commerceState.purchaseNotifications.length > 0)) {
-        const vibe = (visualSettings as any).vibeScore || 85;
-        const velocity = (visualSettings as any).chatVelocity || 0;
-        
-        const ctxType = (visualSettings as any).streamingContext;
-        if (ctxType === 'sales') {
-            // Sales context has its own overlay for product/timer, so only draw notifications here
-            uiOverlay.drawCommerceOverlays(null, null, null, commerceState.purchaseNotifications, time, vibe, velocity);
-        } else {
-            uiOverlay.drawCommerceOverlays(commerceState.flashSaleActive, commerceState.activeProduct, commerceState.qrCodeBitmap, commerceState.purchaseNotifications, time, vibe, velocity);
-        }
+        try {
+            const vibe = (visualSettings as any).vibeScore || 85;
+            const velocity = (visualSettings as any).chatVelocity || 0;
+            
+            const ctxType = (visualSettings as any).streamingContext;
+            if (ctxType === 'sales') {
+                // Sales context has its own overlay for product/timer, so only draw notifications here
+                uiOverlay.drawCommerceOverlays(null, null, null, commerceState.purchaseNotifications, time, vibe, velocity);
+            } else {
+                uiOverlay.drawCommerceOverlays(commerceState.flashSaleActive, commerceState.activeProduct, commerceState.qrCodeBitmap, commerceState.purchaseNotifications, time, vibe, velocity);
+            }
+        } catch (e) { console.error('[RenderWorker] CommerceOverlays error:', e); }
         sceneDirty = true; // Keep animating for notifications
     }
 
     if (currentQuest && !cinematicMode && isLiveState) {
-        uiOverlay.drawQuestOverlay(currentQuest, time);
+        try { uiOverlay.drawQuestOverlay(currentQuest, time); } catch (e) { console.error('[RenderWorker] Quest overlay error:', e); }
         sceneDirty = true; // Keep animating for shimmers/pulses
     }
 
     if (activeFacts.length > 0 && !cinematicMode && isLiveState) {
-        uiOverlay.drawFactCheckHub(activeFacts, 40, canvas.height - (activeFacts.length * 60 + 60));
+        try { uiOverlay.drawFactCheckHub(activeFacts, 40, canvas.height - (activeFacts.length * 60 + 60)); } catch (e) { console.error('[RenderWorker] FactCheck overlay error:', e); }
         sceneDirty = true;
     }
 
     if (vizData.length > 0 && !cinematicMode && isLiveState) {
-        uiOverlay.drawDataVizWidget(vizData, 'Live Engagement', 40, 150);
+        try { uiOverlay.drawDataVizWidget(vizData, 'Live Engagement', 40, 150); } catch (e) { console.error('[RenderWorker] DataViz overlay error:', e); }
         sceneDirty = true;
     }
 
     // Context-Specific Overlays
     const ctxType = (visualSettings as any).streamingContext;
     if (ctxType && !cinematicMode && isLiveState) {
-        if (ctxType === 'education' && visualSettings.streamRatio !== '9:16') {
-            uiOverlay.drawEducationOverlay(contextData.education);
-            sceneDirty = true;
-        } else if (ctxType === 'news') {
-            uiOverlay.drawNewsOverlay(contextData.news);
-        } else if (ctxType === 'sport') {
-            uiOverlay.drawSportOverlay(contextData.sport);
-        } else if (ctxType === 'sales') {
-            uiOverlay.drawSalesOverlay(contextData.sales);
-            // // FORCE DEBUG MOCK: Render product even if none is selected
-            // const activeProduct = commerceState.activeProduct || {
-            //     name: "LIMITED EDITION E-COMMERCE MOCK PRODUCT",
-            //     price: 1337.99,
-            //     features: ["Anti-Gravity Tech", "Super Fast Delivery", "Zero Latency AI"],
-            //     showQR: true
-            // };
-            // const flashSale = commerceState.flashSaleActive || {
-            //     startTime: Date.now() - 60000,
-            //     durationMinutes: 60
-            // };
-            
-            // const salesData = { 
-            //     ...contextData.sales, 
-            //     activeProduct: activeProduct, 
-            //     flashSale: flashSale 
-            // };
-            // // Uses a default placeholder QR if qrCodeBitmap is missing
-            // uiOverlay.drawSalesOverlay(salesData, commerceState.qrCodeBitmap);
-            sceneDirty = true;
-        } else if (ctxType === 'gameshow') {
-            uiOverlay.drawGameShowOverlay(contextData.gameshow);
-        } else if (ctxType === 'talkshow') {
-            uiOverlay.drawTalkShowOverlay(contextData.talkshow);
-        }
+        try {
+            if (ctxType === 'education' && visualSettings.streamRatio !== '9:16') {
+                uiOverlay.drawEducationOverlay(contextData.education);
+                sceneDirty = true;
+            } else if (ctxType === 'news') {
+                uiOverlay.drawNewsOverlay(contextData.news);
+            } else if (ctxType === 'sport') {
+                uiOverlay.drawSportOverlay(contextData.sport);
+            } else if (ctxType === 'sales') {
+                // uiOverlay.drawSalesOverlay(contextData.sales);
+                // // FORCE DEBUG MOCK: Render product even if none is selected
+                const activeProduct = commerceState.activeProduct || {
+                    name: "LIMITED EDITION E-COMMERCE MOCK PRODUCT",
+                    price: 1337.99,
+                    features: ["Anti-Gravity Tech", "Super Fast Delivery", "Zero Latency AI"],
+                    showQR: true
+                };
+                const flashSale = commerceState.flashSaleActive || {
+                    startTime: Date.now() - 60000,
+                    durationMinutes: 60
+                };
+                
+                const salesData = { 
+                    ...contextData.sales, 
+                    activeProduct: activeProduct, 
+                    flashSale: flashSale 
+                };
+                // Uses a default placeholder QR if qrCodeBitmap is missing
+                uiOverlay.drawSalesOverlay(salesData, commerceState.qrCodeBitmap);
+                sceneDirty = true;
+            } else if (ctxType === 'gameshow') {
+                uiOverlay.drawGameShowOverlay(contextData.gameshow);
+            } else if (ctxType === 'talkshow') {
+                uiOverlay.drawTalkShowOverlay(contextData.talkshow);
+            }
+        } catch (e) { console.error('[RenderWorker] Context overlay error:', ctxType, e); }
     }
 
     if (activeRecap && !cinematicMode && isLiveState) {
-        uiOverlay.drawFinalRecapCard(activeRecap, canvas.width, canvas.height);
+        try { uiOverlay.drawFinalRecapCard(activeRecap, canvas.width, canvas.height); } catch (e) { console.error('[RenderWorker] Recap error:', e); }
         sceneDirty = true;
     }
 
     // Phase 33: Neural Singularity Aura Effect
     if (hypeLevel > 0.5) {
-        uiOverlay.drawSingularityAura(hypeLevel);
+        try { uiOverlay.drawSingularityAura(hypeLevel); } catch (e) { console.error('[RenderWorker] Singularity aura error:', e); }
         sceneDirty = true;
     }
 
     // FLUSH 2D GRAPHICS CONTEXT TO WEBGL TEXTURE
-    uiOverlay.uploadAndRenderGraphics();
+    try {
+        uiOverlay.uploadAndRenderGraphics();
+    } catch (e) { console.error('[RenderWorker] Upload overlay error:', e); }
 
     sceneDirty = false;
     requestAnimationFrame(renderLoop);

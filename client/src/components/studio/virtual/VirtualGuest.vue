@@ -80,7 +80,6 @@
                 :is-portrait="isPortrait"
                 :is-paused="isPaused"
                 @ready="handleReady"
-                @chroma-ready="(m: any) => $emit('chroma-ready', m)"
             />
 
             <!-- VRM Model Viewer (Upgraded from Head3DViewer) -->
@@ -153,7 +152,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     'stream-ready': [stream: MediaStream];
-    'chroma-ready': [metadata: any];
 }>();
 
 onMounted(() => {
@@ -411,18 +409,8 @@ const captureStream = async () => {
 
     if (canvas) {
         try {
-            // Optimization: If it's an AIDOL model, prefer the raw video stream to bypass PIXI rendering overhead on main thread
-            if (isAidol.value && viewerAidol.value && (viewerAidol.value as any).captureStreamRaw) {
-                const stream = (viewerAidol.value as any).captureStreamRaw();
-                if (stream) {
-                    console.log(`[VirtualGuest] ${props.persona.name} capturing via RAW VIDEO PATH`);
-                    emit('stream-ready', stream);
-                    return true;
-                }
-            }
-
-            // Fallback: Standardize to 12fps for cinematic but lightweight motion
-            const stream = (canvas as any).captureStream(12);
+            // Optimization: Standardize to 30fps for smooth motion
+            const stream = (canvas as any).captureStream(30);
             if (stream) {
                 emit('stream-ready', stream);
                 return true;

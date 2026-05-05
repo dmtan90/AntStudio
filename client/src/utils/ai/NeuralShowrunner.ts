@@ -194,12 +194,10 @@ export class NeuralShowrunner {
     }
 
     public async start() {
+        if (this.active.isRunning) return;
+        
         const { useStudioStore } = await import('@/stores/studio');
         const studioStore = useStudioStore();
-        if (studioStore.streamingContext === 'sales') {
-            console.log('[NeuralShowrunner] Sales context detected. Delegating to SaleRunner.');
-            return;
-        }
 
         if (this.active.segments.length === 0) {
             if (studioStore.activeScript && studioStore.activeScript.length > 0) {
@@ -468,7 +466,6 @@ export class NeuralShowrunner {
                 });
             });
 
-
             // Phase 29: Quest Activation
             const segment = this.active.segments[this.active.currentSegmentIndex];
             if (segment.type === 'rpg_quest') {
@@ -479,12 +476,9 @@ export class NeuralShowrunner {
         }
     }
 
-    // Phase 16: Centralized directive emission
     private async emitDirective() {
         const { useStudioStore } = await import('@/stores/studio');
         const studioStore = useStudioStore();
-        if (studioStore.streamingContext === 'sales') return;
-
         const segment = this.active.segments[this.active.currentSegmentIndex];
         if (!segment) return;
 
