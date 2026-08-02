@@ -47,18 +47,18 @@ try {
   console.log(`3. Packaging application with electron-builder (Target: ${targetPlatform})...`);
 
   if (targetPlatform === 'win' || targetPlatform === 'all') {
-    console.log('📦 Building for Windows (ZIP & unpacked dir)...');
-    execSync('electron-builder --win zip dir --config.npmRebuild=false --publish never', { cwd: rootDir, stdio: 'inherit' });
+    console.log('📦 Building for Windows (ZIP)...');
+    execSync('electron-builder --win zip --config.npmRebuild=false --publish never', { cwd: rootDir, stdio: 'inherit' });
   }
 
   if (targetPlatform === 'linux' || targetPlatform === 'all') {
     console.log('📦 Building for Linux...');
-    execSync('electron-builder --linux tar.gz dir --config.npmRebuild=false --publish never', { cwd: rootDir, stdio: 'inherit' });
+    execSync('electron-builder --linux tar.gz --config.npmRebuild=false --publish never', { cwd: rootDir, stdio: 'inherit' });
   }
 
   if (targetPlatform === 'mac') {
-    console.log('📦 Building for macOS (ZIP, DMG & unpacked dir)...');
-    execSync('electron-builder --mac zip dmg dir --config.npmRebuild=false --publish never', { cwd: rootDir, stdio: 'inherit' });
+    console.log('📦 Building for macOS (ZIP & DMG)...');
+    execSync('electron-builder --mac zip dmg --config.npmRebuild=false --publish never', { cwd: rootDir, stdio: 'inherit' });
   }
 
   console.log('✅ Build and packaging completed successfully!');

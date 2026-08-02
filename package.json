@@ -77,11 +77,13 @@
     "extraResources": [
       {
         "from": "electron/.env.enc",
-        "to": ".env.enc"
+        "to": ".env.enc",
+        "filter": ["*"]
       },
       {
         "from": ".env.electron",
-        "to": ".env"
+        "to": ".env",
+        "filter": ["*"]
       },
       {
         "from": "client/dist",
