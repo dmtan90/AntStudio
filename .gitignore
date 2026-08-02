@@ -50,6 +50,7 @@ logs
 .env.*
 !.env.example
 !.env.electron
+!electron/.env.enc
 pnpm-lock.yaml
 .vscode/settings.json
 server/build_log_utf8.txt
@@ -68,7 +69,6 @@ server/tsc_output_utf8.txt
 # Electron server dependencies build folder
 electron/server-deps
 electron/dist
-electron/.env.enc
 gcp-service-account.json
 client/package-lock.json
 server/package-lock.json
