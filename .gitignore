@@ -51,7 +51,6 @@ logs
 !.env.example
 !.env.electron
 pnpm-lock.yaml
-pnpm-workspace.yaml
 .vscode/settings.json
 server/build_log_utf8.txt
 server/build_log_v2.txt

@@ -36,7 +36,16 @@ jobs:
           node-version: 24
 
       - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
+        shell: bash
+        run: |
+          if [ ! -f pnpm-workspace.yaml ]; then
+            echo "packages:" > pnpm-workspace.yaml
+            echo "  - 'genblaze'" >> pnpm-workspace.yaml
+            echo "  - 'client'" >> pnpm-workspace.yaml
+            echo "  - 'server'" >> pnpm-workspace.yaml
+            echo "  - 'electron'" >> pnpm-workspace.yaml
+          fi
+          pnpm install --no-frozen-lockfile
         env:
           NODE_ENV: development
 
