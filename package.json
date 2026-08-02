@@ -62,7 +62,11 @@
       "**/*.node",
       "**/*.wasm",
       "**/@ffmpeg-installer/**/*",
-      "**/@ffprobe-installer/**/*"
+      "**/@ffprobe-installer/**/*",
+      "**/@napi-rs/**/*",
+      "**/canvas/prebuilds/**/*",
+      "**/sharp/**/*",
+      "**/better-sqlite3/**/*"
     ],
     "extraFiles": [
       {

@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { uploadToS3 } from '~/utils/s3.js';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+
 import { getAdminSettings } from '~/models/AdminSettings.js';
 import { EnvConfig } from '~/utils/ConfigService.js';
 import { fileURLToPath } from 'url';

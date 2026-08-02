@@ -1,9 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-import ffprobeInstaller from '@ffprobe-installer/ffprobe';
-
 import fs from 'fs';
 
 // Handling __dirname for ES modules
@@ -58,6 +55,61 @@ const resolveUnpackedPath = (binPath: string) => {
         }
     }
     return binPath;
+};
+
+// Safe ffmpeg/ffprobe path resolution.
+// @ffmpeg-installer/ffmpeg throws at import time if the binary doesn't exist at the
+// asar-internal path, so we resolve paths manually and handle asar.unpacked ourselves.
+const resolveFfmpegPath = (): string => {
+    if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+    try {
+        // Dynamic import to avoid hard crash if binary not found inside asar
+        const installer = require('@ffmpeg-installer/ffmpeg');
+        return resolveUnpackedPath(installer.path);
+    } catch {
+        // Fallback: construct the unpacked path manually based on platform
+        const platform = process.platform;
+        const arch = process.arch;
+        const platformKey = `${platform}-${arch}`;
+        const binaryName = platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+        const candidates = [
+            // Inside asar.unpacked (Electron packaged)
+            path.join(__dirname, `../../../node_modules/@ffmpeg-installer/${platformKey}/${binaryName}`),
+            path.join(__dirname, `../../../../app.asar.unpacked/node_modules/@ffmpeg-installer/${platformKey}/${binaryName}`),
+            // System-installed
+            '/usr/bin/ffmpeg',
+            '/usr/local/bin/ffmpeg',
+        ];
+        for (const candidate of candidates) {
+            if (fs.existsSync(candidate)) return candidate;
+        }
+        console.warn('[Config] ffmpeg binary not found in any candidate path.');
+        return 'ffmpeg'; // fallback to PATH
+    }
+};
+
+const resolveFfprobePath = (): string => {
+    if (process.env.FFPROBE_PATH) return process.env.FFPROBE_PATH;
+    try {
+        const installer = require('@ffprobe-installer/ffprobe');
+        return resolveUnpackedPath(installer.path);
+    } catch {
+        const platform = process.platform;
+        const arch = process.arch;
+        const platformKey = `${platform}-${arch}`;
+        const binaryName = platform === 'win32' ? 'ffprobe.exe' : 'ffprobe';
+        const candidates = [
+            path.join(__dirname, `../../../node_modules/@ffprobe-installer/${platformKey}/${binaryName}`),
+            path.join(__dirname, `../../../../app.asar.unpacked/node_modules/@ffprobe-installer/${platformKey}/${binaryName}`),
+            '/usr/bin/ffprobe',
+            '/usr/local/bin/ffprobe',
+        ];
+        for (const candidate of candidates) {
+            if (fs.existsSync(candidate)) return candidate;
+        }
+        console.warn('[Config] ffprobe binary not found in any candidate path.');
+        return 'ffprobe';
+    }
 };
 
 export const config = {
@@ -141,8 +193,8 @@ export const config = {
     unsplashApiKey: process.env.UNSPLASH_API_KEY,
 
     // FFmpeg & FFprobe
-    ffmpegPath: process.env.FFMPEG_PATH || resolveUnpackedPath(ffmpegInstaller.path),
-    ffprobePath: process.env.FFPROBE_PATH || resolveUnpackedPath(ffprobeInstaller.path),
+    ffmpegPath: resolveFfmpegPath(),
+    ffprobePath: resolveFfprobePath(),
 
     // Public keys (matching Nuxt public config)
     baseUrl: process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
