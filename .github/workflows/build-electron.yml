@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Build for ${{ matrix.os }}
@@ -67,9 +70,26 @@ jobs:
 
       - name: Build Electron Binary
         run: pnpm run build:electron:${{ matrix.target }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: AntStudio-${{ matrix.target }}
           path: electron/dist/
+
+      - name: Create Draft Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            electron/dist/*.exe
+            electron/dist/*.zip
+            electron/dist/*.dmg
+            electron/dist/*.AppImage
+            electron/dist/*.deb
+            electron/dist/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
