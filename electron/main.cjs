@@ -16,6 +16,19 @@ app.commandLine.appendSwitch('no-sandbox');
 // app.commandLine.appendSwitch('disable-gpu');
 app.commandLine.appendSwitch('disable-software-rasterizer');
 
+// When running in silent/headless mode on a Linux server (no X11 display),
+// tell Chromium to use its built-in headless mode so it does not try to
+// connect to an X server or Wayland compositor.
+if (isSilentMode) {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-gpu-compositing');
+  app.commandLine.appendSwitch('headless');
+  app.commandLine.appendSwitch('disable-dev-shm-usage');
+  app.commandLine.appendSwitch('no-zygote');
+  // app.commandLine.appendSwitch('single-process');
+}
+
 let mainWindow = null;
 
 // Catch global uncaught errors and report via GUI dialog or console
