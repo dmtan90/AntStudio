@@ -54,6 +54,8 @@ jobs:
           pnpm install --no-frozen-lockfile
         env:
           NODE_ENV: development
+          YOUTUBE_DL_SKIP_DOWNLOAD: "true"
+          YTDLP_SKIP_DOWNLOAD: "true"
 
       - name: Build Web Client & Server
         run: pnpm run build

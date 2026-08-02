@@ -13,7 +13,7 @@ const handleThemeChange = (value: Theme) => {
 
 <template>
   <el-dropdown trigger="click">
-    <el-button type="primary" text bg circle icon>
+    <el-button type="primary" text bg circle>
       <Sun v-if="theme === 'light'" :size="15" />
       <Moon v-else-if="theme === 'dark'" :size="15" />
       <SunMoon v-else :size="15" />
