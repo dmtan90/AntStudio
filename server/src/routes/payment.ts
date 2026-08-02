@@ -1,16 +1,18 @@
 import { Router } from 'express';
-import { paymentService } from '../services/PaymentService.js';
-import { payPalService } from '../services/PayPalService.js';
+import { stripeService } from '~/services/payment/StripeService.js';
+import { payPalService } from '~/services/payment/PayPalService.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { cacheMiddleware } from '../middleware/cache.js';
 import { License } from '../models/License.js';
 import { LicensePackage } from '../models/LicensePackage.js';
-import { Transaction } from '../models/Transaction.js';
-import { User } from '../models/User.js';
-import config from '../utils/config.js';
+import { Transaction, TransactionGateway, TransactionStatus, TransactionType } from '../models/Transaction.js';
+import { CreditTransactionType, User } from '../models/User.js';
+import { EnvConfig, configService } from '../utils/ConfigService.js';
 import crypto from 'crypto';
 
 import { Logger } from '../utils/Logger.js';
+import { LicenseStatus } from '~/models/License.js';
+import { TenantBillingCycle } from '~/models/Tenant.js';
 
 const router = Router();
 
@@ -19,11 +21,22 @@ router.post('/create-checkout', authMiddleware, async (req: AuthRequest, res) =>
     try {
         const { packageId, licenseKey, type } = req.body;
         let url;
-        
-        if (type === 'credit') {
-            url = await paymentService.createCreditCheckout(req.user!.userId, packageId);
+        const gateway = req.body.gateway || TransactionGateway.STRIPE;
+        if(gateway == TransactionGateway.STRIPE){
+            if (type === 'credit') {
+                url = await stripeService.createCreditCheckout(req.user!.userId, packageId);
+            } else {
+                url = await stripeService.createLicenseCheckout(req.user!.userId, packageId, licenseKey);
+            }
+        }
+        else if(gateway == TransactionGateway.PAYPAL){
+            if (type === 'credit') {
+                url = await payPalService.createCreditOrder(req.user!.userId, packageId);
+            } else {
+                url = await payPalService.createLicenseOrder(req.user!.userId, packageId, licenseKey);
+            }
         } else {
-            url = await paymentService.createLicenseCheckout(req.user!.userId, packageId, licenseKey);
+            throw new Error('Invalid gateway');
         }
         
         res.json({ success: true, data: { url } });
@@ -36,7 +49,7 @@ router.post('/create-checkout', authMiddleware, async (req: AuthRequest, res) =>
 router.post('/paypal/create-order', authMiddleware, async (req: AuthRequest, res) => {
     try {
         const { packageId, licenseKey } = req.body;
-        const url = await payPalService.createOrder(req.user!.userId, packageId, licenseKey);
+        const url = await payPalService.createLicenseOrder(req.user!.userId, packageId, licenseKey);
         res.json({ success: true, data: { url } });// Return approval link
     } catch (e: any) {
         res.status(500).json({ success: false, error: e.message });
@@ -49,21 +62,21 @@ router.post('/verify-session', authMiddleware, async (req: AuthRequest, res) => 
         const { sessionId, gateway } = req.body;
         let tx;
 
-        if (gateway === 'stripe') {
-            tx = await paymentService.verifySession(sessionId);
-        } else if (gateway === 'paypal') {
+        if (gateway === TransactionGateway.STRIPE) {
+            tx = await stripeService.verifySession(sessionId);
+        } else if (gateway === TransactionGateway.PAYPAL) {
             tx = await payPalService.captureOrder(sessionId);
         }
 
-        if (tx && tx.status === 'completed') {
-            if (tx.type === 'credit_purchase') {
+        if (tx && tx.status === TransactionStatus.COMPLETED) {
+            if (tx.type === TransactionType.CREDIT_PURCHASE) {
                 // Top-up Credits
                 const { credits } = tx.metadata;
                 const user = await User.findById(tx.userId);
                 if (user && credits) {
                     user.credits.balance += credits;
                     user.creditLogs.push({
-                        type: 'obtained',
+                        type: CreditTransactionType.OBTAINED,
                         amount: credits,
                         description: 'Credit Package Purchase',
                         timestamp: new Date()
@@ -82,8 +95,8 @@ router.post('/verify-session', authMiddleware, async (req: AuthRequest, res) => 
                         if (lic) {
                             const base = lic.endDate > new Date() ? lic.endDate : new Date();
                             const newEnd = new Date(base);
-                            if (pkg.billingPeriod === 'monthly') newEnd.setMonth(newEnd.getMonth() + 1);
-                            else if (pkg.billingPeriod === 'yearly') newEnd.setFullYear(newEnd.getFullYear() + 1);
+                            if (pkg.billingPeriod === TenantBillingCycle.MONTHLY) newEnd.setMonth(newEnd.getMonth() + 1);
+                            else if (pkg.billingPeriod === TenantBillingCycle.YEARLY) newEnd.setFullYear(newEnd.getFullYear() + 1);
 
                             lic.endDate = newEnd;
                             lic.tier = pkg.tier; // Handle upgrade scenario
@@ -93,8 +106,8 @@ router.post('/verify-session', authMiddleware, async (req: AuthRequest, res) => 
                         // NEW LICENSE
                         const startDate = new Date();
                         const endDate = new Date();
-                        if (pkg.billingPeriod === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
-                        else if (pkg.billingPeriod === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
+                        if (pkg.billingPeriod === TenantBillingCycle.MONTHLY) endDate.setMonth(endDate.getMonth() + 1);
+                        else if (pkg.billingPeriod === TenantBillingCycle.YEARLY) endDate.setFullYear(endDate.getFullYear() + 1);
 
                         const key = 'LIC-' + crypto.randomBytes(8).toString('hex').toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
                         await License.create({
@@ -105,7 +118,7 @@ router.post('/verify-session', authMiddleware, async (req: AuthRequest, res) => 
                             maxUsersPerInstance: pkg.limits.usersPerInstance,
                             startDate,
                             endDate,
-                            status: 'valid'
+                            status: LicenseStatus.VALID
                         });
                     }
                 }
@@ -195,11 +208,11 @@ router.get('/stripe/callback', async (req, res) => {
         const { session_id } = req.query;
         
         if (!session_id) {
-            return res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=missing_session`);
+            return res.redirect(`${configService.domain}/license-portal?payment=failed&reason=missing_session`);
         }
 
         // Verify the payment
-        const tx = await paymentService.verifySession(session_id as string);
+        const tx = await stripeService.verifySession(session_id as string);
 
         if (tx && tx.status === 'completed') {
             if (tx.type === 'credit_purchase') {
@@ -258,19 +271,19 @@ router.get('/stripe/callback', async (req, res) => {
             }
             
             // Redirect to success page
-            res.redirect(`${config.public.baseUrl}/license-portal?payment=success&gateway=stripe`);
+            res.redirect(`${configService.domain}/license-portal?payment=success&gateway=stripe`);
         } else {
-            res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=verification_failed`);
+            res.redirect(`${configService.domain}/license-portal?payment=failed&reason=verification_failed`);
         }
     } catch (e: any) {
         Logger.error('Stripe callback error:', e);
-        res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=error`);
+        res.redirect(`${configService.domain}/license-portal?payment=failed&reason=error`);
     }
 });
 
 // GET /api/payment/stripe/cancel - Handle Stripe cancel
 router.get('/stripe/cancel', async (req, res) => {
-    res.redirect(`${config.public.baseUrl}/license-portal?payment=cancelled&gateway=stripe`);
+    res.redirect(`${configService.domain}/license-portal?payment=cancelled&gateway=stripe`);
 });
 
 // GET /api/payment/paypal/callback - Handle PayPal return
@@ -279,7 +292,7 @@ router.get('/paypal/callback', async (req, res) => {
         const { token, PayerID } = req.query;
         
         if (!token) {
-            return res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=missing_token`);
+            return res.redirect(`${configService.domain}/license-portal?payment=failed&reason=missing_token`);
         }
 
         // Capture the payment
@@ -342,19 +355,19 @@ router.get('/paypal/callback', async (req, res) => {
             }
             
             // Redirect to success page
-            res.redirect(`${config.public.baseUrl}/license-portal?payment=success&gateway=paypal`);
+            res.redirect(`${configService.domain}/license-portal?payment=success&gateway=paypal`);
         } else {
-            res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=capture_failed`);
+            res.redirect(`${configService.domain}/license-portal?payment=failed&reason=capture_failed`);
         }
     } catch (e: any) {
         Logger.error('PayPal callback error:', e);
-        res.redirect(`${config.public.baseUrl}/license-portal?payment=failed&reason=error`);
+        res.redirect(`${configService.domain}/license-portal?payment=failed&reason=error`);
     }
 });
 
 // GET /api/payment/paypal/cancel - Handle PayPal cancel
 router.get('/paypal/cancel', async (req, res) => {
-    res.redirect(`${config.public.baseUrl}/license-portal?payment=cancelled&gateway=paypal`);
+    res.redirect(`${configService.domain}/license-portal?payment=cancelled&gateway=paypal`);
 });
 
 export default router;

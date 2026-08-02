@@ -1,4 +1,4 @@
-# AntFlow Services Architecture
+# AntStudio Services Architecture
 
 The backend follows a service-oriented approach, where complex business logic is encapsulated in dedicated "Service" classes.
 

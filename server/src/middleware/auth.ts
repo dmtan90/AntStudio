@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractTokenFromHeader, extractTokenFromCookie } from '../utils/jwt.js';
-import { User } from '../models/User.js';
+import { User, UserRole } from '../models/User.js';
 
 export interface AuthRequest extends Request {
     user?: {
         id: string; // Alias for userId
         userId: string;
         email: string;
-        role: string;
+        role: UserRole | string;
         currentOrganizationId?: string;
     };
 }
@@ -44,14 +44,14 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
 };
 
 export const adminMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'sys-admin')) {
+    if (!req.user || (req.user.role !== UserRole.ADMIN && req.user.role !== UserRole.SYS_ADMIN)) {
         return res.status(403).json({ success: false, data: null, error: 'Admin access required' });
     }
     next();
 };
 
 export const sysAdminMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user || req.user.role !== 'sys-admin') {
+    if (!req.user || req.user.role !== UserRole.SYS_ADMIN) {
         return res.status(403).json({ success: false, data: null, error: 'Admin access required' });
     }
     next();

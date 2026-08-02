@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth.js';
-import { redisService } from '../services/RedisService.js';
+import { redisService } from '../services/system/RedisService.js';
 import { Logger } from '../utils/Logger.js';
 
 export const cacheMiddleware = (options: {

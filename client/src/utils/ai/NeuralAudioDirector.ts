@@ -1,7 +1,7 @@
 import { studioDirector } from './StudioDirector.js';
 
 /**
- * Neural Audio Director (Phase 28 & 34)
+ * Neural Audio Director
  * Acts as the AI Audio Engineer. Manages Background Music (BGM) crossfading,
  * Auto-Ducking (lowering volume when speaking), and Sound Effects (SFX/Foley).
  */
@@ -58,7 +58,7 @@ export class NeuralAudioDirector {
     }
 
     /**
-     * Smoothly crossfades BGM to the new vibe track, fetching from stock API if needed (Phase 34)
+     * Smoothly crossfades BGM to the new vibe track, fetching from stock API if needed
      */
     private async crossfadeToVibe(newVibe: string) {
         if (!this.bgmAudio || !this.enabled) return;
@@ -71,7 +71,7 @@ export class NeuralAudioDirector {
         
         let newSrc = this.vibeTracks[newVibe];
         
-        // Phase 34: If no local track mapping exists, try fetching from Stock Audio API
+        // If no local track mapping exists, try fetching from Stock Audio API
         if (!newSrc) {
             console.log(`[NeuralAudioDirector] Fetching stock BGM for vibe: ${newVibe}...`);
             const stockAudio = await studioDirector.fetchStockMedia('sound', newVibe);
@@ -119,7 +119,7 @@ export class NeuralAudioDirector {
         let src = this.sfxLibrary[effectName];
         
         if (!src) {
-            // Phase 34: Use Sound API if local SFX not found
+            // Use Sound API if local SFX not found
             const stockAudio = await studioDirector.fetchStockMedia('sound', effectName);
             if (stockAudio && stockAudio.url) {
                 src = stockAudio.url;

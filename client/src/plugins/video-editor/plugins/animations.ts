@@ -55,7 +55,11 @@ export class CanvasAnimations {
 
   private _update(value) {
     // console.log("anime update", value);
-    this.canvas.renderAll();
+    try{
+		this.canvas.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
   }
 
   private _complete(object: fabric.Object) {
@@ -874,6 +878,10 @@ export class CanvasAnimations {
     object?.off("deselected");
     this.previewing = false;
     // this.canvas.objectCaching = true;
-    this.canvas.renderAll();
+    try{
+		this.canvas.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
   }
 }

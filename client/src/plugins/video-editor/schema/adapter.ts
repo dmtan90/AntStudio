@@ -35,10 +35,10 @@ export const EditorBrandSchema = z.object({
 
 export const EditorTemplateSchema = z.object({
   id: z.string().nullish(),
-  name: z.string(),
-  description: z.string(),
-  category: z.string(),
-  is_published: z.boolean(),
+  name: z.string().nullish().transform(val => val ?? ""),
+  description: z.string().nullish().transform(val => val ?? ""),
+  category: z.string().nullish().transform(val => val ?? "General"),
+  is_published: z.boolean().nullish().transform(val => val ?? false),
   pages: z.array(z.object({
     id: z.string(),
     name: z.string(),

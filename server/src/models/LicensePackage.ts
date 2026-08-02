@@ -1,12 +1,14 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { LicenseType } from './License.js';
+import { TenantBillingCycle } from './Tenant.js';
 
 export interface ILicensePackage extends Document {
     name: string;
-    tier: 'basic' | 'pro' | 'enterprise';
+    tier: LicenseType | string;
     description: string;
     price: number;
     currency: string;
-    billingPeriod: 'monthly' | 'yearly' | 'lifetime';
+    billingPeriod: TenantBillingCycle | string;
     limits: {
         instances: number;
         usersPerInstance: number;
@@ -22,11 +24,11 @@ export interface ILicensePackage extends Document {
 const LicensePackageSchema = new Schema<ILicensePackage>(
     {
         name: { type: String, required: true },
-        tier: { type: String, enum: ['basic', 'pro', 'enterprise'], required: true },
+        tier: { type: String, enum: Object.values(LicenseType), required: true },
         description: { type: String },
         price: { type: Number, required: true },
         currency: { type: String, default: 'USD' },
-        billingPeriod: { type: String, enum: ['monthly', 'yearly', 'lifetime'], default: 'monthly' },
+        billingPeriod: { type: String, enum: Object.values(TenantBillingCycle), default: TenantBillingCycle.MONTHLY },
         limits: {
             instances: { type: Number, default: 1 },
             usersPerInstance: { type: Number, default: 10 },

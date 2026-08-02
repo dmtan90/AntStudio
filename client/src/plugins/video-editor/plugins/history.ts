@@ -47,7 +47,11 @@ export class CanvasHistory {
           }
           FabricUtils.applyTransformationsAfterLoad(this.canvas);
           this.status = "idle";
-          this.canvas.renderAll();
+          try{
+			this.canvas.renderAll();
+		  }catch(err){
+			console.warn(err);
+		  }
           this._canvas.editor.onModified?.();
           resolve();
         });

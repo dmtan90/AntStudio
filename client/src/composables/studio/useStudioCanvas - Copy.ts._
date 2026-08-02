@@ -208,7 +208,7 @@ export function useStudioCanvas(
         }
 
         try {
-            // Phase 89: Stop cloning tracks. Cloning creates a new track instance
+            // Stop cloning tracks. Cloning creates a new track instance
             // that doesn't share the 'enabled' state of the original.
             // Using the original track allows MediaStreamTrackProcessor to see
             // track.enabled = false (black frames) when toggled in LiveStudio.vue.
@@ -344,7 +344,7 @@ export function useStudioCanvas(
         if (isWorkerEnabled) checkNewStreams();
     }, { deep: true, immediate: true });
 
-    // Phase 93: Sync lyrics to worker
+    // Sync lyrics to worker
     watch([
         () => mediaStore.performanceLyrics,
         () => mediaStore.performanceLyricsCurrentTime,
@@ -437,7 +437,7 @@ export function useStudioCanvas(
         if (newFilter !== 'none') updateLUT(newFilter);
     });
 
-    // Handle Brand Logo Changes (Phase 18)
+    // Handle Brand Logo Changes
     const updateBrandLogo = (url: string) => {
         if (!isWorkerEnabled || !worker) return;
         worker.postMessage({ type: 'update-brand-logo', payload: { logoUrl: url } });
@@ -450,7 +450,7 @@ export function useStudioCanvas(
 
     // Initialize AI Engine
     onMounted(async () => {
-        // Phase 89: Listen for metadata on these elements so we bridge as soon as stream exists
+        // Listen for metadata on these elements so we bridge as soon as stream exists
         if (options.screenVideo?.value) {
             options.screenVideo.value.onloadedmetadata = () => checkNewStreams();
         }
@@ -577,7 +577,7 @@ export function useStudioCanvas(
                         });
                     }
                     
-                    // Phase 93: Global Lyrics Burn-in removed from overlay canvas to prevent duplication
+                    // Global Lyrics Burn-in removed from overlay canvas to prevent duplication
                     // Per-slot lyrics are handled in drawActualRegion
 
                     renderCommerceOverlays(ctx, canvas);
@@ -758,7 +758,7 @@ export function useStudioCanvas(
             renderNameTag(ctx, 'HOST', x, y, w, h);
         }
 
-        // Phase 93: Lyrics Rendering per-slot
+        // Lyrics Rendering per-slot
         const guestId = mediaStore.performingVTuberId;
         if (guestId && mediaStore.performanceLyricsVisible) {
             let isTarget = false;
@@ -1120,7 +1120,7 @@ export function useStudioCanvas(
                     return;
                 }
 
-                // Phase 95: Enable Face Tracking for real-time framing
+                // Enable Face Tracking for real-time framing
                 const results = await liveAIEngine.processFrame(track, timestamp, { 
                     enableSegmentation: !skipSegmentation,
                     enableFace: true 

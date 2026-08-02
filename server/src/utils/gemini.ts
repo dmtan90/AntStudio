@@ -1,6 +1,8 @@
 import { GoogleGenAI, Modality } from '@google/genai';
-import { AdminSettings, IAdminSettings } from '../models/AdminSettings.js';
+import { IAdminSettings, getAdminSettings } from '../models/AdminSettings.js';
 import { Logger } from './Logger.js';
+import { AIAccountProvider } from '~/models/AIAccount.js';
+import { config as Config } from './config.js';
 
 export interface GeminiKeyInfo {
     key: string;
@@ -26,14 +28,14 @@ export class GeminiPool {
      * Get all available Gemini keys from AdminSettings
      */
     private async getAllKeys(): Promise<GeminiKeyInfo[]> {
-        const settings = await AdminSettings.findOne();
+        const settings = await getAdminSettings();
         if (!settings) return [];
 
         let allKeys: GeminiKeyInfo[] = [];
 
         // 1. Keys from explicit geminiApiKeys array
         if (settings.geminiApiKeys && settings.geminiApiKeys.length > 0) {
-            allKeys = settings.geminiApiKeys.map(k => ({
+            allKeys = settings.geminiApiKeys.map((k: any) => ({
                 key: k.key,
                 label: k.label,
                 isActive: k.isActive,
@@ -44,9 +46,9 @@ export class GeminiPool {
         // 2. Discover keys from AI Providers (supporting comma-separated)
         const providers = settings.aiSettings?.providers || [];
         for (const provider of providers) {
-            if (provider.isActive && (provider.id.includes('gemini') || provider.id.includes('google') || provider.id.includes('aistudio'))) {
+            if (provider.isActive && (provider.id.includes(AIAccountProvider.GEMINI) || provider.id.includes(AIAccountProvider.GOOGLE) || provider.id.includes(AIAccountProvider.AISTUDIO))) {
                 if (provider.apiKey && provider.apiKey.includes(',')) {
-                    const splitKeys = provider.apiKey.split(',').map(k => k.trim()).filter(k => k);
+                    const splitKeys = provider.apiKey.split(',').map((k: any) => k.trim()).filter((k: any) => k);
                     for (const k of splitKeys) {
                         // Avoid duplicates
                         if (!allKeys.find(ak => ak.key === k)) {
@@ -87,7 +89,7 @@ export class GeminiPool {
     /**
      * Select the best key for the requested model based on quota
      */
-    public async getOptimalClient(modelId: string = 'gemini-2.5-flash'): Promise<{ client: GoogleGenAI, key: string }> {
+    public async getOptimalClient(modelId: string = Config.geminiModelTextAnalysis): Promise<{ client: GoogleGenAI, key: string }> {
         const keys = await this.getAllKeys();
         if (keys.length === 0) {
             throw new Error('No active Gemini API keys found in Admin Settings or Environment');
@@ -118,11 +120,11 @@ export class GeminiPool {
      */
     public async recordUsage(apiKey: string, modelId: string): Promise<void> {
         try {
-            const settings = await AdminSettings.findOne();
+            const settings = await getAdminSettings();
             if (!settings) return;
 
             // Update in geminiApiKeys if present
-            const keyInPool = settings.geminiApiKeys?.find(k => k.key === apiKey);
+            const keyInPool = settings.geminiApiKeys?.find((k: any) => k.key === apiKey);
             if (keyInPool) {
                 keyInPool.usageCount = (keyInPool.usageCount || 0) + 1;
                 keyInPool.lastUsed = new Date();

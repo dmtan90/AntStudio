@@ -65,6 +65,16 @@ const form = reactive({
   confirmPassword: ''
 })
 
+onMounted(() => {
+  const token = route.query.token as string
+  if (!token) {
+    toast.error(t('auth.resetPassword.toasts.invalidToken'))
+    setTimeout(() => {
+      router.replace('/login');
+    }, 2000)
+  }
+});
+
 const handleResetPassword = async () => {
   if (!form.password || !form.confirmPassword) {
     toast.error(t('auth.resetPassword.toasts.fillAll'))

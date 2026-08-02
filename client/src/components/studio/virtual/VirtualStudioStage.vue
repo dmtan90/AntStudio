@@ -42,7 +42,7 @@ const particles: any[] = [];
 const studioStore = useStudioStore();
 const targetLookX = ref(0); // Normalized -1.0 to 1.0 (left to right)
 
-// Phase 64: Camera State
+// Camera State
 const cameraState = ref({
     zoom: 1.0,
     x: 0,
@@ -215,7 +215,7 @@ const updateVideoPosition = (guestId: string, index: number) => {
 
 // Video Positioning & Spatial Interaction
 const updateLoop = (delta: number) => {
-    // Update Camera (Phase 64)
+    // Update Camera
     updateCamera(delta);
 
     // Update Atmosphere
@@ -228,7 +228,7 @@ const updateLoop = (delta: number) => {
     // (Most logic is handled inside VirtualGuest streams now)
 };
 
-// Phase 64: Auto-Camera Logic
+// Auto-Camera Logic
 watch(() => [studioStore.currentSpeakerId, studioStore.autoCameraEnabled], ([speakerId, autoEnabled]) => {
     if (!autoEnabled || !app) {
         cameraState.value.targetZoom = 1.0;
@@ -272,7 +272,7 @@ const updateCamera = (delta: number) => {
     app.stage.y = app.screen.height + s.y - (app.screen.height * s.zoom);
 };
 
-// Phase 62: Spatial Awareness Watcher
+// Spatial Awareness Watcher
 watch(() => studioStore.currentSpeakerId, (speakerId) => {
     if (!speakerId) {
         targetLookX.value = 0; // Look at audience

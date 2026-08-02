@@ -18,9 +18,20 @@ export class ActionSyncService {
      * Connects to the collaboration server for a specific room.
      */
     public static connect(roomId: string, token: string, extraAuth: any = {}) {
-        if (this.socket?.connected && this.roomId === roomId) {
-            console.log(`[ActionSync] Already connected to room ${roomId}`);
+        if (this.socket?.connected) {
+            if (this.roomId !== roomId) {
+                console.log(`[ActionSync] Reusing active socket, switching room from ${this.roomId} to ${roomId}`);
+                this.roomId = roomId;
+                this.socket.emit('room:join', { roomId });
+            } else {
+                console.log(`[ActionSync] Already connected to room ${roomId}`);
+            }
             return;
+        }
+
+        if (this.socket) {
+            this.socket.disconnect();
+            this.socket = null;
         }
 
         this.roomId = roomId;
@@ -40,8 +51,9 @@ export class ActionSyncService {
 
         this.socket.on('connect', async () => {
             console.log(`✅ [ActionSync] Connected to signaling transport (Transport: ${this.socket?.id})`);
+            window.dispatchEvent(new CustomEvent('actionsync:connect'));
             
-            // Phase 96: Flush buffered relay chunks once connected
+            // Flush buffered relay chunks once connected
             if (this.relayQueue.length > 0) {
                 console.log(`[ActionSync] Flushing ${this.relayQueue.length} buffered relay chunks`);
                 while (this.relayQueue.length > 0) {
@@ -53,14 +65,14 @@ export class ActionSyncService {
             }
         });
 
-        this.socket.on('session:connected', async (data: { userId: string, role: string, name: string }) => {
-            console.log(`🆔 [ActionSync] Identity stabilized: ${data.name} (${data.userId}) as ${data.role}`);
-            const studio = (await import('@/stores/studio')).useStudioStore();
-            studio.myGuestId = data.userId;
+        this.socket.on('disconnect', (reason) => {
+            console.warn(`⚠️ [ActionSync] Socket disconnected: ${reason}`);
+            window.dispatchEvent(new CustomEvent('actionsync:disconnect', { detail: { reason } }));
         });
 
         this.socket.on('connect_error', (err) => {
             console.error(`❌ [ActionSync] Connection error:`, err.message);
+            window.dispatchEvent(new CustomEvent('actionsync:disconnect', { detail: { reason: err.message } }));
         });
 
         // Add periodic latency test for stats
@@ -80,6 +92,10 @@ export class ActionSyncService {
 
     public static getLatency(): number {
         return ActionSyncService.latency || 0;
+    }
+
+    public static isConnected(): boolean {
+        return !!(this.socket?.connected);
     }
 
     /**
@@ -153,7 +169,19 @@ export class ActionSyncService {
             studio.applyRemoteState(state);
         });
 
-        // Sync Viral Peaks (Phase 90)
+        // Sync Stream Errors
+        this.socket.on('stream:error', (payload: any) => {
+            console.error('[ActionSync] Stream Error:', payload);
+            window.dispatchEvent(new CustomEvent('stream:error', { detail: payload }));
+        });
+
+        // Sync Stream Stopped by Server
+        this.socket.on('stream:stopped', (payload: any) => {
+            console.warn('[ActionSync] Stream Stopped by Server:', payload);
+            window.dispatchEvent(new CustomEvent('stream:stopped', { detail: payload }));
+        });
+
+        // Sync Viral Peaks
         this.socket.on('studio:viral_peak', (data: any) => {
             console.log('🚀 [ActionSync] Viral Peak Detected:', data);
             
@@ -258,7 +286,7 @@ export class ActionSyncService {
             window.dispatchEvent(new CustomEvent('style:switch', { detail: payload }));
         });
 
-        // --- Audience Interaction (Phase 66) ---
+        // --- Audience Interaction ---
         this.socket.on('hive:poll_update', (poll: any) => {
             console.log('[ActionSync] Hive Poll Update:', poll);
             studio.activePoll = poll;
@@ -273,7 +301,7 @@ export class ActionSyncService {
         this.socket.on('hive:sentiment', (data: { score: number }) => {
             console.log('[ActionSync] Sentiment Update:', data.score);
             
-            // Phase 18: Pipe into granular analyzer
+            // Pipe into granular analyzer
             studioVibeAnalyzer.update({
                 voiceLevel: 0, 
                 chatVelocity: 0, 
@@ -304,7 +332,7 @@ export class ActionSyncService {
             studio.executeShowStep(step);
         });
 
-        // --- Phase 88: Gamification ---
+        // --- Gamification ---
         this.socket.on('gamification:update', async (progress: any) => {
             if (!studio.godModeEnabled) return; // Gate: Only log/process if God Mode is ON
             console.log('[ActionSync] Gamification Update:', progress);
@@ -342,7 +370,7 @@ export class ActionSyncService {
             });
         });
 
-        // --- Phase 68: Economy ---
+        // --- Economy ---
         this.socket.on('economy:balance_update', (wallet: any) => {
             console.log('[ActionSync] Wallet Update:', wallet.balance);
             studio.userWallet = wallet;
@@ -366,6 +394,63 @@ export class ActionSyncService {
                 toast.error(error.message);
             });
         });
+
+        // --- Google Cloud Agent Orchestration ---
+        this.socket.on('agent:show_product', (payload: any) => {
+            console.log('🤖 [ActionSync] Agent Action: Show Product', payload);
+            window.dispatchEvent(new CustomEvent('agent:show_product', { detail: payload }));
+            import('vue-sonner').then(({ toast }) => {
+                toast.info(`AI Spotlight: ${payload.name || 'New Product'}`, {
+                    description: 'The AI Agent has highlighted this product.',
+                    icon: '🛒',
+                    duration: 5000
+                });
+            });
+        });
+
+        this.socket.on('agent:play_audio', (payload: any) => {
+            console.log('🤖 [ActionSync] Agent Action: Play Audio', payload);
+            window.dispatchEvent(new CustomEvent('agent:play_audio', { detail: payload }));
+        });
+
+        this.socket.on('agent:switch_scene', (payload: any) => {
+            console.log('🤖 [ActionSync] Agent Action: Switch Scene', payload);
+            window.dispatchEvent(new CustomEvent('agent:switch_scene', { detail: payload }));
+        });
+
+        this.socket.on('agent:highlight_comment', (payload: any) => {
+            console.log('🤖 [ActionSync] Agent Action: Highlight Comment', payload);
+            window.dispatchEvent(new CustomEvent('agent:highlight_comment', { detail: payload }));
+        });
+
+        // --- Autonomous Agentic FSM Directives ---
+        const handleStateChange = (payload: any) => {
+            console.log('🤖 [ActionSync] Received Server-Driven FSM State Change:', payload);
+
+            // Normalize payload to orchestrate step format so SaleRunner/SaleStudio
+            // can seamlessly handle both FSM loops and wizard orchestration.
+            const normalizedStep = {
+                // --- Orchestrate-native fields (Newly emitted by FSM) ---
+                text:      payload.text      || payload.scriptText || '',
+                type:      payload.type      || (payload.state === 'CLOSING' ? 'checkout' : 'speaking'),
+                gesture:   payload.gesture   || 'speaking',
+                speaker:   payload.speaker   || null,
+                productId: payload.productId || payload.highlightProductId || null,
+                title:     payload.title     || null,
+                // --- State meta ---
+                state:     payload.state,
+                sessionId: payload.sessionId,
+                triggerDiscount: payload.triggerDiscount || false,
+                // --- Legacy compat (kept for backward compatibility with existing handlers) ---
+                scriptText:        payload.text || payload.scriptText || '',
+                highlightProductId: payload.productId || payload.highlightProductId || null,
+                reason:    payload.reason || null
+            };
+
+            window.dispatchEvent(new CustomEvent('showrunner:directive', { detail: normalizedStep }));
+        };
+
+        this.socket.on('studio:state_change', handleStateChange);
     }
 
     /**
@@ -387,16 +472,33 @@ export class ActionSyncService {
     /**
      * Send binary stream chunk for backend relay (FFmpeg ingest)
      */
-    public static sendStreamRelay(sessionId: string, chunk: Blob | Buffer | ArrayBuffer) {
-        if (!this.socket?.connected) {
-            // Buffer the critical initial chunks (especially the EBML header)
-            this.relayQueue.push({ sessionId, chunk });
-            if (this.relayQueue.length % 10 === 0) {
-                console.warn(`[ActionSync] Socket not connected, queued ${this.relayQueue.length} chunks for ${sessionId}`);
+    public static async sendStreamRelay(sessionId: string, chunk: Blob | Buffer | ArrayBuffer) {
+        let binaryData: ArrayBuffer | Buffer = chunk as any;
+        if (chunk instanceof Blob) {
+            try {
+                binaryData = await chunk.arrayBuffer();
+            } catch (e) {
+                console.error("[ActionSync] Failed to convert Blob to ArrayBuffer:", e);
+                return;
             }
+        }
+
+        const chunkSize = binaryData instanceof ArrayBuffer ? binaryData.byteLength : (binaryData as any)?.length ?? 0;
+        
+        // Firewall against empty/corrupted chunks to prevent FFmpeg parser crashes
+        if (chunkSize === 0) {
+            console.warn(`[ActionSync] Ignoring empty chunk of size 0 bytes for ${sessionId}`);
             return;
         }
-        this.socket.emit('stream:relay', { sessionId, chunk });
+
+        if (!this.socket?.connected) {
+            // Buffer the critical initial chunks (especially the EBML header)
+            this.relayQueue.push({ sessionId, chunk: binaryData });
+            console.warn(`[ActionSync] Socket not connected (socketId=${this.socket?.id ?? 'null'}), queued chunk #${this.relayQueue.length} (${chunkSize} bytes) for ${sessionId}`);
+            return;
+        }
+        // console.log(`[ActionSync] Emitting stream:relay for ${sessionId}, chunkSize=${chunkSize}, socketId=${this.socket.id}`);
+        this.socket.emit('stream:relay', { sessionId, chunk: binaryData });
     }
 
     /**
@@ -465,7 +567,7 @@ export class ActionSyncService {
     }
 
     /**
-     * Phase 90: Generates or retrieves a persistent ID for reconnection stability.
+     * Generates or retrieves a persistent ID for reconnection stability.
      */
     private static getOrCreatePersistentId(): string {
         let id = localStorage.getItem('antstudio_persistent_id');

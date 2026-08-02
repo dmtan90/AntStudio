@@ -5,6 +5,7 @@ import { Logger } from '../../Logger.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getFromS3 } from '~/utils/s3.js';
 import { Readable } from 'stream';
+import { AIModelType } from '~/models/AdminSettings.js';
 
 export class FlowAdapter {
     private apiBaseUrl = 'https://aisandbox-pa.googleapis.com/v1';
@@ -57,7 +58,8 @@ export class FlowAdapter {
         };
 
         const sessionId = Math.random().toString().slice(2, 17);
-        const fileName = `upload_${Date.now()}.png`;
+        const ext = mimeType.split('/')[1] || 'png';
+        const fileName = `upload_${Date.now()}.${ext}`;
 
         const payload = {
             clientContext: {
@@ -73,21 +75,19 @@ export class FlowAdapter {
         };
 
         try {
-            Logger.info(`[FlowAdapter] Uploading image to Flow... (${buffer.length} bytes)`);
+            Logger.info(`[FlowAdapter] Uploading media to Flow... (${buffer.length} bytes, mime: ${mimeType})`);
             const response = await axios.post(url, payload, { headers });
             
-            // Flow API returns media name in a nested object: data.media.name (UUID)
-            // It needs to be converted to the full resource name format
-            Logger.info(`[FlowAdapter] Image uploaded successfully. Response: ${JSON.stringify(response.data)}`);
+            Logger.info(`[FlowAdapter] Media uploaded successfully. Response: ${JSON.stringify(response.data)}`);
             const mediaName = response.data.media?.name || response.data.name || response.data.mediaId;
-            // const mediaId = mediaName?.startsWith('projects/') ? mediaName : `projects/${projectId}/media/${mediaName}`;
             if (!mediaName) {
                 Logger.info(`[FlowAdapter] No media name in response. Data: ${JSON.stringify(response.data)}`);
                 throw new Error('No mediaId returned from upload');
             }
             
-            Logger.info(`[FlowAdapter] Image uploaded successfully. MediaId: ${mediaName}`);
-            return mediaName;
+            const cleanMediaId = mediaName.includes('/media/') ? mediaName.split('/media/')[1] : mediaName;
+            Logger.info(`[FlowAdapter] Media uploaded successfully. MediaId: ${cleanMediaId}`);
+            return cleanMediaId;
         } catch (error: any) {
             const msg = error.response?.data?.error?.message || error.message;
             Logger.error(`[FlowAdapter] uploadMedia failed: ${msg}`);
@@ -99,7 +99,7 @@ export class FlowAdapter {
      * Resolve media input: if it's a URL or base64, upload it first.
      */
     private async resolveMediaInput(account: IAIAccount, input: any, projectId: string): Promise<string> {
-        const resolveToVeoImage = async (input: any) => {
+        const resolveToVeoMedia = async (input: any) => {
             if (!input) return undefined;
             if (typeof input !== 'string') return input; // Already resolved or object
 
@@ -110,7 +110,7 @@ export class FlowAdapter {
                 if (input.startsWith('https://') || input.startsWith('http://')) {
                     const response = await axios.get(input, { responseType: 'arraybuffer' });
                     buffer = Buffer.from(response.data);
-                    mimeType = response.headers['content-type'] || 'image/png';
+                    mimeType = String(response.headers['content-type'] || 'image/png');
                 } else {
                     // Assume S3 Key
                     const s3Stream = await getFromS3(input) as Readable;
@@ -122,16 +122,17 @@ export class FlowAdapter {
                     
                     if (input.endsWith('.jpg') || input.endsWith('.jpeg')) mimeType = 'image/jpeg';
                     else if (input.endsWith('.webp')) mimeType = 'image/webp';
+                    else if (input.endsWith('.mp4')) mimeType = 'video/mp4';
                 }
 
-                Logger.info(`[GeminiClient] Resolved image reference ${input} to ${buffer.length} bytes, mime: ${mimeType}`, 'GeminiClient');
+                Logger.info(`[FlowAdapter] Resolved media reference ${input} to ${buffer.length} bytes, mime: ${mimeType}`, 'FlowAdapter');
 
                 return {
-                    imageBytes: buffer.toString('base64'),
+                    mediaBytes: buffer.toString('base64'),
                     mimeType
                 };
             } catch (err: any) {
-                Logger.warn(`[GeminiClient] Failed to resolve reference image ${input}: ${err.message}`, 'GeminiClient');
+                Logger.warn(`[FlowAdapter] Failed to resolve reference media ${input}: ${err.message}`, 'FlowAdapter');
                 return undefined;
             }
         };
@@ -140,12 +141,12 @@ export class FlowAdapter {
 
         // If it's already a Flow mediaId string (projects/.../media/...)
         if (typeof input === 'string' && input.startsWith('projects/') && input.includes('/media/')) {
-            return input;
+            return input.split('/media/')[1];
         }
 
-        const data = await resolveToVeoImage(input);
+        const data = await resolveToVeoMedia(input);
         if (data) {
-            const buffer = Buffer.from(data.imageBytes, 'base64');
+            const buffer = Buffer.from(data.mediaBytes, 'base64');
             return await this.uploadMedia(account, buffer, data.mimeType, projectId);
         }
 
@@ -176,8 +177,8 @@ export class FlowAdapter {
     /**
      * Resolve model settings based on generic model ID and config
      */
-    private resolveModelSettings(type: 'image' | 'video', modelId: string, config: any = {}) {
-        const rawRatio = config.aspectRatio || (type === 'image' ? 'IMAGE_ASPECT_RATIO_LANDSCAPE' : 'VIDEO_ASPECT_RATIO_LANDSCAPE');
+    private resolveModelSettings(type: AIModelType.IMAGE | AIModelType.VIDEO, modelId: string, config: any = {}) {
+        const rawRatio = config.aspectRatio || (type === AIModelType.IMAGE ? 'IMAGE_ASPECT_RATIO_LANDSCAPE' : 'VIDEO_ASPECT_RATIO_LANDSCAPE');
         const ratio = this.mapAspectRatio(type, rawRatio);
         
         // Better portrait detection: check if it's the PORTRAIT enum OR if the raw ratio is 9:16 or 3:4
@@ -188,7 +189,7 @@ export class FlowAdapter {
         
         const imageCount = (config.imageInputs || config.referenceImages || []).length;
 
-        if (type === 'image') {
+        if (type === AIModelType.IMAGE) {
             let imageModelName = 'IMAGEN_3_5';
             if (modelId.includes('gemini-2.5-flash')) imageModelName = 'GEM_PIX';
             else if (modelId.includes('gemini-3.0-pro') || modelId.includes('gemini-3-pro') || modelId.includes('gemini-3-pro-image')) imageModelName = 'GEM_PIX_2';
@@ -202,20 +203,12 @@ export class FlowAdapter {
             return { imageModelName, aspectRatio: ratio, upsample };
         } else {
             // Video mapping
-            let videoType: 't2v' | 'i2v' | 'r2v' = 't2v';
+            let videoType: 't2v' | 'i2v' | 'r2v' | 'extend' | 'upsample' = 't2v';
             
             // Collect all potential images
             const images = config.imageInputs || config.referenceImages || [];
             const hasStartEnd = !!(config.imageStart || config.imageEnd || config.image);
             const hasCharacters = !!(config.characterImages && config.characterImages.length > 0);
-
-            // Prioritize R2V for aidol/influencer character consistency or when mixing characters with start/end
-            if (hasCharacters || (images.length > 0)) {
-                videoType = 'r2v';
-            } else if (hasStartEnd || images.length >= 1) {
-                // Default to I2V if we have few images and no specific character references
-                videoType = (config.mode === 'r2v') ? 'r2v' : 'i2v';
-            }
 
             let prefix = 'veo_3_1';
             if(modelId.includes('veo-3.0')){
@@ -231,9 +224,23 @@ export class FlowAdapter {
                 prefix = "veo_2_1";
             }
 
+            if (config.mode === 'extend' || config.videoType === 'extend' || modelId.includes('extend')) {
+                videoType = 'extend';
+            } else if (config.mode === 'upsample' || config.videoType === 'upsample' || modelId.includes('upsample') || modelId.includes('upsampler')) {
+                videoType = 'upsample';
+            } else if (hasCharacters || (images.length > 0)) {
+                videoType = 'r2v';
+            } else if (hasStartEnd || images.length >= 1) {
+                videoType = (config.mode === 'r2v') ? 'r2v' : 'i2v';
+            }
+
             let videoModelKey = `${prefix}_t2v_fast_landscape`;
-            // Handle Veo 2.0 or 2.1 specific overrides
-            if (prefix === 'veo_2_0') {
+            if (videoType === 'extend') {
+                videoModelKey = isPortrait ? `${prefix}_extend_portrait` : `${prefix}_extend`;
+            } else if (videoType === 'upsample') {
+                const resolution = config.resolution || 'VIDEO_RESOLUTION_4K';
+                videoModelKey = resolution === 'VIDEO_RESOLUTION_1080P' ? `${prefix}_upsampler_1080p` : `${prefix}_upsampler_4k`;
+            } else if (prefix === 'veo_2_0') {
                 if (videoType === 't2v') {
                     videoModelKey = isPortrait ? `${prefix}_t2v_portrait` : `${prefix}_t2v_landscape`;
                 } else if (videoType === 'i2v') {
@@ -247,15 +254,15 @@ export class FlowAdapter {
                 }
             } else {//3.0/3.1
                 if (videoType === 't2v') {
-                    videoModelKey = isPortrait ? `${prefix}_t2v_fast_portrait` : `${prefix}_t2v_fast_landscape`;
+                    videoModelKey = isPortrait ? `${prefix}_t2v_fast_portrait` : `${prefix}_t2v_fast`;
                 } else if (videoType === 'i2v') {
                     videoModelKey = isPortrait ? `${prefix}_i2v_s_fast_portrait_fl` : `${prefix}_i2v_s_fast_fl`;
                 } else if (videoType === 'r2v') {
-                    videoModelKey = isPortrait ?    `${prefix}_r2v_fast_portrait` : `${prefix}_r2v_fast`;
+                    videoModelKey = isPortrait ?    `${prefix}_r2v_fast_portrait` : `${prefix}_r2v_fast_landscape`;
                 }
             }
 
-            return { videoModelKey, aspectRatio: ratio, videoType };
+            return { videoModelKey, aspectRatio: ratio, videoType, resolution: config.resolution || 'VIDEO_RESOLUTION_1080P' };
         }
     }
 
@@ -303,7 +310,7 @@ export class FlowAdapter {
         }
 
         // 2. Resolve model settings
-        const settings = this.resolveModelSettings('image', modelName, { ...config, imageInputs });
+        const settings = this.resolveModelSettings(AIModelType.IMAGE, modelName, { ...config, imageInputs });
         Logger.info(`[FlowAdapter] Resolved model settings: ${JSON.stringify(settings)}`);
 
         let retry = 5;
@@ -417,7 +424,7 @@ export class FlowAdapter {
                 const mediaName = response.data.media?.[0]?.name || response.data.name;
                 if (mediaName && mediaName.includes('operations/')) {
                     Logger.info(`[FlowAdapter] Image generation is async, polling operation: ${mediaName}`);
-                    return await this.pollMedia(account, projectId, mediaName, 'image');
+                    return await this.pollMedia(account, projectId, mediaName, AIModelType.IMAGE);
                 }
 
                 Logger.error(`[FlowAdapter] Response did not contain inline image bytes or operation: ${JSON.stringify(response.data).substring(0, 300)}...`);
@@ -428,7 +435,8 @@ export class FlowAdapter {
                 if(msg != "reCAPTCHA evaluation failed"){
                     throw new Error(`Flow Image Generation Failed: ${msg}`);
                 }
-                Logger.info(`[FlowAdapter] reCAPTCHA evaluation failed. Retrying...`);
+                Logger.info(`[FlowAdapter] reCAPTCHA evaluation failed. Retrying in 5s...`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
                 retry--;
             }
         }
@@ -480,8 +488,22 @@ export class FlowAdapter {
             resolvedMediaIds.push(await this.resolveMediaInput(account, img, projectId));
         }
 
+        // Collect and resolve potential video references (for extend/upsample)
+        const rawVideos = [
+            config.videoInput,
+            config.referenceVideo,
+            config.video
+        ].filter(v => !!v);
+
+        const uniqueVideos = [...new Set(rawVideos)];
+        const resolvedVideoIds = [];
+        for (const vid of uniqueVideos) {
+            resolvedVideoIds.push(await this.resolveMediaInput(account, vid, projectId));
+        }
+
         // 2. Resolve model settings
-        const settings = this.resolveModelSettings('video', modelName, { ...config, imageInputs: resolvedMediaIds });
+        const settings = this.resolveModelSettings(AIModelType.VIDEO, modelName, { ...config, imageInputs: resolvedMediaIds });
+        Logger.info(`[FlowAdapter] generateVideo settings: ${JSON.stringify(settings)}`);
 
         let retry = 5;
         while(retry > 0){
@@ -511,6 +533,10 @@ export class FlowAdapter {
                     }
                 } else if (settings.videoType === 'r2v') {
                     url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoReferenceImages`;
+                } else if (settings.videoType === 'extend') {
+                    url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoExtendVideo`;
+                } else if (settings.videoType === 'upsample') {
+                    url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoUpsampleVideo`;
                 }
 
                 const clientContext = {
@@ -527,24 +553,21 @@ export class FlowAdapter {
                 const requests: any = {
                     aspectRatio: settings.aspectRatio,
                     seed: Math.floor(Math.random() * 99999) + 1,
-                    textInput: {
-                        structuredPrompt: {
-                            parts: [{
-                                text: prompt
-                            }]
-                        }
-                    },
-                    // textInput: {
-                    //     prompt: prompt
-                    // },
-                    startImage: undefined,
-                    endImage: undefined,
-                    referenceImages: undefined,
                     videoModelKey: settings.videoModelKey,
                     metadata: {
                         sceneId: sceneId
                     }
                 };
+
+                if (settings.videoType !== 'upsample') {
+                    requests.textInput = {
+                        structuredPrompt: {
+                            parts: [{
+                                text: prompt
+                            }]
+                        }
+                    };
+                }
 
                 if (settings.videoType === 'i2v') {
                     requests.startImage = resolvedMediaIds[0] ? { mediaId: resolvedMediaIds[0] } : undefined;
@@ -556,6 +579,23 @@ export class FlowAdapter {
                             imageUsageType: 'IMAGE_USAGE_TYPE_ASSET'
                         }));
                     }
+                } else if (settings.videoType === 'extend') {
+                    const videoMediaId = resolvedVideoIds[0];
+                    if (!videoMediaId) {
+                        throw new Error('Extend mode requires a source video reference (videoInput, referenceVideo, or video)');
+                    }
+                    requests.videoInput = {
+                        mediaId: videoMediaId
+                    };
+                } else if (settings.videoType === 'upsample') {
+                    const videoMediaId = resolvedVideoIds[0];
+                    if (!videoMediaId) {
+                        throw new Error('Upsample mode requires a source video reference (videoInput, referenceVideo, or video)');
+                    }
+                    requests.videoInput = {
+                        mediaId: videoMediaId
+                    };
+                    requests.resolution = settings.resolution;
                 }
 
                 const payload: any = {
@@ -601,14 +641,14 @@ export class FlowAdapter {
 
                 Logger.info(`[FlowAdapter] Generation submitted. Operation: ${mediaName}`);
 
-                if (config.async !== false) {
+                if (config.async === true) {
                     return { jobId: mediaName, status: 'pending' };
                 }
 
                 //ignore reCAPTCHA evaluation failed
                 retry = 0;
 
-                return await this.pollMedia(account, projectId, mediaName, 'video');
+                return await this.pollMedia(account, projectId, mediaName, AIModelType.VIDEO);
             }catch(error: any){
                 const msg = error.response?.data?.error?.message || error.message;
                 // Logger.error(`[FlowAdapter] generateVideo failed: ${msg}`, 'FlowAdapter', error.response?.data);
@@ -618,7 +658,8 @@ export class FlowAdapter {
                 if(msg != "reCAPTCHA evaluation failed"){
                     throw new Error(`Flow Video Generation Failed: ${msg}`);
                 }
-                Logger.info(`[FlowAdapter] reCAPTCHA evaluation failed. Retrying...`);
+                Logger.info(`[FlowAdapter] reCAPTCHA evaluation failed. Retrying in 5s...`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
                 retry--;
             }
         }
@@ -628,8 +669,8 @@ export class FlowAdapter {
     /**
      * Poll for media generation results
      */
-    private async pollMedia(account: IAIAccount, projectId: string, mediaName: string, type: 'image' | 'video'): Promise<any> {
-        const url = type === 'video' 
+    private async pollMedia(account: IAIAccount, projectId: string, mediaName: string, type: AIModelType.IMAGE | AIModelType.VIDEO): Promise<any> {
+        const url = type === AIModelType.VIDEO 
             ? `${this.apiBaseUrl}/video:batchCheckAsyncVideoGenerationStatus`
             : `${this.apiBaseUrl}/projects/${projectId}/${mediaName}`;
 
@@ -647,7 +688,7 @@ export class FlowAdapter {
 
         while (pollCount < maxPolls) {
             try {
-                if (type === 'video') {
+                if (type === AIModelType.VIDEO) {
                     const payload = {
                         operations: [{ operation: { name: mediaName } }] // FIXED PAYLOAD FORMAT
                     };

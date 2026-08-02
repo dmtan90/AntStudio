@@ -12,7 +12,7 @@ export enum SocialPlatform {
 
 export interface IUserPlatformAccount extends Document {
     userId: mongoose.Types.ObjectId;
-    platform: SocialPlatform;
+    platform: SocialPlatform | string;
     accountName: string; // e.g., "My Gaming Channel"
     accountId?: string; // Platform-specific ID
     avatarUrl?: string;

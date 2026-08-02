@@ -1,0 +1,38 @@
+{
+  "name": "genblaze",
+  "version": "0.3.2",
+  "private": true,
+  "description": "Genblaze TypeScript/JavaScript SDK",
+  "author": "AntStudio",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/libs/meta/genblaze/index.js",
+  "types": "./dist/libs/meta/genblaze/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/libs/meta/genblaze/index.d.ts",
+      "default": "./dist/libs/meta/genblaze/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "workspaces": [
+    "libs/*",
+    "libs/connectors/*",
+    "libs/core/*",
+    "libs/spec/*",
+    "cli"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "example:quickstart": "node --loader ts-node/esm examples/quickstart.ts",
+    "example:quickstart_local": "node --loader ts-node/esm examples/quickstart_local.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "^5.3.3"
+  }
+}

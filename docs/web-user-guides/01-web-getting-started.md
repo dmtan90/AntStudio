@@ -1,10 +1,10 @@
-# Getting Started with AntFlow Web
+# Getting Started with AntStudio Web
 
-Welcome to the AntFlow Web Studio! This comprehensive platform allows you to create, edit, and stream professional content directly from your browser.
+Welcome to the AntStudio Web Studio! This comprehensive platform allows you to create, edit, and stream professional content directly from your browser.
 
 ## 1. Accessing the Studio
 
-1.  **Navigate**: Open your web browser (Chrome or Edge recommended) and go to `https://antflow.io` (or your deployed URL).
+1.  **Navigate**: Open your web browser (Chrome or Edge recommended) and go to `https://antstudio.io` (or your deployed URL).
 2.  **Login/Sign Up**: 
     -   Click the "Login" button in the top right.
     -   Use your Email or Single Sign-On (Google/GitHub/Apple) to access your account.

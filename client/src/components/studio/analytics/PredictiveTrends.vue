@@ -89,7 +89,7 @@ onMounted(() => {
   // Simulate fetching prediction from store or backend
   pollInterval = setInterval(async () => {
      // In real app, this would be a socket event or API call
-     // For this phase, we'll simulate a random-ish AI update 
+     // we'll simulate a random-ish AI update 
      // following the logic that snapshots are being recorded every 30s
      if (Math.random() > 0.7) {
         prediction.value = {

@@ -122,27 +122,6 @@ onMounted(async () => {
     }
   }
 
-  if(route.query?.payload){
-      let editorProduct = null;
-      let editorBrand = null;
-      const payload = JSON.parse(atob(route.query.payload as string));
-      if(payload?.product){
-          editorProduct = payload.product;
-      }
-
-      if(payload?.brand){
-          editorBrand = payload.brand;
-      }
-      console.log("editorProduct", editorProduct);
-      console.log("editorBrand", editorBrand);
-      // editorStore.adapter.update({
-      //     product: editorProduct,
-      //     brand: editorBrand,
-      //     objective: payload.objective,
-      //     mode: payload.headless ? 'creator' : 'edit'
-      // });
-  }
-
   // If project has no saved pages, auto-convert storyboard to studio format
   if (project.value && !project.value.pages && project.value.storyboard?.segments?.length) {
     const pageSamples = convertFlowToStudio(project.value as StudioProject);
@@ -163,6 +142,49 @@ onMounted(async () => {
 
   console.log("template", template);
   await editorStore.loadTemplate(template.value, 'reset');
+
+  let editorProduct = null;
+  let editorBrand = null;
+  let objective = 'E-commerce Ad';
+  let adapterMode = 'edit';
+
+  if(route.query?.payload){
+      const payload = JSON.parse(atob(route.query.payload as string));
+      if(payload?.product){
+          editorProduct = payload.product;
+      }
+
+      if(payload?.brand){
+          editorBrand = payload.brand;
+      }
+
+      if(payload?.objective){
+        objective = payload.objective;
+      }
+
+      adapterMode = payload.headless ? 'creator' : 'edit';
+      // editorStore.adapter.update({
+      //     product: editorProduct,
+      //     brand: editorBrand,
+      //     objective: payload.objective,
+      //     mode: payload.headless ? 'creator' : 'edit'
+      // });
+  }
+  // else if(project.value && (project.value.product || project.value.brand)){
+  //   editorProduct = project.value.product;
+  //   editorBrand = project.value.brand;
+  // }
+
+  console.log(editorProduct, editorBrand, objective, adapterMode);
+
+  if(editorProduct || editorBrand){
+    editorStore.adapter.update({
+      product: editorProduct,
+      brand: editorBrand,
+      objective: objective,
+      mode: adapterMode
+    });
+  }
 });
 
 const handleSave = async () => {

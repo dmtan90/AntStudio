@@ -1,7 +1,7 @@
 import express from 'express';
 import { Logger } from '../utils/Logger.js';
 import { StreamSessionModel } from '../models/StreamSession.js';
-import { socketServer } from '../services/SocketServer.js';
+import { socketServer } from '../services/streaming/SocketServer.js';
 
 const router = express.Router();
 

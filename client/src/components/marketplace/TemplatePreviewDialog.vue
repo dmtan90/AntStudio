@@ -9,7 +9,7 @@
             </button>
 
             <!-- Left: Preview -->
-            <div class="flex-1 bg-black relative flex items-center justify-center bg-[url('/grid.svg')] bg-center p-8">
+            <div class="flex-1 bg-black relative flex items-center justify-center bg-center p-8">
                 <div class="relative w-full h-full flex items-center justify-center">
 
                     <video v-if="activePreviewUrl" :src="getFileUrl(activePreviewUrl)" autoplay loop controls

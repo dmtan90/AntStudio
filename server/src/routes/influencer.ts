@@ -1,15 +1,22 @@
 import express, { Response } from 'express';
-import { InfluencerService } from '../services/InfluencerService.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { rbacMiddleware } from '../middleware/rbac.js';
-import { Permission } from '../utils/permissions.js';
-import { Influencer } from '../models/Influencer.js';
+import { InfluencerService } from '~/services/streaming/InfluencerService.js';
+import { authMiddleware, AuthRequest } from '~/middleware/auth.js';
+import { rbacMiddleware } from '~/middleware/rbac.js';
+import { Permission } from '~/utils/permissions.js';
+import { Influencer } from '~/models/Influencer.js';
 //import { digitalDoubleService } from '../services/ai/DigitalDoubleService.js';
 import multer from 'multer';
-import { liveSalesService } from '../services/ai/LiveSalesService.js';
-import { Logger } from '../utils/Logger.js';
+import { liveSalesService } from '~/services/ai/LiveSalesService.js';
+import { Logger } from '~/utils/Logger.js';
 import { generateImage, translateContent, generateText, generateVideo } from '../utils/AIGenerator.js';
-import { deductCredits, getCreditCost } from '../utils/credits.js';
+import { deductCredits, getCreditCost } from '~/utils/credits.js';
+import { configService, EnvConfig } from '~/utils/ConfigService.js';
+import { AIModelType, getAdminSettings } from '~/models/AdminSettings.js';
+import { GoogleTTSProvider } from '~/utils/ai/providers/GoogleTTSProvider.js';
+import { GeminiClient } from '~/integrations/ai/GeminiClient.js';
+import { Media } from '~/models/Media.js';
+import { aiAccountManager } from '~/utils/ai/AIAccountManager.js';
+import { AIAccountProvider } from '~/models/AIAccount.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -45,6 +52,36 @@ router.get('/list', async (req: AuthRequest, res: Response) => {
             }
         });
     } catch (e: any) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+/**
+ * GET /api/influencer/voices/:provider - Fetch dynamic voice list from provider
+ */
+
+router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
+    try {
+        const { provider } = req.params;
+        const { language } = req.query; // Optional language filter
+
+        if(!provider){
+            return res.status(400).json({ success: false, error: `Unsupported provider:${provider}` });
+        }
+
+        let lisVoices: any[] = [];
+        if(provider === AIAccountProvider.GOOGLE){
+            lisVoices = await AIServiceManager.getInstance().getVoiceList(AIAccountProvider.GOOGLE, language as string);
+        }
+        else if(provider === AIAccountProvider.GEMINI){
+            lisVoices = await AIServiceManager.getInstance().getVoiceList(AIAccountProvider.GEMINI, language as string);
+        }
+        else{
+            Logger.error(`Unsupported provider.${provider}`);
+        }
+        return res.json({ success: true, data: lisVoices });
+    } catch (e: any) {
+        Logger.error('[InfluencerRoute] Voice List Fetch Failed:', e.message);
         res.status(500).json({ success: false, error: e.message });
     }
 });
@@ -248,6 +285,8 @@ router.get('/:entityId/analytics', async (req: AuthRequest, res: Response) => {
  * POST /api/influencer/:entityId/model - Upload custom 3D Base Model
  */
 import { uploadToS3 } from '../utils/s3.js';
+import { ServiceType } from '~/utils/CreditManager.js';
+import { AIServiceManager } from '~/utils/ai/AIServiceManager.js';
 
 router.post('/:entityId/model', upload.single('model'), async (req: AuthRequest, res: Response) => {
     try {
@@ -277,79 +316,79 @@ router.post('/:entityId/model', upload.single('model'), async (req: AuthRequest,
     }
 });
 
+// import { AIModelType, getAdminSettings } from '../models/AdminSettings.js';
+// import { GoogleTTSProvider } from '../utils/ai/providers/GoogleTTSProvider.js';
+// import { GeminiClient } from '../integrations/ai/GeminiClient.js';
+// import { Media } from '~/models/Media.js';
+// import { AIAccountProvider } from '~/models/AIAccount.js';
+
 /**
  * GET /api/influencer/voices/:provider - Fetch dynamic voice list from provider
  */
-import { getAdminSettings } from '../models/AdminSettings.js';
-import { GoogleTTSProvider } from '../utils/ai/providers/GoogleTTSProvider.js';
-import { GeminiClient } from '../integrations/ai/GeminiClient.js';
-import { Media } from '~/models/Media.js';
-import config from '~/utils/config.js';
-
-router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
-    try {
-        const { provider } = req.params;
-        const { language } = req.query; // Optional language filter
+// router.get('/voices/:provider', async (req: AuthRequest, res: Response) => {
+//     try {
+//         const { provider } = req.params;
+//         const { language } = req.query; // Optional language filter
         
-        const settings = await getAdminSettings();
+//         const settings = await getAdminSettings();
         
-        if (provider === 'google') {
-            // Google TTS
-            const { aiAccountManager } = await import('../utils/ai/AIAccountManager.js');
-            const account = await aiAccountManager.getOptimalAccount('audio');
+//         if (provider === AIAccountProvider.GOOGLE) {
+//             // Google TTS
             
-            const config: any = {};
+//             const account = await aiAccountManager.getOptimalAccount(AIModelType.AUDIO);
             
-            if (account && account.providerId === 'google') {
-                const token = await aiAccountManager.refreshAccessToken(account);
-                config.accessToken = token;
-                config.projectId = account.projectId;
-            } else {
-                const googleProvider = settings.aiSettings.providers.find(p => p.id === 'google');
-                config.apiKey = googleProvider?.apiKey || process.env.GOOGLE_API_KEY;
-            }
+//             const config: any = {};
             
-            if (!config.apiKey && !config.accessToken) {
-                return res.status(500).json({ success: false, error: 'Google TTS not configured' });
-            }
+//             if (account && account.providerId === AIAccountProvider.GOOGLE) {
+//                 const token = await aiAccountManager.refreshAccessToken(account);
+//                 config.accessToken = token;
+//                 config.projectId = account.projectId;
+//             } else {
+//                 const googleProvider = settings.aiSettings.providers.find((p: any) => p.id === AIAccountProvider.GOOGLE || p.id === AIAccountProvider.GOOGLE_VERTEX);
+//                 config.apiKey = googleProvider?.apiKey || process.env.GOOGLE_API_KEY;
+//                 config.serviceAccount = (googleProvider as any)?.serviceAccount || EnvConfig.googleApplicationCredentials;
+//             }
             
-            const ttsProvider = new GoogleTTSProvider(config);
-            const voices = await ttsProvider.listVoices(language as string);
+//             if (!config.apiKey && !config.accessToken && !config.serviceAccount) {
+//                 return res.status(500).json({ success: false, error: 'Google TTS not configured' });
+//             }
             
-            const formattedVoices = voices.map((v: any) => ({
-                id: v.name,
-                name: v.name,
-                language: v.languageCodes?.[0] || 'en-US',
-                gender: v.ssmlGender || 'NEUTRAL',
-                provider: 'google',
-                audioSampleUrl: `https://cloud.google.com/static/text-to-speech/docs/audio/${v.name}.wav`
-            }));
+//             const ttsProvider = new GoogleTTSProvider(config);
+//             const voices = await ttsProvider.listVoices(language as string);
             
-            return res.json({ success: true, data: formattedVoices });
-        }
-        else if (provider === 'gemini') {
-            // Gemini TTS
-            const geminiProvider = settings.aiSettings.providers.find(p => p.id === 'google');
-            let apiKey = geminiProvider?.apiKey || process.env.GOOGLE_API_KEY;
+//             const formattedVoices = voices.map((v: any) => ({
+//                 id: v.name,
+//                 name: v.name,
+//                 language: v.languageCodes?.[0] || 'en-US',
+//                 gender: v.ssmlGender || 'NEUTRAL',
+//                 provider: 'google',
+//                 audioSampleUrl: `https://cloud.google.com/static/text-to-speech/docs/audio/${v.name}.wav`
+//             }));
             
-            if (!apiKey) {
-                return res.status(500).json({ success: false, error: 'Google API Key not configured' });
-            }
+//             return res.json({ success: true, data: formattedVoices });
+//         }
+//         else if (provider === AIAccountProvider.GEMINI) {
+//             // Gemini TTS
+//             const geminiProvider = settings.aiSettings.providers.find((p: any) => p.id === AIAccountProvider.GOOGLE || p.id === AIAccountProvider.GOOGLE_VERTEX);
+//             let apiKey = geminiProvider?.apiKey || EnvConfig.geminiApiKey;
             
-            const client = new GeminiClient({ apiKey });
-            const voices = await client.listVoices();
+//             if (!apiKey) {
+//                 return res.status(500).json({ success: false, error: 'Google API Key not configured' });
+//             }
             
-            return res.json({ success: true, data: voices });
-        }
-        else {
-            return res.status(400).json({ success: false, error: 'Unsupported provider.' });
-        }
-    } catch (e: any) {
-        Logger.error('[InfluencerRoute] Voice List Fetch Failed:', e.message);
-        res.status(500).json({ success: false, error: e.message });
-    }
-});
-
+//             const client = new GeminiClient({ apiKey });
+//             const voices = await client.listVoices();
+            
+//             return res.json({ success: true, data: voices });
+//         }
+//         else {
+//             return res.status(400).json({ success: false, error: 'Unsupported provider.' });
+//         }
+//     } catch (e: any) {
+//         Logger.error('[InfluencerRoute] Voice List Fetch Failed:', e.message);
+//         res.status(500).json({ success: false, error: e.message });
+//     }
+// });
 
 /**
  * DELETE /api/influencer/:entityId - Delete a Influencer
@@ -379,7 +418,7 @@ router.delete('/:entityId', async (req: AuthRequest, res: Response) => {
  */
 router.post('/voice-preview', async (req: AuthRequest, res: Response) => {
     try {
-        const { text, provider, voiceId, language } = req.body;
+        const { text, provider, voiceId, language, speed, pitch } = req.body;
 
         if (!text || !provider || !voiceId) {
             return res.status(400).json({ 
@@ -395,7 +434,9 @@ router.post('/voice-preview', async (req: AuthRequest, res: Response) => {
             text,
             provider,
             voiceId,
-            language: language || 'en-US'
+            language: language || 'en-US',
+            speed,
+            pitch
         });
 
         res.json({ 
@@ -419,12 +460,12 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
         const effectiveDuration = duration || 8;
 
         // Credit Deduction
-        const baseCreditCost = await getCreditCost('video');
+        const baseCreditCost = await getCreditCost(AIModelType.VIDEO);
         const creditAmount = Math.ceil(effectiveDuration * baseCreditCost);
         const deductionDescription = `Generate Video (Generic) - ${effectiveDuration}s @ ${baseCreditCost} cr/s`;
 
         try {
-            await deductCredits(req.user!.userId, 'video', creditAmount, deductionDescription);
+            await deductCredits(req.user!.userId, ServiceType.VIDEO, creditAmount, deductionDescription);
         } catch (creditError: any) {
             return res.status(402).json({ success: false, error: creditError.message || 'Insufficient credits' });
         }
@@ -459,7 +500,7 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
                 fileName: `AI Video - ${jobId}`,
                 contentType: 'video/mp4',
                 size: 0,
-                bucket: config.awsS3Bucket, // Consistent with images
+                bucket: configService.bucketName, // Consistent with images
                 purpose: 'ai-video',
                 metadata: {
                     jobId,
@@ -482,12 +523,12 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
  */
 router.post('/:entityId/generate-product-video', async (req: AuthRequest, res: Response) => {
     try {
-        const { productId } = req.body;
+        const { productId, language } = req.body;
         if (!productId) {
             return res.status(400).json({ success: false, error: 'ProductId is required' });
         }
 
-        const result = await liveSalesService.prepareProductVideo(req.params.entityId, productId);
+        const result = await liveSalesService.prepareProductVideo(req.params.entityId, productId, language);
         
         // If any result failed, return 400 to signal error to the client
         // const hasFailures = results.some(r => r.status === 'failed');
@@ -564,7 +605,8 @@ router.post('/ai/generate-image', async (req: AuthRequest, res: Response) => {
         const config = req.body;
         
         // Deduct credits
-        await deductCredits(userId, 'image', 5, 'AI Influencer Avatar Generation');
+        const creditCost = await getCreditCost(AIModelType.IMAGE);
+        await deductCredits(userId, ServiceType.IMAGE, creditCost, 'AI Influencer Avatar Generation');
 
         // Build character context for AIGenerator
         const charContext = {
@@ -611,7 +653,8 @@ router.post('/ai/analyze-vision', upload.single('image'), async (req: AuthReques
         const { prompt } = req.body;
         if (!file) return res.status(400).json({ success: false, error: 'No image uploaded' });
 
-        await deductCredits(req.user!.userId, 'image', 2, 'Influencer Vision Analysis');
+        const creditCost = await getCreditCost(AIModelType.IMAGE);
+        await deductCredits(req.user!.userId, ServiceType.IMAGE, creditCost, 'Influencer Vision Analysis');
 
         // Vision analysis logic using generateText with multi-modal support
         const result = await generateText(prompt || 'Analyze this image for influencer personality alignment', undefined, {
@@ -658,6 +701,32 @@ router.post('/sales/orchestrate', async (req: AuthRequest, res: Response) => {
         res.json({ success: true, data: { script, productIds, influencerIds } });
     } catch (e: any) {
         Logger.error('[InfluencerRoute] Script orchestration failed:', e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+/**
+ * POST /api/influencer/ai/generate-script
+ * Generates an engaging speech script for AI Avatar
+ */
+router.post('/ai/generate-script', async (req: AuthRequest, res: Response) => {
+    try {
+        const { avatarName, topic, language, style } = req.body;
+        const prompt = `As a viral video scriptwriter, write a compelling, natural, short 2-3 sentence speech script for an AI avatar named "${avatarName || 'AIDOL Host'}".
+Topic / Context: ${topic || 'Welcome video introducing AI content creation and high quality video synthesis'}.
+
+CRITICAL LANGUAGE INSTRUCTION:
+- Write the entire speech script in the EXACT SAME language as the Topic / Context provided above (e.g. if the topic is in Vietnamese, write the entire script in natural, fluent Vietnamese; if the topic is in English, write in English).
+- Do NOT translate to English if the input topic is written in Vietnamese or another language.
+
+Style: ${style || 'engaging and professional'}.
+
+Return ONLY the plain text script without quotes, markdown headers, or extra formatting.`;
+
+        const scriptText = await generateText(prompt, undefined);
+        res.json({ success: true, data: { script: scriptText.trim() } });
+    } catch (e: any) {
+        Logger.error('[InfluencerRoute] Script generation failed:', e);
         res.status(500).json({ success: false, error: e.message });
     }
 });

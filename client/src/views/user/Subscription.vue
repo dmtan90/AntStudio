@@ -121,7 +121,7 @@
                   <thead>
                      <tr class="border-b border-white/5">
                         <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('subscription.date') }}</th>
-                        <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('subscription.plan') }}</th>
+                        <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('subscription.task') }}</th>
                         <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">{{ t('subscription.amount') }}</th>
                         <th class="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">{{ t('subscription.status') }}</th>
                      </tr>
@@ -129,8 +129,8 @@
                   <tbody v-if="payments.length">
                      <tr v-for="payment in payments" :key="payment.id" class="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                         <td class="px-8 py-6 font-bold text-sm text-gray-300">{{ formatDate(payment.createdAt) }}</td>
-                        <td class="px-8 py-6 font-bold text-white uppercase">{{ payment.plan }}</td>
-                        <td class="px-8 py-6 font-mono font-bold text-gray-300">${{ payment.amount }} {{ payment.currency?.toUpperCase() }}</td>
+                        <td class="px-8 py-6 font-bold text-white uppercase">{{ payment.type }}</td>
+                        <td class="px-8 py-6 font-mono font-bold text-gray-300">{{payment.currency?.toUpperCase() }} {{ payment.amount }}</td>
                         <td class="px-8 py-6 text-right">
                            <span class="inline-flex px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border"
                               :class="payment.status === 'completed' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'">

@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" width="520px" class="cinematic-dialog shadow-2xl overflow-hidden" destroy-on-close
+  <el-dialog v-model="visible" width="520px" class="cinematic-dialog shadow-2xl overflow-hidden"
     :show-close="!isAssembling">
     <template #header>
       <div class="flex items-center gap-3">
@@ -49,14 +49,16 @@
           </el-form-item>
         </div>
 
-        <el-form-item class="mt-2">
-          <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/30">{{ t('projects.editor.video.quality') }}</span></template>
-          <el-select v-model="form.bitrate" class="w-full high-contrast-select" popper-class="cinematic-dropdown">
-            <el-option :label="t('projects.editor.video.low')" value="low" />
-            <el-option :label="t('projects.editor.video.medium')" value="medium" />
-            <el-option :label="t('projects.editor.video.high')" value="high" />
-          </el-select>
-        </el-form-item>
+        <div class="mt-2">
+          <el-form-item>
+            <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/30">{{ t('projects.editor.video.quality') }}</span></template>
+            <el-select v-model="form.bitrate" class="w-full high-contrast-select" popper-class="cinematic-dropdown">
+              <el-option :label="t('projects.editor.video.low')" value="low" />
+              <el-option :label="t('projects.editor.video.medium')" value="medium" />
+              <el-option :label="t('projects.editor.video.high')" value="high" />
+            </el-select>
+          </el-form-item>
+        </div>
 
         <div class="mt-8 border-t border-white/5 pt-6">
           <div class="flex items-center justify-between mb-6">
@@ -73,8 +75,7 @@
                 <template #label><span class="text-[10px] font-black uppercase tracking-widest text-white/40">{{ t('projects.editor.video.audioCodec') }}</span></template>
                 <el-select v-model="form.audioCodec" class="w-full high-contrast-select"
                   popper-class="cinematic-dropdown">
-                  <el-option label="AAC" value="aac" />
-                  <el-option label="Opus" value="opus" />
+                  <el-option v-for="ac in availableAudioCodecs" :key="ac.val" :label="ac.label" :value="ac.val" />
                 </el-select>
               </el-form-item>
               <el-form-item>
@@ -116,6 +117,8 @@
           </el-button>
         </template>
         <template v-else>
+          <el-button v-if="progress >= 100" @click="cancel"
+            class="cinematic-button !h-10 !px-8 !rounded-xl !bg-red-500/10 !border-red-500/20 !text-red-500 hover:!bg-red-500/20">{{ t('projects.editor.video.resetProcess') }}</el-button>
           <el-button v-if="progress < 100" @click="cancel"
             class="cinematic-button !h-10 !px-8 !rounded-xl !bg-red-500/10 !border-red-500/20 !text-red-500 hover:!bg-red-500/20">{{ t('projects.editor.video.abortProcess') }}</el-button>
           <el-button v-else type="success" @click="handleFinish"
@@ -151,11 +154,18 @@ watch(() => props.modelValue, (val) => {
 
 watch(visible, (val) => {
   emit('update:modelValue', val)
-})
+});
 
 const assemblerStore = useVideoAssemblerStore()
 const { isAssembling, progress, status, result } = storeToRefs(assemblerStore)
 const { assemble, cancel } = assemblerStore
+
+watch(progress, (newVal) => {
+  // console.log("progress", newVal);
+  if(newVal >= 100){
+    handleFinish();
+  }
+});
 
 const form = reactive({
   format: 'mp4',
@@ -180,6 +190,29 @@ const availableCodecs = computed(() => {
     { label: 'H.265 (HEVC)', val: 'H265' },
     { label: 'AV1', val: 'AV1' }
   ]
+})
+
+const availableAudioCodecs = computed(() => {
+  if (form.format === 'webm') {
+    return [
+      { label: 'Opus (Standard WebM)', val: 'opus' },
+      { label: 'Vorbis', val: 'vorbis' }
+    ]
+  }
+  return [
+    { label: 'AAC (Standard MP4)', val: 'aac' },
+    { label: 'MP3', val: 'mp3' }
+  ]
+})
+
+watch(() => form.format, (newFormat) => {
+  if (newFormat === 'webm') {
+    form.codec = 'VP8'
+    form.audioCodec = 'opus'
+  } else {
+    form.codec = 'H264'
+    form.audioCodec = 'aac'
+  }
 })
 
 const resolutionOptions = computed(() => {
@@ -207,7 +240,7 @@ const resolutionOptions = computed(() => {
 
 watch(() => form.format, (newF) => {
   if (newF === 'webm') {
-    form.codec = 'VP9'
+    form.codec = 'VP8'
   } else if (form.codec === 'VP9' || form.codec === 'VP8') {
     form.codec = 'H264'
   }
@@ -218,8 +251,9 @@ const handleConfirm = async () => {
 }
 
 const handleFinish = () => {
-  visible.value = false
+  console.log("handleFinish", result.value);
   emit('complete', result.value)
+  visible.value = false
 }
 </script>
 

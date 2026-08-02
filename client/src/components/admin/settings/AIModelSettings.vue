@@ -3,13 +3,13 @@
         <!-- Providers Registry -->
         <div class="settings-section cinematic-panel p-6">
             <div class="panel-header flex justify-between items-center mb-6">
-                <span class="text-xs font-black uppercase tracking-widest opacity-60">
+                <span class="text-xs uppercase tracking-widest opacity-60">
                     {{ $t('admin.settings.ai.providerRegistry') }}
                 </span>
                 <div class="flex gap-2">
-                    <el-button v-if="geminiApiKeys" plain bg round size="small" type="primary" @click="showGeminiPool = true">
+                    <!-- <el-button v-if="geminiApiKeys" plain bg round size="small" type="primary" @click="showGeminiPool = true">
                         {{ $t('admin.settings.ai.geminiPoolManager') }}
-                    </el-button>
+                    </el-button> -->
                     <el-dropdown @command="handleProviderCommand">
                         <el-button plain bg round size="small">
                             {{ $t('admin.settings.ai.addIntelligenceCore') }}
@@ -55,6 +55,8 @@
                                 <el-option :label="t('admin.settings.ai.capabilities.video')" value="video" />
                                 <el-option :label="t('admin.settings.ai.capabilities.audio')" value="audio" />
                                 <el-option :label="t('admin.settings.ai.capabilities.music')" value="music" />
+                                <el-option :label="t('admin.settings.ai.capabilities.voice')" value="voice" />
+                                <el-option :label="t('admin.settings.ai.capabilities.agent')" value="agent" />
                             </el-select>
                         </div>
                         <div class="col-span-1 flex justify-center">
@@ -170,7 +172,7 @@
                    </el-form-item>
                 </div>
 
-                <div class="mt-6 flex items-center justify-between p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10">
+                <!-- <div class="mt-6 flex items-center justify-between p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10">
                     <div class="flex items-center gap-3">
                         <info theme="outline" size="14" class="text-blue-400" />
                         <span class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">{{ $t('admin.settings.ai.captchaStatus') || 'Automatic Routing' }}</span>
@@ -178,7 +180,7 @@
                     <el-tag size="small" effect="dark" type="success" round class="font-black uppercase tracking-widest text-[8px]">
                         {{ captchaSettings.method === 'personal' ? 'Manual Intervention Required' : 'Fully Autonomous' }}
                     </el-tag>
-                </div>
+                </div> -->
             </el-form>
         </div>
 

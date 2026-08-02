@@ -1,0 +1,15 @@
+{
+  "name": "@genblaze/spec",
+  "version": "0.3.2",
+  "description": "JSON Schemas and TypeScript types for Genblaze manifests and stream events",
+  "main": "ts/genblaze.d.ts",
+  "types": "ts/genblaze.d.ts",
+  "files": [
+    "schemas",
+    "ts"
+  ],
+  "scripts": {
+    "generate-types": "bash scripts/generate-types.sh"
+  },
+  "license": "MIT"
+}

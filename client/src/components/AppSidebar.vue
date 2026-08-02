@@ -72,18 +72,18 @@
           <book-one theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.resources') }}</span>
         </router-link>
-        <router-link to="/billing" class="nav-item" :class="{ active: route.path === '/billing' }">
+        <router-link v-if="uiStore.creditModeEnabled" to="/billing" class="nav-item" :class="{ active: route.path === '/billing' }">
           <credit theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.subscription') }}</span>
         </router-link>
 
-        <router-link v-if="userStore.systemMode === 'master'" to="/license-portal" class="nav-item"
+        <!-- <router-link v-if="user?.role === 'sys-admin'" to="/license-portal" class="nav-item"
           :class="{ active: route.path === '/license-portal' }">
           <key theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text text-amber-400">{{ t('nav.licenseHub') }}</span>
-        </router-link>
+        </router-link> -->
 
-        <router-link v-if="user?.role === 'sys-admin'" to="/license" class="nav-item"
+        <router-link v-if="user?.role === 'sys-admin' && userStore.systemMode === 'master'" to="/license" class="nav-item"
           :class="{ active: route.path === '/license' }">
           <key theme="outline" size="20" />
           <span v-if="!collapsed" class="nav-text">{{ t('nav.license') }}</span>
@@ -121,11 +121,11 @@
               <span class="nav-text">{{ t('nav.aiAccounts') }}</span>
             </router-link>
 
-            <router-link v-if="userStore.systemMode === 'master'" to="/admin/fleet" class="nav-item sub-item"
+            <!-- <router-link v-if="userStore.systemMode === 'master'" to="/admin/fleet" class="nav-item sub-item"
               :class="{ active: route.path === '/admin/fleet' }">
               <data-server theme="outline" size="18" />
               <span class="nav-text text-blue-400">{{ t('nav.fleetCommand') }}</span>
-            </router-link>
+            </router-link> -->
 
             <router-link to="/admin/monitoring" class="nav-item sub-item"
               :class="{ active: route.path.startsWith('/admin/monitoring') }">

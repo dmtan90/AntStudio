@@ -6,7 +6,7 @@
       </button>
 
       <!-- Left: Preview -->
-      <div class="flex-1 bg-black relative flex items-center justify-center bg-[url('/grid.svg')] bg-center p-8">
+      <div class="flex-1 bg-black relative flex items-center justify-center bg-center p-8">
         <video v-if="isVideo" :src="getFileUrl(resource.key)" autoplay loop controls class="max-w-full max-h-full rounded-lg shadow-2xl"></video>
         <img v-else-if="isImage" :src="getFileUrl(resource.key)" class="max-w-full max-h-full rounded-lg shadow-2xl object-contain" />
         <div v-else class="flex flex-col items-center gap-6">

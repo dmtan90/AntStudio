@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { versionControlService } from '../services/VersionControlService.js';
+import { versionControlService } from '../services/streaming/VersionControlService.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { connectDB } from '../utils/db.js';
 

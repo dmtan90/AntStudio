@@ -1,4 +1,24 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { LicenseStatus } from './License.js';
+
+export enum TenantType {
+    ROOT = 'root',
+    MASTER = 'master',
+    SUB = 'sub'
+}
+
+export enum TenantLicenseType {
+    STARTUP = 'startup',
+    BUSINESS = 'business',
+    ENTERPRISE = 'enterprise',
+    PERPETUAL = 'perpetual'
+}
+
+export enum TenantBillingCycle {
+    MONTHLY = 'monthly',
+    YEARLY = 'yearly',
+    PERPETUAL = 'perpetual'
+}
 
 export interface ITenant extends Document {
     name: string;
@@ -7,7 +27,7 @@ export interface ITenant extends Document {
 
     // Hierarchy Support
     parentId?: mongoose.Types.ObjectId; // Pointer to Master Tenant
-    tenantType: 'root' | 'master' | 'sub';
+    tenantType: TenantType | string;
 
     // White-label branding
     branding: {
@@ -22,8 +42,8 @@ export interface ITenant extends Document {
 
     // License configuration
     license: {
-        type: 'startup' | 'business' | 'enterprise' | 'perpetual';
-        status: 'active' | 'trial' | 'suspended' | 'expired';
+        type: TenantLicenseType | string;
+        status: LicenseStatus | string;
         startDate: Date;
         endDate?: Date;
         maxSeats: number; // -1 for unlimited
@@ -45,7 +65,7 @@ export interface ITenant extends Document {
         plan: string;
         amount: number;
         currency: string;
-        billingCycle: 'monthly' | 'yearly' | 'perpetual';
+        billingCycle: TenantBillingCycle | string;
         nextBillingDate?: Date;
         paymentMethod: string;
         stripeCustomerId?: string;

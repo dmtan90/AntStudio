@@ -44,7 +44,7 @@ export class StudioDirector {
         }
         const { voiceLevel, activeGuests, chatVelocity, currentSceneId, guestLevels = [] } = context;
 
-        // Neural Segment Influencer (Phase 32)
+        // Neural Segment Influencer
         const showrunner = neuralShowrunner.active;
         let segmentType = '';
         if (showrunner.isRunning) {
@@ -70,12 +70,12 @@ export class StudioDirector {
             return { action: 'show_overlay', payload: { type: 'particles', effect: 'celebration' } };
         }
 
-        // Phase 40 & Phase 34: Media Integration priority
+        // Media Integration priority
         if (this.aiRequestQueue.length > 0 && this.aiRequestQueue[0].action === 'show_overlay' && this.aiRequestQueue[0].payload.type === 'b_roll_generated') {
              const highPriorityReq = this.aiRequestQueue.shift();
              this.lastSwitchTime = now;
 
-             // Phase 34: Overwrite generated B-Roll with real Stock Video if applicable
+             // Overwrite generated B-Roll with real Stock Video if applicable
              const query = highPriorityReq?.payload.topic || highPriorityReq?.payload.prompt || 'live stream';
              this.fetchStockMedia('video', query).then(stockMedia => {
                  if (stockMedia && stockMedia.url) {
@@ -122,7 +122,7 @@ export class StudioDirector {
 
         // 3. Autonomous Scene Switching (Director Core)
         if (now - this.lastSwitchTime > this.cooldownMs) {
-            // Narrative-Driven Overrides (Phase 32)
+            // Narrative-Driven Overrides
             if (showrunner.isRunning) {
                 if (segmentType === 'intro' && currentSceneId !== 'fullscreen') {
                     this.lastSwitchTime = now;
@@ -142,7 +142,7 @@ export class StudioDirector {
                 }
             }
 
-            // Context-Aware Overrides (Phase 21)
+            // Context-Aware Overrides
             const studioStore = useStudioStore();
             const ctx = studioStore.streamingContext;
 
@@ -228,7 +228,7 @@ export class StudioDirector {
     }
 
     /**
-     * Phase 33: Autonomous Cinematic Camera Orchestration.
+     * Autonomous Cinematic Camera Orchestration.
      * Selects a dramatic camera path based on performance metrics and narrative context.
      */
     private triggerCinematicPath(context: any): { action: any, payload?: any } {
@@ -302,7 +302,7 @@ export class StudioDirector {
     }
 
     /**
-     * Phase 34: Fetches real stock media from integrated APIs to save AI generation costs.
+     * Fetches real stock media from integrated APIs to save AI generation costs.
      */
     public async fetchStockMedia(type: 'image' | 'video' | 'gif' | 'sound', query: string): Promise<any> {
         try {
@@ -331,7 +331,7 @@ export class StudioDirector {
     }
 
     /**
-     * Phase 51: Applies a thematic visual layout based on the streaming context.
+     * Applies a thematic visual layout based on the streaming context.
      * Moves guests to specific "thematic" slots instead of standard grid.
      */
     public applyThematicLayout(context: string) {
@@ -367,7 +367,7 @@ export class StudioDirector {
                 studioStore.switchScene('standard');
         }
 
-        // Phase 51: Auto-assign slots for active guests to match the theme
+        // Auto-assign slots for active guests to match the theme
         const activeGuests = studioStore.liveGuests;
         activeGuests.forEach((guest, index) => {
             // Logic to position guests based on their role or importance could go here

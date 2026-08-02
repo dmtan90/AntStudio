@@ -1,5 +1,5 @@
 import { Project } from '../../models/Project.js';
-import { broadcasterService } from '../BroadcasterService.js';
+import { broadcasterService } from '../streaming/BroadcasterService.js';
 import { Logger } from '../../utils/Logger.js';
 
 export interface NetworkHealthSnapshot {

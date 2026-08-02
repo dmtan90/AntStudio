@@ -1,0 +1,11 @@
+{
+  "name": "genblaze",
+  "version": "0.3.2",
+  "description": "Umbrella SDK package for Genblaze",
+  "main": "genblaze/index.js",
+  "types": "genblaze/index.d.ts",
+  "dependencies": {
+    "@genblaze/core": "^0.3.2"
+  },
+  "license": "MIT"
+}

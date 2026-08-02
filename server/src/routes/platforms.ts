@@ -3,11 +3,8 @@ import path from 'path';
 import { UserPlatformAccount, SocialPlatform } from '../models/UserPlatformAccount.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { connectDB } from '../utils/db.js';
-import { PlatformAuthService } from '../services/PlatformAuthService.js';
-import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getS3Client } from '../utils/s3.js';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import config from '../utils/config.js';
+import { PlatformAuthService } from '../services/system/PlatformAuthService.js';
+import { StorageFactory } from '../services/storage/StorageFactory.js';
 // Configure Multer for temp storage (Disk is better for large videos than memory)
 import multer from 'multer';
 import os from 'os';
@@ -63,11 +60,13 @@ router.get('/', async (req: AuthRequest, res) => {
  * Get OAuth Authorization URL
  */
 router.get('/auth/:platform', async (req: AuthRequest, res) => {
+    const { platform } = req.params;
     try {
-        const { platform } = req.params;
         const url = await PlatformAuthService.getAuthUrl(platform as SocialPlatform);
+        Logger.info(`[Auth URL] Generated for ${platform}: ${url}`, 'Platforms');
         res.json({ success: true, data: { url } });
     } catch (error: any) {
+        Logger.error(`[Auth URL] Error for ${platform}: ${error.message}`, 'Platforms', error);
         res.status(400).json({ success: false, error: error.message });
     }
 });
@@ -453,21 +452,14 @@ router.post('/:id/videos/upload', upload.single('file'), async (req: AuthRequest
             videoStream = fs.createReadStream(req.file.path);
             cleanup = () => fs.unlinkSync(req.file!.path); // Delete temp file after
         } else if (s3Key) {
-            // Warehouse upload (stream from S3)
+            // Warehouse upload (stream from storage)
             try {
                 if (s3Key) {
-                    const client = getS3Client();
-                    const command = new GetObjectCommand({
-                        Bucket: config.awsS3Bucket,
-                        Key: decodeURIComponent(s3Key)
-                    });
-                    const response = await client.send(command).catch(err => {
-                        Logger.error('S3 GetObject failed directly, will try signed URL fallback if possible');
+                    const storage = await StorageFactory.getActiveAdapter();
+                    videoStream = await storage.getFileStream(decodeURIComponent(s3Key)).catch(err => {
+                        Logger.error('Storage getFileStream failed directly, will try signed URL fallback if possible');
                         return null;
                     });
-                    if (response?.Body) {
-                        videoStream = response.Body;
-                    }
                 }
 
                 if (!videoStream) {

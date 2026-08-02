@@ -1,32 +1,32 @@
 <template>
   <div class="projects-page min-h-screen bg-[#0a0a0c] text-white font-outfit">
-    <div class="max-w-7xl mx-auto py-12 px-8">
+    <div class="max-w-7xl mx-auto py-8 px-8">
       
       <!-- Header -->
       <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
         <div>
-          <h1 class="text-5xl font-black mb-4 tracking-tighter">
+          <h1 class="text-4xl font-black mb-4 tracking-tighter">
           {{ t('projects.header.title').split(' ')[0] }} <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">{{ t('projects.header.title').split(' ').slice(1).join(' ') }}</span>
-        </h1>
+          </h1>
           <p class="text-xl text-gray-400 font-medium max-w-2xl">
             {{ t('projects.header.subtitle') }}
           </p>
         </div>
-        
-        <button 
-          id="tour-new-project"
-          @click="showCreationDialog = true" 
-          class="group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden"
-        >
-          <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-          <plus theme="outline" size="20" />
-          {{ t('projects.actions.newProject') }}
-        </button>
+        <div class="flex flex-row flex-end justify-between items-end gap-6 ">
+          <button 
+            id="tour-new-project"
+            @click="showCreationDialog = true" 
+            class="whitespace-nowrap group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden"
+          >
+            <plus theme="outline" size="20" />
+            {{ t('projects.actions.newProject') }}
+          </button>
 
-        <button @click="studioStore.showOnboarding = true" class="whitespace-nowrap group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3">
-          <broadcast theme="outline" size="20" class="text-red-500" />
-          {{ t('dashboard.header.goLive') }}
-        </button>
+          <button @click="onGoLive" class="whitespace-nowrap group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3">
+            <broadcast theme="outline" size="20" class="text-red-500" />
+            {{ t('dashboard.header.goLive') }}
+          </button>
+        </div>
       </div>
 
       <!-- Tour -->
@@ -117,9 +117,8 @@
                 <!-- Actions Menu -->
                 <div class="absolute top-6 right-4" @click.stop>
                    <el-dropdown trigger="click" @command="(cmd: string) => handleAction(cmd, project)">
-                      <button class="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                         <more theme="outline" size="20" />
-                      </button>
+                      <el-button :icon="More" circle plain bg>
+                      </el-button>
                       <template #dropdown>
                          <el-dropdown-menu class="glass-dropdown">
                             <el-dropdown-item command="edit" :icon="EditIcon">{{ t('projects.actions.edit') }}</el-dropdown-item>
@@ -186,7 +185,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Copy as CopyIcon,
-  Pic
+  Pic, Broadcast
 } from '@icon-park/vue-next'
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
@@ -339,6 +338,11 @@ const formatDate = (date: string) => {
      day: 'numeric'
   })
 }
+
+const onGoLive = () => {
+  // studioStore.showOnboarding = true
+  router.push({name: "live-sales"});
+};
 
 onMounted(() => {
   projectStore.fetchProjects()

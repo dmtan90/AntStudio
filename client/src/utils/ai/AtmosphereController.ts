@@ -15,7 +15,7 @@ export class AtmosphereController {
             this.adaptAtmosphere(vibe, score);
         });
 
-        // Phase 23: Environmental Shift Listener
+        // Environmental Shift Listener
         if (typeof window !== 'undefined') {
             window.addEventListener('environmental:shift', (e: Event) => {
                 const detail = (e as CustomEvent).detail;

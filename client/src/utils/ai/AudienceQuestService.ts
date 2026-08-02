@@ -2,7 +2,7 @@ import { useStudioStore } from '@/stores/studio';
 import { generateUUID } from '@/utils/uuid';
 
 /**
- * Phase 29: Audience Quest Service
+ * Audience Quest Service
  * Manages interactive RPG-style challenges that the audience can complete together.
  */
 export class AudienceQuestService {

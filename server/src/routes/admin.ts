@@ -3,9 +3,10 @@ import { User } from '../models/User.js';
 import { connectDB } from '../utils/db.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
 import { Project } from '../models/Project.js';
-import { AdminSettings } from '../models/AdminSettings.js';
-import { configService } from '../utils/configService.js';
+import { AdminSettings, getAdminSettings } from '../models/AdminSettings.js';
+import { configService } from '../utils/ConfigService.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
+import { LicenseService } from '../services/system/LicenseService.js';
 
 import { Logger } from '../utils/Logger.js';
 
@@ -120,7 +121,7 @@ router.get('/stats', async (req: AuthRequest, res) => {
             User.countDocuments(),
             User.countDocuments({ 'subscription.status': 'active', 'subscription.plan': { $ne: 'free' } }),
             Project.find().populate('userId', 'name').sort({ createdAt: -1 }).limit(10),
-            AdminSettings.findOne()
+            getAdminSettings()
         ]);
 
         // Monthly revenue (placeholder for now, matching _server logic)
@@ -167,7 +168,7 @@ router.get('/stats', async (req: AuthRequest, res) => {
                 storageUsed,
                 recentSignups,
                 recentUpgrades,
-                recentProjects: recentProjects.map(p => ({
+                recentProjects: recentProjects.map((p: any) => ({
                     _id: p._id,
                     title: p.title,
                     status: p.status,
@@ -191,10 +192,7 @@ router.get('/stats', async (req: AuthRequest, res) => {
 router.get('/settings', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        let settings = await AdminSettings.findOne();
-        if (!settings) {
-            settings = await AdminSettings.create({});
-        }
+        let settings = await getAdminSettings();
         res.json({ success: true, data: settings, error: null });
     } catch (error: any) {
         res.status(500).json({ success: false, data: null, error: error.message });
@@ -219,12 +217,12 @@ router.put('/settings', async (req: AuthRequest, res) => {
         if (req.body.license && req.body.license.key) {
             // Import dynamically to avoid circular dependency if any, or just import at top if fine.
             // But we can just use the service.
-            const { LicenseWorker } = await import('../services/LicenseWorker.js');
-            await LicenseWorker.checkStatus(req.body.license.key);
+            // const { LicenseWorker } = await import('../services/system/LicenseService.js');
+            await LicenseService.checkStatus(req.body.license.key);
 
 
             // Re-fetch settings to get updated license info
-            const updatedSettings = await AdminSettings.findOne();
+            const updatedSettings = await getAdminSettings();
             return res.json({ success: true, data: updatedSettings, error: null });
         }
 
@@ -237,9 +235,8 @@ router.put('/settings', async (req: AuthRequest, res) => {
 // POST /api/admin/sync-license - Force sync license with Master
 router.post('/sync-license', async (req: AuthRequest, res) => {
     try {
-        const { LicenseWorker } = await import('../services/LicenseWorker.js');
-        await LicenseWorker.checkStatus();
-        const settings = await AdminSettings.findOne();
+        await LicenseService.checkStatus();
+        const settings = await getAdminSettings();
         res.json({ success: true, data: settings, error: null });
     } catch (error: any) {
         res.status(500).json({ success: false, data: null, error: error.message });

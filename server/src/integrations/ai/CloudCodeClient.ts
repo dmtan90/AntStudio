@@ -2,7 +2,7 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { IAIAccount } from '../../models/AIAccount.js';
 import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
-
+import { EnvConfig } from '~/utils/ConfigService.js';
 import { Logger } from '../../utils/Logger.js';
 
 export const ANTIGRAVITY_ENDPOINT_DAILY = "https://daily-cloudcode-pa.sandbox.googleapis.com";
@@ -49,7 +49,7 @@ export class CloudCodeClient {
     /**
      * Generate content (Text generation via Agent Gateway)
      */
-    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.5-flash', options: any = {}) {
+    public async generateContent(prompt: string | any[], modelId: string = EnvConfig.geminiModelTextAnalysis, options: any = {}) {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         const headers = await this.getHeaders();
 
@@ -70,7 +70,7 @@ export class CloudCodeClient {
                 generationConfig: {
                     temperature: 0.7,
                     topP: 0.95,
-                    maxOutputTokens: 65536,//fix truncate JSON string
+                    maxOutputTokens: 65535,//fix truncate JSON string
                     // Merge caller-provided overrides (e.g. responseMimeType, maxOutputTokens from generateJSON)
                     ...options.generationConfig,
                 }
@@ -107,7 +107,7 @@ export class CloudCodeClient {
     /**
      * Generate image via Agent Gateway (Imagen 3.5)
      */
-    public async generateImage(prompt: string, modelId: string = 'gemini-3-pro-image') {
+    public async generateImage(prompt: string, modelId: string = EnvConfig.geminiModelImageGeneration) {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         const headers = await this.getHeaders();
 
@@ -207,7 +207,7 @@ export class CloudCodeClient {
     /**
      * Generate Audio (Multimodal TTS)
      */
-    public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = 'gemini-2.5-flash-tts', options: any = {}) {
+    public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = EnvConfig.geminiModelTTS, options: any = {}) {
         const projectId = await aiAccountManager.discoverProjectId(this.account);
         const headers = await this.getHeaders();
         const url = `${CloudCodeClient.AGENT_ENDPOINT}/v1internal:generateContent`;

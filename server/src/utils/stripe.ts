@@ -1,5 +1,5 @@
 import Stripe from 'stripe'
-import { configService } from './configService.js'
+import { configService } from './ConfigService.js'
 
 export const getStripeClient = () => {
     const stripeConfig = configService.stripe;

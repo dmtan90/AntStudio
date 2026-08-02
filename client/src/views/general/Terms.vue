@@ -9,7 +9,7 @@
       <transition name="fade-up" appear>
         <div class="content-inner">
           <h1 class="glow-title" v-if="!embedded">{{ $t('marketing.terms.title') }}</h1>
-          <p class="last-updated" v-if="!embedded">{{ $t('marketing.terms.lastUpdated') }}</p>
+          <p class="last-updated" v-if="!embedded">{{ $t('marketing.terms.lastUpdated', {date: (new Date()).toLocaleDateString('en-US')}) }}</p>
 
           <div class="legal-sections card" :class="{ glass: !embedded }">
             <section>

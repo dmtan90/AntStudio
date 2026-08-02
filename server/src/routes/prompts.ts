@@ -14,12 +14,13 @@ import {
     buildResearchTopicPrompt,
     buildKnowledgeExplanationPrompt
 } from '../utils/PromptBuilder.js';
-import { AIServiceManager } from '../utils/ai/AIServiceManager.js';
+import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
-import { licenseGating } from '../middleware/licenseGating.js';
+import { licenseGating } from '../middleware/LicenseGating.js';
 
 import { Logger } from '../utils/Logger.js';
+import { LicenseType } from '~/models/License.js';
 
 const router = Router();
 
@@ -27,7 +28,7 @@ const router = Router();
 router.use(authMiddleware);
 
 // POST /api/prompts/studio - Get studio-specific prompts
-router.post('/studio', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/studio', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         const { type, data } = req.body;
         let prompt = '';
@@ -90,7 +91,7 @@ router.get('/character/:projectId/:charIndex', async (req: any, res: Response) =
         const style = project.videoStyle || project.creativeBrief?.visualStyle || 'Cinematic, Photo-realistic';
         const language = project.scriptAnalysis?.language;
 
-        const aiManager = AIServiceManager.getInstance();
+        // const aiManager = AIServiceManager.getInstance();
         const translator = async (p: string) => await aiManager.generateText(p, undefined);
 
         const prompt = await buildCharacterSheetPrompt(character, style, project.scriptAnalysis, language, translator);
@@ -140,7 +141,7 @@ router.get('/scene/:projectId/:segmentId', async (req: any, res: Response) => {
 
         const style = project.creativeBrief?.visualStyle || project.videoStyle || 'Cinematic';
         
-        const aiManager = AIServiceManager.getInstance();
+        // const aiManager = AIServiceManager.getInstance();
         const translator = async (p: string) => await aiManager.generateText(p, undefined);
 
         const prompt = await buildScenePrompt(segment.description, characterContext, style, project.scriptAnalysis, project.scriptAnalysis?.language, translator);
@@ -187,7 +188,7 @@ router.get('/video/:projectId/:segmentId', async (req: any, res: Response) => {
         const projectStyle = project.creativeBrief?.visualStyle || project.videoStyle || 'Cinematic';
         const language = project.scriptAnalysis?.language;
 
-        const aiManager = AIServiceManager.getInstance();
+        // const aiManager = AIServiceManager.getInstance();
         const translator = async (p: string) => await aiManager.generateText(p, undefined);
 
         const prompt = await buildVeoVideoPrompt(segment, allCharacters, project, language, translator);
@@ -212,7 +213,7 @@ router.get('/video/:projectId/:segmentId', async (req: any, res: Response) => {
 });
 
 // POST /api/prompts/generate - Generate optimized AI prompts for preview
-router.post('/generate', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/generate', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { type, payload } = req.body;
@@ -221,10 +222,10 @@ router.post('/generate', licenseGating('trial'), rbacMiddleware(Permission.AI_GE
             return res.status(400).json({ success: false, error: 'Type and payload are required' });
         }
 
-        const mgr = AIServiceManager.getInstance();
-        await mgr.initialize();
+        // const mgr = AIServiceManager.getInstance();
+        // await mgr.initialize();
 
-        const prompts = await mgr.generatePrompt(payload, type);
+        const prompts = await aiManager.generatePrompt(payload, type);
 
         res.json({ success: true, data: prompts });
     } catch (error: any) {

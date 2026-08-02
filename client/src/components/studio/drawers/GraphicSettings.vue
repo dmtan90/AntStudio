@@ -66,7 +66,7 @@
             </div>
         </section>
  
-         <!-- Branding Overlay (Phase 18) -->
+         <!-- Branding Overlay -->
          <section>
              <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">{{ $t('studio.drawers.graphics.identityOverlay') }}</h4>
              <div class="space-y-4">
@@ -112,7 +112,7 @@
              </div>
          </section>
  
-         <!-- Utility Modes (Phase 18) -->
+         <!-- Utility Modes -->
          <section>
              <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">{{ $t('studio.drawers.graphics.utilityModes') }}</h4>
              <div class="space-y-4">
@@ -132,7 +132,7 @@
                  </div>
              </div>
          </section>
-         <!-- Special Overlays (Phase 18) -->
+         <!-- Special Overlays -->
          <section>
              <h4 class="text-xs font-black opacity-30 uppercase tracking-widest mb-4">{{ $t('studio.drawers.graphics.specialTemplates') }}</h4>
              <div class="space-y-3">

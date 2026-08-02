@@ -1,13 +1,18 @@
 import { Router } from 'express';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { streamingService, StreamTarget } from '../services/StreamingService.js';
-import { redisService } from '../services/RedisService.js';
-import { UserPlatformAccount } from '../models/UserPlatformAccount.js';
-import { Project } from '../models/Project.js';
-import { connectDB } from '../utils/db.js';
-import { getAdminSettings } from '../models/AdminSettings.js';
-import { PlatformAuthService } from '../services/PlatformAuthService.js';
+import { authMiddleware, AuthRequest } from '~/middleware/auth.js';
+import { streamingService, StreamTarget } from '~/services/streaming/StreamingService.js';
+import { redisService } from '~/services/system/RedisService.js';
+import { UserPlatformAccount } from '~/models/UserPlatformAccount.js';
+import { Project } from '~/models/Project.js';
+import { connectDB } from '~/utils/db.js';
+import { PlatformAuthService } from '~/services/system/PlatformAuthService.js';
+import { highlightService } from '~/services/streaming/HighlightService.js';
+import { socketServer } from '~/services/streaming/SocketServer.js';
 
+import { Logger } from '~/utils/Logger.js';
+import { configService } from '~/utils/ConfigService.js';
+import { deductCredits } from '~/utils/credits.js';
+import { ServiceType } from '~/utils/CreditManager.js';
 
 const router = Router();
 
@@ -36,7 +41,15 @@ router.use(authMiddleware);
 router.post('/start', async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const { source, platformAccountIds, loop, projectId, quality } = req.body;
+        const { source, platformAccountIds, loop, projectId, quality, productIds, language, influencerId, autonomousMode } = req.body;
+        const userId = req.user!.userId;
+        
+        // Credit Deduction
+        try {
+            await deductCredits(userId, ServiceType.STREAMING, 1, `Start live streaming`);
+        } catch (ce: any) {
+            return res.status(402).json({ success: false, error: ce.message });
+        }
 
         let finalSource = source;
         let project: any = null;
@@ -79,8 +92,8 @@ router.post('/start', async (req: AuthRequest, res) => {
 
             if (fallbackAMS) {
                 Logger.info(`[Streaming] Auto-selecting fallback AMS for WebRTC: ${fallbackAMS.accountName}`);
-                accounts.push(fallbackAMS);
-                amsAccount = fallbackAMS;
+                accounts.push(fallbackAMS as any);
+                amsAccount = fallbackAMS as any;
             }
         }
 
@@ -135,7 +148,7 @@ router.post('/start', async (req: AuthRequest, res) => {
             req.user?.userId.toString() || 'unknown',
             finalSource,
             targets,
-            { loop: !!loop, quality, projectId }
+            { loop: !!loop, quality, projectId, productIds, language, influencerId, autonomousMode }
         );
 
         res.json({
@@ -186,11 +199,6 @@ router.get('/status/:id', (req: AuthRequest, res) => {
 
     res.json({ success: true, data: { status: session.status, startTime: session.startTime } });
 });
-
-import { highlightService } from '../services/HighlightService.js';
-import { socketServer } from '../services/SocketServer.js';
-
-import { Logger } from '../utils/Logger.js';
 
 /**
  * POST /api/streaming/:id/highlight
@@ -340,9 +348,7 @@ router.post('/invite', async (req: AuthRequest, res) => {
 
         const token = await streamingService.generateGuestToken(sessionId);
         // Return only the token and a short URL. The client builds the link using its dynamic origin.
-        const settings = await getAdminSettings();
-        const apiConfig = settings.apiConfigs;
-        const host = apiConfig.publicDomain || process.env.FRONTEND_URL || 'http://localhost:3000';
+        const host = configService.domain;
         const inviteUrl = `${host}/join/${token}`;
 
         res.json({ success: true, data: { token, inviteUrl } });

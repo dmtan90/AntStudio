@@ -1,7 +1,7 @@
 <template>
   <div class="resources-view min-h-screen bg-[#0a0a0c] text-white">
     <!-- Header Section -->
-    <header class="relative py-20 px-8 overflow-hidden border-b border-white/5">
+    <header class="relative py-8 px-8 overflow-hidden border-b border-white/5">
       <div class="absolute inset-0 bg-gradient-to-br from-blue-600/15 via-purple-600/5 to-transparent pointer-events-none"></div>
       <!-- Animated background glow -->
       <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
@@ -12,27 +12,30 @@
           <div class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
           <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">{{ t('resources.badge') }}</span>
         </div>
-        <h1 class="text-6xl font-black mb-6 tracking-tighter leading-[0.9]">
-          {{ t('resources.assets') }}<br />
-          {{ t('resources.archives') }}
-        </h1>
-        <p class="text-xl text-gray-400 max-w-2xl leading-relaxed mb-10 font-medium">
-          {{ t('resources.subtitle') }}
-        </p>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-1">
+          <div class="flex flex-col">
+            <h1 class="text-4xl font-black mb-6 tracking-tighter leading-[0.9]">
+              {{ t('resources.assets') }}<br />
+              {{ t('resources.archives') }}
+            </h1>
+            <p class="text-xl text-gray-400 max-w-2xl leading-relaxed font-medium">
+              {{ t('resources.subtitle') }}
+            </p>
+          </div>
+          <div class="flex flex-row gap-4 items-center">
+            <button @click="showUploadDialog = true" class="group no-wrap px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <UploadOne theme="filled" class="text-xl" />
+              {{ t('resources.upload') }}
+            </button>
 
-        <div class="flex flex-wrap gap-4 items-center">
-          <button @click="showUploadDialog = true" class="group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-            <UploadOne theme="filled" class="text-xl" />
-            {{ t('resources.upload') }}
-          </button>
-
-          <div class="flex -space-x-4">
-            <div v-for="i in 3" :key="i" class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] overflow-hidden bg-white/5 backdrop-blur-md">
-              <img :src="`https://api.dicebear.com/7.x/identicon/svg?seed=${i + 100}`" class="w-full h-full object-cover" />
-            </div>
-            <div class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] bg-white/10 backdrop-blur-md flex items-center justify-center text-[10px] font-black text-white">
-              +50
+            <div class="flex -space-x-4">
+              <div v-for="i in 3" :key="i" class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] overflow-hidden bg-white/5 backdrop-blur-md">
+                <img :src="getFileUrl(`https://api.dicebear.com/7.x/identicon/svg?seed=${i + 100}`)" class="w-full h-full object-cover" />
+              </div>
+              <div class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] bg-white/10 backdrop-blur-md flex items-center justify-center text-[10px] font-black text-white">
+                +50
+              </div>
             </div>
           </div>
         </div>
@@ -77,11 +80,19 @@
 
         <div v-else-if="resources.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div v-for="item in resources" :key="item._id" class="cinematic-asset-card group">
-            <div class="preview-area" @click="previewResource(item)">
-              <img v-if="isImage(item.contentType)" :src="getFileUrl(item.key)" class="preview-img" />
+            <div class="preview-area relative" @click="previewResource(item)">
+              <img v-if="isImage(item.contentType) || item.metadata?.thumbnail" :src="getFileUrl(item.metadata?.thumbnail || item.key)" class="preview-img" />
               <div v-else class="preview-icon">
                 <component :is="getIconComponent(item.contentType)" />
               </div>
+
+              <!-- Video Play Overlay if it has a thumbnail -->
+              <div v-if="item.contentType?.startsWith('video/') && item.metadata?.thumbnail" class="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:scale-110 transition-all duration-300">
+                <div class="w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/80 shadow-lg">
+                  <PlayTwo theme="filled" size="16" />
+                </div>
+              </div>
+
               <div class="overlay opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
                 <button @click.stop="downloadResource(item)" class="action-circle-btn"><Download /></button>
                 <button @click.stop="deleteResource(item)" class="action-circle-btn danger"><Delete /></button>
@@ -191,6 +202,7 @@ import { useMediaStore } from '@/stores/media'
 import { storeToRefs } from 'pinia'
 import { getFileUrl } from '@/utils/api'
 import { toast } from 'vue-sonner'
+import { generateVideoThumbnail } from '@/utils/thumbnail'
 
 // Components
 import GalleryVideoCard from '@/components/projects/GalleryVideoCard.vue'
@@ -265,6 +277,15 @@ const handleFileSelect = async (event: any) => {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('purpose', activeTab.value === 'archives' ? 'recording' : 'project_asset')
+      
+      // If it's a video, generate thumbnail and append to formData
+      if (file.type.startsWith('video/')) {
+        const thumbBlob = await generateVideoThumbnail(file);
+        if (thumbBlob) {
+          formData.append('thumbnail', thumbBlob, 'thumbnail.jpg');
+        }
+      }
+
       await mediaStore.uploadMedia(formData)
     }
     toast.success(t('resources.toasts.uploadSuccess'), { id: toastId })

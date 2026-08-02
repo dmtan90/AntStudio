@@ -25,6 +25,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePlatformStore } from '@/stores/platform';
 import { useAdminStore } from '@/stores/admin';
+import { useUserStore } from '@/stores/user';
 import { toast } from 'vue-sonner';
 import { CloseOne } from '@icon-park/vue-next';
 import { useI18n } from 'vue-i18n';
@@ -34,6 +35,7 @@ const route = useRoute();
 const router = useRouter();
 const platformStore = usePlatformStore();
 const adminStore = useAdminStore();
+const userStore = useUserStore();
 
 const loading = ref(true);
 const error = ref('');
@@ -47,9 +49,43 @@ const platformName = computed(() => {
     if (p === 'payment') return t('platformCallback.paymentGateway');
     return p ? p.charAt(0).toUpperCase() + p.slice(1) : t('platformCallback.service');
 });
+const notifyAndClose = (targetUrl: string, status: boolean = true, message?: string) => {
+    console.log('[PlatformCallback] Auth success, notifying main window and closing popup...', targetUrl);
+
+    // 1. BroadcastChannel (Works across same-origin windows even if window.opener is null)
+    let success = false;
+    let type = status ? "OAUTH_SUCCESS" : "OAUTH_ERROR";
+    try {
+        const channel = new BroadcastChannel('oauth_channel');
+        channel.postMessage({ type, payload: { url: targetUrl, message } });
+        success = true;
+    } catch (e) {
+
+    }
+
+    // 2. localStorage fallback (Triggers storage event in main window)
+    if (!success) {
+        try {
+            localStorage.setItem('oauth_result', JSON.stringify({ type, url: targetUrl, message, at: Date.now() }));
+            success = true;
+        } catch (e) { }
+    }
+
+    // Always attempt to close window (browsers permit window.close() for script-opened popups)
+    setTimeout(() => {
+        window.close();
+
+        // Fallback: if browser did not close window (e.g. user opened callback directly in main tab), redirect router
+        setTimeout(() => {
+            if (!window.closed) {
+                router.push(targetUrl);
+            }
+        }, 500);
+    }, 500);
+};
 
 onMounted(async () => {
-    const code = route.query.code as string;
+    const code = route.query.code as string || route.query.token as string;
     const state = route.query.state as string;
     const paymentSuccess = route.query.success === 'true' || route.query.payment_intent;
 
@@ -62,6 +98,18 @@ onMounted(async () => {
 
     try {
         // 2. Route based on Type/Platform
+        if (type.value === 'login') {
+            await userStore.setToken(code);
+            if (platform.value === 'google') {
+                notifyAndClose('/dashboard');
+            } else if (platform.value === 'facebook') {
+                notifyAndClose('/dashboard');
+            }
+            else {
+                throw new Error(t('platformCallback.errors.unknownPlatform'));
+            }
+            return;
+        }
         if (platform.value === 'google' && type.value === 'ai-account') {
             // AI Account Auth (e.g. Google for Antigravity)
             if (!code) throw new Error(t('platformCallback.errors.missingCode'));
@@ -69,34 +117,28 @@ onMounted(async () => {
             const redirectUri = `${window.location.origin}${route.path}?type=${type.value}`;
             await adminStore.handleAIAuthCallback('google', code, state, redirectUri);
             toast.success(t('platformCallback.toasts.aiLinked'));
-            setTimeout(() => router.push('/admin/ai-accounts'), 1500);
-            returnUrl.value = '/admin/ai-accounts';
+            notifyAndClose('/admin/ai-accounts');
         } else if (platform.value === 'payment') {
             // Payment Gateway Callback
             if (paymentSuccess) {
                 toast.success(t('platformCallback.toasts.paymentSuccess'));
-                setTimeout(() => router.push('/billing'), 1500);
-                returnUrl.value = '/billing';
+                notifyAndClose('/billing');
             } else {
                 error.value = t('platformCallback.errors.paymentCancelled');
                 loading.value = false;
             }
-            returnUrl.value = '/billing';
         } else {
             // Standard Social/Streaming Platform
             if (!code) throw new Error(t('platformCallback.errors.missingCode'));
             await platformStore.handleCallback(platform.value, code);
-            // Redirection logic
-            setTimeout(() => {
-                const redirect = route.query.redirect as string || '/platforms';
-                router.push(redirect);
-            }, 1000);
-            returnUrl.value = '/platforms';
+            // const redirect = route.query.redirect as string || '/platforms';
+            notifyAndClose('/platforms');
         }
     } catch (e: any) {
-        console.error('[Callback] Proccessing failed:', e);
+        console.error('[Callback] Processing failed:', e);
         error.value = e.response?.data?.error || e.message || t('platformCallback.errors.exchangeFailed');
         loading.value = false;
+        notifyAndClose('', false, error.value);
     }
 });
 </script>

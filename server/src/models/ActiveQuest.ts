@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export enum QuestType {
+    CHAT = 'chat',
+    POLL = 'poll',
+    WATCH_TIME = 'watch_time',
+    SHARE = 'share'
+}
+
 export interface IActiveQuest extends Document {
     userId: string;
     questId: string;
@@ -8,7 +15,7 @@ export interface IActiveQuest extends Document {
     target: number;
     current: number;
     rewardXp: number;
-    type: 'chat' | 'poll' | 'watch_time' | 'share';
+    type: QuestType | string;
     completed: boolean;
     expiresAt: Date;
     createdAt: Date;
@@ -26,7 +33,7 @@ const ActiveQuestSchema = new Schema<IActiveQuest>(
         rewardXp: { type: Number, default: 100 },
         type: { 
             type: String, 
-            enum: ['chat', 'poll', 'watch_time', 'share'],
+            enum: Object.values(QuestType),
             required: true 
         },
         completed: { type: Boolean, default: false },

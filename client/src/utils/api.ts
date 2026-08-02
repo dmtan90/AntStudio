@@ -8,16 +8,14 @@ const api = axios.create({
 // Request interceptor: attach auth token
 api.interceptors.request.use(
     (config) => {
-        let token = localStorage.getItem('auth-token')
+        let token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth-token') : null
 
         // Feature: Automatically use token from URL if on any page (OAuth/Guest support)
-        if (!token) {
+        if (!token && typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search)
             token = params.get('token')
-            if (token) {
+            if (token && typeof localStorage !== 'undefined') {
                 localStorage.setItem('auth-token', token)
-                // Note: We don't clean URL here as the store might be doing it, 
-                // but if we are outside of Vue/Pinia context (e.g. direct utility use), it's safer.
             }
         }
 
@@ -84,8 +82,13 @@ export function getFileUrl(path: string | undefined | null, options?: { cached?:
     if (!path) return options?.cached ? Promise.resolve('') : ''
 
     let url = path
+    // If it's blob or data, return it directly
+    if (path.startsWith("blob:") || path.startsWith("data:")) {
+        return url;
+    }
+
     // If it doesn't start with http or /, assume it's an S3 path
-    if (!path.startsWith('http') && !path.startsWith('/') && !path.startsWith('blob:') && !path.startsWith('data:')) {
+    if (!path.startsWith('http') && !path.startsWith('/')) {
         url = `/api/s3/${path}`
     }
 
@@ -101,12 +104,11 @@ export function getFileUrl(path: string | undefined | null, options?: { cached?:
     }
 
     if (options?.cached) {
-        const token = localStorage.getItem('auth-token')
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth-token') : null
         const fetchOptions: RequestInit = {}
 
         // Only attach Authorization header if it's our own API (S3 proxy)
-        // Only attach Authorization header if it's our own API (S3 proxy)
-        const isInternal = url.startsWith('/') || url.startsWith(window.location.origin)
+        const isInternal = url.startsWith('/') || (typeof window !== 'undefined' && url.startsWith(window.location.origin))
         if (token && isInternal) {
             fetchOptions.headers = { 'Authorization': `Bearer ${token}` }
         }

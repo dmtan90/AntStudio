@@ -1,17 +1,20 @@
 import { GoogleGenAI, Modality, FileState } from '@google/genai';
 import axios from 'axios';
 import crypto from 'crypto';
-import { IAIAccount } from '~/models/AIAccount.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { AIAccountProvider, AIAccountType, IAIAccount } from '~/models/AIAccount.js';
 import { geminiPool } from '~/utils/gemini.js';
 import { aiAccountManager } from '~/utils/ai/AIAccountManager.js';
 import { CloudCodeClient } from './CloudCodeClient.js';
 import { AntigravityClient } from './AntigravityClient.js';
-import { VertexClient } from './VertexClient.js';
 import { OpenAIClient } from './OpenAIClient.js';
-import { getAdminSettings } from '~/models/AdminSettings.js';
+import { AIModelType, getAdminSettings } from '~/models/AdminSettings.js';
 import { Logger } from '~/utils/Logger.js';
 import { getFromS3 } from '~/utils/s3.js';
 import { Readable } from 'stream';
+import { EnvConfig } from '~/utils/ConfigService.js'
 
 /**
  * GeminiClient: Unified client for all Google Gemini tasks.
@@ -20,17 +23,221 @@ import { Readable } from 'stream';
 export class GeminiClient {
     private apiKey?: string;
     private account?: IAIAccount;
+    private serviceAccount?: string | Record<string, any>;
     private googleGenAI?: GoogleGenAI;
 
-    /**
-     * @param options Provide either apiKey or account
-     */
-    constructor(options: { apiKey?: string; account?: IAIAccount }) {
-        this.apiKey = options.apiKey;
-        this.account = options.account;
-        if (this.apiKey) {
-            this.googleGenAI = new GoogleGenAI({ apiKey: this.apiKey });
+    private static instance?: GeminiClient;
+
+    public static getInstance(): GeminiClient {
+        if (!GeminiClient.instance) {
+            GeminiClient.instance = new GeminiClient();
         }
+        return GeminiClient.instance;
+    }
+
+    /**
+     * @param options Provide apiKey, account, or serviceAccount
+     */
+    constructor(options?: { apiKey?: string; account?: IAIAccount; serviceAccount?: string | Record<string, any>; keyFilename?: string }) {
+        this.apiKey = options?.apiKey;
+        this.account = options?.account;
+        this.serviceAccount = options?.serviceAccount || options?.keyFilename;
+
+        if (this.serviceAccount) {
+            this.setupServiceAccount(this.serviceAccount);
+        } else if (this.apiKey) {
+            this.googleGenAI = new GoogleGenAI({ apiKey: this.apiKey });
+        } else if (GeminiClient.detectADC()) {
+            this.setupADC();
+        }
+    }
+
+    private setupServiceAccount(serviceAccount: string | Record<string, any>) {
+        let projectId: string | undefined;
+        let location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+
+        if (typeof serviceAccount === 'object' && serviceAccount !== null) {
+            projectId = (serviceAccount as any).project_id;
+            try {
+                const tempPath = path.join(os.tmpdir(), `gcp_sa_${Date.now()}.json`);
+                fs.writeFileSync(tempPath, JSON.stringify(serviceAccount, null, 2));
+                process.env.GOOGLE_APPLICATION_CREDENTIALS = tempPath;
+            } catch (e) {
+                Logger.warn('[GeminiClient] Failed to write temporary serviceAccount file', 'GeminiClient');
+            }
+        } else if (typeof serviceAccount === 'string') {
+            const trimmed = serviceAccount.trim();
+            if (trimmed.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    projectId = parsed.project_id;
+                    const tempPath = path.join(os.tmpdir(), `gcp_sa_${Date.now()}.json`);
+                    fs.writeFileSync(tempPath, JSON.stringify(parsed, null, 2));
+                    process.env.GOOGLE_APPLICATION_CREDENTIALS = tempPath;
+                } catch (e) {
+                    Logger.warn('[GeminiClient] Failed to parse serviceAccount JSON string', 'GeminiClient');
+                }
+            } else if (fs.existsSync(trimmed)) {
+                const resolvedPath = path.resolve(trimmed);
+                process.env.GOOGLE_APPLICATION_CREDENTIALS = resolvedPath;
+                try {
+                    const content = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
+                    if (content.project_id) projectId = content.project_id;
+                } catch (e) {}
+            }
+        }
+
+        if (!projectId) {
+            projectId = process.env.GOOGLE_CLOUD_PROJECT;
+        }
+
+        if (projectId) {
+            try {
+                this.googleGenAI = new GoogleGenAI({ vertexai: true, project: projectId, location });
+                Logger.info(`[GeminiClient] Initialized GoogleGenAI with Service Account for project ${projectId}`, 'GeminiClient');
+            } catch (e: any) {
+                Logger.warn(`[GeminiClient] Failed to initialize GoogleGenAI with Service Account: ${e.message}`, 'GeminiClient');
+            }
+        }
+    }
+
+    private setupADC() {
+        const projectId = process.env.GOOGLE_CLOUD_PROJECT;
+        const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+        if (projectId) {
+            try {
+                this.googleGenAI = new GoogleGenAI({ vertexai: true, project: projectId, location });
+                Logger.info(`[GeminiClient] Initialized GoogleGenAI with Application Default Credentials for project ${projectId}`, 'GeminiClient');
+            } catch (e: any) {
+                Logger.warn(`[GeminiClient] Failed to initialize GoogleGenAI with ADC: ${e.message}`, 'GeminiClient');
+            }
+        }
+    }
+
+    private parseVertexParams(baseUrl?: string) {
+        let project: string | undefined;
+        let location: string | undefined;
+        if (baseUrl) {
+            const projectMatch = baseUrl.match(/\/projects\/([^/]+)/);
+            if (projectMatch) {
+                project = projectMatch[1];
+            }
+            const locationMatch = baseUrl.match(/\/locations\/([^/]+)/);
+            if (locationMatch) {
+                location = locationMatch[1];
+            } else {
+                const subdomainMatch = baseUrl.match(/https?:\/\/([^.]+)-aiplatform/);
+                if (subdomainMatch) {
+                    location = subdomainMatch[1];
+                }
+            }
+        }
+        return { project, location };
+    }
+
+    private static detectADC(): boolean {
+        let credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        if (credPath) {
+            try {
+                const filename = path.basename(credPath);
+                const possiblePaths = [
+                    credPath,
+                    path.resolve(process.cwd(), credPath),
+                    path.resolve(process.cwd(), '..', credPath),
+                    path.resolve(process.cwd(), '..', filename),
+                    path.resolve(process.cwd(), filename)
+                ];
+                for (const p of possiblePaths) {
+                    if (fs.existsSync(p)) {
+                        process.env.GOOGLE_APPLICATION_CREDENTIALS = p;
+                        return true;
+                    }
+                }
+            } catch (e) {}
+        }
+        
+        try {
+            let defaultPath = '';
+            if (process.platform === 'win32') {
+                if (process.env.APPDATA) {
+                    defaultPath = path.join(process.env.APPDATA, 'gcloud/application_default_credentials.json');
+                }
+            } else {
+                const home = os.homedir();
+                if (home) {
+                    defaultPath = path.join(home, '.config/gcloud/application_default_credentials.json');
+                }
+            }
+            if (defaultPath && fs.existsSync(defaultPath)) {
+                return true;
+            }
+        } catch (e) {}
+        
+        if (process.env.K_SERVICE || process.env.GAE_SERVICE || process.env.CLOUD_RUN_JOB) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    private async getGoogleGenAI(apiKey: string, baseUrl?: string): Promise<GoogleGenAI> {
+        return new GoogleGenAI({ apiKey });
+    }
+
+    private async getClientInstance(cred: any): Promise<GoogleGenAI> {
+        if (cred.googleGenAI) return cred.googleGenAI;
+
+        const apiKey = cred.apiKey || cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey');
+        const baseUrl = cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl');
+
+        if (cred.type === AIAccountProvider.GOOGLE_VERTEX) {
+            const { project: parsedProject, location: parsedLocation } = this.parseVertexParams(baseUrl);
+            const project = parsedProject || process.env.GOOGLE_CLOUD_PROJECT || undefined;
+            let location = parsedLocation || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+            if (!location || location === 'global') {
+                location = 'us-central1';
+            }
+            const hasADC = GeminiClient.detectADC();
+
+            const clientOptions: any = {};
+            if (project && location && hasADC) {
+                clientOptions.vertexai = true;
+                clientOptions.project = project;
+                clientOptions.location = location;
+                Logger.info(`[GeminiClient] Initializing Vertex AI client with ADC. Project: ${project}, Location: ${location}`, 'GeminiClient');
+
+                const oldGeminiKey = process.env.GEMINI_API_KEY;
+                const oldGoogleKey = process.env.GOOGLE_API_KEY;
+                delete process.env.GEMINI_API_KEY;
+                delete process.env.GOOGLE_API_KEY;
+
+                try {
+                    return new GoogleGenAI(clientOptions);
+                } finally {
+                    if (oldGeminiKey) process.env.GEMINI_API_KEY = oldGeminiKey;
+                    if (oldGoogleKey) process.env.GOOGLE_API_KEY = oldGoogleKey;
+                }
+            } else {
+                if (apiKey) {
+                    clientOptions.apiKey = apiKey;
+                    Logger.info('[GeminiClient] Initializing AI Studio client with apiKey (fallback from Vertex config).', 'GeminiClient');
+                } else {
+                    clientOptions.vertexai = true;
+                    if (project) clientOptions.project = project;
+                    if (location) clientOptions.location = location;
+                    Logger.info('[GeminiClient] Initializing Vertex AI client without apiKey (no ADC or API key found).', 'GeminiClient');
+                }
+                return new GoogleGenAI(clientOptions);
+            }
+        }
+
+        if (cred.type === 'apikey' && apiKey) {
+            return await this.getGoogleGenAI(apiKey, baseUrl);
+        }
+
+        const initOptions: any = {};
+        if (apiKey) initOptions.apiKey = apiKey;
+        return new GoogleGenAI(initOptions);
     }
 
 
@@ -42,8 +249,8 @@ export class GeminiClient {
      * 
      * If the caller provided an explicit account or apiKey, only that is used.
      */
-    private async resolveCredentialsChain(modality: 'text' | 'image' | 'video' | 'audio' | 'music' | 'live'): Promise<Array<{ type: 'antigravity' | 'standard' | 'apikey' | 'vertex' | 'openai' | 'custom'; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any }>> {
-        const chain: Array<{ type: 'antigravity' | 'standard' | 'apikey' | 'vertex' | 'openai' | 'custom'; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any }> = [];
+    private async resolveCredentialsChain(modality: AIModelType): Promise<Array<{ type: AIAccountType; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any, keyFile?: string }>> {
+        const chain: Array<{ type: AIAccountType; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any }> = [];
 
         // If caller provided explicit credentials, use only those
         // if (this.account) {
@@ -52,42 +259,52 @@ export class GeminiClient {
         //     return chain;
         // }
         let types = [];
-        if(modality == "text"){
-            types = ['antigravity', 'standard', 'vertex', 'openai', 'custom', 'apikey'];
+        if(modality == AIModelType.TEXT){
+            types = [AIAccountType.ANTIGRAVITY, AIAccountType.GOOGLE_VERTEX, AIAccountType.STANDARD, AIAccountType.OPENAI, AIAccountType.CUSTOM, AIAccountType.API_KEY];
+        }
+        else if(modality == AIModelType.MUSIC){
+            types = [AIAccountType.GOOGLE_VERTEX, AIAccountType.OPENAI, AIAccountType.CUSTOM, AIAccountType.API_KEY];
+        }
+        else if(modality == AIModelType.VOICE){
+            types = [AIAccountType.GOOGLE_VERTEX, AIAccountType.API_KEY];
+        }
+        else if(modality == AIModelType.AUDIO){
+            types = [AIAccountType.GOOGLE_VERTEX, AIAccountType.OPENAI, AIAccountType.CUSTOM, AIAccountType.API_KEY];
         }
         else{
-            types = ['vertex', 'openai', 'custom', 'apikey'];
+            types = [AIAccountType.GOOGLE_VERTEX, AIAccountType.OPENAI, AIAccountType.CUSTOM, AIAccountType.API_KEY];
         }
 
         // Auto-resolve: build full chain from account pool
         // Step 1: Antigravity accounts
-        if(types.includes('antigravity')){
-            const antigravityAccount = await aiAccountManager.getOptimalAccount(modality, 'antigravity');
+        if(types.includes(AIAccountType.ANTIGRAVITY)){
+            const antigravityAccount = await aiAccountManager.getOptimalAccount(modality, AIAccountType.ANTIGRAVITY);
             if (antigravityAccount) {
-                chain.push({ type: 'antigravity', account: antigravityAccount });
+                chain.push({ type: AIAccountType.ANTIGRAVITY, account: antigravityAccount });
             }
         }
 
         // Step 2: Standard Google OAuth accounts
-        if(types.includes("standard")){
+        if(types.includes(AIAccountType.STANDARD)){
             const standardAccount = await aiAccountManager.getOptimalAccount(modality, 'standard');
             if (standardAccount) {
-                chain.push({ type: 'standard', account: standardAccount });
+                chain.push({ type: AIAccountType.STANDARD, account: standardAccount });
             }
         }
 
-        if(types.includes("vertex") || types.includes("openai") || types.includes("custom")){
+        if(types.includes(AIAccountType.GOOGLE_VERTEX) || types.includes(AIAccountType.OPENAI) || types.includes(AIAccountType.CUSTOM)){
             const settings = await getAdminSettings();
             if (settings?.aiSettings?.providers) {
                 for (const p of settings.aiSettings.providers) {
                     if (p.isActive && p.supportedTypes.includes(modality)) {
-                        if (p.id === 'vertex' || p.id.includes('google-cloud')) {
+                        if (p.id === AIAccountType.GOOGLE_VERTEX || p.id.includes(AIAccountType.GOOGLE_CLOUD)) {
                             if(p.supportedTypes.includes(modality)){
-                                chain.push({ type: 'vertex', provider: p });
+                                const ai = await this.getClientInstance({ type: AIAccountType.GOOGLE_VERTEX, provider: p });
+                                chain.push({ type: AIAccountType.GOOGLE_VERTEX, provider: p, googleGenAI: ai });
                             }
-                        } else if (p.id === 'openai' || p.id === 'custom' || p.baseUrl) {
+                        } else if (p.id === AIAccountType.OPENAI || p.id === AIAccountType.CUSTOM || p.baseUrl) {
                             if(p.supportedTypes.includes(modality)){
-                                chain.push({ type: p.id === 'openai' ? 'openai' : 'custom', provider: p });
+                                chain.push({ type: p.id === AIAccountType.OPENAI ? AIAccountType.OPENAI : AIAccountType.CUSTOM, provider: p });
                             }
                         }
                     }
@@ -95,24 +312,36 @@ export class GeminiClient {
             }
         }
         
-        if(types.includes("apikey")){
+        if(types.includes(AIAccountType.API_KEY)){
             if (this.apiKey) {
-                chain.push({ type: 'apikey', apiKey: this.apiKey, googleGenAI: this.googleGenAI });
-                // return chain;
+                const ai = await this.getClientInstance({ type: AIAccountType.API_KEY, apiKey: this.apiKey });
+                chain.push({ type: AIAccountType.API_KEY, apiKey: this.apiKey, googleGenAI: ai });
             }
             
             // Step 3: API Key pool
             try {
                 const { key } = await geminiPool.getOptimalClient();
                 if (key) {
-                    chain.push({ type: 'apikey', apiKey: key, googleGenAI: new GoogleGenAI({ apiKey: key }) });
+                    const ai = await this.getClientInstance({ type: AIAccountType.API_KEY, apiKey: key });
+                    chain.push({ type: AIAccountType.API_KEY, apiKey: key, googleGenAI: ai });
                 }
             } catch (e) {
                 // No API keys available
             }
         }
 
-        
+        if (this.googleGenAI && !chain.some(c => c.googleGenAI === this.googleGenAI)) {
+            chain.push({ type: AIAccountType.GOOGLE_VERTEX, googleGenAI: this.googleGenAI });
+        } else if (chain.length === 0 && GeminiClient.detectADC()) {
+            const project = process.env.GOOGLE_CLOUD_PROJECT;
+            const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+            if (project) {
+                try {
+                    const ai = new GoogleGenAI({ vertexai: true, project, location });
+                    chain.push({ type: AIAccountType.GOOGLE_VERTEX, googleGenAI: ai });
+                } catch (e) {}
+            }
+        }
 
         return chain;
     }
@@ -121,23 +350,23 @@ export class GeminiClient {
      * Generate Text / Multimodal Content
      * Fallback chain: Antigravity → Standard Google → API Key
      */
-    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.5-flash', options: any = {}) {
-        const chain = await this.resolveCredentialsChain('text');
+    public async generateContent(prompt: string | any[], modelId: string = EnvConfig.geminiModelTextAnalysis, options: any = {}) {
+        const chain = await this.resolveCredentialsChain(AIModelType.TEXT);
         const errors: string[] = [];
 
         for (const cred of chain) {
             try {
-                if (cred.type === 'antigravity' && cred.account) {
+                if (cred.type === AIAccountType.ANTIGRAVITY && cred.account) {
                     const client = new AntigravityClient(cred.account);
                     return await client.generateContent(prompt, modelId, options);
                 }
 
-                if (cred.type === 'standard' && cred.account) {
+                if (cred.type === AIAccountType.STANDARD && cred.account) {
                     const client = new CloudCodeClient(cred.account);
                     return await client.generateContent(prompt, modelId, options);
                 }
 
-                if (cred.type === 'apikey' && cred.googleGenAI) {
+                if ((cred.type === AIAccountType.API_KEY || cred.type === AIAccountType.GOOGLE_VERTEX) && cred.googleGenAI) {
                     const parts: any[] = Array.isArray(prompt) ? prompt : [{ text: String(prompt) }];
                     
                     if (options.image) {
@@ -155,6 +384,8 @@ export class GeminiClient {
                         config: {
                             systemInstruction: options.systemPrompt ? { parts: [{ text: options.systemPrompt }] } : undefined,
                             tools: options.grounding ? [{ googleSearch: {} }] : options.tools,
+                            maxOutputTokens: options.maxTokens || 4096,
+                            temperature: options.temperature ?? 0.7,
                             ...options.generationConfig,
                             thinkingConfig: options.thinkingConfig,
                         }
@@ -168,15 +399,7 @@ export class GeminiClient {
                     };
                 }
 
-                if (cred.type === 'vertex' && (cred.account || cred.provider)) {
-                    const client = new VertexClient({
-                        apiKey: cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey'),
-                        baseUrl: cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl')
-                    });
-                    return await client.generateContent(prompt, modelId, options);
-                }
-
-                if ((cred.type === 'openai' || cred.type === 'custom') && (cred.account || cred.provider)) {
+                if ((cred.type === AIAccountType.OPENAI || cred.type === AIAccountType.CUSTOM) && (cred.account || cred.provider)) {
                     const client = new OpenAIClient({
                         apiKey: cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey') || '',
                         baseUrl: cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl')
@@ -184,7 +407,7 @@ export class GeminiClient {
                     return await client.generateContent(prompt, modelId, options);
                 }
             } catch (error: any) {
-                const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
+                const label = cred.type === AIAccountType.API_KEY ? 'API Key' : `${cred.type} (${cred.account?.email})`;
                 Logger.warn(`[GeminiClient] generateContent failed via ${label}: ${error.message}`, 'GeminiClient');
                 errors.push(`${label}: ${error.message}`);
             }
@@ -200,20 +423,20 @@ export class GeminiClient {
      * - Gemini native image models (gemini-*-image) → generateContent() with responseModalities: ['IMAGE']
      * - Imagen dedicated models (imagen-*) → generateImages() dedicated API
      */
-    public async generateImage(prompt: string, modelId: string = 'gemini-2.5-flash-image', options: any = {}): Promise<{ url: string; mimeType: string } | null> {
+    public async generateImage(prompt: string, modelId: string = EnvConfig.geminiModelImageGeneration, options: any = {}): Promise<{ url: string; mimeType: string } | null> {
         try{
-            const chain = await this.resolveCredentialsChain('image');
+            const chain = await this.resolveCredentialsChain(AIModelType.IMAGE);
             const errors: string[] = [];
 
             for (const cred of chain) {
                 try {
-                    if (cred.type === 'antigravity' && cred.account) {
+                    if (cred.type === AIAccountType.ANTIGRAVITY && cred.account) {
                         const client = new AntigravityClient(cred.account);
                         const result = await client.generateImage(prompt, modelId);
                         return { url: result.url, mimeType: 'image/png' };
                     }
 
-                    if (cred.type === 'standard' && cred.account) {
+                    if (cred.type === AIAccountType.STANDARD && cred.account) {
                         const client = new CloudCodeClient(cred.account);
                         const result = await client.generateImage(prompt, modelId) as any;
                         return {
@@ -222,7 +445,7 @@ export class GeminiClient {
                         };
                     }
 
-                    if (cred.type === 'apikey' && cred.googleGenAI) {
+                    if ((cred.type === AIAccountType.API_KEY || cred.type === AIAccountType.GOOGLE_VERTEX) && cred.googleGenAI) {
                         const isImagenModel = modelId.startsWith('imagen-');
 
                         if (isImagenModel) {
@@ -233,7 +456,8 @@ export class GeminiClient {
                                 config: {
                                     numberOfImages: 1,
                                     outputMimeType: 'image/png',
-                                    aspectRatio: options.aspectRatio || '1:1'
+                                    aspectRatio: options.aspectRatio || '1:1',
+                                    ...options.parameters
                                 }
                             });
                             if (response.generatedImages?.length > 0) {
@@ -260,16 +484,7 @@ export class GeminiClient {
                         }
                     }
 
-                    if (cred.type === 'vertex' && (cred.account || cred.provider)) {
-                        const client = new VertexClient({
-                            apiKey: cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey'),
-                            baseUrl: cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl')
-                        });
-                        const result = await client.generateImage(prompt, modelId, options);
-                        return { url: result.url, mimeType: result.mimeType || 'image/png' };
-                    }
-
-                    if ((cred.type === 'openai' || cred.type === 'custom') && (cred.account || cred.provider)) {
+                    if ((cred.type === AIAccountType.OPENAI || cred.type === AIAccountType.CUSTOM) && (cred.account || cred.provider)) {
                         const client = new OpenAIClient({
                             apiKey: cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey') || '',
                             baseUrl: cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl')
@@ -278,7 +493,7 @@ export class GeminiClient {
                         return { url: result.url, mimeType: result.mimeType || 'image/png' };
                     }
                 } catch (error: any) {
-                    const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
+                    const label = cred.type === AIAccountType.API_KEY ? 'API Key' : `${cred.type} (${cred.account?.email})`;
                     Logger.warn(`[GeminiClient] generateImage failed via ${label}: ${error.message}`, 'GeminiClient');
                     errors.push(`${label}: ${error.message}`);
                 }
@@ -296,9 +511,9 @@ export class GeminiClient {
      * Fallback chain: Antigravity → Standard Google → API Key
      * API Key path uses generateVideos() + async polling
      */
-    public async generateVideo(prompt: string, modelId: string = 'veo-3.0-generate-001', options: any = {}): Promise<{ url?: string; mimeType?: string; sceneId?: string; statusUrl?: string; jobId?: string; status?: string } | null> {
+    public async generateVideo(prompt: string, modelId: string = EnvConfig.geminiModelVideoGeneration, options: any = {}): Promise<{ url?: string; mimeType?: string; sceneId?: string; statusUrl?: string; jobId?: string; status?: string } | null> {
         try{
-            const chain = await this.resolveCredentialsChain('video');
+            const chain = await this.resolveCredentialsChain(AIModelType.VIDEO);
             const errors: string[] = [];
 
             // Helper to resolve images for Veo API structure
@@ -313,7 +528,7 @@ export class GeminiClient {
                     if (input.startsWith('https://') || input.startsWith('http://')) {
                         const response = await axios.get(input, { responseType: 'arraybuffer' });
                         buffer = Buffer.from(response.data);
-                        mimeType = response.headers['content-type'] || 'image/png';
+                        mimeType = String(response.headers['content-type'] || 'image/png');
                     } else {
                         // Assume S3 Key
                         const s3Stream = await getFromS3(input) as Readable;
@@ -368,17 +583,17 @@ export class GeminiClient {
 
             for (const cred of chain) {
                 try {
-                    if (cred.type === 'antigravity' && cred.account) {
+                    if (cred.type === AIAccountType.ANTIGRAVITY && cred.account) {
                         // const client = new AntigravityClient(cred.account);
                         // if (typeof client.generateVideo === 'function') {
                         //     return await client.generateVideo(prompt, modelId, resolvedOptions);
                         // }
                         // // If AntigravityClient has no generateVideo, fall through to next
                         // throw new Error('AntigravityClient does not support generateVideo');
-                    } else if (cred.type === 'standard' && cred.account) {
-                        // const client = new CloudCodeClient(cred.account);
-                        // return await client.generateVideo(prompt, modelId, resolvedOptions);
-                    } else if (cred.type === 'apikey' && cred.googleGenAI) {
+                    } else if (cred.type === AIAccountType.STANDARD && cred.account) {
+                        const client = new CloudCodeClient(cred.account);
+                        return await client.generateVideo(prompt, modelId, resolvedOptions);
+                    } else if ((cred.type === AIAccountType.API_KEY || cred.type === AIAccountType.GOOGLE_VERTEX) && cred.googleGenAI) {
                         const genConfig: any = {};
                         if (options.aspectRatio) genConfig.aspectRatio = options.aspectRatio;
                         if (options.resolution) genConfig.resolution = options.resolution;
@@ -420,7 +635,9 @@ export class GeminiClient {
 
                         Logger.info(`[GeminiClient] Final API Key Payload structure: hasImage=${!!generateParams.image}, hasLastFrame=${!!generateParams.config?.lastFrame}, referenceImageCount=${generateParams.config?.referenceImages?.length || 0}`, 'GeminiClient');
 
-                        const ai = new GoogleGenAI({ apiKey: cred.apiKey, apiVersion: "v1alpha" } as any);
+                        const ai = cred.type === AIAccountType.GOOGLE_VERTEX 
+                            ? cred.googleGenAI 
+                            : new GoogleGenAI({ apiKey: cred.apiKey, apiVersion: "v1alpha" } as any);
 
                         let operation;
                         if (options.jobId) {
@@ -447,22 +664,31 @@ export class GeminiClient {
 
                         if (!operation.done) throw new Error('Video generation timed out after 10 minutes');
 
+                        // Logger.info(`[GeminiClient] Veo operation response content: ${JSON.stringify(operation.response)}`, 'GeminiClient');
+
                         const generatedVideos = operation.response?.generatedVideos || [];
                         if (generatedVideos.length === 0) throw new Error('No videos returned from Veo API');
 
                         const videoFile = generatedVideos[0].video;
-                        if (videoFile?.uri) {
-                            let videoUrl = videoFile.uri;
-                            if (videoUrl.includes('generativelanguage.googleapis.com') && cred.apiKey) {
-                                videoUrl += (videoUrl.includes('?') ? '&' : '?') + `key=${cred.apiKey}`;
+                        const videoBytes = videoFile?.videoBytes || generatedVideos[0].videoBytes;
+                        const videoUrl = videoFile?.uri || videoFile?.gcsUri || generatedVideos[0].uri || generatedVideos[0].gcsUri;
+
+                        if (videoBytes) {
+                            const finalUrl = `data:${videoFile?.mimeType || 'video/mp4'};base64,${videoBytes}`;
+                            Logger.info(`[GeminiClient] Video generated inline successfully (bytes length: ${videoBytes.length})`, 'GeminiClient');
+                            return { url: finalUrl, mimeType: videoFile?.mimeType || 'video/mp4', sceneId: options.sceneId };
+                        } else if (videoUrl) {
+                            let finalUrl = videoUrl;
+                            if (finalUrl.includes('generativelanguage.googleapis.com') && cred.apiKey) {
+                                finalUrl += (finalUrl.includes('?') ? '&' : '?') + `key=${cred.apiKey}`;
                             }
-                            Logger.info(`[GeminiClient] Video generated successfully: ${videoUrl}`, 'GeminiClient');
-                            return { url: videoUrl, mimeType: videoFile.mimeType || 'video/mp4', sceneId: options.sceneId };
+                            Logger.info(`[GeminiClient] Video generated via URI successfully: ${finalUrl}`, 'GeminiClient');
+                            return { url: finalUrl, mimeType: videoFile?.mimeType || 'video/mp4', sceneId: options.sceneId };
                         }
-                        throw new Error('No video URI in Veo response');
+                        throw new Error('No video URI or bytes in Veo response');
                     }
                 } catch (error: any) {
-                    const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
+                    const label = cred.type === AIAccountType.API_KEY ? 'API Key' : `${cred.type} (${cred.account?.email})`;
                     
                     // Detailed logging for Google API Errors (like 403 Service Disabled)
                     let detail = error.message;
@@ -495,7 +721,7 @@ export class GeminiClient {
      * Language is auto-detected from input text
      * Reference: https://ai.google.dev/gemini-api/docs/speech-generation
      */
-    async listVoices() {
+    async listVoices(language?: string) {
         return [
             { id: 'Zephyr', name: 'Zephyr', language: 'auto', gender: 'neutral', provider: 'gemini', description: 'Bright, Higher Pitch', audioSampleUrl: "https://gstatic.com/aistudio/voices/samples/Zephyr.wav" },
             { id: 'Puck', name: 'Puck', language: 'auto', gender: 'neutral', provider: 'gemini', description: 'Upbeat, Middle Pitch', audioSampleUrl: "https://gstatic.com/aistudio/voices/samples/Puck.wav" },
@@ -535,8 +761,8 @@ export class GeminiClient {
      * Fallback chain: Antigravity → Standard Google → API Key
      * Output: raw PCM16 24kHz mono → auto-wrapped in WAV header
      */
-    public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = 'gemini-2.5-flash-preview-tts', options: any = {}): Promise<{ url: string; mimeType: string }> {
-        const chain = await this.resolveCredentialsChain('audio');
+    public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = EnvConfig.geminiModelTTS, options: any = {}): Promise<{ url: string; mimeType: string }> {
+        const chain = await this.resolveCredentialsChain(AIModelType.AUDIO);
         const errors: string[] = [];
 
         for (const cred of chain) {
@@ -544,18 +770,12 @@ export class GeminiClient {
                 let base64: string;
                 let mimeType: string;
 
-                // if (cred.type === 'antigravity' && cred.account) {
-                //     const client = new AntigravityClient(cred.account);
-                //     const result = await client.generateAudio(text, voiceId, modelId, options);
-                //     base64 = result.url.split(',')[1];
-                //     mimeType = result.mimeType || 'audio/wav';
-                // }
-                if (cred.type === 'standard' && cred.account) {
+                if (cred.type === AIAccountType.STANDARD && cred.account) {
                     const client = new CloudCodeClient(cred.account);
                     const result = await client.generateAudio(text, voiceId, modelId, options);
                     base64 = result.url.split(',')[1];
                     mimeType = result.mimeType || 'audio/wav';
-                } else if (cred.type === 'apikey' && cred.googleGenAI) {
+                } else if ((cred.type === AIAccountType.API_KEY || cred.type === AIAccountType.GOOGLE_VERTEX) && cred.googleGenAI) {
                     let speechConfig: any;
                     let finalText = text;
                     
@@ -591,11 +811,24 @@ export class GeminiClient {
                                 } 
                             } 
                         };
+
+                        // Gemini Native Audio prompt steering for speed and pitch
+                        const styleInstructions: string[] = [];
+                        if (options.speed && options.speed !== 1.0) {
+                            styleInstructions.push(options.speed > 1.0 ? `speak faster at ${options.speed}x speed` : `speak slower at ${options.speed}x speed`);
+                        }
+                        if (options.pitch && options.pitch !== 0) {
+                            styleInstructions.push(options.pitch > 0 ? `use a higher pitch (+${options.pitch})` : `use a lower pitch (${options.pitch})`);
+                        }
+
+                        if (styleInstructions.length > 0) {
+                            finalText = `Instructions: Please ${styleInstructions.join(' and ')} when reading the following text aloud.\n\nText:\n${text}`;
+                        }
                     }
 
                     const response = await (cred.googleGenAI as any).models.generateContent({
                         model: modelId,
-                        contents: [{ parts: [{ text: finalText }] }],
+                        contents: [{ role: 'user', parts: [{ text: finalText }] }],
                         config: { responseModalities: ['AUDIO'], speechConfig }
                     });
 
@@ -648,139 +881,106 @@ export class GeminiClient {
     }
 
     /**
-     * Generate Music (Lyria RealTime)
-     * Uses WebSocket streaming via live.music.connect() to generate music.
-     * Collects PCM16 audio chunks for a configurable duration, then encodes as WAV.
-     * 
-     * Lyria RealTime specs: 16-bit PCM, 48kHz, stereo (2 channels)
+     * Generate Music (Lyria 3)
+     * Uses Interactions API to generate high-fidelity audio clips.
      */
-    public async generateMusic(prompt: string, modelId: string = 'lyria-realtime-exp', options: any = {}): Promise<{ url: string; mimeType: string }> {
-        const chain = await this.resolveCredentialsChain('music');
-
+    public async generateMusic(prompt: string, modelId: string = EnvConfig.geminiModelMusic, options: any = {}): Promise<{ url: string; mimeType: string }> {
+        const chain = await this.resolveCredentialsChain(AIModelType.MUSIC);
         const errors: string[] = [];
 
-        // Try account-based credentials first
         for (const cred of chain) {
-            if (cred.type !== 'apikey' && cred.account) {
-                try {
-                    const client = new CloudCodeClient(cred.account);
+            try {
+                if (cred.type === AIAccountType.ANTIGRAVITY && cred.account) {
+                    const client = new AntigravityClient(cred.account);
                     const result = await client.generateMusic(prompt, modelId, options) as any;
                     return {
                         url: result.url || result.media?.url,
                         mimeType: result.mimeType || result.media?.mimeType || 'audio/mpeg'
                     };
-                } catch (error: any) {
-                    const label = `${cred.type} (${cred.account?.email})`;
-                    Logger.warn(`[GeminiClient] generateMusic failed via ${label}: ${error.message}`, 'GeminiClient');
-                    errors.push(`${label}: ${error.message}`);
                 }
+                if (cred.type === AIAccountType.STANDARD && cred.account) {
+                    const client = new CloudCodeClient(cred.account);
+                    const result = await client.generateMusic(prompt, modelId, options) as any;
+                    return {
+                        url: result.url || result.media?.url,
+                        mimeType: result.media?.mimeType || result.media?.mimeType || 'audio/mpeg'
+                    };
+                }
+                if ((cred.type === AIAccountType.API_KEY || cred.type === AIAccountType.GOOGLE_VERTEX) && cred.googleGenAI) {
+                    const isVertex = cred.type === AIAccountType.GOOGLE_VERTEX;
+                    const hasADC = GeminiClient.detectADC();
+
+                    if (isVertex && hasADC) {
+                        Logger.info(`[GeminiClient] Using Vertex Interactions API for music generation: ${modelId}`, 'GeminiClient');
+                        const interaction = await (cred.googleGenAI as any).interactions.create({
+                            model: modelId,
+                            input: prompt,
+                        });
+
+                        Logger.info(`[GeminiClient] interaction keys: ${Object.keys(interaction).join(', ')}`, 'GeminiClient');
+
+                        let generatedAudio = interaction.outputAudio || interaction.output_audio;
+                        if (!generatedAudio && Array.isArray(interaction.outputs)) {
+                            const audioOutput = interaction.outputs.find((out: any) => out.data && (out.mime_type?.startsWith('audio/') || out.mimeType?.startsWith('audio/')));
+                            if (audioOutput) {
+                                generatedAudio = {
+                                    data: audioOutput.data,
+                                    mime_type: audioOutput.mime_type || audioOutput.mimeType || 'audio/mp3'
+                                };
+                            }
+                        }
+
+                        if (!generatedAudio) {
+                            throw new Error('No audio data returned from Lyria via interactions');
+                        }
+
+                        if (cred.apiKey) await geminiPool.recordUsage(cred.apiKey, modelId);
+
+                        return {
+                            url: `data:${generatedAudio.mime_type || 'audio/mp3'};base64,${generatedAudio.data}`,
+                            mimeType: generatedAudio.mime_type || 'audio/mp3'
+                        };
+                    } else {
+                        Logger.info(`[GeminiClient] Using Gemini/AI Studio generateContent API for music generation: ${modelId}`, 'GeminiClient');
+                        const response = await (cred.googleGenAI as any).models.generateContent({
+                            model: modelId,
+                            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                            config: {
+                                responseModalities: ['AUDIO'],
+                                speechConfig: {
+                                    voiceConfig: {
+                                        prebuiltVoiceConfig: {
+                                            voiceName: 'Puck'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        const part = response.candidates?.[0]?.content?.parts?.[0];
+                        const base64 = part?.inlineData?.data;
+                        const mimeType = part?.inlineData?.mimeType || 'audio/mp3';
+
+                        if (!base64) {
+                            throw new Error('No audio data returned from Lyria via generateContent');
+                        }
+
+                        if (cred.apiKey) await geminiPool.recordUsage(cred.apiKey, modelId);
+
+                        return {
+                            url: `data:${mimeType};base64,${base64}`,
+                            mimeType
+                        };
+                    }
+                }
+            } catch (error: any) {
+                const label = cred.type === AIAccountType.API_KEY ? 'API Key' : `${cred.type} (${cred.account?.email})`;
+                Logger.warn(`[GeminiClient] generateMusic failed via ${label}: ${error.message}`, 'GeminiClient');
+                errors.push(`${label}: ${error.message}`);
             }
         }
 
-        // API Key path (Lyria RealTime via WebSocket)
-        const apiKeyCred = chain.find(c => c.type === 'apikey');
-        if (!apiKeyCred?.apiKey) {
-            throw new Error(`All credential sources failed for generateMusic: ${errors.join(' | ')}`);
-        }
-
-        const durationSeconds = options.durationSeconds || 30;
-        const bpm = options.bpm || 120;
-        const temperature = options.temperature || 1.0;
-        const sampleRate = 48000;
-        const channels = 2;
-
-        Logger.info(`[GeminiClient] Using Lyria RealTime for music generation. Duration: ${durationSeconds}s, BPM: ${bpm}`, 'GeminiClient');
-
-        const ai = new GoogleGenAI({ apiKey: apiKeyCred.apiKey, apiVersion: "v1alpha" } as any);
-
-        return new Promise<{ url: string; mimeType: string }>((resolve, reject) => {
-            const audioChunks: Buffer[] = [];
-            let sessionRef: any = null;
-
-            const timeout = setTimeout(() => {
-                // Stop after duration
-                if (sessionRef) {
-                    try { sessionRef.stop(); } catch (e) { /* ignore */ }
-                }
-            }, durationSeconds * 1000);
-
-            (ai as any).live.music.connect({
-                model: `models/${modelId}`,
-                callbacks: {
-                    onmessage: (message: any) => {
-                        if (message.serverContent?.audioChunks) {
-                            for (const chunk of message.serverContent.audioChunks) {
-                                const audioBuffer = Buffer.from(chunk.data, 'base64');
-                                audioChunks.push(audioBuffer);
-                            }
-                        } else {
-                            Logger.debug(`[GeminiClient] Lyria non-audio message: ${JSON.stringify(message)}`, 'GeminiClient');
-                        }
-                    },
-                    onerror: (error: any) => {
-                        clearTimeout(timeout);
-                        Logger.error(`[GeminiClient] Lyria session error: ${error}`, 'GeminiClient');
-                        reject(new Error(`Lyria Music Generation Failed: ${error.message || error}`));
-                    },
-                    onclose: () => {
-                        clearTimeout(timeout);
-                        Logger.info(`[GeminiClient] Lyria stream closed. Collected ${audioChunks.length} chunks.`, 'GeminiClient');
-
-                        if (audioChunks.length === 0) {
-                            reject(new Error('No audio data received from Lyria'));
-                            return;
-                        }
-
-                        // Combine PCM chunks and wrap in WAV header
-                        const pcmData = Buffer.concat(audioChunks);
-                        const wavBuffer = Buffer.allocUnsafe(44 + pcmData.length);
-                        wavBuffer.write('RIFF', 0);
-                        wavBuffer.writeUInt32LE(36 + pcmData.length, 4);
-                        wavBuffer.write('WAVE', 8);
-                        wavBuffer.write('fmt ', 12);
-                        wavBuffer.writeUInt32LE(16, 16);        // chunk size
-                        wavBuffer.writeUInt16LE(1, 20);         // PCM format
-                        wavBuffer.writeUInt16LE(channels, 22);  // stereo
-                        wavBuffer.writeUInt32LE(sampleRate, 24);
-                        wavBuffer.writeUInt32LE(sampleRate * channels * 2, 28); // byte rate
-                        wavBuffer.writeUInt16LE(channels * 2, 32);  // block align
-                        wavBuffer.writeUInt16LE(16, 34);        // bits per sample
-                        wavBuffer.write('data', 36);
-                        wavBuffer.writeUInt32LE(pcmData.length, 40);
-                        pcmData.copy(wavBuffer, 44);
-
-                        const base64 = wavBuffer.toString('base64');
-                        resolve({
-                            url: `data:audio/wav;base64,${base64}`,
-                            mimeType: 'audio/wav'
-                        });
-                    }
-                }
-            }).then(async (session: any) => {
-                sessionRef = session;
-
-                await session.setWeightedPrompts({
-                    weightedPrompts: [
-                        { text: prompt, weight: 1.0 }
-                    ]
-                });
-
-                await session.setMusicGenerationConfig({
-                    musicGenerationConfig: {
-                        bpm: bpm,
-                        temperature: temperature,
-                        audioFormat: 'pcm16',
-                        sampleRateHz: sampleRate,
-                    }
-                });
-
-                Logger.info('[GeminiClient] Lyria session started. Playing...', 'GeminiClient');
-                await session.play();
-            }).catch((err: any) => {
-                clearTimeout(timeout);
-                reject(new Error(`Lyria connection failed: ${err.message}`));
-            });
-        });
+        throw new Error(`All credential sources failed for generateMusic: ${errors.join(' | ')}`);
     }
 
     /**
@@ -798,53 +998,85 @@ export class GeminiClient {
             onmessage?: (msg: any) => void;
             onerror?: (err: any) => void;
             onclose?: (event: any) => void;
-        }
-    }) {
-        const chain = await this.resolveCredentialsChain('live');
-        const model = config.model || 'gemini-2.5-flash-native-audio-preview-12-2025';
-
+        }}){
+        const chain = await this.resolveCredentialsChain(AIModelType.VOICE);
+        const model = config.model || EnvConfig.geminiModelVoice;
+        
         // For Live API, find the first usable credential
         for (const cred of chain) {
-            let token: string | undefined;
-            let isApiKey = false;
-
-            if (cred.type === 'apikey' && cred.apiKey) {
-                token = cred.apiKey;
-                isApiKey = true;
-            } else if (cred.account) {
-                try {
-                    token = await aiAccountManager.refreshAccessToken(cred.account);
-                } catch (e) { continue; }
-            }
-            if (!token) continue;
-
-            const ai = new GoogleGenAI({ apiKey: isApiKey ? token : undefined, httpOptions: {"apiVersion": "v1alpha"} }); 
-            // const ai = new GoogleGenAI({ apiKey: isApiKey ? token : undefined }); 
             try {
-                const session = await (ai as any).live.connect({
-                    model: model,
-                    config: {
-                        systemInstruction: config.systemInstruction,
-                        responseModalities: config.generationConfig?.responseModalities,
-                        speechConfig: config.generationConfig?.speechConfig,
-                        tools: config.tools,
-                        // proactivity: { proactiveAudio: false },
-                        enableAffectiveDialog: true,
-                        contextWindowCompression: config.contextWindowCompression,
-                        sessionResumption: config.sessionResumption,
-                        realtimeInputConfig: {
-                            automaticActivityDetection: {
-                                disabled: true,
+                let session: any;
+                let finalApiKey: string | undefined;
+                let finalAccount: any = undefined;
+
+                if (cred.type === AIAccountType.GOOGLE_VERTEX) {
+                    if (cred.keyFile && !fs.existsSync(cred.keyFile)) {
+                        Logger.info(`[GeminiClient] Vertex keyFile ${cred.keyFile} does not exist, skipping vertex cred`, 'GeminiClient');
+                        continue;
+                    }
+                    if (!cred.googleGenAI) continue;
+
+                    session = await (cred.googleGenAI as any).live.connect({
+                        model: model,
+                        config: {
+                            systemInstruction: config.systemInstruction,
+                            responseModalities: config.generationConfig?.responseModalities,
+                            speechConfig: config.generationConfig?.speechConfig,
+                            tools: config.tools,
+                            enableAffectiveDialog: true,
+                            contextWindowCompression: config.contextWindowCompression,
+                            sessionResumption: config.sessionResumption,
+                            realtimeInputConfig: {
+                                automaticActivityDetection: {
+                                    disabled: true,
+                                }
                             }
-                        }
-                    },
-                    callbacks: config.callbacks
-                });
+                        },
+                        callbacks: config.callbacks
+                    });
+                    finalApiKey = cred.provider?.apiKey || this.apiKey;
+                } else {
+                    let token: string | undefined;
+                    let isApiKey = false;
+
+                    if (cred.type === AIAccountType.API_KEY && cred.apiKey) {
+                        token = cred.apiKey;
+                        isApiKey = true;
+                    } else if (cred.account) {
+                        try {
+                            token = await aiAccountManager.refreshAccessToken(cred.account);
+                        } catch (e) { continue; }
+                    }
+                    if (!token) continue;
+
+                    const ai = new GoogleGenAI({ apiKey: isApiKey ? token : undefined, httpOptions: {"apiVersion": "v1alpha"} }); 
+                    session = await (ai as any).live.connect({
+                        model: model,
+                        config: {
+                            systemInstruction: config.systemInstruction,
+                            responseModalities: config.generationConfig?.responseModalities,
+                            speechConfig: config.generationConfig?.speechConfig,
+                            tools: config.tools,
+                        // proactivity: { proactiveAudio: false },
+                            enableAffectiveDialog: true,
+                            contextWindowCompression: config.contextWindowCompression,
+                            sessionResumption: config.sessionResumption,
+                            realtimeInputConfig: {
+                                automaticActivityDetection: {
+                                    disabled: true,
+                                }
+                            }
+                        },
+                        callbacks: config.callbacks
+                    });
+                    finalApiKey = isApiKey ? token : undefined;
+                    finalAccount = !isApiKey ? cred.account : undefined;
+                }
 
                 return {
                     session,
-                    apiKey: isApiKey ? token : undefined,
-                    account: !isApiKey ? cred.account : undefined
+                    apiKey: finalApiKey,
+                    account: finalAccount
                 };
             } catch (error: any) {
                 Logger.warn(`[GeminiClient] Live connection failed via ${cred.type}: ${error.message}`, 'GeminiClient');
@@ -858,16 +1090,16 @@ export class GeminiClient {
      * Upload a file to Gemini File API
      */
     public async uploadFile(filePath: string, mimeType: string, displayName?: string) {
-        const chain = await this.resolveCredentialsChain('video');
+        const chain = await this.resolveCredentialsChain(AIModelType.VIDEO);
         const errors: string[] = [];
 
         for (const cred of chain) {
             try {
-                if ((cred.type === 'antigravity' || cred.type === 'standard') && cred.account) {
+                if ((cred.type === AIAccountType.ANTIGRAVITY || cred.type === AIAccountType.STANDARD) && cred.account) {
                     const client = new CloudCodeClient(cred.account);
                     return await client.uploadFile(filePath, mimeType, displayName);
                 }
-                if (cred.type === 'apikey' && cred.googleGenAI) {
+                if (cred.type === AIAccountType.API_KEY && cred.googleGenAI) {
                     return await cred.googleGenAI.files.upload({
                         file: filePath,
                         config: { mimeType, displayName: displayName || filePath.split('/').pop() }
@@ -884,16 +1116,16 @@ export class GeminiClient {
     }
 
     public async waitForFileActive(fileIdOrUri: string) {
-        const chain = await this.resolveCredentialsChain('video');
+        const chain = await this.resolveCredentialsChain(AIModelType.VIDEO);
         const errors: string[] = [];
 
         for (const cred of chain) {
             try {
-                if ((cred.type === 'antigravity' || cred.type === 'standard') && cred.account) {
+                if ((cred.type === AIAccountType.ANTIGRAVITY || cred.type === AIAccountType.STANDARD) && cred.account) {
                     const client = new CloudCodeClient(cred.account);
                     return await client.waitForFileActive(fileIdOrUri);
                 }
-                if (cred.type === 'apikey' && cred.googleGenAI) {
+                if (cred.type === AIAccountType.API_KEY && cred.googleGenAI) {
                     const fileName = fileIdOrUri.includes('/')
                         ? (fileIdOrUri.startsWith('http') ? `files/${fileIdOrUri.split('/').pop()}` : fileIdOrUri)
                         : `files/${fileIdOrUri}`;
@@ -906,7 +1138,7 @@ export class GeminiClient {
                     return file;
                 }
             } catch (error: any) {
-                const label = cred.type === 'apikey' ? 'API Key' : `${cred.type} (${cred.account?.email})`;
+                const label = cred.type === AIAccountType.API_KEY ? 'API Key' : `${cred.type} (${cred.account?.email})`;
                 Logger.warn(`[GeminiClient] waitForFileActive failed via ${label}: ${error.message}`, 'GeminiClient');
                 errors.push(`${label}: ${error.message}`);
             }
@@ -916,15 +1148,15 @@ export class GeminiClient {
     }
 
     public async deleteFile(fileIdOrUri: string) {
-        const chain = await this.resolveCredentialsChain('video');
+        const chain = await this.resolveCredentialsChain(AIModelType.VIDEO);
 
         for (const cred of chain) {
             try {
-                if ((cred.type === 'antigravity' || cred.type === 'standard') && cred.account) {
+                if ((cred.type === AIAccountType.ANTIGRAVITY || cred.type === AIAccountType.STANDARD) && cred.account) {
                     const client = new CloudCodeClient(cred.account);
                     return await client.deleteFile(fileIdOrUri);
                 }
-                if (cred.type === 'apikey' && cred.googleGenAI) {
+                if (cred.type === AIAccountType.API_KEY && cred.googleGenAI) {
                     const fileName = fileIdOrUri.includes('/')
                         ? (fileIdOrUri.startsWith('http') ? `files/${fileIdOrUri.split('/').pop()}` : fileIdOrUri)
                         : `files/${fileIdOrUri}`;

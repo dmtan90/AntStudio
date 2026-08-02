@@ -127,7 +127,7 @@ export function useStudioCanvas(
                     worker.postMessage({ type: 'update-scene', payload: { scene: JSON.parse(JSON.stringify(studioStore.activeScene)) } });
                 }
 
-                // Phase 35: Proactively push current settings including auth token
+                // Proactively push current settings including auth token
                 const token = localStorage.getItem('auth-token');
                 worker.postMessage({ 
                     type: 'update-settings', 
@@ -153,11 +153,11 @@ export function useStudioCanvas(
                 // Listen for guest commands and forward to worker
                 window.addEventListener('studio-worker-command', handleWorkerCommand);
 
-                // Phase 32: Listen for fact-check results
+                // Listen for fact-check results
                 window.addEventListener('fact_check:new_result', handleFactCheck);
 
                 /* 
-                // Phase 31: Sync quest state to worker
+                // Sync quest state to worker
                 // Bridge AI influencers via MediaStream. 
                 syntheticGuestManager.activeGuests.forEach((guest, id) => {
                     const persona = guest.persona;
@@ -209,7 +209,7 @@ export function useStudioCanvas(
             const track = stream.getVideoTracks()[0];
             if (!track) return;
 
-            // Phase 89: Stop cloning tracks. Cloning creates a new track instance
+            // Stop cloning tracks. Cloning creates a new track instance
             // that doesn't share the 'enabled' state of the original.
             // Using the original track allows MediaStreamTrackProcessor to see
             // track.enabled = false (black frames) when toggled in LiveStudio.vue.
@@ -365,7 +365,7 @@ export function useStudioCanvas(
         if (isWorkerEnabled) checkNewStreams();
     }, { deep: true, immediate: true });
 
-    // Phase 93: Sync lyrics to worker
+    // Sync lyrics to worker
     watch([
         () => mediaStore.performanceLyrics,
         () => mediaStore.performanceLyricsCurrentTime,
@@ -387,7 +387,7 @@ export function useStudioCanvas(
         }
     }, { immediate: true });
 
-    // Phase 31: Sync quest state to worker
+    // Sync quest state to worker
     watch(() => studioStore.activeQuest, (quest) => {
         if (isWorkerEnabled && worker) {
             const payload = quest ? {
@@ -407,14 +407,14 @@ export function useStudioCanvas(
         }
     }, { deep: true, immediate: true });
 
-    // Phase 32: Sync Facts, Viz and Recap to worker
+    // Sync Facts, Viz and Recap to worker
     watch(() => studioStore.verifiedFacts, (facts) => {
         if (isWorkerEnabled && worker) {
             worker.postMessage({ type: 'update-facts', payload: { facts: JSON.parse(JSON.stringify(facts.slice(0, 5))) } });
         }
     }, { deep: true });
 
-    // Phase 52.1: Sync all context data to worker
+    // Sync all context data to worker
     watch(() => studioStore.contextData, (data) => {
         if (isWorkerEnabled && worker) {
             worker.postMessage({
@@ -453,7 +453,7 @@ export function useStudioCanvas(
         if (metricsInterval) clearInterval(metricsInterval);
     });
 
-    // Phase 101: Sync isLive status to worker
+    // Sync isLive status to worker
     watch(() => options.isLive?.value, (live) => {
         if (isWorkerEnabled && worker) {
             worker.postMessage({
@@ -536,7 +536,7 @@ export function useStudioCanvas(
         if (newFilter !== 'none') updateLUT(newFilter);
     });
 
-    // Handle Brand Logo Changes (Phase 18)
+    // Handle Brand Logo Changes
     const updateBrandLogo = (url: string) => {
         if (!isWorkerEnabled || !worker) return;
         worker.postMessage({ type: 'update-brand-logo', payload: { logoUrl: url } });
@@ -566,7 +566,8 @@ export function useStudioCanvas(
                 if (!qrImg) {
                     qrImg = new Image();
                     qrImg.crossOrigin = 'anonymous';
-                    qrImg.src = QRCodeGenerator.getProductQR(activeProduct.inventoryUrl || `https://antstudio.agrhub.com/p/${productId}`);
+                    const qrDataUrl = await QRCodeGenerator.getProductQR(activeProduct.inventoryUrl || `https://antstudio.agrhub.com/p/${productId}`);
+                    qrImg.src = qrDataUrl;
                     qrCodeImages.set(productId, qrImg);
                     
                     await new Promise(resolve => {
@@ -625,7 +626,7 @@ export function useStudioCanvas(
 
     // Initialize AI Engine
     onMounted(async () => {
-        // Phase 89: Listen for metadata on these elements so we bridge as soon as stream exists
+        // Listen for metadata on these elements so we bridge as soon as stream exists
         if (options.screenVideo?.value) {
             options.screenVideo.value.onloadedmetadata = () => checkNewStreams();
         }
@@ -768,7 +769,7 @@ export function useStudioCanvas(
                         });
                     }
                     
-                    // Phase 93: Global Lyrics Burn-in removed from overlay canvas to prevent duplication
+                    // Global Lyrics Burn-in removed from overlay canvas to prevent duplication
                     // Per-slot lyrics are handled in drawActualRegion
 
                     if (!hasNotifications) overlayDirty.value = false;
@@ -941,7 +942,7 @@ export function useStudioCanvas(
             renderNameTag(ctx, 'HOST', x, y, w, h);
         }
 
-        // Phase 93: Lyrics Rendering per-slot
+        // Lyrics Rendering per-slot
         const guestId = mediaStore.performingInfluencerId;
         if (guestId && mediaStore.performanceLyricsVisible) {
             let isTarget = false;
@@ -1092,7 +1093,9 @@ export function useStudioCanvas(
         if (!qrImg) {
             qrImg = new Image();
             qrImg.crossOrigin = 'anonymous';
-            qrImg.src = QRCodeGenerator.getProductQR(product.inventoryUrl || `https://antstudio.agrhub.com/p/${productId}`);
+            QRCodeGenerator.getProductQR(product.inventoryUrl || `https://antstudio.agrhub.com/p/${productId}`).then(qrDataUrl => {
+                qrImg!.src = qrDataUrl;
+            });
             qrCodeImages.set(productId, qrImg);
         }
 
@@ -1301,7 +1304,7 @@ export function useStudioCanvas(
                     return;
                 }
 
-                // Phase 95: Enable Face Tracking for real-time framing
+                // Enable Face Tracking for real-time framing
                 const results = await liveAIEngine.processFrame(track, timestamp, { 
                     enableSegmentation: !skipSegmentation,
                     enableFace: true 

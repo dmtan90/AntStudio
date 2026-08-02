@@ -1,21 +1,116 @@
 {
   "name": "antstudio",
+  "version": "1.0.0",
+  "description": "AntStudio Video Creation Platform",
+  "author": "AntStudio Team",
   "private": true,
+  "main": "electron/main.cjs",
   "scripts": {
     "dev:client": "pnpm --filter client dev",
     "dev:server": "pnpm --filter server dev",
-    "dev": "pnpm dev:client & pnpm dev:server",
+    "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:client\"",
+    "dev:electron": "concurrently \"pnpm run dev:server\" \"pnpm run dev:client\" \"electron .\"",
+    "start:client": "pnpm --filter client preview",
+    "start:server": "pnpm --filter server start",
+    "start:silent": "electron . --silent",
     "build": "pnpm run build:client && pnpm run build:server",
     "build:client": "pnpm --filter client build",
     "build:client-only": "pnpm --filter client build:only",
     "build:server": "pnpm --filter server build",
-    "install:all": "pnpm install",
-    "build:standalone": "node server/scripts/build-standalone.cjs"
+    "build:electron": "node electron/build.cjs",
+    "build:electron:embedded": "node electron/build.cjs --env=.env",
+    "build:electron:win": "node electron/build.cjs --target=win",
+    "build:electron:linux": "node electron/build.cjs --target=linux",
+    "build:electron:mac": "node electron/build.cjs --target=mac",
+    "build:electron:all": "node electron/build.cjs --target=all",
+    "build:genblaze": "pnpm --filter genblaze build",
+    "install:all": "pnpm install"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "form-data": "^4.0.5"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "vite-plugin-pwa": "^1.2.0"
+  },
+  "build": {
+    "appId": "com.antstudio.app",
+    "productName": "AntStudio",
+    "executableName": "AntStudio",
+    "npmRebuild": false,
+    "directories": {
+      "output": "electron/dist"
+    },
+    "files": [
+      "electron/**/*",
+      "!electron/dist/**/*",
+      "!electron/server-deps/**/*",
+      "server/dist/**/*",
+      "server/bin/**/*",
+      "server/package.json",
+      "package.json",
+      {
+        "from": "electron/server-deps/node_modules",
+        "to": "node_modules",
+        "filter": ["**/*"]
+      }
+    ],
+    "asarUnpack": [
+      "**/*.node",
+      "**/*.wasm",
+      "**/@ffmpeg-installer/**/*",
+      "**/@ffprobe-installer/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "electron/start-silent.bat",
+        "to": "start-silent.bat"
+      },
+      {
+        "from": "electron/start-silent.sh",
+        "to": "start-silent.sh"
+      }
+    ],
+    "extraResources": [
+      {
+        "from": "electron/.env.enc",
+        "to": ".env.enc"
+      },
+      {
+        "from": ".env.electron",
+        "to": ".env"
+      },
+      {
+        "from": "client/dist",
+        "to": "client/dist"
+      }
+    ],
+    "cscLink": null,
+    "win": {
+      "icon": "client/public/icon.png",
+      "executableName": "AntStudio",
+      "target": [
+        "dir"
+      ],
+      "verifyUpdateCodeSignature": false
+    },
+    "mac": {
+      "icon": "client/public/icon.png",
+      "executableName": "AntStudio",
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "icon": "client/public/icon.png",
+      "executableName": "AntStudio",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
   }
 }

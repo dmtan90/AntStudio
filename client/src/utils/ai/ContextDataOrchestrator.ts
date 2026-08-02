@@ -36,7 +36,7 @@ export class ContextDataOrchestrator {
            this.handleDirectUpdate(e.detail);
         });
 
-        // Phase 37: Listen for verified facts from FactCheckingService
+        // Listen for verified facts from FactCheckingService
         const { factCheckingService } = await import('./FactCheckingService');
         factCheckingService.on('fact:verified', (result: any) => {
             const studioStore = useStudioStore();
@@ -122,13 +122,13 @@ export class ContextDataOrchestrator {
             }
         }
 
-        // Phase 37: Trigger fact-check for substantial claims in news context
+        // Trigger fact-check for substantial claims in news context
         if (text.length > 40 && !text.includes('?')) {
             const { factCheckingService } = await import('./FactCheckingService');
             factCheckingService.analyzeStatement(text, 'News Broadcast');
         }
 
-        // Phase 38: Reactive Research Pulse for News Ticker
+        // Reactive Research Pulse for News Ticker
         if (text.includes('latest') || text.includes('trending') || text.includes('what is happening')) {
             const { neuralResearchService } = await import('./NeuralResearchService');
             neuralResearchService.performResearchPulse();

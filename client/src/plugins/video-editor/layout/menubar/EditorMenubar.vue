@@ -267,7 +267,7 @@ const isFormat = (format) => {
 
     <section id="right" class="ml-auto flex items-center gap-3 relative z-10">
       <!-- Mode Toggle -->
-      <el-button
+      <el-button v-if="projectStore.currentProject && projectStore.currentProject.value?.mode == 'topic'"
         class="cinematic-button !h-9 !px-4 !rounded-xl border-brand-primary/20 text-brand-primary hover:!bg-brand-primary/10 transition-all font-bold flex items-center gap-2"
         @click="projectStore.editorMode = 'simple'" :icon="Robot">
         <span class="text-[10px] uppercase tracking-[0.2em]">Agentic</span>

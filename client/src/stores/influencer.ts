@@ -110,12 +110,25 @@ export const useInfluencerStore = defineStore('influencer', {
         /**
          * Generate a preview for a selected voice.
          */
-        async generateVoicePreview(config: { text: string, provider: string, voiceId: string, language?: string }) {
+        async generateVoicePreview(config: { text: string, provider: string, voiceId: string, language?: string, speed?: number, pitch?: number }) {
             try {
                 const { data } = await api.post('/influencer/voice-preview', config);
                 return data;
             } catch (e: any) {
                 this.error = e.response?.data?.error || 'Failed to generate voice preview';
+                throw e;
+            }
+        },
+
+        /**
+         * Generate AI speech script for avatar.
+         */
+        async generateScript(params: { avatarName?: string; topic?: string; language?: string; style?: string }) {
+            try {
+                const { data } = await api.post('/influencer/ai/generate-script', params);
+                return data;
+            } catch (e: any) {
+                this.error = e.response?.data?.error || 'Failed to generate script';
                 throw e;
             }
         },
@@ -191,9 +204,9 @@ export const useInfluencerStore = defineStore('influencer', {
             }
         },
 
-        async generateProductVideo(influencerId: string, productId: string) {
+        async generateProductVideo(influencerId: string, productId: string, language?: string) {
             try {
-                const res: any = await api.post(`/influencer/${influencerId}/generate-product-video`, { productId }, {
+                const res: any = await api.post(`/influencer/${influencerId}/generate-product-video`, { productId, language }, {
                     timeout: GENERATE_ASSET_TIMEOUT
                 });
                 return res.data?.data || res.data
@@ -387,7 +400,7 @@ export const useInfluencerStore = defineStore('influencer', {
             }
         },
 
-        // --- Phase 1: Interaction Actions ---
+        // --- Interaction Actions ---
 
         /**
          * Trigger Influencer reaction to a chat message

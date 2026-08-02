@@ -17,7 +17,7 @@
             {{ $t(`projects.avatarCreator.steps[${step - 1}]`) }}
           </h2>
           <p class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-            {{ $t('projects.avatarCreator.step', { step }) }}
+            {{ $t('projects.avatarCreator.step', { step, totalSteps: 4 }) }}
           </p>
         </div>
         <div class="flex gap-2">
@@ -47,6 +47,8 @@
                       :backgroundUrl="selectedAvatarData.visual.backgroundUrl || '/bg/pro-studio.jpg'"
                       :modelConfig="selectedAvatarData.visual.modelConfig"
                       :interactive="false"
+                      :videoClips="selectedAvatarData.visual?.aidolClips || {}"
+                      :activeState="activeState"
                       class="w-full h-full"
                     />
                   </div>
@@ -85,12 +87,10 @@
                   </div>
                 </div>
 
-                <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[400px]">
-                  <div v-if="loadingAvatars" class="h-full flex items-center justify-center">
-                    <el-icon class="is-loading text-blue-500 text-3xl"><Loading /></el-icon>
-                  </div>
+                <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[400px]" v-loading="loadingAvatars">
+                  <el-empty v-if="paginatedAvatars.length == 0" description="No avatars found" />
                   <div v-else class="flex flex-col h-full">
-                    <div class="grid grid-cols-3 gap-4 flex-1">
+                    <div class="grid grid-cols-3 gap-4">
                       <div 
                         v-for="av in paginatedAvatars" 
                         :key="av._id"
@@ -105,7 +105,7 @@
                           </div>
                         </div>
                         <div class="px-1 pb-1">
-                          <div class="text-[10px] font-black text-white uppercase truncate">{{ av.name }}</div>
+                          <div class="text-[10px] font-black text-white uppercase truncate">{{ av.identity?.name ?? 'Anonymous' }}</div>
                           <div class="text-[8px] text-white/40 uppercase tracking-widest border-t border-white/5 mt-1 pt-1">
                             {{ av.visual?.modelType || $t('projects.avatarCreator.static') }}
                           </div>
@@ -146,6 +146,8 @@
                     :modelConfig="selectedAvatarData.visual.modelConfig"
                     :speakingVol="previewSpeakingVol"
                     :interactive="false"
+                    :videoClips="selectedAvatarData.visual?.aidolClips || {}"
+                    :activeState="activeState"
                     class="w-full h-full"
                   />
                   
@@ -231,7 +233,7 @@
                     <el-button 
                       link 
                       class="!text-blue-400 !text-[10px] font-black uppercase"
-                      @click="generateAiscript"
+                      @click="generateAiScript"
                       :loading="generatingAiScript"
                     >
                       <Magic theme="outline" class="mr-1" /> {{ $t('projects.avatarCreator.aiWrite') }}
@@ -253,7 +255,7 @@
                 </div>
 
                 <!-- Tools/Settings -->
-                <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                <!-- <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                   <div class="flex items-center gap-3">
                     <div class="p-2 rounded-lg bg-blue-500/10">
                       <Magic theme="outline" class="text-blue-400" />
@@ -268,7 +270,7 @@
                     </div>
                   </div>
                   <el-switch v-model="voiceConfig.enhancedSync" size="small" />
-                </div>
+                </div> -->
               </div>
             </div>
           </div>
@@ -288,6 +290,8 @@
                     :modelConfig="selectedAvatarData.visual.modelConfig"
                     :speakingVol="renderSpeakingVol"
                     :interactive="false"
+                    :videoClips="selectedAvatarData.visual?.aidolClips || {}"
+                    :activeState="activeState"
                     class="w-full h-full"
                   />
                   
@@ -420,6 +424,22 @@
                     </el-button>
                   </div>
                   
+                  <!-- AI Hook Suggestions -->
+                  <div v-if="aiHooks.length > 0" class="ai-hook-lab animate-in fade-in slide-in-from-top-2">
+                    <div class="grid grid-cols-3 gap-2">
+                      <div 
+                        v-for="(hook, idx) in aiHooks" 
+                        :key="idx"
+                        class="hook-variant p-2.5 rounded-2xl border cursor-pointer transition-all text-left"
+                        :class="selectedHookIdx === idx ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'"
+                        @click="applyHook(idx)"
+                      >
+                        <div class="text-[8px] font-black uppercase tracking-widest mb-1 text-blue-400 opacity-80">{{ hook.type }}</div>
+                        <div class="text-[10px] font-bold text-white truncate leading-tight">{{ hook.title }}</div>
+                      </div>
+                    </div>
+                  </div>
+
                   <el-input 
                     v-model="publishMetadata.title" 
                     :placeholder="$t('projects.avatarCreator.videoTitle')" 
@@ -620,6 +640,8 @@ const isPublishing = ref(false);
 const selectedAccountIds = ref<string[]>([]);
 const publishMetadata = ref({ title: '', description: '' });
 const loadingHooks = ref(false);
+const aiHooks = ref<any[]>([]);
+const selectedHookIdx = ref<number | null>(null);
 
 const estimatedDuration = computed(() => {
   // Rough estimate: 150 words per minute
@@ -646,6 +668,13 @@ const isStepValid = computed(() => {
   if (step.value === 1) return !!selectedAvatarId.value;
   if (step.value === 2) return script.value.trim().length > 10 && !!voiceConfig.value.voiceId;
   return true;
+});
+
+const activeState = computed(() => {
+  if(selectedAvatarData.value && selectedAvatarData.value.visual.modelType == "aidol" && selectedAvatarData.value.visual.aidolClips['speaking']){
+    return "speaking";
+  }
+  return "idle";
 });
 
 // Logic
@@ -683,12 +712,14 @@ const previewVoiceWithSync = async () => {
     previewLoading.value = true;
     let audioUrl = voiceConfig.value.sampleUrl;
 
-    if (!audioUrl) {
+    if (!audioUrl || voiceConfig.value.speed !== 1.0 || voiceConfig.value.pitch !== 0) {
       const data = await influencerStore.generateVoicePreview({
-        text: t('projects.avatarCreator.toasts.voicePreviewDefault'),
+        text: script.value || t('projects.avatarCreator.toasts.voicePreviewDefault'),
         provider: voiceConfig.value.provider,
         voiceId: voiceConfig.value.voiceId,
-        language: voiceConfig.value.language || 'en-US'
+        language: voiceConfig.value.language || 'en-US',
+        speed: voiceConfig.value.speed,
+        pitch: voiceConfig.value.pitch
       });
       audioUrl = data?.audioUrl;
     }
@@ -756,14 +787,23 @@ const stopPreviewSync = () => {
   previewSpeakingVol.value = 0;
 };
 
-const generateAiscript = async () => {
+const generateAiScript = async () => {
   try {
     generatingAiScript.value = true;
-    // Mock AI script generation
-    await new Promise(r => setTimeout(r, 2000));
-    const hostName = selectedAvatarData.value?.name || t('projects.avatarCreator.defaultScriptFallback');
-    script.value = t('projects.avatarCreator.defaultScript', { name: hostName });
-    toast.success(t('projects.avatarCreator.toasts.scriptGenerated'));
+    const hostName = selectedAvatarData.value?.identity?.name;
+    if (!hostName) throw new Error('No avatar selected');
+    const res = await influencerStore.generateScript({
+      avatarName: hostName,
+      topic: script.value || 'Introduce AI Avatars and video synthesis capabilities',
+      language: voiceConfig.value?.language || 'en'
+    });
+
+    if (res?.script) {
+      script.value = res.script;
+      toast.success(t('projects.avatarCreator.toasts.scriptGenerated'));
+    } else {
+      throw new Error('No script generated');
+    }
   } catch (e) {
     toast.error(t('projects.avatarCreator.toasts.scriptFailed'));
   } finally {
@@ -779,12 +819,14 @@ const startRendering = async () => {
   exportUrl.value = '';
   
   try {
-    // 1. Generate FULL TTS Audio
+    // 1. Generate FULL TTS Audio with Speed & Pitch settings
     const voiceData = await influencerStore.generateVoicePreview({
       text: script.value,
       provider: voiceConfig.value.provider,
       voiceId: voiceConfig.value.voiceId,
-      language: voiceConfig.value.language
+      language: voiceConfig.value.language,
+      speed: voiceConfig.value.speed,
+      pitch: voiceConfig.value.pitch
     });
 
     if (!voiceData || !voiceData.audioUrl) throw new Error('Failed to synthesize audio');
@@ -844,7 +886,7 @@ const startRendering = async () => {
       const videoBlob = await capturePromise;
       if (videoBlob) {
         exportUrl.value = URL.createObjectURL(videoBlob);
-        publishMetadata.value.title = t('projects.avatarCreator.defaultTitlePrefix') + (selectedAvatarData.value?.name || '');
+        publishMetadata.value.title = selectedAvatarData.value?.identity?.name || t('projects.avatarCreator.defaultTitlePrefix');
         publishMetadata.value.description = script.value;
         toast.success(t('projects.avatarCreator.toasts.videoCaptured'));
       }
@@ -877,17 +919,16 @@ const handleExportProject = async () => {
         const file = new File([blob], `avatar_render_${Date.now()}.webm`, { type: 'video/webm' });
         
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('purpose', 'avatar-render');
+        formData.append('video', file);
         // const uploadRes = await mediaStore.uploadMedia(formData);
         
         let data = await projectStore.createProject({
             title: publishMetadata.value.title,
             description: publishMetadata.value.description,
             mode: 'avatar',
-            aspectRatio: "16:9",
-            videoStyle: "",
-            targetDuration: 15,
+            aspectRatio: "9:16",
+            videoStyle: "AI Avatar",
+            targetDuration: estimatedDuration.value,
             input: {
               topic: publishMetadata.value.description
             },
@@ -945,13 +986,26 @@ const toggleAccount = (id: string) => {
 const generateViralHooks = async () => {
     loadingHooks.value = true;
     try {
-        // Placeholder for AI Hook generation logic if needed
-        setTimeout(() => {
+        const context = script.value || selectedAvatarData.value?.identity?.description || 'AI Avatar Video';
+        const hooks = await platformStore.generateHooks('', context);
+        if (hooks && hooks.length > 0) {
+            aiHooks.value = hooks;
             toast.success(t('projects.avatarCreator.toasts.hooksGenerated'));
-            loadingHooks.value = false;
-        }, 1500);
-    } catch(e) {
+        }
+    } catch(e: any) {
+        toast.error('Failed to generate AI suggestions');
+    } finally {
         loadingHooks.value = false;
+    }
+};
+
+const applyHook = (idx: number) => {
+    selectedHookIdx.value = idx;
+    const hook = aiHooks.value[idx];
+    if (hook) {
+        publishMetadata.value.title = hook.title;
+        publishMetadata.value.description = hook.description;
+        toast.success(t('projects.avatarCreator.toasts.hookApplied'));
     }
 };
 
@@ -982,7 +1036,9 @@ const resetWizard = () => {
 };
 
 onMounted(() => {
+  console.log("onMounted!");
   loadAvatars();
+  platformStore.fetchAccounts();
 });
 
 watch(isVisible, (val) => {

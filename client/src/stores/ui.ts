@@ -7,7 +7,8 @@ export const useUIStore = defineStore('ui', {
         appName: 'AntStudio',
         logo: '',
         favicon: '',
-        domain: window?.location?.origin || 'https://studio.agrhub.com',
+        domain: window?.location?.origin || 'https://antstudio.agrhub.com',
+        creditModeEnabled: false,
     }),
     actions: {
         toggleSidebar() {
@@ -16,11 +17,12 @@ export const useUIStore = defineStore('ui', {
         setSidebarCollapsed(value: boolean) {
             this.sidebarCollapsed = value
         },
-        setAppConfig(config: { appName?: string; logo?: string; favicon?: string, domain?: string }) {
+        setAppConfig(config: { appName?: string; logo?: string; favicon?: string, domain?: string, creditModeEnabled?: boolean }) {
             if (config.appName) this.appName = config.appName
             if (config.logo) this.logo = config.logo
             if (config.favicon) this.favicon = config.favicon
             if (config.domain) this.domain = config.domain ?? this.domain;
+            if (config.creditModeEnabled !== undefined) this.creditModeEnabled = config.creditModeEnabled;
 
             // Update document title and favicon
             if (config.appName) document.title = config.appName

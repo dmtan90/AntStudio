@@ -7,7 +7,7 @@
 // Global Styles using tokens
 html, body {
     height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden;
     margin: 0;
     padding: 0;
 }
@@ -42,16 +42,16 @@ body {
 
 // Unified Typography
 .glow-title {
-    font-size: 48px;
+    font-size: 24px;
     font-weight: 800;
     @include text-gradient(linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%));
-    letter-spacing: -1.5px;
+    letter-spacing: -1px;
     margin: 0;
 }
 
 .subtitle {
     color: $text-secondary;
-    font-size: 16px;
+    font-size: 12px;
     margin-top: $spacing-sm;
 }
 
@@ -89,7 +89,7 @@ body {
         .el-dialog__title {
             color: #fff;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 14px;
         }
     }
 }

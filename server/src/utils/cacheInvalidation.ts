@@ -1,4 +1,4 @@
-import { redisService } from '../services/RedisService.js';
+import { redisService } from '../services/system/RedisService.js';
 
 export class CacheInvalidator {
     static async onProjectUpdate(projectId: string, userId: string) {

@@ -1,58 +1,75 @@
 import { Router } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
-import { geminiLiveService } from '~/services/GeminiLiveService.js';
+import { geminiLiveService } from '~/services/ai/GeminiLiveService.js';
 import { Influencer } from '~/models/Influencer.js';
 import { GeminiLiveSession } from '~/models/GeminiLiveSession.js';
 import { verifyToken } from '~/utils/jwt.js';
 import { authMiddleware, AuthRequest } from '~/middleware/auth.js';
 import { aiGuestService } from '~/services/ai/AIGuestService.js';
 import { Logger } from '../utils/Logger.js';
+import { streamingService } from '~/services/streaming/StreamingService.js';
+import { productKnowledgeService } from '~/services/ai/ProductKnowledgeService.js';
+import { Product } from '~/models/Product.js';
+import { AIServiceManager } from '~/utils/ai/AIServiceManager.js';
+import { AIAccountProvider } from '~/models/AIAccount.js';
 
+import { socketServer } from '~/services/streaming/SocketServer.js';
+import { Socket } from 'socket.io';
+
+const axios = (await import('axios')).default;
 const router = Router();
 
-// Store WebSocket server instance
-let wss: WebSocketServer | null = null;
-const activeWebSockets = new Map<string, WebSocket>();
+// Store active Socket.io sockets for live sessions
+const activeWebSockets = new Map<string, Socket>();
 
 // Listen for session closures
 geminiLiveService.on('session:closed', ({ sessionId }) => {
-    const ws = activeWebSockets.get(sessionId);
-    if (ws) {
-        Logger.info(`[LiveWS] Closing WebSocket for session ${sessionId} because Gemini session ended.`, 'LiveWS');
-        ws.close(4000, 'Gemini Session Ended');
+    const socket = activeWebSockets.get(sessionId);
+    if (socket) {
+        Logger.info(`Closing Live Socket for session ${sessionId} because Gemini session ended.`, 'LiveWS');
+        socket.emit('message', { type: 'error', message: 'Gemini Session Ended' });
+        socket.disconnect(true);
         activeWebSockets.delete(sessionId);
     }
 });
 
 /**
- * Initialize WebSocket server
+ * Initialize Live WebSocket server via Socket.io (/live namespace)
  */
 export function initializeLiveWebSocket(server: Server) {
-    wss = new WebSocketServer({ 
-        server,
-        path: '/api/live'
-    });
+    const io = socketServer.getIO();
+    if (!io) {
+        Logger.warn('[LiveWS] SocketServer.getIO() is null, live namespace deferred', 'LiveWS');
+        return;
+    }
 
-    wss.on('connection', async (ws: WebSocket, req) => {
-        Logger.info('[LiveWS] New WebSocket connection');
+    const liveNamespace = io.of('/live');
 
-        // Extract params from query
-        const url = new URL(req.url!, `http://${req.headers.host}`);
-        const archiveId = url.searchParams.get('archiveId');
-        const token = url.searchParams.get('token');
-        const projectId = url.searchParams.get('projectId');
-        const isMaster = url.searchParams.get('isMaster') === 'true';
-        const liveContext = url.searchParams.get('liveContext') || undefined;
-        const productIds = url.searchParams.get('productIds');
-        const resumeSessionId = url.searchParams.get('resumeSessionId');
+    liveNamespace.on('connection', async (socket: Socket) => {
+        Logger.info(`New Live Socket.io connection: ${socket.id}`, 'LiveWS');
+
+        const query = socket.handshake.query;
+        const archiveId = query.archiveId as string;
+        const token = query.token as string;
+        const projectId = query.projectId as string;
+        const isMaster = query.isMaster === 'true';
+        const liveContext = (query.liveContext as string) || undefined;
+        const productIds = query.productIds as string;
+        const language = (query.language as string) || undefined;
+        const resumeSessionId = query.resumeSessionId as string;
         let sessionId: string | null = resumeSessionId;
         let isResumed = false;
 
+        const sendJSON = (data: any) => {
+            if (socket.connected) {
+                socket.emit('message', data);
+            }
+        };
 
         if (!archiveId) {
-            ws.send(JSON.stringify({ type: 'error', message: 'Missing archiveId' }));
-            ws.close();
+            sendJSON({ type: 'error', message: 'Missing archiveId' });
+            socket.disconnect(true);
             return;
         }
 
@@ -63,25 +80,23 @@ export function initializeLiveWebSocket(server: Server) {
             if (decoded) {
                 userId = decoded.userId;
             } else {
-                // Phase 90: Try Guest Token fallback
-                const { streamingService } = await import('~/services/StreamingService.js');
                 const guestInfo = await streamingService.validateGuestToken(token);
                 if (guestInfo) {
                     userId = archiveId; // Use archiveId as the "acting" userId for guests
-                    Logger.info(`[LiveWS] Authenticated as guest via token for archive ${archiveId}`, 'LiveWS');
+                    Logger.info(`Authenticated as guest via token for archive ${archiveId}`, 'LiveWS');
                 } else {
-                    ws.send(JSON.stringify({ type: 'error', message: 'Invalid or expired token' }));
-                    ws.close();
+                    sendJSON({ type: 'error', message: 'Invalid or expired token' });
+                    socket.disconnect(true);
                     return;
                 }
             }
         } else {
-            Logger.warn('[LiveWS] Connection without token, using system user');
+            Logger.warn('Connection without token, using system user');
         }
 
         try {
             // Load Influencer configuration
-            Logger.info(`[LiveWS] Loading Influencer configuration for archiveId: ${archiveId}`, 'LiveWS');
+            Logger.info(`Loading Influencer configuration for archiveId: ${archiveId}`, 'LiveWS');
             const archive = await Influencer.findOne({ 
                 $or: [
                     { entityId: archiveId },
@@ -89,8 +104,8 @@ export function initializeLiveWebSocket(server: Server) {
                 ]
             });
             if (!archive) {
-                ws.send(JSON.stringify({ type: 'error', message: 'Influencer not found' }));
-                ws.close();
+                sendJSON({ type: 'error', message: 'Influencer not found' });
+                socket.disconnect(true);
                 return;
             }
 
@@ -100,9 +115,9 @@ export function initializeLiveWebSocket(server: Server) {
             if (sessionId) {
                 isResumed = geminiLiveService.resumeSession(sessionId);
                 if (isResumed) {
-                    Logger.info(`[LiveWS] Resumed existing session ${sessionId} for archive ${archiveId}`, 'LiveWS');
+                    Logger.info(`Resumed existing session ${sessionId} for archive ${archiveId}`, 'LiveWS');
                 } else {
-                    Logger.warn(`[LiveWS] Failed to resume session ${sessionId}, creating new one.`, 'LiveWS');
+                    Logger.warn(`Failed to resume session ${sessionId}, creating new one.`, 'LiveWS');
                     sessionId = null;
                 }
             }
@@ -110,36 +125,30 @@ export function initializeLiveWebSocket(server: Server) {
             if (!sessionId) {
                 let systemInstruction = archive.identity?.description || 'You are a helpful AI assistant.';
 
-                // Phase 11: Context Injection — Inject Distilled Product Knowledge
+                // Context Injection — Inject Distilled Product Knowledge
                 if (liveContext === 'sales') {
                     try {
-                        const { productKnowledgeService } = await import('~/services/ai/ProductKnowledgeService.js');
-                        const { Product } = await import('~/models/Product.js');
-                        
-                        // Fetch active products for this user, optionally filtered by productIds
-                        const query: any = { userId, isActive: true };
+                        const queryObj: any = { userId, isActive: true };
                         if (productIds) {
                             const ids = productIds.split(',').filter(id => id.length > 0);
                             if (ids.length > 0) {
-                                query._id = { $in: ids };
+                                queryObj._id = { $in: ids };
                             }
                         }
 
-                        const products = await Product.find(query).select('_id name description price currency features inventoryUrl knowledgeBase knowledgeStatus');
+                        const products = await Product.find(queryObj).select('_id name description price currency features inventoryUrl knowledgeBase knowledgeStatus');
 
                         if (products.length > 0) {
                             let knowledgePrompts = '\n\n--- PRODUCT KNOWLEDGE BASE ---\nThese are the products you are selling today. Use this information accurately when pitching or answering questions:\n\n';
                             
                             for (const p of products) {
                                 if (p.knowledgeStatus === 'ready' && p.knowledgeBase) {
-                                    // Full distilled knowledge available
                                     const kp = await productKnowledgeService.getKnowledgePrompt(p._id.toString());
                                     if (kp) {
                                         knowledgePrompts += kp.replace(`## Product Knowledge: ${p.name}`, `## Product: ${p.name} (ID: ${p._id.toString()})`);
                                         knowledgePrompts += '\n\n';
                                     }
                                 } else {
-                                    // Fallback: basic product info from DB fields
                                     knowledgePrompts += `## Product: ${p.name} (ID: ${p._id.toString()})\n`;
                                     knowledgePrompts += `- Price: ${p.price} ${p.currency}\n`;
                                     if (p.description) knowledgePrompts += `- Description: ${p.description}\n`;
@@ -148,9 +157,9 @@ export function initializeLiveWebSocket(server: Server) {
 
                                     // Auto-trigger background ingestion if inventoryUrl exists and not already processing
                                     if (p.inventoryUrl && p.knowledgeStatus !== 'processing') {
-                                        Logger.info(`[LiveWS] Auto-triggering knowledge ingestion for product: ${p.name}`, 'LiveWS');
+                                        Logger.info(`Auto-triggering knowledge ingestion for product: ${p.name}`, 'LiveWS');
                                         productKnowledgeService.ingestProduct(p._id.toString()).catch((err: any) => {
-                                            Logger.warn(`[LiveWS] Background ingestion failed for ${p.name}: ${err.message}`, 'LiveWS');
+                                            Logger.warn(`Background ingestion failed for ${p.name}: ${err.message}`, 'LiveWS');
                                         });
                                     }
                                 }
@@ -158,10 +167,10 @@ export function initializeLiveWebSocket(server: Server) {
                             
                             knowledgePrompts += '--- END PRODUCT KNOWLEDGE ---\n';
                             systemInstruction += knowledgePrompts;
-                            Logger.info(`[LiveWS] Injected product knowledge for ${products.length} products into system instructions.`, 'LiveWS');
+                            Logger.info(`Injected product knowledge for ${products.length} products into system instructions.`, 'LiveWS');
                         }
                     } catch (knowledgeErr: any) {
-                        Logger.error('[LiveWS] Failed to inject product knowledge:', 'LiveWS', knowledgeErr);
+                        Logger.error('Failed to inject product knowledge:', 'LiveWS', knowledgeErr);
                     }
                 }
 
@@ -175,23 +184,110 @@ export function initializeLiveWebSocket(server: Server) {
                     isMaster,
                     liveContext: liveContext || undefined,
                     modelType: archive.visual?.modelType,
-                    language: archive.meta?.voiceConfig?.language || 'en-US'
+                    language: language || archive.meta?.voiceConfig?.language || 'en-US'
                 });
 
-                Logger.info(`[LiveWS] Created new session ${sessionId} for archive ${archiveId}`, 'LiveWS');
+                Logger.info(`Created new session ${sessionId} for archive ${archiveId}`, 'LiveWS');
             }
 
+            // Store active socket and disconnect any old duplicate socket
+            const existingSocket = activeWebSockets.get(sessionId);
+            if (existingSocket && existingSocket !== socket) {
+                Logger.info(`Disconnecting duplicate active socket for session ${sessionId}`, 'LiveWS');
+                existingSocket.disconnect(true);
+            }
+            activeWebSockets.set(sessionId, socket);
+
             // Send connection success
-            ws.send(JSON.stringify({ 
+            sendJSON({ 
                 type: 'connected', 
                 sessionId,
-                voiceName,
                 isResumed,
-                archiveName: archive.identity?.name,
+                voiceName,
+                archiveName: archive.identity?.name || archive.entityId || 'Noname',
                 liveContext
-            }));
+            });
 
-            // --- Handlers Setup ---
+            // Handlers Setup
+            const handleAudioChunk = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ 
+                        type: 'audio', 
+                        data: data.audioData, 
+                        mimeType: data.mimeType,
+                        turnComplete: data.turnComplete
+                    });
+                }
+            };
+
+            const handleTextResponse = async (data: any) => {
+                if (data.sessionId === sessionId) {
+                    let responseData: any = { type: 'text', text: data.text, isConsolidated: false };
+                    try {
+                        const normalized = await aiGuestService.normalizeLiveResponse(data.text);
+                        responseData = { ...responseData, ...normalized, isConsolidated: true };
+                    } catch (e: any) { }
+                    sendJSON(responseData);
+                }
+            };
+
+            const handleInterrupted = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'interrupted' });
+                }
+            };
+
+            const handleSessionError = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'error', message: data.error });
+                }
+            };
+
+            const handleTokenRefreshed = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'token_refreshed', accessToken: data.accessToken });
+                }
+            };
+
+            const handleToolCall = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'tool_call', toolCall: data.toolCall });
+                }
+            };
+
+            const handleSwarmMessage = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'swarm_message', fromAgent: data.fromAgent, toAgent: data.toAgent, payload: data.payload, timestamp: data.timestamp });
+                }
+            };
+
+            const handleQuestCreated = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'quest_created', ...data });
+                }
+            };
+            const handleQuestUpdated = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'quest_updated', ...data });
+                }
+            };
+            const handleQuestFloor = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'quest_floor_assigned', ...data });
+                }
+            };
+            const handleQuestEvaluated = (data: any) => {
+                 if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'quest_evaluated', ...data });
+                }
+            };
+
+            const handleTurnComplete = (data: any) => {
+                if (data.sessionId === sessionId) {
+                    sendJSON({ type: 'turn_complete' });
+                }
+            };
+
             const cleanupHandlers = () => {
                 geminiLiveService.off('audio:chunk', handleAudioChunk);
                 geminiLiveService.off('text:response', handleTextResponse);
@@ -204,96 +300,20 @@ export function initializeLiveWebSocket(server: Server) {
                 geminiLiveService.off('quest:updated', handleQuestUpdated);
                 geminiLiveService.off('quest:floor_assigned', handleQuestFloor);
                 geminiLiveService.off('quest:evaluated', handleQuestEvaluated);
+                geminiLiveService.off('turn:complete', handleTurnComplete);
             };
 
-            const handleAudioChunk = (data: any) => {
-                // Logger.info('[LiveWS] Audio chunk received:', data.audioData.length, 'bytes');
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'audio', data: data.audioData, mimeType: data.mimeType }));
-                }
-            };
-
-            const handleTextResponse = async (data: any) => {
-                Logger.info(`[LiveWS] Text response received: ${data.text}`, 'LiveWS');
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    let responseData: any = { type: 'text', text: data.text, isConsolidated: false };
-                    try {
-                        const normalized = await aiGuestService.normalizeLiveResponse(data.text);
-                        responseData = { ...responseData, ...normalized, isConsolidated: true };
-                    } catch (e: any) { }
-                    ws.send(JSON.stringify(responseData));
-                }
-            };
-
-            const handleInterrupted = (data: any) => {
-                Logger.info('[LiveWS] Interrupted:', 'LiveWS', data);
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'interrupted' }));
-                }
-            };
-
-            const handleSessionError = (data: any) => {
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'error', message: data.error }));
-                }
-            };
-
-            const handleTokenRefreshed = (data: any) => {
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'token_refreshed', accessToken: data.accessToken }));
-                }
-            };
-
-            const handleToolCall = (data: any) => {
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'tool_call', toolCall: data.toolCall }));
-                }
-            };
-
-            const handleSwarmMessage = (data: any) => {
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'swarm_message', fromAgent: data.fromAgent, toAgent: data.toAgent, payload: data.payload, timestamp: data.timestamp }));
-                }
-            };
-
-            const handleQuestCreated = (data: any) => {
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'quest_created', ...data }));
-                }
-            };
-            const handleQuestUpdated = (data: any) => {
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'quest_updated', ...data }));
-                }
-            };
-            const handleQuestFloor = (data: any) => {
-                if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'quest_floor_assigned', ...data }));
-                }
-            };
-            const handleQuestEvaluated = (data: any) => {
-                 if (data.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'quest_evaluated', ...data }));
-                }
-            };
-
-            // Register Basic Handlers
+            // Register Handlers
             geminiLiveService.on('audio:chunk', handleAudioChunk);
             geminiLiveService.on('text:response', handleTextResponse);
             geminiLiveService.on('token:refreshed', handleTokenRefreshed);
-            // Note: Context-specific handlers are registered above
             geminiLiveService.on('session:interrupted', handleInterrupted);
             geminiLiveService.on('session:error', handleSessionError);
             geminiLiveService.on('tool:call', handleToolCall);
             geminiLiveService.on('swarm:message', handleSwarmMessage);
+            geminiLiveService.on('turn:complete', handleTurnComplete);
 
-            // Register Context-Specific Handlers
-            if (liveContext === 'sales') {
-                Logger.info(`[LiveWS] Setting up Sales handlers for session ${sessionId}`, 'LiveWS');
-                // Sale-specific tool forwarding is already handled by generic tool:call
-                // But we could add more specific logic here if needed
-            } else if (liveContext === 'gameshow') {
-                Logger.info(`[LiveWS] Setting up GameShow handlers for session ${sessionId}`, 'LiveWS');
+            if (liveContext === 'gameshow') {
                 geminiLiveService.on('quest:created', handleQuestCreated);
                 geminiLiveService.on('quest:updated', handleQuestUpdated);
                 geminiLiveService.on('quest:floor_assigned', handleQuestFloor);
@@ -301,145 +321,116 @@ export function initializeLiveWebSocket(server: Server) {
             }
 
             // Handle incoming messages from client
-            ws.on('message', async (message: Buffer) => {
+            socket.on('message', async (data: any) => {
                 try {
-                    const data = JSON.parse(message.toString());
-                    Logger.info(`[LiveWS] Message received: ${data.type}`, 'LiveWS');
+                    const message = typeof data === 'string' ? JSON.parse(data) : data;
+                    Logger.info(`Live Socket message received: ${message.type}`, 'LiveWS');
 
-                    if (data.type === 'audio' && sessionId) {
-                        // Forward audio to Gemini Live API
+                    if (message.type === 'audio' && sessionId) {
                         geminiLiveService.sendAudio(sessionId, {
-                            data: data.data,
-                            mimeType: data.mimeType || 'audio/pcm;rate=16000'
+                            data: message.data,
+                            mimeType: message.mimeType || 'audio/pcm;rate=16000'
                         });
-                    } else if (data.type === 'text' && sessionId) {
-                        // Forward text to Gemini Live API
-                        await geminiLiveService.sendText(sessionId, data.text);
-                    } else if (data.type === 'video' && sessionId) {
-                        // Forward video/image frame to Gemini Live API
+                    } else if (message.type === 'text' && sessionId) {
+                        await geminiLiveService.sendText(sessionId, message.text);
+                    } else if (message.type === 'video' && sessionId) {
                         geminiLiveService.sendVideo(sessionId, {
-                            data: data.data,
-                            mimeType: data.mimeType || 'image/jpeg'
+                            data: message.data,
+                            mimeType: message.mimeType || 'image/jpeg'
                         });
-                    } else if (data.type === 'tool_response' && sessionId) {
-                        // Forward tool response to Gemini Live API
-                        geminiLiveService.sendToolResponse(sessionId, data.functionResponses);
-                    } else if (data.type === 'talk') {
-                        // Unified 'Talk' handler for Standard mode Influencers over WebSocket
-                        const { prompt, context } = data;
-                        Logger.info(`[LiveWS] Talk request received for archive ${archiveId}: ${sessionId ? '(Routing to Live API)' : '(Routing to GuestService)'} ${prompt.substring(0, 50)}`, 'LiveWS');
-
+                    } else if (message.type === 'tool_response' && sessionId) {
+                        geminiLiveService.sendToolResponse(sessionId, message.functionResponses);
+                    } else if (message.type === 'talk') {
+                        const { prompt, context } = message;
                         if (sessionId) {
-                            // Forward to Gemini Live API
                             await geminiLiveService.sendText(sessionId, prompt);
                             return;
                         }
 
-                        // Use AIGuestService to generate dialogue (Integrated TTS)
-                        // Using dynamic import to avoid circular dependency or early loading issues
-                        const { aiGuestService } = await import('../services/ai/AIGuestService.js');
                         const result = await aiGuestService.generateGuestDialogue(userId, archiveId, prompt, context);
 
-                        // 1. Send text metadata immediately
-                        ws.send(JSON.stringify({
+                        sendJSON({
                             type: 'text',
                             text: result.text,
                             emotion: result.emotion,
                             gesture: result.gesture,
                             action: result.action,
                             actionPayload: result.actionPayload,
-                            isConsolidated: true // Mark as coming from the unified WebSocket talk path
-                        }));
+                            isConsolidated: true
+                        });
 
-                        // 2. Stream audio if generated
                         if (result.audioUrl) {
                             try {
-                                const axios = (await import('axios')).default;
                                 const response = await axios.get(result.audioUrl, { responseType: 'arraybuffer' });
                                 const audioBuffer = Buffer.from(response.data);
 
-                                // Send as a single message for reliable decoding by audioContext.decodeAudioData
-                                ws.send(JSON.stringify({
+                                sendJSON({
                                     type: 'audio',
                                     data: audioBuffer.toString('base64'),
                                     mimeType: 'audio/mpeg'
-                                }));
+                                });
                             } catch (audioError: any) {
-                                Logger.error(`[LiveWS] Failed to stream audio for talk: ${audioError.message}`, 'LiveWS', audioError);
+                                Logger.error(`Failed to stream audio for talk: ${audioError.message}`, 'LiveWS', audioError);
                             }
-                        } else if (data.type === 'speak_directive' && sessionId) {
-                        // Phase 10: Proactive script performance via TTS
-                        // Generates exact audio from a script and streams it to the client
-                        const { text, voiceName: directiveVoice } = data;
+                        }
+                    } else if (message.type === 'speak_directive' && sessionId) {
+                        const { text, voiceName: directiveVoice } = message;
                         if (text) {
                             try {
-                                Logger.info(`[LiveWS] speak_directive: generating TTS for ${text.substring(0, 60)}...`, 'LiveWS');
-                                const { GeminiClient } = await import('../integrations/ai/GeminiClient.js');
-                                const geminiClient = new GeminiClient({});
+                                const aiServiceManager = AIServiceManager.getInstance();
                                 const selectedVoice = directiveVoice || archive.meta?.voiceConfig?.voiceId || 'Puck';
-                                const audioResult = await geminiClient.generateAudio(text, selectedVoice);
-
+                                const audioResult = await aiServiceManager.generateAudio(text, undefined, AIAccountProvider.GEMINI, {voiceId: selectedVoice});
+                                
                                 if (audioResult?.url) {
-                                    const axios = (await import('axios')).default;
                                     const response = await axios.get(audioResult.url, { responseType: 'arraybuffer' });
                                     const audioBuffer = Buffer.from(response.data);
 
-                                    ws.send(JSON.stringify({
+                                    sendJSON({
                                         type: 'audio',
                                         data: audioBuffer.toString('base64'),
                                         mimeType: audioResult.mimeType || 'audio/mpeg',
                                         source: 'speak_directive'
-                                    }));
+                                    });
 
-                                    // Inject into live session history as a memo so the LLM knows what was spoken
                                     await geminiLiveService.sendText(sessionId, `[SYSTEM NOTE: You just spoke the following exact text to the audience: "${text}" — Do not repeat it. Continue naturally from here.]`);
                                 }
                             } catch (speakError: any) {
-                                Logger.error(`[LiveWS] speak_directive TTS failed: ${speakError.message}`, 'LiveWS', speakError);
-                                ws.send(JSON.stringify({ type: 'error', message: `speak_directive failed: ${speakError.message}` }));
+                                Logger.error(`speak_directive TTS failed: ${speakError.message}`, 'LiveWS', speakError);
+                                sendJSON({ type: 'error', message: `speak_directive failed: ${speakError.message}` });
                             }
                         }
-                    } else if (data.type === 'chat_message' && sessionId) {
-                        // Phase 11: Q&A Bridge — buyer comment forwarded to Gemini Live for response
-                        const { username, text: chatText } = data;
+                    } else if (message.type === 'chat_message' && sessionId) {
+                        const { username, text: chatText } = message;
                         if (chatText) {
-                            const prompt = `[Live Chat from ${username || 'Viewer'}]: ${chatText}`;
-                            Logger.info(`[LiveWS] chat_message → Live API: ${prompt.substring(0, 80)}`, 'LiveWS');
+                            const prompt = `Chat from ${username || 'Viewer'}]: ${chatText}`;
                             await geminiLiveService.sendText(sessionId, prompt);
                         }
                     }
-                    }
                 } catch (error: any) {
-                    Logger.error('[LiveWS] Error processing message:', 'LiveWS', error);
-                    ws.send(JSON.stringify({ type: 'error', message: error.message }));
+                    Logger.error('Error processing Socket message:', 'LiveWS', error);
+                    sendJSON({ type: 'error', message: error.message });
                 }
             });
 
-            // Track WebSocket by sessionId for clean closure (Phase 2)
-            activeWebSockets.set(sessionId, ws);
-
-            // Handle client disconnect
-            ws.on('close', () => {
-                Logger.info(`[LiveWS] Client disconnected, marking session ${sessionId} for graceful cleanup.`, 'LiveWS');
+            socket.on('disconnect', () => {
+                Logger.info(`Live Socket disconnected for session ${sessionId}`, 'LiveWS');
                 if (sessionId) {
-                    if (activeWebSockets.get(sessionId) === ws) {
+                    if (activeWebSockets.get(sessionId) === socket) {
                         activeWebSockets.delete(sessionId);
                     }
                     geminiLiveService.disconnectSession(sessionId);
                 }
-
-                // Unified cleanup of event listeners
                 cleanupHandlers();
             });
 
         } catch (error: any) {
-            Logger.error('[LiveWS] Error setting up session:', 'LiveWS', error);
-            ws.send(JSON.stringify({ type: 'error', message: error.message }));
-            ws.close();
+            Logger.error('Error setting up Live Socket session:', 'LiveWS', error);
+            sendJSON({ type: 'error', message: error.message });
+            socket.disconnect(true);
         }
     });
 
-    Logger.info('[LiveWS] WebSocket server initialized on /live');
+    Logger.info('Socket.io Live Studio namespace initialized on /live', 'LiveWS');
 }
 
 /**

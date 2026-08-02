@@ -1,11 +1,11 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { AIAccount, IAIAccount } from '../../models/AIAccount.js';
-import { AdminSettings } from '../../models/AdminSettings.js';
-import { AntigravityClient } from '../../integrations/ai/AntigravityClient.js';
+import { AIAccount, IAIAccount, AIAccountType, AIAccountStatus, AIAccountProvider } from '~/models/AIAccount.js';
+import { AIModelType, getAdminSettings } from '~/models/AdminSettings.js';
+import { AntigravityClient } from '~/integrations/ai/AntigravityClient.js';
 
-import { Logger } from '../Logger.js';
-import { flowSyncService } from './FlowSyncService.js';
+import { Logger } from '~/utils/Logger.js';
+import { flowSyncService } from '~/utils/ai/FlowSyncService.js';
 
 // Authorization endpoints
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/auth';
@@ -70,12 +70,12 @@ export class AIAccountManager {
 
             for (const account of accounts) {
                 try {
-                    if (account.accountType === 'google-flow') {
+                    if (account.accountType === AIAccountType.GOOGLE_FLOW) {
                         await this.syncFlowAccount(account);
-                    } else if (account.accountType === 'antigravity') {
+                    } else if (account.accountType === AIAccountType.ANTIGRAVITY) {
                         await this.refreshAccessToken(account);
                         await this.syncAvailableModels(account);
-                    } else if (account.accountType === 'standard' && account.providerId === 'google') {
+                    } else if (account.accountType === AIAccountType.STANDARD && account.providerId === AIAccountProvider.GOOGLE) {
                         await this.refreshAccessToken(account);
                     }
                 } catch (err: any) {
@@ -92,7 +92,7 @@ export class AIAccountManager {
      * Get OAuth credentials from AdminSettings
      */
     private async getCredentials() {
-        const settings = await AdminSettings.findOne();
+        const settings = await getAdminSettings();
         const creds = settings?.apiConfigs?.oauth?.google;
 
         if (!creds || !creds.clientId) {
@@ -116,7 +116,7 @@ export class AIAccountManager {
         } else {
             const creds = await this.getCredentials();
             if (!creds) throw new Error('Google OAuth credentials not configured in Admin Settings > AI Accounts');
-            clientId = creds.clientId;
+            clientId = creds.clientId || "";
         }
 
         const urlParams = new URLSearchParams({
@@ -174,7 +174,7 @@ export class AIAccountManager {
             Logger.info('[AIAccountManager] User info retrieved:', email);
 
             // Save or update account
-            const accountType = options.isAntigravity ? 'antigravity' : 'standard';
+            const accountType = options.isAntigravity ? AIAccountType.ANTIGRAVITY : AIAccountType.STANDARD;
             let account = await AIAccount.findOne({ email, accountType });
 
             if (account) {
@@ -182,18 +182,18 @@ export class AIAccountManager {
                 account.accessToken = access_token;
                 account.accessTokenExpiresAt = new Date(Date.now() + expires_in * 1000);
                 account.avatarUrl = picture || account.avatarUrl;
-                account.status = 'ready';
+                account.status = AIAccountStatus.READY;
                 await account.save();
             } else {
                 account = await AIAccount.create({
                     email,
-                    providerId: 'google',
+                    providerId: AIAccountProvider.GOOGLE,
                     accountType,
                     refreshToken: refresh_token,
                     accessToken: access_token,
                     accessTokenExpiresAt: new Date(Date.now() + expires_in * 1000),
                     avatarUrl: picture,
-                    status: 'ready'
+                    status: AIAccountStatus.READY
                 });
             }
 
@@ -228,7 +228,7 @@ export class AIAccountManager {
         }
 
         // SPECIAL HANDLING: Google Flow accounts use session-to-token sync
-        if (account.accountType === 'google-flow') {
+        if (account.accountType === AIAccountType.GOOGLE_FLOW) {
             const { flowSyncService } = await import('./FlowSyncService.js');
             await flowSyncService.refreshAccountTokens(account);
             return account.flowAT || '';
@@ -238,7 +238,7 @@ export class AIAccountManager {
             let clientId = '';
             let clientSecret = '';
 
-            if (account.accountType === 'antigravity' || customCreds) {
+            if (account.accountType === AIAccountType.ANTIGRAVITY || customCreds) {
                 clientId = customCreds?.clientId || AntigravityClient.CLIENT_ID;
                 clientSecret = customCreds?.clientSecret || AntigravityClient.CLIENT_SECRET;
             } else {
@@ -264,155 +264,155 @@ export class AIAccountManager {
 
             account.accessToken = access_token;
             account.accessTokenExpiresAt = new Date(Date.now() + expires_in * 1000);
-            account.status = 'ready';
+            account.status = AIAccountStatus.READY;
             await account.save();
 
             return access_token;
         } catch (error: any) {
             Logger.error(`[AIAccountManager] Refresh Token Error for ${account.email}:`, error.response?.data || error.message);
-            account.status = 'unauthorized';
+            account.status = AIAccountStatus.UNAUTHORIZED;
             account.errorMessage = 'Refresh token expired or invalid';
             await account.save();
             throw new Error(`Failed to refresh token for ${account.email}`);
         }
     }
 
-    /**
-     * Onboard an 11labs-direct (11labs.net) account using only email
-     */
-    public async onboard11LabsDirectAccount(email: string) {
-        try {
-            Logger.info(`[AIAccountManager] Onboarding 11labs-direct account for ${email}...`);
+    // /**
+    //  * Onboard an 11labs-direct (11labs.net) account using only email
+    //  */
+    // public async onboard11LabsDirectAccount(email: string) {
+    //     try {
+    //         Logger.info(`[AIAccountManager] Onboarding 11labs-direct account for ${email}...`);
 
-            // Generate deterministic hardware IDs for this server instance
-            const hardware_id = crypto.createHash('md5').update('antstudio-server-hw').digest('hex').substring(0, 16);
-            const cpu_id = crypto.createHash('md5').update('antstudio-server-cpu').digest('hex').substring(0, 16);
-            const mainboard_uuid = crypto.createHash('md5').update('antstudio-server-mb').digest('hex').substring(0, 16);
+    //         // Generate deterministic hardware IDs for this server instance
+    //         const hardware_id = crypto.createHash('md5').update('antstudio-server-hw').digest('hex').substring(0, 16);
+    //         const cpu_id = crypto.createHash('md5').update('antstudio-server-cpu').digest('hex').substring(0, 16);
+    //         const mainboard_uuid = crypto.createHash('md5').update('antstudio-server-mb').digest('hex').substring(0, 16);
 
-            const serviceKeys = new Map<string, string>();
-            const brands = [
-                { id: 'voice', brand: 'elevenlabs' },
-                { id: 'image', brand: 'imagen' },
-                { id: 'video', brand: 'veo3' }
-            ];
+    //         const serviceKeys = new Map<string, string>();
+    //         const brands = [
+    //             { id: 'voice', brand: 'elevenlabs' },
+    //             { id: 'image', brand: 'imagen' },
+    //             { id: 'video', brand: 'veo3' }
+    //         ];
 
-            for (const { id, brand } of brands) {
-                Logger.info(`[AIAccountManager] Requesting license for ${brand}...`);
-                try {
-                    const response = await axios.post('https://11labs.net/api/license/activate.php', {
-                        email,
-                        hardware_id,
-                        cpu_id,
-                        mainboard_uuid,
-                        brand
-                    }, { timeout: 10000 });
+    //         for (const { id, brand } of brands) {
+    //             Logger.info(`[AIAccountManager] Requesting license for ${brand}...`);
+    //             try {
+    //                 const response = await axios.post('https://11labs.net/api/license/activate.php', {
+    //                     email,
+    //                     hardware_id,
+    //                     cpu_id,
+    //                     mainboard_uuid,
+    //                     brand
+    //                 }, { timeout: 10000 });
 
-                    if (response.data.success && response.data.license_key) {
-                        serviceKeys.set(id, response.data.license_key);
-                        Logger.info(`[AIAccountManager] Successfully retrieved ${id} key for ${email}`);
-                    } else {
-                        Logger.warn(`[AIAccountManager] Failed to get ${id} key:`, response.data.message);
-                    }
-                } catch (err: any) {
-                    Logger.error(`[AIAccountManager] Error activating ${brand}:`, err.message);
-                }
-            }
+    //                 if (response.data.success && response.data.license_key) {
+    //                     serviceKeys.set(id, response.data.license_key);
+    //                     Logger.info(`[AIAccountManager] Successfully retrieved ${id} key for ${email}`);
+    //                 } else {
+    //                     Logger.warn(`[AIAccountManager] Failed to get ${id} key:`, response.data.message);
+    //                 }
+    //             } catch (err: any) {
+    //                 Logger.error(`[AIAccountManager] Error activating ${brand}:`, err.message);
+    //             }
+    //         }
 
-            if (serviceKeys.size === 0) {
-                Logger.warn(`[AIAccountManager] No license keys retrieved from 11labs.net for ${email}. Account will be created but may need manual key configuration.`);
-            }
+    //         if (serviceKeys.size === 0) {
+    //             Logger.warn(`[AIAccountManager] No license keys retrieved from 11labs.net for ${email}. Account will be created but may need manual key configuration.`);
+    //         }
 
-            // Save or update account
-            const accountType = '11labs-direct';
-            let account = await AIAccount.findOne({ email, accountType });
+    //         // Save or update account
+    //         const accountType = '11labs-direct';
+    //         let account = await AIAccount.findOne({ email, accountType });
 
-            if (account) {
-                account.serviceKeys = serviceKeys;
-                account.status = 'ready';
-                await account.save();
-            } else {
-                account = await AIAccount.create({
-                    email,
-                    providerId: '11labs-direct',
-                    accountType,
-                    serviceKeys,
-                    status: 'ready',
-                    isActive: true
-                });
-            }
+    //         if (account) {
+    //             account.serviceKeys = serviceKeys;
+    //             account.status = 'ready';
+    //             await account.save();
+    //         } else {
+    //             account = await AIAccount.create({
+    //                 email,
+    //                 providerId: '11labs-direct',
+    //                 accountType,
+    //                 serviceKeys,
+    //                 status: 'ready',
+    //                 isActive: true
+    //             });
+    //         }
 
-            // Sync detailed account info
-            await this.syncDirectAccountInfo(account);
+    //         // Sync detailed account info
+    //         await this.syncDirectAccountInfo(account);
 
-            return account;
-        } catch (error: any) {
-            Logger.error('[AIAccountManager] 11labs-direct Onboarding Error:', error.message);
-            throw error;
-        }
-    }
+    //         return account;
+    //     } catch (error: any) {
+    //         Logger.error('[AIAccountManager] 11labs-direct Onboarding Error:', error.message);
+    //         throw error;
+    //     }
+    // }
 
     /**
      * Synchronize detailed account info for 11labs-direct accounts
      */
-    public async syncDirectAccountInfo(account: IAIAccount): Promise<void> {
-        // if (account.accountType !== '11labs-direct' || !account.serviceKeys || account.serviceKeys.size === 0) {
-        //     Logger.info(`[AIAccountManager] Skipping sync for ${account.email} - no service keys available`);
-        //     return;
-        // }
+    // public async syncDirectAccountInfo(account: IAIAccount): Promise<void> {
+    //     // if (account.accountType !== '11labs-direct' || !account.serviceKeys || account.serviceKeys.size === 0) {
+    //     //     Logger.info(`[AIAccountManager] Skipping sync for ${account.email} - no service keys available`);
+    //     //     return;
+    //     // }
 
-        Logger.info(`[AIAccountManager] Syncing direct account info for ${account.email}...`);
+    //     Logger.info(`[AIAccountManager] Syncing direct account info for ${account.email}...`);
 
-        const serviceInfoUrls = [
-            { id: 'voice', url: 'https://11labs.net/api/account/info' },
-            { id: 'image', url: 'https://11labs.net/api/account/info', params: { app: 'imagen4' } },
-            { id: 'video', url: 'https://11labs.net/api/account/info_veo3.php', params: { app: 'veo3' } }
-        ];
+    //     const serviceInfoUrls = [
+    //         { id: 'voice', url: 'https://11labs.net/api/account/info' },
+    //         { id: 'image', url: 'https://11labs.net/api/account/info', params: { app: 'imagen4' } },
+    //         { id: 'video', url: 'https://11labs.net/api/account/info_veo3.php', params: { app: 'veo3' } }
+    //     ];
 
-        for (const { id, url, params } of serviceInfoUrls) {
-            const licenseKey = account.serviceKeys ? account.serviceKeys.get(id) : null;
-            if (!licenseKey) continue;
+    //     for (const { id, url, params } of serviceInfoUrls) {
+    //         const licenseKey = account.serviceKeys ? account.serviceKeys.get(id) : null;
+    //         if (!licenseKey) continue;
 
-            try {
-                const response = await axios.get(url, {
-                    params: { ...params, license_key: licenseKey },
-                    timeout: 5000
-                });
+    //         try {
+    //             const response = await axios.get(url, {
+    //                 params: { ...params, license_key: licenseKey },
+    //                 timeout: 5000
+    //             });
 
-                if (response.data.success) {
-                    const info = response.data.data?.account_info || {};
-                    Logger.info(`[AIAccountManager] Received info for ${id}:`, info.email);
+    //             if (response.data.success) {
+    //                 const info = response.data.data?.account_info || {};
+    //                 Logger.info(`[AIAccountManager] Received info for ${id}:`, info.email);
 
-                    // Update quotas based on received info
-                    if (id === 'video') {
-                        const remaining = info.remaining_veo3_credits ?? info.veo3_remaining_videos ?? 0;
-                        const safeId = this.sanitizeModelId('veo-3.1-generate-001');
-                        account.quotas.set(safeId, {
-                            used: 0,
-                            limit: info.unlimited_paid_veo3 ? 999999 : remaining
-                        });
-                    } else if (id === 'image') {
-                        const remaining = info.imagen_limit_no_package - info.imagen_count;
-                        const safeId = this.sanitizeModelId('imagen-4.0-generate-001');
-                        account.quotas.set(safeId, {
-                            used: 0,
-                            limit: info.imagen_buy_package ? 999999 : remaining
-                        });
-                    }
-                }
-            } catch (err: any) {
-                Logger.error(`[AIAccountManager] Error syncing ${id} info:`, err.message);
-            }
-        }
+    //                 // Update quotas based on received info
+    //                 if (id === 'video') {
+    //                     const remaining = info.remaining_veo3_credits ?? info.veo3_remaining_videos ?? 0;
+    //                     const safeId = this.sanitizeModelId('veo-3.1-generate-001');
+    //                     account.quotas.set(safeId, {
+    //                         used: 0,
+    //                         limit: info.unlimited_paid_veo3 ? 999999 : remaining
+    //                     });
+    //                 } else if (id === 'image') {
+    //                     const remaining = info.imagen_limit_no_package - info.imagen_count;
+    //                     const safeId = this.sanitizeModelId('imagen-4.0-generate-001');
+    //                     account.quotas.set(safeId, {
+    //                         used: 0,
+    //                         limit: info.imagen_buy_package ? 999999 : remaining
+    //                     });
+    //                 }
+    //             }
+    //         } catch (err: any) {
+    //             Logger.error(`[AIAccountManager] Error syncing ${id} info:`, err.message);
+    //         }
+    //     }
 
-        account.markModified('quotas');
-        await account.save();
-    }
+    //     account.markModified('quotas');
+    //     await account.save();
+    // }
 
     /**
      * Synchronize Google Flow account tokens
      */
     public async syncFlowAccount(account: IAIAccount): Promise<boolean> {
-        if (account.accountType !== 'google-flow') return false;
+        if (account.accountType !== AIAccountType.GOOGLE_FLOW) return false;
         Logger.info(`[AIAccountManager] Syncing Google Flow account: ${account.email}`);
         try {
             await flowSyncService.refreshAccountTokens(account);
@@ -426,17 +426,18 @@ export class AIAccountManager {
     /**
      * Get the most optimal account for a task
      */
-    public async getOptimalAccount(type: 'text' | 'image' | 'video' | 'audio' | 'music' | 'live', accountType?: string): Promise<IAIAccount | null> {
+    public async getOptimalAccount(type: AIModelType, accountType?: string): Promise<IAIAccount | null> {
+        Logger.info(`getOptimalAccount type:${type} accountType:${accountType}`, 'AIAccountManager');
         // Build base query
         const query: any = { isActive: true, status: 'ready' };
         if (accountType) query.accountType = accountType;
 
         if (!accountType) {
             // Priority: google-flow for specific media tasks if credits available
-            if (type === 'image' || type === 'video') {
+            if (type === AIModelType.IMAGE || type === AIModelType.VIDEO) {
                 const flowAccount = await AIAccount.findOne({ 
                     ...query, 
-                    accountType: 'google-flow',
+                    accountType: AIAccountType.GOOGLE_FLOW,
                     credits: { $gt: 0 } 
                 }).sort({ lastUsedAt: 1 });
                 
@@ -446,10 +447,19 @@ export class AIAccountManager {
                     return flowAccount;
                 }
             }
-            const standard = await AIAccount.findOne({ ...query, 
-                accountType: 'standard', 
-                providerId: 'google',
+
+            let standard = await AIAccount.findOne({ ...query, 
+                accountType: AIAccountType.STANDARD, 
+                providerId: AIAccountProvider.GOOGLE,
             }).sort({ lastUsedAt: 1 });
+            
+            if(!standard){
+                standard = await AIAccount.findOne({ ...query, 
+                    accountType: AIAccountType.STANDARD, 
+                    providerId: AIAccountProvider.GOOGLE_VERTEX,
+                }).sort({ lastUsedAt: 1 });
+            }
+
             if (standard) {
                 standard.lastUsedAt = new Date();
                 await standard.save();
@@ -463,12 +473,12 @@ export class AIAccountManager {
             const hourAgo = new Date(Date.now() - 3600000);
             const coolingAccounts = await AIAccount.find({
                 isActive: true,
-                status: 'rate-limited',
+                status: AIAccountStatus.RATE_LIMITED,
                 updatedAt: { $lt: hourAgo }
             }).sort({ lastUsedAt: 1 });
 
             if (coolingAccounts.length > 0) {
-                coolingAccounts[0].status = 'ready';
+                coolingAccounts[0].status = AIAccountStatus.READY;
                 coolingAccounts[0].lastUsedAt = new Date();
                 await coolingAccounts[0].save();
                 return coolingAccounts[0];
@@ -480,7 +490,7 @@ export class AIAccountManager {
         // Sort by credits (desc) then lastUsedAt (asc) for Google Flow
         // For others, just by lastUsedAt (asc)
         accounts.sort((a, b) => {
-            if (a.accountType === 'google-flow' && b.accountType === 'google-flow') {
+            if (a.accountType === AIAccountType.GOOGLE_FLOW && b.accountType === AIAccountType.GOOGLE_FLOW) {
                 const creditsA = a.credits || 0;
                 const creditsB = b.credits || 0;
                 if (creditsA !== creditsB) return creditsB - creditsA; // More credits first
@@ -544,7 +554,7 @@ export class AIAccountManager {
         // }
 
         // Validate cached Project ID for Antigravity accounts
-        if (account.accountType === 'antigravity' && account.projectId) {
+        if (account.accountType === AIAccountType.ANTIGRAVITY && account.projectId) {
             const isHexId = /^[0-9a-fA-F]{24}$/.test(account.projectId); // Likely a userId, not a project ID
             const isTooShort = !account.projectId.includes('-') && account.projectId.length < 10;
 
@@ -557,7 +567,7 @@ export class AIAccountManager {
         if (account.projectId && !account.projectId.includes('default')) return account.projectId;
 
         // Specialized discovery only applies to Antigravity (CloudCode) or Standard with full scopes
-        if (account.accountType === 'antigravity') {
+        if (account.accountType === AIAccountType.ANTIGRAVITY) {
             try {
                 const projectId = await this._discoverAntigravityProject(account);
                 if (projectId) return projectId;
@@ -568,7 +578,7 @@ export class AIAccountManager {
 
         // Only standard accounts can use the Cloud Resource Manager API for discovery.
         // google-flow and antigravity tokens lack the necessary scopes (results in 403).
-        if (account.accountType !== 'standard') {
+        if (account.accountType !== AIAccountType.STANDARD) {
             Logger.info(`[AIAccountManager] Skipping standard project discovery for ${account.accountType} account ${account.email}`);
             return account.projectId || '';
         }
@@ -692,7 +702,7 @@ export class AIAccountManager {
      * Synchronize available models from Antigravity and update account quotas
      */
     public async syncAvailableModels(account: IAIAccount): Promise<void> {
-        if (account.accountType !== 'antigravity') return;
+        if (account.accountType !== AIAccountType.ANTIGRAVITY) return;
 
         try {
             const client = new AntigravityClient(account);
@@ -765,7 +775,7 @@ export class AIAccountManager {
             // Get current quota or default if missing
             let limit = 10;
             // if (account.accountType === '11labs-direct') limit = 999999;
-            if (account.accountType === 'antigravity') limit = 100;
+            if (account.accountType === AIAccountType.ANTIGRAVITY) limit = 100;
 
             const quota = account.quotas.get(safeModelName) || { used: 0, limit };
             quota.used++;
@@ -833,7 +843,7 @@ export class AIAccountManager {
         let changed = false;
         // ONLY apply default model list to Standard and Google Flow accounts
         // Antigravity and 11labs accounts use specialized logic
-        if (account.accountType === 'standard' || account.accountType === 'google-flow') {
+        if (account.accountType === AIAccountType.STANDARD || account.accountType === AIAccountType.GOOGLE_FLOW) {
             const limitScale = 1;
             for (const model of defaultModels) {
                 const safeId = this.sanitizeModelId(model.id);
@@ -852,7 +862,7 @@ export class AIAccountManager {
         }
 
         // Also sync available models if Antigravity (This will handle pruning of defaults if they existed)
-        if (account.accountType === 'antigravity') {
+        if (account.accountType === AIAccountType.ANTIGRAVITY) {
             await this.syncAvailableModels(account);
         }
     }

@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { generateVideo, generateImage, generateAudio } from '../utils/AIGenerator.js';
 import { AuthRequest } from '../middleware/auth.js';
-import { headlessRateLimiter } from '../middleware/rateLimiter.js';
+import { headlessRateLimiter } from '../middleware/RateLimiter.js';
 import { connectDB } from '../utils/db.js';
 
 const router = Router();

@@ -2,7 +2,7 @@ import fs from 'fs'
 import { aiManager } from './ai/AIServiceManager.js'
 import config from './config.js'
 import { Logger } from './Logger.js'
-import { configService } from './configService.js'
+import { configService } from './ConfigService.js'
 import { uploadToS3, getFromS3 } from './s3.js'
 import { 
     buildCharacterSheetPrompt, 
@@ -15,7 +15,7 @@ import {
     buildFlowVideoNormalizePrompt,
     getFlowVideoConstraints
 } from './PromptBuilder.js'
-import { InfluencerService } from '../services/InfluencerService.js'
+import { InfluencerService } from '../services/streaming/InfluencerService.js'
 import { Readable } from 'stream'
 
 // Job tracking for async operations
@@ -68,7 +68,7 @@ export const generateJSON = async <T = any>(prompt: string | any[], modelName?: 
                 ...options,
                 generationConfig: {
                     responseMimeType: 'application/json',
-                    maxOutputTokens: 65536
+                    maxOutputTokens: 65535
                 }
             });
 
@@ -248,9 +248,9 @@ export const generateImage = async (
 
     const style = options.videoStyle || 'Cinematic, Photo-realistic';
     if (options.generationType === 'character' && options.characterContext && options.characterContext.length > 0) {
-        optimizedPrompt = await buildCharacterSheetPrompt(options.characterContext[0], style, options.projectAnalysis, 'vi', translator, options.views, options.greenScreen);
+        optimizedPrompt = await buildCharacterSheetPrompt(options.characterContext[0], style, options.projectAnalysis, 'en', translator, options.views, options.greenScreen);
     } else {
-        optimizedPrompt = await buildScenePrompt(prompt, options.characterContext || [], style, options.projectAnalysis, 'vi', translator);
+        optimizedPrompt = await buildScenePrompt(prompt, options.characterContext || [], style, options.projectAnalysis, 'en', translator);
     }
 
     try {
@@ -289,10 +289,9 @@ export interface Veo3GenerateOptions {
 }
 
 export const generateVideo = async (options: Veo3GenerateOptions): Promise<{ url: string; jobId?: string }> => {
-    await configService.refresh();
-    const videoDefault = configService.ai.defaults?.video;
-    const model = videoDefault?.modelId || 'veo-2.0';
-    const provider = videoDefault?.providerId || 'google';
+    // const videoDefault = configService.aiDefaultModels?.video;
+    // const model = videoDefault?.modelId || config.geminiModelVideoGeneration;
+    // const provider = videoDefault?.providerId || undefined;
 
     const jobId = options.metadata?.jobId || `gen-native-${Date.now()}`;
     
@@ -312,7 +311,7 @@ export const generateVideo = async (options: Veo3GenerateOptions): Promise<{ url
             try {
                 Logger.info(`[AIGenerator] Normalizing flow prompt via Gemini (Opt-in)...`);
                 const normalizePromptText = await buildFlowVideoNormalizePrompt(options.prompt);
-                const normalized = await aiManager.generateText(normalizePromptText, undefined, 'google');
+                const normalized = await aiManager.generateText(normalizePromptText);
                 
                 if (normalized) {
                     finalPrompt = normalized.trim();
@@ -331,23 +330,27 @@ export const generateVideo = async (options: Veo3GenerateOptions): Promise<{ url
                 backgroundConstraints = "\n\n### MANDATORY VISUAL CONSTRAINT ###\n- Use a pure, flat, evenly lit GREEN SCREEN background (Hex #00FF00). No shadows, no gradients, no scenery.";
             }
 
+            if (options.imageStart && options.imageEnd) {
+                backgroundConstraints += "\n- The video must begin and end exactly matching the provided posture image seeds to ensure 100% pixel-perfect seamless loops and cuts.";
+            }
+
             finalPrompt = finalPrompt + backgroundConstraints + "\n\n" + constraintsBlock;
-            Logger.info(`[AIGenerator] Constraints appended (Green Screen: ${!!options.useGreenScreen}).`);
+            Logger.info(`[AIGenerator] Constraints appended (Green Screen: ${!!options.useGreenScreen}, Loop Enforced: ${!!(options.imageStart && options.imageEnd)}).`);
         }
 
-        const result: any = await aiManager.generateVideo(finalPrompt, model, provider, {
+        const result: any = await aiManager.generateVideo(finalPrompt, undefined, undefined, {
             ...options,
             prompt: finalPrompt, // Pass the normalized prompt
             async: false // Wait for completion
         });
 
-        if (result && result.url) {
+        if (result && (result.url || result.buffer)) {
             Logger.info(`[AIGenerator] Video generation finished. URL: ${result.url}`, 'AIGenerator');
             
             // Upload to S3 like generateImage
             const projectId = options.metadata?.projectId || 'system';
             const filename = options.metadata?.filename || jobId;
-            const buffer = await getFileBuffer(result.url);
+            const buffer = result.buffer || await getFileBuffer(result.url);
             const mimeType = 'video/mp4';
             const s3Key = `projects/${projectId}/videos/${filename}.mp4`;
             

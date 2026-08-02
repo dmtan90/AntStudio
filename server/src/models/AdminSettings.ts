@@ -1,4 +1,60 @@
-import mongoose, { Schema, Document, Model } from 'mongoose'
+import mongoose, { Schema, Document, Model } from 'mongoose';
+import Config from '~/utils/config.js';
+import { LicenseStatus, LicenseType } from './License.js';
+
+export enum AIModelType {
+    TEXT = 'text',
+    IMAGE = 'image',
+    VIDEO = 'video',
+    AUDIO = 'audio',
+    MUSIC = 'music',
+    VOICE = 'voice',
+    AGENT = 'agent',
+};
+
+export enum AIModelCost {
+    TEXT = 1,
+    IMAGE = 4,
+    VIDEO = 10,
+    AUDIO = 1,
+    MUSIC = 5,
+    VOICE = 1,
+    AGENT = 1,
+};
+
+export enum StorageProviderType {
+    S3 = 's3',
+    GOOGLE_DRIVE = 'google_drive',
+    B2 = 'b2'
+};
+
+export enum CaptchaProviderType {
+    YESCAPTCHA = 'yescaptcha',
+    CAPSOLVER = 'capsolver',
+    CAPMONSTER = 'capmonster',
+    EZCAPTCHA = 'ezcaptcha',
+    BROWSER = 'browser',
+    PERSONAL = 'personal',
+    REMOTE_BROWSER = 'remote_browser'
+};
+
+export enum ProxyProviderType {
+    WEBSHARE = 'webshare'
+};
+
+export enum LogLevel {
+    ERROR = 'error',
+    WARN = 'warn',
+    INFO = 'info',
+    DEBUG = 'debug'
+};
+
+export enum HttpMethod {
+    GET = 'GET',
+    POST = 'POST',
+    PUT = 'PUT',
+    DELETE = 'DELETE'
+};
 
 export interface IAdminSettings extends Document {
     geminiApiKeys: Array<{
@@ -10,9 +66,10 @@ export interface IAdminSettings extends Document {
         lastUsed?: Date
     }>
     apiConfigs: {
-        stripe: { secretKey: string; publicKey: string; webhookSecret: string }
-        paypal: { clientId: string; clientSecret: string; webhookSecret: string; mode?: 'sandbox' | 'live' }
-        aws: { accessKeyId: string; secretAccessKey: string; bucketName: string; region: string }
+        payment: {
+            stripe: { secretKey: string; publicKey: string; webhookSecret: string, enabled: boolean },
+            paypal: { clientId: string; clientSecret: string; webhookSecret: string; mode?: 'sandbox' | 'live', enabled: boolean }
+        },
         smtp: {
             host: string
             port: number
@@ -23,9 +80,9 @@ export interface IAdminSettings extends Document {
             fromName: string
         }
         oauth: {
-            google: { clientId: string; clientSecret: string; redirectUriOverride?: string; enabled: boolean }
-            facebook: { appId: string; appSecret: string; enabled: boolean }
-            tiktok: { clientKey: string; clientSecret: string; enabled: boolean }
+            google: { clientId: string | undefined; clientSecret: string | undefined; redirectUri?: string; enabled: boolean }
+            facebook: { appId: string | undefined; appSecret: string | undefined; enabled: boolean; redirectUri?: string }
+            tiktok: { clientKey: string | undefined; clientSecret: string | undefined; enabled: boolean; redirectUri?: string }
         }
         media: {
             giphy: { apiKey: string; enabled: boolean }
@@ -39,11 +96,23 @@ export interface IAdminSettings extends Document {
             appName: string
         }
         storage: {
-            activeProvider: 's3' | 'google_drive'
+            activeProvider: StorageProviderType | string
+            aws: {
+                accessKeyId: string;
+                secretAccessKey: string;
+                bucketName: string;
+                region: string;
+                endpoint: string;
+            },
             googleDrive: {
                 clientEmail: string
                 privateKey: string
                 rootFolderId: string
+            }
+            b2: {
+                applicationKeyId: string
+                applicationKey: string
+                bucketName: string
             }
         }
         proxy?: {
@@ -55,17 +124,13 @@ export interface IAdminSettings extends Document {
                 proxyPort?: number
             }
         }
-        publicDomain?: string
         captcha?: {
-            method: 'yescaptcha' | 'capsolver' | 'capmonster' | 'ezcaptcha' | 'browser' | 'personal' | 'remote_browser'
+            method: CaptchaProviderType,
             yescaptcha?: { apiKey: string; baseUrl: string }
             remoteBrowser?: { apiKey: string; baseUrl: string; timeout: number }
             localBrowser?: { launchBackground: boolean; profileDir: string }
         }
     }
-    // settings.oauthProviders is deprecated in favor of apiConfigs.oauth but kept for migration if needed, 
-    // but better to remove it now to avoid confusion.
-    // aiSettings...
     aiSettings: {
         providers: Array<{
             id: string
@@ -76,7 +141,7 @@ export interface IAdminSettings extends Document {
             isActive: boolean
             taskConfigs?: Map<string, {
                 endpoint: string
-                method: 'POST' | 'GET'
+                method: HttpMethod,
                 headers?: Record<string, string>
                 payloadTemplate?: string
                 models?: string[]
@@ -88,7 +153,7 @@ export interface IAdminSettings extends Document {
                 }
                 pollConfig?: {
                     endpoint: string           // e.g. "https://api.example.com/history/{{jobId}}"
-                    method?: 'GET' | 'POST'
+                    method?: HttpMethod,
                     headers?: Record<string, string>
                     intervalMs?: number        // Poll interval (default: 3000ms)
                     timeoutMs?: number         // Total timeout (default: 120000ms)
@@ -110,26 +175,22 @@ export interface IAdminSettings extends Document {
             audio: { providerId: string; modelId: string; creditCost: number } // TTS
             music: { providerId: string; modelId: string; creditCost: number },
             voice: { providerId: string; modelId: string; creditCost: number },// LiveAPI
+            agent: { providerId: string; modelId: string; creditCost: number } // Agent
         }
         models: Array<{
             id: string
             name: string
             providerId: string
-            type: 'image' | 'video' | 'audio' | 'text' | 'music' | 'voice'
+            type: AIModelType
             creditCost: number
             isActive: boolean
         }>
-        flowWorkspaceUrls: string[]
-        flowSessionToken?: string
-        sessionSync?: {
-            googleCookies?: string // For AIStudio/Gemini
-            flowCookies?: string // For Labs Flow
-        }
     }
     s3: {
         totalStorageUsed: number
         totalStorageLimit: number
     }
+    creditModeEnabled?: boolean
     plans: Array<{
         name: string
         price: number
@@ -151,8 +212,8 @@ export interface IAdminSettings extends Document {
     license: {
         key: string
         info: {
-            status: 'valid' | 'expired' | 'invalid'
-            type: 'trial' | 'basic' | 'pro' | 'enterprise'
+            status: string,
+            type: string,
             maxUsers: number
             maxProjects: number
             startDate?: Date
@@ -165,11 +226,12 @@ export interface IAdminSettings extends Document {
         appName: string
         logo: string
         favicon: string
+        publicDomain?: string
     }
     logSettings: {
         emailNotificationsEnabled: boolean
         notificationEmail: string
-        minNotificationLevel: 'debug' | 'info' | 'warn' | 'error'
+        minNotificationLevel: LogLevel
         retentionDays: number
     }
     updatedAt: Date
@@ -177,6 +239,7 @@ export interface IAdminSettings extends Document {
 
 const AdminSettingsSchema = new Schema<IAdminSettings>(
     {
+        _id: { type: Schema.Types.Mixed, default: 'global_admin_settings' },
         geminiApiKeys: [
             {
                 key: { type: String, required: true },
@@ -196,23 +259,20 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
             }
         ],
         apiConfigs: {
-            stripe: {
-                secretKey: { type: String, default: '' },
-                publicKey: { type: String, default: '' },
-                webhookSecret: { type: String, default: '' }
-            },
-            paypal: {
-                clientId: { type: String, default: '' },
-                clientSecret: { type: String, default: '' },
-                webhookSecret: { type: String, default: '' },
-                mode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox' }
-            },
-            aws: {
-                accessKeyId: { type: String, default: '' },
-                secretAccessKey: { type: String, default: '' },
-                bucketName: { type: String, default: '' },
-                region: { type: String, default: 'us-east-1' },
-                endpoint: { type: String, default: '' }
+            payment: {
+                stripe: {
+                    secretKey: { type: String, default: '' },
+                    publicKey: { type: String, default: '' },
+                    webhookSecret: { type: String, default: '' },
+                    enabled: { type: Boolean, default: false }
+                },
+                paypal: {
+                    clientId: { type: String, default: '' },
+                    clientSecret: { type: String, default: '' },
+                    webhookSecret: { type: String, default: '' },
+                    enabled: { type: Boolean, default: false },
+                    mode: { type: String, enum: ['sandbox', 'live'], default: 'sandbox' }
+                },
             },
             smtp: {
                 host: { type: String, default: 'smtp.gmail.com' },
@@ -224,9 +284,9 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 fromName: { type: String, default: 'AntStudio' }
             },
             oauth: {
-                facebook: { appId: { type: String, default: '' }, appSecret: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
-                google: { clientId: { type: String, default: '' }, clientSecret: { type: String, default: '' }, redirectUriOverride: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
-                tiktok: { clientKey: { type: String, default: '' }, clientSecret: { type: String, default: '' }, enabled: { type: Boolean, default: false } }
+                facebook: { appId: { type: String, default: '' }, appSecret: { type: String, default: '' }, redirectUri: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
+                google: { clientId: { type: String, default: '' }, clientSecret: { type: String, default: '' }, redirectUri: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
+                tiktok: { clientKey: { type: String, default: '' }, clientSecret: { type: String, default: '' }, redirectUri: { type: String, default: '' }, enabled: { type: Boolean, default: false } }
             },
             media: {
                 giphy: { apiKey: { type: String, default: '' }, enabled: { type: Boolean, default: false } },
@@ -237,14 +297,26 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 baseUrl: { type: String, default: '' },
                 email: { type: String, default: '' },
                 password: { type: String, default: '' },
-                appName: { type: String, default: 'WebRTCAppEE' }
+                appName: { type: String, default: 'LiveApp' }
             },
             storage: {
-                activeProvider: { type: String, enum: ['s3', 'google_drive'], default: 's3' },
+                activeProvider: { type: String, enum: Object.values(StorageProviderType), default: StorageProviderType.S3 },
+                aws: {
+                    accessKeyId: { type: String, default: '' },
+                    secretAccessKey: { type: String, default: '' },
+                    bucketName: { type: String, default: '' },
+                    region: { type: String, default: 'us-east-1' },
+                    endpoint: { type: String, default: '' }
+                },
                 googleDrive: {
                     clientEmail: { type: String, default: '' },
                     privateKey: { type: String, default: '' },
                     rootFolderId: { type: String, default: 'root' }
+                },
+                b2: {
+                    applicationKeyId: { type: String, default: '' },
+                    applicationKey: { type: String, default: '' },
+                    bucketName: { type: String, default: '' }
                 }
             },
             proxy: {
@@ -256,9 +328,8 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                     proxyPort: { type: Number, default: 80 }
                 }
             },
-            publicDomain: { type: String, default: '' },
             captcha: {
-                method: { type: String, enum: ['yescaptcha', 'capsolver', 'capmonster', 'ezcaptcha', 'browser', 'personal', 'remote_browser'], default: 'browser' },
+                method: { type: String, enum: Object.values(CaptchaProviderType), default: CaptchaProviderType.YESCAPTCHA },
                 yescaptcha: {
                     apiKey: { type: String, default: '' },
                     baseUrl: { type: String, default: 'https://api.yescaptcha.com' }
@@ -277,7 +348,7 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
         logSettings: {
             emailNotificationsEnabled: { type: Boolean, default: false },
             notificationEmail: { type: String, default: '' },
-            minNotificationLevel: { type: String, enum: ['debug', 'info', 'warn', 'error'], default: 'error' },
+            minNotificationLevel: { type: String, enum: Object.values(LogLevel), default: LogLevel.ERROR },
             retentionDays: { type: Number, default: 30 }
         },
         aiSettings: {
@@ -293,7 +364,7 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                         type: Map,
                         of: new Schema({
                             endpoint: String,
-                            method: { type: String, default: 'POST' },
+                            method: { type: String, enum: Object.values(HttpMethod), default: HttpMethod.POST },
                             headers: { type: Schema.Types.Mixed }, // Support both Map and JSON string
                             payloadTemplate: String,
                             models: { type: [String], default: [] },
@@ -305,7 +376,7 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                             },
                             pollConfig: {
                                 endpoint: String,
-                                method: { type: String, default: 'GET' },
+                                method: { type: String, enum: Object.values(HttpMethod), default: HttpMethod.GET },
                                 headers: { type: Schema.Types.Mixed },
                                 intervalMs: { type: Number, default: 3000 },
                                 timeoutMs: { type: Number, default: 120000 },
@@ -323,29 +394,24 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
                 }
             ],
             defaults: {
-                text: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-2.5-flash' }, creditCost: { type: Number, default: 1 } },
-                image: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-2.5-flash-image' }, creditCost: { type: Number, default: 4 } },
-                video: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'veo-3.1-generate-preview' }, creditCost: { type: Number, default: 10 } },
-                audio: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-2.5-flash-preview-tts' }, creditCost: { type: Number, default: 1 } },
-                music: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'lyria-realtime-exp' }, creditCost: { type: Number, default: 5 } },
-                voice: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: 'gemini-2.5-flash-native-audio-preview-12-2025' }, creditCost: { type: Number, default: 1 } }
+                text: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: Config.geminiModelTextAnalysis }, creditCost: { type: Number, default: AIModelCost.TEXT } },
+                image: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: Config.geminiModelImageGeneration }, creditCost: { type: Number, default: AIModelCost.IMAGE } },
+                video: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: Config.geminiModelVideoGeneration }, creditCost: { type: Number, default: AIModelCost.VIDEO } },
+                audio: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: Config.geminiModelTTS }, creditCost: { type: Number, default: AIModelCost.AUDIO } },
+                music: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: Config.geminiModelMusic }, creditCost: { type: Number, default: AIModelCost.MUSIC } },
+                voice: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: Config.geminiModelVoice }, creditCost: { type: Number, default: AIModelCost.VOICE } },
+                agent: { providerId: { type: String, default: 'google' }, modelId: { type: String, default: Config.geminiModelAgent }, creditCost: { type: Number, default: AIModelCost.AGENT } }
             },
             models: [
                 {
                     id: String,
                     name: String,
                     providerId: String,
-                    type: { type: String, enum: ['image', 'video', 'audio', 'text', 'music'] },
+                    type: { type: String, enum: Object.values(AIModelType), default: AIModelType.TEXT },
                     creditCost: { type: Number, default: 1 },
                     isActive: { type: Boolean, default: true }
                 }
             ],
-            flowWorkspaceUrls: { type: [String], default: [] },
-            flowSessionToken: { type: String, default: '' },
-            sessionSync: {
-                googleCookies: { type: String, default: '' },
-                flowCookies: { type: String, default: '' }
-            }
         },
         s3: {
             totalStorageUsed: { type: Number, default: 0 },
@@ -376,8 +442,8 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
         license: {
             key: { type: String, default: '' },
             info: {
-                status: { type: String, default: 'invalid' }, // valid, expired, invalid
-                type: { type: String, default: 'trial' }, // trial, free, enterprise
+                status: { type: String, enum: Object.values(LicenseStatus), default: LicenseStatus.VALID },
+                type: { type: String, enum: Object.values(LicenseType), default: LicenseType.TRIAL },
                 maxUsers: { type: Number, default: 5 },
                 maxProjects: { type: Number, default: 10 },
                 startDate: Date,
@@ -389,8 +455,10 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
         whitelabel: {
             appName: { type: String, default: 'AntStudio' },
             logo: { type: String, default: '' }, // S3 path or URL
-            favicon: { type: String, default: '' }
-        }
+            favicon: { type: String, default: '' },
+            publicDomain: { type: String, default: '' },
+        },
+        creditModeEnabled: { type: Boolean, default: false }
     },
     {
         timestamps: { createdAt: false, updatedAt: true }
@@ -400,140 +468,181 @@ const AdminSettingsSchema = new Schema<IAdminSettings>(
 export const AdminSettings: Model<IAdminSettings> =
     mongoose.models.AdminSettings || mongoose.model<IAdminSettings>('AdminSettings', AdminSettingsSchema)
 
-// Singleton pattern - ensure only one settings document
-export const getAdminSettings = async () => {
-    let settings = await AdminSettings.findOne()
+export const SETTINGS_ID = 'global_admin_settings';
 
+// Singleton pattern - ensure only one settings document
+export const getAdminSettings = async (): Promise<IAdminSettings> => {
+    // 1. Fast path: Try to find existing settings document by fixed ID
+    let settings = await AdminSettings.findOne({ _id: SETTINGS_ID });
+
+    // 2. Fallback: Find any existing document
     if (!settings) {
-        // Create default settings
-        settings = await AdminSettings.create({
-            geminiApiKeys: [],
-            apiConfigs: {
-                stripe: { secretKey: '', publicKey: '', webhookSecret: '' },
-                paypal: { clientId: '', clientSecret: '', webhookSecret: '' },
-                aws: { accessKeyId: '', secretAccessKey: '', bucketName: '', region: 'us-east-1' },
-                smtp: {
-                    host: 'smtp.gmail.com',
-                    port: 587,
-                    secure: false,
-                    user: '',
-                    pass: '',
-                    fromEmail: 'noreply@flova.ai',
-                    fromName: 'AntStudio'
-                },
-                oauth: {
-                    facebook: { appId: '', appSecret: '', enabled: false },
-                    google: { clientId: '', clientSecret: '', redirectUriOverride: '', enabled: false },
-                    tiktok: { clientKey: '', clientSecret: '', enabled: false }
-                },
-                media: { giphy: { apiKey: '', enabled: false }, pexels: { apiKey: '', enabled: false }, unsplash: { apiKey: '', enabled: false } },
-                antMedia: {
-                    baseUrl: '',
-                    email: '',
-                    password: '',
-                    appName: 'WebRTCAppEE'
-                },
-                storage: {
-                    activeProvider: 's3',
-                    googleDrive: {
-                        clientEmail: '',
-                        privateKey: '',
-                        rootFolderId: 'root'
+        settings = await AdminSettings.findOne();
+    }
+
+    // 3. If no document exists at all, perform atomic upsert
+    if (!settings) {
+        try {
+            settings = await AdminSettings.findOneAndUpdate(
+                { _id: SETTINGS_ID },
+                {
+                    $setOnInsert: {
+                        _id: SETTINGS_ID,
+                        geminiApiKeys: [],
+                        creditModeEnabled: false,
+                        apiConfigs: {
+                            payment: {
+                                stripe: { 
+                                    secretKey: Config.stripeSecretKey, 
+                                    publicKey: Config.stripePublishableKey, 
+                                    webhookSecret: Config.stripeWebhookSecret, 
+                                    enabled: false 
+                                },
+                                paypal: { 
+                                    clientId: Config.paypalClientId, 
+                                    clientSecret: Config.paypalSecret, 
+                                    webhookSecret: Config.paypalWebhookSecret, 
+                                    enabled: false 
+                                },
+                            },
+                            smtp: {
+                                host: Config.smtpHost,
+                                port: Config.smtpPort,
+                                secure: Config.smtpSecure,
+                                user: Config.smtpUser,
+                                pass: Config.smtpPassword,
+                                fromEmail: Config.smtpFromEmail,
+                                fromName: Config.smtpFromName
+                            },
+                            oauth: {
+                                facebook: { 
+                                    appId: Config.facebookAppId, 
+                                    appSecret: Config.facebookAppSecret, 
+                                    redirectUri: Config.facebookRedirectUri, 
+                                    enabled: false 
+                                },
+                                google: { 
+                                    clientId: Config.googleClientId, 
+                                    clientSecret: Config.googleClientSecret, 
+                                    redirectUri: Config.googleRedirectUri, 
+                                    enabled: false 
+                                },
+                                tiktok: { 
+                                    clientKey: Config.tiktokClientKey, 
+                                    clientSecret: Config.tiktokClientSecret, 
+                                    redirectUri: Config.tiktokRedirectUri, 
+                                    enabled: false 
+                                },
+                            },
+                            media: { 
+                                giphy: { apiKey: Config.giphyApiKey, enabled: true }, 
+                                pexels: { apiKey: Config.pexelsApiKey, enabled: true }, 
+                                unsplash: { apiKey: Config.unsplashApiKey, enabled: true } 
+                            },
+                            antMedia: {
+                                baseUrl: '',
+                                email: '',
+                                password: '',
+                                appName: 'LiveApp'
+                            },
+                            storage: {
+                                activeProvider: Config.storageProvider,
+                                aws: { 
+                                    accessKeyId: Config.awsAccessKeyId, 
+                                    secretAccessKey: Config.awsSecretAccessKey, 
+                                    bucketName: Config.awsS3Bucket, 
+                                    region: Config.awsRegion, 
+                                    endpoint: Config.awsS3Endpoint 
+                                },
+                                googleDrive: {
+                                    clientEmail: '',
+                                    privateKey: '',
+                                    rootFolderId: 'root'
+                                },
+                                b2: {
+                                    applicationKeyId: Config.blazeB2AppId,
+                                    applicationKey: Config.blazeB2AppKey,
+                                    bucketName: Config.blazeB2BucketName
+                                }
+                            },
+                        },
+                        logSettings: {
+                            emailNotificationsEnabled: false,
+                            notificationEmail: '',
+                            minNotificationLevel: LogLevel.ERROR,
+                            retentionDays: 30
+                        },
+                        aiSettings: {
+                            providers: [
+                                { id: 'google', name: 'Google Gemini', apiKey: '', supportedTypes: Object.values(AIModelType), isActive: true },
+                            ],
+                            defaults: {
+                                text: { providerId: 'google', modelId: Config.geminiModelTextAnalysis, creditCost: AIModelCost.TEXT },
+                                image: { providerId: 'google', modelId: Config.geminiModelImageGeneration, creditCost: AIModelCost.IMAGE },
+                                video: { providerId: 'google', modelId: Config.geminiModelVideoGeneration, creditCost: AIModelCost.VIDEO },
+                                audio: { providerId: 'google', modelId: Config.geminiModelTTS, creditCost: AIModelCost.AUDIO },
+                                music: { providerId: 'google', modelId: Config.geminiModelMusic, creditCost: AIModelCost.MUSIC },
+                                voice: { providerId: 'google', modelId: Config.geminiModelVoice, creditCost: AIModelCost.VOICE },
+                                agent: { providerId: 'google', modelId: Config.geminiModelAgent, creditCost: AIModelCost.AGENT },
+                            },
+                            models: [],
+                        },
+                        s3: {
+                            totalStorageUsed: 0,
+                            totalStorageLimit: 1000
+                        },
+                        plans: [
+                            {
+                                name: 'Free',
+                                price: 0,
+                                yearlyPrice: 0,
+                                currency: 'usd',
+                                features: { monthlyCredits: 500, prioritySupport: false }
+                            },
+                            {
+                                name: 'Pro',
+                                price: 29,
+                                yearlyPrice: 290,
+                                currency: 'usd',
+                                features: { monthlyCredits: 2000, prioritySupport: true }
+                            },
+                            {
+                                name: 'Enterprise',
+                                price: 99,
+                                yearlyPrice: 990,
+                                currency: 'usd',
+                                features: { monthlyCredits: 6000, prioritySupport: true }
+                            }
+                        ],
+                        creditPackages: [
+                            { id: 'cp_1000', name: '1000 Credits', credits: 1000, price: 10, currency: 'usd', isActive: true },
+                            { id: 'cp_2000', name: '2000 Credits', credits: 2000, price: 20, currency: 'usd', isActive: true },
+                            { id: 'cp_5500', name: '5500 Credits', credits: 5500, price: 50, currency: 'usd', isActive: true },
+                            { id: 'cp_12000', name: '12000 Credits', credits: 12000, price: 100, currency: 'usd', isActive: true }
+                        ],
+                        license: {
+                            key: '',
+                            info: {
+                                status: LicenseStatus.VALID,
+                                type: LicenseType.TRIAL,
+                                maxUsers: 5,
+                                maxProjects: 10
+                            }
+                        },
+                        whitelabel: {
+                            appName: 'AntStudio',
+                            logo: '',
+                            favicon: '',
+                            publicDomain: ''
+                        }
                     }
                 },
-                publicDomain: ''
-            },
-            logSettings: {
-                emailNotificationsEnabled: false,
-                notificationEmail: '',
-                minNotificationLevel: 'error',
-                retentionDays: 30
-            },
-            aiSettings: {
-                providers: [
-                    { id: 'google', name: 'Google Gemini', apiKey: '', supportedTypes: ['text', 'image', 'video', 'audio'], isActive: true },
-                    { id: 'geminigen-ai', name: 'GeminiGen AI', apiKey: '', supportedTypes: ['text', 'image', 'video', 'audio'], isActive: true },
-                    { id: 'openai', name: 'OpenAI', apiKey: '', supportedTypes: ['text', 'image'], isActive: true },
-                    { id: 'suno', name: 'Suno', apiKey: '', supportedTypes: ['music'], isActive: true }
-                ],
-                defaults: {
-                    text: { providerId: 'google', modelId: 'gemini-2.5-flash', creditCost: 1 },
-                    image: { providerId: 'google', modelId: 'imagen-3.0', creditCost: 4 },
-                    video: { providerId: 'google', modelId: 'veo-2.0', creditCost: 10 },
-                    audio: { providerId: 'google', modelId: 'tts-1', creditCost: 1 },
-                    music: { providerId: 'suno', modelId: 'v3.5', creditCost: 5 }
-                },
-                models: [
-                    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', providerId: 'google', type: 'text', creditCost: 1, isActive: true },
-                    { id: 'imagen-3.0', name: 'Imagen 3', providerId: 'google', type: 'image', creditCost: 4, isActive: true },
-                    { id: 'veo-2.0', name: 'Veo 2.0', providerId: 'google', type: 'video', creditCost: 10, isActive: true }
-                ],
-                flowWorkspaceUrls: [],
-                flowSessionToken: ''
-            },
-            s3: {
-                totalStorageUsed: 0,
-                totalStorageLimit: 1000
-            },
-            plans: [
-                {
-                    name: 'Free',
-                    price: 0,
-                    yearlyPrice: 0,
-                    currency: 'usd',
-                    features: { monthlyCredits: 500, prioritySupport: false }
-                },
-                {
-                    name: 'Pro',
-                    price: 29,
-                    yearlyPrice: 290,
-                    currency: 'usd',
-                    features: { monthlyCredits: 2000, prioritySupport: true }
-                },
-                {
-                    name: 'Enterprise',
-                    price: 99,
-                    yearlyPrice: 990,
-                    currency: 'usd',
-                    features: { monthlyCredits: 6000, prioritySupport: true }
-                }
-            ],
-            creditPackages: [
-                { id: 'cp_1000', name: '1000 Credits', credits: 1000, price: 10, currency: 'usd', isActive: true },
-                { id: 'cp_2000', name: '2000 Credits', credits: 2000, price: 20, currency: 'usd', isActive: true },
-                { id: 'cp_5500', name: '5500 Credits', credits: 5500, price: 50, currency: 'usd', isActive: true },
-                { id: 'cp_12000', name: '12000 Credits', credits: 12000, price: 100, currency: 'usd', isActive: true }
-            ],
-            license: {
-                key: '',
-                info: {
-                    status: 'invalid',
-                    type: 'trial',
-                    maxUsers: 5,
-                    maxProjects: 10
-                }
-            },
-            whitelabel: {
-                appName: 'AntStudio',
-                logo: '',
-                favicon: ''
-            }
-        })
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+        } catch (e) {
+            settings = await AdminSettings.findOne();
+        }
     }
 
-    // Ensure nested defaults exist if schema changed on existing document
-    if (!settings.apiConfigs.oauth) {
-        settings.apiConfigs.oauth = {
-            facebook: { appId: '', appSecret: '', enabled: false },
-            google: { clientId: '', clientSecret: '', redirectUriOverride: '', enabled: false },
-            tiktok: { clientKey: '', clientSecret: '', enabled: false }
-        };
-        await settings.save();
-    }
-    if (settings.apiConfigs.publicDomain === undefined) {
-        settings.apiConfigs.publicDomain = '';
-        await settings.save();
-    }
-
-    return settings
+    return settings!;
 }

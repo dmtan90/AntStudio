@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import config from './config.js';
 import { clusterManager } from './ClusterManager.js';
 import { Logger } from './Logger.js';
+import { getAdminSettings } from '~/models/AdminSettings.js';
 
 let isConnected = false;
 
@@ -15,6 +16,8 @@ export const connectDB = async () => {
         await clusterManager.connect();
         isConnected = true;
         Logger.info(`✅ Global Database Cluster connected successfully (State: ${mongoose.connection.readyState})`, 'Database');
+        //must init admin settings first if empty
+        await getAdminSettings();
     } catch (error) {
         Logger.error('❌ Database Cluster connection failed', 'Database', { error });
         throw error;

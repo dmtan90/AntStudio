@@ -1,9 +1,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { ServiceType } from '~/utils/CreditManager.js';
 
 export interface ICreditUsage extends Document {
     tenantId: mongoose.Types.ObjectId;
     userId: mongoose.Types.ObjectId;
-    serviceType: 'streaming' | 'ai_translation' | 'face_swap' | 'storage' | 'custom';
+    serviceType: ServiceType | string;
     creditsConsumed: number;
     description: string;
     metadata: any; // e.g. { videoId: '...', duration: 60 }
@@ -15,7 +16,7 @@ const CreditUsageSchema = new Schema<ICreditUsage>({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     serviceType: {
         type: String,
-        enum: ['streaming', 'ai_translation', 'face_swap', 'storage', 'custom'],
+        enum: Object.values(ServiceType),
         required: true,
         index: true
     },

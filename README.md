@@ -1,328 +1,187 @@
-# AntStudio - Autonomous AI Streamer for Live Commerce
+# AntStudio - Autonomous AI Streamer & Video Production Platform
 
 ![Landing Page](./docs/images/landing-page.png)
 
-> The world's first fully autonomous AI Streamer built specifically for Live Commerce and E-Commerce sales. Transform your products into viral 24/7 sales livestreams.
+> **AntStudio** is a state-of-the-art, fully autonomous AI Video Production & 24/7 Live Commerce Platform. Transform text prompts, digital avatars, product URLs, and camera feeds into high-converting video campaigns and non-stop live stream events.
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://opensource.org/licenses/AGPL-3.0)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Vue 3](https://img.shields.io/badge/Vue-3.4+-brightgreen.svg)](https://vuejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Electron](https://img.shields.io/badge/Electron-Desktop-purple.svg)](https://www.electronjs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green.svg)](https://www.mongodb.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](https://github.com/dmtan90/AntStudio)
 
-## 📸 Platform Overview
+---
+
+## 📸 Platform Showcase
 
 ![Dashboard](./docs/images/dashboard.png)
+*AntStudio Central Workspace Dashboard*
 
 ![Admin Dashboard](./docs/images/admin-dashboard.png)
+*Enterprise Management & Analytics Portal*
 
-## 🎬 Overview
+---
 
-AntStudio is redefining live commerce with our **fully autonomous AI Streamer**. It combines real-time video generation, intelligent sales orchestration, and interactive commerce tools into a unified platform built to drive conversions 24/7.
+## 🎬 Specialized Production Workflows
 
-### 🌟 AI Streamer for Sales (Core Features)
+AntStudio features 6 specialized AI production engines accessible via `ProjectCreationDialog.vue`:
 
-- 🤖 **AI Streamer (Sales Mode)**:
-  - 24/7 Autonomous Live Selling
-  - Dynamic product pitching based on real-time viewer interaction
-  - Script-driven `Aidol` (AI Idol) video clip mapping for seamless product showcases
-  - Natural conversational sales flow with context awareness
+1. ⚡ **Script-to-Video AI Engine (`ai-video`)**:
+   - Generate full video storyboards, AI voiceovers, BGM, and animated subtitles automatically from text prompts or raw scripts.
+2. 🎭 **AI Digital Avatars & Personas (`avatar`)**:
+   - Create & customize 2D photo talking avatars, 3D VRM models, and Aidol video clips with Gemini voice synthesis and lip-sync.
+3. 🛍️ **E-Commerce Product Ads Wizard (`product-ads`)**:
+   - Paste any e-commerce product page URL to generate high-converting video ads with automated copy, voice, and graphic overlays.
+4. 📡 **24/7 Autonomous Sale Studio (`sales-studio`)**:
+   - Run non-stop live commerce streams with intelligent AI hosts, autonomous FSM product pitch loops, live Q&A, and scannable QR overlays.
+5. 📹 **Screen & Camera Recorder Studio (`record`)**:
+   - Capture webcam footage, desktop screens, presentation slides, and studio audio recordings with multi-track support.
+6. 🎞️ **Multi-Track Canvas & Timeline Studio (`blank`)**:
+   - Full-featured canvas video editor with multi-track video/audio timelines, transitions, and dynamic overlay rendering.
 
-- 💰 **Commerce Intelligence Engine**:
-  - Automatic product mention detection and synchronization
-  - Dynamic QR code generation for instant checkout (real scannable codes)
-  - Autonomous flash-sale and scarcity overlay triggering
-  - Live conversion tracking and engagement analytics
+---
 
-- 🎤 **Neural Audio & Sales Dubbing**:
-  - Expressive, sales-optimized text-to-speech
-  - Multi-language support to sell globally
-  - Instant translation of viewer questions
+## 📡 24/7 Autonomous Sale Studio Architecture
 
-- 🎥 **Live Highlight Service**:
-  - Autonomous capture of viral sales moments
-  - AI-driven engagement analysis to find the best pitches
-  - Instant social-ready exports for TikTok/Reels marketing
+The **24/7 Autonomous Sale Studio** is powered by `LiveSalesServiceV3`:
 
-- 🌍 **Multi-Modal Accessibility**:
-  - Visual subtitles + Audio dubbing
-  - Interactive QR codes
-  - Global reach with local authenticity
+- 🔄 **Autonomous FSM State Machine**:
+  - Automatically cycles through states (`GREETING` -> `PITCHING` -> `Q_AND_A` -> `CLOSING`) per product.
+  - Broadcasts `studio:state_change` WebSocket directives directly to connected room clients (`socketServer.emitToRoom`).
+- 🧠 **RAG-Grounded Product Pitching**:
+  - Dynamically queries product specification vectors and knowledge bases before each pitch turn.
+  - Cleans MongoDB ObjectIDs into human-readable product names in speech scripts.
+- 💬 **Reactive Q&A Interception**:
+  - Monitors viewer chat comments in real-time and pauses the storyboard loop to answer viewer questions instantly.
+- 📱 **Dynamic QR & Urgency Overlays**:
+  - Generates instant scannable checkout QR codes (<500ms) with real-time flash sale timer banners.
+- ⚡ **Auto-Resilient Connection & Stream Relay**:
+  - Built-in WebSocket grace period tracking (`getRoomSocketCount`) and client auto-reconnect banner alerts (`reconnectingMsg`).
+  - Direct FFmpeg NMS stream relaying to YouTube, Facebook Live, and TikTok.
 
-### 🎨 Additional Features
+---
 
-- 🤖 **AI-Powered Workflow**:
-  - **Script to Video**: Automated analysis and storyboard generation
-  - **Product Ads**: Marketing wizard for e-commerce videos
-  - **AI Avatars**: Generate realistic talking avatars using **Google Veo 3**
-  - **Presentation to Video**: Convert PDF/PPTX slides into video scenes
+## 🌍 5-Locale i18n Internationalization
 
-![Product Ads Wizard](./docs/images/product-ads-wizard.png)
-*AI-driven Product Ads Wizard*
+AntStudio is fully localized across **5 major languages**:
+- 🇬🇧 **English (`en`)**
+- 🇻🇳 **Vietnamese (`vi`)**
+- 🇪🇸 **Spanish (`es`)**
+- 🇯🇵 **Japanese (`ja`)**
+- 🇨🇳 **Chinese (`zh`)**
 
-- 🎬 **Live Studio**:
-  - Real-time AI processing (face detection, segmentation, AR)
-  - Virtual production (chromakey, 3D stages)
-  - Multi-platform streaming (YouTube, Facebook, TikTok, Ant Media Server)
-  - Mobile camera ingest
-  - WebRTC guest integration
+Language switching is supported seamlessly across both the Marketing Landing Page, User Workspace, and Live Studio components.
 
-![Influencers & Live Studio](./docs/images/influencers.png)
-*Live Studio & Virtual Production Management*
+---
 
-- 🎨 **Advanced Video Editor**:
-  - Professional timeline with magnetic snapping
-  - Multi-track support and drag-and-drop
-  - 50+ editing tools and effects
-  - Export to disk for unlimited duration
-
-![Templates](./docs/images/templates.png)
-*Professional Video Templates & Editor*
-
-- 🎤 **Voice Intelligence**:
-  - **Voice Lab**: Manage and clone voices
-  - **Voice Cloning**: Create instant digital twins using **ElevenLabs**
-  - **Text-to-Speech**: High-quality synthesis via ElevenLabs or Google Gemini
-
-- 💳 **Monetization & Licensing**:
-  - **Hybrid Payment System**: Seamless integration with **Stripe** and **PayPal** for diverse billing options.
-  - **License Portal**: Enterprise-grade license key verification and management.
-  - **Smart Subscriptions**: Automated recurring billing, trial management, and webhook callbacks.
-  - **Usage Tracking**: Granular credit tracking for AI generation features.
-
-![Licensing & Subscription](./docs/images/subscription.png)
-*Monetization and Subscription Management*
-
-- 🏢 **Enterprise Features**:
-  - White-label multi-tenant architecture
-  - Global CDN delivery
-  - Multi-region deployment
-  - Real-time monitoring and alerting
-  - Perpetual and subscription licensing
-
-![System Monitoring](./docs/images/system-monitoring.png)
-*Enterprise System Monitoring Dashboard*
-
-## 🏗️ Architecture
+## 🏗️ Technical Architecture
 
 ### Monorepo Structure
 
 ```
-antstudio/
-├── client/              # Vite + Vue 3 frontend
+AntStudio/
+├── client/              # Vite + Vue 3 + TypeScript Frontend Application
 │   ├── src/
-│   │   ├── components/  # Reusable UI components
-│   │   ├── views/       # Page components
-│   │   │   ├── user/    # Dashboard, Projects, LiveStudio
-│   │   │   ├── admin/   # Settings, Monitoring, Tenants
-│   │   │   └── video-editor/  # Advanced timeline editor
-│   │   ├── stores/      # Pinia state management
-│   │   └── utils/
-│   │       └── ai/      # AI engines (Director, Commerce, Vibe, etc.)
-├── server/              # Express.js backend
+│   │   ├── components/  # Atomic UI & Project Dialogs (ProjectCreationDialog.vue, AppNavbar.vue)
+│   │   ├── views/       # LandingPage, SaleStudio, LiveStudio, ProjectEditor
+│   │   ├── stores/      # Pinia state stores (studio.ts, user.ts, editor.ts)
+│   │   ├── utils/ai/    # ActionSyncService.ts, StudioDirector.ts, SyntheticGuestManager.ts
+│   │   └── locales/     # 5-Locale i18n Dictionaries (en, vi, es, ja, zh)
+├── server/              # Node.js + Express + Socket.IO Backend Server
 │   ├── src/
-│   │   ├── models/      # MongoDB schemas
-│   │   ├── routes/      # API endpoints
-│   │   ├── services/    # Business logic
-│   │   │   ├── StreamingService.ts
-│   │   │   ├── ClusterManager.ts
-│   │   │   └── MonitoringService.ts
-│   │   ├── integrations/
-│   │   │   ├── ai/      # AI provider clients
-│   │   │   └── flow/    # Direct API clients
-│   │   └── utils/       # Helpers and utilities
-└── docker-compose.yml   # Full stack orchestration
+│   │   ├── models/      # MongoDB Mongoose Schemas (User, Product, StreamSession)
+│   │   ├── routes/      # REST API Routes (/api/auth, /api/projects, /api/health)
+│   │   ├── services/
+│   │   │   ├── ai/      # LiveSalesServiceV3.ts, AIServiceManager.ts
+│   │   │   └── streaming/ SocketServer.ts, StreamingService.ts
+│   │   └── index.ts     # Main Server Entry Point (supports /health & /api/health)
+├── electron/            # Electron Desktop Launcher & Native Packaging
+│   ├── main.cjs         # Electron Main Process & Development Server Loader
+│   └── preload.cjs      # IPC Preload Bridge
+└── docs/                # Comprehensive Platform Documentation
 ```
 
-### Tech Stack
+### Technology Stack
 
-**Frontend:**
-- Vue 3 + TypeScript + Vite
-- Pinia + Vue Query
-- Element Plus + TailwindCSS
-- Fabric.js (Canvas) + FFmpeg.js
-- MediaPipe (AI inference)
-- Three.js (3D virtual stages)
-
-**Backend:**
-- Node.js + Express
-- MongoDB + Mongoose
-- FFmpeg (video processing)
-- WebRTC + Socket.io
-- **AI Integrations**: Google Vertex AI, ElevenLabs, Custom models
-- AWS S3 (Storage)
-- **Payments**: Stripe (Connect/Checkout), PayPal (Smart Buttons)
-- **Licensing**: Custom License Portal Integration
-
-**AI Services:**
-- **Google**: Gemini, Veo 3, Imagen 3
-- **ElevenLabs**: Voice cloning, TTS, Music generation
-- **MediaPipe**: Face detection, body segmentation
-- **Custom**: Commerce Intelligence, Vibe Engine, AI Director
-
-> [!IMPORTANT]
-> **Architectural Decision: Client-Side Video Assembly**
-> AntStudio uses a **Decentralized Rendering Architecture**. All video assembly, encoding, and final exports are processed on the **client-side (browser)** using WebWorkers and `@webav/av-cliper`. The backend serves only as an asset repository and data orchestrator. **DO NOT** implement backend rendering services to avoid unnecessary GPU/CPU load on the server cluster.
-
-## 🚀 Quick Start (Docker)
-
-The easiest way to run AntStudio is with Docker.
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/antstudio.git
-   cd antstudio
-   ```
-
-2. **Configure Environment**
-   Create a `.env` file in the root directory:
-   ```env
-   # Required for Core Features
-   MONGODB_URI=mongodb://mongo:27017/antstudio
-   JWT_SECRET=your_secret_key_here
-   
-   # AI Services
-   GEMINI_API_KEY=your_gemini_key
-   ELEVENLABS_API_KEY=your_elevenlabs_key
-   
-   # Storage
-   AWS_ACCESS_KEY_ID=your_aws_key
-   AWS_SECRET_ACCESS_KEY=your_aws_secret
-   AWS_S3_BUCKET=your_bucket_name
-   AWS_REGION=us-east-1
-   
-   # Optional: FFmpeg path for streaming
-   FFMPEG_BIN=ffmpeg
-   ```
-
-3. **Run with Docker Compose**
-   ```bash
-   docker-compose up --build -d
-   ```
-
-4. **Access the App**
-   - Frontend: `http://localhost:5173`
-   - Backend API: `http://localhost:4000/api`
-   - Live Studio: `http://localhost:5173/live-studio`
-
-## 🛠️ Local Development
-
-If you prefer running services individually:
-
-```bash
-# Install dependencies
-pnpm install
-
-# Run Client (http://localhost:5173)
-cd client
-pnpm dev
-
-# Run Server (http://localhost:4000)
-cd server
-pnpm dev
-```
-
-## 🎯 Key Capabilities
-
-### AI Video Production
-- Generate videos from scripts in 2-5 minutes
-- Support for 10+ video formats
-- Automated storyboard generation
-- AI-powered scene composition
-
-### Live Streaming
-- Simultaneous broadcast to 3+ platforms
-- 60 FPS real-time rendering
-- <100ms AI decision latency
-- WebRTC and RTMP support
-
-### Commerce Integration
-- 90%+ product detection accuracy
-- <500ms QR code generation
-- Real-time conversion tracking
-- Autonomous overlay management
-
-### Global Accessibility
-- Real-time translation in multiple languages
-- Neural voice dubbing with cloning
-- Multi-modal content delivery
-- CDN-powered global reach
-
-## 📖 Documentation
-
-- [Development Guide](./DEVELOPMENT.md) - Setup, architecture, and contribution
-- [Deployment Guide](./DEPLOYMENT.md) - Cloud, Edge, and Enterprise deployment
-- [User Manual](./USER_MANUAL.md) - Features and usage guide
-- [Enterprise Guide](./ENTERPRISE_GUIDE.md) - White-labeling and multi-tenant setup
-- [API Documentation](./server/docs/API.md) - REST API reference
-- [Wiki](./WIKI.md) - Comprehensive documentation hub
-
-## 🏆 What Makes AntStudio Unique
-
-### World's First Features
-
-1. **Autonomous AI Live Streamer** - Fully autonomous 24/7 sales orchestration
-2. **Live Commerce Intelligence** - Real-time product detection and QR generation
-3. **Neural Voice Translation** - Voice cloning with live translation
-4. **Autonomous Viral Capture** - AI-driven highlight recording
-5. **Multi-Modal Accessibility** - Combined visual, audio, and interactive elements
-
-### Production Ready
-
-- ✅ 0 lint errors, 100% TypeScript
-- ✅ High-Performance Smart Rendering (Optimized WebGL)
-- ✅ Multi-tenant architecture
-- ✅ Global CDN integration
-- ✅ Real-time monitoring
-- ✅ Comprehensive documentation
-
-## 💰 Pricing & Credits
-
-**Subscription Tiers:**
-- **Free**: 500 credits/month
-- **Pro**: 2000 credits/month + priority support
-- **Enterprise**: 6000 credits/month + dedicated infrastructure
-
-**Credit Costs:**
-- Text generation: 1 credit
-- Image generation: 4 credits
-- Video generation: 10 credits
-- Live streaming: 1 credit per 60 minutes
-- Music generation: 5 credits
-
-**Unlimited Bypass:** ElevenLabs integration provides unlimited media generation
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
-
-## � Support the Project
-
-If you find AntStudio useful and want to support its development, you can sponsor the project via **PayPal**:
-
-👉 **[Sponsor via PayPal (dmtan90@gmail.com)](https://www.paypal.com/paypalme/dmtan90)**
+- **Frontend**: Vue 3 (Composition API), Vite, TypeScript, Pinia, TailwindCSS, Element Plus, IconPark.
+- **Backend**: Node.js, Express.js, Socket.IO, MongoDB, Mongoose, FFmpeg, Node-Media-Server (NMS).
+- **Desktop**: Electron cross-platform runner (Windows, macOS, Linux).
+- **AI Integrations**: Google Antigravity SDK, Gemini 3.1 Flash Lite / Pro, Google TTS, MediaPipe.
+- **Video Engine**: Client-side WebWorker rendering via `@webav/av-cliper` and Fabric.js canvas.
 
 ---
 
-## �📄 License
+## 🚀 Quick Start Guide
+
+### Option 1: Development Mode (Root Workspace)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/dmtan90/AntStudio.git
+cd AntStudio
+
+# 2. Install workspace dependencies
+pnpm install
+
+# 3. Configure environment variables (.env)
+cp .env.example .env
+
+# 4. Start Client & Backend Server concurrently
+pnpm dev
+```
+- **Client Application**: `http://localhost:3000`
+- **Backend API Server**: `http://localhost:4000` (Health checks: `/health` & `/api/health`)
+
+### Option 2: Electron Desktop App Mode
+
+```bash
+# Start Vite client + Backend server + Electron desktop app
+pnpm run dev:electron
+
+# Build Electron production installers (.exe, .dmg, .AppImage)
+pnpm run build:electron
+```
+
+### Option 3: Docker Compose
+
+```bash
+docker-compose up --build -d
+```
+
+---
+
+## 📄 API & Health Check Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | `GET` | Core backend service health check |
+| `/api/health` | `GET` | API route health check alias (returns `{ status: 'ok' }`) |
+| `/api/auth/login` | `POST` | User authentication & JWT issuance |
+| `/api/projects` | `GET/POST` | Project workspace CRUD operations |
+| `/api/streaming/start` | `POST` | Launch autonomous Live Stream session |
+
+---
+
+## 📖 Documentation Index
+
+- 📘 [User Manual](./USER_MANUAL.md) - End-user workflow guide for all 6 AI modes
+- 🛠️ [Development Guide](./DEVELOPMENT.md) - Architecture, Socket.IO event flow & dev setup
+- 🚀 [Deployment Guide](./DEPLOYMENT.md) - Production cloud, Docker & Electron deployment
+- 📚 [Wiki & Knowledge Base](./WIKI.md) - In-depth technical specifications & FSM loops
+- 📡 [API Reference](./docs/backend-guides/02-api-reference.md) - Complete REST & WS API specification
+
+---
+
+## ⚖️ Licensing
 
 AntStudio is dual-licensed:
 
-1. **Personal & Non-Commercial Use**: Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. You can use, modify, and distribute the software for free, provided that any derivative works are also licensed under AGPL-3.0 and their source code is made available.
-2. **Commercial Use**: Requires a **Commercial License**. If you wish to use AntStudio for commercial purposes, in a closed-source environment, or without the restrictions of AGPL-3.0, please contact **Tan Do** at [dmtan90@gmail.com](mailto:dmtan90@gmail.com) to purchase a commercial license.
-
-See the [LICENSE](./LICENSE) file for more details.
+1. **Personal & Non-Commercial Use**: Open-source under **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+2. **Commercial Use**: Requires a Commercial License. Contact **Tan Do** ([dmtan90@gmail.com](mailto:dmtan90@gmail.com)).
 
 ---
 
-## 🌟 Status
-
-**Version**: 2.0.0 (Singularity)  
-**Status**: Production Ready ✅  
-**Last Updated**: January 2026
-
----
-
-**Made with ❤️ and 🤖 by the AntStudio Team**
-
-*"From Script to Singularity - Transforming Creativity with AI"*
+*Made with ❤️ and 🤖 by the AntStudio Engineering Team.*

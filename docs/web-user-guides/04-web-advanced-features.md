@@ -1,6 +1,6 @@
 # Advanced Web Features Guide
 
-Unlock the full potential of AntFlow with our AI and Team tools.
+Unlock the full potential of AntStudio with our AI and Team tools.
 
 ## 1. Voice Lab (Web)
 *Generate professional voiceovers directly in your browser.*

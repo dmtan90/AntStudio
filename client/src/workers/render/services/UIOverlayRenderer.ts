@@ -979,7 +979,7 @@ export class UIOverlayRenderer {
     }
 
     /**
-     * Phase 32: Renders a sleek real-time Data Visualization widget.
+     * Renders a sleek real-time Data Visualization widget.
      */
     drawDataVizWidget(data: any[], title: string, x: number, y: number) {
         if (!this.gl || !data || data.length < 2) return;
@@ -1040,7 +1040,7 @@ export class UIOverlayRenderer {
     }
 
     /**
-     * Phase 32: News-style Fact Checking Hub.
+     * News-style Fact Checking Hub.
      */
     drawFactCheckHub(facts: any[], x: number, y: number) {
         if (!this.gl || !facts || facts.length === 0) return;
@@ -1086,7 +1086,7 @@ export class UIOverlayRenderer {
     }
 
     /**
-     * Phase 32: Premium end-of-stream recap card.
+     * Premium end-of-stream recap card.
      */
     drawFinalRecapCard(recap: any, canvasW: number, canvasH: number) {
         if (!this.gl || !recap) return;
@@ -1175,7 +1175,7 @@ export class UIOverlayRenderer {
     }
 
     /**
-     * Phase 33: Neural Singularity Aura.
+     * Neural Singularity Aura.
      * A cinematic post-processing effect (chromatic aberration & bloom pulse)
      * that intensifies with hype levels.
      */

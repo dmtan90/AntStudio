@@ -78,7 +78,7 @@
     </section>
 
     <!-- Partners Section -->
-    <section id="partners" class="partners-section">
+    <!-- <section id="partners" class="partners-section">
       <div class="container">
         <div class="section-top">
           <h2 class="section-title">{{ $t('marketing.home.partners.title') }}</h2>
@@ -98,14 +98,14 @@
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
     <!-- Gallery Section -->
     <section id="gallery" class="gallery-cinematic-focus">
       <div class="container-wide">
-        <div class="gallery-header">
+        <!-- <div class="gallery-header">
           <router-link to="/flow-gallery" class="watch-short-btn">{{ $t('marketing.home.gallery.watchFilms') }}</router-link>
-        </div>
+        </div> -->
 
         <div class="gallery-focus-grid">
           <div v-for="(img, idx) in galleryImages" :key="idx" class="gallery-focus-item"
@@ -173,11 +173,34 @@
       <div class="container footer-content">
         <div class="footer-left">{{ uiStore.appName }}</div>
         <div class="footer-right">
-          <router-link to="/privacy">{{ $t('marketing.home.footer.privacy') }}</router-link>
-          <router-link to="/terms">{{ $t('marketing.home.footer.terms') }}</router-link>
+          <button type="button" class="footer-link-btn" @click="showPrivacyModal = true">{{ $t('marketing.home.footer.privacy') }}</button>
+          <button type="button" class="footer-link-btn" @click="showTermsModal = true">{{ $t('marketing.home.footer.terms') }}</button>
         </div>
       </div>
     </footer>
+
+    <!-- Privacy & Terms Dialogs -->
+    <el-dialog
+      v-model="showPrivacyModal"
+      :title="$t('marketing.privacy.title')"
+      width="760px"
+      align-center
+      class="legal-modal-dialog"
+      append-to-body
+    >
+      <Privacy :embedded="true" />
+    </el-dialog>
+
+    <el-dialog
+      v-model="showTermsModal"
+      :title="$t('marketing.terms.title')"
+      width="760px"
+      align-center
+      class="legal-modal-dialog"
+      append-to-body
+    >
+      <Terms :embedded="true" />
+    </el-dialog>
   </div>
 </template>
 
@@ -187,6 +210,8 @@ import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '@/stores/config'
 import { useUIStore } from '@/stores/ui'
 import { storeToRefs } from 'pinia'
+import Privacy from './Privacy.vue'
+import Terms from './Terms.vue'
 import {
   PlayOne,
   Comments,
@@ -206,6 +231,8 @@ import gallery11 from '@/assets/images/gallery_11.png'
 const scrolled = ref(false)
 const activeFeature = ref('consistent')
 const activeSection = ref('overview')
+const showPrivacyModal = ref(false)
+const showTermsModal = ref(false)
 
 const { t } = useI18n()
 const configStore = useConfigStore()
@@ -943,5 +970,48 @@ section {
   .glow-title {
     font-size: 80px;
   }
+}
+
+.footer-link-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  padding: 0;
+  margin-left: 24px;
+}
+
+.footer-link-btn:hover {
+  color: #ffffff;
+}
+
+:deep(.legal-modal-dialog) {
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0c0d12 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+:deep(.legal-modal-dialog .el-dialog__header) {
+  padding: 20px 24px;
+  margin-right: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+:deep(.legal-modal-dialog .el-dialog__title) {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+:deep(.legal-modal-dialog .el-dialog__body) {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+  color: rgba(255, 255, 255, 0.85);
 }
 </style>

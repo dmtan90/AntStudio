@@ -16,7 +16,7 @@
         <div v-if="user" class="nav-links">
           <template v-if="isHomePage">
             <a v-for="link in landingLinks" :key="link.id" :href="link.to" class="nav-link"
-              :class="{ active: activeSection === link.id }" @click.prevent="scrollToSection(link.id)">
+              :class="{ active: activeSection === link.targetId }" @click.prevent="scrollToSection(link.targetId)">
               {{ t(`nav.${link.id}`) }}
             </a>
           </template>
@@ -28,7 +28,7 @@
         </div>
         <div v-else class="nav-links">
           <a v-if="isHomePage" v-for="link in landingLinks" :key="link.id" :href="link.to" class="nav-link"
-            :class="{ active: activeSection === link.id }" @click.prevent="scrollToSection(link.id)">
+            :class="{ active: activeSection === link.targetId }" @click.prevent="scrollToSection(link.targetId)">
             {{ t(`nav.${link.id}`) }}
           </a>
           <router-link v-else to="/" class="nav-link">{{ t('nav.home') }}</router-link>
@@ -53,7 +53,7 @@
 
         <template v-if="user">
           <!-- Credit Display with Popover -->
-          <GPopover trigger="hover" placement="bottom" :width="300">
+          <GPopover trigger="hover" placement="bottom" :width="300" v-if="uiStore.creditModeEnabled">
             <template #reference>
               <div class="credit-badge glass-dark">
                 <ticket theme="outline" size="16" />
@@ -234,12 +234,9 @@ const route = useRoute()
 const { t, locale } = useI18n()
 const userStore = useUserStore()
 const uiStore = useUIStore()
-const { user } = storeToRefs(userStore)
+const { user, preferredLanguage } = storeToRefs(userStore)
 
 const fileInput = ref<HTMLElement | null>(null)
-
-
-
 const isDashboard = computed(() => route.path.startsWith('/dashboard'))
 
 // Languages
@@ -407,16 +404,22 @@ const isHomePage = computed(() => route.path === '/')
 const activeSection = ref('overview')
 let observer: IntersectionObserver | null = null
 
-const scrollToSection = (id: string) => {
-  if (!isHomePage.value) {
-    router.push({ path: '/', hash: `#${id}` })
-    return
-  }
+const landingLinks = [
+  { id: 'overview', targetId: 'overview', to: '#overview' },
+  { id: 'capabilities', targetId: 'features', to: '#features' },
+  { id: 'aiStreamer', targetId: 'ai-streamer', to: '#ai-streamer' },
+  { id: 'b2b', targetId: 'b2b-enterprise', to: '#b2b-enterprise' },
+  { id: 'liveMetrics', targetId: 'live-metrics', to: '#live-metrics' }
+]
 
-  const element = document.getElementById(id)
+const scrollToSection = (targetId: string) => {
+  const element = document.getElementById(targetId)
   if (element) {
-    element.scrollIntoView({ behavior: 'smooth' })
-    activeSection.value = id
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    activeSection.value = targetId
+    history.pushState(null, '', `#${targetId}`)
+  } else {
+    router.push({ path: '/', hash: `#${targetId}` })
   }
 }
 
@@ -425,7 +428,7 @@ const setupScrollSpy = () => {
 
   const observerOptions = {
     root: null,
-    rootMargin: '-50% 0px -50% 0px',
+    rootMargin: '-30% 0px -60% 0px',
     threshold: 0
   }
 
@@ -437,8 +440,11 @@ const setupScrollSpy = () => {
     })
   }, observerOptions)
 
-  document.querySelectorAll('section[id]').forEach((section) => {
-    observer?.observe(section)
+  landingLinks.forEach((link) => {
+    const el = document.getElementById(link.targetId)
+    if (el) {
+      observer?.observe(el)
+    }
   })
 }
 
@@ -448,14 +454,6 @@ const cleanupScrollSpy = () => {
     observer = null
   }
 }
-
-const landingLinks = [
-  { id: 'overview', to: '#overview' },
-  { id: 'capabilities', to: '#capabilities' },
-  { id: 'partners', to: '#partners' },
-  { id: 'gallery', to: '#gallery' },
-  { id: 'pricing', to: '#pricing' }
-]
 
 watch(isHomePage, (newVal) => {
   if (newVal) {
@@ -468,7 +466,7 @@ watch(isHomePage, (newVal) => {
 
 onMounted(() => {
   userStore.fetchProfile()
-  const savedLang = localStorage.getItem('preferred-language')
+  const savedLang = preferredLanguage.value;
   if (savedLang) locale.value = savedLang as Locale
 })
 
@@ -820,5 +818,13 @@ onUnmounted(() => {
       }
     }
   }
+}
+
+:global(html) {
+  scroll-behavior: smooth;
+}
+
+:global([id]) {
+  scroll-margin-top: 85px;
 }
 </style>

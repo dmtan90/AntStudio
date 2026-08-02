@@ -1,17 +1,60 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
+
+export enum UserRole {
+    USER = 'user',
+    ADMIN = 'admin',
+    SYS_ADMIN = 'sys-admin'
+}
+
+export enum SubscriptionStatus {
+    ACTIVE = 'active',
+    CANCELLED = 'cancelled',
+    EXPIRED = 'expired'
+}
+
+export enum SubscriptionPlan {
+    FREE = 'free',
+    BASIC = 'basic',
+    PRO = 'pro',
+    ENTERPRISE = 'enterprise'
+}
+
+export enum CreditType {
+    MEMBERSHIP = 'membership',
+    BONUS = 'bonus',
+    WEEKLY = 'weekly'
+}
+
+export enum CreditTransactionType {
+    CONSUMED = 'consumed',
+    OBTAINED = 'obtained'
+}
+
+export enum Language {
+    EN = 'en',
+    VI = 'vi',
+    ZH = 'zh',
+    JA = 'ja',
+    ES = 'es'
+}
+
+export enum Theme {
+    DARK = 'dark',
+    LIGHT = 'light'
+}
 
 export interface IUser extends Document {
     email: string
     passwordHash: string
     name: string
     avatar?: string
-    role: 'user' | 'admin' | 'sys-admin'
+    role: UserRole | string
     tenantId?: mongoose.Types.ObjectId // Association with White-label Tenant
     currentOrganizationId?: mongoose.Types.ObjectId // Active Team Context
     subscription: {
-        plan: 'free' | 'pro' | 'enterprise'
-        status: 'active' | 'cancelled' | 'expired'
+        plan: SubscriptionPlan | string
+        status: SubscriptionStatus
         startDate?: Date
         endDate?: Date
         stripeCustomerId?: string
@@ -24,13 +67,13 @@ export interface IUser extends Document {
         weekly: number
     }
     creditLogs: Array<{
-        type: 'consumed' | 'obtained'
+        type: CreditTransactionType | string
         amount: number
         description: string
         timestamp: Date
     }>
     emailVerified: boolean
-    language: 'en' | 'vi' | 'zh' | 'ja' | 'es'
+    language: Language | string
     isActive: boolean
     notificationSettings: {
         taskCompletion: boolean
@@ -94,8 +137,8 @@ const UserSchema = new Schema<IUser>(
         },
         role: {
             type: String,
-            enum: ['user', 'admin', 'sys-admin'],
-            default: 'user'
+            enum: Object.values(UserRole),
+            default: UserRole.USER
         },
         tenantId: {
             type: Schema.Types.ObjectId,
@@ -110,13 +153,13 @@ const UserSchema = new Schema<IUser>(
         subscription: {
             plan: {
                 type: String,
-                enum: ['free', 'starter', 'basic', 'pro'],
-                default: 'free'
+                enum: Object.values(SubscriptionPlan),
+                default: SubscriptionPlan.FREE
             },
             status: {
                 type: String,
-                enum: ['active', 'cancelled', 'expired'],
-                default: 'active'
+                enum: Object.values(SubscriptionStatus),
+                default: SubscriptionStatus.ACTIVE
             },
             startDate: Date,
             endDate: Date,
@@ -131,7 +174,7 @@ const UserSchema = new Schema<IUser>(
         },
         creditLogs: [
             {
-                type: { type: String, enum: ['consumed', 'obtained'] },
+                type: { type: String, enum: Object.values(CreditTransactionType) },
                 amount: Number,
                 description: String,
                 timestamp: { type: Date, default: Date.now }
@@ -164,8 +207,8 @@ const UserSchema = new Schema<IUser>(
         },
         language: {
             type: String,
-            enum: ['en', 'vi', 'zh', 'ja', 'es'],
-            default: 'en'
+            enum: Object.values(Language),
+            default: Language.EN
         },
         isActive: {
             type: Boolean,
@@ -187,7 +230,7 @@ const UserSchema = new Schema<IUser>(
         resetPasswordExpires: Date,
         preferences: {
             aiPersona: { type: String, default: 'Default Enthusiast' },
-            theme: { type: String, default: 'dark' },
+            theme: { type: String, default: Theme.DARK },
             customVoiceId: String
         }
     },

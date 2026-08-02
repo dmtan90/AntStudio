@@ -1,7 +1,7 @@
 import { generateText } from './AIGenerator.js';
 import { uploadToS3 } from './s3.js';
 import { Logger } from './Logger.js';
-import { promptService } from '../services/PromptService.js';
+import { promptService } from '../services/ai/PromptService.js';
 
 /**
  * Service for AI-powered audio enhancement (denoising, clarity).

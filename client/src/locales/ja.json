@@ -1,1 +1,6287 @@
-{}
+{
+  "app": {
+    "name": "アントスタジオ",
+    "beta": "ベータ",
+    "loading": "エクスペリエンスを読み込んでいます..."
+  },
+  "nav": {
+    "home": "家",
+    "overview": "概要",
+    "capabilities": "能力",
+    "partners": "パートナー",
+    "dashboard": "ダッシュボード",
+    "projects": "プロジェクト",
+    "gallery": "ギャラリー",
+    "signIn": "サインイン",
+    "signUp": "サインアップ",
+    "admin": "管理者",
+    "users": "ユーザー",
+    "licenseHub": "ライセンスハブ",
+    "resources": "リソース",
+    "merchant": "商人",
+    "viral": "バイラルハブ",
+    "influencers": "インフルエンサー",
+    "templates": "テンプレート",
+    "platforms": "プラットフォーム",
+    "subscription": "サブスクリプション",
+    "avatars": "アバター",
+    "license": "ライセンス",
+    "pricing": "価格設定",
+    "features": "特徴",
+    "whyUs": "なぜ私たちなのか",
+    "showcase": "ショーケース",
+    "team": "チーム",
+    "settings": "設定",
+    "aiAccounts": "AIアカウント",
+    "fleetCommand": "AIノード",
+    "monitoring": "監視",
+    "infrastructure": "インフラストラクチャー",
+    "network": "ネットワーク制御",
+    "developer": "開発者",
+    "marketplace": "市場",
+    "aiStreamer": "AI ストリーマー",
+    "b2b": "エンタープライズ",
+    "liveMetrics": "ライブ指標"
+  },
+  "common": {
+    "logout": "ログアウト",
+    "profile": "私のプロフィール",
+    "password": "パスワード",
+    "updateSuccess": "更新に成功しました",
+    "failed": "操作が失敗しました",
+    "generating": "生成中...",
+    "saving": "保存中...",
+    "save": "変更を保存",
+    "cancel": "キャンセル",
+    "ok": "わかりました",
+    "warning": "警告",
+    "copy": "コピー",
+    "copySuccess": "クリップボードにコピーされました",
+    "auto": "自動",
+    "seconds": "秒",
+    "approve": "承認する",
+    "reject": "拒否する",
+    "open": "開ける",
+    "close": "近い",
+    "refresh": "リフレッシュ",
+    "retry": "リトライ",
+    "delete": "消去",
+    "edit": "編集",
+    "approved": "承認された",
+    "rejected": "拒否されました",
+    "completed": "完了",
+    "pending": "保留中",
+    "locale": "ja",
+    "loading": "読み込み中...",
+    "search": "検索",
+    "confirm": "確認する",
+    "next": "次",
+    "back": "戻る",
+    "finish": "仕上げる",
+    "guide": {
+      "back": "戻る",
+      "next": "次",
+      "gotIt": "わかった",
+      "skip": "スキップ"
+    },
+    "creator": "クリエイター",
+    "optional": "オプション",
+    "processing": "処理...",
+    "actions": {
+      "cancel": "キャンセル",
+      "edit": "編集",
+      "link": "リンク",
+      "delete": "消去",
+      "back": "戻る"
+    },
+    "subject": "主題",
+    "disable": "無効にする",
+    "enable": "有効にする",
+    "unknown": "未知",
+    "platforms": {
+      "google": "グーグル",
+      "facebook": "フェイスブック"
+    },
+    "unknownProduct": "不明な製品",
+    "verifiedCollection": "検証されたコレクション",
+    "na": "ナ",
+    "returnHome": "家に帰る",
+    "mute": "ミュート",
+    "unmute": "ミュートを解除する",
+    "stopCamera": "カメラを停止",
+    "startCamera": "カメラを起動する",
+    "connecting": "接続中",
+    "disconnect": "切断する",
+    "returnDashboard": "ダッシュボードに戻る",
+    "time": {
+      "justNow": "ちょうど今"
+    },
+    "revoke": "取り消す",
+    "noData": "データなし",
+    "getStarted": "始めましょう",
+    "connect": "接続する",
+    "unknownProject": "未知のプロジェクト",
+    "settings": "設定",
+    "left": "左",
+    "right": "右",
+    "top": "トップ",
+    "bottom": "底",
+    "center": "中心",
+    "unlimited": "無制限",
+    "add": "追加",
+    "remove": "取り除く",
+    "generate": "生成する",
+    "generateImage": "画像の生成",
+    "generateVideo": "ビデオの生成"
+  },
+  "dashboard": {
+    "header": {
+      "systemOperational": "システム運用中",
+      "welcomeBack": "おかえり、",
+      "subtitle": "AI を活用したビデオ制作でクリエイティブなビジョンに命を吹き込みます",
+      "newProject": "新しいプロジェクト",
+      "goLive": "ライブに移行"
+    },
+    "stats": {
+      "credits": "クレジット",
+      "plan": "プラン",
+      "free": "無料利用枠",
+      "activeProjects": "アクティブなプロジェクト",
+      "viewAll": "すべて見る",
+      "connectedPlatforms": "接続されたプラットフォーム",
+      "manageConnections": "接続の管理",
+      "commerce": "商業収入",
+      "pendingOrders": "未決注文"
+    },
+    "recentProjects": {
+      "title": "最近のプロジェクト",
+      "viewAll": "すべて見る",
+      "noProjects": "まだプロジェクトはありません。",
+      "startJourney": "今日からクリエイティブな旅を始めましょう。",
+      "createProject": "プロジェクトの作成"
+    },
+    "connectedAccounts": {
+      "title": "接続されたプラットフォーム",
+      "connected": "接続済み",
+      "managePlatforms": "接続の管理"
+    },
+    "systemStatus": {
+      "title": "システムステータス",
+      "aiEngine": "AI合成エンジン",
+      "renderingNodes": "クラウド レンダリング ノード",
+      "storage": "オブジェクトストレージ",
+      "status": {
+        "operational": "稼働中",
+        "idle": "アイドル状態",
+        "healthy": "健康"
+      }
+    },
+    "tour": {
+      "welcome": {
+        "title": "いらっしゃいませ",
+        "desc": "あなたのクリエイティブハブ。"
+      },
+      "stats": {
+        "title": "クイック統計",
+        "desc": "使用状況を監視します。"
+      },
+      "actions": {
+        "title": "アクション",
+        "desc": "ワークフローを開始または継続します。"
+      },
+      "recent": {
+        "title": "最近の仕事",
+        "desc": "中断したところから再開します。"
+      }
+    },
+    "upgrade": "アップグレードプラン"
+  },
+  "projects": {
+    "header": {
+      "title": "あなたのプロジェクト",
+      "subtitle": "すべてのクリエイティブなプロジェクト、テンプレート、下書きを管理および監督します。"
+    },
+    "actions": {
+      "newProject": "新しいプロジェクト",
+      "edit": "編集",
+      "duplicate": "重複",
+      "delete": "消去"
+    },
+    "filters": {
+      "searchPlaceholder": "プロジェクトを検索...",
+      "all": "全て",
+      "draft": "下書き",
+      "processing": "処理...",
+      "generating": "生成中",
+      "storyboard": "絵コンテ",
+      "completed": "完了",
+      "failed": "失敗した"
+    },
+    "status": {
+      "draft": "下書き",
+      "processing": "処理...",
+      "generating": "生成中",
+      "storyboard": "絵コンテ",
+      "completed": "完了",
+      "failed": "失敗した",
+      "analyzing": "分析中"
+    },
+    "placeholders": {
+      "noDescription": "説明はありません。"
+    },
+    "modes": {
+      "video": "ビデオフロー",
+      "live-stream": "ライブストリーム",
+      "avatar": "アバター",
+      "commerce": "商業",
+      "template": "テンプレート",
+      "blank": "スタジオ",
+      "marketing": "マーケティング",
+      "topic": "AIビデオ"
+    },
+    "empty": {
+      "title": "アクティブなプロジェクトはありません",
+      "description": "新しいプロジェクトを初期化して、クリエイティブ アセットの生成を開始します。"
+    },
+    "confirmDelete": "このプロジェクトを終了してもよろしいですか?これを元に戻すことはできません。",
+    "deleteSuccess": "プロジェクトは正常に削除されました。",
+    "duplicateSuccess": "Project duplicated successfully.",
+    "duplicateFailed": "Failed to duplicate project.",
+    "tour": {
+      "create": {
+        "title": "プロジェクトの初期化",
+        "desc": "新しいクリエイティブ プロジェクトを開始するには、ここをクリックしてください。"
+      },
+      "filters": {
+        "title": "プロジェクトの並べ替えとフィルター",
+        "desc": "プロジェクトをステータスでフィルタリングするか、ここでクイック検索を実行します。"
+      }
+    },
+    "editor": {
+      "title": "ビデオエディター",
+      "messagePlaceholder": "Enter your message, @ to mention...",
+      "storyboard": {
+        "title": "絵コンテ",
+        "keyElements": "主要な要素",
+        "productionSegments": "生産セグメント",
+        "styleRules": "スタイルルール",
+        "audio": "オーディオ",
+        "worldPhysics": "世界の物理学",
+        "physicsModel": "物理モデル",
+        "lightingModel": "照明モデル",
+        "noGlobalRules": "グローバルルールなし",
+        "colorHarmony": "カラーハーモニー",
+        "noPalette": "パレットなし",
+        "coreStyle": "コアスタイル",
+        "visualStyle": "ビジュアルスタイル",
+        "characteristics": "特徴",
+        "audioTitle": "オーディオ制作とスコアリング",
+        "musicSection": "バックグラウンドミュージック",
+        "generatedBgm": "生成されたBGM",
+        "voiceoverSection": "ナレーションとボーカル要素",
+        "ambience": "雰囲気",
+        "sfxCues": "特殊効果キュー",
+        "segmentStatus": "セグメントのステータス",
+        "generateVoiceovers": "すべてのナレーションを生成する",
+        "subtitlesSection": "字幕とテキスト要素",
+        "subtitlesInfo": "字幕情報",
+        "regenerateCharacters": "キャラクターを再生成する",
+        "generateCharacters": "キャラクターの生成",
+        "generateAllAssets": "すべてのアセットを生成",
+        "regenerateAllFrames": "すべてのフレームを再生成",
+        "regenerateAllVideos": "すべてのビデオを再生成",
+        "batchStart": "バッチ再生成を開始します",
+        "batchComplete": "バッチが完了しました:",
+        "charsUpdated": "キャラクターが更新されました",
+        "framesUpdated": "フレームが更新されました",
+        "videosRequested": "リクエストされたビデオ",
+        "videoBatchStart": "バッチビデオ生成を開始します",
+        "assetReady": "アセットが生成され、同期されました。",
+        "backgroundJobStarted": "バックグラウンドで生成が開始されました...",
+        "segDialog": {
+          "generalInfo": "一般情報",
+          "description": "視覚的な説明",
+          "camera": "カメラの詳細",
+          "location": "場所の詳細",
+          "character": "キャラクター",
+          "line": "ライン",
+          "delivery": "配達",
+          "style": "スタイル",
+          "timing": "タイミング (例: 0 ～ 2 秒)",
+          "lang": "言語",
+          "suggestions": {
+            "generateFrames": "フレームの生成",
+            "generateMotion": "モーションの生成",
+            "generateAudio": "オーディオの生成"
+          },
+          "videoProcessing": "ビデオ処理中...",
+          "imageProcessing": "画像処理中...",
+          "tabs": {
+            "environment": "環境",
+            "general": "一般的な",
+            "cinematic": "映画的な",
+            "audio": "音声と対話",
+            "prompt": "AIプロンプト"
+          },
+          "locationType": "タイプ",
+          "atmosphere": "雰囲気",
+          "title": "セグメントの詳細",
+          "noMedia": "メディアは生成されませんでした",
+          "regenerateFrame": "フレームの生成",
+          "regenerateVideo": "ビデオの生成",
+          "uploadImageVideo": "画像/ビデオをアップロードする",
+          "segTitle": "タイトル",
+          "duration": "期間(秒)",
+          "lipSync": "リップシンクが必要です",
+          "framing": "フレーミング",
+          "angle": "角度",
+          "movement": "動き",
+          "focus": "集中",
+          "lighting": "点灯",
+          "objects": "主要なオブジェクト",
+          "voiceover": "ナレーションスクリプト",
+          "audioDetails": "オーディオの詳細",
+          "detailedDialogue": "詳しい対話",
+          "imagePrompt": "画像生成プロンプト",
+          "videoPrompt": "ビデオ生成プロンプト",
+          "options": {
+            "extremeCloseUp": "極端なクローズアップ",
+            "closeUp": "閉じる",
+            "mediumShot": "ミディアムショット",
+            "fullShot": "フルショット",
+            "wideShot": "ワイドショット",
+            "extremeWideShot": "エクストリームワイドショット",
+            "ultraWideShot": "超ワイドショット",
+            "pov": "ハメ撮り",
+            "eyeLevel": "アイレベル",
+            "highAngle": "ハイトアングル",
+            "lowAngle": "ローアングル",
+            "dutchAngle": "ダッチアングル",
+            "overShoulder": "肩越し",
+            "birdsEye": "鳥の目",
+            "wormsEye": "ワームズアイ",
+            "static": "静的",
+            "pan": "パン",
+            "tilt": "傾ける",
+            "zoomIn": "ズームイン",
+            "zoomOut": "ズームアウト",
+            "dolly": "ドリー",
+            "tracking": "トラッキング",
+            "handheld": "ハンドヘルド",
+            "craneFlycam": "クレーンフライカム",
+            "deepFocus": "ディープフォーカス",
+            "shallowFocus": "浅い焦点",
+            "rackFocus": "ラックフォーカス",
+            "softFocus": "ソフトフォーカス",
+            "studio": "スタジオ",
+            "indoor": "屋内",
+            "outdoor": "アウトドア",
+            "urban": "都会的な",
+            "nature": "自然",
+            "scifi": "SF",
+            "cyberpunk": "サイバーパンク",
+            "cinematicInterior": "映画のようなインテリア"
+          },
+          "ambience": "雰囲気",
+          "sfx": "効果音",
+          "music": "音楽"
+        },
+        "addVisualCues": "視覚的な手がかりを追加...",
+        "addAudioCues": "オーディオキューを追加...",
+        "charDialog": {
+          "title": "キャラクター詳細",
+          "noImage": "画像なし",
+          "regenerateVisual": "画像の生成",
+          "uploadImage": "画像をアップロードする",
+          "general": "一般的なアイデンティティ",
+          "physical": "物理的な詳細",
+          "costume": "衣装と小道具",
+          "voice": "音声キャスト (TTS)",
+          "voiceId": "ボイスを選択",
+          "pitch": "ピッチ",
+          "name": "名前",
+          "species": "種",
+          "gender": "性別",
+          "age": "年",
+          "bodyBuild": "体",
+          "faceShape": "顔の形",
+          "hair": "髪",
+          "skinColor": "肌の色",
+          "eyes": "目",
+          "features": "特徴",
+          "outfitTop": "衣装トップ",
+          "outfitBottom": "衣装ボトム",
+          "footwear": "履物",
+          "headwear": "帽子",
+          "props": "小道具",
+          "listen": "聞く",
+          "styleCategory": "スタイルカテゴリー",
+          "options": {
+            "human": "人間",
+            "robot": "ロボット",
+            "animal": "動物",
+            "mystical": "神秘的な",
+            "alien": "エイリアン",
+            "male": "男",
+            "female": "女性",
+            "other": "他の",
+            "unknown": "未知",
+            "slender": "スレンダー",
+            "balanced": "バランスの取れた",
+            "muscular": "筋肉質",
+            "chubby": "ぽっちゃり",
+            "petite": "小柄な",
+            "athletic": "アスレチック",
+            "oval": "楕円形",
+            "round": "ラウンド",
+            "square": "四角",
+            "long": "長さ",
+            "diamond": "ダイヤモンド",
+            "heart": "心臓",
+            "blackShort": "ブラックショート",
+            "blondeLong": "ブロンドロング",
+            "brownCurly": "ブラウンカーリー",
+            "bald": "ハゲ",
+            "silverBun": "銀饅頭",
+            "shoulder": "ショルダー",
+            "white": "白",
+            "yellow": "黄色",
+            "tan": "タン",
+            "black": "黒",
+            "grey": "グレー",
+            "green": "緑"
+          }
+        },
+        "englishAiPrompt": "英語Aiプロンプト",
+        "visualKeywords": "ビジュアルキーワード",
+        "audioKeywords": "音声キーワード",
+        "suggestions": {
+          "generateFrames": "フレームの生成",
+          "generateMotion": "モーションの生成",
+          "generateAudio": "オーディオの生成"
+        },
+        "generateMusic": "音楽を生成する",
+        "bgmTrack": "バックグラウンドミュージックトラック",
+        "musicReady": "ミュージックレディ",
+        "regenerateMusic": "音楽を再生する",
+        "voiceoverReady": "ナレーションの準備完了",
+        "regenerateVoiceover": "ナレーションの再生成",
+        "captionsGenerated": "キャプションが正常に生成されました。",
+        "captionsReady": "キャプションの準備ができました",
+        "captionsFailed": "キャプションの生成に失敗しました!",
+        "generateSubtitles": "字幕の生成",
+        "generateAllSubtitles": "すべての字幕を生成",
+        "subtitlesGenerating": "字幕を生成しています...",
+        "editCaptions": "字幕とキャプションを編集する",
+        "editCaptionsSubtitle": "各セグメントのテキストのタイミング、内容、スタイルを調整する",
+        "captionTextPlaceholder": "字幕テキスト...",
+        "startTime": "開始時間",
+        "endTime": "終了時間",
+        "captionStyle": "キャプションのスタイル",
+        "addCaptionLine": "キャプション行を追加する",
+        "noCaptionsYet": "このセグメントにはまだ字幕行がありません。",
+        "captionsSaved": "キャプションが保存されました",
+        "transitions": "トランジション"
+      },
+      "timeline": {
+        "title": "タイムライン",
+        "subtitleTrack": "字幕トラック",
+        "generateAction": "アクションの生成",
+        "manualGeneration": "手動生成",
+        "createAllVoiceovers": "すべてのナレーションを作成する",
+        "createAllSubtitles": "すべての字幕を作成する",
+        "regenBgm": "リジェネBGM",
+        "volume": "音量",
+        "musicVolume": "音楽の音量",
+        "videoVolume": "ビデオの音量",
+        "fadeOut": "フェードアウト",
+        "speed": "スピード",
+        "duration": "間隔",
+        "trimOffset": "トリムオフセット",
+        "live": "ライブ",
+        "tracks": "トラック",
+        "videoTrack": "ビデオトラック",
+        "voiceTrack": "ボイストラック",
+        "musicTrack": "音楽トラック",
+        "aiVoice": "アイボイス",
+        "noCaptions": "キャプションなし",
+        "noLowerThirds": "ローワーサードなし",
+        "addLowerThird": "下三分の一を追加",
+        "backgroundMusic": "バックグラウンドミュージック",
+        "generatingAiMusic": "Ai音楽の生成",
+        "generateAiBgm": "AiBGMの生成",
+        "voiceoverGenerating": "ナレーションを生成中...",
+        "voiceoverSuccess": "ナレーションの準備ができています",
+        "voiceoverFailed": "ナレーションの生成に失敗しました",
+        "transitionSettings": "トランジション",
+        "dialogueSegment": "対話",
+        "volumeUpdated": "ボリュームが更新されました",
+        "failedUpdateVolume": "ボリュームの更新に失敗しました",
+        "speedUpdated": "速度が更新されました",
+        "failedUpdateSpeed": "速度の更新に失敗しました",
+        "durationUpdated": "期間が更新されました",
+        "failedUpdateDuration": "期間の更新に失敗しました",
+        "fadeUpdated": "フェードが更新されました",
+        "transitionUpdated": "移行が更新されました",
+        "generating": "生成中...",
+        "generate": "ボイスオーバーを生成する",
+        "ready": "準備ができて",
+        "transitions": {
+          "none": "なし",
+          "fade": "フェード",
+          "dissolve": "溶解する",
+          "blur": "ぼかし",
+          "zoomBlur": "ズームブラー",
+          "morph": "モーフ",
+          "glitch": "グリッチ",
+          "lightLeak": "光漏れ",
+          "cube": "キューブ",
+          "flip": "フリップ",
+          "wipe": "ワイプ",
+          "circle": "丸",
+          "slide": "スライド"
+        },
+        "selectedSegment": "選択済み: #{id}",
+        "captionsGenerated": "キャプションが正常に生成されました。",
+        "transitionsTitle": "トランジション",
+        "regenVoiceover": "リジェネのナレーション",
+        "voiceVolume": "声の大きさ",
+        "voiceSpeed": "音声速度",
+        "regenCaptions": "キャプションを再生成する"
+      },
+      "chatAssistant": "AIアシスタント",
+      "video": {
+        "serverStart": "サーバー側アセンブリを開始しています...",
+        "started": "動画の組み立てが始まりました！",
+        "failedStart": "ビデオアセンブリの開始に失敗しました",
+        "starting": "レンダリング シーケンスを開始しています...",
+        "cancelled": "レンダリングシーケンスが中止されました",
+        "completed": "レンダリングが完了しました。",
+        "progress": "合成中: {p}%",
+        "exportSettings": "設定のエクスポート",
+        "format": "形式",
+        "codec": "コーデック",
+        "resolution": "解決",
+        "fps": "fps",
+        "quality": "品質",
+        "globalAudio": "グローバルオーディオ",
+        "includeAllTracks": "すべてのトラックを含める",
+        "audioCodec": "オーディオコーデック",
+        "sampleRate": "サンプルレート",
+        "optimizing": "最適化",
+        "startExport": "エクスポートの開始",
+        "abortProcess": "プロセスの中止",
+        "viewResult": "結果を見る",
+        "resetProcess": "リセットプロセス",
+        "exporting": "輸出中",
+        "initializing": "初期化中",
+        "processing": "処理...",
+        "complete": "完了",
+        "done": "終わり",
+        "error": "ビデオの組み立てに失敗しました",
+        "noSegments": "ビデオセグメントはありません。まずは一般的なビデオセグメントをお願いします。",
+        "recommended": "推奨",
+        "hd": "HD",
+        "fullHd": "フルHD",
+        "2k": "2K",
+        "4k": "4K",
+        "fpsLabel": "{fps} FPS",
+        "low": "低い",
+        "medium": "中くらい",
+        "high": "高い",
+        "hzLabel": "{hz} Hz",
+        "errorTitle": "ビデオの組み立てに失敗しました",
+        "noProject": "プロジェクトが見つかりませんでした。",
+        "uploading": "ビデオをアップロードしています...",
+        "success": "動画が無事にアップロードされました！",
+        "cancel": "ビデオのアップロードに失敗しました"
+      },
+      "lowerThird": {
+        "edit": "編集",
+        "add": "追加",
+        "text": "文章",
+        "subtitle": "字幕",
+        "style": "スタイル",
+        "position": "位置",
+        "animation": "アニメーション",
+        "startTime": "開始時間",
+        "duration": "間隔",
+        "options": {
+          "styles": {
+            "default": "デフォルト",
+            "defaultDesc": "デフォルトの説明",
+            "minimal": "最小限",
+            "minimalDesc": "最小限の説明",
+            "bold": "大胆な",
+            "boldDesc": "太字の説明",
+            "gradient": "勾配",
+            "gradientDesc": "グラデーションデスク"
+          },
+          "positions": {
+            "left": "左",
+            "center": "中心",
+            "right": "右"
+          },
+          "animations": {
+            "fade": "フェード",
+            "slide": "スライド",
+            "none": "なし"
+          }
+        }
+      },
+      "chat": {
+        "attachFiles": "ファイルを添付する",
+        "mentionFiles": "ファイルに言及する",
+        "keywords": {
+          "visualPlan": "ビジュアルプラン",
+          "generatePlan": "計画の生成"
+        },
+        "visualStrategyFailed": "ビジュアルプランの生成に失敗しました",
+        "error": "申し訳ありませんが、リクエストの処理中にエラーが発生しました。"
+      },
+      "assistant": "AIアシスタント",
+      "header": {
+        "untitled": "無題のプロジェクト",
+        "credits": "クレジット",
+        "studio": "スタジオ",
+        "title": "プロジェクト編集者",
+        "back": "戻る",
+        "rename": "プロジェクト名の変更",
+        "renameSuccess": "プロジェクト名が変更されました",
+        "renameError": "プロジェクト名の変更に失敗しました",
+        "export": "輸出",
+        "exportMp4": "フルビデオ (.mp4)",
+        "exportCapcut": "キャップカットプロジェクト",
+        "exportPremiere": "プレミアプロジェクト",
+        "exportAssets": "アセット ZIP (画像、音声、音楽)",
+        "exportComingSoon": "輸出も近日開始予定",
+        "featureComingSoon": "エディター ビューでの機能が近日公開予定",
+        "renamed": "プロジェクト名が変更されました",
+        "renameFailed": "プロジェクト名の変更に失敗しました",
+        "comingSoon": "近日公開",
+        "simple": "流れ"
+      },
+      "publish": {
+        "title": "ビデオを公開する",
+        "syncing": "同期中",
+        "storage": "ストレージ",
+        "archived": "アーカイブ済み",
+        "download": "ダウンロード",
+        "specifications": "仕様",
+        "fileSize": "ファイルサイズ",
+        "syndicate": "シンジケート",
+        "noAccounts": "アカウントがありません",
+        "connect": "接続する",
+        "syndicateNow": "今すぐシンジケートする",
+        "antMedia": "Ant メディア サーバー",
+        "antMediaDesc": "スケーラブルなストリーミング ソリューション",
+        "connected": "接続済み",
+        "streamId": "ストリームID",
+        "streamIdDesc": "ストリームIDの説明",
+        "pushRtmp": "プッシュ Rtmp",
+        "liveStream": "ライブストリーム",
+        "saveVod": "VOD を保存する",
+        "metrics": "メトリクス",
+        "viewers": "視聴者",
+        "bitrate": "ビットレート",
+        "simulcast": "同時放送",
+        "addEndpoint": "エンドポイントの追加",
+        "exit": "出口",
+        "syndicationTitle": "動画のタイトル",
+        "syndicationDescription": "ビデオの説明",
+        "toasts": {
+          "vodFailed": "ビデオを VOD に保存できませんでした",
+          "vodSaved": "ビデオは正常に保存されました",
+          "endpointFailed": "エンドポイントの追加に失敗しました",
+          "endpointAdded": "エンドポイントが正常に追加されました",
+          "broadcastStarted": "ブロードキャストが正常に開始されました",
+          "broadcastFailed": "ブロードキャストの開始に失敗しました"
+        },
+        "platforms": "プラットフォーム"
+      },
+      "music": {
+        "generated": "BGMが生成される"
+      }
+    },
+    "recorder": {
+      "title": "レコーダー",
+      "getReady": "摂取の準備をしてください...",
+      "liveCam": "ライブカメラ",
+      "micChangeDisabled": "録音中はボーカル入力を変更できません。",
+      "finishDialog": {
+        "title": "タイトル",
+        "save": "保存",
+        "download": "ダウンロード",
+        "discard": "破棄"
+      },
+      "tabs": {
+        "camera": "カメラ",
+        "cameraScreen": "カメラとスクリーン",
+        "screen": "画面",
+        "audio": "オーディオ"
+      },
+      "overlay": {
+        "aslZone": "ASL キャプチャーゾーン",
+        "audioLevel": "レベル"
+      },
+      "settings": {
+        "blur": "視覚的なぼやけ"
+      },
+      "dialog": {
+        "title": "録音完了",
+        "desc": "録音の準備が完了しました。何をしたいですか?",
+        "download": "ダウンロード",
+        "save": "プロジェクトに保存"
+      },
+      "status": {
+        "syncing": "録音を同期中...",
+        "persistenceSuccess": "ミッションは永続的。",
+        "persistenceError": "持続中の戦術的失敗",
+        "extractionSoon": "強化されたファイル抽出機能は近日中に提供される予定です。",
+        "accessError": "戦略的失敗: ニューラル キャプチャ ユニットにアクセスできませんでした",
+        "stopFirst": "モードを切り替える前に録画を停止してください"
+      },
+      "projectDefault": "ニューラルセッション"
+    },
+    "new": {
+      "title": "プロジェクトの作成を開始する",
+      "subtitle": "プロジェクトモードを選択してください",
+      "success": "プロジェクトが正常に作成されました。",
+      "setup": {
+        "blank": {
+          "title": "空のプロジェクト",
+          "desc": "空のプロジェクトから始めます。",
+          "projectTitle": "プロジェクトタイトル",
+          "aspectRatio": "アスペクト比",
+          "creating": "作成"
+        },
+        "flow": "プロジェクトの流れ",
+        "template": "従来のテンプレート",
+        "avatar": {
+          "selectInfluencer": "インフルエンサーを選択する",
+          "selectInfluencerDesc": "インフルエンサーの説明を選択",
+          "uploadCustom": "カスタムのアップロード",
+          "uploadSupport": "アップロードのサポート",
+          "scriptVoice": "スクリプトボイス",
+          "scriptVoiceDesc": "スクリプトボイスの説明",
+          "scriptLabel": "スクリプトラベル",
+          "voiceSelection": "ボイスセレクション",
+          "advancedSettings": "詳細設定",
+          "allLanguages": "すべての言語",
+          "allGenders": "すべての性別",
+          "male": "男",
+          "female": "女性",
+          "neutral": "中性",
+          "speed": "スピード",
+          "stability": "安定性",
+          "similarity": "類似性",
+          "trainVoice": "トレインボイス",
+          "videoPreview": "ビデオプレビュー",
+          "generatingVideo": "ビデオの生成",
+          "videoReady": "ビデオ対応",
+          "download": "ダウンロード",
+          "saveLibrary": "ライブラリの保存",
+          "createNew": "新規作成",
+          "modal": {
+            "title": "タイトル",
+            "desc": "説明",
+            "voiceName": "ボイスネーム",
+            "startTraining": "トレーニングを開始する"
+          },
+          "initializingEngine": "エンジンを初期化しています"
+        },
+        "liveStream": {
+          "title": "タイトル",
+          "desc": "説明",
+          "studioMode": "スタジオモード",
+          "studioDesc": "スタジオの説明",
+          "restreamMode": "リストリームモード",
+          "restreamDesc": "リストリームの説明",
+          "selectContent": "コンテンツの選択",
+          "selectDestinations": "目的地の選択",
+          "loading": "処理...",
+          "noPlatforms": "プラットフォームがありません",
+          "connectFirst": "まず接続してください",
+          "studioBtn": "スタジオボタン",
+          "restreamBtn": "リストリームボタン",
+          "toasts": {
+            "failed": "失敗した"
+          }
+        },
+        "presentation": {
+          "title": "タイトル",
+          "desc": "説明",
+          "presenterAvatar": "プレゼンターのアバター",
+          "noAvatars": "アバターなし",
+          "uploadSlides": "スライドをアップロードする",
+          "uploadPresentation": "プレゼンテーションをアップロードする",
+          "support": "サポート",
+          "selectFile": "ファイルの選択"
+        },
+        "productAds": {
+          "source": "ソース",
+          "sourceDesc": "ソースの説明",
+          "productUrl": "製品URL",
+          "uploadAssets": "アセットのアップロード",
+          "urlLabel": "URLラベル",
+          "uploadPrompt": "アップロードプロンプト",
+          "analysis": "分析",
+          "analysisDesc": "分析の説明",
+          "productName": "製品名",
+          "price": "価格",
+          "sellingPoints": "セールスポイント",
+          "brandVibe": "ブランドの雰囲気",
+          "noVibes": "ノーバイブス",
+          "productImages": "製品画像",
+          "selectTemplate": "テンプレートの選択",
+          "selectTemplateDesc": "テンプレートの説明を選択"
+        }
+      },
+      "flow": {
+        "threeDRender": "3D ニューラル レンダリング",
+        "sceneSynthesis": "シーン合成",
+        "landscape": "風景",
+        "portrait": "肖像画",
+        "square": "四角",
+        "classic": "クラシック",
+        "cinematic": "映画的な",
+        "realistic": "現実的な",
+        "anime": "アニメ",
+        "targetDuration": "目標期間",
+        "resetFlow": "リセットフロー",
+        "mentionHeader": "メンションヘッダー",
+        "confirmCreate": "今すぐ始めましょう",
+        "reGenerate": "再生成",
+        "approve_script": "私はこの脚本を承認します。リソース分析を続行してください。",
+        "approve_analysis": "リソース分析を承認します。ストーリーボードの生成に進んでください。",
+        "thinking": "あなたのアイデアを検討中です...",
+        "analyzing": "分析中...",
+        "resetTitle": "リセット",
+        "attachFiles": "画像、ビデオ、テキスト、ドキュメントをサポート"
+      },
+      "topicPlaceholder": "動画のトピック、ストーリー、アイデアについて説明します。できるだけ詳しく説明してください。",
+      "results": {
+        "analysis": {
+          "summaryBar": "リソース分析",
+          "isReady": "準備ができています",
+          "type": "タイプ",
+          "document": "書類",
+          "scriptAnalysisTitle": "スクリプト分析",
+          "generalOverview": "概要",
+          "genre": "ジャンル",
+          "mood": "気分",
+          "duration": "推定所要時間",
+          "setting": "設定",
+          "themes": "コアテーマ",
+          "characterSystem": "キャラクターシステム",
+          "physical": "物理的な",
+          "voice": "声",
+          "narrativeStructure": "物語の構造",
+          "act1": "第一幕",
+          "act2": "第二幕",
+          "act3": "第 3 幕",
+          "segmentsCount": "生産セグメント",
+          "scenes": "シーン",
+          "visualElements": "ビジュアル＆アートディレクション",
+          "palette": "カラーパレット",
+          "worldRules": "世界のルール",
+          "lighting": "点灯",
+          "colorHarmony": "カラーハーモニー",
+          "visualKeywords": "ビジュアルキーワード",
+          "cameraAngles": "カメラアングル",
+          "audioElements": "オーディオ要素",
+          "sfx": "効果音",
+          "music": "バックグラウンドミュージック",
+          "ambience": "雰囲気",
+          "approveAndCreateStoryboard": "ストーリーボードの承認と作成"
+        },
+        "brief": {
+          "summaryBar": "クリエイティブブリーフ",
+          "videoType": "ビデオの種類",
+          "narrativeDriver": "ナラティブドライバー",
+          "tone": "感情的なトーン",
+          "visualStyle": "ビジュアルスタイル",
+          "pacing": "ペーシング",
+          "soundDesign": "サウンドデザイン",
+          "aspectRatio": "アスペクト比",
+          "language": "言語",
+          "audience": "対象者"
+        },
+        "closing": {
+          "intro": "高品質のビデオを作成するには、もう少し詳細が必要です。これらについてどう思いますか?",
+          "happy": "このビジョンに満足していますか?"
+        },
+        "script": {
+          "summaryBar": "脚本",
+          "title": "生成された脚本",
+          "hint": "上記のスクリプトを確認してください。承認して映画の分析に進むことができます。",
+          "approveBtn": "承認と分析"
+        },
+        "storyboard": {
+          "summaryBar": "絵コンテ",
+          "isUpdated": "更新されています",
+          "hint": "上記のストーリーボードのセグメントを確認してください。問題がなければ、承認してプロジェクトを作成し、エディタに入ります。",
+          "approveBtn": "プロジェクトの承認と作成"
+        },
+        "visualAssets": {
+          "summaryBar": "サマリーバー"
+        },
+        "visualPath": {
+          "summaryBar": "サマリーバー"
+        }
+      },
+      "back": "戻る",
+      "create": "プロジェクトの作成",
+      "next": "次",
+      "options": {
+        "aiVideo": {
+          "label": "AIビデオ",
+          "desc": "プロンプトから完全なビデオを生成します。"
+        },
+        "aiAvatar": {
+          "label": "AIアバター",
+          "desc": "デジタル プレゼンターを使用してビデオを作成します。"
+        },
+        "urlToVideo": {
+          "label": "製品広告",
+          "desc": "製品の URL または記事をビデオに変換します。"
+        },
+        "cloneStyle": {
+          "label": "クローンスタイル",
+          "desc": "あらゆるビデオのビジュアルおよびオーディオ スタイルを複製します。"
+        },
+        "scriptToVideo": {
+          "label": "スクリプトからビデオへ",
+          "desc": "カスタム スクリプトからシーンとオーディオを生成します。"
+        },
+        "presentation": {
+          "label": "プレゼンテーション",
+          "desc": "スライドまたは PDF をビデオに変換します。"
+        },
+        "record": {
+          "label": "レコーダー",
+          "desc": "画面、カメラ、音声を記録します。"
+        },
+        "liveStudio": {
+          "label": "ライブストリーム",
+          "desc": "AI アシストを使用して複数のプラットフォームにブロードキャストします。"
+        },
+        "productAds": {
+          "label": "製品広告",
+          "desc": "製品の URL または記事をビデオに変換します。"
+        },
+        "blank": {
+          "label": "空のプロジェクト",
+          "desc": "スタジオできれいなキャンバスから始めます。"
+        },
+        "saleStudio": {
+          "label": "販売スタジオ",
+          "desc": "AI エージェントを使用して顧客に製品を宣伝します。"
+        }
+      },
+      "clonePrompt": "このスタイルに似たビデオを作成したいと考えています: [ここに URL を貼り付け]。要件：",
+      "suggestions": {
+        "marketing": "[製品名] の 15 秒マーケティング広告を作成します",
+        "script": "[トピック] についての短編映画の脚本を書いてください",
+        "convert": "[@file] をビデオに変換します",
+        "clone": "[@reference] からスタイルをクローンします",
+        "presentation": "レポートデータのMCプレゼンテーション"
+      },
+      "toasts": {
+        "analysisFailed": "分析に失敗しました",
+        "resetSuccess": "履歴が正常に消去されました",
+        "resetFailed": "履歴のクリアに失敗しました",
+        "created": "プロジェクトが正常に作成されました",
+        "createFailed": "プロジェクトの作成に失敗しました"
+      },
+      "projectPrefix": "プロジェクトの接頭辞",
+      "characterRoster": "キャラクター",
+      "characterRosterDesc": "あなたのキャラクターとペルソナ",
+      "lockAndContinue": "承認して続行"
+    },
+    "detail": {
+      "duration": "間隔",
+      "summary": "まとめ",
+      "pending": "保留中",
+      "backDashboard": "ダッシュボードに戻る",
+      "continue": "続き→",
+      "created": "作成されました",
+      "scriptInput": "スクリプト入力",
+      "ready": "準備ができて",
+      "topic": "トピック",
+      "uploadedFile": "アップロードされたファイル",
+      "fileType": "ファイルの種類",
+      "uploaded": "アップロードされました",
+      "noInput": "まだスクリプトが入力されていません",
+      "analysis": "スクリプト分析",
+      "complete": "完了",
+      "genre": "ジャンル",
+      "mood": "気分",
+      "characters": "キャラクター",
+      "locations": "所在地",
+      "generateImages": "キャラクターと位置画像の生成",
+      "analysisNotStarted": "分析はまだ開始されていません",
+      "startAnalysis": "分析を開始する",
+      "storyboard": "絵コンテ",
+      "segments": "セグメント",
+      "notCreated": "作成されていません",
+      "totalDuration": "合計所要時間",
+      "viewStoryboard": "ストーリーボードを見る",
+      "generateVideos": "すべてのビデオを生成",
+      "storyboardNotCreated": "ストーリーボードはまだ作成されていません",
+      "generateStoryboard": "ストーリーボードの生成",
+      "finalVideo": "最終ビデオ",
+      "notGenerated": "生成されません",
+      "assembling": "組み立て中...",
+      "resolution": "解決",
+      "openEditor": "ビデオエディタを開く",
+      "videoNotAssembled": "ビデオはまだ組み立てられていません",
+      "goEditor": "エディターに移動",
+      "notFound": "プロジェクトが見つかりません"
+    },
+    "list": {
+      "title": "プロジェクト管理",
+      "subtitle": "プロジェクトとパイプラインを管理する",
+      "create": "新しいプロジェクトを開始する",
+      "search": "プロジェクトを検索...",
+      "empty": "プロジェクトが検出されませんでした。",
+      "table": {
+        "title": "プロジェクト名",
+        "createdAt": "作成時間",
+        "status": "状態",
+        "actions": "アクション"
+      },
+      "status": {
+        "draft": "下書き",
+        "processing": "処理...",
+        "rendered": "レンダリング済み"
+      }
+    },
+    "avatarCreator": {
+      "title": "アバタークリエイター",
+      "selectInfluencer": "インフルエンサーを選択する",
+      "noDescription": "説明なし",
+      "availableAvatars": "利用可能なアバター",
+      "search": "検索",
+      "static": "静的",
+      "stopPreview": "プレビューを停止",
+      "realTimePreview": "リアルタイムプレビュー",
+      "lipSyncPreview": "リップシンクプレビュー",
+      "lipSyncDesc": "選択した音声プロファイルでアバターの口がどのように動くかをテストします。",
+      "voiceProfile": "音声プロファイル",
+      "openLibrary": "オープンライブラリー",
+      "selectVoice": "ボイスを選択",
+      "speechSpeed": "話す速度",
+      "pitchAdjustment": "ピッチ調整",
+      "scriptContent": "スクリプトの内容",
+      "aiWrite": "アイライト",
+      "scriptPlaceholder": "ここにスクリプトを入力するか、テキストを貼り付けます。テキストを分析し、それに応じて音声を生成します。",
+      "enhancedSync": "強化された同期",
+      "aiVisemeMapping": "Ai 口形素マッピング",
+      "captureComplete": "キャプチャ完了",
+      "captureCompleteDesc": "キャプチャの完全な説明",
+      "continueToPreview": "プレビューを続ける",
+      "readyToRender": "レンダリングの準備ができました",
+      "renderDesc": "AI ペルソナを作成しています...",
+      "avatar": "アバター",
+      "estDuration": "推定期間",
+      "startRendering": "レンダリングの開始",
+      "abortRendering": "レンダリングの中止",
+      "metadata": "メタデータ",
+      "aiHookLab": "AIによる提案",
+      "videoTitle": "動画のタイトル",
+      "videoDescription": "ビデオの説明",
+      "syndicateToPlatforms": "Syndicate To Platforms",
+      "noAccounts": "アカウントがありません",
+      "connectAccounts": "Connect Accounts",
+      "download": "ダウンロード",
+      "saveToProjects": "プロジェクトに保存",
+      "syndicateFinish": "Syndicate Finish",
+      "back": "戻る",
+      "previewResults": "結果のプレビュー",
+      "renderPreview": "Render Preview",
+      "continue": "続く",
+      "toasts": {
+        "voicePreviewDefault": "Voice Preview Default",
+        "scriptGenerated": "Script Generated",
+        "renderFailed": "ビデオの生成に失敗しました。もう一度試してください。",
+        "videoCaptured": "ビデオのキャプチャに成功しました!",
+        "saving": "保存中...",
+        "hooksGenerated": "動画のタイトルと説明が正常に生成されました。"
+      },
+      "defaultScriptFallback": "こんにちは、みんな！ AI アバターを使用した素晴らしいコンテンツの作成をお手伝いできることを嬉しく思います。このクライアント側のレンダリング テクノロジーにより、制作物の高品質と低遅延が保証されます。",
+      "defaultTitlePrefix": "Your video title",
+      "steps": [
+        "Select Your Influencer",
+        "Script & Voice",
+        "Capture Video",
+        "Preview & Share"
+      ],
+      "step": "アバター作成者のステップ {step} / {totalSteps}",
+      "chars": "合計文字数: {count}",
+      "defaultScript": "こんにちは、みんな！ AI アバターを使用した素晴らしいコンテンツの作成をお手伝いできることを嬉しく思います。このクライアント側のレンダリング テクノロジーにより、制作物の高品質と低遅延が保証されます。"
+    },
+    "createDialog": {
+      "title": "ビデオの作成",
+      "subtitle": "作成方法を選択してください",
+      "options": {
+        "aiVideo": {
+          "label": "AIビデオ",
+          "desc": "テキストプロンプトから生成"
+        },
+        "aiAvatar": {
+          "label": "AIアバター",
+          "desc": "トーキングヘッドのビデオ"
+        },
+        "productAds": {
+          "label": "製品広告",
+          "desc": "URLから商品広告を作成"
+        },
+        "cloneStyle": {
+          "label": "クローンスタイル",
+          "desc": "参考動画より"
+        },
+        "liveStudio": {
+          "label": "ライブスタジオ",
+          "desc": "ソーシャルにブロードキャストする"
+        },
+        "presentation": {
+          "label": "プレゼンテーション",
+          "desc": "スライドまたは PDF から"
+        },
+        "record": {
+          "label": "記録",
+          "desc": "スクリーンとカメラ"
+        },
+        "blank": {
+          "label": "空のプロジェクト",
+          "desc": "ゼロから始める"
+        }
+      }
+    },
+    "previewModal": {
+      "title": "プレビュー",
+      "noVideo": "ビデオなし",
+      "syndicate": "シンジケート",
+      "loadingPlatforms": "荷台",
+      "noAccounts": "アカウントがありません",
+      "connectAccounts": "Connect Accounts",
+      "metadata": "メタデータ",
+      "generating": "生成中",
+      "aiHookLab": "AIによる提案",
+      "titleLabel": "タイトル",
+      "descriptionLabel": "説明",
+      "scheduleDistribution": "スケジュール配信",
+      "selectDateTime": "日付時刻を選択してください",
+      "analyzing": "分析中",
+      "aiPeakTime": "AIによる提案",
+      "aiPeakDesc": "ビデオを公開する時期が来ました",
+      "download": "ダウンロード",
+      "syndicateBtn": "シンジケート",
+      "defaultVideoName": "デフォルトのビデオ名",
+      "toasts": {
+        "publishFailed": "公開に失敗しました",
+        "hookApplied": "AIのタイトルと説明が適用されました",
+        "noVideo": "ビデオなし",
+        "selectDate": "日付と時刻を選択してください",
+        "selectPlatform": "ストリーミング プラットフォームを選択してください",
+        "peakTimeSuccess": "ピーク時間{time}が設定されました",
+        "peakTimeFailed": "ピークタイムに間に合わなかった",
+        "hooksFailed": "提案のタイトルと説明を生成できませんでした"
+      }
+    }
+  },
+  "studio": {
+    "quests": {
+      "audienceQuest": "謁見クエスト",
+      "timeRemaining": "残り時間",
+      "success": "クエスト完了！",
+      "failure": "クエスト失敗",
+      "rewardUnlocked": "報酬のロックが解除されました: {reward}",
+      "types": {
+        "hype_train": "ハイプ トレイン: 1 分あたり {target} メッセージを達成!",
+        "sentiment_surge": "ポジティブ サージ: {target} のポジティブな雰囲気を送りましょう!",
+        "gift_goal": "ギフト目標: {target} サポート トークンを集めましょう!"
+      }
+    },
+    "audio": {
+      "director": "ニューラルオーディオディレクター",
+      "bgm": "BGMレベル",
+      "sfx": "SFXエンジン",
+      "autoDucking": "自動ダッキングアクティブ",
+      "currentVibe": "現在の雰囲気: {vibe}"
+    },
+    "context": {
+      "sales": "コマースモード",
+      "game_streaming": "ゲームモード",
+      "general": "一般的なチャット",
+      "shift": "コンテキスト シフトが検出されました: {context} のステージを設定しています"
+    },
+    "accessibility": {
+      "translating": "音声を翻訳中...",
+      "liveAudio": "ライブオーディオ",
+      "aslTitle": "ASL 実践"
+    },
+    "header": {
+      "godMode": "ゴッドモード",
+      "live": "ライブ",
+      "ready": "準備ができて",
+      "professionalStudio": "プロフェッショナルスタジオ",
+      "addDescription": "説明の追加",
+      "noDescription": "説明なし",
+      "swarm": "群れ",
+      "engaged": "婚約中",
+      "off": "オフ",
+      "directorsLog": "ディレクターズログ",
+      "throttling": "スロットリング",
+      "awaitingAi": "愛を待っています",
+      "autoEmotion": "オートエモーション",
+      "demoStats": "デモ統計",
+      "mockViewers": "モックビューア",
+      "heartbeat": "ハートビート",
+      "optimal": "最適",
+      "simulatedMsg": "シミュレートされたメッセージ",
+      "autoAtmosphere": "オートアトモスフィア",
+      "demoMode": "デモモード"
+    },
+    "messages": {
+      "liveError": "ブロードキャストの開始に失敗しました",
+      "visionCaptured": "捉えられたビジョン",
+      "questStartedText": "クエスト開始テキスト",
+      "aiDealTriggeredTitle": "Ai ディールのトリガー",
+      "checkProductionPanel": "生産パネルを確認する",
+      "live": "放送は生放送です！",
+      "autoAtmosphereDisabled": "自動雰囲気を無効にする",
+      "godModeDisabled": "ゴッドモードを無効にする",
+      "demoModeDisabled": "デモモードを無効にする",
+      "autoAtmosphereEnabled": "自動雰囲気を有効にする",
+      "godModeEnabled": "ゴッドモードを有効にする",
+      "demoModeEnabled": "デモモードを有効にする",
+      "stopped": "放送停止",
+      "recordingStart": "録音セッション...",
+      "recordingSaved": "録画をクラウドに保存",
+      "godModeOn": "ゴッドモード開始",
+      "godModeOff": "手動制御が復元されました",
+      "inviteCopied": "招待リンクをコピーしました",
+      "mockChat": "素晴らしいストリーム品質！",
+      "aiChoice": "AI ディレクター: シーンを {payload} に切り替えました",
+      "aiShowingInfoCard": "AI ディレクター: 情報カードの表示",
+      "aiShowcasingProduct": "AI ディレクター: 製品 {name} を紹介します",
+      "aiCelebration": "AI ディレクター: お祝いの始まりです!",
+      "aiHighlight": "AI ディレクター: ハイライトを捉えました!",
+      "aiVisualEffectsActive": "AI ディレクター: 強化された視覚効果が有効です",
+      "aiCinematicCam": "AI ディレクター: 映画のような {path} カメラを適用する",
+      "aiAtmosphereChange": "AI ディレクター: ゲストの雰囲気を {effect} に変更しました",
+      "aiGlobalAtmosphere": "AI ディレクター: シーン全体の雰囲気を適用: {effect}",
+      "aiGiftEscalation": "AI ディレクター: {user} からの大量の {gift}!生産規模を拡大！",
+      "aiGiftReaction": "AI ディレクター: {user} から {gift} を承認します",
+      "aiHypeBoost": "AI ディレクター: チャットは盛り上がっています!環境への誇大広告を強化!",
+      "aiGroupAction": "AIディレクター：グループパフォーマンスを発動！",
+      "aiGestureDrink": "AI ディレクター: {name} は飲み物を飲んでいます",
+      "aiGesturePhone": "AI ディレクター: {name} が携帯電話をチェックしています",
+      "aiGestureLookAround": "AI ディレクター: {name} は環境を観察しています",
+      "aiAutonomyImpulse": "AI ディレクター: {name} が自律インパルスをトリガーしました",
+      "contextApplied": "AI ディレクター: コンテキストが適用されました",
+      "selectPlatform": "ストリーミング プラットフォームを選択してください",
+      "aiDealTriggered": "取引がトリガーされました",
+      "aiShowcase": "AI ディレクター: 製品 {name} を紹介します"
+    },
+    "title": "無題のストリーム",
+    "filters": {
+      "none": "普通",
+      "dream": "夢のような",
+      "noir": "ノワール",
+      "vibrant": "活気に満ちた"
+    },
+    "stats": {
+      "connection": "繋がり",
+      "unstable": "不安定",
+      "stable": "安定した"
+    },
+    "stageControls": {
+      "live": "ライブ",
+      "goLive": "ライブに移行",
+      "highlight": "ハイライト",
+      "recording": "録音",
+      "rec": "録音",
+      "onAir": "オンエア",
+      "inviteGuest": "ゲストを招待する"
+    },
+    "interactions": {
+      "tabs": {
+        "layout": "レイアウト",
+        "guests": "ゲスト",
+        "chat": "チャット",
+        "moments": "瞬間",
+        "stats": "統計"
+      },
+      "replyAs": "返信先",
+      "waitingEngagement": "待機中のエンゲージメント",
+      "viralPeaks": "ウイルスのピーク",
+      "draftPost": "ドラフト投稿",
+      "shareNow": "今すぐシェアする",
+      "noViralMoments": "バイラルな瞬間はありません",
+      "liveAudience": "ライブ視聴者",
+      "peak": "ピーク",
+      "uplinkStability": "アップリンクの安定性",
+      "bitrate": "ビットレート",
+      "latency": "レイテンシ",
+      "engagementIndex": "エンゲージメントインデックス",
+      "likes": "いいね！",
+      "shares": "株式",
+      "sendMessagePlaceholder": "メッセージのプレースホルダーを送信",
+      "simulateInteraction": "インタラクションをシミュレートする"
+    },
+    "videoEditor": {
+      "export": {
+        "extractingFrames": "フレームを抽出中...",
+        "processingAudio": "音声を処理中...",
+        "compilingVideo": "ビデオを編集中...",
+        "completed": "完了",
+        "error": "エクスポート中のエラー",
+        "uploading": "ビデオをアップロードしています...",
+        "loading": "リソースを読み込んでいます...",
+        "success": "ビデオは正常にエクスポートおよび保存されました。",
+        "uploadFailed": "ビデオのアップロードに失敗しました",
+        "startingStream": "エクスポート ストリームを開始しています...",
+        "exportingProgress": "エクスポート中: {percent}%",
+        "exportComplete": "エクスポートが完了しました！",
+        "renderingScene": "シーンのレンダリング {current}/{total}...",
+        "capturingScene": "シーンをキャプチャ中 {current}: {percent}%",
+        "readyForAssembly": "組み立ての準備完了！"
+      },
+      "messages": {
+        "splitError": "分割できません: 再生ヘッドがシーンの開始または終了に近すぎます。",
+        "untitledTemplate": "無題のテンプレート"
+      }
+    },
+    "loading": {
+      "initializing": "初期化中",
+      "hardwareAccelerationRequired": "ハードウェアアクセラレーションが必要です",
+      "hardwareAccelerationDesc": "WebGLの初期化に失敗しました。プロフェッショナルなブロードキャスト エクスペリエンスを提供するには、AntStudio ではブラウザで GPU アクセラレーションを有効にする必要があります。",
+      "troubleshooting": "トラブルシューティング",
+      "retry": "リトライ",
+      "exit": "出口",
+      "browsers": {
+        "chrome": {
+          "name": "クロム",
+          "title": "Chrome でハードウェア アクセラレーションを有効にする",
+          "steps[0]": "chrome://settings/system に移動します",
+          "steps[1]": "「利用可能な場合はハードウェア アクセラレーションを使用する」をオンにします。",
+          "steps[2]": "プロンプトが表示されたら「再起動」をクリックします",
+          "steps[3]": "chrome://flags にアクセスして「WebGL」を検索します",
+          "steps[4]": "「WebGL ドラフト拡張機能」と「WebGL 開発者拡張機能」を有効にする",
+          "steps[5]": "ブラウザを再起動して変更を適用します",
+          "troubleshoot": "get.webgl.org にアクセスして確認してください。 chrome://gpu で「ハードウェア アクセラレーション」ステータスを確認します。"
+        },
+        "firefox": {
+          "name": "Firefox",
+          "title": "Firefox でハードウェア アクセラレーションを有効にする",
+          "steps[0]": "アドレスバーに「about:config」と入力します。",
+          "steps[1]": "「リスクを受け入れて続行」をクリックします。",
+          "steps[2]": "webgl.disabled を検索し、false に設定します。",
+          "steps[3]": "webgl.force-enabled を検索し、true に設定します",
+          "steps[4]": "設定を適用するには Firefox を再起動します",
+          "troubleshoot": "get.webgl.org にアクセスして確認してください。 「WebRender」ステータスのサポートについて確認してください。"
+        },
+        "safari": {
+          "name": "サファリ",
+          "title": "Safari でハードウェア アクセラレーションを有効にする",
+          "steps[0]": "Safari を開き、[Safari] > [設定] に移動します。",
+          "steps[1]": "「詳細設定」タブをクリックします",
+          "steps[2]": "「メニューバーに開発メニューを表示」にチェックを入れる",
+          "steps[3]": "「設定」を閉じて、メニューバーの「開発」をクリックします。",
+          "steps[4]": "[実験的機能] にマウスを移動し、利用可能な場合は [WebGL 2.0] および [WebGL 1.0] を有効にします。",
+          "troubleshoot": "get.webgl.org にアクセスして確認してください。 「WebRender」ステータスのサポートについて確認してください。"
+        }
+      },
+      "status": {
+        "syncing": "同期中",
+        "starting": "起動",
+        "loading": "読み込み中",
+        "initializing": "初期化中",
+        "hardwareAccelerationRequired": "ハードウェアアクセラレーションが必要です",
+        "hardwareAccelerationDesc": "ハードウェア アクセラレーションの説明",
+        "troubleshooting": "トラブルシューティング",
+        "retry": "リトライ",
+        "exit": "出口"
+      }
+    },
+    "rail": {
+      "vibe": "バイブ",
+      "assets": "資産",
+      "coHosts": "共同ホスト"
+    },
+    "stage": {
+      "sessionPaused": "セッションが一時停止されました",
+      "beRightBack": "すぐ戻ってきます",
+      "sponsor": "スポンサー"
+    },
+    "guest": "ゲスト",
+    "project": {
+      "defaultTitle": "新しいプロジェクト"
+    },
+    "common": {
+      "changeBtn": "変化",
+      "aiOptimized": "AI に最適化",
+      "promote": "推進する",
+      "initializingEntity": "エンティティを初期化しています",
+      "highFidelity": "高忠実度",
+      "syncing": "同期中",
+      "noPreview": "利用可能なプレビューがありません",
+      "fileInfo": "ファイル情報",
+      "size": "サイズ",
+      "created": "作成されました",
+      "metaData": "メタデータ",
+      "type": "タイプ",
+      "purpose": "目的",
+      "downloadFile": "ダウンロードファイル",
+      "deleteAsset": "アセットの削除",
+      "dismiss": "却下する",
+      "level": "レベル",
+      "experience": "経験",
+      "xp": "XP",
+      "toggleLyrics": "歌詞を切り替え",
+      "stopPerformance": "パフォーマンスを停止する",
+      "showrunnerTitle": "AI ショーランナー",
+      "showrunnerStep": "ステップ {current} / {total}",
+      "showrunnerSays": "{agent} 言います:",
+      "showrunnerAction": "アクショントリガー: {action}",
+      "showrunnerUpNext": "次へ:",
+      "hiveMindPollTitle": "ハイブマインド投票",
+      "pollRemaining": "残り {count}s",
+      "pollVotesCast": "{count} 投票数",
+      "pollVoteRecorded": "投票が記録されました",
+      "download": "ダウンロード",
+      "title": "タイトル",
+      "description": "説明",
+      "levelUp": "レベルアップ！",
+      "levelInfo": "レベル {level}",
+      "newRewards": "新しい報酬のロックが解除されました",
+      "intensity": "強度",
+      "positivity": "陽性",
+      "active": "アクティブ",
+      "paused": "一時停止中",
+      "discard": "破棄",
+      "live": "ライブ",
+      "pin": "ピン",
+      "send": "送信",
+      "unlock": "ロックを解除する",
+      "copy": "コピー",
+      "copied": "コピーしました！",
+      "approve": "承認する",
+      "reject": "拒否する",
+      "cancel": "キャンセル",
+      "upload": "アップロード",
+      "video": "ビデオ",
+      "clear": "クリア",
+      "close": "近い",
+      "uploading": "アップロード中...",
+      "languages": {
+        "en-US": "英語 (米国)",
+        "vi-VN": "ベトナム語",
+        "ja-JP": "日本語",
+        "zh-CN": "中国語（簡体字）",
+        "es-ES": "スペイン語"
+      }
+    },
+    "analytics": {
+      "hookPerformance": "フック性能",
+      "hookInsightsDesc": "動画オープニングの AI を活用した分析",
+      "noAbData": "A/B テスト データはまだありません",
+      "hookLabHint": "Hook Lab でさらに実験を実行して、パフォーマンスの比較を確認します。",
+      "winningConcept": "勝利のコンセプト",
+      "experimentalRuns": "実験的な実行",
+      "avgPulse": "平均脈",
+      "avgLikes": "平均いいね！",
+      "viralGrowth": "ウイルスの増殖",
+      "historicalViews": "長期にわたる視聴回数とエンゲージメント",
+      "platformShare": "プラットフォームシェア",
+      "syndicationFootprint": "ソーシャルネットワーク全体へのトラフィック分散",
+      "totalReach": "トータルリーチ",
+      "audienceForecast": "観客動員数予想",
+      "aiRecommendation": "AIレコメンド",
+      "contentCalendar": "コンテンツカレンダー",
+      "distributionSchedule": "すべてのプラットフォームにわたってスケジュールおよび公開されたコンテンツ",
+      "analyzing": "分析中...",
+      "reasoningFollowers": "現在のシェアの速度とニッチの飽和に基づいて、ウイルスのブレイクスルーの可能性が高い。",
+      "reasoningRevenue": "ピーク時の最適化により、コンバージョン率は以前のベンチマークより 14% 上昇する傾向にあります。",
+      "reasoningDefault": "AI モデルは、現在のエンゲージメントの急増に基づいて持続的な成長期間を予測します。",
+      "hooks": {
+        "Curiosity": "好奇心フック",
+        "Controversial": "物議を醸す角度",
+        "Educational": "教育枠",
+        "Problem/Solution": "問題/解決策",
+        "Behind the Scenes": "舞台裏",
+        "Quick Tip": "クイックヒント",
+        "Comparison": "比較",
+        "Myth Busting": "神話を打ち破る"
+      },
+      "liveNow": "今を生きる",
+      "liveAnalyticsTitle": "ライブ分析",
+      "audience": "観客",
+      "economy": "経済",
+      "chatVel": "チャットベル",
+      "hypeMeter": "ハイプメーター",
+      "liveFeed": "ライブフィード"
+    },
+    "calendar": {
+      "weekDays": {
+        "sun": "太陽",
+        "mon": "月",
+        "tue": "火",
+        "wed": "水",
+        "thu": "木",
+        "fri": "金",
+        "sat": "土"
+      }
+    },
+    "drawers": {
+      "aiPersona": {
+        "neuralPersonas": "AI ペルソナ",
+        "syntheticIntelligence": "合成知能",
+        "role": {
+          "master": "マスター",
+          "agent": "エージェント"
+        },
+        "expression": "表現",
+        "quickEmotions": "素早い感情",
+        "prompts": {
+          "introduce": "導入",
+          "react": "反応する"
+        },
+        "actions": {
+          "introduce": "導入",
+          "react": "反応する",
+          "liveVoice": "生の声",
+          "vision": "ビジョン"
+        },
+        "animation": {
+          "intensity": "強度",
+          "gesture": "ジェスチャー",
+          "tilt": "傾ける",
+          "nod": "うなずく"
+        },
+        "performance": {
+          "fx": "FX",
+          "aura": "オーラ",
+          "particles": "粒子",
+          "lighting": "点灯",
+          "music": "音楽",
+          "selectSong": "曲を選択",
+          "unknownArtist": "不明なアーティスト",
+          "perform": "実行する",
+          "noSong": "歌がない"
+        },
+        "options": {
+          "none": "なし",
+          "sakura": "さくら",
+          "snow": "雪",
+          "glitter": "キラキラ",
+          "studio": "スタジオ",
+          "neon": "ネオン",
+          "dramatic": "劇的",
+          "vocalOrange": "ボーカルオレンジ"
+        },
+        "background": "背景",
+        "promptPlaceholder": "プロンプトプレースホルダー",
+        "autoGuest": {
+          "title": "自動ゲストロジック",
+          "desc": "有効にすると、AI ディレクターはペルソナを自動的に呼び出して、静かな時間を埋めたり、特定のチャット トピックについて議論したりします。"
+        }
+      },
+      "cinematic": {
+        "title": "シネマティック スタジオ",
+        "desc": "没入型レンダリングを有効にして、すべての AI エージェントを統一された高忠実度環境に配置します。",
+        "activeEnvironment": "アクティブな環境",
+        "autoCamera": "オートカメラ",
+        "status": {
+          "prod": "製品"
+        },
+        "influencerLink": "インフルエンサーリンク",
+        "activeVfx": "アクティブVFX",
+        "options": {
+          "none": "なし",
+          "bloom": "咲く"
+        },
+        "immersiveDisabled": "イマーシブステージ無効"
+      },
+      "collaboration": {
+        "title": "共同主催スタジオ",
+        "invite": "招待する",
+        "desc": "ゲストをリアルタイムのストリームに招待します。彼らは、完全なオーディオおよびビデオ機能を備えたライブ参加者として表示されます。",
+        "you": "あなた",
+        "connected": "接続済み",
+        "offline": "オフライン",
+        "noMembers": "メンバーがいません"
+      },
+      "comments": {
+        "title": "コミュニティスタジオ",
+        "platformEngagement": "プラットフォームへの取り組み",
+        "moderation": "節度",
+        "analyzing": "分析中",
+        "noComments": "コメントはありません",
+        "waiting": "待っている",
+        "aiSuggest": "アイサジェスト",
+        "reply": "返事",
+        "replyPlaceholder": "返信プレースホルダー",
+        "sending": "送信中",
+        "postReply": "返信を投稿する"
+      },
+      "layout": {
+        "availableLayouts": "利用可能なレイアウト",
+        "activeLayout": "アクティブレイアウト",
+        "transitionStyle": "トランジションスタイル",
+        "transitionStyleDesc": "トランジションスタイルの説明",
+        "transitionDuration": "移行期間",
+        "transitionDurationDesc": "移行期間の説明",
+        "transitionEasing": "移行緩和",
+        "transitionEasingDesc": "遷移イージングの説明",
+        "transitions": {
+          "instant": "なし",
+          "fade": "フェード",
+          "slide": "スライド",
+          "zoom": "ズーム",
+          "custom": "カスタム",
+          "wipe": "ワイプ"
+        }
+      },
+      "guest": {
+        "inviteGuest": "ゲストを招待する",
+        "inviteGuestDesc": "ストリームにゲストを招待する",
+        "inviteGuestPlaceholder": "ストリームにゲストを招待する",
+        "inviteGuestButton": "ゲストを招待する",
+        "inviteGuestButtonDesc": "ストリームにゲストを招待する",
+        "addMobileCam": "モバイルカメラ",
+        "personaGallery": "ギャラリー",
+        "roles": {
+          "agent": "エージェント",
+          "master": "マスター",
+          "host": "ホスト",
+          "guest": "ゲスト",
+          "mobileCam": "モバイルカメラ"
+        },
+        "inviteGuests": "ゲストを招待する",
+        "connectAudience": "ゲストをライブに招待する",
+        "joinLink": "リンクに参加する",
+        "secureLink": "安全なリンク",
+        "generatingUrl": "URLの生成",
+        "scanToJoin": "スキャンして参加",
+        "fastestForMobile": "モバイルでは最速",
+        "permissions": "権限",
+        "autoApprove": "自動承認",
+        "micEnabled": "マイクロフォン",
+        "camEnabled": "カメラ",
+        "guestLimitInfo": "ゲストの承認を待っています",
+        "linkCopied": "リンクがコピーされました",
+        "linkSecondaryDevice": "ビデオを取り込むためにモバイルカメラを追加",
+        "activeGuests": "アクティブなゲスト",
+        "slot": "スロット",
+        "swapTitle": "スワップ",
+        "waitingRoom": "待合室",
+        "knocking": "ノッキング",
+        "waiting": "待っている",
+        "approved": "承認された",
+        "rejected": "拒否されました",
+        "waitingStatus": "ゲスト待機中",
+        "guestApproved": "ゲストが承認しました",
+        "guestRejected": "ゲストが拒否されました"
+      },
+      "graphics": {
+        "hostIdentity": "ホスト名",
+        "primaryName": "ブロードキャストプライマリ名",
+        "placeholders": {
+          "primaryName": "例えばAntStudio プライム",
+          "subtitleRole": "例えばAIニュースアンカー"
+        },
+        "subtitleRole": "サブタイトル/役割",
+        "brandColor": "ブランドカラー",
+        "liveOverlays": "ライブオーバーレイ",
+        "lowerThird": "ローワーサード",
+        "dynamicTicker": "ダイナミックティッカー",
+        "identityOverlay": "アイデンティティオーバーレイ",
+        "brandLogo": "ブランドロゴ",
+        "changeLogo": "ロゴの変更",
+        "logoPosition": "ロゴの位置",
+        "logoScale": "ロゴスケール",
+        "logoOpacity": "ロゴの不透明度",
+        "utilityModes": "公共事業",
+        "breakMode": "ブレイクモード",
+        "specialTemplates": "特別なテンプレート",
+        "sponsorshipBadge": "スポンサーシップバッジ",
+        "sponsorshipDesc": "スポンサーシップの説明",
+        "positions": {
+          "top-left": "左上",
+          "top-right": "右上",
+          "bottom-left": "左下",
+          "bottom-right": "右下"
+        },
+        "statusMessage": "ステータスメッセージ"
+      },
+      "linguistic": {
+        "globalSync": "グローバル同期",
+        "voiceInputLanguage": "音声入力言語",
+        "subtitleTarget": "字幕ターゲット",
+        "neuralDubbing": "ニューラルダビング",
+        "voiceCloneRelay": "ボイスクローンリレー",
+        "canvasSubtitles": "キャンバスの字幕",
+        "burnInLiveText": "ライブテキストの書き込み",
+        "canvasSubtitlesDesc": "転写されたテキストは、視聴者のブロードキャスト キャンバス上に直接レンダリングされます。"
+      },
+      "economy": {
+        "storefrontSync": "店頭同期",
+        "flashDeal": "フラッシュディール",
+        "salesIntelligence": "セールスインテリジェンス",
+        "totalOrders": "総注文数",
+        "revenue": "収益",
+        "buyNow": "今すぐ購入",
+        "addToCart": "カートに追加",
+        "endFlash": "フラッシュディールを終了する",
+        "flashSaleActive": "フラッシュセールが開催中",
+        "endingIn": "で終わる",
+        "wallet": {
+          "balance": "バランス"
+        },
+        "giftCatalog": "ギフトカタログ",
+        "powerups": "パワーアップ"
+      },
+      "vibe": {
+        "script": {
+          "title": "AI ShowRunner ロジック",
+          "desc": "自律的な番組進行スクリプトを生成します。",
+          "openGenerator": "スクリプトジェネレーターを開く",
+          "generate": "生成する",
+          "regenerate": "再生する",
+          "loading": "読み込み中...",
+          "empty": "スクリプトなし",
+          "activeScript": "アクティブスクリプト"
+        },
+        "atmosphereCore": "アトモスフィアコア",
+        "currentState": "現在の状態",
+        "neuralAdaptation": "神経の適応",
+        "dynamicMusic": "ダイナミックミュージックFX",
+        "musicSyncDesc": "ビートをチャットのエネルギーに同期します ({status})",
+        "trackingInProgress": "感情追跡中です",
+        "tabs": {
+          "classic": "クラシック",
+          "pano": "360パノ"
+        },
+        "presets": {
+          "Late Night Talk": "深夜のトーク",
+          "Morning Vibes": "朝の雰囲気",
+          "Cyberpunk Stream": "サイバーパンクストリーム",
+          "Cozy Fireside": "居心地の良い炉辺",
+          "Nebula Void": "星雲ボイド",
+          "Digital Forest": "デジタルフォレスト",
+          "Neon City Peak": "ネオンシティピーク",
+          "Minimal Stage": "ミニマルステージ"
+        },
+        "moodDesc": "{mood} 気分",
+        "scenePresets": "スタジオシーンのプリセット"
+      },
+      "showrunner": {
+        "title": "ショーランナー AI",
+        "selectProfile": "「プロファイルを表示」を選択します",
+        "generateAiScript": "AI スクリプトの生成",
+        "loadProfilesFailed": "番組プロファイルのロードに失敗しました",
+        "scriptInputs": "スクリプト入力",
+        "dreaming": "番組を夢見て…",
+        "scriptReady": "スクリプトの準備完了: {title}",
+        "startProduction": "生産開始",
+        "generateScriptSuccess": "スクリプトが正常に生成されました。",
+        "showrunnerActive": "ショーランナーアクティブ!座ってリラックスしてください。"
+      },
+      "engagement": {
+        "livePolls": "ライブ投票",
+        "startNew": "新しい投票を開始する",
+        "noActivePoll": "アクティブな投票はありません",
+        "createNewPoll": "新しい投票の作成",
+        "qaQueueHeader": "Q&A リアルタイムキュー",
+        "ending": "エンディング...",
+        "question": "質問",
+        "questionPlaceholder": "質問を入力してください",
+        "options": "オプション",
+        "launchPoll": "投票を開始する"
+      }
+    },
+    "tabs": {
+      "ai": "AI ペルソナ",
+      "graphics": "グラフィックス",
+      "linguistic": "言語学",
+      "commerce": "商業",
+      "engagement": "婚約",
+      "guests": "ゲスト",
+      "store": "店",
+      "cinematic": "映画的な",
+      "script": "スクリプト",
+      "chat": "チャット",
+      "platforms": "プラットフォーム",
+      "broadcasting": "放送",
+      "enhancement": "強化",
+      "background": "背景",
+      "filters": "フィルター",
+      "branding": "ブランディング",
+      "overlays": "オーバーレイ",
+      "accessibility": "アクセシビリティ"
+    },
+    "settings": {
+      "title": "設定",
+      "version": "1.0.0",
+      "resetBtn": "リセット",
+      "streamingQuality": "品質",
+      "enableAiFeatures": "AIの機能",
+      "aiFeaturesDesc": "顔認識、手の形、美しさ、フィルターなどの AI 機能を有効にします...",
+      "enhancementPresets": "強化",
+      "advancedSettings": "アドバンテージ",
+      "bgStandard": "デフォルト",
+      "bgBlur": "ぼかし",
+      "bgVirtual": "バーチャル",
+      "lensProfile": "フィルター",
+      "lensNone": "なし",
+      "lensNoir": "ノワール",
+      "lensVintage": "ビンテージ",
+      "lensCool": "いいね",
+      "lensWarm": "暖かい",
+      "lensCinema": "シネマ",
+      "greenScreen": "グリーンスクリーン",
+      "studioIdentity": "スタジオのアイデンティティ",
+      "studioName": "スタジオ名",
+      "addStudioName": "スタジオ名の更新",
+      "subHeader": "AI Studio の設定を管理する",
+      "addHeaderTitle": "スタジオ名を追加",
+      "addHeaderDesc": "スタジオ名を AI Studio に追加します",
+      "brandingStyle": "ブランド",
+      "accentColor": "アクセントカラー",
+      "lowerThird": "ローワーサード",
+      "lowerThirdDesc": "AI Studio に下 3 分の 1 を追加する",
+      "tickerBar": "ティッカーバー",
+      "tickerBarDesc": "AI Studio にティッカー バーを追加する",
+      "breakMode": "ブレイクモード",
+      "breakModeDesc": "AI Studio に休憩モードを追加する",
+      "aiTranslations": "AI翻訳",
+      "aiTranslationsDesc": "AI 翻訳を AI Studio に追加する",
+      "sourceLang": "ソース言語",
+      "targetLang": "対象言語",
+      "liveCaptions": "ライブキャプション",
+      "liveCaptionsDesc": "AI Studio にライブキャプションを追加する",
+      "tabs": {
+        "ai": "AI ペルソナ",
+        "graphics": "グラフィックス",
+        "linguistic": "言語学",
+        "commerce": "商業",
+        "engagement": "婚約",
+        "guests": "ゲスト",
+        "store": "店",
+        "cinematic": "映画的な",
+        "script": "スクリプト",
+        "chat": "チャット",
+        "platforms": "プラットフォーム",
+        "broadcasting": "放送",
+        "enhancement": "強化",
+        "background": "背景",
+        "filters": "フィルター",
+        "branding": "ブランディング",
+        "overlays": "オーバーレイ",
+        "accessibility": "アクセシビリティ"
+      }
+    },
+    "vibes": {
+      "technoChill": "テクノチル"
+    },
+    "modals": {
+      "recordingComplete": {
+        "title": "録音完了",
+        "desc": "録音が完了しました。これで視聴者と共有できるようになります。",
+        "actions": {
+          "share": "共有",
+          "download": "ダウンロード",
+          "delete": "消去"
+        }
+      }
+    },
+    "swarm": {
+      "header": "スウォームモード",
+      "emptyState": "Swarm の洞察がない",
+      "density": "密度",
+      "nodes": "ノード",
+      "latency": "レイテンシ",
+      "hiveMood": "ハイブムード",
+      "status": "状態"
+    },
+    "godMode": {
+      "title": "ゴッドモード",
+      "humanFreeMode": "ヒューマンフリーモード",
+      "humanFreeModeDesc": "ホストのウェブカメラとマイクを無効にします。リソースを節約するための完全に AI インフルエンサー主導のショー。",
+      "directorStatus": "ディレクターのステータス",
+      "active": "アクティブ",
+      "silence": "沈黙",
+      "speaking": "話す",
+      "sensitivity": "感度",
+      "switchDelay": "スイッチ遅延",
+      "autoEffects": "オートエフェクト",
+      "autoEffectsDesc": "オートエフェクト",
+      "autoCam": "オートカメラ",
+      "autoCamDesc": "オートカメラ",
+      "autoPilot": "AI オートパイロット",
+      "autoPilotDesc": "AI がトピックをピボットし、ゲストを個別に管理できるようにする",
+      "hypeMeter": "視聴者の誇大宣伝レベル",
+      "boardConsensus": "取締役会のコンセンサス",
+      "awaitingEvaluation": "評価待ち",
+      "awaitingEvaluationDesc": "評価待ち",
+      "decisionLog": "意思決定ログ",
+      "decisionLogDesc": "意思決定ログ",
+      "autoPublishViral": "自動公開バイラル"
+    },
+    "director": {
+      "roomVibe": "部屋の雰囲気",
+      "vibeTense": "時制",
+      "vibeNeutral": "中性",
+      "vibeHype": "誇大広告",
+      "audienceActions": "視聴者のアクション",
+      "pollCreatorTitle": "投票作成者",
+      "newHivePoll": "新しいハイブ投票",
+      "pollQuestionLabel": "質問",
+      "pollQuestionPlaceholder": "次に何が起こるでしょうか?",
+      "pollOptionsLabel": "オプション",
+      "pollOptionPlaceholder": "オプション",
+      "cancelButton": "キャンセル",
+      "launchPollButton": "打ち上げ",
+      "actions": {
+        "airHorn": "エアホーン",
+        "airHornDesc": "瞬間を盛り上げる",
+        "confetti": "紙吹雪",
+        "confettiDesc": "勝利を祝う",
+        "dramaticCut": "ドラマティックなカット",
+        "dramaticCutDesc": "スピーカーに焦点を当てる",
+        "randomClip": "ランダムクリップ",
+        "randomClipDesc": "カオス B ロールを挿入"
+      },
+      "insufficientCredits": "クレジットが不十分です",
+      "actionRequested": "{name}をリクエストしました",
+      "pollRequestSent": "投票リクエストがホストに送信されました。",
+      "createHivePoll": "ハイブ投票の作成"
+    },
+    "resources": {
+      "title": "リソース",
+      "searchLibrary": "アセットの検索",
+      "noAssets": "アセットが見つかりません",
+      "uploadDesc": "番組の画像や動画をアップロードする",
+      "actions": {
+        "bg": "背景",
+        "media": "メディア"
+      },
+      "fetchingHub": "読み込み中...",
+      "libraryEmpty": "資産がありません",
+      "addToSession": "セッションに追加",
+      "tabs": {
+        "pool": "プール",
+        "library": "図書館"
+      }
+    },
+    "guides": {
+      "liveStudioWelcomeTitle": "ライブスタジオへようこそ！",
+      "step": "ステップ",
+      "liveStudioWelcomeDesc": "LiveStudio は、プロフェッショナルなブロードキャスト プラットフォームです。ライブ ストリーミングと録画を開始するための簡単なツアーを見てみましょう。",
+      "skipTip": "ESC キーを押すか外側をクリックすることで、いつでもこのチュートリアルをスキップできます。",
+      "studioCanvasTitle": "スタジオキャンバス",
+      "studioCanvasDesc": "これは、ライブ ストリームが表示されるメイン キャンバスです。自分自身、ゲスト、すべての視覚効果をリアルタイムで確認できます。",
+      "studioCanvasTip": "キャンバスは、選択したレイアウトと解像度に自動的に調整されます。",
+      "effectsRailTitle": "エフェクトレール",
+      "effectsRailDesc": "このサイドバーから強力なエフェクトにアクセスします。レイアウト、フィルター、オーバーレイ、背景などから選択して、ストリームを強化します。",
+      "effectsRailTip": "いずれかのタブをクリックしてエフェクト パネルを開き、ストリームをカスタマイズします。",
+      "stageControlsTitle": "ステージコントロール",
+      "stageControlsTip": "緑色のボタンはアクティブを意味し、灰色のボタンは非アクティブを意味します。",
+      "liveChatTitle": "ライブチャットとインタラクション",
+      "liveChatDesc": "リアルタイムで視聴者と交流しましょう。ストリーム中にメッセージを確認し、「いいね！」を生成し、視聴者と対話します。",
+      "liveChatTip": "視聴者がストリームにコメントすると、メッセージがすぐに表示されます。",
+      "guestManagementTitle": "ゲスト管理",
+      "guestManagementDesc": "ゲストをストリームに招待しましょう!ゲスト スロットを管理したり、AI ペルソナを召喚したり、実際のコラボレーターを招待したりできます。",
+      "guestManagementTip": "複数のゲストを異なるレイアウトで使用できます。",
+      "goLiveTitle": "ライブに行きましょう！",
+      "goLiveDesc": "準備ができたら、[ライブ配信] ボタンをクリックして、接続されているプラ​​ットフォームへのブロードキャストを開始します。マイクとカメラがオンになっていることを確認してください。",
+      "goLiveTip": "公開する前に、[プラットフォーム] タブからプラットフォームに接続します。",
+      "allSetTitle": "準備は完了です!",
+      "allSetDesc": "素晴らしいライブ コンテンツを作成する準備ができました。エフェクトを探索し、レイアウトを試して、ストリーミングを楽しんでください。",
+      "allSetTip": "プレス ？いつでもキーボード ショートカットを確認できます。",
+      "recorderWelcomeTitle": "レコーダーへようこそ!",
+      "recorderWelcomeDesc": "レコーダーを使用すると、Web カメラ、画面共有、または AI アバターを使用してプロフェッショナルなビデオをキャプチャできます。特徴を探ってみましょう！",
+      "recorderWelcomeTip": "上部のタブを使用してモードを切り替えます。",
+      "recordingModesTitle": "録音モード",
+      "recordingModesDesc": "録画モードを選択します: 顔カメラの場合は Web カメラ、スクリーン キャプチャの場合はスクリーン、AI を利用したプレゼンテーションの場合はアバター。",
+      "recordingModesTip": "各モードには、さまざまなユースケースに最適化された独自の機能があります。",
+      "previewAreaTitle": "プレビューエリア",
+      "previewAreaDesc": "録画する前に自分自身または画面をリアルタイムで確認します。ここに表示されているものが記録されるものです。",
+      "previewAreaTip": "録画を開始する前に、カメラの角度と照明を調整します。",
+      "recordingControlsTitle": "録音コントロール",
+      "recordingControlsDesc": "録音の開始/停止、マイクの切り替え、ビューティーフィルターの有効化など。重要なコントロールはすべてここにあります。",
+      "recordingControlsTip": "赤いボタンをクリックすると録音が開始され、もう一度クリックすると停止します。",
+      "sidePanelToolsTitle": "サイドパネルツール",
+      "sidePanelToolsDesc": "サイド パネルからフィルター、背景、テレプロンプター、設定などの高度な機能にアクセスします。",
+      "sidePanelToolsTip": "コントロール バーのアイコンをクリックして、さまざまなパネルを開きます。",
+      "teleprompterTitle": "テレプロンプター (プロのヒント!)",
+      "teleprompterDesc": "テレプロンプターを使用して、録音中に台本を読み上げます。プロのプレゼンテーションに最適です。",
+      "teleprompterTip": "スクロール速度とフォントサイズを好みに合わせて調整します。",
+      "startRecordingTitle": "録音を開始してください！",
+      "startRecordingDesc": "録音する準備ができました!準備ができたら録画ボタンをクリックして、素晴らしいコンテンツを作成してください。",
+      "startRecordingTip": "録音はプロジェクト ライブラリに自動的に保存されます。",
+      "avatarWelcomeTitle": "AI アバターのセットアップへようこそ!",
+      "avatarWelcomeDesc": "AI アバターを使用してプロフェッショナルなビデオを作成します。次の手順に従って、現実的な AI プレゼンターでスクリプトに命を吹き込みます。",
+      "avatarWelcomeTip": "これは 4 ステップのプロセスで、所要時間は約 2 分です。",
+      "step1Title": "ステップ 1: アバターを選択する",
+      "step1Desc": "プロの AI アバターのライブラリから選択するか、独自のカスタム アバター画像をアップロードします。",
+      "step1Tip": "各アバターには独自の特徴とスタイルがあります。",
+      "uploadCustomTitle": "カスタムアバターをアップロードする",
+      "uploadCustomDesc": "自分の顔を使いたいですか？ + カードをクリックしてカスタム アバター写真をアップロードします。",
+      "uploadCustomTip": "最良の結果を得るには、鮮明な正面の写真を使用してください。",
+      "step2Title": "ステップ 2: スクリプトを作成する",
+      "step2Desc": "アバターに話させたいテキストを入力します。自然で会話的であれ！",
+      "step2Tip": "AI を使用してスクリプトを生成したり、独自のスクリプトを作成したりできます。",
+      "step3Title": "ステップ 3: 音声を選択する",
+      "step3Desc": "アバターに合った声を選択してください。私たちは複数の言語とアクセントで音声を話します。",
+      "step3Tip": "再生ボタンをクリックして各音声をプレビューします。",
+      "step4Title": "高度な音声設定",
+      "step4Desc": "ピッチ、スピード、感情などの高度なコントロールを使用して声を微調整します。",
+      "step4Tip": "これを切り替えると、プロフェッショナルな音声カスタマイズにアクセスできます。",
+      "generateTitle": "ビデオを生成しましょう！",
+      "generateDesc": "準備完了です！ 「ビデオを生成」をクリックすると、AI が数分でプロのアバター ビデオを作成します。",
+      "generateTip": "ビデオの準備ができたら通知が届きます。"
+    },
+    "virtual": {
+      "aiSuffix": "AI"
+    },
+    "influencerSelector": {
+      "title": "ライブストリームのインフルエンサーを選択してください",
+      "subtitle": "ライブストリーミングのインフルエンサーは最大 3 人",
+      "launch": "打ち上げ",
+      "agentsSelected": "エージェントが選択されました"
+    },
+    "audioDirector": {
+      "title": "オーディオディレクター",
+      "vibe": "バイブ",
+      "ducking": "ダッキング",
+      "standby": "待機する",
+      "masterVol": "マスターボリューム"
+    },
+    "contextSelector": {
+      "greeting": "どのコンテキストでストリーミングしていますか?",
+      "question": "以下からメインのストリーミング カテゴリを選択して、エクスペリエンスをカスタマイズしてください",
+      "modes": {
+        "sales": {
+          "name": "販売",
+          "desc": "Eコマース、製品デモ、オークション"
+        },
+        "talkshow": {
+          "name": "トークショー",
+          "desc": "インタビュー、パネルディスカッション、ディベート"
+        },
+        "news": {
+          "name": "ニュース",
+          "desc": "ニュース速報、天気、株式市場"
+        },
+        "education": {
+          "name": "教育",
+          "desc": "オンラインクラス、講義、ウェビナー"
+        },
+        "music": {
+          "name": "音楽",
+          "desc": "ライブコンサート、ミュージックビデオ、ミュージックショー"
+        },
+        "sport": {
+          "name": "スポーツ",
+          "desc": "ライブマッチ、スポーツ分析、スポーツショー"
+        },
+        "gameshow": {
+          "name": "ゲームショー",
+          "desc": "クイズ番組、ゲーム大会、ゲーム大会"
+        },
+        "game_streaming": {
+          "name": "ゲームストリーミング",
+          "desc": "ライブゲームストリーミング、ゲームトーナメント、ゲームコンペティション"
+        },
+        "commentary": {
+          "name": "解説",
+          "desc": "ライブ実況、ゲーム実況、スポーツ実況"
+        },
+        "general": {
+          "name": "一般的な",
+          "desc": "一般的なストリーミング、ライブ イベント、Vlog"
+        }
+      },
+      "skip": "スキップ",
+      "continue": "続く"
+    },
+    "dashboard": {
+      "directiveTitle": "指令"
+    }
+  },
+  "subscription": {
+    "title": "サブスクリプションと請求",
+    "description": "サブスクリプションを管理する",
+    "currentPlan": "現在の計画",
+    "upgrade": "アップグレードプラン",
+    "cancel": "プランをキャンセルする",
+    "credits": "クレジット",
+    "consumed": "消費された",
+    "balance": "バランス",
+    "membership": "メンバーシップ",
+    "bonus": "ボーナス",
+    "weekly": "週給",
+    "consumedThisMonth": "今月消費された",
+    "creditUsagePercent": "クレジット使用率",
+    "status": "状態",
+    "renewsOn": "更新日",
+    "manage": "管理",
+    "subtitle": "現在のプランの概要を確認し、請求履歴を表示し、レンダリング クレジットを補充します。",
+    "plans": {
+      "free": "無料利用枠",
+      "pro": "プロプラン",
+      "enterprise": "企業"
+    },
+    "active": "アクティブ",
+    "inactive": "非アクティブ",
+    "canceled": "キャンセル",
+    "renewalDate": "次回の更新日",
+    "creditsBalance": "クレジット残高",
+    "topUp": "チャージクレジット",
+    "available": "利用可能",
+    "usedThisMonth": "今月使用しました",
+    "planLimit": "プランの制限",
+    "billingHistory": "請求履歴",
+    "date": "日付",
+    "plan": "プラン",
+    "task": "タスク",
+    "amount": "額",
+    "noHistory": "請求履歴はありません。",
+    "toasts": {
+      "loadFailed": "サブスクリプションの詳細をロードできませんでした。"
+    },
+    "resetInfo": "情報のリセット",
+    "dialogs": {
+      "buyCredits": {
+        "title": "クレジットを購入する",
+        "subtitle": "AI 機能を使用するにはクレジットを購入してください",
+        "bonus": "ボーナス",
+        "credits": "クレジット",
+        "custom": "カスタム",
+        "policy": "⚠️ クレジットルール、ボーナスポリシー、報酬プログラムは、事前の通知の有無にかかわらず、運営上のニーズに基づいていつでも調整される場合があります。",
+        "purchase": "購入",
+        "toasts": {
+          "paymentFailed": "支払いに失敗しました",
+          "contactSupport": "サポートに連絡する"
+        },
+        "customDesc": "お問い合わせ"
+      },
+      "plans": {
+        "title": "料金プラン",
+        "subtitle": "あなたに合ったプランをお選びください",
+        "monthly": "毎月",
+        "annually": "毎年",
+        "recommended": "推奨",
+        "currentPlan": "現在の計画",
+        "upgradeNow": "今すぐアップグレード",
+        "payment": {
+          "card": {
+            "title": "クレジットカード",
+            "desc": "クレジットカードによる安全な支払い"
+          },
+          "paypal": {
+            "title": "ペイパル",
+            "desc": "PayPal による安全な支払い"
+          }
+        },
+        "save": "セール 20% オフ",
+        "features": {
+          "rewards": "報酬",
+          "aivision": "AIの機能",
+          "motion": "モーション",
+          "rights": "権利",
+          "portal": "ポータル"
+        }
+      }
+    }
+  },
+  "profile": {
+    "title": "ユーザープロフィール",
+    "name": "フルネーム",
+    "email": "電子メールアドレス",
+    "language": "インターフェース言語",
+    "upload": "クリックして新しい ID 署名をアップロードします",
+    "save": "プロファイルの保存",
+    "cancel": "キャンセル",
+    "plan": "プラン",
+    "upgrade": "アップグレード"
+  },
+  "account": {
+    "title": "ユーザープロフィール",
+    "menu": {
+      "profile": "プロファイル設定",
+      "notification": "通知",
+      "credits": "クレジット",
+      "integrations": "統合",
+      "price": "価格設定",
+      "terms": "条項",
+      "privacy": "プライバシー",
+      "signout": "サインアウト"
+    },
+    "credits": {
+      "title": "クレジット残高",
+      "balance": "現在のクレジット",
+      "membership": "会員の割り当て",
+      "bonus": "戦略的ボーナス",
+      "weekly": "毎週の更新",
+      "all": "全て",
+      "consumed": "消費",
+      "obtained": "取得した",
+      "noTransactions": "データが見つかりませんでした",
+      "resetInfo": "情報のリセット"
+    },
+    "pricing": {
+      "title": "価格設定",
+      "subtitle": "操作ごとの動的なリソース消費率",
+      "columns": {
+        "classification": "分類",
+        "model": "AIモデル",
+        "price": "信用コスト",
+        "remarks": "単位・備考"
+      },
+      "types": {
+        "text": "ダイアログフロー",
+        "image": "視覚的合成",
+        "video": "モーションレンダリング",
+        "audio": "音声合成",
+        "music": "ソニックアトモスフィア"
+      },
+      "units": {
+        "text": "1,000 トークン",
+        "image": "画像",
+        "video": "2番",
+        "audio": "1,000 文字",
+        "music": "追跡"
+      },
+      "remarks": {
+        "dialogue": "対話と文脈",
+        "beta": "ベータエンジン",
+        "quota": "標準クォータ",
+        "highQuality": "高忠実度"
+      }
+    },
+    "integrations": {
+      "youtube": "YouTube",
+      "facebook": "フェイスブック",
+      "connected": "接続済み",
+      "notConnected": "接続されていません",
+      "connect": "接続する",
+      "disconnect": "切断する",
+      "confirmDisconnect": "{platform} リンクを切断してもよろしいですか?",
+      "disconnectSuccess": "{platform} リンクが切断されました",
+      "disconnectFailed": "{platform} リンクの切断に失敗しました"
+    },
+    "notifications": {
+      "email": {
+        "title": "電子メール",
+        "desc": "重要なシステム アラートを電子メールで受信します。"
+      },
+      "project": {
+        "title": "プロジェクト",
+        "desc": "プロジェクトの進捗に関するアラート。"
+      },
+      "marketing": {
+        "title": "マーケティング",
+        "desc": "新しいエンジン機能に関する情報。"
+      },
+      "security": {
+        "title": "安全",
+        "desc": "多要素アラートとログイン異常アラート。"
+      }
+    }
+  },
+  "admin": {
+    "overview": {
+      "title": "管理者の概要",
+      "stats": {
+        "users": "総ユーザー数",
+        "revenue": "総収益",
+        "processing": "処理能力",
+        "uptime": "システム稼働時間",
+        "totalUsers": "総ユーザー数",
+        "monthlyRevenue": "月収",
+        "cpuUsage": "CPU使用率",
+        "storageUsed": "使用済みストレージ",
+        "stable": "安定した"
+      },
+      "charts": {
+        "velocity": "プラットフォームの速度",
+        "userGrowth": "ユーザーの増加",
+        "revenue": "収益",
+        "totalUsers": "総ユーザー数"
+      },
+      "recent": {
+        "signups": "最近のサインアップ",
+        "viewAll": "すべて見る",
+        "migrations": "最近の移行",
+        "upgradedPlan": "アップグレードプラン"
+      },
+      "infrastructure": {
+        "pulse": "インフラストラクチャーパルス",
+        "load": "システム負荷",
+        "cpuFulfillment": "CPUのフルフィルメント",
+        "manage": "インフラストラクチャの管理"
+      }
+    },
+    "users": {
+      "title": "ユーザー管理",
+      "subtitle": "ID とアクセスを管理する",
+      "searchPlaceholder": "名前またはメールアドレスで検索",
+      "table": {
+        "identity": "身元",
+        "role": "役割",
+        "subscription": "サブスクリプション",
+        "status": "状態",
+        "actions": "アクション"
+      },
+      "roles": {
+        "admin": "管理者",
+        "user": "ユーザー",
+        "sys-admin": "スーパー管理者"
+      },
+      "plans": {
+        "free": "無料",
+        "pro": "プロ",
+        "enterprise": "企業"
+      },
+      "status": {
+        "activated": "アクティブ化された",
+        "deactivated": "無効化されました"
+      },
+      "actions": {
+        "viewDetails": "詳細を見る",
+        "deleteUser": "ユーザーの削除"
+      },
+      "toasts": {
+        "loadFailed": "ユーザーのロードに失敗しました",
+        "statusUpdated": "ユーザーステータスが{status}_に更新されました",
+        "updateFailed": "ユーザーステータスの更新に失敗しました"
+      },
+      "deleteConfirm": {
+        "message": "このユーザーを削除してもよろしいですか?",
+        "title": "ユーザーの削除",
+        "confirm": "確認する",
+        "cancel": "キャンセル"
+      }
+    },
+    "userDetails": {
+      "title": "ユーザープロフィール",
+      "loading": "ユーザープロファイルをロード中...",
+      "status": {
+        "active": "アクティブ",
+        "inactive": "一時停止中"
+      },
+      "subscription": {
+        "free": "無料",
+        "status": "契約状況",
+        "plan": "アクティブ層",
+        "currentStatus": "ネットワークステータス",
+        "renewsOn": "リニューアルブロック"
+      },
+      "userId": "ユーザーID",
+      "joinedDate": "初期化日",
+      "lastLogin": "最終チェックイン",
+      "never": "初期化されていない",
+      "creditsBalance": "利用可能なクレジット"
+    },
+    "growth": {
+      "title": "ネットワークの拡張",
+      "subtitle": "グローバルな軌跡と成長の分析",
+      "status": {
+        "liveOptimizing": "ライブ最適化"
+      },
+      "stats": {
+        "impressions": "グローバルインプレッション",
+        "vsPrevWeek": "{n}% 対先週",
+        "conversion": "コンバージョンデルタ",
+        "abWinner": "A/B 勝者が導入されました",
+        "discoveryIndex": "ディスカバリーインデックス",
+        "seoHealth": "SEO の健全性: 最適",
+        "viralVelocity": "ウイルスの速度",
+        "clippingEngine": "クリッピング エンジンがアクティブです"
+      },
+      "abTesting": {
+        "missionTitle": "A/B テストのオーケストレーション",
+        "newTest": "テストの初期化",
+        "variantA": "バリアント A",
+        "variantB": "バリアント B",
+        "crLabel": "CR {n}%"
+      },
+      "seo": {
+        "engine": "SEO ディスカバリー エンジン",
+        "schema": "スキーマインジェクション",
+        "verified": "検証済みかつアクティブ",
+        "socialMeta": "ソーシャルメタグラフ",
+        "tagsActive": "OG タグがアクティブです",
+        "autoIndex": "自動インデックス作成",
+        "calibrating": "校正中 ({n}%)",
+        "topKeywords": "人気のキーワード"
+      },
+      "getStarted": "始めましょう"
+    },
+    "fleet": {
+      "title": "艦隊の展開",
+      "subtitle": "グローバル レンダー ノードとエッジ オーケストレーション",
+      "totalActiveUnits": "合計アクティブユニット数",
+      "refreshCommand": "テレメトリの更新",
+      "establishingDownlink": "ダウンリンクを確立しています...",
+      "activeRegistries": "アクティブなレジストリ",
+      "enterpriseTiers": "{count} エンタープライズ層",
+      "fleetIntegrity": "艦隊の誠実さ",
+      "statusOptimal": "ステータス最適",
+      "globalIngest": "グローバルインジェスト",
+      "s3ThroughputOptimal": "最適な S3 スループット",
+      "latestEngine": "最新エンジン",
+      "orchestrateRelease": "リリースを調整する",
+      "registryDatabase": "レジストリデータベース",
+      "searchPlaceholder": "ライセンスを検索...",
+      "table": {
+        "licenseIdentity": "ライセンスID",
+        "ownerContext": "所有者のコンテキスト",
+        "tacticalTier": "戦術層",
+        "activeUnits": "アクティブユニット",
+        "missionStatus": "ミッションステータス",
+        "operationalActions": "運用上のアクション"
+      },
+      "expires": "有効期限が切れます",
+      "units": "単位",
+      "telemetry": "テレメトリー",
+      "terminate": "消去",
+      "confirmTerminate": "ライセンス {key} を終了してもよろしいですか?",
+      "toasts": {
+        "downlinkFailure": "フリート レジストリとのダウンリンクを確立できませんでした"
+      }
+    },
+    "financials": {
+      "title": "財務台帳",
+      "subtitle": "世界的な収益と価値のベロシティ",
+      "downloadCsv": "台帳CSVをダウンロード",
+      "mrr": "毎月の経常収益",
+      "vsLastMonth": "{val} 対先月",
+      "activeSubscribers": "アクティブなコミットメント",
+      "newThisWeek": "{val} 今週の新しいコミットメント",
+      "transactionVolume": "取引量",
+      "lifetimeGross": "生涯総処理量",
+      "churnRate": "チャーンレート",
+      "acceptableLimits": "許容可能なしきい値の範囲内",
+      "globalLedger": "グローバル取引台帳",
+      "liveFeed": "ライブキャプチャフィード",
+      "table": {
+        "txId": "トランザクションID",
+        "customer": "顧客エンティティ",
+        "type": "分類",
+        "amount": "価値",
+        "status": "クリアランスステータス",
+        "gateway": "処理ゲートウェイ"
+      },
+      "fleetDistribution": "フリート層の分布",
+      "units": "単位"
+    },
+    "network": {
+      "title": "ネットワーク制御",
+      "subtitle": "ライブグローバル生成トポロジー",
+      "totalNodes": "合計出力ノード数",
+      "liveViewers": "グローバル視聴者フィード",
+      "globalHype": "世界的な誇大宣伝のトリガー",
+      "triggerEffects": "同期されたエフェクトをすべてのアクティブなライブストリーム ノードに展開します。",
+      "celebration": "最初のお祝いシーケンス",
+      "breakingNews": "ニュース速報アラート シーケンス",
+      "activePipeline": "アクティブなレンダリング パイプライン",
+      "synchronizing": "ストリームを同期中",
+      "autonomyDepth": "自律性の深さ",
+      "uptime": "ノード稼働時間",
+      "stability": "メッシュの安定性",
+      "statusNominal": "公称",
+      "noNodes": "アクティブなストリーミング ノードがありません",
+      "noNodesDesc": "中央のスタジオから新しいライブ プロジェクション エンティティをデプロイしてブロードキャストを開始します。"
+    },
+    "infra": {
+      "title": "インフラストラクチャの健全性",
+      "subtitle": "グローバルノードのステータスと調整されたフェイルオーバー",
+      "systemOperational": "システム稼働中",
+      "latency": "レイテンシー",
+      "load": "負荷",
+      "nodes": "ノード",
+      "noRegions": "アクティブな領域が検出されませんでした",
+      "databaseCluster": "データベースクラスター",
+      "optimizeIndexes": "インデックスの最適化",
+      "uptime": "稼働時間",
+      "failoverTitle": "フェイルオーバー オーケストレーション",
+      "standbyReady": "スタンバイ準備完了",
+      "failoverDesc": "高可用性を管理し、代替ゾーンへの手動フェイルオーバー シーケンスを開始します。",
+      "aiRedistribute": "AIによる負荷の再分散",
+      "validateBackups": "バックアップの検証",
+      "liveHeartbeat": "ライブハートビート",
+      "pulse": "脈",
+      "loadLabel": "ロードラベル",
+      "waitingHeartbeat": "ハートビートを待っています"
+    },
+    "monitoring": {
+      "title": "監視ステーション",
+      "subtitle": "リアルタイムのテレメトリとメトリクスの可観測性",
+      "support": "サポートコンソール",
+      "exportLogs": "診断のエクスポート",
+      "exporting": "梱包...",
+      "config": "アラート設定",
+      "clean": "ログのパージ",
+      "settingsTitle": "テレメトリ構成",
+      "emailAlerts": "電子メールアラートストリーム",
+      "recipientEmail": "受信側エンドポイント",
+      "alertLevel": "しきい値トリガー",
+      "errorOnly": "重大な異常のみ",
+      "warnError": "警告と異常",
+      "logRetention": "保持期間",
+      "days": "日",
+      "cpuUsage": "CPU使用率",
+      "ramActive": "VRAM/RAM アクティブ",
+      "diskSpace": "ストレージボリューム",
+      "networkThroughput": "帯域幅スループット",
+      "total": "合計",
+      "cpuRamTrends": "CPU / メモリ速度",
+      "networkActivity": "ネットワークIO",
+      "systemLogs": "システムログ",
+      "realtimeStream": "リアルタイムストリーム",
+      "clientErrors": "クライアントエラー",
+      "analytics": "分析",
+      "liveEngineStream": "ライブ エンジン ストリーム",
+      "connected": "接続済み",
+      "connecting": "接続中",
+      "allLevels": "すべてのレベル",
+      "debug": "デバッグ",
+      "normal": "普通",
+      "warning": "警告",
+      "error": "エラー",
+      "records": "記録",
+      "noRecords": "記録がありません",
+      "noClientErrors": "クライアントエラーなし",
+      "comingSoon": "近日公開"
+    },
+    "logs": {
+      "title": "生のテレメトリ",
+      "subtitle": "フィルタリングされていないシステム イベントとエラー ストリーム",
+      "logSettings": "テレメトリプロファイル",
+      "clearLogs": "メトリクスのパージ",
+      "notificationRules": "アラートルーティングルール",
+      "enableEmailAlerts": "クリティカル ヒットを電子メールにルーティングする",
+      "active": "アクティブ",
+      "inactive": "待機する",
+      "recipientEmail": "対象のメールアドレス",
+      "minAlertLevel": "重大度のしきい値",
+      "alertLevels": {
+        "error": "重大な障害",
+        "warn": "異常と警告",
+        "info": "すべてのアドバイザリートラフィック"
+      },
+      "logRetention": "データ保持サイクル",
+      "days": "日数",
+      "settingsHint": "テレメトリ ルールへの変更はメッシュ全体に即座に伝播されます。",
+      "level": "分類",
+      "allLevels": "すべての分類",
+      "debug": "ディープトレース",
+      "normal": "標準情報",
+      "warning": "警告状態",
+      "error": "重大なエラー",
+      "search": "フィルターパターン",
+      "searchPlaceholder": "正規表現またはキーワードを入力してください...",
+      "autoRefresh": "ライブ同期",
+      "recordsFound": "{count} エンゲージメントの追跡",
+      "connecting": "メッシュリンクを確立しています...",
+      "noLogs": "電線では沈黙。条件に一致するテレメトリはありません。",
+      "collapse": "ハッシュを折りたたむ",
+      "viewMetadata": "オブジェクトデータの展開",
+      "confirmClear": "警告: テレメトリの削除は永続的です。メトリクスブロックの消去に進みますか?",
+      "toasts": {
+        "loadLogsFailed": "テレメトリ データベースへの接続が切断されました",
+        "saveSettingsFailed": "ルールをエッジに伝播できませんでした",
+        "clearLogsFailed": "メトリクスブロックの消去に失敗しました"
+      }
+    },
+    "moderation": {
+      "title": "モデレーションログ",
+      "subtitle": "コンテンツの安全性と生成の自動監視",
+      "stats": {
+        "flaggedToday": "今日のリスクフラグ",
+        "blocked": "端子台"
+      },
+      "filters": {
+        "status": "Audit Status",
+        "all": "すべての監査",
+        "flagged": "Flagged / Review",
+        "blocked": "Hard Blocked",
+        "approved": "明示的に承認されました",
+        "searchPlaceholder": "世代プロンプトまたはインスタンスで検索..."
+      },
+      "loading": "Scanning audit trails...",
+      "card": {
+        "violation": "{type} ポリシー違反",
+        "risk": "リスク量子",
+        "vulnerability": "脆弱性インデックス {score}",
+        "hardBlock": "Hard Block Generation",
+        "forceApprove": "Force Output Approval"
+      },
+      "toasts": {
+        "resolved": "監査証跡 {id} はバイアスにより終了しました: {decision}"
+      }
+    },
+    "analytics": {
+      "title": "Analytics Engine",
+      "subtitle": "機械学習のパフォーマンスとシステムの洞察",
+      "autonomousOptimization": "自律最適化メッシュ",
+      "autonomousOptimizationDesc": "AI が視聴者の維持率に合わせてレンダリングの重みを動的に調整できるようにします。",
+      "engagementVsConfig": "視聴者のエンゲージメントとレンダリングプロファイルの比較",
+      "optimalStyle": "最適な美学",
+      "optimalPersona": "定着率の高いペルソナ",
+      "analyzing": "分析中...",
+      "directorInsights": "AI ディレクターのニューラル インサイト",
+      "gatheringData": "ニューラル ネットワークの観察を収集しています...",
+      "toasts": {
+        "disengaged": "自律的な最適化が解除されました。",
+        "toggleFailed": "最適化切り替えのネゴシエーションに失敗しました。"
+      },
+      "retentionScore": "保持スコア (%)"
+    },
+    "settings": {
+      "title": "システムアーキテクチャコンソール",
+      "subtitle": "グローバル システム パラメータとサブシステム",
+      "sync": "レジストリを同期する",
+      "committing": "コミット中...",
+      "save": "アーキテクチャの保存",
+      "tabs": {
+        "license": "アイデンティティとアクセス",
+        "system": "インフラストラクチャー",
+        "media": "メディアAPI",
+        "ai": "ニューラルネットワーク",
+        "billing": "経済"
+      },
+      "loading": "システムパラメータを取得しています...",
+      "toasts": {
+        "syncSuccess": "システムアーキテクチャの同期",
+        "syncFailed": "アーキテクチャの同期に失敗しました",
+        "saveSuccess": "アーキテクチャ構成がコミットされました",
+        "saveFailed": "コミットに失敗しました",
+        "stagedProtocol": "{name} 用にステージングされたプロトコル: {type}",
+        "keyRemoved": "APIキーが取り消されました",
+        "keysRegistered": "{count} 固有の API キーが登録されました",
+        "noUniqueKeys": "新しい一意のキーが見つかりませんでした",
+        "cookiesStaged": "セッション Cookie がディスパッチ用にステージングされました",
+        "validatingCookies": "汎用セッション Cookie を検証しています...",
+        "noCookies": "必要なセッション ペイロードがありません",
+        "invalidCookies": "不正な形式の Cookie ペイロードが拒否されました",
+        "syncCookiesSuccess": "認証クッキーが同期されました",
+        "syncCookiesFailed": "同期に失敗しました: {error}",
+        "applyConfig": "構成の適用",
+        "abort": "キャンセル",
+        "generateProtocol": "プロトコルの生成"
+      },
+      "ai": {
+        "captchaService": "キャプチャ解決ネットワーク",
+        "captchaSubtitle": "AI ワークフローの自動化された課題解決を構成します。",
+        "captchaMode": "解決戦略",
+        "yesCaptchaKey": "APIキー",
+        "yesCaptchaApi": "API URL",
+        "captchaStatus": "自動ルーティング",
+        "sessionSync": "ニューラルセッション同期",
+        "sessionSyncSubtitle": "ヘッドレス AI Studio および Labs Flow 認証用のグローバル Cookie。",
+        "googleCookies": "AIStudio / Gemini Cookie (JSON/Raw)",
+        "flowCookies": "Labs フロー Cookie (JSON/Raw)",
+        "applyCookies": "同期エンジンを適用する",
+        "providerRegistry": "プロバイダーレジストリ",
+        "geminiPoolManager": "ジェミニプールマネージャー",
+        "addIntelligenceCore": "インテリジェンスコアの追加",
+        "customProvider": "カスタムプロバイダー",
+        "bulkAddKeys": "キーの一括追加",
+        "aiAssist": "アイアシスト",
+        "config": {
+          "method": "方法",
+          "endpoint": "終点",
+          "headers": "ヘッダー",
+          "payload": "ペイロード",
+          "models": "モデル",
+          "responseMapping": "応答の適用",
+          "contentPath": "コンテンツはこちら",
+          "mediaUrlPath": "メディアrlアス",
+          "base64Path": "Base64ath",
+          "jobIdPath": "仕事の日"
+        },
+        "pollConfig": "図に関する投票",
+        "poll": {
+          "desc": "説明",
+          "endpoint": "終点",
+          "interval": "間隔",
+          "timeout": "タイムアウト",
+          "statusPath": "ステータスath",
+          "successValues": "成功の秘訣",
+          "failureValues": "失敗の価値",
+          "responseMapping": "応答の適用"
+        },
+        "aiAssistDesc": "アイシストエスケープ",
+        "aiAssistTitle": "AIアシスタントの設定",
+        "docUrl": "ドキュメントの URL",
+        "capabilities": {
+          "text": "文章",
+          "image": "画像",
+          "video": "ビデオ",
+          "audio": "オーディオ",
+          "music": "音楽",
+          "voice": "声",
+          "agent": "エージェント"
+        },
+        "protocol": "プロトコル"
+      },
+      "table": {
+        "identity": "身元",
+        "security": "安全",
+        "capabilities": "能力",
+        "status": "状態",
+        "actions": "アクション",
+        "apiKey": "APIキー",
+        "baseUrl": "ベース API URL",
+        "protocols": "プロトコル"
+      },
+      "license": {
+        "activation": "アクティベーション",
+        "fields": {
+          "type": "タイプ",
+          "maxUsers": "最大ユーザー数",
+          "maxProjects": "最大プロジェクト数",
+          "expires": "有効期限が切れます"
+        },
+        "instruction": "ライセンス キーを入力し、[すべての変更を保存] をクリックして、システムのすべての機能を有効にします。",
+        "key": "ライセンスキー",
+        "keyPlaceholder": "ライセンスキーを入力してください"
+      },
+      "media": {
+        "giphy": {
+          "title": "ジフィー",
+          "info": "GIF を検索して共有する",
+          "apiKey": "APIキー",
+          "placeholder": "APIキーの入力"
+        },
+        "pexels": {
+          "title": "ペクセル",
+          "info": "写真の検索と共有",
+          "apiKey": "APIキー",
+          "placeholder": "APIキーの入力"
+        },
+        "unsplash": {
+          "title": "アンスプラッシュ",
+          "info": "写真の検索と共有",
+          "apiKey": "APIキー",
+          "placeholder": "APIキーの入力"
+        }
+      },
+      "system": {
+        "domain": {
+          "title": "ドメイン",
+          "label": "あなたのドメイン",
+          "placeholder": "ドメインを入力します。例えばhttps://antstudio.com",
+          "info": ""
+        },
+        "proxy": {
+          "title": "プロキシ",
+          "integration": "統合",
+          "user": "ユーザー",
+          "pass": "パスワード",
+          "domain": "プロキシドメイン",
+          "port": "ポート"
+        },
+        "smtp": {
+          "title": "SMTP",
+          "user": "ユーザー",
+          "pass": "パスワード",
+          "host": "ホスト",
+          "port": "ポート",
+          "fromEmail": "メールから",
+          "fromName": "差出人名"
+        },
+        "payment": {
+          "title": "支払い",
+          "webhookInfo": "Webhook 情報",
+          "sandbox": "サンドボックス",
+          "live": "ライブ",
+          "modeInfo": "モード情報",
+          "stripe": "ストライプ",
+          "paypal": "ペイパル",
+          "publicKey": "公開鍵",
+          "secretKey": "秘密鍵",
+          "webhookSecret": "Webhook シークレット",
+          "clientId": "クライアントID",
+          "clientSecret": "クライアントシークレット",
+          "webhookSecretOptional": "Webhook シークレット オプション",
+          "mode": "モード",
+          "enabled": "有効"
+        },
+        "storage": {
+          "title": "ストレージ",
+          "awsS3": "AWS S3",
+          "googleDrive": "Googleドライブ",
+          "amazonS3": "Amazon S3 (S3 互換)",
+          "s3Info": "S3情報",
+          "driveInfo": "ドライブ情報",
+          "customEndpoint": "カスタムエンドポイント",
+          "accessKeyId": "アクセスキー",
+          "secretAccessKey": "秘密鍵",
+          "region": "地域",
+          "bucketName": "バケット名",
+          "serviceAccountEmail": "サービスアカウントのメールアドレス",
+          "privateKey": "秘密鍵",
+          "rootFolderId": "ルートフォルダー",
+          "b2": "バックブレイズB2",
+          "b2Info": "Backblaze B2 クラウド ストレージの構成",
+          "b2ApplicationKeyId": "アプリケーションキーID",
+          "b2ApplicationKey": "アプリケーションキー"
+        },
+        "oauth": {
+          "title": "OAuth",
+          "googleIdentity": "Google ID",
+          "facebook": "フェイスブック",
+          "tiktok": "ティックトック",
+          "redirectUriOverride": "リダイレクト URI オーバーライド",
+          "redirectInfo": "リダイレクト URI 情報",
+          "appId": "アプリID",
+          "appSecret": "アプリの秘密",
+          "clientKey": "クライアントキー",
+          "clientSecret": "クライアントシークレット"
+        }
+      },
+      "taskDefaults": {
+        "title": "タスクのデフォルト",
+        "table": {
+          "taskType": "タスクの種類",
+          "defaultCore": "デフォルトコア",
+          "neuralModelId": "ニューラルモデルID",
+          "costConfig": "コスト構成"
+        },
+        "perSec": "1秒あたり",
+        "selectProvider": "プロバイダーの選択",
+        "selectModel": "モデルを選択してください"
+      },
+      "whitelabel": {
+        "title": "ホワイトラベル",
+        "core": "コア",
+        "logoPreview": "ロゴのレビュー",
+        "faviconPreview": "ファビコンのレビュー",
+        "appName": "アプリ名",
+        "appLogo": "アプリのロゴ",
+        "favicon": "ファビコン",
+        "placeholders": {
+          "appName": "アプリ名を入力します。例えばアントスタジオ",
+          "appLogo": "アプリのロゴをアップロードします。例えばAntStudio.png",
+          "favicon": "ファビコンをアップロードします。例えばAntStudio.ico",
+          "logo": "ロゴをアップロードします。例えばAntStudio.png"
+        }
+      }
+    },
+    "support": {
+      "title": "サポートコマンド",
+      "subtitle": "サポートチケット",
+      "openIncidents": "オープンインシデント",
+      "searchPlaceholder": "件名または ID でインシデントを検索...",
+      "unknownAgent": "不明なエージェント",
+      "status": {
+        "open": "開ける",
+        "inProgress": "進行中",
+        "solved": "解決済み",
+        "closed": "閉店"
+      },
+      "dataBundles": "添付されたデータバンドル",
+      "dataAuthorized": "ディープシステム調査を許可されています",
+      "replyPlaceholder": "運用指令草案...",
+      "selectIncident": "台帳からインシデントを選択して開始します。",
+      "toasts": {
+        "statusUpdated": "インシデントのステータスが更新されました"
+      }
+    },
+    "tenant": {
+      "title": "ネットワークとテナント",
+      "subtitle": "グローバル名前空間と展開範囲",
+      "licenseBadge": "V2 {type} ライセンス",
+      "branding": {
+        "title": "ブランドアイデンティティ",
+        "companyName": "会社名",
+        "placeholderCompanyName": "アクメ社",
+        "primaryColor": "メインのアクセントカラー",
+        "logoHint": "1024x1024 透過 PNG",
+        "uploadLogo": "記章をアップロードする"
+      },
+      "deployment": {
+        "title": "展開モード",
+        "internal": "内部",
+        "public": "一般向け",
+        "internalModeActive": "内部モードがアクティブです。",
+        "internalModeDesc": "システムは密閉されています。登録には、明示的な招待リンクまたは管理者のプロビジョニングが必要です。",
+        "publicModeActive": "パブリックモードがアクティブです。",
+        "publicModeDesc": "システムはオープンです。誰でもポータルにアクセスしてテナントをインスタンス化できます。"
+      },
+      "credits": {
+        "title": "基本容量の更新",
+        "tierLabel": "{tier} ティアベースライン",
+        "perMonth": "クレジット/月",
+        "autoRefreshTitle": "自動リフレッシュシンクロナイザー",
+        "autoRefreshDesc": "毎月_{day}日に更新されます"
+      },
+      "contract": {
+        "title": "スマートコントラクト",
+        "status": "契約状況",
+        "active": "アクティブ",
+        "renewsOn": "更新日",
+        "renewsOnDate": "毎月24日",
+        "seatCapacity": "座席定員",
+        "manageSeats": "座席割り当ての管理",
+        "upgradePerpetual": "無期限へのアップグレード"
+      },
+      "support": {
+        "title": "プレミアムサポート",
+        "vipLineActive": "VIPラインがアクティブです",
+        "managerConnected": "アカウントマネージャーが接続されました"
+      },
+      "payment": {
+        "title": "財務ルーティング",
+        "stripeConnect": "ストライプコネクト",
+        "connectedTo": "{appName} マスター アカウントに接続されました",
+        "configureCustom": "カスタムゲートウェイの構成"
+      },
+      "managedSubs": {
+        "title": "管理対象サブテナント",
+        "onboard": "オンボードクライアント",
+        "verifiedSubdomain": "検証済みのサブドメイン",
+        "creditsConsumed": "消費されたクレジット"
+      },
+      "orgPool": {
+        "title": "組織プール",
+        "remainingCredits": "残りのクレジット",
+        "nextRefill": "次の詰め替え",
+        "credits": "クレジット"
+      },
+      "team": {
+        "title": "組織チーム",
+        "invite": "プロビジョニングメンバー",
+        "minUsed": "{n} 使用時間分"
+      },
+      "provision": {
+        "title": "アカウントのプロビジョニング",
+        "workEmail": "仕事用メールアドレス",
+        "placeholderEmail": "neo@matrix.io",
+        "firstName": "ファーストネーム",
+        "lastName": "苗字",
+        "accessLevel": "アクセスレベルクリアランス",
+        "roles": {
+          "admin": "システム管理者",
+          "editor": "コンテンツエディター",
+          "viewer": "オブザーバー (読み取り専用)"
+        },
+        "cancel": "キャンセル",
+        "confirm": "アカウントのプロビジョニング"
+      },
+      "consumption": {
+        "title": "容量消費",
+        "services": {
+          "streaming": "ライブストリーミングの計算",
+          "audio": "オーディオ合成エンジン",
+          "visuals": "ビジュアル生成パイプライン"
+        },
+        "quota": "{n}% 割り当て"
+      },
+      "footer": {
+        "cancel": "破棄",
+        "save": "ネットワーク構成の保存"
+      },
+      "toasts": {
+        "onboardingInitiated": "{name} のオンボーディング シーケンスが開始されました",
+        "accountProvisioned": "{email} 用にアカウントがプロビジョニングされました",
+        "configUpdated": "ネットワーク構成が複製されました",
+        "perpetualCheckout": "永続的なアップグレード シーケンスを開始しています..."
+      }
+    },
+    "aiAccounts": {
+      "title": "AIアカウントプール",
+      "subtitle": "インテリジェントなアカウントと割り当てを管理",
+      "addAntigravity": "反重力",
+      "addGoogle": "グーグルクラウド",
+      "addGoogleFlow": "Googleフロー",
+      "sessionToken": "セッショントークン（flowST）",
+      "howToGetToken": "このトークンを取得するにはどうすればよいですか?",
+      "stats": {
+        "totalAccounts": "総アカウント数",
+        "activeNodes": "アクティブなアカウント",
+        "rateLimited": "レート制限あり",
+        "systemsDown": "システムダウン"
+      },
+      "account": {
+        "disabled": "無効",
+        "syncQuota": "同期クォータ",
+        "remove": "アカウントの削除",
+        "showLess": "崩壊",
+        "moreModels": "{n} 個のモデルをさらに表示",
+        "noQuotaData": "クォータ データが取得されませんでした",
+        "addedAt": "追加した",
+        "updatedAt": "更新されました",
+        "changeProjectId": "プロジェクトIDの変更",
+        "createNewProject": "新しいプロジェクトの作成",
+        "enableApi": "APIを有効にする",
+        "enableBilling": "課金を有効にする",
+        "never": "一度もない",
+        "justNow": "ちょうど今",
+        "credits": "クレジット",
+        "minsAgo": "数分前",
+        "hoursAgo": "数時間前",
+        "daysAgo": "数日前",
+        "updateToken": "トークンの更新"
+      },
+      "toasts": {
+        "loadFailed": "フリートデータのロードに失敗しました",
+        "statusUpdated": "ノードのステータスが更新されました",
+        "updateFailed": "ノードの更新に失敗しました",
+        "synced": "ノードクォータが同期されました",
+        "syncFailed": "ノードの同期に失敗しました",
+        "deleted": "フリートからノードが削除されました",
+        "deleteFailed": "ノードの削除に失敗しました",
+        "deleteConfirm": "このインテリジェント ノードを削除してもよろしいですか?",
+        "syncing": "同期中..."
+      },
+      "empty": {
+        "title": "AI アカウントはありません",
+        "description": "AI アカウントを追加して AI 機能を使用する"
+      },
+      "toast": {
+        "enabled": "有効",
+        "disabled": "無効",
+        "stRequired": "セッショントークンが必要です"
+      },
+      "updateToken": "トークンの更新",
+      "tokenExpiredHelp": "Google Flowセッショントークンを取得するにはどうすればよいですか?"
+    },
+    "activation": {
+      "title": "システムのアクティベーション",
+      "subtitle": "端末ライセンスキーの認証",
+      "coreStatus": "コアオーセンティック",
+      "welcome": "{tier} 階層のロックが解除されました",
+      "unlocked": "ライセンスがアクティベートされました",
+      "goDashboard": "コマンドセンターに進む",
+      "licenseKey": "暗号化ライセンスキー",
+      "connectHub": "マスターハブに接続する",
+      "eula": "メッシュ ネットワークに接続すると、継続的な最適化のためのテレメトリ送信が許可されます。",
+      "toasts": {
+        "enterKey": "有効な暗号キーを提供してください",
+        "success": "キーが検証されました。ようこそ指揮官。",
+        "failed": "キーが拒否されました。ハンドシェイクが中止されました。",
+        "handshakeFailure": "ライセンスサーバーとのハンドシェイクのネゴシエーションに失敗しました"
+      }
+    },
+    "licenses": {
+      "title": "ライセンスハブ",
+      "generate": "ライセンスの生成",
+      "table": {
+        "key": "ライセンスキー",
+        "type": "タイプ",
+        "status": "状態",
+        "limits": "限界",
+        "expiry": "有効期限日",
+        "actions": "アクション"
+      },
+      "status": {
+        "active": "アクティブ",
+        "expired": "期限切れ",
+        "revoked": "取り消されました"
+      },
+      "limits": {
+        "unlimited": "無制限",
+        "never": "一度もない"
+      },
+      "actions": {
+        "revoke": "ライセンスを取り消す"
+      },
+      "empty": "ライセンスが見つかりません。",
+      "form": {
+        "type": "ライセンスの種類",
+        "selectType": "タイプを選択してください",
+        "maxUsers": "最大ユーザー数",
+        "maxProjects": "最大プロジェクト数",
+        "expiry": "有効期限",
+        "pickDate": "日付を選択してください",
+        "cancel": "キャンセル",
+        "generate": "生成する"
+      },
+      "planTypes": {
+        "trial": "トライアル",
+        "free": "無料",
+        "enterprise": "企業"
+      },
+      "deleteConfirm": {
+        "title": "ライセンスの削除",
+        "confirm": "確認する",
+        "cancel": "キャンセル"
+      }
+    },
+    "release": {
+      "title": "リリースハブ",
+      "subtitle": "ビルド アーティファクトをエッジ ターミナルにプッシュする",
+      "publishBuild": "ビルドの公開",
+      "deployVersion": "セマンティック バージョンのデプロイ",
+      "semanticVersion": "セマンティックバージョン",
+      "placeholderVersion": "例えば2.1.0",
+      "releaseChannel": "リリースチャンネル",
+      "channels": {
+        "stable": "安定した",
+        "beta": "ベータ",
+        "nightly": "ナイトリー/エッジ"
+      },
+      "tacticalNotes": "戦術的リリースノート",
+      "placeholderNotes": "ニューラル ネット ウェイトの調整と UI の改善について詳しく説明します...",
+      "artifactUrl": "バイナリ アーティファクト URL (S3 / CDN)",
+      "deploy": "リリースのデプロイ",
+      "channelSuffix": "チャネル",
+      "downloadArtifact": "アーティファクトをダウンロード",
+      "toasts": {
+        "fetchFailed": "リリースマニフェストとの同期に失敗しました"
+      }
+    },
+    "common": {
+      "import": "輸入",
+      "calls": "電話",
+      "unlimited": "無制限",
+      "never": "一度もない",
+      "label": "管理者設定"
+    },
+    "subscription": {
+      "plans": {
+        "title": "予定",
+        "monthlyPrice": "月額料金",
+        "yearlyPrice": "年間価格",
+        "quotas": "割り当て",
+        "monthlyCredits": "毎月のクレジット",
+        "prioritySupport": "優先サポート"
+      },
+      "packages": {
+        "title": "パッケージ",
+        "addPack": "パックの追加",
+        "creditsVolume": "クレジット量",
+        "price": "価格",
+        "packageActive": "パッケージがアクティブです",
+        "packageName": "パッケージ名"
+      }
+    }
+  },
+  "license": {
+    "title": "ライセンスマネージャー",
+    "description": "ユーザーライセンスを管理する",
+    "add": "+ ライセンスの追加",
+    "search": "ライセンスを検索...",
+    "filterAll": "すべてのライセンス",
+    "filterValid": "有効なライセンス",
+    "filterExpired": "期限切れのライセンス",
+    "filterBlocked": "ブロックされたライセンス",
+    "noLicenses": "ライセンスは追加されていません",
+    "noLicensesDesc": "ライセンスを追加して開始してください",
+    "preview": "プレビュー",
+    "download": "ダウンロード",
+    "delete": "消去",
+    "confirmDelete": "このライセンスを削除してもよろしいですか?",
+    "storageUsed": "使用済みストレージ",
+    "ownerRequired": "所有者は必須です",
+    "typeRequired": "タイプは必須です",
+    "maxUsersRequired": "最大ユーザー数は必須です",
+    "maxProjectsRequired": "最大プロジェクト数は必須です",
+    "durationDaysRequired": "期間 日数は必須です",
+    "issue": "ライセンスの発行",
+    "owner": "所有者",
+    "type": "タイプ",
+    "maxUsers": "最大ユーザー数",
+    "maxProjects": "最大プロジェクト数",
+    "durationDays": "期間 日数",
+    "typeTrial": "トライアル",
+    "typeFree": "無料",
+    "typeEnterprise": "企業",
+    "startDate": "開始日",
+    "endDate": "終了日",
+    "status": "状態",
+    "valid": "有効",
+    "expired": "期限切れ",
+    "blocked": "ブロックされました",
+    "update": "ライセンスの更新",
+    "subtitle": "ユーザーライセンスを管理する",
+    "columns": {
+      "owner": "所有者",
+      "type": "タイプ",
+      "limits": "限界",
+      "created": "作成されました",
+      "actions": "アクション",
+      "status": "状態",
+      "expires": "有効期限が切れます"
+    },
+    "empty": {
+      "title": "ライセンスなし"
+    },
+    "dialog": {
+      "issueTitle": "ライセンスの発行",
+      "ownerLabel": "所有者",
+      "tierLabel": "階層",
+      "maxUsers": "最大ユーザー数",
+      "maxProjects": "最大プロジェクト数",
+      "duration": "間隔",
+      "cancel": "キャンセル",
+      "issue": "問題",
+      "editTitle": "ライセンスの編集",
+      "keyLabel": "鍵",
+      "startDate": "開始日",
+      "endDate": "終了日",
+      "update": "アップデート",
+      "ownerPlaceholder": "所有者のメールアドレスを入力してください"
+    },
+    "typeBasic": "タイプベーシック",
+    "typePro": "タイププロ"
+  },
+  "marketing": {
+    "nav": {
+      "features": "機能",
+      "aiStreamer": "AI Streamer",
+      "b2bEnterprise": "エンタープライズ B2B",
+      "aiPersonas": "AI ペルソナ",
+      "login": "ログイン",
+      "getStarted": "スタジオを起動"
+    },
+    "hero": {
+      "badge": "自律型 AI ライブ配信 ＆ セールスエンジン",
+      "title": "自律型 AI ペルソナで <br/><span class=\"text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-pink-500\">24時間365日ライブ配信・販売</span>",
+      "desc": "インテリジェントな AI ストリーマー、リアルタイム Gemini 音声合成、自動商品ピッチループ、YouTube・TikTok・Facebook・AntMedia への同時マルチプラットフォーム配信でライブコマースを強化します。",
+      "cta": {
+        "start": "Sale Studio を起動",
+        "demo": "AI ペルソナを探索"
+      },
+      "stats": {
+        "nonStop": "24時間365日連続配信",
+        "platforms": "4以上のプラットフォーム",
+        "push": "同時マルチ配信",
+        "latency": "リアルタイム AI 音声"
+      },
+      "demo": {
+        "live": "ライブモード",
+        "viewers": "14,820 視聴者",
+        "flashSale": "タイムセール",
+        "productName": "スマート HD カメラドアホン",
+        "hudTitle": "AI ストリーマー スクリプトトリガー",
+        "hudText": "「ライブ配信へようこそ！本日限りのスマートドアホンの限定セールを実施中です。配線不要の 1080p 高画質...」"
+      }
+    },
+    "features": {
+      "tag": "次世代 AI ライブコマース プラットフォーム",
+      "title": "自律型ライブ販売配信の運用に必要な <br/><span class=\"text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-pink-500\">すべての機能を統合</span>",
+      "desc": "AntStudio は、高度な有限状態機械（FSM）自動化、リアルタイム Gemini 音声合成、動的な商品スポットライトオーバーレイ、マルチ目的地配信を1つの統一スタジオに統合します。",
+      "fsm": {
+        "title": "自律型販売 FSM",
+        "desc": "人間の介入なしで、商品のプレゼンテーション、スペック紹介、タイムセールカウントダウン、ソーシャルプルーフのトリガーを24時間365日自動実行します。",
+        "link": "スマートな状態遷移"
+      },
+      "speech": {
+        "title": "Gemini リアルタイム音声合成",
+        "desc": "50ms 未満のレイテンシで AI 音声をストリーミング。2D、3D VRM、Aidol ビデオキャラクターにリアルタイムリップシンク付きの自然な音声を提供します。",
+        "link": "マルチペルソナ音声"
+      },
+      "multicast": {
+        "title": "同時マルチ目的地配信",
+        "desc": "YouTube、TikTok Live、Facebook、Ant Media Server に同時配信。自動一時停止と接続自動復旧エンジンを内蔵。",
+        "link": "WebRTC ＆ FFmpeg リレー"
+      },
+      "catalog": {
+        "title": "カタログナレッジベース",
+        "desc": "商品カタログ、在庫 URL、FAQ ファイルを取り込むことで、AI ストリーマーが正確にスペックをアピールし、視聴者の質問に回答します。",
+        "link": "文脈に応じた Q&A 回答"
+      },
+      "overlays": {
+        "title": "ライブコマース オーバーレイ",
+        "desc": "販売中商品の QR コード、動的割引タグ、タイムセールカウントダウンタイマー、特殊な視覚効果を即座に生成します。",
+        "link": "即時購入チェックアウト"
+      },
+      "analytics": {
+        "title": "リアルタイム分析 ＆ ハイライト検出",
+        "desc": "視聴者数、エンゲージメント速度、感情スコアをリアルタイムで追跡。SNS 用の切り抜き動画を作成するためのバイラルピークを検出します。",
+        "link": "エンゲージメントテレメトリ"
+      }
+    },
+    "showcase": {
+      "tag": "SALE STUDIO スイート",
+      "title": "ブラウザ上で完結する仮想スタジオ環境",
+      "desc": "Sale Studio は、WebGL キャンバス描画、マルチトラックオーディオミキシング、動的商品切り替え、自律スクリプト実行を洗練された UI に統合しています。",
+      "item1Title": "マルチフォーマットアバター:",
+      "item1Desc": "2D 静止画、3D VRM アバター、Aidol ビデオクリップをスムーズに切り替え可能。",
+      "item2Title": "シームレスなネットワーク制御:",
+      "item2Desc": "リアルタイム RTT レイテンシと FPS テレメトリを備えた適応型ビットレートストリーミング。",
+      "item3Title": "柔軟な接続復旧機能:",
+      "item3Desc": "サーバー再起動時に FSM ループを自動一時停止し、WebSocket と WebRTC 接続を自動再試行。",
+      "cta": "SaleStudio ライブを体験"
+    },
+    "b2b": {
+      "badge": "エンタープライズ B2B アーキテクチャ",
+      "title": "代理店・ブランド・マルチテナント事業者向け設計",
+      "desc": "カスタムホワイトレーベルブランディング、多層組織階層、中央集中型クレジット管理により、ライブ配信オペレーションを拡張できます。",
+      "whiteLabel": {
+        "title": "ホワイトレーベル ＆ カスタムブランド",
+        "desc": "独自ドメイン、ロゴ、SMTP、クライアントポータル用のカスタマイズされた UI カラーで展開可能。",
+        "f1": "独自ドメイン ＆ SSL マッピング",
+        "f2": "ブランドロゴ ＆ カラーパレット",
+        "f3": "カスタム SMTP メール通知"
+      },
+      "hierarchy": {
+        "title": "マルチテナント階層管理",
+        "desc": "詳細な権限ロールと分離されたワークスペース環境で、サブ代理店、加盟店、チームメンバーを管理します。",
+        "f1": "サブテナントのプロビジョニングと分離",
+        "f2": "詳細なロールベースのアクセス制御",
+        "f3": "マルチユーザーチームワークスペース"
+      },
+      "pools": {
+        "title": "組織割り当て ＆ クレジットプール",
+        "desc": "配信時間、AI 音声クレジット、ストレージ容量をクライアントアカウント間で動的に割り当て、監査ログを記録します。",
+        "f1": "動的なクレジット ＆ 時間の割り当て",
+        "f2": "毎月の自動容量補充",
+        "f3": "詳細な使用状況の監査 ＆ 分析"
+      },
+      "cta": {
+        "title": "専用のエンタープライズプランやオンプレミスリレーが必要ですか？",
+        "desc": "デジタル代理店やメディア企業と提携し、専用配信ノードの展開、プライベート LLM 統合、専用サポート SLA を提供します。",
+        "button": "法人営業に問い合わせる"
+      }
+    },
+    "projects": {
+      "new": {
+        "title": "新規 AI 動画プロジェクトを作成",
+        "subtitle": "制作ワークフローを選択して動画プロジェクトを開始します",
+        "options": {
+          "aiVideo": {
+            "label": "台本ペースト AI 動画生成",
+            "desc": "テキストプロンプトから絵コンテ、AI ナレーション、BGM、動的字幕を自動生成します。"
+          },
+          "aiAvatar": {
+            "label": "AI デジタルアバター＆ペルソナ",
+            "desc": "Gemini 音声合成とリップシンクを備えた 2D 写真、3D VRM、Aidol 動画アバターを制作。"
+          },
+          "productAds": {
+            "label": "EC 商品 URL 動画広告ウィザード",
+            "desc": "商品ページの URL を貼り付けるだけで、売上に直結する動画広告を自動生成します。"
+          },
+          "saleStudio": {
+            "label": "24/7 自律型セールススタジオ",
+            "desc": "AI アバター、FSM 商品ピッチループ、リアルタイム Q&A、QR コードで 24 時間ライブ配信。"
+          },
+          "record": {
+            "label": "画面＆カメラ録画スタジオ",
+            "desc": "Web カメラ、デスクトップ画面、プレゼンテーション、マルチトラック音声の録画に対応。"
+          },
+          "blank": {
+            "label": "マルチトラックタイムラインスタジオ",
+            "desc": "マルチトラックの動画/音声タイムライン、トランジション、オーバーレイを備えた動画編集。"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "uptime": "配信稼働率",
+      "latency": "音声レイテンシ",
+      "destinations": "マルチ配信先",
+      "selling": "自律型販売"
+    },
+    "bottomCta": {
+      "tag": "今すぐ ANTSTUDIO を始めましょう",
+      "title": "ライブコマースの運営を自動化する準備はできましたか？",
+      "desc": "数分で最初の AI ストリーマーを配置し、YouTube、TikTok、Facebook、AntMedia 全体で連続売り上げを生成しましょう。",
+      "start": "無料トライアルを開始",
+      "signIn": "スタジオにログイン"
+    },
+    "footer": {
+      "brandDesc": "AntStudio は、24時間365日のマルチプラットフォーム配信のために設計された自律型 AI ライブ配信 ＆ コマース自動化プラットフォームです。",
+      "platform": "プラットフォーム",
+      "enterprise": "エンタープライズ",
+      "resources": "リソース ＆ 法的情報",
+      "whiteLabel": "ホワイトレーベルポータル",
+      "quotas": "組織割当",
+      "isolation": "サブテナント分離",
+      "documentation": "ドキュメント",
+      "privacy": "プライバシーポリシー",
+      "terms": "利用規約",
+      "rights": "© 2026 {appName}. All rights reserved."
+    },
+    "privacy": {
+      "title": "プライバシーポリシー",
+      "lastUpdated": "最終更新日: 2026年7月",
+      "sections": {
+        "introduction": {
+          "title": "1. はじめに",
+          "content": "お客様のプライバシーは当社にとって非常に重要です。本プライバシーポリシーは、{appName}（以下「当社」）が、ウェブサイトおよびサービスのご利用時にお客様の個人情報をどのように収集、使用、保護するかを説明するものです。"
+        },
+        "collection": {
+          "title": "2. 収集する情報",
+          "content": "当社は、アカウント作成時、動画生成時、またはサポートへのお問い合わせ時など、お客様が直接提供する情報を収集します。これには、お名前、メールアドレス、支払い情報が含まれます。"
+        },
+        "ai": {
+          "title": "3. AI テクノロジーの利用",
+          "content": "当社は、お客様の入力に基づいて動画コンテンツを生成するために AI テクノロジーを使用します。本サービスを利用することにより、AI 生成目的でのデータ処理に同意したとみなされます。"
+        },
+        "security": {
+          "title": "4. セキュリティ",
+          "content": "当社は、お客様のデータを保護するために業界標準のセキュリティ対策を実施しています。ただし、インターネット上の送信方法で100%安全なものは存在しません。"
+        }
+      }
+    },
+    "terms": {
+      "title": "利用規約",
+      "lastUpdated": "最終更新日: 2026年1月",
+      "sections": {
+        "acceptance": {
+          "title": "1. 規約への同意",
+          "content": "{appName} にアクセスまたは利用することにより、本利用規約に拘束されることに同意したものとみなされます。同意されない場合は、本サービスのご利用をお控えください。"
+        },
+        "use": {
+          "title": "2. サービスの利用",
+          "content": "お客様は、合法的な目的のためにのみ {appName} を利用することに同意するものとします。ご自身のアカウントを使用して生成されたすべてのコンテンツについて、お客様が責任を負います。"
+        },
+        "property": {
+          "title": "3. 知的財産権",
+          "content": "当社のプラットフォームを通じて生成されたすべてのコンテンツの所有権はお客様に帰属します。ただし、本サービスを利用することにより、サービスの提供および改善の目的でのみコンテンツを使用するライセンスを当社に付与するものとします。"
+        },
+        "conduct": {
+          "title": "4. ユーザーの行動規範",
+          "content": "違法、有害、または他者の権利を侵害するコンテンツを生成または配布するために当社プラットフォームを利用しないことに同意するものとします。"
+        }
+      }
+    }
+  },
+  "influencers": {
+    "badge": "デジタルペルソナ",
+    "avatars": "アバター",
+    "collection": "&コレクション",
+    "subtitle": "仮想ホストを管理したり、カスタム Live2D/VRM モデルをインポートしたり、高品質のプリセットから選択したりできます。",
+    "syncing": "同期中...",
+    "sync": "ライブラリの同期",
+    "tabs": {
+      "live2d": "Live2D プリセット",
+      "static": "静的プリセット",
+      "myInfluencers": "私の影響力のある人たち",
+      "public": "公共"
+    },
+    "search": "ペルソナを検索...",
+    "all": "全て",
+    "empty": {
+      "noInfluencers": "インフルエンサーが見つかりません",
+      "myInfluencersDesc": "インフルエンサー ペルソナをまだ追加していません。",
+      "presetsDesc": "条件に一致するプリセットはありません。"
+    },
+    "confirmDelete": "{name} のニューラル リンクを終了しますか?これを元に戻すことはできません。",
+    "toasts": {
+      "cloning": "ニューラル ネットワークのクローンを作成しています...",
+      "cloneSuccess": "プリセットのクローンが正常に作成されました",
+      "cloneFailed": "プリセットのクローン作成に失敗しました",
+      "previewSoon": "プレビュー モジュールは近日公開予定"
+    },
+    "newInfluencer": "新しいインフルエンサー",
+    "dashboard": {
+      "title": "ダッシュボード",
+      "activeSession": "アクティブなライブセッション",
+      "stats": {
+        "activeHours": "活動時間",
+        "sessions": "合計セッション数",
+        "salesGenerated": "生み出された売上",
+        "audienceReach": "視聴者へのリーチ"
+      },
+      "engines": {
+        "content": "年中無休のコンテンツ エンジン",
+        "live": "24 時間年中無休のライブ エンジン",
+        "status": "エンジンステータス",
+        "operational": "稼働中",
+        "processing": "処理",
+        "idle": "アイドル状態"
+      },
+      "videoPool": {
+        "title": "製品ビデオプール",
+        "desc": "このインフルエンサーの自動製品レビューとガイド。",
+        "generateForProduct": "レビューの生成",
+        "empty": "製品ビデオはまだ生成されていません。"
+      },
+      "memory": {
+        "title": "ペルソナメモリー",
+        "desc": "アクティブな知識エントリと歴史的背景。",
+        "activeKnowledge": "アクティブな知識",
+        "history": "インタラクション履歴"
+      },
+      "collaborators": {
+        "title": "コラボレーションネットワーク",
+        "invite": "共同主催者を招待する",
+        "connected": "{name} との神経結合が確立されました"
+      }
+    },
+    "create": {
+      "title": "インフルエンサーの初期化",
+      "projectionPending": "投影を待っています",
+      "liveLinkTooltip": "Toggle ライブ WebRTC トラッキング",
+      "isolatingSilhouette": "対象を隔離中...",
+      "synthesizingVisuals": "ビジュアルを合成中...",
+      "generateSnapshot": "サムネイルのキャプチャ",
+      "uploadPortrait": "ポートレートをアップロードする",
+      "generateVideo": "ビデオの生成",
+      "visionSource": "ビジョンソース",
+      "projectionType": "投影タイプ",
+      "vrm3d": "VRM",
+      "live2d": "ライブ2D",
+      "static": "静止写真",
+      "aidol": "AIエージェント",
+      "video": "ビデオ",
+      "videoPhoi": "コンテキストビデオベース",
+      "deployEntityFile": "エンティティファイルのデプロイ",
+      "acceptsPhotos": ".vrm、.zip、または標準の画像形式を受け入れます",
+      "fileSynchronized": "ファイルが同期されました",
+      "live2dAssetSynced": "Live2D アセットが正常に同期されました",
+      "influencerPhotoProcessed": "写真は正常に処理されました",
+      "videoPhôiSynced": "ビデオマスターが正常に同期されました",
+      "personaIdentity": "ペルソナのアイデンティティ",
+      "namePlaceholder": "ペルソナ名を入力してください...",
+      "vocalSignature": "ボーカルサイン",
+      "signatureLoaded": "音声署名がロードされました",
+      "openLibrary": "ニューラル音声ライブラリを開く",
+      "promptDescription": "システムプロンプト/説明",
+      "descriptionPlaceholder": "性格や行動の特徴を教えてください...",
+      "environment": "環境",
+      "hideSpecialized": "特殊なパラメータを非表示にする",
+      "refineIntelligence": "インテリジェンスパラメータを調整する",
+      "coreTraits": "主要な行動特性",
+      "traits": {
+        "friendly": "フレンドリー",
+        "professional": "プロ",
+        "creative": "クリエイティブ",
+        "energetic": "元気いっぱい",
+        "calm": "落ち着いた",
+        "mysterious": "不思議な"
+      },
+      "gestureIntensity": "ジェスチャーの強度",
+      "tiltFactor": "頭の傾き係数",
+      "emphasisPower": "うなずき強調力",
+      "cinematicMode": "シネマティックカメラモード",
+      "dynamicFraming": "ダイナミックなフレーミングとアングル",
+      "directorMode": "ディレクターAIモード",
+      "autoFX": "オートビジュアルFX",
+      "keywordTriggered": "会話のキーワードによって引き起こされる",
+      "autoCamera": "自動カメラカット",
+      "emphasisZoom": "強調した対話に焦点を当てる",
+      "directorAutonomy": "ディレクターの自律レベル",
+      "backgroundMusic": "アンビエントオーディオトラック",
+      "lyrics": "歌詞を表示",
+      "selectMusic": "BGM を選択する",
+      "lyricsLinesSync": "{count} 同期ポイント",
+      "initializeAvatar": "アバターの初期化",
+      "backgrounds": {
+        "studio": "プロスタジオ",
+        "cyberpunk": "サイバーパンク",
+        "nature": "禅の庭",
+        "abstract": "ネオンアブストラクト",
+        "solidBlack": "ソリッドブラック"
+      },
+      "tts": {
+        "defaultTest": "こんにちは、これは私の神経音声署名です。",
+        "syncTesting": "ボーカル同期パラメータをテストしています...",
+        "voicePreview": "音声プレビューが初期化されました",
+        "updatedPreview": "更新されたプレビュー"
+      },
+      "wizard": {
+        "step1": {
+          "title": "ビジュアル＆ボイス",
+          "desc": "合成とチューニング",
+          "header": "生体特性と視覚的合成"
+        },
+        "step2": {
+          "title": "AIブレイン",
+          "desc": "性格とペルソナ",
+          "header": "ニューラル アーキテクチャとバックストーリー"
+        },
+        "step3": {
+          "title": "環境",
+          "desc": "背景と小道具",
+          "header": "環境"
+        },
+        "step4": {
+          "title": "ファイナライズ",
+          "desc": "ファイナライズと初期化",
+          "header": "ファイナライズと初期化"
+        },
+        "title": "ウィザード",
+        "desc": "AIを使ってアバターを作成します。",
+        "actions": {
+          "back": "戻る",
+          "next": "次",
+          "finish": "仕上げる",
+          "nextStep": "次のステップ",
+          "initializeEntity": "初期化"
+        },
+        "fields": {
+          "liveAutomation": "自動ライブストリーミング",
+          "liveAutomationDesc": "自動ライブストリーミングを有効にする",
+          "vodGeneration": "VOD の自動生成",
+          "vodGenerationDesc": "自動 VOD 生成を有効にする",
+          "socialConnections": "社会的なつながり",
+          "connect": "接続する",
+          "jobRole": "職務内容",
+          "selectRole": "役割の選択",
+          "everyday": "日常",
+          "activeScheduleSlots": "アクティブなスケジュール スロット"
+        }
+      },
+      "toasts": {
+        "musicSynced": "Audio track synced: {title}",
+        "generateSuccess": "Influencer image synthesized successfully.",
+        "generateFailed": "AI合成に失敗しました。",
+        "voicePreviewFailed": "音声プレビューの生成に失敗しました",
+        "linkEstablished": "トラッキングリンクが確立されました",
+        "cameraAccessFailed": "カメラ機器へのアクセスに失敗しました",
+        "uploadFailed": "アセットのアップロードに失敗しました",
+        "vrmUploaded": "VRM アセットがアップロードされました",
+        "live2dUploaded": "Live2D アセットがアップロードされました",
+        "avatarUploaded": "アバター画像をアップロードしました",
+        "portraitUploaded": "ポートレートが正常にアップロードされました",
+        "unsupportedFormat": "サポートされていないアセット形式です",
+        "videoUploaded": "ビデオマスターがアップロードされました",
+        "videoUpdated": "ビデオマスターが更新されました",
+        "backgroundUploaded": "環境アセットがアップロードされました",
+        "uploadAvatarFirst": "最初にアバターの件名をアップロードしてください",
+        "backgroundRemoved": "環境は正常に削除されました",
+        "segmentationFailed": "被験者の隔離に失敗しました",
+        "removalFailed": "被験者の隔離に失敗しました: {error}",
+        "loadModelFirst": "最初にビジュアルモデルをロードしてください",
+        "thumbnailGenerated": "マニフェストのサムネイルが登録されました",
+        "syncFailed": "同期に失敗しました",
+        "previewFailed": "プレビュービデオの生成に失敗しました",
+        "videoAudioGenerated": "プレビュービデオが生成される",
+        "visemeSynthesisStarted": "口形素スプライトシートを生成しています...",
+        "visemeSynthesisFailed": "口形素スプライトシートの生成に失敗しました",
+        "visemeSynthesisComplete": "口形素スプライトシートが正常に生成されました",
+        "voiceConfigMissing": "最初にインフルエンサーの声を選択してください"
+      },
+      "emotions": {
+        "happy": "ハッピー",
+        "sad": "悲しい",
+        "angry": "怒り",
+        "surprised": "驚いた",
+        "neutral": "中性",
+        "thinking": "考え"
+      },
+      "knowledgeBank": "ナレッジバンク",
+      "contentPlaceholder": "ここにコンテンツを入力してください...",
+      "uploadingData": "データのアップロード",
+      "updateEntityFile": "エンティティファイルの更新",
+      "live2dAssetConnected": "Live2d アセットが接続されました",
+      "influencerProfileSynchronized": "インフルエンサーのプロフィールが同期されました",
+      "synchronized": "同期済み",
+      "corePersonalityPlaceholder": "中心人物のプレースホルダー",
+      "performanceTest": "性能試験",
+      "history": "歴史",
+      "titlePlaceholder": "タイトルプレースホルダー",
+      "stylisticWeights": "文体上の重み",
+      "loraPlaceholder": "ローラのプレースホルダ",
+      "socialConnectivity": "ソーシャルコネクティビティ",
+      "targetPlaceholder": "ターゲット プレースホルダ",
+      "relationships": {
+        "friend": "友達",
+        "rival": "ライバル",
+        "mentor": "メンター",
+        "stranger": "見知らぬ人"
+      },
+      "stageEffects": "舞台効果",
+      "autoDirector": "オートディレクター",
+      "autonomousProduction": "自律生産",
+      "vocalAura": "ボーカルのオーラ",
+      "reactivePulse": "リアクティブパルス",
+      "atmosphericAtmosphere": "大気の雰囲気",
+      "stageLighting": "舞台照明",
+      "voiceReactivity": "音声の反応性",
+      "pulsingVolume": "パルスボリューム",
+      "stageCamera": "ステージカメラ",
+      "stageLyrics": "ステージ歌詞",
+      "showLyrics": "歌詞を表示",
+      "synchronizedText": "同期されたテキスト",
+      "changeMusic": "音楽を変更する",
+      "selectStageMusic": "ステージ音楽の選択",
+      "digitalInstruments": "デジタル機器",
+      "synchronizeInfluencer": "インフルエンサーを同期する",
+      "particles": {
+        "title": "粒子",
+        "sakura": "さくら",
+        "snow": "雪",
+        "fireworks": "花火",
+        "rain": "雨",
+        "none": "なし",
+        "glitter": "キラキラ"
+      },
+      "lightingPresets": {
+        "title": "照明プリセット",
+        "studio": "スタジオ",
+        "cyberpunk": "サイバーパンク",
+        "nature": "自然",
+        "abstract": "抽象的な",
+        "solidBlack": "ソリッドブラック",
+        "neon": "ネオン",
+        "cinematic": "映画的な",
+        "dramatic": "劇的",
+        "vocal_orange": "ボーカルオレンジ"
+      },
+      "intensity": "強度",
+      "cameraPaths": {
+        "title": "カメラパス",
+        "orbit": "軌道",
+        "slow_zoom": "スローズーム",
+        "side_sweep": "サイドスイープ",
+        "dramatic_low": "劇的低"
+      },
+      "lyricsStyles": {
+        "title": "歌詞のスタイル",
+        "neon": "ネオン",
+        "minimal": "最小限",
+        "kinetic": "キネティック"
+      },
+      "lyricsPositions": {
+        "title": "歌詞の位置",
+        "top": "トップ",
+        "bottom": "底"
+      },
+      "weight": "重さ",
+      "selection": {
+        "title": "AI インフルエンサーを作成する",
+        "desc": "AI を使用してインフルエンサーのアバターを作成します。",
+        "upload": {
+          "title": "アップロード",
+          "desc": "VRM/Live2D/アバター/ビデオをコンピュータからアップロードします。"
+        },
+        "ai": {
+          "title": "AI合成",
+          "desc": "AIを使ってアバターを生成します。"
+        }
+      },
+      "aiGenerator": {
+        "title": "AIジェネレーター",
+        "bgPromptMemory": "バックグラウンドプロンプトメモリ",
+        "animationIntelligence": "アニメーション インテリジェンス",
+        "characterStyle": "文字スタイル",
+        "characterType": "文字の種類",
+        "gender": "性別",
+        "ethnicity": "民族",
+        "nationality": "国籍",
+        "skinColor": "肌の色",
+        "eyeColor": "目の色",
+        "eyesSubtype": "目のサブタイプ",
+        "builder": "ビルダー",
+        "prompt": "AIプロンプト",
+        "generateAI": "生成する",
+        "buildKOL": "ビルドエージェント",
+        "ageProfile": "年",
+        "visualPrompt": "ビジュアルプロンプト",
+        "visualPromptPlaceholder": "ビジュアルキャラクターを入力してインフルエンサーを生成",
+        "architecting": "建築",
+        "bendingLatent": "ベンディング潜在力",
+        "options": {
+          "styles": {
+            "realistic": "現実的な",
+            "anime": "アニメ",
+            "cartoon": "漫画",
+            "2d": "2D"
+          },
+          "roles": {
+            "sales": "販売",
+            "news": "ニュース",
+            "talkshow": "トークショー",
+            "entertainer": "エンターテイナー",
+            "educator": "教育者",
+            "influencer": "インフルエンサー",
+            "custom": "カスタム",
+            "gamer": "ゲーマー"
+          },
+          "characterTypes": {
+            "human": "人間",
+            "alien": "エイリアン",
+            "mechanical": "機械式",
+            "elf": "エルフ",
+            "amphibian": "両生類",
+            "ant": "アリ",
+            "bee": "蜂",
+            "bird": "鳥",
+            "cat": "猫",
+            "dog": "犬",
+            "dragon": "ドラゴン",
+            "fish": "魚",
+            "fox": "キツネ",
+            "rabbit": "うさぎ",
+            "reptile": "爬虫類",
+            "lyzard": "トカゲ",
+            "mantis": "カマキリ",
+            "octopus": "タコ",
+            "panda": "パンダ",
+            "pig": "豚",
+            "shark": "サメ",
+            "spider": "スパイダー",
+            "tiger": "虎",
+            "wolf": "狼",
+            "bear": "クマ",
+            "cow": "牛",
+            "goat": "ヤギ",
+            "horse": "馬",
+            "sheep": "羊",
+            "chicken": "チキン",
+            "duck": "アヒル",
+            "eagle": "イーグル",
+            "owl": "フクロウ",
+            "penguin": "ペンギン",
+            "parrot": "オウム",
+            "swan": "白鳥",
+            "turkey": "七面鳥",
+            "lion": "ライオン",
+            "monkey": "猿",
+            "mouse": "ねずみ",
+            "crocodile": "クロコダイル",
+            "iguana": "イグアナ",
+            "beetle": "甲虫"
+          },
+          "genders": {
+            "female": "女性",
+            "male": "男",
+            "neutral": "中性"
+          },
+          "ethnicities": {
+            "asian": "アジア人",
+            "white": "白",
+            "black": "黒",
+            "latino": "ラテン系アメリカ人",
+            "middle_eastern": "中東",
+            "european": "ヨーロッパ人",
+            "african": "アフリカ人",
+            "indian": "インド人",
+            "mixed": "混合"
+          },
+          "nationalities": {
+            "vietnamese": "ベトナム語",
+            "japanese": "日本語",
+            "chinese": "中国語",
+            "korean": "韓国人",
+            "thai": "タイ語",
+            "indian": "インド人",
+            "british": "イギリス人",
+            "french": "フランス語",
+            "german": "ドイツ語",
+            "american": "アメリカ人",
+            "brazilian": "ブラジル人",
+            "nigerian": "ナイジェリア人",
+            "egyptian": "エジプト人"
+          },
+          "ages": {
+            "child": "子供",
+            "teen": "ティーン",
+            "adult": "アダルト",
+            "mature": "成熟した",
+            "senior": "シニア"
+          },
+          "eyeTypes": {
+            "human": "人間",
+            "reptile": "爬虫類",
+            "mechanical": "機械式",
+            "void": "空所",
+            "glow": "グロー",
+            "cartoon": "漫画",
+            "glowing": "光る",
+            "blink": "まばたき",
+            "differentColor": "差分カラー",
+            "scarred": "傷跡"
+          },
+          "eyeColors": {
+            "amber": "アンバー",
+            "black": "黒",
+            "blue": "青",
+            "brown": "茶色",
+            "deepBrown": "ディープブラウン",
+            "green": "緑",
+            "grey": "グレー",
+            "purple": "紫",
+            "red": "赤",
+            "white": "白",
+            "blackVoid": "ブラックボイド",
+            "whiteVoid": "ホワイトボイド"
+          },
+          "skinTypes": {
+            "human": "人間",
+            "fur": "毛皮",
+            "fish": "魚",
+            "amphibian": "両生類",
+            "scales": "天秤",
+            "metallic": "メタリックな"
+          },
+          "skinConditions": {
+            "albinism": "アルビノ",
+            "birthmarks": "あざ",
+            "burns": "やけど",
+            "cracked": "ひび割れた",
+            "freckles": "そばかす",
+            "pigmentation": "色素沈着",
+            "scars": "傷跡",
+            "vitiligo": "白斑",
+            "wrinkled": "しわのある"
+          },
+          "hairTypes": {
+            "afro": "アフロ",
+            "bald": "ハゲた",
+            "fur": "毛皮",
+            "long": "長さ",
+            "punk": "パンク",
+            "short": "短い",
+            "spines": "背骨",
+            "tentacles": "触手"
+          }
+        },
+        "toasts": {
+          "generateFailed": "AI合成に失敗しました。",
+          "generateSuccess": "AI合成に成功しました。"
+        },
+        "skinType": "肌タイプ",
+        "hairType": "髪の種類",
+        "eyeType": "目のタイプ",
+        "age": "年",
+        "skinCondition": "肌の状態"
+      },
+      "aidols": {
+        "clipLibrary": {
+          "title": "ニューラルビデオライブラリ",
+          "desc": "キャラクターの状態ごとにグリーン スクリーン ビデオを生成してアップロードし、忠実度の高いニューラル スイッチングを可能にします。",
+          "copyPrompt": "Veo/Sora プロンプトをコピー",
+          "generate": "生成する",
+          "uploadSuccess": "アップロード成功",
+          "promptCopied": "プロンプトがコピーされました",
+          "initialIdle": "初期アイドル",
+          "mandatoryDesc": "続行する前に基礎ビデオを生成します。",
+          "ready": "準備ができて",
+          "regenerate": "再生する",
+          "customPromptPlaceholder": "カスタムプロンプトを入力"
+        },
+        "states": {
+          "idle": "アイドル状態",
+          "speaking": "話し中",
+          "product": "製品紹介",
+          "checkout": "チェックアウト/CTA",
+          "hype": "誇大宣伝/高エネルギー",
+          "gift_react": "ギフトリアクション",
+          "dance": "歌・踊り",
+          "wave": "ウェーブ/アウトロ"
+        }
+      }
+    },
+    "edit": {
+      "title": "インフルエンサーの編集",
+      "desc": "AI を使用してインフルエンサーのアバターを編集します。"
+    },
+    "preset": {
+      "live2d": "ライブ2D",
+      "static": "静的",
+      "useTemplate": "テンプレートを使用する",
+      "preview": "プレビュー"
+    },
+    "ready": "準備ができて",
+    "live": "ライブ",
+    "startLiveVoice": "ライブを開始する",
+    "identityAwaitingSync": "同期を待っている ID",
+    "neuralLinkEstablishing": "インフルエンサー",
+    "music": {
+      "title": "音楽セレクション",
+      "searchPlaceholder": "YouTube で曲を検索...",
+      "searchButton": "検索",
+      "noMusicFound": "音楽が見つかりません",
+      "tryDifferentSearch": "別の検索クエリを試してください",
+      "fetching": "取得中...",
+      "fetchAndApply": "フェッチして適用",
+      "lyricsPreview": "歌詞プレビュー",
+      "moreLines": "...さらに {count} 行",
+      "animationStyle": "アニメーションスタイル",
+      "position": "位置",
+      "styles": {
+        "title": "音楽スタイル",
+        "neon": "ネオン",
+        "minimal": "最小限",
+        "kinetic": "キネティック"
+      },
+      "positions": {
+        "title": "歌詞の位置",
+        "top": "トップ",
+        "bottom": "底"
+      },
+      "selectedSong": "選択した曲",
+      "noLyrics": "この曲の歌詞は見つかりませんでした",
+      "lyricsFetched": "歌詞が正常に取得されました",
+      "fetchFailed": "音楽または歌詞の取得に失敗しました",
+      "applied": "音楽と歌詞が正常に適用されました",
+      "toasts": {
+        "enterQuery": "検索クエリを入力してください",
+        "noResults": "結果が見つかりませんでした",
+        "lyricsFetched": "歌詞が正常に取得されました",
+        "noLyrics": "この曲の歌詞は見つかりませんでした",
+        "fetchFailed": "音楽または歌詞の取得に失敗しました",
+        "applied": "音楽と歌詞が正常に適用されました"
+      },
+      "trending": "トレンド",
+      "regions": "地域",
+      "preferCovers": "カバーを好む",
+      "target": "ターゲット",
+      "languages": "言語",
+      "lyricsLabel": "歌詞レーベル",
+      "lyricsLanguages": "歌詞の言語"
+    },
+    "voiceLibrary": {
+      "title": "音声ライブラリ",
+      "filterPlaceholder": "音声を検索...",
+      "provider": "プロバイダー",
+      "gender": "性別",
+      "language": "言語",
+      "genders": {
+        "all": "全て",
+        "female": "女性",
+        "male": "男",
+        "neutral": "中性"
+      },
+      "tts": {
+        "preview": "こんにちは、これは私の神経音声署名です。"
+      }
+    },
+    "musicPerformance": {
+      "loading": "読み込み中..."
+    },
+    "viewer": {
+      "noModel": "モデルなし",
+      "resetViewTooltip": "ビューをリセット",
+      "reset": "リセット"
+    },
+    "geminiChat": {
+      "title": "ジェミニチャット",
+      "subtitle": "インフルエンサーとチャットする",
+      "placeholder": "メッセージを入力してください...",
+      "send": "送信",
+      "loading": "読み込み中...",
+      "error": "エラー",
+      "retry": "リトライ",
+      "clear": "クリア",
+      "tabs": {
+        "liveChat": "ライブチャット",
+        "history": "歴史"
+      },
+      "sidebar": {
+        "selectInfluencer": "インフルエンサーを選択する",
+        "geminiOnly": "ジェミニのみ",
+        "liveReady": "ライブレディ",
+        "voiceLabel": "声",
+        "empty": {
+          "title": "ライブ対応インフルエンサーがいない",
+          "action": "インフルエンサーライブラリへ行く"
+        }
+      },
+      "session": {
+        "ready": {
+          "title": "チャットの準備ができました",
+          "connectTo": "{name} に接続します",
+          "selectToBegin": "開始するにはインフルエンサーを選択してください",
+          "startAction": "セッションの開始"
+        },
+        "live": "ライブ",
+        "visionActive": "ビジョンアクティブ",
+        "controls": {
+          "startVision": "スタートビジョン",
+          "stopVision": "ストップビジョン",
+          "endSession": "セッションの終了"
+        },
+        "info": {
+          "archive": "アーカイブ",
+          "voice": "声",
+          "sessionId": "セッションID"
+        },
+        "connected": {
+          "title": "{name} とのライブ セッション",
+          "status": "状態",
+          "statusConnected": "接続済み",
+          "statusDisconnected": "切断されました",
+          "stats": {
+            "title": "統計",
+            "messages": "メッセージ",
+            "duration": "間隔",
+            "toolsUsed": "使用したツール"
+          },
+          "actions": {
+            "title": "アクション",
+            "endSession": "セッションの終了",
+            "viewTranscript": "トランスクリプトを表示",
+            "toggleMicrophone": "マイクの切り替え",
+            "toggleCamera": "カメラの切り替え",
+            "resetView": "ビューをリセット",
+            "changeExpression": "式の変更",
+            "playAnimation": "アニメーションを再生する",
+            "changeMood": "気分を変える"
+          },
+          "controls": {
+            "microphone": "マイクロフォン",
+            "camera": "カメラ",
+            "expressions": "式",
+            "animations": "アニメーション",
+            "moods": "気分"
+          },
+          "dialogs": {
+            "transcript": {
+              "title": "成績証明書",
+              "noMessages": "まだメッセージはありません",
+              "usedTool": "使用ツール: {name}"
+            },
+            "expression": {
+              "title": "式の変更",
+              "select": "式の選択"
+            },
+            "animation": {
+              "title": "アニメーションを再生する",
+              "select": "アニメーションを選択"
+            },
+            "mood": {
+              "title": "気分を変える",
+              "select": "気分を選択してください"
+            }
+          },
+          "toasts": {
+            "sessionEnded": "セッションは正常に終了しました",
+            "sessionFailed": "セッションを終了できませんでした",
+            "loadDetailFailed": "セッションの詳細をロードできませんでした",
+            "endCurrentSession": "まず現在のセッションを終了してください",
+            "startFailed": "セッションの開始に失敗しました",
+            "messageSent": "メッセージは正常に送信されました",
+            "messageFailed": "メッセージの送信に失敗しました",
+            "clearSuccess": "チャットは正常にクリアされました",
+            "clearFailed": "チャットをクリアできませんでした",
+            "switchedScene": "シーンに切り替え: {name}",
+            "hypeEvent": "誇大宣伝イベントがトリガーされました: {reason}",
+            "shoutout": "{name} に感謝の意を表します。",
+            "questStarted": "クエスト開始: {title}",
+            "aiDeal": "AI 取引がトリガーされました: {reason}",
+            "generatingBg": "背景を生成中: {prompt}",
+            "momentCaptured": "キャプチャされた瞬間: {description}",
+            "expression": "式の設定: {name}",
+            "animation": "再生されたアニメーション: {name}",
+            "mood": "ムードセット: {name}"
+          }
+        }
+      },
+      "history": {
+        "title": "歴史",
+        "subtitle": "過去のライブセッションを表示する",
+        "empty": "セッション履歴が見つかりません。",
+        "filters": {
+          "title": "フィルター",
+          "searchPlaceholder": "セッションを検索...",
+          "dateRange": "日付範囲",
+          "influencer": "インフルエンサー",
+          "all": "全て"
+        },
+        "sessionCard": {
+          "title": "{name} とのセッション",
+          "date": "日付",
+          "duration": "間隔",
+          "messages": "メッセージ",
+          "viewDetails": "詳細を見る",
+          "delete": "消去",
+          "deleteConfirm": "このセッションを削除してもよろしいですか?",
+          "deleteSuccess": "セッションが正常に削除されました",
+          "deleteFailed": "セッションの削除に失敗しました"
+        }
+      },
+      "detail": {
+        "title": "セッションの詳細",
+        "subtitle": "セッションの詳細を表示する",
+        "empty": {
+          "title": "詳細なし",
+          "action": "新しいセッションを開始して詳細を確認してください"
+        },
+        "filters": {
+          "title": "フィルター",
+          "searchPlaceholder": "セッションを検索...",
+          "dateRange": "日付範囲",
+          "influencer": "インフルエンサー",
+          "all": "全て"
+        },
+        "sessionCard": {
+          "title": "{name} とのセッション",
+          "date": "日付",
+          "duration": "間隔",
+          "messages": "メッセージ",
+          "viewDetails": "詳細を見る",
+          "delete": "消去",
+          "deleteConfirm": "このセッションを削除してもよろしいですか?",
+          "deleteSuccess": "セッションが正常に削除されました",
+          "deleteFailed": "セッションの削除に失敗しました"
+        }
+      },
+      "dialogs": {
+        "transcript": {
+          "title": "成績証明書",
+          "noMessages": "まだメッセージはありません",
+          "usedTool": "使用ツール: {name}"
+        },
+        "expression": {
+          "title": "式の変更",
+          "select": "式の選択"
+        },
+        "animation": {
+          "title": "アニメーションを再生する",
+          "select": "アニメーションを選択"
+        },
+        "mood": {
+          "title": "気分を変える",
+          "select": "気分を選択してください"
+        }
+      },
+      "toasts": {
+        "sessionEnded": "セッションは正常に終了しました",
+        "sessionFailed": "セッションを終了できませんでした",
+        "loadDetailFailed": "セッションの詳細をロードできませんでした",
+        "endCurrentSession": "まず現在のセッションを終了してください",
+        "startFailed": "セッションの開始に失敗しました",
+        "messageSent": "メッセージは正常に送信されました",
+        "messageFailed": "メッセージの送信に失敗しました",
+        "clearSuccess": "チャットは正常にクリアされました",
+        "clearFailed": "チャットをクリアできませんでした",
+        "switchedScene": "シーンに切り替え: {name}",
+        "hypeEvent": "誇大宣伝イベントがトリガーされました: {reason}",
+        "shoutout": "{name} に感謝の意を表します。",
+        "questStarted": "クエスト開始: {title}",
+        "aiDeal": "AI 取引がトリガーされました: {reason}",
+        "generatingBg": "背景を生成中: {prompt}",
+        "momentCaptured": "キャプチャされた瞬間: {description}",
+        "expression": "式の設定: {name}",
+        "animation": "再生されたアニメーション: {name}",
+        "mood": "ムードセット: {name}"
+      }
+    }
+  },
+  "marketplace": {
+    "badge": "市場",
+    "magic": "魔法",
+    "template": "テンプレート",
+    "hub": "ハブ",
+    "subtitle": "事前に構築されたクリエイティブ フロー、カスタム インフルエンサー、スマート構造を検出してインポートします。",
+    "importUrl": "インポートURL",
+    "importPptx": "PPTXのインポート",
+    "importingPptx": "PPTX をインポートしています...",
+    "trustedBy": "信頼されている",
+    "globalCreators": "グローバルクリエイター",
+    "search": "テンプレートを検索...",
+    "tabs": {
+      "public": "公共",
+      "canva": "カンバ",
+      "capcut": "キャップカット",
+      "private": "私のテンプレート"
+    },
+    "canva": {
+      "title": "Canvaの統合",
+      "professionalVideo": "プロのビデオ",
+      "allFilters": "すべてのフィルター"
+    },
+    "capcut": {
+      "title": "キャップカットテンプレート"
+    },
+    "types": {
+      "video": "ビデオ",
+      "image": "画像"
+    },
+    "filters": {
+      "style": "スタイル",
+      "theme": "テーマ",
+      "price": "価格",
+      "color": "色"
+    },
+    "categories": {
+      "peaceVideos": "平和ビデオ",
+      "birthday": "誕生日",
+      "education": "教育",
+      "nature": "自然",
+      "business": "仕事",
+      "forYou": "あなたのために",
+      "trending": "トレンド",
+      "newYear": "新年",
+      "tiktok": "TikTok",
+      "vlog": "ビデオブログ",
+      "student": "学生"
+    },
+    "sections": {
+      "featured": "注目の",
+      "personal": "個人的",
+      "community": "コミュニティテンプレート",
+      "myLibrary": "私のテンプレート ライブラリ"
+    },
+    "empty": {
+      "noTemplates": "テンプレートが見つかりませんでした",
+      "privateDesc": "まだテンプレートを保存していません。",
+      "publicDesc": "条件に一致するコミュニティ テンプレートはありません。"
+    },
+    "templateCard": {
+      "free": "無料",
+      "credits": "クレジット",
+      "viewDetail": "詳細を見る"
+    },
+    "title": "市場",
+    "importDialog": {
+      "title": "スマート テンプレート インポーター",
+      "supports": "Capcut、Canva などからテンプレートをインポート",
+      "pasteUrl": "URLを貼り付け",
+      "urlPlaceholder": "テンプレートURLを入力",
+      "processing": "処理...",
+      "startMagic": "インポートの開始",
+      "importing": "インポート中",
+      "privacySafe": "プライバシー保護",
+      "errors": {
+        "unsupportedUrl": "サポートされていない URL",
+        "failed": "失敗した"
+      }
+    },
+    "previewDialog": {
+      "defaultAuthor": "デフォルトの作成者",
+      "clips": "クリップ",
+      "duration": "間隔",
+      "texts": "テキスト",
+      "editable": "編集可能",
+      "uses": "用途",
+      "selectRatio": "選択比率",
+      "description": "説明",
+      "defaultDesc": "デフォルトの説明",
+      "useTemplate": "テンプレートを使用する",
+      "customizable": "カスタマイズ可能",
+      "defaultRatio": "デフォルト比率"
+    },
+    "balance": "バランス",
+    "listAsset": "アセットのリスト",
+    "badges": {
+      "official": "正式"
+    },
+    "actions": {
+      "getNow": "今すぐ入手",
+      "cancel": "キャンセル",
+      "confirm": "確認する"
+    },
+    "dialogs": {
+      "purchase": {
+        "desc": "説明",
+        "priceLabel": "価格ラベル",
+        "feeLabel": "料金ラベル",
+        "securityNote": "セキュリティに関する注意事項"
+      }
+    }
+  },
+  "merchant": {
+    "header": {
+      "liveCommerce": "ライブコマース",
+      "title": "商人",
+      "hub": "ハブ",
+      "subtitle": "デジタル製品を管理し、注文を追跡し、パフォーマンスを監視します。",
+      "totalRevenue": "総収益",
+      "pendingOrders": "未決注文"
+    },
+    "tabs": {
+      "inventory": "在庫",
+      "orders": "注文",
+      "analytics": "分析"
+    },
+    "actions": {
+      "addProduct": "製品の追加"
+    },
+    "confirmDelete": {
+      "message": "{name} を削除してもよろしいですか?",
+      "title": "製品の削除"
+    },
+    "inventory": {
+      "inStock": "{count} 在庫あり",
+      "generateAd": "広告ビデオの生成"
+    },
+    "orders": {
+      "table": {
+        "orderId": "注文ID",
+        "customer": "ユーザー",
+        "product": "製品",
+        "amount": "額",
+        "source": "ソース",
+        "status": "状態",
+        "actions": "アクション"
+      },
+      "sources": {
+        "live": "ライブストリーム",
+        "video": "ショートビデオ"
+      },
+      "details": "詳細",
+      "statuses": {
+        "pending": "保留中",
+        "processing": "処理",
+        "shipped": "出荷済み",
+        "delivered": "納品済み",
+        "cancelled": "キャンセル"
+      }
+    },
+    "analytics": {
+      "landingViews": "ランディングページビュー数",
+      "orderClicks": "オーダークリック数",
+      "userAgeGroups": "ユーザーの年齢層",
+      "topRegions": "上位地域",
+      "gender": {
+        "male": "男",
+        "female": "女性",
+        "other": "他の"
+      },
+      "device": {
+        "desktop": "デスクトップ",
+        "mobile": "携帯",
+        "tablet": "錠剤"
+      },
+      "stats": {
+        "totalViews": "合計視聴数",
+        "viewsSub": "すべての製品にわたって",
+        "totalClicks": "合計クリック数",
+        "clicksSub": "クリックスルー",
+        "conversionRate": "コンバージョン率",
+        "conversionSub": "クリックからビューまで",
+        "totalOrders": "総注文数",
+        "ordersSub": "履行保留中"
+      },
+      "engagementFlow": "エンゲージメントの流れ",
+      "viewsVsClicks": "ビューとクリック数",
+      "audienceProfile": "視聴者のプロフィール",
+      "deviceDistribution": "デバイスの配布",
+      "geographicReach": "地理的範囲",
+      "productPerformance": "製品性能",
+      "conversionByProduct": "製品別の変換",
+      "table": {
+        "productName": "製品名",
+        "views": "ビュー",
+        "clicks": "クリック数",
+        "conversion": "変換"
+      }
+    },
+    "adDialog": {
+      "title": "商品広告の作成",
+      "steps": {
+        "analyze": "分析する",
+        "review": "レビュー",
+        "template": "テンプレート",
+        "finalize": "ファイナライズ",
+        "render": "与える"
+      },
+      "stepIndicator": "ステップ {step} / {total}",
+      "analyzeStep": {
+        "title": "製品の分析",
+        "placeholder": "Shopify または Amazon の URL を貼り付けます...",
+        "or": "- または -",
+        "uploadBtn": "製品画像をアップロード",
+        "analyzeBtn": "AIで分析する"
+      },
+      "refineStep": {
+        "productName": "製品名",
+        "price": "価格",
+        "description": "説明",
+        "brandName": "ブランド名",
+        "brandSlogan": "ブランドスローガン",
+        "brandSloganPlaceholder": "オプションのキャッチフレーズ...",
+        "brandLogo": "ブランドロゴ",
+        "noLogo": "ロゴなし",
+        "logoUrlPlaceholder": "ロゴの URL...",
+        "keyFeatures": "主な特長",
+        "addFeaturePlaceholder": "機能を追加...",
+        "colorPalette": "カラーパレット",
+        "primary": "主要な",
+        "secondary": "二次",
+        "selectImage": "製品画像を選択してください",
+        "or": "- または -",
+        "uploadBtn": "製品画像をアップロード"
+      },
+      "templateStep": {
+        "targetFormat": "ターゲットフォーマット",
+        "selectTemplate": "テンプレートの選択",
+        "searchPlaceholder": "テンプレートを検索...",
+        "noTemplates": "この比率のテンプレートは見つかりませんでした",
+        "total": "合計: {total}"
+      },
+      "finalizeStep": {
+        "title": "起動準備完了",
+        "subtitle": "高コンバージョン広告の設定が完了しました。強化されたワークフローを選択します。",
+        "editorStudio": "エディタースタジオ",
+        "editorStudioDesc": "フルコントロール。すべてのフレーム、トランジション、およびブランド アセットを手動で編集します。",
+        "quickRender": "クイックレンダリング",
+        "quickRenderDesc": "AI がバックグラウンドでビデオを即座に構築してエクスポートします。"
+      },
+      "renderStep": {
+        "success": "広告準備完了!",
+        "successSubtitle": "コンバージョン率の高いクリエイティブを生成",
+        "preparingPreview": "プレビューを準備しています...",
+        "landingPage": "ランディングページ",
+        "publish": "公開",
+        "liveStudioIntegrated": "LiveStudio 統合",
+        "liveStudioDesc": "この広告は、商品の広告クリエイティブ スロットに自動的に追加されました。この商品がライブ ストリームで紹介されると、視聴者に表示されます。",
+        "done": "終わり",
+        "rendering": "広告のレンダリング",
+        "share": "共有"
+      },
+      "toasts": {
+        "extractSuccess": "製品が正常に抽出されました。",
+        "extractError": "AI はこの URL を解析できませんでした。手動で入力してください。",
+        "selectTemplate": "続行するにはテンプレートを選択してください",
+        "renderFailed": "広告の生成に失敗しました。もう一度試してください。",
+        "publishSuccess": "広告ビデオが公開され、商品にリンクされました。",
+        "publishFailed": "広告ビデオを公開できませんでした",
+        "renderSuccess": "広告が正常にレンダリングされ、ダウンロードされました。",
+        "renderFailedDetailed": "広告のレンダリングに失敗しました。ぜひエディタースタジオをお試しください。",
+        "productUpdateSuccess": "製品が更新され、新しい広告ビデオが追加されました。",
+        "productNotFound": "製品またはビデオが見つかりません",
+        "updateFailed": "製品のアップデートに失敗しました",
+        "copySuccess": "ランディング ページのリンクがクリップボードにコピーされました。"
+      }
+    },
+    "editDialog": {
+      "titleEdit": "製品の編集",
+      "titleAdd": "製品の追加",
+      "purchaseUrl": "購入URL",
+      "autoFill": "オートフィル",
+      "analyzing": "分析中...",
+      "urlHint": "Shopify、Amazon、または TikTok から製品リンクを貼り付けると、詳細が自動的に抽出されます。",
+      "productName": "製品名",
+      "price": "価格",
+      "stock": "ストック",
+      "images": "製品画像",
+      "imageHint": "URL またはアップロード経由で製品画像を追加します。",
+      "description": "マーケティングの説明",
+      "brandIdentity": "ブランドアイデンティティ",
+      "brandName": "ブランド名",
+      "brandLogo": "ブランドロゴ（URL）",
+      "brandSlogan": "ブランドスローガン",
+      "videoUrl": "特集ビデオの URL",
+      "previewVideo": "プレビュービデオ",
+      "primaryColors": "原色",
+      "secondaryColors": "二次色",
+      "updateProduct": "製品を更新する",
+      "createProduct": "製品の作成",
+      "extractError": "製品の詳細を抽出できませんでした",
+      "extracted": "抽出された{count}_の画像と詳細",
+      "mainLabel": "メイン画像",
+      "placeholders": {
+        "url": "https://store.example.com/product...",
+        "name": "製品名を入力してください...",
+        "image": "画像のURLを貼り付け...",
+        "description": "短いマーケティングの説明...",
+        "brandName": "ブランド名…",
+        "brandLogo": "ロゴ画像のURL...",
+        "brandSlogan": "ブランドのキャッチフレーズ...",
+        "video": "動画の URL またはパス..."
+      }
+    },
+    "previewDialog": {
+      "noImage": "画像が見つかりません",
+      "units": "単位",
+      "views": "ビュー",
+      "clicks": "クリック数",
+      "sales": "販売",
+      "launchWizard": "広告ウィザードの起動",
+      "brand": "ブランド",
+      "defaultBrand": "アントスタジオ",
+      "defaultSlogan": "製品"
+    }
+  },
+  "resources": {
+    "badge": "アセットライブラリ",
+    "assets": "クリエイティブアセット",
+    "archives": "スタジオアーカイブ",
+    "subtitle": "アップロードしたファイルを管理し、過去のライブ ストリームを確認し、生成されたビデオ エクスポートをダウンロードします。",
+    "upload": "メディアをアップロードする",
+    "tabs": {
+      "assets": "メディア資産",
+      "archives": "スタジオアーカイブ",
+      "gallery": "プロダクションギャラリー"
+    },
+    "search": "検索...",
+    "categories": {
+      "all": "すべてのファイル",
+      "image": "画像",
+      "video": "動画",
+      "audio": "オーディオ",
+      "application": "書類"
+    },
+    "empty": {
+      "noAssets": "アセットが見つかりません",
+      "uploadDesc": "プロジェクトで使用する最初のメディア ファイルをアップロードします。",
+      "nothingHere": "ここにはまだ何もありません",
+      "archivesDesc": "録画したライブ ストリームと生の映像がここに表示されます。",
+      "galleryDesc": "最終的にレンダリングされたビデオはここに保存されます。"
+    },
+    "dialogs": {
+      "upload": {
+        "title": "メディアをアップロードする",
+        "processing": "処理...",
+        "drop": "ここにファイルをドラッグ アンド ドロップするか、クリックして参照します",
+        "supported": "JPG、PNG、MP4、MP3、PDF、PPTXをサポート（最大200MB）"
+      }
+    },
+    "toasts": {
+      "uploading": "ファイルをアップロードしています...",
+      "uploadSuccess": "ファイルは正常にアップロードされました。",
+      "uploadFailed": "ファイルのアップロードに失敗しました。"
+    },
+    "confirmDelete": "このファイルを削除してもよろしいですか?"
+  },
+  "auth": {
+    "login": {
+      "subtitle": "サインインしてダッシュボードにアクセスします。",
+      "emailPlaceholder": "電子メールアドレス",
+      "passwordPlaceholder": "パスワード",
+      "forgotPassword": "パスワードをお忘れですか？",
+      "signIn": "サインイン",
+      "orContinue": "または続行してください",
+      "newTo": "{appName} を初めて使用しますか?",
+      "createAccount": "アカウントを作成する",
+      "backHome": "ホームに戻る",
+      "toasts": {
+        "fillAll": "すべてのフィールドに入力してください",
+        "success": "ログイン成功",
+        "failed": "ログインに失敗しました。もう一度試してください。",
+        "oauthFailed": "OAuthログインに失敗しました。もう一度試してください。"
+      }
+    },
+    "register": {
+      "subtitle": "作成を開始するにはアカウントを作成してください。",
+      "namePlaceholder": "フルネーム",
+      "emailPlaceholder": "電子メールアドレス",
+      "passwordPlaceholder": "パスワード",
+      "confirmPasswordPlaceholder": "パスワードを認証する",
+      "createAccount": "アカウントを作成する",
+      "alreadyHave": "すでにアカウントをお持ちですか?",
+      "login": "サインイン",
+      "rules": {
+        "mismatch": "パスワードが一致しません",
+        "nameRequired": "あなたの名前を入力してください",
+        "emailRequired": "メールアドレスを入力してください",
+        "emailInvalid": "有効なメールアドレスを入力してください",
+        "passwordRequired": "パスワードを入力してください",
+        "passwordMin": "パスワードは8文字以上である必要があります",
+        "confirmRequired": "パスワードを確認してください"
+      },
+      "toasts": {
+        "success": "登録が成功しました",
+        "failed": "登録に失敗しました。もう一度試してください。"
+      }
+    },
+    "forgot": {
+      "title": "パスワードのリセット",
+      "description": "メールアドレスを入力してください。パスワードをリセットするためのリンクが送信されます。",
+      "emailPlaceholder": "電子メールアドレス",
+      "cancel": "キャンセル",
+      "reset": "リセットリンクを送信する",
+      "toasts": {
+        "enterEmail": "メールアドレスを入力してください"
+      }
+    },
+    "resetPassword": {
+      "title": "新しいパスワードを作成する",
+      "subtitle": "新しいパスワードを下に入力してください。",
+      "newPasswordPlaceholder": "新しいパスワード",
+      "confirmPasswordPlaceholder": "新しいパスワードを確認する",
+      "resetButton": "パスワードのリセット",
+      "backToLogin": "ログインに戻る",
+      "toasts": {
+        "fillAll": "すべてのフィールドに入力してください",
+        "mismatch": "パスワードが一致しません",
+        "tooShort": "パスワードは6文字以上である必要があります",
+        "invalidToken": "無効または期限切れのリセット トークン"
+      }
+    },
+    "onboarding": {
+      "setupAssistant": "セットアップアシスタント",
+      "initializeTitle": "コアシステムの初期化",
+      "steps": {
+        "regional": "地域設定",
+        "identity": "所有者の身元",
+        "security": "セキュリティとライセンス",
+        "finish": "導入"
+      },
+      "step0": {
+        "title": "地域パラメータ",
+        "desc": "システムの優先言語と地域設定を選択します。",
+        "continue": "セットアップを続行する"
+      },
+      "step1": {
+        "title": "所有者の身元",
+        "desc": "システム管理用のマスター管理者アカウントを作成します。",
+        "fullName": "フルネーム",
+        "email": "管理者のメールアドレス",
+        "password": "管理者パスワード",
+        "initIdentity": "ID の初期化",
+        "creating": "作成..."
+      },
+      "step2": {
+        "title": "システムハンドシェイク",
+        "desc": "ライセンス キーを入力して、AntFlow エコシステムをアクティブ化します。",
+        "placeholder": "XXXX-XXXX-XXXX-XXXX",
+        "authorize": "ノードの認可",
+        "validating": "検証中...",
+        "getTrial": "トライアルライセンスを取得する"
+      },
+      "step3": {
+        "title": "システムのキャリブレーション",
+        "desc": "コアモジュールを構成し、ワークスペースを準備します。",
+        "cloudStorage": "クラウドストレージ",
+        "influencerUnits": "インフルエンサーユニット",
+        "deployHub": "コントロールハブの展開"
+      },
+      "toasts": {
+        "identityEstablished": "アイデンティティの確立",
+        "regFailed": "ID の作成に失敗しました",
+        "handshakeEstablished": "ハンドシェイクが確立されました",
+        "activationFailed": "ライセンスのアクティベーションに失敗しました",
+        "missionReady": "システム準備完了。 AntStudio へようこそ。"
+      }
+    },
+    "password": {
+      "current": "現在",
+      "new": "新しい",
+      "confirm": "確認する",
+      "failed": "失敗した"
+    }
+  },
+  "sidebar": {
+    "updateAvailable": "アップデート{version}_が利用可能"
+  },
+  "password": {
+    "current": "現在のパスワード",
+    "currentPlaceholder": "現在のパスワードを入力してください",
+    "new": "新しいパスワード",
+    "newPlaceholder": "新しいパスワードを入力してください",
+    "confirm": "新しいパスワードを確認する",
+    "confirmPlaceholder": "新しいパスワードを繰り返します",
+    "update": "ID パスワードの更新",
+    "mismatch": "パスワードが一致しません",
+    "tooShort": "パスワードは6文字以上である必要があります",
+    "success": "パスワードが正常に更新されました",
+    "failed": "パスワードの更新に失敗しました"
+  },
+  "gallery": {
+    "download": "ダウンロード",
+    "showcase": {
+      "createdBy": "作成者",
+      "watch": "時計",
+      "disclaimer": "免責事項",
+      "films": {
+        "electricPink": {
+          "title": "エレクトリック ピンク",
+          "synopsis": "あらすじ"
+        },
+        "dearStranger": {
+          "title": "親愛なる見知らぬ人へ",
+          "synopsis": "あらすじ"
+        },
+        "freelancers": {
+          "title": "フリーランサー",
+          "synopsis": "あらすじ"
+        }
+      }
+    }
+  },
+  "drawers": {
+    "aiPersona": {
+      "neuralPersonas": "AI ペルソナ",
+      "syntheticIntelligence": "合成知能",
+      "role": {
+        "master": "マスター",
+        "agent": "エージェント"
+      },
+      "expression": "表現",
+      "quickEmotions": "素早い感情",
+      "prompts": {
+        "introduce": "導入",
+        "react": "反応する"
+      },
+      "actions": {
+        "introduce": "導入",
+        "react": "反応する",
+        "liveVoice": "生の声",
+        "vision": "ビジョン"
+      },
+      "animation": {
+        "intensity": "強度",
+        "gesture": "ジェスチャー",
+        "tilt": "傾ける",
+        "nod": "うなずく"
+      },
+      "performance": {
+        "fx": "FX",
+        "aura": "オーラ",
+        "particles": "粒子",
+        "lighting": "点灯",
+        "music": "音楽",
+        "selectSong": "曲を選択",
+        "unknownArtist": "不明なアーティスト",
+        "perform": "実行する",
+        "noSong": "歌がない"
+      },
+      "options": {
+        "none": "なし",
+        "sakura": "さくら",
+        "snow": "雪",
+        "glitter": "キラキラ",
+        "studio": "スタジオ",
+        "neon": "ネオン",
+        "dramatic": "劇的",
+        "vocalOrange": "ボーカルオレンジ"
+      },
+      "background": "背景",
+      "promptPlaceholder": "プロンプトプレースホルダー",
+      "autoGuest": {
+        "title": "自動ゲストロジック",
+        "desc": "有効にすると、AI ディレクターはペルソナを自動的に呼び出して、静かな時間を埋めたり、特定のチャット トピックについて議論したりします。"
+      }
+    },
+    "cinematic": {
+      "title": "シネマティック スタジオ",
+      "desc": "没入型レンダリングを有効にして、すべての AI エージェントを統一された高忠実度環境に配置します。",
+      "activeEnvironment": "アクティブな環境",
+      "autoCamera": "オートカメラ",
+      "status": {
+        "prod": "製品"
+      },
+      "influencerLink": "インフルエンサーリンク",
+      "activeVfx": "アクティブVFX",
+      "options": {
+        "none": "なし",
+        "bloom": "咲く"
+      },
+      "immersiveDisabled": "イマーシブステージ無効"
+    },
+    "collaboration": {
+      "title": "チームセッション",
+      "invite": "招待する",
+      "desc": "他の人を招待してレイヤーを編集し、リアルタイムでストリームを管理します。変更はすべてのホスト間で同期されます。",
+      "you": "あなた",
+      "connected": "接続済み",
+      "offline": "オフライン",
+      "noMembers": "チームメンバーが割り当てられていません"
+    },
+    "comments": {
+      "title": "プラットフォームへの取り組み",
+      "platformEngagement": "感情を認識した AI モデレーション",
+      "moderation": "節度",
+      "analyzing": "会話を分析中...",
+      "noComments": "コメントはありません",
+      "waiting": "ウイルスの火花を待っています！視聴者が関心を持ち始めると、ここにコメントが表示されます。",
+      "aiSuggest": "アイサジェスト",
+      "reply": "返事",
+      "replyPlaceholder": "返信プレースホルダー",
+      "sending": "送信中",
+      "postReply": "返信を投稿する"
+    }
+  },
+  "support": {
+    "ticket": {
+      "title": "サポートチケット",
+      "subtitle": "運用上の異常を指令センターにエスカレーションします。",
+      "objective": "客観的",
+      "urgency": "緊急",
+      "priorities": {
+        "low": "低い",
+        "medium": "中くらい",
+        "high": "高い",
+        "critical": "致命的"
+      },
+      "sitrep": "シトレプ",
+      "attachments": "添付ファイル",
+      "extractLogs": "ログの抽出",
+      "dragDrop": "ドラッグドロップ",
+      "supports": "サポート",
+      "dataAuth": "データ認証",
+      "dataAuthDesc": "データ認証の説明",
+      "cancel": "キャンセル",
+      "transmitting": "送信中",
+      "submit": "提出する"
+    }
+  },
+  "pricing": {
+    "title": "価格設定",
+    "subtitle": "柔軟な料金プランで、クリエイティブな可能性を最大限に引き出します。",
+    "mostPopular": "最も人気のある",
+    "perMonth": "月あたり",
+    "features": {
+      "prioritySupport": "優先サポート",
+      "standardSupport": "標準サポート"
+    },
+    "getStarted": "始めましょう",
+    "subscribeNow": "今すぐ購読する",
+    "faq": {
+      "title": "よくある質問",
+      "a1": "AntStudioとは何ですか?",
+      "a2": "プロジェクトを作成するにはどうすればよいですか?",
+      "a3": "AI ペルソナをプロジェクトに追加するにはどうすればよいですか?"
+    },
+    "plans": {
+      "free": "無料",
+      "pro": "プロ",
+      "enterprise": "企業"
+    }
+  },
+  "productLanding": {
+    "loading": "処理...",
+    "orderNow": "今すぐ注文",
+    "freeShipping": "送料無料",
+    "secureCheckout": "安全なチェックアウト",
+    "previewUnavailable": "プレビューは利用できません",
+    "visualGallery": "ビジュアルギャラリー",
+    "authenticProduct": "正規品",
+    "stockStatus": "在庫状況",
+    "limitedStock": "在庫に限りがございます",
+    "outOfStock": "在庫切れ",
+    "getItNow": "今すぐ入手",
+    "notFound": {
+      "title": "製品が見つかりません",
+      "desc": "お探しの商品は存在しません。",
+      "backHome": "ホームに戻る"
+    }
+  },
+  "affiliate": {
+    "title": "アフィリエイト プログラム",
+    "join": {
+      "desc": "アフィリエイト プログラムに参加すると、AntStudio を紹介する顧客ごとにコミッションを獲得できます。",
+      "button": "今すぐ参加"
+    },
+    "engine": {
+      "title": "アフィリエイト エンジン",
+      "linkTitle": "アフィリエイトリンク",
+      "copy": "コピー",
+      "rate": "レート",
+      "recurring": "繰り返し発生する",
+      "cookie": "クッキー"
+    },
+    "commissions": {
+      "title": "手数料",
+      "viewAll": "すべて見る",
+      "empty": "空の",
+      "paid": "有料",
+      "approved": "承認された",
+      "user": "ユーザー"
+    },
+    "wallet": {
+      "title": "財布",
+      "available": "利用可能",
+      "request": "リクエスト",
+      "lifetime": "一生"
+    },
+    "tips": {
+      "title": "ヒント",
+      "tip1": "ヒント1"
+    }
+  },
+  "analytics": {
+    "title": "分析",
+    "subtitle": "ストリーム分析の可視性",
+    "metrics": {
+      "peakViewers": "ピーク視聴者数",
+      "engagementScore": "エンゲージメントスコア",
+      "highViral": "高ウイルス性",
+      "stableEngagement": "安定したエンゲージメント",
+      "avgWatchTime": "平均視聴時間",
+      "zeroTime": "ゼロタイム",
+      "stable": "安定した",
+      "commerceRevenue": "商業収入"
+    },
+    "heatmap": {
+      "title": "ヒートマップ",
+      "viewers": "視聴者",
+      "chatVelocity": "チャットの速度",
+      "pollStarted": "投票が開始されました",
+      "flashDeal": "フラッシュディール"
+    },
+    "highlights": {
+      "title": "ハイライト",
+      "score": "スコア",
+      "generateShort": "ショートの生成"
+    }
+  },
+  "developer": {
+    "title": "開発者ツール",
+    "subtitle": "外部オーケストレーションのための API キーと Webhook 統合を管理します。",
+    "apiVersion": "APIのバージョン",
+    "keys": {
+      "title": "APIキー",
+      "generate": "生成する",
+      "lastUsed": "最後に使用したもの",
+      "never": "一度もない",
+      "empty": "空の",
+      "dialog": {
+        "abort": "キャンセル",
+        "initialize": "初期化する"
+      },
+      "success": {
+        "warning": "警告",
+        "copy": "コピー",
+        "stored": "保存済み"
+      }
+    },
+    "webhooks": {
+      "title": "Webhook",
+      "add": "追加",
+      "revoke": "取り消す",
+      "empty": "空の",
+      "dialog": {
+        "cancel": "キャンセル",
+        "establish": "確立する"
+      }
+    },
+    "headless": {
+      "title": "ヘッドレス",
+      "auth": "認証",
+      "verify": "確認する"
+    },
+    "toasts": {
+      "genFailed": "生成に失敗しました",
+      "webhookFailed": "Webhook が失敗しました"
+    }
+  },
+  "guestRoom": {
+    "loading": "処理...",
+    "error": {
+      "title": "エラー",
+      "noToken": "トークンなし",
+      "invalidOrExpired": "無効または期限切れです"
+    },
+    "join": {
+      "title": "ルームに参加する",
+      "subtitle": "名前を入力してルームに参加します",
+      "activeSession": "アクティブなセッション",
+      "displayName": "表示名",
+      "action": "アクション",
+      "hostStudio": "{name} のスタジオ",
+      "placeholder": "あなたの名前を入力してください"
+    },
+    "live": {
+      "title": "ライブ",
+      "status": "ライブ接続は正常です",
+      "desc": "これで、ホストはあなたの姿を見て、声を聞くことができるようになります。左側のコントロールを使用してマイクとカムを調整します。",
+      "subtitle": "あなたのフィードは現在、{name}_ のライブ プロダクションにミックスされています。"
+    },
+    "poweredBy": "AntStudio WebRTC ブリッジを利用",
+    "toasts": {
+      "hostUnmutedMic": "ホストのミュート解除されたマイク",
+      "hostMutedMic": "ホストのミュートマイク",
+      "hostEnabledCam": "ホスト対応カメラ",
+      "hostDisabledCam": "ホストが無効になっているカメラ",
+      "requestSent": "リクエストを送信しました",
+      "requestAccepted": "リクエストが受け入れられました",
+      "requestRejected": "リクエストが拒否されました",
+      "kickedOut": "追い出された",
+      "muted": "ミュート",
+      "unmuted": "ミュート解除",
+      "cameraOn": "カメラオン",
+      "cameraOff": "カメラオフ",
+      "hostApproved": "ホストの承認済み"
+    }
+  },
+  "joinOrg": {
+    "validating": "検証中",
+    "validatingDesc": "説明を検証しています",
+    "invite": {
+      "title": "招待する",
+      "desc1": "組織への参加に招待されました",
+      "desc2": "組織に参加するには確認してください",
+      "decline": "衰退",
+      "accept": "受け入れる"
+    },
+    "error": {
+      "title": "エラー",
+      "invalidOrExpired": "無効または期限切れです",
+      "validationFailed": "検証に失敗しました"
+    },
+    "toasts": {
+      "error": "エラー"
+    }
+  },
+  "licensePortal": {
+    "header": {
+      "title": "ライセンスポータル",
+      "subtitle": "ライセンスを管理する"
+    },
+    "actions": {
+      "support": "サポート",
+      "upgrade": "アップグレード"
+    },
+    "sidebar": {
+      "registries": "レジストリ"
+    },
+    "license": {
+      "keyId": "キーID",
+      "units": "単位"
+    },
+    "empty": {
+      "title": "ライセンスなし"
+    },
+    "telemetry": {
+      "title": "テレメトリー",
+      "operational": "稼働中",
+      "extend": "伸ばす",
+      "active": "アクティブ",
+      "lastHeartbeat": "最後のハートビート",
+      "empty": {
+        "title": "テレメトリーなし",
+        "desc": "利用可能なテレメトリ データがありません"
+      },
+      "selectRegistry": "レジストリの選択"
+    },
+    "pricing": {
+      "operationalTiers": "運用層",
+      "title": "価格設定",
+      "subtitle": "料金プラン",
+      "popular": "人気のある",
+      "edgeUnits": "エッジユニット",
+      "usersPerUnit": "ユニットあたりのユーザー数",
+      "projectsPerUnit": "単位当たりのプロジェクト数"
+    },
+    "toasts": {
+      "checkoutFailed": "チェックアウトに失敗しました",
+      "paymentFailed": "支払いに失敗しました",
+      "paymentExpired": "支払い期限が切れました",
+      "paymentVerificationFailed": "支払いの検証に失敗しました",
+      "paymentProcessingError": "支払い処理エラー"
+    },
+    "payment": {
+      "gateway": "ゲートウェイ"
+    }
+  },
+  "mobileIngest": {
+    "status": {
+      "live": "ライブ",
+      "standby": "待機する"
+    },
+    "stats": {
+      "bitrate": "ビットレート",
+      "latency": "レイテンシ",
+      "deviceTemp": "デバイスの温度",
+      "tempNormal": "正常な温度",
+      "resolution": "解決"
+    },
+    "pairing": {
+      "title": "モバイルインジェスト",
+      "desc": "モバイルデバイスを部屋にペアリングする"
+    }
+  },
+  "organization": {
+    "title": "組織",
+    "actions": {
+      "sync": "同期",
+      "create": "作成する"
+    },
+    "members": {
+      "title": "メンバー",
+      "invite": "招待する",
+      "actions": {
+        "modifyAccess": "アクセス権の変更",
+        "revoke": "取り消す"
+      }
+    },
+    "invitations": {
+      "pending": "保留中",
+      "status": {
+        "pending": "保留中"
+      }
+    },
+    "sidebar": {
+      "activeContext": "アクティブなコンテキスト",
+      "seats": {
+        "title": "席",
+        "engaged": "婚約中"
+      },
+      "identity": {
+        "title": "身元",
+        "discovery": "発見",
+        "customize": "カスタマイズ"
+      }
+    },
+    "empty": {
+      "title": "組織がありません",
+      "desc": "組織が見つかりません"
+    },
+    "dialogs": {
+      "create": {
+        "submit": "提出する"
+      },
+      "invite": {
+        "submit": "提出する"
+      }
+    }
+  },
+  "paymentSuccess": {
+    "viewSubscription": "サブスクリプションを見る"
+  },
+  "platformCallback": {
+    "waitDesc": "プラットフォームに接続しています...",
+    "error": {
+      "title": "エラー",
+      "action": "アクション"
+    },
+    "paymentGateway": "ペイメントゲートウェイ",
+    "service": "サービス",
+    "errors": {
+      "paymentCancelled": "支払いがキャンセルされました",
+      "exchangeFailed": "交換に失敗しました"
+    },
+    "connecting": "接続中...",
+    "connected": "接続済み",
+    "disconnected": "切断されました"
+  },
+  "platformCMS": {
+    "header": {
+      "subtitle": "プラットフォームのコンテンツを管理する"
+    },
+    "actions": {
+      "upload": "アップロード",
+      "uploading": "アップロード中"
+    },
+    "stats": {
+      "subscribers": "購読者",
+      "views": "ビュー",
+      "library": "図書館",
+      "published": "発行済み"
+    },
+    "empty": {
+      "title": "コンテンツなし",
+      "desc": "コンテンツが見つかりませんでした"
+    },
+    "analytics": {
+      "engagement": "婚約",
+      "avgViews": "平均視聴数",
+      "topPerforming": "トップパフォーマンス"
+    },
+    "comments": {
+      "empty": "空の"
+    },
+    "dialogs": {
+      "upload": {
+        "title": "ビデオをアップロードする",
+        "fields": {
+          "title": "タイトル",
+          "description": "説明"
+        },
+        "placeholders": {
+          "clickToUpload": "クリックしてアップロード",
+          "selectArchive": "アーカイブを選択"
+        },
+        "tabs": {
+          "local": "地元",
+          "archive": "アーカイブ"
+        }
+      },
+      "live": {
+        "title": "ライブに移行",
+        "fields": {
+          "title": "タイトル",
+          "privacy": "プライバシー"
+        },
+        "refresh": "リフレッシュ",
+        "launch": "打ち上げ",
+        "privacy": {
+          "public": "公共",
+          "private": "プライベート",
+          "unlisted": "非上場"
+        }
+      }
+    },
+    "tabs": {
+      "videos": "動画",
+      "analytics": "分析",
+      "comments": "コメント",
+      "overview": "概要"
+    },
+    "filters": {
+      "search": "検索",
+      "published": "発行済み",
+      "draft": "下書き",
+      "live": "ライブ",
+      "offline": "オフライン",
+      "sortBy": "並べ替え",
+      "newest": "最新",
+      "mostViews": "最も多くのビュー"
+    }
+  },
+  "platforms": {
+    "status": {
+      "connected": "接続済み",
+      "disconnected": "切断されました",
+      "expired": "期限切れ"
+    },
+    "actions": {
+      "goLive": "ライブに移行",
+      "connectNew": "新しい接続",
+      "manage": "管理",
+      "disconnect": "切断する",
+      "connected": "接続済み"
+    },
+    "dialogs": {
+      "connect": {
+        "fields": {
+          "rtmpUrl": "RTMP URL",
+          "streamKey": "ストリームキー",
+          "internalName": "内部名",
+          "serverUrl": "サーバーURL",
+          "adminEmail": "管理者のメールアドレス",
+          "password": "パスワード",
+          "appName": "アプリ名"
+        },
+        "title": "コネクトプラットフォーム",
+        "oauthDesc": "{platform} を {appName} に接続します",
+        "placeholders": {
+          "internalName": "内部名",
+          "serverUrl": "サーバーURL",
+          "adminEmail": "管理者のメールアドレス",
+          "password": "パスワード",
+          "appName": "アプリ名",
+          "amsName": "AMS アプリ名",
+          "rtmpName": "RTMP ストリーム名"
+        }
+      }
+    },
+    "header": {
+      "connected": "接続済み",
+      "platforms": "プラットフォーム",
+      "subtitle": "ストリーミング プラットフォームを管理する"
+    },
+    "empty": {
+      "title": "プラットフォームがありません",
+      "desc": "プラットフォームが見つかりません"
+    },
+    "noEmail": "メールなし",
+    "confirmDisconnect": "このプラットフォームを切断してもよろしいですか?",
+    "toasts": {
+      "authUrlFailed": "OAuth が失敗しました",
+      "nameRequired": "プラットフォーム名を入力してください",
+      "serverAndEmailRequired": "サーバーの URL と電子メールは必須です",
+      "passwordRequired": "パスワードが必要です",
+      "rtmpAndKeyRequired": "RTMP URLとストリームキーが必要です",
+      "syncing": "{name} を同期しています",
+      "syncSuccess": "同期が成功しました",
+      "authError": ""
+    }
+  },
+  "remoteCam": {
+    "header": {
+      "title": "リモートカメラ"
+    },
+    "pairing": {
+      "title": "リモートカメラをペアリングする",
+      "subtitle": "リモートカメラを部屋にペアリングする",
+      "enableAction": "アクションを有効にする"
+    },
+    "status": {
+      "live": "ライブ",
+      "ready": "準備ができて",
+      "onAir": "オンエア",
+      "awaitingApproval": "承認待ち"
+    },
+    "actions": {
+      "startBroadcast": "ブロードキャストを開始する",
+      "disconnect": "切断する"
+    },
+    "footer": {
+      "p2pBridge": "P2p ブリッジ"
+    },
+    "toasts": {
+      "front": "フロント",
+      "back": "戻る",
+      "hostUnmuted": "ホストのミュートが解除されました",
+      "hostMuted": "ホストがミュートされました",
+      "hostEnabledCam": "ホスト対応カメラ",
+      "hostDisabledCam": "ホストが無効になっているカメラ",
+      "cameraActive": "カメラがアクティブです",
+      "cameraInactive": "カメラが非アクティブ"
+    }
+  },
+  "viral": {
+    "header": {
+      "viral": "トレンド",
+      "syndication": "分布",
+      "hub": "ハブ"
+    },
+    "subtitle": "バイラルコンテンツの洞察を管理する",
+    "sync": "同期",
+    "refresh": "リフレッシュ",
+    "stats": {
+      "vsLastWeek": "先週との比較",
+      "views": "ビュー",
+      "engagement": "婚約",
+      "ctr": "クリック率",
+      "conversions": "コンバージョン",
+      "totalViews": "合計視聴数",
+      "totalEngagement": "トータルエンゲージメント",
+      "totalCtr": "合計クリック率",
+      "totalConversions": "総コンバージョン数",
+      "totalReach": "トータルリーチ",
+      "shares": "株式",
+      "stability": "安定性",
+      "growth": "成長"
+    },
+    "views": {
+      "overview": "概要",
+      "analytics": "分析",
+      "calendar": "カレンダー",
+      "abLab": "アブラボ"
+    },
+    "history": {
+      "title": "歴史",
+      "filters": {
+        "all": "全て",
+        "success": "成功",
+        "failed": "失敗した"
+      },
+      "syncing": "同期中",
+      "empty": {
+        "title": "履歴なし",
+        "desc": "履歴が見つかりません",
+        "start": "始める"
+      },
+      "columns": {
+        "content": "コンテンツ",
+        "channel": "チャネル",
+        "status": "状態",
+        "performance": "パフォーマンス",
+        "date": "日付",
+        "actions": "アクション"
+      },
+      "actions": {
+        "view": "ビュー",
+        "edit": "編集",
+        "delete": "消去",
+        "manageComments": "コメントの管理",
+        "viewExternal": "外部を見る",
+        "retry": "リトライ",
+        "cancelSchedule": "スケジュールをキャンセルする"
+      }
+    },
+    "status": {
+      "success": "成功",
+      "failed": "失敗した",
+      "pending": "保留中"
+    }
+  },
+  "videoEditor": {
+    "sidebar": {
+      "scene": "シーン",
+      "template": "テンプレート",
+      "magic": "魔法",
+      "element": "要素",
+      "text": "文章",
+      "image": "画像",
+      "video": "ビデオ",
+      "audio": "オーディオ",
+      "upload": "アップロード",
+      "record": "記録",
+      "cloud": "雲",
+      "layers": "レイヤー",
+      "formats": "フォーマット"
+    },
+    "scene": {
+      "title": "シーン",
+      "add": "シーンの追加",
+      "edit": "編集",
+      "moveUp": "上に移動",
+      "moveDown": "下に移動",
+      "duplicate": "重複",
+      "delete": "消去",
+      "sceneIndex": "シーン {index}"
+    },
+    "template": {
+      "title": "テンプレート",
+      "searchPlaceholder": "テンプレートを検索...",
+      "public": "公共",
+      "private": "プライベート",
+      "unknownMode": "不明モード",
+      "noTemplatesFound": "テンプレートが見つかりませんでした",
+      "replaceScene": "シーンを置き換える",
+      "newScene": "新しいシーン",
+      "localTemplates": "ローカルテンプレート",
+      "loadJson": "JSONをロードする",
+      "noLocalTemplates": "ローカルテンプレートはありません"
+    },
+    "ai": {
+      "title": "ジェミニAI",
+      "breadcrumbTools": "ツール",
+      "creativeSuite": "クリエイティブスイート",
+      "creativeSuiteDesc": "Google の最も有能な AI モデルを使用してワークフローを強化します。",
+      "voiceGeneration": "音声生成",
+      "voiceGenerationDesc": "感情豊かな AI によるテキスト読み上げ",
+      "imageGeneration": "画像生成",
+      "imageGenerationDesc": "本番環境に対応したアセットを生成する",
+      "videoGeneration": "ビデオ生成",
+      "videoGenerationDesc": "プロンプトからビデオクリップを作成する",
+      "captionGeneration": "キャプションの生成",
+      "captionGenerationDesc": "字幕を自動生成",
+      "musicGeneration": "音楽の生成",
+      "musicGenerationDesc": "プロンプトからオリジナルのトラックを作成する",
+      "aiCreativeDirector": "AIクリエイティブディレクター",
+      "aiCreativeDirectorDesc": "スクリプトからビデオへのゼロツーワン自動化",
+      "aiTalkingHeads": "AIトーキングヘッズ",
+      "aiTalkingHeadsDesc": "リップシンク アバター ビデオの生成",
+      "viralHighlights": "バイラルハイライト",
+      "viralHighlightsDesc": "ソーシャルメディア用にクリップを抽出してトリミング",
+      "kineticTypography": "キネティックタイポグラフィー",
+      "kineticTypographyDesc": "アニメーションキャプションとモーショントラッキング",
+      "visualEnrichment": "ビジュアルエンリッチメント",
+      "visualEnrichmentDesc": "AI B ロールとシネマティック ポリッシュ",
+      "aiAnalytics": "AI分析",
+      "aiAnalyticsDesc": "エンゲージメント スコアとエクスポート オプティマイザー",
+      "brandKit": "ブランドキット",
+      "brandKitDesc": "スタイルの継承とブランドの強化",
+      "aiDubbing": "AIアフレコ",
+      "aiDubbingDesc": "グローバルプロジェクトのローカリゼーションと同期",
+      "sceneDetection": "シーン検出",
+      "sceneDetectionDesc": "ビデオをシーンに自動分割する",
+      "autoCut": "ビートに合わせて自動カット",
+      "autoCutDesc": "シーンをオーディオのリズムと同期させる",
+      "smartTrim": "スマートトリム",
+      "smartTrimDesc": "サイレントギャップを自動的に削除",
+      "backgroundRemoval": "背景の除去",
+      "backgroundRemovalDesc": "画像の背景を削除する",
+      "upscale": "高級感のある",
+      "denoise": "ノイズ除去",
+      "imageVectorizer": "画像ベクタライザー",
+      "imageVectorizerDesc": "画像をSVGに変換する",
+      "autoReframe": "自動再フレーム",
+      "autoReframeDesc": "ビデオの焦点を被写体に合わせる",
+      "objectTracking": "オブジェクト追跡",
+      "objectTrackingDesc": "オブジェクトの追跡とクエリ",
+      "faceBlur": "顔のぼかし",
+      "faceBlurDesc": "顔の自動ぼかし"
+    },
+    "timeline": {
+      "transitions": "トランジション",
+      "showTiming": "ショーのタイミング",
+      "subtitle": "字幕",
+      "voiceover": "ナレーション",
+      "audio": "オーディオ",
+      "subtitleUpdated": "字幕を更新しました",
+      "uploadingVoiceover": "ナレーションをアップロードしています...",
+      "voiceoverSaved": "ナレーションが保存されました",
+      "voiceoverFailed": "ナレーションを保存できませんでした",
+      "timelineNotInitialized": "タイムラインが初期化されていません"
+    },
+    "text": {
+      "title": "文章",
+      "searchPlaceholder": "タイポグラフィを検索...",
+      "basicTexts": "基本テキスト",
+      "addTitle": "タイトルを追加する",
+      "addHeading": "見出しを追加する",
+      "addParagraph": "段落を追加する",
+      "defaultTitle": "ここにタイトルが入ります",
+      "defaultHeading": "ここに見出しが入ります",
+      "defaultParagraph": "ここにあなたの段落が入ります"
+    },
+    "image": {
+      "title": "画像",
+      "searchPlaceholder": "画像を検索...",
+      "popular": "人気のある",
+      "uploads": "アップロード",
+      "upload": "アップロード",
+      "seeAll": "すべて見る",
+      "noUploads": "アップロードはありません",
+      "pixels": "ピクセル",
+      "unsplash": "アンスプラッシュ",
+      "userImages": "私のイメージ",
+      "pixelsImages": "Pexels ライブラリ",
+      "unsplashImages": "アンスプラッシュライブラリ",
+      "replaceLoading": "画像差し替え中です…",
+      "replaceSuccess": "画像が差し替えられました",
+      "replaceError": "画像の置換中にエラーが発生しました",
+      "addLoading": "画像を読み込んでいます...",
+      "addSuccess": "画像がアートボードに追加されました",
+      "addError": "画像の追加中にエラーが発生しました",
+      "loadError": "画像アセットのロードに失敗しました",
+      "noImagesFound": "画像が見つかりません"
+    },
+    "video": {
+      "title": "動画",
+      "searchPlaceholder": "動画を検索...",
+      "popular": "人気のある",
+      "uploads": "アップロード",
+      "upload": "アップロード",
+      "seeAll": "すべて見る",
+      "noUploads": "アップロードはありません",
+      "stockVideos": "ストックビデオ",
+      "userVideos": "私のビデオ",
+      "pixelsVideos": "Pexels ライブラリ",
+      "uploadLoading": "あなたのビデオがアップロードされています...",
+      "uploadSuccess": "ビデオが正常にアップロードされました",
+      "uploadError": "動画のアップロード中にエラーが発生しました",
+      "replaceLoading": "動画差し替え中です…",
+      "replaceSuccess": "動画が差し替えられました",
+      "replaceError": "ビデオの置き換え中にエラーが発生しました",
+      "addLoading": "ビデオをロード中です...",
+      "addSuccess": "動画がアートボードに追加されました",
+      "addError": "ビデオの追加中にエラーが発生しました",
+      "loadError": "ビデオアセットのロードに失敗しました",
+      "videoLabel": "ビデオ"
+    },
+    "recorder": {
+      "title": "レコーダー",
+      "recording": "記録 {time}",
+      "studioMode": "スタジオモード",
+      "masterControl": "マスターコントロール",
+      "recordingLive": "ライブ録音",
+      "idle": "アイドル状態",
+      "stopRecording": "録音を停止する",
+      "startSession": "スタジオセッションを開始する",
+      "settings": "設定",
+      "settingsDesc": "フィルター、レイアウト、デバイス、AI",
+      "captureReady": "キャプチャ準備完了",
+      "addToTimeline": "タイムラインに追加",
+      "saveFile": "ファイルの保存",
+      "teleprompter": "テレプロンプター",
+      "stop": "停止",
+      "scroll": "スクロール",
+      "selectAvatar": "プレゼンテーションアバターの選択",
+      "avatarPrompt": "AI インフルエンサーにホワイトボード プレゼンテーションを主催してもらいたいですか?これをスキップして、声だけでプレゼンテーションすることもできます。",
+      "noAvatar": "アバターなし",
+      "voiceOnly": "音声のみ",
+      "cancel": "キャンセル",
+      "addSuccess": "録画がタイムラインに追加されました!",
+      "saveError": "録音の保存に失敗しました"
+    },
+    "layers": {
+      "title": "レイヤー",
+      "hide": "レイヤーを非表示にする",
+      "show": "レイヤーを表示",
+      "unlock": "レイヤーのロックを解除する",
+      "lock": "ロックレイヤー",
+      "delete": "レイヤーの削除",
+      "unnamed": "名前のないレイヤー",
+      "noLayers": "レイヤーなし",
+      "emptyStateDesc": "開始するには要素を追加してください"
+    },
+    "element": {
+      "title": "要素",
+      "searchPlaceholder": "要素を検索...",
+      "popular": "人気のある",
+      "basicShapes": "基本的な形状",
+      "abstractShapes": "抽象的な形",
+      "frames": "フレーム",
+      "lines": "ライン",
+      "gifs": "GIF",
+      "stickers": "ステッカー",
+      "emoji": "絵文字",
+      "seeAll": "すべて見る",
+      "replaceGifLoading": "GIFは差し替え中です...",
+      "replaceGifSuccess": "GIFは差し替えられました",
+      "replaceGifError": "GIF の置換中にエラーが発生しました",
+      "addGifLoading": "GIF アセットをロード中です...",
+      "addGifSuccess": "GIF アセットがアートボードに追加されました",
+      "addGifError": "GIF アセットの追加でエラーが発生しました",
+      "loadGifError": "GIF アセットのロードに失敗しました",
+      "replaceEmojiLoading": "絵文字が置き換えられています...",
+      "replaceEmojiSuccess": "絵文字が置き換えられました",
+      "replaceEmojiError": "絵文字の置換中にエラーが発生しました",
+      "addEmojiLoading": "絵文字を読み込んでいます...",
+      "addEmojiSuccess": "絵文字がアートボードに追加されました",
+      "addEmojiError": "絵文字の追加中にエラーが発生しました",
+      "loadEmojiError": "絵文字アセットのロードに失敗しました"
+    },
+    "chart": {
+      "title": "チャート",
+      "searchPlaceholder": "チャートを検索...",
+      "basicCharts": "基本的なチャート",
+      "bar": "棒グラフ",
+      "line": "折れ線グラフ",
+      "pie": "円グラフ"
+    },
+    "cloud": {
+      "title": "クラウドドライブ",
+      "subtitle": "統合された資産ハブ",
+      "searchPlaceholder": "クラウド資産を検索...",
+      "noAssets": "クラウド資産が見つかりません",
+      "corsWarning": "ブラウザーから直接インポートするには、ストレージ バケットでクロスオリジン (CORS) を有効にする必要があります。",
+      "unsupportedFormat": "サポートされていないファイル形式です",
+      "syncSuccess": "アセットは正常に同期されました",
+      "importError": "アセットのインポートに失敗しました"
+    },
+    "prompt": {
+      "title": "AIプロンプター",
+      "selectFormat": "コンテンツ形式の選択",
+      "topicInstructions": "トピックとクリエイティブの指示",
+      "placeholder": "コンバージョン率の高い動画広告を生成します...",
+      "generateScene": "シーンの生成",
+      "footerNote": "当社の AI はプロンプトを分析し、最適なタイミングとアセットで制作可能なビデオ シーンを生成します。",
+      "generating": "動画広告を生成しています...",
+      "generated": "動画広告が生成されます",
+      "generateError": "広告の生成中にエラーが発生しました",
+      "feed": "餌",
+      "story": "話",
+      "banner": "バナー",
+      "loadingSession": "プロンプトセッションを読み込んでいます...",
+      "sessionLoaded": "プロンプトセッションがロードされました",
+      "loadSessionError": "プロンプトセッションのロードに失敗しました",
+      "searchPlaceholder": "セッションを検索...",
+      "newSession": "新しいセッション",
+      "recentSessions": "最近のセッション",
+      "seeAll": "すべて見る",
+      "duration": "間隔"
+    },
+    "format": {
+      "title": "フォーマット",
+      "searchPlaceholder": "検索形式..."
+    },
+    "export": {
+      "title": "ビデオのエクスポート",
+      "exportingStatus": "エクスポート中...",
+      "chooseQuality": "品質プリセットを選択する",
+      "cancelExport": "エクスポートのキャンセル",
+      "exportVideo": "ビデオのエクスポート",
+      "cancel": "キャンセル",
+      "advancedSettings": "詳細設定",
+      "resolution": "解決",
+      "frameRate": "フレームレート",
+      "bitrate": "ビットレート",
+      "codec": "コーデック",
+      "bitrateLow": "低い",
+      "bitrateMedium": "中くらい",
+      "bitrateHigh": "高い",
+      "bitrateUltra": "ウルトラ",
+      "codecCompatible": "互換性がある",
+      "codecEfficient": "より小さいファイル",
+      "timeRemaining": "残り時間",
+      "estimatedSize": "推定サイズ",
+      "successMessage": "ビデオは正常にエクスポートされました。",
+      "failedMessage": "エクスポートに失敗しました",
+      "confirmCancel": "エクスポートをキャンセルしてもよろしいですか?",
+      "cancelledMessage": "エクスポートがキャンセルされました",
+      "presets": {
+        "draft": "下書き",
+        "draftDesc": "プレビュー用の高速エクスポート",
+        "standard": "標準",
+        "standardDesc": "バランスのとれた品質とサイズ",
+        "high": "高い",
+        "highDesc": "共有できる高品質",
+        "ultra": "ウルトラ",
+        "ultraDesc": "最高品質 (4K)"
+      }
+    },
+    "shortcuts": {
+      "title": "キーボードショートカット",
+      "subtitle": "ワークフローをカスタマイズする",
+      "searchPlaceholder": "ショートカットを検索...",
+      "reset": "リセット",
+      "pressKeys": "キーを押してください...",
+      "edit": "編集",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "tip": "ヒント: ショートカットの横にある「編集」をクリックし、希望のキーの組み合わせを押します。",
+      "categories": {
+        "playback": "再生",
+        "editing": "編集",
+        "timeline": "タイムライン",
+        "selection": "選択",
+        "effects": "エフェクトとツール",
+        "general": "一般的な"
+      }
+    },
+    "audio": {
+      "title": "オーディオ",
+      "searchPlaceholder": "オーディオを検索...",
+      "uploads": "アップロード",
+      "music": "音楽",
+      "soundFx": "サウンドFX",
+      "userAudios": "私のオーディオ",
+      "musics": "音楽ライブラリ",
+      "sounds": "効果音",
+      "seeAll": "すべて見る",
+      "noUploads": "アップロードはありません",
+      "upload": "アップロード",
+      "uploadLoading": "オーディオ アセットをアップロード中です...",
+      "uploadSuccess": "音声が正常にアップロードされました",
+      "uploadError": "音声のアップロード中にエラーが発生しました",
+      "noAudiosFound": "音声が見つかりません",
+      "noMusicFound": "音楽が見つかりません",
+      "voiceLab": "ボイスラボ",
+      "addLoading": "オーディオ アセットをロード中です...",
+      "addSuccess": "オーディオ アセットがアートボードに追加されました",
+      "addError": "オーディオアセットの追加中にエラーが発生しました",
+      "loadError": "オーディオアセットのロードに失敗しました"
+    },
+    "upload": {
+      "title": "アップロード",
+      "searchPlaceholder": "アップロードを検索...",
+      "images": "画像",
+      "videos": "動画",
+      "audios": "オーディオ",
+      "upload": "アップロード",
+      "seeAll": "すべて見る",
+      "uploadLoading": "アセットをアップロード中です...",
+      "uploadSuccess": "アセットが正常にアップロードされました",
+      "uploadError": "アセットのアップロード中にエラーが発生しました",
+      "replaceImageLoading": "画像差し替え中です…",
+      "replaceImageSuccess": "画像が差し替えられました",
+      "replaceImageError": "画像の置換中にエラーが発生しました",
+      "addImageLoading": "画像を読み込んでいます...",
+      "addImageSuccess": "画像がアートボードに追加されました",
+      "addImageError": "画像アセットの追加中にエラーが発生しました",
+      "addVideoLoading": "ビデオアセットをロード中です...",
+      "addVideoSuccess": "ビデオアセットがアートボードに追加されました",
+      "addVideoError": "ビデオアセットの追加中にエラーが発生しました",
+      "addAudioLoading": "オーディオ アセットをロード中です...",
+      "addAudioSuccess": "オーディオ アセットがアートボードに追加されました",
+      "addAudioError": "オーディオアセットの追加中にエラーが発生しました"
+    },
+    "arrange": {
+      "title": "整える",
+      "align": "整列",
+      "distribution": "分布",
+      "position": "位置",
+      "timelineManagement": "タイムライン管理",
+      "duration": "間隔",
+      "offset": "オフセット",
+      "layerOrder": "レイヤーの順序",
+      "alignment": "位置合わせ",
+      "mirroring": "ミラーリング",
+      "horizontal": "水平",
+      "vertical": "垂直",
+      "transform": "変身",
+      "width": "幅",
+      "height": "身長",
+      "positionX": "位置X",
+      "positionY": "位置Y",
+      "angle": "角度",
+      "top": "トップ",
+      "bottom": "底",
+      "left": "左",
+      "right": "右",
+      "verticalCenter": "垂直中央",
+      "horizontalCenter": "水平方向の中央",
+      "distributeVertically": "垂直方向に分布",
+      "distributeHorizontally": "水平方向に分散",
+      "forward": "フォワード",
+      "backward": "後方へ",
+      "front": "フロント",
+      "back": "戻る"
+    },
+    "visual": {
+      "title": "ビジュアル",
+      "showLayer": "レイヤーを表示",
+      "hideLayer": "レイヤーを非表示にする",
+      "visualizerMode": "ビジュアライザーモード",
+      "barWidth": "バーの幅",
+      "barSpace": "バースペース",
+      "barColor": "バーの色",
+      "symmetric": "対称",
+      "capsHeight": "キャップの高さ",
+      "dropSpeed": "ドロップスピード",
+      "capsColor": "キャップの色",
+      "brickHeight": "レンガの高さ",
+      "brickSpace": "ブリックスペース",
+      "lineWidth": "線幅",
+      "lineSpace": "行間",
+      "lineColor": "線の色",
+      "outline": "概要",
+      "color": "色",
+      "progressBar": "プログレスバー",
+      "width": "幅",
+      "clockwise": "時計回り",
+      "meterSpace": "メータースペース",
+      "rotateGraph": "グラフを回転する",
+      "playtimeDisplay": "プレイタイム表示",
+      "playtimeSlider": "プレイタイムスライダー",
+      "fontSize": "フォントサイズ",
+      "family": "家族",
+      "sliderWidth": "スライダーの幅",
+      "sliderColor": "スライダーの色",
+      "playedWidth": "再生幅",
+      "playedColor": "プレイドカラー",
+      "includeMilliseconds": "ミリ秒を含む",
+      "positionBottom": "位置を下にします",
+      "bars": "バー",
+      "wave": "波形",
+      "circle": "丸",
+      "meter": "メーター"
+    },
+    "toolbar": {
+      "text": "文章",
+      "shape": "形",
+      "line": "ライン",
+      "image": "画像",
+      "video": "ビデオ",
+      "audio": "オーディオ",
+      "crop": "作物",
+      "trim": "トリム",
+      "activeSelection": "選択",
+      "fill": "埋める",
+      "stroke": "脳卒中",
+      "opacity": "不透明度",
+      "position": "位置",
+      "timeline": "タイムライン",
+      "bringForward": "前倒し",
+      "sendBackward": "逆方向に送信",
+      "duplicate": "重複",
+      "delete": "消去",
+      "group": "グループ",
+      "ungroup": "グループを解除する",
+      "reset": "リセット",
+      "cancel": "キャンセル",
+      "apply": "適用する",
+      "volume": "音量",
+      "filters": "フィルター",
+      "mask": "マスク",
+      "intensity": "強度"
+    },
+    "menubar": {
+      "file": "ファイル",
+      "edit": "編集",
+      "view": "ビュー",
+      "help": "ヘルプ",
+      "newProject": "新しいプロジェクト",
+      "openProject": "プロジェクトを開く",
+      "saveProject": "プロジェクトの保存",
+      "export": "輸出",
+      "undo": "元に戻す",
+      "redo": "やり直し",
+      "copy": "コピー",
+      "paste": "ペースト",
+      "delete": "消去",
+      "selectAll": "すべて選択",
+      "zoomIn": "ズームイン",
+      "zoomOut": "ズームアウト",
+      "fitToScreen": "画面に合わせる",
+      "shortcuts": "ショートカット",
+      "documentation": "ドキュメント",
+      "unnamedProject": "名前のないプロジェクト"
+    },
+    "animation": {
+      "title": "アニメーション",
+      "page": "ページ",
+      "element": "要素",
+      "onEnter": "入力時",
+      "display": "画面",
+      "onExit": "終了時",
+      "motion": "モーション",
+      "motionTracks": "モーショントラック",
+      "addKeyframesPath": "キーフレームを追加してパスを作成する",
+      "clearAll": "すべてクリア",
+      "addKeyframe": "キーフレームの追加",
+      "noKeyframesYet": "この要素にはまだキーフレームが追加されていません",
+      "previewMotion": "モーションのプレビュー",
+      "at": "で",
+      "basicAnimations": "基本的なアニメーション",
+      "textAnimations": "テキストアニメーション",
+      "easingType": "イージングタイプ",
+      "durationS": "期間(秒)",
+      "springPhysics": "ばねの物理学",
+      "adjustPhysics": "物理を調整する",
+      "mass": "質量",
+      "stiffness": "剛性",
+      "damping": "ダンピング",
+      "velocity": "速度",
+      "textStyle": "テキストスタイル",
+      "textStyles": {
+        "letter": "手紙",
+        "word": "言葉",
+        "line": "ライン"
+      },
+      "names": {
+        "none": "なし",
+        "fade": "フェード",
+        "slide-left": "左にスライド",
+        "slide-right": "右にスライド",
+        "pan-left": "左にパン",
+        "pan-right": "右にパン",
+        "rise-up": "ライズアップ",
+        "sink-down": "シンクダウン",
+        "wipe": "ワイプ",
+        "baseline": "ベースライン",
+        "pop": "ポップ",
+        "typewriter": "タイプライター",
+        "block": "ブロック",
+        "merge": "マージ",
+        "burst": "バースト",
+        "clarify": "明らかにする",
+        "bounce": "バウンス",
+        "ascend": "昇る",
+        "rotate": "回転",
+        "zoom-in": "ズームイン",
+        "zoom-out": "ズームアウト",
+        "blink": "まばたき"
+      },
+      "easings": {
+        "linear": "リニア",
+        "easeInSine": "イーズイン",
+        "easeOutSine": "イーズアウト",
+        "easeInOutSine": "イーズインアウト",
+        "easeOutInSine": "イーズアウトイン",
+        "easeInElastic": "イーズインエラスティック",
+        "easeOutElastic": "イーズアウトエラスティック",
+        "easeInOutElastic": "イーズインアウトエラスティック",
+        "easeOutInElastic": "イーズアウトインエラスティック",
+        "spring": "春"
+      }
+    },
+    "clip": {
+      "title": "クリップマスク",
+      "removeMask": "クリップマスクを削除",
+      "basicShapes": "基本的な形状",
+      "abstract": "抽象的な",
+      "frames": "フレーム",
+      "seeAll": "すべて見る",
+      "noElements": "要素サンプルなし",
+      "noSceneElements": "利用可能なシーン要素がありません",
+      "shapes": "形状"
+    },
+    "fill": {
+      "title": "埋める",
+      "solid": "固体",
+      "gradient": "勾配"
+    },
+    "filters": {
+      "title": "フィルター",
+      "reset": "リセット",
+      "filter": "フィルター",
+      "adjust": "調整する",
+      "intensity": "強度",
+      "none": "なし",
+      "brightness": "輝度",
+      "contrast": "対比",
+      "saturation": "飽和",
+      "vibrance": "活気",
+      "noise": "ノイズ",
+      "pixelate": "ピクセル化",
+      "hue": "色相",
+      "blur": "ぼかし",
+      "gamma": "ガンマ",
+      "sepia": "セピア",
+      "blackWhite": "ブラック&ホワイト",
+      "brownie": "ブラウニー",
+      "vintage": "ビンテージ",
+      "kodachrome": "コダクローム",
+      "technicolor": "テクニカラー",
+      "polaroid": "ポラロイド",
+      "invert": "反転",
+      "grayscale": "グレースケール",
+      "blendColor": "ブレンドカラー",
+      "duotone": "デュオトーン",
+      "removeColor": "色の削除",
+      "tolerance": "許容範囲",
+      "opacity": "不透明度",
+      "blendControls": "ブレンドコントロール",
+      "light": "ライト",
+      "dark": "暗い",
+      "filmGrain": "フィルムグレイン",
+      "vignette": "ビネット",
+      "chromaticAberration": "色収差",
+      "ice-water": "氷水",
+      "summer-heat": "夏の暑さ",
+      "fever": "熱",
+      "strawberry": "いちご",
+      "ibiza": "イビサ",
+      "sweet-sunset": "スイートサンセット",
+      "blue-rock": "ブルーロック",
+      "ocean-way": "オーシャンウェイ",
+      "little-red": "リトル・レッド",
+      "vintage-may": "ヴィンテージ 5 月"
+    },
+    "fonts": {
+      "title": "フォント",
+      "searchPlaceholder": "フォントを検索..."
+    },
+    "audioSettings": {
+      "title": "オーディオ設定",
+      "showLayer": "レイヤーを表示",
+      "hideLayer": "レイヤーを非表示にする",
+      "volume": "音量",
+      "fadeIn": "フェードイン",
+      "fadeOut": "フェードアウト",
+      "clipName": "クリップ名",
+      "aiUtilities": "AIユーティリティ",
+      "generateVoiceover": "AI ナレーションの生成",
+      "aiDescription": "このクリップのテキストをスタジオ品質のナレーションに変換します。"
+    },
+    "stroke": {
+      "title": "脳卒中",
+      "pickColorError": "ページから色を選択できませんでした"
+    },
+    "aiMagic": {
+      "title": "AIマジック",
+      "magicWrite": "マジックライト"
+    },
+    "transition": {
+      "title": "トランジション",
+      "duration": "間隔",
+      "direction": "方向",
+      "presets": "トランジションプリセット",
+      "none": "なし",
+      "fade": "クロスフェード",
+      "blur": "ブラーディゾルブ",
+      "glitch": "デジタルグリッチ",
+      "lightLeak": "光漏れ",
+      "morph": "リキッドモーフ",
+      "zoomBlur": "ズームブラー",
+      "wipe": "クラシックワイプ",
+      "slide": "スライドプッシュ",
+      "cube": "3Dキューブ",
+      "flip": "3Dフリップ",
+      "circle": "アイリスサークル",
+      "left": "左",
+      "right": "右",
+      "up": "上",
+      "down": "下"
+    },
+    "position": {
+      "title": "位置",
+      "arrange": "整える",
+      "layers": "レイヤー"
+    },
+    "footer": {
+      "tracks": "トラック",
+      "scenes": "シーン",
+      "visuals": "ビジュアル",
+      "audio": "オーディオ",
+      "subtitles": "字幕",
+      "scene": "シーン",
+      "selectTransition": "トランジションの選択",
+      "duplicate": "重複",
+      "copy": "コピー",
+      "delete": "消去"
+    },
+    "playback": {
+      "splitClip": "クリップの分割",
+      "splitKeepLeft": "分割して左に保持",
+      "splitKeepRight": "分割して右を維持",
+      "duplicateClip": "クリップの複製",
+      "deleteElement": "要素の削除",
+      "viewportFormat": "ビューポートキャンバス形式",
+      "canvasScale": "キャンバススケール",
+      "timelineZoom": "タイムラインズーム",
+      "presets": "プリセット",
+      "duration": "間隔",
+      "globalTimeline": "グローバルプロジェクトのタイムライン",
+      "timeLimit": "期限",
+      "toggleTimeline": "タイムラインパネルの切り替え",
+      "timeline": "タイムライン"
+    }
+  },
+  "ai": {
+    "greetings": {
+      "script": {
+        "title": "こんにちは！映画の台本を受け取りました。 📄",
+        "steps": "次に、次の手順を自動的に実行します。",
+        "step1": "アップロードしたファイルからスクリプトの内容を分析する",
+        "step2": "スクリプトに基づいてプロジェクトの概要を作成する",
+        "step3": "ビデオの詳細なストーリーボードを作成する",
+        "footer": "ストーリーボードが完成したら、ビジュアルを生成する前に確認のために一時停止します。ちょっと待ってください！ ⏳"
+      },
+      "topic": {
+        "title": "こんにちは！ビデオプロジェクトのセットアップを開始しています。 🚀",
+        "steps": "次に、次の手順を実行します。",
+        "step1": "アイデアと最新のトレンドを分析する",
+        "step2": "詳細なクリエイティブブリーフを作成する",
+        "step3": "完全なストーリーボードを作成する",
+        "footer": "ビジュアルを作成する前にレビューのために停止します。乞うご期待！ ⏳"
+      },
+      "visualGuide": {
+        "title": "システムは、主要なキャラクターや設定を含む、プロジェクトの詳細な絵コンテを完成させました。",
+        "footer": "上記のストーリーボードの内容を確認してください。ビジュアル制作を企画する前に、キャラクターデザインや設定などの細かい調整をご希望の場合はお知らせください。",
+        "steps": "これらのシーンの実現を開始するための次のステップは次のとおりです。",
+        "step1": "視覚戦略を設計して、最適な技術的手法と芸術的モデルを決定します。",
+        "step2": "キャラクターとキーアイテムを作成します。これは、モーション シーンをデザインする前に視覚的な一貫性を確保するために必須の手順です。",
+        "step3": "BGM とナレーションを生成して雰囲気を確立します。"
+      }
+    },
+    "settings": {
+      "ai": {
+        "capabilities": {}
+      }
+    }
+  },
+  "saleWizard": {
+    "title": "ライブセットアップウィザード",
+    "badge": "販売",
+    "step": "ステップ {step}/7: {name}",
+    "steps": {
+      "agent": "AIエージェントの選択",
+      "product": "製品の選択",
+      "influencer": "インフルエンサーの割り当て",
+      "video": "AI ビデオ補助者の準備",
+      "script": "スクリプトオーケストレーション",
+      "config": "シーンとプラットフォームの構成",
+      "review": "最終レビュー"
+    },
+    "agents": {
+      "title": "AIエージェント",
+      "subtitle": "ライブ ストリーミングする AI エージェントを選択してください",
+      "empty": "AI エンティティは存在しません",
+      "emptySub": "まずパネルで AI インフルエンサーを作成します"
+    },
+    "products": {
+      "autoMode": "自動（スマート）モード",
+      "autoModeDesc": "購入者の意図に基づいて製品を自動的に選択してランク付けします",
+      "search": "製品を検索...",
+      "noProducts": "製品が見つかりませんでした"
+    },
+    "videos": {
+      "language": "スマートランゲージ",
+      "languageDesc": "ライブ ストリームで言語を選択してください",
+      "generate": "AIビデオを生成する",
+      "generating": "生成中...",
+      "awaiting": "ビデオアシスタントを待っています",
+      "generateVideo": "ビデオの生成",
+      "copyPrompt": "プロンプトのコピー",
+      "upload": "アップロード",
+      "promptCopied": "プロンプトがクリップボードにコピーされました"
+    },
+    "script": {
+      "title": "絵コンテ",
+      "subtitle": "ライブストリームのストーリーボードを生成する",
+      "generate": "AIの生成",
+      "emptyDesc": "スクリプトはまだ生成されていません",
+      "generateStoryboard": "ストーリーボードの生成",
+      "placeholder": "インフルエンサーは何と言っていますか？"
+    },
+    "config": {
+      "title": "プラットフォームとシーン",
+      "subtitle": "ストリーミング用のプラットフォームを選択してください",
+      "targetPlatforms": "対象プラットフォーム",
+      "noAccounts": "アカウントが接続されていません。設定で追加してください。",
+      "frameRatio": "フレーム比",
+      "landscape": "風景",
+      "portrait": "肖像画",
+      "background": "背景",
+      "searchBg": "検索..."
+    },
+    "review": {
+      "ready": "ライブの準備完了",
+      "readyDesc": "{products} 個の商品を用意し、{agents}_ 人のインフルエンサーとコーディネートしました。すべての視覚補助とスクリプトは同期されます。",
+      "selectedProducts": "厳選された製品",
+      "language": "言語",
+      "aspectRatio": "アスペクト比",
+      "targetPlatforms": "対象プラットフォーム",
+      "aiAgents": "AIエージェント",
+      "noPlatforms": "プラットフォームが選択されていません"
+    },
+    "buttons": {
+      "back": "戻る",
+      "next": "次",
+      "goLive": "ライブに行く"
+    }
+  },
+  "saleStudio": {
+    "title": "AIストリーマー",
+    "subtitle": "自律的な販売エンジン",
+    "setup": "設定",
+    "liveMode": "ライブモード",
+    "viewers": "{count} 視聴者",
+    "exit": "出口",
+    "spotlightPitch": "スポットライトピッチ",
+    "spotlight": "スタジオスポットライト",
+    "socialProof": "社会的証明: 42 人のクライアントがチェックアウト中です!",
+    "loading": "売上スタックをロードしています",
+    "loadingSub": "グリーンフィールド レンダリングを読み込み中...",
+    "liveDialogue": "ライブダイアログ",
+    "aiMode": "AIモード",
+    "storyboardMode": "ストーリーボードモード",
+    "awaitingIngestion": "ライブ取り込みを待っています...",
+    "startBroadcast": "放送を開始する",
+    "stopBroadcast": "放送を停止する",
+    "networkStatus": "WebRTC ネットワーク",
+    "excellent": "素晴らしい",
+    "good": "良い",
+    "poor": "貧しい"
+  }
+}

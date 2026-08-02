@@ -3,6 +3,7 @@
         "target": "ES2020",
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
+        "rootDir": "src",
         "baseUrl": ".",
         "paths": {
             "~/*": [
@@ -18,13 +19,15 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "allowJs": true
+        "allowJs": true,
+        "noEmitOnError": true
     },
     "include": [
         "src/**/*"
     ],
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "scripts/*"
     ]
 }

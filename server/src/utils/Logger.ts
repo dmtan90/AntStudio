@@ -1,22 +1,21 @@
 import { SystemLog } from '../models/SystemLog.js';
-import { emailService } from '../services/email.js';
-import { alertService } from '../services/AlertService.js';
-import { configService } from './configService.js';
+import { emailService } from '../services/system/EmailService.js';
+import { alertService } from '../services/system/AlertService.js';
+import { configService } from './ConfigService.js';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { Server } from 'socket.io';
 
 class LoggerClass {
     private static instance: LoggerClass;
     private levels = ['debug', 'info', 'warn', 'error'];
-    private logDir: string;
-    private currentLogFile: string;
+    private logDir!: string;
+    private currentLogFile!: string;
     private io: Server | null = null;
 
     private constructor() {
-        this.logDir = path.join(process.cwd(), 'logs');
-        this.currentLogFile = path.join(this.logDir, 'antstudio-system.log');
-        this.ensureLogDir();
+        this.initPaths();
     }
 
     public static getInstance(): LoggerClass {
@@ -26,9 +25,40 @@ class LoggerClass {
         return LoggerClass.instance;
     }
 
+    private initPaths() {
+        // Resolve log directory dynamically for Electron (APP_USER_DATA_PATH) and Standalone Node server
+        let baseDir = process.env.APP_USER_DATA_PATH;
+
+        if (!baseDir) {
+            const resourcesPath = (process as any).resourcesPath;
+            if (resourcesPath) {
+                baseDir = path.join(resourcesPath, '..');
+            } else {
+                baseDir = process.cwd();
+            }
+        }
+
+        this.logDir = path.join(baseDir, 'logs');
+        this.currentLogFile = path.join(this.logDir, 'antstudio-system.log');
+        this.ensureLogDir();
+    }
+
     private ensureLogDir() {
-        if (!fs.existsSync(this.logDir)) {
-            fs.mkdirSync(this.logDir, { recursive: true });
+        try {
+            if (!fs.existsSync(this.logDir)) {
+                fs.mkdirSync(this.logDir, { recursive: true });
+            }
+        } catch (err) {
+            // Fallback to system temp directory if target directory is not writable
+            try {
+                this.logDir = path.join(os.tmpdir(), 'antstudio-logs');
+                this.currentLogFile = path.join(this.logDir, 'antstudio-system.log');
+                if (!fs.existsSync(this.logDir)) {
+                    fs.mkdirSync(this.logDir, { recursive: true });
+                }
+            } catch (fallbackErr) {
+                console.error('Failed to create log directory:', fallbackErr);
+            }
         }
     }
 
@@ -94,7 +124,13 @@ class LoggerClass {
                 else if (typeof finalMetadata === 'object') Object.assign(finalMetadata, errorMeta);
             }
 
-            const settings = configService.logs;
+            let settings: any = null;
+            try {
+                settings = configService.logs;
+            } catch (e) {
+                // Ignore configService read errors during early boot
+            }
+
             const retentionDays = settings?.retentionDays || 30;
             const now = new Date();
             const expiresAt = new Date(now);
@@ -107,28 +143,31 @@ class LoggerClass {
             await this.rotateAndWrite(logString);
 
             if (level === "error") {
-                const logEntry = new SystemLog({
-                    level,
-                    message: messageString,
-                    source: finalSource,
-                    metadata: finalMetadata,
-                    expiresAt,
-                });
-                await logEntry.save();
+                try {
+                    const logEntry = new SystemLog({
+                        level,
+                        message: messageString,
+                        source: finalSource,
+                        metadata: finalMetadata,
+                        expiresAt,
+                    });
+                    await logEntry.save();
 
+                    if (settings?.emailNotificationsEnabled && settings?.notificationEmail) {
+                        const minLevelIndex = this.levels.indexOf(settings.minNotificationLevel || 'error');
+                        const currentLevelIndex = this.levels.indexOf(level);
 
-                if (settings?.emailNotificationsEnabled && settings?.notificationEmail) {
-                    const minLevelIndex = this.levels.indexOf(settings.minNotificationLevel || 'error');
-                    const currentLevelIndex = this.levels.indexOf(level);
-
-                    if (currentLevelIndex >= minLevelIndex) {
-                        await this.sendErrorNotification(logEntry);
-                        await alertService.sendCriticalAlert(`System Error: ${messageString}`, {
-                            source: finalSource,
-                            metadata: finalMetadata,
-                            logId: logEntry._id
-                        });
+                        if (currentLevelIndex >= minLevelIndex) {
+                            await this.sendErrorNotification(logEntry);
+                            await alertService.sendCriticalAlert(`System Error: ${messageString}`, {
+                                source: finalSource,
+                                metadata: finalMetadata,
+                                logId: logEntry._id
+                            });
+                        }
                     }
+                } catch (dbLogErr) {
+                    // Suppress DB logging failure if database is not connected or available
                 }
             }
 
@@ -169,6 +208,7 @@ class LoggerClass {
 
     private async rotateAndWrite(logString: string) {
         try {
+            this.ensureLogDir();
             if (!fs.existsSync(this.currentLogFile)) {
                 fs.writeFileSync(this.currentLogFile, '', 'utf8');
             }
@@ -247,7 +287,7 @@ class LoggerClass {
                         </div>
                     ` : ''}
                     <div style="margin-top: 30px;">
-                        <a href="${process.env.PUBLIC_URL || 'http://localhost:3000'}/admin/logs" style="background: #ef4444; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Logs on Dashboard</a>
+                        <a href="${configService.publicDomain}/admin/logs" style="background: #ef4444; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Logs on Dashboard</a>
                     </div>
                 </div>
             `;

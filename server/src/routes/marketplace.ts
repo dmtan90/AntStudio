@@ -1,18 +1,20 @@
 import { Router } from 'express';
 import { deductCredits } from '../utils/credits.js';
-import { MarketplaceAsset } from '../models/MarketplaceAsset.js';
+import { AssetStatus, MarketplaceAsset } from '../models/MarketplaceAsset.js';
 import { Template } from '../models/Template.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { tenantMiddleware } from '../middleware/tenant.js';
 import { connectDB } from '../utils/db.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
-import { capcutImporter } from '../services/CapCutImporter.js';
-import { canvaImporter } from '../services/CanvaImporter.js';
-import { pptxImporter } from '../services/PptxImporter.js';
+import { capcutImporter } from '../services/system/CapCutImporter.js';
+import { canvaImporter } from '../services/system/CanvaImporter.js';
+import { pptxImporter } from '../services/system/PptxImporter.js';
 import multer from 'multer';
 import axios from 'axios';
 
 import { Logger } from '../utils/Logger.js';
+import { ServiceType } from '~/utils/CreditManager.js';
+import { CreditTransactionType } from '../models/User.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -28,7 +30,7 @@ router.get('/assets', async (req, res) => {
         await connectDB();
         const { type, search, sort } = req.query;
 
-        let query: any = { status: 'published' };
+        let query: any = { status: AssetStatus.PUBLISHED };
         if (type) query.type = type;
         if (search) query.$text = { $search: search as string };
 
@@ -77,7 +79,7 @@ router.post('/purchase/:id', authMiddleware, async (req: AuthRequest, res) => {
         // 1. Deduct Credits from Buyer
         const success = await deductCredits(
             buyerId,
-            'marketplace',
+            ServiceType.MARKETPLACE,
             asset.priceCredits,
             `Purchase Asset: ${asset.title}`
         );
@@ -95,7 +97,7 @@ router.post('/purchase/:id', authMiddleware, async (req: AuthRequest, res) => {
         if (creator) {
             creator.credits.balance += creatorEarning;
             creator.creditLogs.push({
-                type: 'obtained',
+                type: CreditTransactionType.OBTAINED,
                 amount: creatorEarning,
                 description: `Sale: ${asset.title} (70% Share)`,
                 timestamp: new Date()
@@ -147,7 +149,7 @@ router.post('/publish', authMiddleware, async (req: AuthRequest, res) => {
             fileUrl,
             previewUrl,
             tags: tags || [],
-            status: 'published' // Auto-approve for POC
+            status: AssetStatus.PUBLISHED // Auto-approve for POC
         });
 
         res.json({ success: true, data: asset });

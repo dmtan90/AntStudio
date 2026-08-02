@@ -1,6 +1,6 @@
 import { generateJSON } from '../AIGenerator.js';
 import { Logger } from '../Logger.js';
-import { promptService } from '../../services/PromptService.js';
+import { promptService } from '../../services/ai/PromptService.js';
 
 /**
  * Optimizes scene rendering based on AI feedback.

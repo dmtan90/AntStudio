@@ -1,6 +1,6 @@
-# Getting Started with AntFlow Mobile
+# Getting Started with AntStudio Mobile
 
-Welcome to the AntFlow Mobile App user guide! This document will help you get set up and familiar with the core navigation.
+Welcome to the AntStudio Mobile App user guide! This document will help you get set up and familiar with the core navigation.
 
 ## 1. Installation & Account Setup
 
@@ -10,7 +10,7 @@ Welcome to the AntFlow Mobile App user guide! This document will help you get se
 - Active Internet Connection (Wi-Fi recommended for initial sync)
 
 ### Creating an Account
-1.  **Launch the App**: Open the AntFlow app on your device.
+1.  **Launch the App**: Open the AntStudio app on your device.
 2.  **Sign Up**: Tap the "Sign Up" button on the welcome screen.
     - Enter your Email.
     - Choose a strong Password.

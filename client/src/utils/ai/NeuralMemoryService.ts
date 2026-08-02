@@ -60,7 +60,7 @@ export class NeuralMemoryService {
     }
 
     /**
-     * Phase 23: Records major production events for AI awareness.
+     * Records major production events for AI awareness.
      */
     public recordEvent(type: string, description: string) {
         console.log(`[NeuralMemory] RECORDING EVENT: ${type} - ${description}`);
@@ -99,7 +99,7 @@ export class NeuralMemoryService {
     }
 
     /**
-     * Phase 44: Synthesizes a context-aware memory string for AI Directive injection.
+     * Synthesizes a context-aware memory string for AI Directive injection.
      * Looks for 2-3 most relevant past learnings.
      */
     public getDeepRecallContext(currentTopic: string): string | null {

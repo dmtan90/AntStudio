@@ -8,6 +8,8 @@
                     :key="activeComponentKey"
                     ref="viewerRef"
                     :modelUrl="modelUrl"
+                    :videoClips="videoClips"
+                    :activeState="activeState"
                     v-bind="$attrs"
                     @update:config="$emit('update:config', $event)"
                 />
@@ -46,6 +48,18 @@ import AidolVideoPlayer from './AidolVideoPlayer.vue';
 const VRMViewer = defineAsyncComponent(() => import('./VRMViewer.vue'));
 const Live2DViewer = defineAsyncComponent(() => import('./Live2DViewer.vue'));
 
+interface AidolClipLibrary {
+    idle?: string;
+    speaking?: string;
+    hype?: string;
+    gift_react?: string;
+    product?: string;
+    checkout?: string;
+    dance?: string;
+    wave?: string;
+    [customEvent: string]: string | undefined;
+}
+
 const { t } = useI18n();
 
 defineOptions({
@@ -55,6 +69,8 @@ defineOptions({
 const props = defineProps<{
     modelType: 'vrm' | 'live2d' | 'static' | 'video' | 'aidol';
     modelUrl?: string;
+    videoClips?: AidolClipLibrary;
+    activeState?: string;
     // Explicitly listing config to ensure type safety if needed, 
     // but relying on $attrs for mostly transparent pass-through is cleaner for maintainability.
 }>();

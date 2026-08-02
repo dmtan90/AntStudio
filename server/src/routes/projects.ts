@@ -3,40 +3,49 @@ import multer from 'multer';
 import { connectDB } from '../utils/db.js';
 import { Project } from '../models/Project.js';
 import { Media } from '../models/Media.js';
-import { monitoringService } from '../services/monitoringService.js';
+import { monitoringService } from '../services/system/MonitoringService.js';
 import { Logger } from '../utils/Logger.js';
-import { WebhookService } from '../services/WebhookService.js';
-import { moderationService } from '../services/ModerationService.js';
+import { WebhookService } from '../services/system/WebhookService.js';
+import { moderationService } from '../services/streaming/ModerationService.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { cacheMiddleware } from '../middleware/cache.js';
 // import { checkLicenseStatus, checkProjectLimit } from '../middleware/license.js';
 import { generateText, generateJSON, generateImage } from '../utils/AIGenerator.js';
-import { generateStoryboardIteratively } from '../services/iterativeStoryboard.js';
+import { generateStoryboardIteratively } from '../services/streaming/IterativeStoryboard.js';
 import { User } from '../models/User.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
-import { checkProjectLimit, licenseGating } from '../middleware/licenseGating.js';
+import { checkProjectLimit, licenseGating } from '../middleware/LicenseGating.js';
 import { hasSufficientCredits, deductCredits, getCreditCost } from '../utils/credits.js';
-import { uploadToS3, S3KeyGenerator, getS3Client } from '../utils/s3.js';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { AnalyticsService } from '../services/AnalyticsService.js';
+import { uploadToS3, S3KeyGenerator } from '../utils/s3.js';
+import { StorageFactory } from '../services/storage/StorageFactory.js';
+import { AnalyticsService } from '../services/streaming/ProjectAnalyticsService.js';
 import ffmpeg from 'fluent-ffmpeg';
-import { config } from '../utils/config.js';
+import { EnvConfig, configService } from '../utils/ConfigService.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { promisify } from 'util';
-import { getAdminSettings } from '../models/AdminSettings.js';
+import { AIModelType, getAdminSettings } from '../models/AdminSettings.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { projectContext } from '../utils/ProjectContext.js';
 import { buildCharacterSheetPrompt } from '../utils/PromptBuilder.js';
-import { configService } from '../utils/configService.js';
-import { promptService } from '../services/PromptService.js';
+import { promptService } from '../services/ai/PromptService.js';
 import { videoWorkflow } from '../services/ai/VideoWorkflow.js';
 import { GeminiClient } from '~/integrations/ai/GeminiClient.js';
+import { ServiceType } from '~/utils/CreditManager.js';
+import { LicenseType } from '~/models/License.js';
+import { socketServer } from '../services/streaming/SocketServer.js';
+import { buildVeoVideoPrompt } from '../utils/PromptBuilder.js';
+import { getFileBuffer } from '../utils/AIGenerator.js';
+import { autoCaptionService } from '../services/ai/AutoCaptionService.js';
+import { socialSyndicationService } from '../services/streaming/SocialSyndicationService.js';
+import { antMediaService } from '../utils/AntMedia.js';
+import { getSignedS3Url } from '../utils/s3.js';
+import { UserPlatformAccount } from '../models/UserPlatformAccount.js';
 
-ffmpeg.setFfmpegPath(config.ffmpegPath);
-ffmpeg.setFfprobePath(config.ffprobePath);
+ffmpeg.setFfmpegPath(EnvConfig.ffmpegPath);
+ffmpeg.setFfprobePath(EnvConfig.ffprobePath);
 const writeFile = promisify(fs.writeFile);
 const mkdir = promisify(fs.mkdir);
 
@@ -48,41 +57,100 @@ async function processVideo(videoPath: string, projectId: string) {
     const thumbnailPath = path.join(tempDir, 'thumb.jpg');
     const previewPath = path.join(tempDir, 'preview.mp4');
 
-    // 1. Get Metadata
-    const metadata: any = await new Promise((resolve, reject) => {
-        ffmpeg.ffprobe(videoPath, (err : any, data : any) => {
-            if (err) reject(err);
-            else resolve(data);
+    // 1. Get Metadata with timeout
+    const metadata: any = await new Promise((resolve) => {
+        const timer = setTimeout(() => {
+            Logger.warn('[ProcessVideo] FFprobe timeout, using default metadata');
+            resolve({ streams: [], format: { duration: 15 } });
+        }, 8000);
+
+        ffmpeg.ffprobe(videoPath, (err: any, data: any) => {
+            clearTimeout(timer);
+            if (err || !data) {
+                Logger.warn('[ProcessVideo] FFprobe error/warning:', err);
+                resolve({ streams: [], format: { duration: 15 } });
+            } else {
+                resolve(data);
+            }
         });
     });
 
-    const videoStream = metadata.streams.find((s: any) => s.codec_type === 'video');
-    const duration = metadata.format.duration || 0;
-    const resolution = videoStream ? `${videoStream.width}x${videoStream.height}` : 'unknown';
+    const videoStream = metadata.streams?.find((s: any) => s.codec_type === 'video');
+    const rawDuration = parseFloat(metadata.format?.duration);
+    const duration = (!isNaN(rawDuration) && rawDuration > 0) ? rawDuration : 15;
+    const previewDuration = Math.max(1, Math.min(5, duration));
+    const resolution = videoStream ? `${videoStream.width}x${videoStream.height}` : '1920x1080';
 
-    // 2. Generate Thumbnail (at the start or middle)
-    await new Promise<void>((resolve, reject) => {
-        ffmpeg(videoPath)
-            .screenshots({
-                timestamps: [duration > 1 ? 1 : 0],
-                filename: 'thumb.jpg',
-                folder: tempDir,
-                size: '1280x?'
-            })
-            .on('end', () => resolve())
-            .on('error', (err: any) => reject(err));
-    });
+    // 2. Generate Thumbnail safely if not exists
+    if (!fs.existsSync(thumbnailPath)) {
+        await new Promise<void>((resolve) => {
+            let cmd: any = null;
+            const timer = setTimeout(() => {
+                Logger.warn('[ProcessVideo] Thumbnail generation timeout');
+                try { cmd?.kill('SIGKILL'); } catch (e) {}
+                resolve();
+            }, 10000);
 
-    // 3. Generate Preview (5 seconds loop)
-    await new Promise<void>((resolve, reject) => {
-        ffmpeg(videoPath)
-            .setStartTime(0)
-            .setDuration(Math.min(5, duration))
-            .size('640x?')
-            .on('end', () => resolve())
-            .on('error', (err: any) => reject(err))
-            .save(previewPath);
-    });
+            cmd = ffmpeg(videoPath)
+                .inputOptions(['-fflags', '+genpts+igndts', '-analyzeduration', '10000000', '-probesize', '10000000'])
+                .outputOptions(['-y', '-vframes 1', '-vf scale=1280:-2'])
+                .on('end', () => { clearTimeout(timer); resolve(); })
+                .on('error', (err: any) => {
+                    clearTimeout(timer);
+                    Logger.warn('[ProcessVideo] Thumbnail generation warning:', err?.message || err);
+                    resolve();
+                });
+            cmd.save(thumbnailPath);
+        });
+    }
+
+    // 3. Generate Preview (MP4 H.264 / AAC) safely if not exists
+    if (!fs.existsSync(previewPath)) {
+        await new Promise<void>((resolve) => {
+            let cmd: any = null;
+            const timer = setTimeout(() => {
+                Logger.warn('[ProcessVideo] Preview generation timeout');
+                try { cmd?.kill('SIGKILL'); } catch (e) {}
+                resolve();
+            }, 35000);
+
+            cmd = ffmpeg(videoPath)
+                .inputOptions(['-fflags', '+genpts+igndts', '-analyzeduration', '10000000', '-probesize', '10000000'])
+                .setStartTime(0)
+                .setDuration(previewDuration)
+                .outputOptions([
+                    '-y',
+                    '-c:v libx264',
+                    '-pix_fmt yuv420p',
+                    '-preset ultrafast',
+                    '-c:a aac',
+                    '-vf scale=640:-2'
+                ])
+                .on('end', () => { clearTimeout(timer); resolve(); })
+                .on('error', (err: any) => {
+                    clearTimeout(timer);
+                    Logger.warn('[ProcessVideo] Preview generation warning:', err?.message || err);
+                    resolve();
+                });
+            cmd.save(previewPath);
+        });
+    }
+
+    // Fallbacks if files don't exist
+    if (!fs.existsSync(thumbnailPath)) {
+        try {
+            // Write minimalist 1x1 solid dark JPEG
+            const dummyJpgBase64 = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=';
+            fs.writeFileSync(thumbnailPath, Buffer.from(dummyJpgBase64, 'base64'));
+        } catch (e) {}
+    }
+    if (!fs.existsSync(previewPath)) {
+        try {
+            if (fs.existsSync(videoPath)) {
+                fs.copyFileSync(videoPath, previewPath);
+            }
+        } catch (e) {}
+    }
 
     return {
         duration,
@@ -155,7 +223,7 @@ router.get('/',
     });
 
 // POST /api/projects - Create new project (scoped to organization)
-router.post('/', licenseGating('trial'), checkProjectLimit, rbacMiddleware(Permission.PROJECT_CREATE), async (req: any, res: Response) => {
+router.post('/', licenseGating(LicenseType.TRIAL), checkProjectLimit, rbacMiddleware(Permission.PROJECT_CREATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { title, description, mode, aspectRatio, videoStyle, targetDuration, metadata, pages, scriptAnalysis, storyboard } = req.body;
@@ -233,20 +301,23 @@ router.put('/:id', rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res
 });
 
 // POST /api/projects/preview - Quick preview (Granular Stages)
-router.post('/preview', licenseGating('trial'), upload.array('files'), async (req: any, res: Response) => {
+router.post('/preview', licenseGating(LicenseType.TRIAL), upload.array('files'), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { topic, targetDuration, stage, script, analysis, language, videoStyle, storyboard } = req.body;
         
         if (!topic && !script && !analysis) return res.status(400).json({ success: false, error: 'Topic, script, or analysis is required' });
 
-        const cost = await getCreditCost('text');
+        const cost = await getCreditCost(AIModelType.TEXT);
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         let currentLanguage = language || 'English';
         if (!language && topic) {
             const langPrompt = `Detect the language of the following text. Respond with only the language name in English.\n\nText: ${topic.substring(0, 500)}`;
-            currentLanguage = await generateText(langPrompt);
+            const rawLang = await generateText(langPrompt);
+            console.log(">>> DETECTED LANGUAGE RAW:", JSON.stringify(rawLang));
+            currentLanguage = rawLang.trim().replace(/[.\n\r]/g, '');
+            console.log(">>> DETECTED LANGUAGE CLEANED:", JSON.stringify(currentLanguage));
         }
 
         // --- STAGE 1: SCRIPT GENERATION ---
@@ -258,7 +329,7 @@ router.post('/preview', licenseGating('trial'), upload.array('files'), async (re
                 language: currentLanguage
             }, 'script');
 
-            await deductCredits(req.user!.userId, 'text' as any, cost, 'Project Script Generation');
+            await deductCredits(req.user!.userId, ServiceType.TEXT, cost, 'Project Script Generation');
 
             return res.json({
                 success: true,
@@ -284,14 +355,20 @@ router.post('/preview', licenseGating('trial'), upload.array('files'), async (re
                     analysis // Pass existing analysis if we are just re-running character stage
                 }, stage === 'character' ? 'character' : 'analysis');
 
-                await deductCredits(req.user!.userId, 'text' as any, cost, 'Project Vision & Actor Design');
+                await deductCredits(req.user!.userId, ServiceType.TEXT, cost, 'Project Vision & Actor Design');
 
                 return res.json({
                     success: true,
                     data: {
-                        stage: workflowResult.currentStage,
+                        stage: "analysis",
                         language: analysisLanguage,
-                        analysis: workflowResult.analysis,
+                        analysis: workflowResult.analysis?.analysis || workflowResult.analysis,
+                        characters: workflowResult.analysis?.analysis?.characters || workflowResult.analysis?.characters,
+                        creativeBrief: workflowResult.analysis?.creativeBrief,
+                        expertFeedback: workflowResult.analysis?.expertFeedback,
+                        summary: workflowResult.analysis?.summary,
+                        closingMessage: workflowResult.analysis?.closingMessage,
+                        isComplete: workflowResult.analysis?.isComplete || true,
                         logs: workflowResult.logs
                     }
                 });
@@ -313,13 +390,14 @@ router.post('/preview', licenseGating('trial'), upload.array('files'), async (re
                     analysis
                 }, 'storyboard');
 
-                await deductCredits(req.user!.userId, 'text' as any, cost, 'Project Storyboard Generation');
+                await deductCredits(req.user!.userId, ServiceType.TEXT, cost, 'Project Storyboard Generation');
 
                 return res.json({
                     success: true,
                     data: {
                         stage: 'storyboard',
-                        storyboard: workflowResult.storyboard,
+                        language: currentLanguage,
+                        storyboard: workflowResult.storyboard?.segments || workflowResult.storyboard || [],
                         logs: workflowResult.logs
                     }
                 });
@@ -338,7 +416,7 @@ router.post('/preview', licenseGating('trial'), upload.array('files'), async (re
 });
 
 // POST /projects/:id/convert-to-script  (Phase 7: Storyboard-to-Live Bridge)
-router.post('/:id/convert-to-script', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post('/:id/convert-to-script', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project: any = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
@@ -409,13 +487,13 @@ router.post('/:id/convert-to-script', licenseGating('trial'), rbacMiddleware(Per
 });
 
 // POST /api/projects/:id/storyboard/respin-segment
-router.post('/:id/storyboard/respin-segment', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post('/:id/storyboard/respin-segment', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project: any = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
-        const cost = await getCreditCost('text');
+        const cost = await getCreditCost(AIModelType.TEXT);
         if (!await hasSufficientCredits(req.user!.userId, cost)) {
             return res.status(402).json({ success: false, error: 'Insufficient credits' });
         }
@@ -434,7 +512,7 @@ router.post('/:id/storyboard/respin-segment', licenseGating('trial'), rbacMiddle
         });
 
         const newSegment = await generateJSON<any>(prompt, undefined);
-        await deductCredits(req.user!.userId, 'text' as any, cost, 'Segment Re-spin');
+        await deductCredits(req.user!.userId, ServiceType.TEXT, cost, 'Segment Re-spin');
 
         return res.json({ success: true, data: { segment: newSegment } });
     } catch (error: any) {
@@ -444,7 +522,7 @@ router.post('/:id/storyboard/respin-segment', licenseGating('trial'), rbacMiddle
 });
 
 // PATCH /api/projects/:id/storyboard/update-segment
-router.patch('/:id/storyboard/update-segment', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.patch('/:id/storyboard/update-segment', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project: any = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
@@ -469,13 +547,13 @@ router.patch('/:id/storyboard/update-segment', licenseGating('trial'), rbacMiddl
     }
 });
 
-router.post(['/:id/analyze', '/:id/analysis'], licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post(['/:id/analyze', '/:id/analysis'], licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
-        const cost = await getCreditCost('text');
+        const cost = await getCreditCost(AIModelType.TEXT);
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const technicalGrounding = await projectContext.getTechnicalGroundingPrompt();
@@ -582,7 +660,7 @@ router.post(['/:id/analyze', '/:id/analysis'], licenseGating('trial'), rbacMiddl
         project.status = 'storyboard';
         await project.save();
 
-        await deductCredits(req.user!.userId, 'text' as any, cost, `Project Analysis: ${project.title}`);
+        await deductCredits(req.user!.userId, ServiceType.TEXT, cost, `Project Analysis: ${project.title}`);
 
         res.json({ success: true, data: { analysis: project.scriptAnalysis, creativeBrief: project.creativeBrief, description: project.description } });
 
@@ -592,19 +670,19 @@ router.post(['/:id/analyze', '/:id/analysis'], licenseGating('trial'), rbacMiddl
 });
 
 // POST /api/projects/:id/chat - AI Refinement
-router.post('/:id/chat', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post('/:id/chat', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
-        const cost = await getCreditCost('text');
+        const cost = await getCreditCost(AIModelType.TEXT);
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const { message } = req.body;
         const response = await generateText(`Directly respond to the user: ${message}. Context: Project ${project.title}`);
 
-        await deductCredits(req.user!.userId, 'text' as any, cost, 'AI Chat Assistance');
+        await deductCredits(req.user!.userId, ServiceType.TEXT, cost, 'AI Chat Assistance');
 
         res.json({ success: true, data: { response } });
     } catch (error: any) {
@@ -613,13 +691,13 @@ router.post('/:id/chat', licenseGating('trial'), rbacMiddleware(Permission.PROJE
 });
 
 // POST /api/projects/:id/generate-visual-plan
-router.post('/:id/generate-visual-plan', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post('/:id/generate-visual-plan', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
-        const cost = await getCreditCost('text');
+        const cost = await getCreditCost(AIModelType.TEXT);
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const stylePrompt = `Create a detailed visual art direction for ${project.title}. Style: ${project.videoStyle || 'Cinematic'}`;
@@ -628,7 +706,7 @@ router.post('/:id/generate-visual-plan', licenseGating('trial'), rbacMiddleware(
         project.creativeBrief = { ...brief, generatedAt: new Date() };
         await project.save();
 
-        await deductCredits(req.user!.userId, 'text' as any, cost, `Visual Plan: ${project.title}`);
+        await deductCredits(req.user!.userId, ServiceType.TEXT, cost, `Visual Plan: ${project.title}`);
 
         res.json({ success: true, data: { creativeBrief: project.creativeBrief } });
     } catch (error: any) {
@@ -637,13 +715,13 @@ router.post('/:id/generate-visual-plan', licenseGating('trial'), rbacMiddleware(
 });
 
 // POST /api/projects/:id/generate-storyboard
-router.post('/:id/generate-storyboard', licenseGating('trial'), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+router.post('/:id/generate-storyboard', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
         const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
-        const cost = await getCreditCost('text'); // Storyboard is complex but text-based
+        const cost = await getCreditCost(AIModelType.TEXT); // Storyboard is complex but text-based
         if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
 
         const storyboard = await generateStoryboardIteratively(
@@ -662,7 +740,7 @@ router.post('/:id/generate-storyboard', licenseGating('trial'), rbacMiddleware(P
         project.status = 'storyboard';
         await project.save();
 
-        await deductCredits(req.user!.userId, 'text' as any, cost, `Storyboard Generation: ${project.title}`);
+        await deductCredits(req.user!.userId, ServiceType.TEXT, cost, `Storyboard Generation: ${project.title}`);
 
         res.json({ success: true, data: { storyboard: project.storyboard } });
     } catch (error: any) {
@@ -680,12 +758,28 @@ router.post('/:id/stream', rbacMiddleware(Permission.STREAM_START), async (req: 
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
         if (!project.publish?.s3Key) return res.status(400).json({ success: false, error: 'Final video not found' });
 
-        const { streamId } = req.body;
-        const { antMediaService } = await import('../utils/antMedia.js');
-        const { getSignedS3Url } = await import('../utils/s3.js');
+        const { streamId, accountId } = req.body;
+        // const { antMediaService } = await import('../utils/AntMedia.js');
+        // const { getSignedS3Url } = await import('../utils/s3.js');
+        // const { UserPlatformAccount } = await import('../models/UserPlatformAccount.js');
 
-        const authenticated = await antMediaService.authenticate();
-        if (!authenticated) throw new Error("Failed to authenticate with AMS");
+        // Dynamically resolve AMS config from connected platform accounts
+        let amsAccount = null;
+        if (accountId) {
+            amsAccount = await UserPlatformAccount.findOne({ _id: accountId, userId: req.user!.userId, isActive: true });
+        }
+        if (!amsAccount) {
+            amsAccount = await UserPlatformAccount.findOne({ userId: req.user!.userId, platform: 'ant-media', isActive: true });
+        }
+
+        const amsConfig = amsAccount ? {
+            baseUrl: amsAccount.credentials?.serverUrl || amsAccount.rtmpUrl,
+            appName: amsAccount.credentials?.appName || amsAccount.accountName || 'LiveApp',
+            email: amsAccount.credentials?.email,
+            password: amsAccount.credentials?.password
+        } : undefined;
+
+        await antMediaService.authenticate(amsConfig);
 
         const videoUrl = await getSignedS3Url(project.publish.s3Key);
         const broadcast = await antMediaService.createBroadcast({
@@ -693,10 +787,10 @@ router.post('/:id/stream', rbacMiddleware(Permission.STREAM_START), async (req: 
             streamId: streamId || `antflow-${project._id}`,
             type: 'streamSource',
             streamUrl: videoUrl
-        });
+        }, amsConfig);
 
-        if (!broadcast || !broadcast.streamId) throw new Error("Failed to create stream source");
-        await antMediaService.startStreamSource(broadcast.streamId);
+        if (!broadcast || !broadcast.streamId) throw new Error("Failed to create stream source on Ant Media Server");
+        await antMediaService.startStreamSource(broadcast.streamId, amsConfig);
 
         WebhookService.dispatch(req.user!.userId, 'stream.started', {
             projectId: project._id,
@@ -711,9 +805,56 @@ router.post('/:id/stream', rbacMiddleware(Permission.STREAM_START), async (req: 
     }
 });
 
+// POST /api/projects/:id/vod - Save project final video as VoD to Ant Media Server
+router.post('/:id/vod', rbacMiddleware(Permission.STREAM_START), async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const project = await Project.findOne({ _id: req.params.id, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+        if (!project.publish?.s3Key) return res.status(400).json({ success: false, error: 'Final video not found' });
+
+        const { accountId } = req.body;
+        // const { antMediaService } = await import('../utils/AntMedia.js');
+        // const { getSignedS3Url } = await import('../utils/s3.js');
+        // const { UserPlatformAccount } = await import('../models/UserPlatformAccount.js');
+
+        let amsAccount = null;
+        if (accountId) {
+            amsAccount = await UserPlatformAccount.findOne({ _id: accountId, userId: req.user!.userId, isActive: true });
+        }
+        if (!amsAccount) {
+            amsAccount = await UserPlatformAccount.findOne({ userId: req.user!.userId, platform: 'ant-media', isActive: true });
+        }
+
+        const amsConfig = amsAccount ? {
+            baseUrl: amsAccount.credentials?.serverUrl || amsAccount.rtmpUrl,
+            appName: amsAccount.credentials?.appName || amsAccount.accountName || 'LiveApp',
+            email: amsAccount.credentials?.email,
+            password: amsAccount.credentials?.password
+        } : undefined;
+
+        await antMediaService.authenticate(amsConfig);
+
+        const videoUrl = await getSignedS3Url(project.publish.s3Key);
+        const vod = await antMediaService.uploadVoD({
+            name: `${project.title || 'AntStudio Video'}.mp4`,
+            streamUrl: videoUrl
+        }, undefined, amsConfig);
+
+        if (!vod) throw new Error("Failed to save VoD on Ant Media Server");
+
+        res.json({ success: true, data: vod });
+    } catch (error: any) {
+        Logger.error('Ant Media VoD save failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // POST /api/projects/:id/publish - Finalizes project with client-side output and server-side processing
 router.post('/:id/publish', rbacMiddleware(Permission.PROJECT_EDIT), upload.fields([
-    { name: 'video', maxCount: 1 }
+    { name: 'video', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 },
+    { name: 'preview', maxCount: 1 }
 ]), async (req: AuthRequest, res: Response) => {
     let tempDir = '';
     let tempVideoPath = '';
@@ -726,20 +867,32 @@ router.post('/:id/publish', rbacMiddleware(Permission.PROJECT_EDIT), upload.fiel
 
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
         const videoFile = files['video']?.[0];
+        const thumbFile = files['thumbnail']?.[0];
+        const previewFile = files['preview']?.[0];
 
         if (!videoFile) return res.status(400).json({ success: false, error: 'Video file is required' });
 
-        // Save to temporary file for FFmpeg
+        // Save to temporary file for FFmpeg with correct extension
         tempDir = path.join(os.tmpdir(), `antflow_pub_${projectId}_${Date.now()}`);
         if (!fs.existsSync(tempDir)) await mkdir(tempDir, { recursive: true });
-        tempVideoPath = path.join(tempDir, 'input.mp4');
+
+        if (thumbFile) {
+            await writeFile(path.join(tempDir, 'thumb.jpg'), thumbFile.buffer);
+        }
+        if (previewFile) {
+            await writeFile(path.join(tempDir, 'preview.mp4'), previewFile.buffer);
+        }
+        
+        const isWebm = videoFile.mimetype?.includes('webm') || videoFile.originalname?.endsWith('.webm');
+        const fileExt = isWebm ? '.webm' : '.mp4';
+        tempVideoPath = path.join(tempDir, `input${fileExt}`);
         await writeFile(tempVideoPath, videoFile.buffer);
 
         // 1. Extract Metadata and Generate Assets
         const processed = await processVideo(tempVideoPath, projectId);
 
         // 2. Upload Everything to S3
-        const finalKey = S3KeyGenerator.finalVideo(projectId);
+        const finalKey = isWebm ? `projects/${projectId}/final.webm` : S3KeyGenerator.finalVideo(projectId);
         const thumbKey = `projects/${projectId}/publish/thumbnail.jpg`;
         const previewKey = `projects/${projectId}/publish/preview.mp4`;
 
@@ -764,7 +917,7 @@ router.post('/:id/publish', rbacMiddleware(Permission.PROJECT_EDIT), upload.fiel
         await project.save();
 
         // Notify
-        const { socketServer } = await import('../services/SocketServer.js');
+        // const { socketServer } = await import('../services/streaming/SocketServer.js');
         socketServer.emitProjectUpdate(req.user!.userId, projectId, {
             type: 'publish_ready',
             result: {
@@ -786,13 +939,16 @@ router.post('/:id/publish', rbacMiddleware(Permission.PROJECT_EDIT), upload.fiel
         Logger.error('[Publish] Error:', error);
         res.status(500).json({ success: false, error: error.message });
     } finally {
-        // Cleanup temp files
-        if (tempDir && fs.existsSync(tempDir)) {
-            try {
-                fs.rmSync(tempDir, { recursive: true, force: true });
-            } catch (e) {
-                Logger.error('Cleanup error:', 'ProjectsRoute', e);
-            }
+        // Cleanup temp files safely after Windows file locks release
+        if (tempDir) {
+            const dirToDelete = tempDir;
+            setTimeout(() => {
+                if (fs.existsSync(dirToDelete)) {
+                    try {
+                        fs.rmSync(dirToDelete, { recursive: true, force: true });
+                    } catch (e) {}
+                }
+            }, 500);
         }
     }
 });
@@ -804,7 +960,7 @@ router.post('/:id/syndicate-final', rbacMiddleware(Permission.PROJECT_EDIT), asy
         const projectId = req.params.id;
         const { caption, hashtags } = req.body;
 
-        const { socialSyndicationService } = await import('../services/SocialSyndicationService.js');
+        // const { socialSyndicationService } = await import('../services/streaming/SocialSyndicationService.js');
         const result = await socialSyndicationService.syndicateFinalVideo(projectId, { caption, hashtags });
 
         res.json({ success: true, data: result });
@@ -828,7 +984,7 @@ router.delete('/:id', rbacMiddleware(Permission.PROJECT_DELETE), async (req: any
 });
 
 // POST /api/projects/:id/segments/:segmentId/generate-voiceover - Generate TTS voiceover for a segment
-router.post('/:id/segments/:segmentId/generate-voiceover', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/:id/segments/:segmentId/generate-voiceover', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { id: projectId, segmentId } = req.params;
@@ -866,11 +1022,11 @@ router.post('/:id/segments/:segmentId/generate-voiceover', licenseGating('trial'
         segment.generatedAudio = { s3Key: '', status: 'generating', generatedAt: new Date() };
         await project.save();
 
-        const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
-        const mgr = AIServiceManager.getInstance();
-        await mgr.initialize();
+        // const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
+        // const mgr = AIServiceManager.getInstance();
+        // await mgr.initialize();
 
-        const result = await mgr.generateAudio(ttsText, modelId, resolvedProviderId, {
+        const result = await aiManager.generateAudio(ttsText, modelId, resolvedProviderId, {
             voice: resolvedVoiceId,
             pitch,
             language: language || project.scriptAnalysis?.language || 'English',
@@ -884,7 +1040,7 @@ router.post('/:id/segments/:segmentId/generate-voiceover', licenseGating('trial'
                 const b64 = result.media.url.split(',')[1];
                 audioBuffer = Buffer.from(b64, 'base64');
             } else {
-                const { getFileBuffer } = await import('../utils/AIGenerator.js');
+                // const { getFileBuffer } = await import('../utils/AIGenerator.js');
                 audioBuffer = await getFileBuffer(result.media.url);
             }
             mimeType = result.media.mimeType || 'audio/mpeg';
@@ -913,7 +1069,7 @@ router.post('/:id/segments/:segmentId/generate-voiceover', licenseGating('trial'
 });
 
 // POST /api/projects/:id/segments/:segmentId/captions - Generate captions for segment
-router.post('/:id/segments/:segmentId/captions', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/:id/segments/:segmentId/captions', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const { id: projectId, segmentId } = req.params;
@@ -925,46 +1081,43 @@ router.post('/:id/segments/:segmentId/captions', licenseGating('trial'), rbacMid
         const segment = project.storyboard?.segments?.find((s: any) => s.order === segmentOrder) as any;
         if (!segment) return res.status(404).json({ success: false, error: 'Segment not found' });
 
-        // Determine source media (Video > Audio)
-        let s3Key = segment.generatedVideo?.s3Key;
-        let mimeType = 'video/mp4';
+        // const { autoCaptionService } = await import('../services/ai/AutoCaptionService.js');
+        let captions: any[] = [];
 
-        if (!s3Key && segment.generatedAudio?.s3Key) {
-            s3Key = segment.generatedAudio.s3Key;
-            mimeType = 'audio/mp3'; // or waiver
+        // Determine source media (Voiceover Audio > Video)
+        let s3Key = segment.generatedAudio?.s3Key;
+        let mimeType = 'audio/mp3';
+
+        if (!s3Key && segment.generatedVideo?.s3Key) {
+            s3Key = segment.generatedVideo.s3Key;
+            mimeType = 'video/mp4';
         }
 
-        if (!s3Key) return res.status(400).json({ success: false, error: 'No media found to caption' });
-
-        const cost = await getCreditCost('audio'); // Assume captioning maps to audio minutes cost
-        if (!await hasSufficientCredits(req.user!.userId, cost)) return res.status(402).json({ success: false, error: 'Insufficient credits' });
-
-        // Download from S3
-        // We need a helper to get Buffer from S3. Assuming one exists or we import S3 client.
-        const s3Client = getS3Client();
-        const s3Params = {
-            Bucket: configService.aws.bucketName,
-            Key: s3Key
-        };
-
-        // Get Stream and convert to Buffer
-        const { Body } = await s3Client.send(new GetObjectCommand(s3Params));
-        const chunks = [];
-        for await (const chunk of (Body as any)) {
-            chunks.push(chunk);
+        if (s3Key) {
+            try {
+                const storage = await StorageFactory.getActiveAdapter();
+                const stream = await storage.getFileStream(s3Key);
+                const chunks = [];
+                for await (const chunk of stream) {
+                    chunks.push(chunk);
+                }
+                const buffer = Buffer.concat(chunks);
+                captions = await autoCaptionService.generateCaptions(buffer, mimeType);
+            } catch (mediaErr: any) {
+                Logger.warn(`[generate-captions] Media transcription failed, using text fallback: ${mediaErr.message}`);
+            }
         }
-        const buffer = Buffer.concat(chunks);
 
-        // Generate Captions
-        const { autoCaptionService } = await import('../services/ai/AutoCaptionService.js');
-        const captions = await autoCaptionService.generateCaptions(buffer, mimeType);
+        // Fallback: If no media or transcription returned empty, estimate from script text
+        if (!captions || captions.length === 0) {
+            const text = segment.voiceover || segment.description || segment.title || '';
+            captions = autoCaptionService.generateTextBasedCaptions(text);
+        }
 
         // Update Project
         segment.captions = captions;
         project.markModified('storyboard'); 
         await project.save();
-
-        await deductCredits(req.user!.userId, 'audio' as any, cost, `Caption Generation: ${segment.title}`);
 
         res.json({ success: true, data: { captions } });
 
@@ -974,8 +1127,96 @@ router.post('/:id/segments/:segmentId/captions', licenseGating('trial'), rbacMid
     }
 });
 
+// PUT /api/projects/:id/segments/:segmentId/captions - Manually update/edit captions for segment
+router.put('/:id/segments/:segmentId/captions', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const { id: projectId, segmentId } = req.params;
+        const { captions } = req.body;
+        const segmentOrder = parseInt(segmentId);
+
+        const project = await Project.findOne({ _id: projectId, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        const segment = project.storyboard?.segments?.find((s: any) => s.order === segmentOrder) as any;
+        if (!segment) return res.status(404).json({ success: false, error: 'Segment not found' });
+
+        segment.captions = Array.isArray(captions) ? captions : [];
+        project.markModified('storyboard');
+        await project.save();
+
+        res.json({ success: true, data: { captions: segment.captions } });
+    } catch (error: any) {
+        Logger.error('Caption update error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/projects/:id/generate-all-captions - Generate captions for all segments
+router.post('/:id/generate-all-captions', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+    try {
+        await connectDB();
+        const { id: projectId } = req.params;
+
+        const project = await Project.findOne({ _id: projectId, userId: req.user!.userId });
+        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+
+        const segments = project.storyboard?.segments || [];
+        if (segments.length === 0) {
+            return res.status(400).json({ success: false, error: 'No segments found' });
+        }
+
+        // const { autoCaptionService } = await import('../services/ai/AutoCaptionService.js');
+        const storage = await StorageFactory.getActiveAdapter();
+
+        let successCount = 0;
+        for (const segment of segments) {
+            // Determine source media (Voiceover Audio > Video)
+            let s3Key = segment.generatedAudio?.s3Key;
+            let mimeType = 'audio/mp3';
+
+            if (!s3Key && segment.generatedVideo?.s3Key) {
+                s3Key = segment.generatedVideo.s3Key;
+                mimeType = 'video/mp4';
+            }
+
+            let captions: any[] = [];
+            if (s3Key) {
+                try {
+                    const stream = await storage.getFileStream(s3Key);
+                    const chunks = [];
+                    for await (const chunk of stream) {
+                        chunks.push(chunk);
+                    }
+                    const buffer = Buffer.concat(chunks);
+                    captions = await autoCaptionService.generateCaptions(buffer, mimeType);
+                } catch (e: any) {
+                    Logger.warn(`[generate-all-captions] Media transcription failed for segment ${segment.order}: ${e.message}`);
+                }
+            }
+
+            if (!captions || captions.length === 0) {
+                const text = segment.voiceover || segment.description || segment.title || '';
+                captions = autoCaptionService.generateTextBasedCaptions(text);
+            }
+
+            segment.captions = captions;
+            if (captions.length > 0) successCount++;
+        }
+
+        project.markModified('storyboard');
+        await project.save();
+
+        res.json({ success: true, data: { storyboard: project.storyboard, successCount } });
+
+    } catch (error: any) {
+        Logger.error('[generate-all-captions] Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // POST /api/projects/:id/assets/generate - Generate specific asset
-router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/:id/assets/generate', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const projectId = req.params.id;
@@ -985,7 +1226,7 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
         // ─── HIGH FIDELITY PROMPT RESOLUTION ─────────────────────
-        const aiManager = (await import('../utils/ai/AIServiceManager.js')).aiManager;
+        // const aiManager = AIServiceManager.getInstance();
         const translator = async (p: string) => await aiManager.generateText(p, undefined);
 
         // Resolve segment if provided (common for image/video/audio scene tasks)
@@ -1133,24 +1374,24 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
                 await project.save();
             }
 
-            const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
-            const mgr = AIServiceManager.getInstance();
-            await mgr.initialize();
+            // const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
+            // const mgr = AIServiceManager.getInstance();
+            // await mgr.initialize();
 
             let finalPrompt = prompt;
             if (segment) {
-                const { buildVeoVideoPrompt } = await import('../utils/PromptBuilder.js');
+                // const { buildVeoVideoPrompt } = await import('../utils/PromptBuilder.js');
                 finalPrompt = await buildVeoVideoPrompt(
                     segment,
                     project.scriptAnalysis?.characters || [],
                     project.scriptAnalysis,
-                    'vi',
-                    async (p) => await mgr.generateText(p, undefined)
+                    'en',
+                    async (p) => await aiManager.generateText(p, undefined)
                 );
                 Logger.info(`[assets/generate] Enriched prompt for segment ${segment.order}`);
             }
 
-            const result = await mgr.generateVideo(finalPrompt, modelId, providerId, {
+            const result = await aiManager.generateVideo(finalPrompt, modelId, providerId, {
                 aspectRatio: options.aspectRatio || project.aspectRatio || '16:9',
                 duration: segment?.duration || options.duration || 5,
                 imageStart,
@@ -1193,11 +1434,11 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
                 await project.save();
             }
 
-            const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
-            const mgr = AIServiceManager.getInstance();
-            await mgr.initialize();
+            // const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
+            // const mgr = AIServiceManager.getInstance();
+            // await mgr.initialize();
 
-            const result = await mgr.generateAudio(ttsText, modelId, providerId, options);
+            const result = await aiManager.generateAudio(ttsText, modelId, providerId, options);
 
             // Result can be { media: { url: 'data:...' } } or { buffer }
             let audioBuffer: Buffer;
@@ -1207,7 +1448,7 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
                     const b64 = result.media.url.split(',')[1];
                     audioBuffer = Buffer.from(b64, 'base64');
                 } else {
-                    const { getFileBuffer } = await import('../utils/AIGenerator.js');
+                    // const { getFileBuffer } = await import('../utils/AIGenerator.js');
                     audioBuffer = await getFileBuffer(result.media.url);
                 }
                 mimeType = result.media.mimeType || 'audio/mpeg';
@@ -1232,11 +1473,11 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
 
         // ─── MUSIC ────────────────────────────────────────────────
         if (type === 'music') {
-            const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
-            const mgr = AIServiceManager.getInstance();
-            await mgr.initialize();
+            // const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
+            // const mgr = AIServiceManager.getInstance();
+            // await mgr.initialize();
 
-            const result = await mgr.generateMusic(prompt, modelId, providerId, options);
+            const result = await aiManager.generateMusic(prompt, modelId, providerId, options);
 
             let musicBuffer: Buffer;
             let mimeType = 'audio/mpeg';
@@ -1245,7 +1486,7 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
                     const b64 = result.media.url.split(',')[1];
                     musicBuffer = Buffer.from(b64, 'base64');
                 } else {
-                    const { getFileBuffer } = await import('../utils/AIGenerator.js');
+                    // const { getFileBuffer } = await import('../utils/AIGenerator.js');
                     musicBuffer = await getFileBuffer(result.media.url);
                 }
                 mimeType = result.media.mimeType || 'audio/mpeg';
@@ -1290,7 +1531,7 @@ router.post('/:id/assets/generate', licenseGating('trial'), rbacMiddleware(Permi
 
 // POST /api/projects/:id/assets/upload - Upload asset
 router.post('/:id/assets/upload',
-    licenseGating('trial'),
+    licenseGating(LicenseType.TRIAL),
     rbacMiddleware(Permission.PROJECT_EDIT),
     upload.single('file'),
     async (req: any, res: Response) => {
@@ -1403,7 +1644,7 @@ router.post('/:id/track', async (req: any, res: Response) => {
 });
 
 // POST /api/projects/:id/storyboard/generate-assets - Batch generate all segment videos
-router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
+router.post('/:id/storyboard/generate-assets', licenseGating(LicenseType.TRIAL), rbacMiddleware(Permission.AI_GENERATE), async (req: any, res: Response) => {
     try {
         await connectDB();
         const projectId = req.params.id;
@@ -1412,9 +1653,9 @@ router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddl
             return res.status(404).json({ success: false, error: 'Project or storyboard segments not found' });
         }
 
-        const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
-        const mgr = AIServiceManager.getInstance();
-        await mgr.initialize();
+        // const { AIServiceManager } = await import('../utils/ai/AIServiceManager.js');
+        // const mgr = AIServiceManager.getInstance();
+        // await mgr.initialize();
 
         // Start batch generation in background
         const generateBatch = async () => {
@@ -1428,22 +1669,22 @@ router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddl
                     await project.save();
 
                     const allCharacters = project.scriptAnalysis?.characters || [];
-                    const { buildVeoVideoPrompt } = await import('../utils/PromptBuilder.js');
+                    // const { buildVeoVideoPrompt } = await import('../utils/PromptBuilder.js');
                     const videoPrompt = await buildVeoVideoPrompt(
                         segment, 
                         allCharacters, 
                         project.scriptAnalysis, 
-                        'vi', 
-                        async (p) => await mgr.generateText(p, undefined)
+                        'en', 
+                        async (p) => await aiManager.generateText(p, undefined)
                     );
 
-                    const result = await mgr.generateVideo(videoPrompt, undefined, undefined, {
+                    const result = await aiManager.generateVideo(videoPrompt, undefined, undefined, {
                         aspectRatio: project.aspectRatio || '16:9',
                         duration: segment.duration || 5,
                         imageStart: segment.sceneImage
                     });
 
-                    const { uploadToS3 } = await import('../utils/s3.js');
+                    // const { uploadToS3 } = await import('../utils/s3.js');
                     const s3Key = S3KeyGenerator.sceneVideo(projectId, segment.order);
                     await uploadToS3(s3Key, result.buffer, result.mimeType || 'video/mp4');
 
@@ -1451,7 +1692,7 @@ router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddl
                     project.markModified('storyboard');
                     await project.save();
                     
-                    const { socketServer } = await import('../services/SocketServer.js');
+                    // const { socketServer } = await import('../services/streaming/SocketServer.js');
                     socketServer.emitProjectUpdate(req.user!.userId, projectId, {
                         type: 'segment_video_ready',
                         segmentOrder: segment.order
@@ -1464,7 +1705,7 @@ router.post('/:id/storyboard/generate-assets', licenseGating('trial'), rbacMiddl
                     project.markModified('storyboard');
                     await project.save();
 
-                    const { socketServer } = await import('../services/SocketServer.js');
+                    // const { socketServer } = await import('../services/streaming/SocketServer.js');
                     socketServer.emitProjectUpdate(req.user!.userId, projectId, {
                         type: 'segment_video_failed',
                         segmentOrder: segment.order

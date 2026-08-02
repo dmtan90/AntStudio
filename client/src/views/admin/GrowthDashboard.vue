@@ -138,7 +138,7 @@ import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 
 const activeTests = ref([
-    { id: '1', name: 'Phase 14 Hero Conversion', status: 'Running', startDate: '2026-01-20', conversionA: 14.2, conversionB: 18.5 },
+    { id: '1', name: 'Hero Conversion', status: 'Running', startDate: '2026-01-20', conversionA: 14.2, conversionB: 18.5 },
     { id: '2', name: 'Pricing Page Tactical Layout', status: 'Running', startDate: '2026-01-22', conversionA: 4.1, conversionB: 3.8 }
 ]);
 

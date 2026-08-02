@@ -1,4 +1,4 @@
-# AntFlow Web Video Editor Guide
+# AntStudio Web Video Editor Guide
 
 The Web Video Editor is a fully-featured non-linear editor (NLE) running in your browser.
 

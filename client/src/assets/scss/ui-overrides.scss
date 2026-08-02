@@ -16,111 +16,108 @@
 
 // 1. Buttons
 .el-button {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
-    backdrop-filter: blur(10px);
-    border-radius: $radius-sm;
-    font-weight: 500;
-    transition: $transition-base;
+    // background: rgba(255, 255, 255, 0.05);
+    // border: 1px solid rgba(255, 255, 255, 0.1);
+    // color: #fff;
+    // backdrop-filter: blur(10px);
+    // border-radius: $radius-sm;
+    // font-weight: 500;
+    // transition: $transition-base;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-size: 12px;
+    // letter-spacing: 0.5px;
+    // font-size: 12px;
 
-    &:hover,
-    &:focus {
-        background: rgba(255, 255, 255, 0.12);
-        border-color: rgba(255, 255, 255, 0.3);
-        color: #fff;
-        transform: translateY(-2px);
-    }
+    // &:hover,
+    // &:focus {
+    //     background: rgba(255, 255, 255, 0.12);
+    //     border-color: rgba(255, 255, 255, 0.3);
+    //     color: #fff;
+    //     transform: translateY(-2px);
+    // }
 
-    // Variants
-    &.el-button--primary {
-        background: #fff;
-        color: #000;
-        border-color: #fff;
+    // &.el-button--primary {
+    //     background: #fff;
+    //     color: #000;
+    //     border-color: #fff;
 
-        &:hover {
-            background: rgba(255, 255, 255, 0.9);
-            color: #000;
-        }
-    }
+    //     &:hover {
+    //         background: rgba(255, 255, 255, 0.9);
+    //         color: #000;
+    //     }
+    // }
 
-    &.el-button--success {
-        background: rgba(16, 185, 129, 0.2);
-        color: #10b981;
-        border-color: rgba(16, 185, 129, 0.3);
+    // &.el-button--success {
+    //     background: rgba(16, 185, 129, 0.2);
+    //     color: #10b981;
+    //     border-color: rgba(16, 185, 129, 0.3);
 
-        &:hover {
-            background: rgba(16, 185, 129, 0.3);
-            border-color: #10b981;
-        }
-    }
+    //     &:hover {
+    //         background: rgba(16, 185, 129, 0.3);
+    //         border-color: #10b981;
+    //     }
+    // }
 
-    &.el-button--warning {
-        background: rgba(245, 158, 11, 0.2);
-        color: #f59e0b;
-        border-color: rgba(245, 158, 11, 0.3);
+    // &.el-button--warning {
+    //     background: rgba(245, 158, 11, 0.2);
+    //     color: #f59e0b;
+    //     border-color: rgba(245, 158, 11, 0.3);
 
-        &:hover {
-            background: rgba(245, 158, 11, 0.3);
-            border-color: #f59e0b;
-        }
-    }
+    //     &:hover {
+    //         background: rgba(245, 158, 11, 0.3);
+    //         border-color: #f59e0b;
+    //     }
+    // }
 
-    &.el-button--danger {
-        background: rgba(239, 68, 68, 0.2);
-        color: #ef4444;
-        border-color: rgba(239, 68, 68, 0.3);
+    // &.el-button--danger {
+    //     background: rgba(239, 68, 68, 0.2);
+    //     color: #ef4444;
+    //     border-color: rgba(239, 68, 68, 0.3);
 
-        &:hover {
-            background: rgba(239, 68, 68, 0.3);
-            border-color: #ef4444;
-        }
-    }
+    //     &:hover {
+    //         background: rgba(239, 68, 68, 0.3);
+    //         border-color: #ef4444;
+    //     }
+    // }
 
-    // Types: plain, link, text, bg
-    &.is-plain {
-        background: transparent;
-        border: 1px solid currentColor;
-        opacity: 0.8;
+    // &.is-plain {
+    //     background: transparent;
+    //     border: 1px solid currentColor;
+    //     opacity: 0.8;
 
-        &:hover {
-            opacity: 1;
-            background: rgba(255, 255, 255, 0.05);
-        }
-    }
+    //     &:hover {
+    //         opacity: 1;
+    //         background: rgba(255, 255, 255, 0.05);
+    //     }
+    // }
 
-    &.is-link {
-        background: transparent !important;
-        border: none !important;
-        padding: 0;
-        height: auto;
-        text-decoration: underline;
+    // &.is-link {
+    //     background: transparent !important;
+    //     border: none !important;
+    //     padding: 0;
+    //     height: auto;
+    //     text-decoration: underline;
 
-        &:hover {
-            transform: none;
-            opacity: 0.8;
-        }
-    }
+    //     &:hover {
+    //         transform: none;
+    //         opacity: 0.8;
+    //     }
+    // }
 
-    &.is-text {
-        background: transparent !important;
-        border: none !important;
-        padding: 4px 8px;
+    // &.is-text {
+    //     background: transparent !important;
+    //     border: none !important;
+    //     padding: 4px 8px;
 
-        &:hover {
-            background: rgba(255, 255, 255, 0.05) !important;
-        }
-    }
+    //     &:hover {
+    //         background: rgba(255, 255, 255, 0.05) !important;
+    //     }
+    // }
 
-    // Special: bg type (custom implementation for cinematic look)
-    &.el-button--bg {
-        border: none;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    }
+    // &.el-button--bg {
+    //     border: none;
+    //     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+    //     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    // }
 }
 
 // 2. Inputs & Selects
@@ -128,37 +125,37 @@
 .el-input__wrapper,
 .el-textarea__inner,
 .el-select .el-input__wrapper {
-    background: rgba(255, 255, 255, 0.03) !important;
+    // background: rgba(255, 255, 255, 0.03) !important;
     box-shadow: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    // border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: $radius-sm !important;
     backdrop-filter: blur(10px);
     transition: $transition-base;
 
-    &.is-focus,
-    &:hover,
-    &:focus {
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        background: rgba(255, 255, 255, 0.06) !important;
-        box-shadow: 0 0 0 1px $primary-color inset !important;
-    }
+    // &.is-focus,
+    // &:hover,
+    // &:focus {
+    //     border-color: rgba(255, 255, 255, 0.3) !important;
+    //     background: rgba(255, 255, 255, 0.06) !important;
+    //     box-shadow: 0 0 0 1px $primary-color inset !important;
+    // }
 
-    input,
-    textarea {
-        color: #fff !important;
+    // input,
+    // textarea {
+    //     color: #fff !important;
 
-        &::placeholder {
-            color: $text-muted;
-        }
-    }
+    //     &::placeholder {
+    //         color: $text-muted;
+    //     }
+    // }
 }
 
 // 3. Cards
 .el-card {
     @include glass-card;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    background: rgba(255, 255, 255, 0.03) !important;
-    color: #fff !important;
+    // background: rgba(255, 255, 255, 0.03) !important;
+    // color: #fff !important;
 
     .el-card__header {
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);

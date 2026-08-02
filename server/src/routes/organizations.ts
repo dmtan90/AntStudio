@@ -1,4 +1,4 @@
-import { OrganizationService } from '../services/OrganizationService.js';
+import { OrganizationService } from '../services/system/OrganizationService.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';

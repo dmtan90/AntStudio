@@ -137,7 +137,11 @@ export class CanvasTemplate {
               this.timeline.initialize(this.page!.duration || 5000);
 
               FabricUtils.applyTransformationsAfterLoad(this.canvas);
-              this.canvas.renderAll();
+              try{
+				this.canvas.renderAll();
+			  }catch(err){
+				console.warn(err);
+			  }
               this.status = "completed";
 
               resolve();

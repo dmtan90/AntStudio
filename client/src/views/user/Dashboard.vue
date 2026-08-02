@@ -4,7 +4,7 @@
     <DashboardHeader 
       :user="user" 
       @create="showCreationDialog = true" 
-      @go-live="studioStore.showOnboarding = true"
+      @go-live="onGoLive"
     />
 
     <!-- Main Content -->
@@ -33,8 +33,9 @@
       </div>
     </main>
 
-    <ProjectCreationDialog v-model="showCreationDialog" @create-ad="adDialogVisible = true; showCreationDialog = false" />
+    <ProjectCreationDialog v-model="showCreationDialog" @create-ad="adDialogVisible = true; showCreationDialog = false" @create-avatar="avatarDialogVisible = true; showCreationDialog = false" />
     <ProductAdDialog v-model="adDialogVisible" />
+    <AIAvatarDialog v-model="avatarDialogVisible" />
     <AppTour v-model="showTour" :steps="tourSteps" @finish="onTourFinish" />
   </div>
 </template>
@@ -50,6 +51,7 @@ import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import ProjectCreationDialog from '@/components/projects/ProjectCreationDialog.vue';
 import ProductAdDialog from '@/components/merchant/dialogs/ProductAdDialog.vue'
+import AIAvatarDialog from '@/components/projects/AIAvatarDialog.vue'
 import AppTour from '@/components/ui/AppTour.vue';
 
 // Dashboard Components
@@ -59,6 +61,7 @@ import RecentProjects from '@/components/dashboard/RecentProjects.vue';
 import ConnectedAccounts from '@/components/dashboard/ConnectedAccounts.vue';
 import SystemStatus from '@/components/dashboard/SystemStatus.vue';
 import { useStudioStore } from '@/stores/studio';
+import router from '@/router';
 
 const userStore = useUserStore();
 const projectStore = useProjectStore();
@@ -74,6 +77,7 @@ const { accounts: platformAccounts } = storeToRefs(platformStore);
 const { commerceStats } = storeToRefs(marketplaceStore);
 
 const showCreationDialog = ref(false);
+const avatarDialogVisible = ref(false)
 const showTour = ref(false);
 const adDialogVisible = ref(false);
 
@@ -130,6 +134,11 @@ const onTourFinish = () => {
     localStorage.setItem(tourKey, 'true');
     showTour.value = false;
 };
+
+const onGoLive = () => {
+  router.push({name: "live-sales"});
+  // studioStore.showOnboarding = true;
+}
 
 onMounted(initializeData);
 </script>

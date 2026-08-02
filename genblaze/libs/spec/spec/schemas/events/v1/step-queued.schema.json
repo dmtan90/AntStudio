@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/backblaze-labs/genblaze/schemas/events/v1/step-queued.schema.json",
+  "title": "StepQueuedEvent",
+  "description": "Emitted when a step is waiting on capacity (serial pipeline or concurrency-limit), not yet running. Additive — fires alongside the existing step.started flow rather than replacing it.",
+  "type": "object",
+  "required": [
+    "type",
+    "timestamp",
+    "run_id",
+    "step_id",
+    "step_index",
+    "total_steps",
+    "provider",
+    "model",
+    "reason"
+  ],
+  "properties": {
+    "type": {
+      "const": "step.queued",
+      "description": "Discriminator tag identifying the event variant."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this event was created (UTC)."
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Run identifier this event belongs to."
+    },
+    "step_id": {
+      "type": "string",
+      "description": "Step identifier (UUID)."
+    },
+    "step_index": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "0-based step position in the pipeline."
+    },
+    "total_steps": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of steps in the pipeline."
+    },
+    "provider": {
+      "type": "string",
+      "description": "Provider name."
+    },
+    "model": {
+      "type": "string",
+      "description": "Model slug."
+    },
+    "reason": {
+      "type": "string",
+      "enum": ["serial", "concurrency_limit"],
+      "description": "Why the step is queued."
+    }
+  },
+  "additionalProperties": false
+}

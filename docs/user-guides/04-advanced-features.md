@@ -1,6 +1,6 @@
 # Advanced Features Guide
 
-Take your content to the next level with AntFlow's advanced AI and collaboration tools.
+Take your content to the next level with AntStudio's advanced AI and collaboration tools.
 
 ## 1. Voice Lab 🎙️
 *Create custom AI voices and generate lifelike speech.*

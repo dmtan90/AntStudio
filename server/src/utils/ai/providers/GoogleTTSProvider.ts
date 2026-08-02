@@ -1,31 +1,93 @@
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import { OAuth2Client } from 'google-auth-library';
 import { Logger } from '../../Logger.js';
+import fs from 'fs';
+import path from 'path';
+
+export interface GoogleTTSConfig {
+    apiKey?: string;
+    accessToken?: string;
+    projectId?: string;
+    serviceAccount?: string | Record<string, any>;
+    keyFilename?: string;
+    credentials?: {
+        client_email?: string;
+        private_key?: string;
+        [key: string]: any;
+    };
+}
 
 export class GoogleTTSProvider {
     private client!: TextToSpeechClient;
+    private static instance: GoogleTTSProvider;
 
-    constructor(config?: { apiKey?: string, accessToken?: string }) {
+    constructor(config?: GoogleTTSConfig) {
         this.updateClient(config);
     }
 
-    public updateClient(config?: { apiKey?: string, accessToken?: string, projectId?: string }) {
+    public static getInstance(): GoogleTTSProvider{
+        if(GoogleTTSProvider.instance == null){
+            GoogleTTSProvider.instance = new GoogleTTSProvider();
+        }
+        return GoogleTTSProvider.instance;
+    }
+
+    public updateClient(config?: GoogleTTSConfig) {
         const clientConfig: any = {};
-        if (config?.apiKey) {
-            clientConfig.apiKey = config.apiKey;
-        } else if (config?.accessToken) {
+
+        // 1. Direct credentials object or keyFilename
+        if (config?.credentials) {
+            clientConfig.credentials = config.credentials;
+            if (config.projectId) clientConfig.projectId = config.projectId;
+        } else if (config?.keyFilename) {
+            clientConfig.keyFilename = config.keyFilename;
+        } else if (config?.serviceAccount) {
+            if (typeof config.serviceAccount === 'object' && config.serviceAccount !== null) {
+                clientConfig.credentials = config.serviceAccount;
+                if ((config.serviceAccount as any).project_id) {
+                    clientConfig.projectId = (config.serviceAccount as any).project_id;
+                }
+            } else if (typeof config.serviceAccount === 'string') {
+                const trimmed = config.serviceAccount.trim();
+                if (trimmed.startsWith('{')) {
+                    try {
+                        const parsed = JSON.parse(trimmed);
+                        clientConfig.credentials = parsed;
+                        if (parsed.project_id) clientConfig.projectId = parsed.project_id;
+                    } catch (e: any) {
+                        Logger.warn(`[GoogleTTSProvider] Failed to parse serviceAccount JSON string: ${e.message}`, 'GoogleTTSProvider');
+                    }
+                } else if (fs.existsSync(trimmed)) {
+                    clientConfig.keyFilename = path.resolve(trimmed);
+                }
+            }
+        }
+
+        // 2. OAuth2 Access Token
+        if (!clientConfig.credentials && !clientConfig.keyFilename && config?.accessToken) {
             const auth = new OAuth2Client();
             auth.setCredentials({ access_token: config.accessToken });
-            // Satisfy newer Cloud SDK requirements
             (auth as any).getUniverseDomain = () => 'googleapis.com';
             (auth as any).getClient = async () => auth;
             
             clientConfig.auth = auth;
-            
             if (config.projectId) {
                 clientConfig.projectId = config.projectId;
             }
         }
+
+        // 3. API Key
+        if (!clientConfig.credentials && !clientConfig.keyFilename && !clientConfig.auth && config?.apiKey) {
+            clientConfig.apiKey = config.apiKey;
+        }
+
+        // 4. Fallback to GOOGLE_APPLICATION_CREDENTIALS environment variable
+        if (!clientConfig.credentials && !clientConfig.keyFilename && !clientConfig.auth && !clientConfig.apiKey) {
+            if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+                clientConfig.keyFilename = path.resolve(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+            }
+        }
+
         this.client = new TextToSpeechClient(clientConfig);
     }
 
@@ -48,7 +110,17 @@ export class GoogleTTSProvider {
                     }
                 }
             }
-            return response.voices || [];
+            //format voices
+            const formattedVoices = response?.voices?.map((v: any) => ({
+                id: v.name,
+                name: v.name,
+                language: v.languageCodes?.[0] || 'en-US',
+                gender: v.ssmlGender || 'NEUTRAL',
+                provider: 'google',
+                audioSampleUrl: `https://cloud.google.com/static/text-to-speech/docs/audio/${v.name}.wav`
+            }))  || [];
+
+            return formattedVoices;
         } catch (error: any) {
             Logger.error(`Google TTS List Voices Error: ${error.message}`, 'GoogleTTSProvider');
             return []; // Return empty array on error
@@ -87,7 +159,7 @@ export class GoogleTTSProvider {
                 },
                 audioConfig: {
                     audioEncoding: 'MP3' as const,
-                    speakingRate: options.speakingRate || 1.0,
+                    speakingRate: options.speed || 1.0,
                     pitch: options.pitch || 0,
                     volumeGainDb: options.volumeGainDb || 0,
                 },

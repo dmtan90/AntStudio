@@ -1,8 +1,7 @@
 import { ref, onUnmounted, getCurrentInstance } from 'vue';
-import { ElMessage } from 'element-plus';
 import { useUIStore } from '@/stores/ui';
-import { toast } from 'vue-sonner'
-
+import { toast } from 'vue-sonner';
+import { io, Socket } from 'socket.io-client';
 
 interface GeminiLiveConfig {
     archiveId: string;
@@ -11,6 +10,7 @@ interface GeminiLiveConfig {
     isMaster?: boolean;
     liveContext?: string;
     productIds?: string;
+    language?: string;
     onToolCall?: (toolCall: any) => void; // Callback for avatar control
     onTextResponse?: (text: string, metadata?: { 
         emotion?: string, 
@@ -22,7 +22,7 @@ interface GeminiLiveConfig {
 }
 
 export function useGeminiLive() {
-    const ws = ref<WebSocket | null>(null);
+    const socketRef = ref<Socket | null>(null);
     const isConnected = ref(false);
     const isSpeaking = ref(false);
     const audioLevel = ref(0);
@@ -32,14 +32,18 @@ export function useGeminiLive() {
     const isCameraActive = ref(false);
     const isAudioPlaying = ref(false);
     const isMuted = ref(false);
+    const lastAudioTime = ref(0);
+    const isTurnComplete = ref(false);
 
     // Audio context for playback
     let audioContext: AudioContext | null = null;
     let audioQueue: AudioBuffer[] = [];
     let isPlaying = false;
     let currentSource: AudioBufferSourceNode | null = null;
+    let activeSources: AudioBufferSourceNode[] = [];
     let nextStartTime = 0;
     let schedulerTimeoutId: any = null;
+    let preFillTimer: any = null;
 
     // Microphone stream
     let mediaStream: MediaStream | null = null;
@@ -48,7 +52,7 @@ export function useGeminiLive() {
     let outputAnalyser: AnalyserNode | null = null; 
     let animationFrameId: number | null = null;
 
-    // Audio Output Stream (Phase 89)
+    // Audio Output Stream
     let audioDestination: MediaStreamAudioDestinationNode | null = null;
     let mixedAudioStream = ref<MediaStream | null>(null);
 
@@ -73,84 +77,95 @@ export function useGeminiLive() {
     let questCallback: ((event: any) => void) | null = null;
     let interruptedCallback: (() => void) | null = null;
 
-    // Phase 87: Reconnection State
+    // Reconnection State
     const manualDisconnect = ref(false);
     const lastConfig = ref<GeminiLiveConfig | null>(null);
     const reconnectAttempts = ref(0);
     const MAX_RECONNECT_ATTEMPTS = 10;
+    let reconnectTimer: any = null;
 
 
     /**
      * Connect to Live Studio WebSocket
      */
     async function connect(config: GeminiLiveConfig): Promise<void> {
-        if (ws.value && ws.value.readyState === WebSocket.OPEN) {
-            console.warn('[GeminiLive] Already connected');
-            return;
+        if (socketRef.value) {
+            if (socketRef.value.connected) {
+                console.warn('[GeminiLive] Already connected');
+                return;
+            }
+            console.warn('[GeminiLive] Cleaning up old disconnected/stale socket before reconnecting');
+            socketRef.value.disconnect();
+            socketRef.value = null;
         }
 
         manualDisconnect.value = false;
         lastConfig.value = config;
+        isTurnComplete.value = false;
 
-        // let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // let host = window.location.host;
         let domain = window.location.origin;
-	    domain = domain.replace("https:", "wss:").replace("http:", "ws:");
         
-        // If domain is explicitly set in UI store and it's different from current host
-        // const uiStore = useUIStore();
-        // if (uiStore.domain && !uiStore.domain.includes(host)) {
-        //     const domain = uiStore.domain.replace('https://', '').replace('http://', '');
-        //     host = domain.endsWith('/') ? domain.slice(0, -1) : domain;
-        // }
-
-        // Phase 87: Check for existing session ID to resume
+        // Check for existing session ID to resume
         const storedSessionId = localStorage.getItem(`gemini_live_session_${config.archiveId}`);
-        const wsUrl = `${domain}/api/live?archiveId=${config.archiveId}${config.projectId ? `&projectId=${config.projectId}` : ''}${config.token ? `&token=${config.token}` : ''}${config.isMaster ? `&isMaster=true` : ''}${config.liveContext ? `&liveContext=${config.liveContext}` : ''}${config.productIds ? `&productIds=${config.productIds}` : ''}${storedSessionId ? `&resumeSessionId=${storedSessionId}` : ''}`;
         
-        console.log('[GeminiLive] Connecting to:', wsUrl);
+        console.log('[GeminiLive] Connecting to Socket.io /live namespace');
         
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
-                socket.close();
+                if (socketRef.value) {
+                    socketRef.value.disconnect();
+                    socketRef.value = null;
+                }
                 reject(new Error('Connection timeout (30s)'));
             }, 30000);
 
-            const socket = new WebSocket(wsUrl);
+            const socketInstance = io(`${domain}/live`, {
+                path: '/socket.io',
+                transports: ['websocket', 'polling'],
+                reconnection: false,
+                query: {
+                    archiveId: config.archiveId,
+                    projectId: config.projectId || '',
+                    token: config.token || '',
+                    isMaster: config.isMaster ? 'true' : 'false',
+                    liveContext: config.liveContext || '',
+                    productIds: config.productIds || '',
+                    language: config.language || '',
+                    resumeSessionId: storedSessionId || ''
+                }
+            });
 
-            socket.onopen = () => {
-                console.log('[GeminiLive] WebSocket socket opened (readyState: OPEN)');
-            };
+            // Store socketRef immediately so subsequent calls detect connecting socket
+            socketRef.value = socketInstance;
 
-            socket.onmessage = (event) => {
+            socketInstance.on('connect', () => {
+                console.log('[GeminiLive] Socket.io connected (id:', socketInstance.id, ')');
+            });
+
+            socketInstance.on('message', (message: any) => {
                 try {
-                    const message = JSON.parse(event.data);
-                    // console.log('[GeminiLive] Message received:', message.type);
                     handleMessage(message);
 
                     if (message.type === 'connected') {
-
                         clearTimeout(timeoutId);
                         console.log('[GeminiLive] Connection handshake complete:', message.sessionId);
                         
                         // Initialize audio output immediately for mixer (Before triggering connected state)
                         initAudioOutput();
 
-                        ws.value = socket;
                         isConnected.value = true;
                         sessionId.value = message.sessionId;
-                        archiveName.value = message.archiveName;
+                        archiveName.value = message.influencerName || message.archiveName;
                         voiceName.value = message.voiceName;
                         reconnectAttempts.value = 0; // Reset on success
 
                         // Store for future reconnection
                         localStorage.setItem(`gemini_live_session_${config.archiveId}`, message.sessionId);
 
-
                         if (message.isResumed) {
-                            toast.success(`Reconnected to ${message.archiveName}`);
+                            toast.success(`Reconnected to ${archiveName.value || 'Influencer'}`);
                         } else {
-                            toast.success(`Connected to ${message.archiveName}`);
+                            toast.success(`Connected to ${archiveName.value || 'Influencer'}`);
                         }
                         
                         resolve();
@@ -158,28 +173,27 @@ export function useGeminiLive() {
                 } catch (error) {
                     console.error('[GeminiLive] Error parsing message:', error);
                 }
-            };
+            });
 
-            socket.onerror = (error) => {
+            socketInstance.on('connect_error', (error: any) => {
                 clearTimeout(timeoutId);
-                console.error('[GeminiLive] WebSocket connection error:', error);
+                console.error('[GeminiLive] Socket.io connection error:', error);
                 reject(error);
-            };
+            });
 
-            socket.onclose = (event) => {
+            socketInstance.on('disconnect', (reason: string) => {
                 clearTimeout(timeoutId);
-                const reasonMsg = event.reason ? ` Reason: ${event.reason}` : '';
-                console.log(`[GeminiLive] WebSocket socket closed: ${event.code}${reasonMsg}`);
+                console.log(`[GeminiLive] Socket.io disconnected: ${reason}`);
                 
                 isConnected.value = false;
-                ws.value = null;
+                socketRef.value = null;
 
                 // Stop inputs and clear audio queue if we lost connection
                 stopAudioAnalysis();
                 stopPlayback();
                 
-                // Phase 87: Automatic Reconnection with Exponential Backoff
-                if (event.code !== 1000 && !manualDisconnect.value && reconnectAttempts.value < MAX_RECONNECT_ATTEMPTS) {
+                // Automatic Reconnection with Exponential Backoff
+                if (reason !== 'io client disconnect' && !manualDisconnect.value && reconnectAttempts.value < MAX_RECONNECT_ATTEMPTS) {
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000);
                     reconnectAttempts.value++;
                     
@@ -190,12 +204,14 @@ export function useGeminiLive() {
                         toast.warning(`Influencer connection lost. Reconnecting... (Attempt ${reconnectAttempts.value})`, { duration: 2000 });
                     }
 
-                    setTimeout(() => {
+                    if (reconnectTimer) clearTimeout(reconnectTimer);
+                    reconnectTimer = setTimeout(() => {
+                        reconnectTimer = null;
                         if (lastConfig.value && !manualDisconnect.value) {
                             connect(lastConfig.value).catch(e => console.log('[GeminiLive] Reconnect backoff silent fail:', e));
                         }
                     }, delay);
-                } else if (event.code !== 1000) {
+                } else if (reason !== 'io client disconnect') {
                      console.error('[GeminiLive] Connection lost permanently or max attempts reached.');
                      toast.error('Influencer connection lost permanently.', { duration: 2000 });
                      stopMicrophone(); // Fully stop if we can't reconnect
@@ -203,9 +219,9 @@ export function useGeminiLive() {
                 }
 
                 if (!sessionId.value) {
-                    reject(new Error(`WebSocket closed before handshake: ${event.code}${reasonMsg}`));
+                    reject(new Error(`Socket.io disconnected before handshake: ${reason}`));
                 }
-            };
+            });
         });
     }
 
@@ -270,24 +286,52 @@ export function useGeminiLive() {
                     if (!isMuted.value) {
                         playAudioChunk(message.data, message.mimeType);
                     }
+                    if (message.turnComplete) {
+                        console.log('[GeminiLive] Turn complete flag from audio chunk');
+                        isTurnComplete.value = true;
+                    }
+                    break;
+
+                case 'turn_complete':
+                    console.log('[GeminiLive] Turn complete message received');
+                    isTurnComplete.value = true;
                     break;
 
                 case 'text':
                     console.log('[GeminiLive] Text response:', message.text);
                     if (textResponseCallback) {
-                        textResponseCallback(message.text, { 
-                            emotion: message.emotion, 
-                            gesture: message.gesture,
-                            action: message.action,
-                            actionPayload: message.actionPayload,
-                            isConsolidated: message.isConsolidated
-                        });
+                        const nowTime = audioContext ? audioContext.currentTime : 0;
+                        const latencyMs = audioContext && nextStartTime > nowTime
+                            ? Math.max(0, (nextStartTime - nowTime) * 1000)
+                            : 0;
+                        if (latencyMs > 0) {
+                            setTimeout(() => {
+                                if (textResponseCallback) {
+                                    textResponseCallback(message.text, { 
+                                        emotion: message.emotion, 
+                                        gesture: message.gesture,
+                                        action: message.action,
+                                        actionPayload: message.actionPayload,
+                                        isConsolidated: message.isConsolidated
+                                    });
+                                }
+                            }, latencyMs);
+                        } else {
+                            textResponseCallback(message.text, { 
+                                emotion: message.emotion, 
+                                gesture: message.gesture,
+                                action: message.action,
+                                actionPayload: message.actionPayload,
+                                isConsolidated: message.isConsolidated
+                            });
+                        }
                     }
                     break;
 
                 case 'interrupted':
                     console.log('[GeminiLive] Interrupted');
-                    stopPlayback();
+                    // stopPlayback();
+                    // isTurnComplete.value = false;
                     if (interruptedCallback) {
                         interruptedCallback();
                     }
@@ -295,13 +339,26 @@ export function useGeminiLive() {
 
                 case 'error':
                     console.error('[GeminiLive] Error:', message.message);
-                    ElMessage.error(message.message);
+                    toast.error(message.message);
                     break;
 
                 case 'tool_call':
                     console.log('[GeminiLive] Tool call received:', message.toolCall);
                     if (toolCallCallback) {
-                        toolCallCallback(message.toolCall);
+                        const nowTime = audioContext ? audioContext.currentTime : 0;
+                        const latencyMs = audioContext && nextStartTime > nowTime
+                            ? Math.max(0, (nextStartTime - nowTime) * 1000)
+                            : 0;
+                        if (latencyMs > 0) {
+                            console.log(`[GeminiLive] Delaying tool call by ${latencyMs.toFixed(0)}ms for audio sync`);
+                            setTimeout(() => {
+                                if (toolCallCallback) {
+                                    toolCallCallback(message.toolCall);
+                                }
+                            }, latencyMs);
+                        } else {
+                            toolCallCallback(message.toolCall);
+                        }
                     }
                     break;
 
@@ -358,13 +415,13 @@ export function useGeminiLive() {
 
             startAudioAnalysis();
 
-            // Set up PCM Processor (Phase 35 Fix)
+            // Set up PCM Processor
             audioProcessor = audioContext.createScriptProcessor(2048, 1, 1);
             source.connect(audioProcessor);
             audioProcessor.connect(audioContext.destination);
 
             audioProcessor.onaudioprocess = (e) => {
-                if (!isConnected.value || ws.value?.readyState !== WebSocket.OPEN) return;
+                if (!isConnected.value || !socketRef.value?.connected) return;
 
                 const inputData = e.inputBuffer.getChannelData(0);
                 // Downsample from 24000Hz to 16000Hz for Gemini Live (3:2 ratio)
@@ -380,18 +437,18 @@ export function useGeminiLive() {
 
                 // Send as base64
                 const base64 = btoa(String.fromCharCode.apply(null, new Uint8Array(pcmData.buffer) as any));
-                ws.value?.send(JSON.stringify({
+                socketRef.value.emit('message', {
                     type: 'audio',
                     data: base64,
                     mimeType: 'audio/pcm;rate=16000'
-                }));
+                });
             };
 
             isSpeaking.value = true;
             console.log('[GeminiLive] Microphone started (PCM mode)');
         } catch (error) {
             console.error('[GeminiLive] Failed to start microphone:', error);
-            ElMessage.error('Failed to access microphone');
+            toast.error('Failed to access microphone');
             throw error;
         }
     }
@@ -439,7 +496,7 @@ export function useGeminiLive() {
             return videoStream;
         } catch (error) {
             console.error('[GeminiLive] Failed to start camera:', error);
-            ElMessage.error('Failed to access camera');
+            toast.error('Failed to access camera');
             throw error;
         }
     }
@@ -477,12 +534,12 @@ export function useGeminiLive() {
             // Split to get base64 data only
             const base64 = videoCanvas.toDataURL('image/jpeg', 0.6).split(',')[1];
             
-            if (ws.value && ws.value.readyState === WebSocket.OPEN) {
-                ws.value.send(JSON.stringify({
+            if (socketRef.value && socketRef.value.connected) {
+                socketRef.value.emit('message', {
                     type: 'video',
                     data: base64,
                     mimeType: 'image/jpeg'
-                }));
+                });
             }
         }
     }
@@ -491,38 +548,40 @@ export function useGeminiLive() {
      * Manually send a video frame (base64)
      */
     function sendVideoFrame(base64: string): void {
-        if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return;
+        if (!socketRef.value || !socketRef.value.connected) return;
 
-        ws.value.send(JSON.stringify({
+        socketRef.value.emit('message', {
             type: 'video',
             data: base64,
             mimeType: 'image/jpeg'
-        }));
+        });
     }
 
     /**
      * Send text to Gemini
      */
     function sendText(text: string): void {
-        if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return;
+        if (!socketRef.value || !socketRef.value.connected) return;
 
-        ws.value.send(JSON.stringify({
+        isTurnComplete.value = false;
+        socketRef.value.emit('message', {
             type: 'text',
             text: text
-        }));
+        });
     }
 
     /**
      * Send talk prompt to server (Standard mode support)
      */
     function sendPrompt(prompt: string, context?: any): void {
-        if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return;
+        if (!socketRef.value || !socketRef.value.connected) return;
 
-        ws.value.send(JSON.stringify({
+        isTurnComplete.value = false;
+        socketRef.value.emit('message', {
             type: 'talk',
             prompt,
             context
-        }));
+        });
     }
 
     /**
@@ -536,9 +595,9 @@ export function useGeminiLive() {
      * Send tool response back to Gemini
      */
     function sendToolResponse(callId: string, name: string, result: any): void {
-        if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return;
+        if (!socketRef.value || !socketRef.value.connected) return;
 
-        ws.value.send(JSON.stringify({
+        socketRef.value.emit('message', {
             type: 'tool_response',
             functionResponses: [
                 {
@@ -547,7 +606,7 @@ export function useGeminiLive() {
                     response: result
                 }
             ]
-        }));
+        });
     }
 
     /**
@@ -607,6 +666,8 @@ export function useGeminiLive() {
      */
     async function playAudioChunk(base64Data: string, mimeType: string): Promise<void> {
         if (!base64Data) return; // Skip empty signaling chunks
+        
+        lastAudioTime.value = Date.now();
 
         if (!audioContext) {
             audioContext = new AudioContext({ sampleRate: 24000 });
@@ -631,7 +692,15 @@ export function useGeminiLive() {
                 audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
             } else {
                 // Handle raw PCM16 (from Gemini Live API)
-                const pcm16 = new Int16Array(bytes.buffer);
+                // Ensure even byte length for PCM16 (16-bit, 2 bytes per sample)
+                const evenLength = bytes.length - (bytes.length % 2);
+                
+                // Copy to a perfectly-aligned new ArrayBuffer to avoid byteOffset/RangeErrors
+                const pcmBuffer = new ArrayBuffer(evenLength);
+                const pcmBytes = new Uint8Array(pcmBuffer);
+                pcmBytes.set(bytes.subarray(0, evenLength));
+
+                const pcm16 = new Int16Array(pcmBuffer);
                 const float32 = new Float32Array(pcm16.length);
                 
                 for (let i = 0; i < pcm16.length; i++) {
@@ -643,12 +712,29 @@ export function useGeminiLive() {
             }
             
             audioQueue.push(audioBuffer);
+            
+            // Set isAudioPlaying to true immediately on buffer enqueue to prevent premature step progression
+            isAudioPlaying.value = true;
 
-        // Pre-fill buffer: Start playing only when we have enough chunks (solid stream)
-        // Increasing from 3 to 5 for better network jitter handling
-        if (!isPlaying && audioQueue.length >= 5) {
-            playNextChunk();
-        }
+            // Pre-fill buffer: Start playing only when we have enough chunks (solid stream)
+            // We use a low threshold (2 chunks) to minimize latency, plus a 50ms fallback timer
+            // so single/short chunks never get stuck.
+            if (!isPlaying && audioQueue.length > 0) {
+                if (audioQueue.length >= 2) {
+                    if (preFillTimer) {
+                        clearTimeout(preFillTimer);
+                        preFillTimer = null;
+                    }
+                    playNextChunk();
+                } else {
+                    if (preFillTimer) clearTimeout(preFillTimer);
+                    preFillTimer = setTimeout(() => {
+                        if (!isPlaying && audioQueue.length > 0) {
+                            playNextChunk();
+                        }
+                    }, 50);
+                }
+            }
         } catch (error) {
             console.error('[GeminiLive] Error playing audio:', error);
         }
@@ -697,13 +783,26 @@ export function useGeminiLive() {
             }
 
             source.start(nextStartTime);
+            activeSources.push(source);
+            
+            source.onended = () => {
+                const index = activeSources.indexOf(source);
+                if (index !== -1) {
+                    activeSources.splice(index, 1);
+                }
+                if (audioQueue.length === 0 && activeSources.length === 0) {
+                    isPlaying = false;
+                    isAudioPlaying.value = false;
+                }
+            };
+
             nextStartTime += buffer.duration;
             
             // Mark as finished locally since we don't use onended for chaining anymore
             // result is smooth back-to-back playback
         }
 
-        if (audioQueue.length === 0 && nextStartTime < now) {
+        if (audioQueue.length === 0 && activeSources.length === 0 && nextStartTime < now) {
             isPlaying = false;
             isAudioPlaying.value = false;
         }
@@ -729,14 +828,29 @@ export function useGeminiLive() {
             clearTimeout(schedulerTimeoutId);
             schedulerTimeoutId = null;
         }
+        if (preFillTimer) {
+            clearTimeout(preFillTimer);
+            preFillTimer = null;
+        }
+        // Stop and disconnect all currently active scheduled sources
+        activeSources.forEach(source => {
+            try {
+                source.stop();
+                source.disconnect();
+            } catch (e) {}
+        });
+        activeSources = [];
+
         if (currentSource) {
             try {
                 currentSource.stop();
+                currentSource.disconnect();
             } catch (e) {}
             currentSource = null;
         }
         isPlaying = false;
         isAudioPlaying.value = false;
+        isTurnComplete.value = false;
         nextStartTime = audioContext?.currentTime || 0;
     }
 
@@ -747,17 +861,23 @@ export function useGeminiLive() {
         manualDisconnect.value = true;
         reconnectAttempts.value = 0;
         
-        if (lastConfig.value?.archiveId) {
-            localStorage.removeItem(`gemini_live_session_${lastConfig.value.archiveId}`);
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+
+        if (preFillTimer) {
+            clearTimeout(preFillTimer);
+            preFillTimer = null;
         }
 
         stopMicrophone();
         stopCamera();
         stopPlayback();
 
-        if (ws.value) {
-            ws.value.close(1000);
-            ws.value = null;
+        if (socketRef.value) {
+            socketRef.value.disconnect();
+            socketRef.value = null;
         }
 
         if (audioContext) {
@@ -784,6 +904,8 @@ export function useGeminiLive() {
         isAudioPlaying,
         isMuted,
         audioLevel,
+        lastAudioTime,
+        isTurnComplete,
         isCameraActive,
         sessionId,
         archiveName,

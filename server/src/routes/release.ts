@@ -9,11 +9,11 @@ const router = Router();
 router.get('/latest', async (req, res) => {
     try {
         await connectDB();
-        const { channel } = req.query; // 'stable', 'beta', 'nightly'
+        const channelStr = typeof req.query.channel === 'string' ? req.query.channel : 'stable';
 
         const release = await Release.findOne({
             isActive: true,
-            channel: channel || 'stable'
+            channel: channelStr
         }).sort({ publishedAt: -1 });
 
         if (!release) return res.json({ success: true, data: { release: null } });

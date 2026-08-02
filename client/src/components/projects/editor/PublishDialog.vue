@@ -3,7 +3,7 @@
         <template #header>
             <div class="flex items-center gap-3">
                 <div class="h-8 w-1.5 bg-green-500 rounded-full shadow-[0_0_12px_rgba(34,197,94,0.5)]" />
-                <h3 class="text-sm font-black uppercase tracking-[0.2em] text-white/90">{{ t('projects.editor.publish.title') }}</h3>
+                <h3 class="text-sm font-black uppercase tracking-[0.2em] text-white/90">{{ project?.title || t('projects.editor.publish.title') || 'Publish Video' }}</h3>
             </div>
         </template>
 
@@ -15,8 +15,8 @@
                         class="video-preview-wrapper bg-black/40 rounded-2xl overflow-hidden shadow-2xl relative border border-white/5 ring-1 ring-white/5 p-1"
                         :class="previewAspectClass">
                         <div class="w-full h-full rounded-xl overflow-hidden relative">
-                            <GMedia :src="project?.publish?.s3Key" type="video"
-                                controls class="w-full h-full object-contain" />
+                            <GMedia :src="videoStream" type="video"
+                                controls class="w-full h-full" />
 
                             <div v-if="syncing"
                                 class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-xl">
@@ -79,7 +79,7 @@
                     </div>
 
                     <div class="social-share-mini">
-                        <h4 class="text-[10px] font-black text-white/30 uppercase mb-4 tracking-[0.2em]">{{ t('projects.editor.publish.syndicate') }}
+                        <h4 class="text-[10px] font-black text-white/30 uppercase mb-4 tracking-[0.2em]">{{ t('projects.editor.publish.platforms') }}
                         </h4>
                         
                         <div v-if="loadingAccounts" class="py-4 text-center">
@@ -129,8 +129,8 @@
                 <div class="flex items-center justify-between mb-8">
                     <div class="flex items-center gap-4">
                         <div class="p-2.5 rounded-xl bg-white/5 border border-white/5">
-                            <img src="https://antmedia.io/wp-content/uploads/2021/05/cropped-antmedia-logo-192x192.png"
-                                class="w-6 h-6 grayscale opacity-80" />
+                            <img src="https://marketplace-assets.digitalocean.com/logos/antmedia-antmediaserveren-18-04.svg"
+                                class="w-6 h-6 opacity-80" />
                         </div>
                         <div class="flex flex-col">
                             <h3 class="text-xs font-black text-white/90 uppercase tracking-[0.2em]">{{ t('projects.editor.publish.antMedia') }}</h3>
@@ -154,7 +154,7 @@
                     </div>
 
                     <div class="flex flex-col gap-3.5">
-                        <el-button type="danger" :disabled="isStreaming"
+                        <!-- <el-button type="danger" :disabled="isStreaming"
                             class="cinematic-button !h-12 !rounded-2xl !bg-red-500 !text-white !border-transparent shadow-[0_8px_25px_rgba(239,68,68,0.3)] hover:!scale-[1.02] active:!scale-95 !transition-all group"
                             @click="startStreaming">
                             <div class="flex items-center gap-3">
@@ -162,13 +162,14 @@
                                     class="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#fff] animate-pulse"></span>
                                 <span class="text-xs font-black uppercase tracking-[0.2em]">{{ t('projects.editor.publish.pushRtmp') }}</span>
                             </div>
-                        </el-button>
+                        </el-button> -->
 
                         <div class="grid grid-cols-2 gap-4">
                             <el-button :disabled="isStreaming"
                                 class="cinematic-button !h-12 !rounded-xl !bg-white/5 !border-white/10 !text-white/80 hover:!bg-white/10 hover:!text-white"
-                                @click="startWebRTC">
-                                <span class="text-[10px] font-black uppercase tracking-widest">{{ t('projects.editor.publish.liveWebRtc') }}</span>
+                                @click="startStreaming">
+                                <span v-if="isStreaming" class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                                <span class="text-[10px] font-black uppercase tracking-widest">{{ t('projects.editor.publish.liveStream') }}</span>
                             </el-button>
                             <el-button :disabled="isStreaming || isSavingVoD"
                                 class="cinematic-button !h-12 !rounded-xl !bg-green-500/20 !border-green-500/30 !text-green-500 hover:!bg-green-500/30 hover:!text-white hover:!border-green-500/50"
@@ -242,7 +243,7 @@
 
         <template #footer>
             <div class="px-4 pb-4">
-                <el-button @click="visible = false"
+                <el-button @click="closeDialog"
                     class="cinematic-button !w-full !h-12 !rounded-2xl !bg-white/5 !border-white/10 !text-white/80 hover:!bg-white/10 hover:!text-white shadow-xl">
                     <span class="text-[11px] font-black uppercase tracking-[0.2em]">{{ t('projects.editor.publish.exit') }}</span>
                 </el-button>
@@ -265,6 +266,7 @@ import { getFileUrl } from '@/utils/api'
 import GMedia from '@/components/ui/GMedia.vue'
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
+import { useVideoAssemblerStore } from 'video-editor/store/assembler'
 
 const { t } = useI18n()
 
@@ -280,6 +282,8 @@ const adminStore = useAdminStore()
 const projectStore = useProjectStore()
 const uiStore = useUIStore()
 const platformStore = usePlatformStore()
+const assemblerStore = useVideoAssemblerStore()
+const { result } = storeToRefs(assemblerStore)
 const visible = ref(props.modelValue)
 
 const accounts = computed(() => platformStore.accounts)
@@ -290,6 +294,8 @@ const publishMetadata = ref({
     description: props.project?.metadata?.description || ''
 })
 const isPublishing = ref(false)
+
+const videoStream = ref(null);
 
 const streamId = ref(uiStore.appName.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substr(2, 9))
 const isStreaming = ref(false)
@@ -326,12 +332,17 @@ watch(() => props.modelValue, (val) => {
         fetchAccounts()
         publishMetadata.value.title = props.project?.title || ''
         publishMetadata.value.description = props.project?.metadata?.description || ''
+        videoStream.value = result.value?.url || props.project?.publish?.s3Key || (props.video ? URL.createObjectURL(props.video) : null);
     }
 })
 
 watch(visible, (val) => {
     emit('update:modelValue', val)
 })
+
+const closeDialog = () => {
+  visible.value = false
+};
 
 const addEndpoint = () => {
     rtmpEndpoints.value.push({ url: '' })
@@ -371,7 +382,6 @@ const handlePublish = async () => {
             metadata: publishMetadata.value
         }
         await platformStore.publishSyndication(payload)
-        visible.value = false
     } finally {
         isPublishing.value = false
     }
@@ -410,10 +420,11 @@ const startStreaming = async () => {
 
     isStreaming.value = true
     try {
-        const result = await projectStore.startStreaming(props.project._id, streamId.value)
-
-        if (result.success) {
-            const settings = adminStore.settings?.apiConfigs?.antMedia
+        const antAccount = accounts.value.find((acc: any) => acc.platform === 'ant-media')
+        const data = await projectStore.startStreaming(props.project._id, streamId.value, antAccount?._id)
+        if (data) {
+            const amsServerUrl = antAccount?.credentials?.serverUrl || antAccount?.rtmpUrl || adminStore.settings?.apiConfigs?.antMedia?.baseUrl
+            const amsAppName = antAccount?.credentials?.appName || antAccount?.accountName || adminStore.settings?.apiConfigs?.antMedia?.appName || 'LiveApp'
             toast.success(t('projects.editor.publish.toasts.broadcastStarted'))
 
             // Start Polling
@@ -425,7 +436,7 @@ const startStreaming = async () => {
                 for (const endpoint of rtmpEndpoints.value) {
                     if (endpoint.url && endpoint.url.startsWith('rtmp')) {
                         try {
-                            await projectStore.addStreamEndpoint(props.project._id, result.data.streamId, endpoint.url);
+                            await projectStore.addStreamEndpoint(props.project._id, data.streamId, endpoint.url);
                             addedCount++;
                         } catch (err: any) {
                             console.error("Failed to add endpoint", err);
@@ -434,16 +445,16 @@ const startStreaming = async () => {
                     }
                 }
                 if (addedCount > 0) {
-                    toast.success(t('projects.editor.publish.toasts.endpointsAdded', { count: addedCount.toString() }));
+                    toast.success(t('projects.editor.publish.toasts.endpointAdded', { count: addedCount.toString() }));
                 }
             }
 
-            if (settings?.baseUrl && settings?.appName) {
-                window.open(`${settings.baseUrl}/${settings.appName}/play.html?name=${result.data.streamId}`, '_blank')
+            if (amsServerUrl && amsAppName) {
+                window.open(`${amsServerUrl.replace(/\/$/, '')}/${amsAppName}/play.html?name=${data.streamId}`, '_blank')
             }
         }
     } catch (e: any) {
-        toast.error(`Streaming failed: ${e.response?.data?.error || e.message}`)
+        toast.error(`${t('projects.editor.publish.toasts.broadcastFailed')}: ${e.response?.data?.error || e.message}`)
         isStreaming.value = false
     }
 }
@@ -470,16 +481,24 @@ const stopPolling = () => {
     }
 }
 
-const startWebRTC = async () => {
-    await startStreaming()
-}
-
 const saveToVoD = async () => {
     isSavingVoD.value = true
     try {
-        const result = await projectStore.saveToVoD(props.project._id)
-        if (result.success) {
+        const antAccount = accounts.value.find((acc: any) => acc.platform === 'ant-media')
+        if (antAccount) {
+            const payload = {
+                projectId: props.project._id,
+                s3Key: props.project.publish?.s3Key,
+                platformAccountIds: [antAccount._id],
+                metadata: publishMetadata.value
+            }
+            await platformStore.publishSyndication(payload)
             toast.success(t('projects.editor.publish.toasts.vodSaved'))
+        } else {
+            const data = await projectStore.saveToVoD(props.project._id)
+            if (data) {
+                toast.success(t('projects.editor.publish.toasts.vodSaved'))
+            }
         }
     } catch (e: any) {
         toast.error(t('projects.editor.publish.toasts.vodFailed', { error: e.response?.data?.error || e.message }))
@@ -503,7 +522,7 @@ const formatSize = (bytes: number) => {
 }
 
 const openIntegrations = () => {
-    window.open('/admin/settings?tab=integrations', '_blank')
+    window.open('/platforms', '_blank');
 }
 
 onUnmounted(() => {

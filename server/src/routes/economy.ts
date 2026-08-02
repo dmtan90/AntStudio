@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { virtualEconomyService } from '../services/economy/VirtualEconomyService.js';
+import { virtualEconomyService } from '../services/streaming/VirtualEconomyService.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();

@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
 import { Logger } from '../../utils/Logger.js';
 import { PerformanceSnapshot } from './AIPerformanceService.js';
-import { socketServer } from '../SocketServer.js';
-import { highlightService } from '../HighlightService.js';
+import { socketServer } from '../streaming/SocketServer.js';
+import { highlightService } from '../streaming/HighlightService.js';
 import { StreamSessionModel } from '../../models/StreamSession.js';
 import { Project } from '../../models/Project.js';
-import { socialSyndicationService } from '../SocialSyndicationService.js';
+import { socialSyndicationService } from '../streaming/SocialSyndicationService.js';
 
 /**
  * Service to detect engagement peaks in real-time and trigger highlights.

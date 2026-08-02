@@ -1,195 +1,129 @@
-# AntStudio Development Guide
+# AntStudio - Developer Guide
 
-This guide is intended for developers who want to contribute to AntStudio or build upon it.
+This guide describes the architecture, codebase structure, development setup, and coding conventions for AntStudio developers and contributors.
+
+---
 
 ## 🏗️ Project Architecture
 
-AntStudio is a monorepo containing both the frontend client and backend server.
+AntStudio is structured as a TypeScript monorepo managed via `pnpm` workspaces:
 
 ```
 AntStudio/
-├── client/              # Frontend Application (Vue 3)
+├── client/              # Frontend Application (Vue 3 + Vite + TypeScript)
 │   ├── src/
-│   │   ├── components/  # Atomic UI Components
-│   │   ├── views/       # Page-level Views
-│   │   ├── stores/      # Pinia State Management
-│   │   ├── hooks/       # Composition API Hooks
-│   │   └── utils/       # Utility Functions
-├── server/              # Backend Application (Node.js/Express)
+│   │   ├── components/  # Reusable UI & Dialog Components (ProjectCreationDialog.vue, AppNavbar.vue)
+│   │   ├── views/       # Application Views (LandingPage.vue, SaleStudio.vue, LiveStudio.vue)
+│   │   ├── stores/      # Pinia Stores (studio.ts, user.ts, editor.ts)
+│   │   ├── utils/ai/    # AI Service Clients (ActionSyncService.ts, StudioDirector.ts)
+│   │   └── locales/     # 5-Locale Dictionaries (en.json, vi.json, es.json, ja.json, zh.json)
+├── server/              # Backend Server (Node.js + Express + Socket.IO + MongoDB)
 │   ├── src/
-│   │   ├── controllers/ # Request Handlers
-│   │   ├── models/      # Mongoose Schema Definitions
-│   │   ├── services/    # Business Logic Layer
-│   │   ├── routes/      # API Route Definitions
-│   │   └── utils/       # Shared Utilities
-└── docker-compose.yml   # Docker Orchestration
+│   │   ├── models/      # Mongoose Schemas (User.ts, Product.ts, StreamSession.ts)
+│   │   ├── routes/      # REST API Controllers (/api/auth, /api/projects, /api/health)
+│   │   ├── services/
+│   │   │   ├── ai/      # LiveSalesServiceV3.ts (FSM loop), AIServiceManager.ts
+│   │   │   └── streaming/ SocketServer.ts (WS manager), StreamingService.ts (FFmpeg relay)
+│   │   └── index.ts     # Express server entry point (supports /health & /api/health)
+├── electron/            # Electron Desktop Launcher
+│   ├── main.cjs         # Electron main process (supports dev URL & auto-hide menu bar)
+│   └── preload.cjs      # IPC bridge
+└── docs/                # Comprehensive platform documentation
 ```
 
-### ⚙️ Architectural Constraints
+---
 
-- **Client-Side Assembly**: All video rendering and assembly for project exports **MUST** happen on the client-side via `useVideoAssembler` and `videoAssembly.worker.ts`.
-- **Stateless Rendering**: The backend should not maintain a render queue or state for video assembly. It only accepts final `Blob` uploads via the `/upload-final-video` route.
-- **Main Thread Offloading**: Live Studio WebGL overlays run in a dedicated `RenderWorker`. Avoid running expensive shaders or filters on the main thread.
-- **PIXI GPU Optimization**: The `AidolVideoPlayer` runs PIXI rendering at a capped 15fps with a max resolution of 360x640 to prevent main thread CPU/GPU starvation.
-- **Resource Offloading**: This architecture is designed to scale horizontally without requiring massive GPU instances for the backend.
+## 📡 WebSocket & Autonomous FSM Architecture
 
-## 🛠️ Tech Stack
+### 1. FSM Loop (`LiveSalesServiceV3.ts`)
+- **Session FSM Engine**: Manages autonomous 24/7 sales streams.
+- **State Machine States**: `GREETING` -> `PITCHING` -> `Q_AND_A` -> `CLOSING`.
+- **WebSocket Broadcast**:
+  - Emits `studio:state_change` to room subscribers via `socketServer.emitToRoom(sessionId, 'studio:state_change', payload)` and to all clients via `socketServer.emitToAll('studio:state_change', payload)`.
+  - Room Connection Monitoring: Calls `await socketServer.getRoomSocketCount(sessionId)` to detect active WS clients.
 
-### Frontend
-- **Framework**: Vue 3 (Composition API)
-- **Language**: TypeScript
-- **Build Tool**: Vite
-- **State Management**: Pinia
-- **Styling**: TailwindCSS + Element Plus
-- **Graphics**: Fabric.js (Canvas), Three.js (3D), WebGL
-- **Video Processing**: FFmpeg.wasm + @webav/av-cliper (**Primary Assembly & Export Engine**)
+### 2. Client Receiver (`ActionSyncService.ts`)
+- Listens to `studio:state_change` socket events.
+- Normalizes script payloads and dispatches `window.dispatchEvent(new CustomEvent('showrunner:directive', { detail: normalizedStep }))`.
+- Handlers in `SaleStudio.vue`, `SyntheticGuestManager.ts`, and `NeuralAudioDirector.ts` intercept `showrunner:directive` to display speech text and trigger voice synthesis instantly.
 
-### Backend
-- **Runtime**: Node.js v18+
-- **Framework**: Express.js
-- **Database**: MongoDB v6.0+
-- **Video Processing**: FFmpeg (Used for streaming relay & thumbnailing **ONLY**)
-- **AI Integration**:
-  - Google Gemini (Text/Analysis)
-  - Google Veo (Video Generation)
-  - ElevenLabs (Voice Synthesis)
-  - Custom Tensor Models (local inference)
+---
 
-## 🚀 Local Development Setup
+## 🛠️ Environment & Setup
 
-### Prerequisites
-- Node.js >= 18.0.0
-- pnpm >= 8.0.0
-- MongoDB >= 6.0
-- FFmpeg (installed and added to system PATH)
+### Environment Configuration (`.env.example` Schema)
 
-### 1. Installation
+Copy `.env.example` to `.env` in the root workspace. All backend services parse environment keys directly from this schema:
 
-Clone the repository and install dependencies for the entire workspace:
-
-```bash
-git clone https://github.com/dmtan90/AntStudio.git
-cd AntStudio
-pnpm install
-```
-
-### 2. Environment Configuration
-
-#### Backend (.env)
-Copy `server/.env.example` to `server/.env` and configure your keys:
-
-```ini
-PORT=4000
+```env
+# MongoDB & JWT
 MONGODB_URI=mongodb://localhost:27017/antstudio
-JWT_SECRET=dev_secret_key_123
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
-# Cloud Services (Optional for local dev, required for full features)
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_S3_BUCKET=
+# Storage (S3 or B2)
+STORAGE_PROVIDER=b2
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_S3_BUCKET=your-s3-bucket
+AWS_S3_ENDPOINT=https://s3.amazonaws.com
+BLAZE_B2_APPLICATION_ID=your-b2-application-id
+BLAZE_B2_APPLICATION_KEY=your-b2-application-key
+BLAZE_B2_BUCKET_NAME=your-b2-bucket
 
-# AI Services
-GEMINI_API_KEY=
-ELEVENLABS_API_KEY=
+# Google Enterprise & Vertex AI Models
+GEMINI_MODEL_TEXT_ANALYSIS=gemini-3.1-flash-lite
+GEMINI_MODEL_IMAGE_GENERATION=gemini-3.1-flash-lite-image
+GEMINI_MODEL_VIDEO_GENERATION=veo-3.1-generate-001
+GEMINI_MODEL_TTS=gemini-3.1-flash-tts-preview
+GEMINI_MODEL_VOICE=gemini-live-2.5-flash-native-audio
+GEMINI_MODEL_MUSIC=lyria-3-clip-preview
+GEMINI_MODEL_AGENT=gemini-3.1-flash-lite
+GCP_PROJECT=your-gcp-project-id
+GCP_LOCATION=us-central1
+GOOGLE_GENAI_USE_VERTEXAI=1
+GOOGLE_APPLICATION_CREDENTIALS=path/to/your/google-vertexai-credential-service-account.json
 
-# Payment Gateways
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-PAYPAL_CLIENT_ID=
-PAYPAL_CLIENT_SECRET=
-PAYPAL_WEBHOOK_ID=
-
-# License Portal
-LICENSE_PORTAL_URL=https://antstudio.agrhub.com
-LICENSE_VERIFICATION_KEY=
+# Application & Streaming Server
+PORT=5000
+BASE_URL=http://localhost:5000
+NODE_ENV=production
+RTMP_PORT=1935
 ```
 
-#### Frontend (.env)
-Copy `client/.env.example` to `client/.env`:
+---
 
-```ini
-VITE_API_BASE_URL=http://localhost:4000/api
-```
+## 🚀 Development & Build Scripts
 
-### 3. Running the Application
+| Command | Action |
+|---|---|
+| `pnpm dev` | Runs Vite Client (`:3000`) and Express Server (`:4000`) concurrently |
+| `pnpm run dev:electron` | Starts dev server and launches Electron desktop window |
+| `pnpm run build:client` | Compiles Vue 3 frontend bundle (`client/dist`) |
+| `pnpm run build:electron` | Packages standard Electron desktop executable binaries |
+| `node electron/build.cjs --env=.env.electron` | Packages Electron desktop app with embedded encrypted `.env.enc` resource |
+| `pnpm run test` | Runs workspace unit and integration test suite |
 
-You can run client and server independently or together.
+---
 
-**Run All (Root):**
-```bash
-pnpm dev
-```
+## 🌍 i18n Localization Workflow
 
-**Run Server Only:**
-```bash
-cd server
-pnpm dev
-```
+Marketing and application strings are located under `client/src/locales/`:
+- `en.json` (English)
+- `vi.json` (Vietnamese)
+- `es.json` (Spanish)
+- `ja.json` (Japanese)
+- `zh.json` (Chinese)
 
-**Run Client Only:**
-```bash
-cd client
-pnpm dev
-```
+To add new localized strings:
+1. Add the key under `marketing.projects.new.options.*` or `saleStudio.*` in `en.json`.
+2. Replicate the key across `vi.json`, `es.json`, `ja.json`, and `zh.json`.
+3. Reference in Vue template: `{{ $t('key.name') }}` or `$t('key.name', { param: val })`.
 
-The application will be available at:
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:4000`
+---
 
-### 4. Webhook Configuration (Payments)
+## 🛡️ Coding Standards
 
-To test payments locally, you need to expose your local server or use provider CLIs.
-
-**Stripe:**
-```bash
-stripe listen --forward-to localhost:4000/api/webhooks/stripe
-```
-Copy the webhook secret (`whsec_...`) to your `.env` file.
-
-**PayPal:**
-1. Configure a webhook in the PayPal Developer Dashboard pointing to your ngrok URL (e.g., `https://your-ngrok.io/api/webhooks/paypal`).
-2. Event types required: `PAYMENT.SALE.COMPLETED`, `BILLING.SUBSCRIPTION.CREATED`, `BILLING.SUBSCRIPTION.CANCELLED`.
-
-## 🧪 Testing
-
-We use Vitest for both unit and integration testing.
-
-```bash
-# Run all tests
-pnpm test
-
-# Run specific suite
-pnpm test:unit
-pnpm test:e2e
-```
-
-## 📝 Code Standards
-
-- **Linting**: ESLint + Prettier are enforced via pre-commit hooks.
-- **Commits**: Follow Conventional Commits format (e.g., `feat: add new timeline track`, `fix: resolve playback sync`).
-- **Typing**: Strict TypeScript mode is enabled. Avoid `any` where possible.
-
-## 📦 Build for Production
-
-To build the production artifacts:
-
-```bash
-pnpm build
-```
-
-- Client artifacts will be in `client/dist`
-- Server artifacts will be in `server/dist`
-
-## 🤝 Contribution Workflow
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
-
-## 📚 Additional Resources
-
-- [User Manual](./USER_MANUAL.md)
-- [Deployment Guide](./DEPLOYMENT.md)
-- [API Documentation](./server/docs/API.md)
+- **Code Language**: All code, variables, function names, and comments **MUST** be written in English.
+- **Strict TypeScript**: Avoid `any` types where possible.
+- **Client-Side Rendering Principle**: Video assembly and final MP4 export are performed on the browser side via `@webav/av-cliper` and WebWorkers to offload backend CPU/GPU usage.

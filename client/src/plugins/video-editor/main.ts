@@ -22,15 +22,6 @@ app.use(pinia);
 app.use(VueQueryPlugin, { queryClient });
 app.use(ElementPlus);
 
-// import Draggable, { DraggablePlugin, DraggableDirective } from '@braks/revue-draggable';
-// // or
-// app.directive('draggable', DraggableDirective)
-// app.component('Draggable', Draggable);
-
-// import vdr from 'vue-draggable-resizable-gorkys-vue3';
-// import 'vue-draggable-resizable-gorkys-vue3/dist/VueDraggableResizable.css';
-// app.component('vdr', vdr);
-
 import { DraggablePlugin } from '@braks/revue-draggable';
 // Use as Plugin (registers directives and components)
 app.use(DraggablePlugin);

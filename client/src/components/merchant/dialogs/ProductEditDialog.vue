@@ -6,6 +6,7 @@
     class="product-edit-dialog glass-dark"
     :align-center="true"
     :append-to-body="true"
+    @close="onClose"
   >
     <div class="p-6 space-y-5">
       <div class="grid grid-cols-1 gap-4">
@@ -67,7 +68,7 @@
               :class="{ 'ring-2 ring-violet-500 ring-offset-1 ring-offset-black': idx === 0 }"
               @click="setPrimaryImage(idx)"
             >
-              <img :src="img" class="w-full h-full object-cover" @error="($event.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22/>'"/>
+              <img :src="getFileUrl(img)" class="w-full h-full object-cover" @error="($event.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22/>'"/>
               <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                 <button @click.stop="removeImage(idx)" class="p-1 rounded-full bg-red-500/80 hover:bg-red-500 transition-colors">
                   <close-one theme="outline" size="10" fill="white" />
@@ -341,7 +342,7 @@ const handleExtract = async () => {
       if (d.brand_slogan) form.value.brand_slogan = d.brand_slogan;
       if (d.primary_colors?.length) form.value.primary_colors = d.primary_colors;
       if (d.secondary_colors?.length) form.value.secondary_colors = d.secondary_colors;
-
+      if (d.video) form.value.video = d.video;
       toast.success(t('merchant.editDialog.extracted', { count: String(form.value.images?.length || 0) }));
     } else {
       toast.error(t('merchant.editDialog.extractError'));
@@ -372,6 +373,27 @@ const handleSave = async () => {
     loading.value = false;
   }
 };
+
+const onClose = () => {
+  form.value = {
+    name: '',
+    description: '',
+    price: 0,
+    currency: 'USD',
+    image: '',
+    images: [],
+    stock: 0,
+    inventoryUrl: '',
+    isActive: true,
+    features: [],
+    brand_name: '',
+    brand_logo: '',
+    brand_slogan: '',
+    primary_colors: [],
+    secondary_colors: [],
+    video: ''
+  };
+}
 </script>
 
 <style lang="scss">

@@ -103,6 +103,7 @@ export interface Product {
     _id: string;
     id: string;
     name: string;
+    brand_name?: string;
     description?: string;
     price: number;
     currency?: string;
@@ -176,6 +177,7 @@ export interface UserProgress {
 }
 
 export const DEFAULT_VISUAL_SETTINGS = {
+    language: 'en-US',
     streamQuality: 'high',
     performanceMode: false,
     aiEnabled: true,
@@ -257,7 +259,7 @@ export const DEFAULT_VISUAL_SETTINGS = {
         autonomousProduction: true,
         autoDirector: true
     },
-    atmosphereEffect: null as string | null // Phase 23
+    atmosphereEffect: null as string | null
 };
 
 export interface EconomyItem {
@@ -514,7 +516,7 @@ export const useStudioStore = defineStore('studio', () => {
     const showOnboarding = ref(false);
 
     // Scene Management
-    const activeScene = useLocalStorage<Scene>('antstudio_studio_active_scene', SCENE_PRESETS[0]);
+    const activeScene = ref<Scene>(SCENE_PRESETS[0]);
     const nextScene = ref<Scene | null>(null);
     const scenes = ref<Scene[]>([...SCENE_PRESETS]);
     const transitionType = ref<TransitionType>('fade');
@@ -592,7 +594,7 @@ export const useStudioStore = defineStore('studio', () => {
     // God Mode
     const aiEnabled = ref(true);
     const isInfiniteMode = ref(false);
-    const bRollLibrary = ref<any[]>([]); // Phase 17: Generated B-Roll assets
+    const bRollLibrary = ref<any[]>([]);
     const activeFilter = ref('none');
     const autoDirectorSettings = useLocalStorage<AutoDirectorConfig>('antstudio_studio_auto_director', {
         enabled: false,
@@ -626,10 +628,10 @@ export const useStudioStore = defineStore('studio', () => {
     const scriptIndex = ref(-1);
     const showProfiles = ref<any[]>([]);
     
-    // RPG Gamification (Phase 29)
+    // RPG Gamification
     const activeQuest = ref<Quest | null>(null);
 
-    // AI Singularity - Advanced Metrics & Facts (Phase 32)
+    // AI Singularity - Advanced Metrics & Facts
     const metricsHistory = ref<{ time: number, value: number }[]>([]);
     const verifiedFacts = ref<any[]>([]);
     const activeRecap = ref<any>(null);
@@ -643,7 +645,7 @@ export const useStudioStore = defineStore('studio', () => {
         achievements: []
     });
 
-    // Context-Specific Data (Phase 34.5)
+    // Context-Specific Data
     const contextData = reactive<Record<string, any>>({
         sport: { homeScore: 3, awayScore: 1, homeTeam: 'LIV', awayTeam: 'MNC', league: 'Premier League', time: '82:44', period: '2nd Half', possessionA: 54, xgA: 2.44, shotsOnTargetA: 8, shotsOnTargetB: 3 },
         news: { ticker: ['Breaking: AI Singularity achieved in AntStudio', 'Global markets react to new digital economy', 'Stock media APIs integrated'], breaking: 'Massive AI Leap', location: 'Tokyo, Japan' },
@@ -836,7 +838,7 @@ export const useStudioStore = defineStore('studio', () => {
         if (effect) effect.enabled = !effect.enabled;
     }
 
-    // // Phase 29: Audience Quest Actions
+    // // Audience Quest Actions
     // function triggerQuest(quest: Quest) {
     //     // Prevent concurrent quests
     //     if (activeQuest.value && !activeQuest.value.completed) return;
@@ -1238,7 +1240,7 @@ export const useStudioStore = defineStore('studio', () => {
                 }
             }));
 
-            // Phase 17: Real-time B-Roll Trigger
+            // Real-time B-Roll Trigger
             VisualConceptService.processDialogue(step.dialogue, studioVibe.value);
         }
 
@@ -1270,14 +1272,14 @@ export const useStudioStore = defineStore('studio', () => {
                     }
                     break;
                 case 'trigger_sponsorship':
-                    // Phase 65 overlay
+                    // overlay
                     activeGraphicContent.value = {
                         title: params.sponsorName || 'Sponsored',
                         subtitle: params.slogan || ''
                     };
                     break;
                 case 'trigger_data_overlay':
-                    // Phase 65 dynamic data overlay
+                    // dynamic data overlay
                     window.dispatchEvent(new CustomEvent('show:event', {
                         detail: { type: 'data_overlay', payload: params }
                     }));
@@ -1545,7 +1547,7 @@ export const useStudioStore = defineStore('studio', () => {
         Object.assign(autoDirectorSettings.value, settings);
     }
 
-    // Phase 29: Quest Actions
+    // Quest Actions
     function triggerQuest(quest: Quest) {
         // Prevent concurrent quests
         if (activeQuest.value && !activeQuest.value.completed) return;
@@ -1591,7 +1593,7 @@ export const useStudioStore = defineStore('studio', () => {
                 visualSettings.value.specialOverlays.showSponsorship = true;
                 visualSettings.value.atmosphereEffect = 'glitter';
                 
-                // Phase 34: Ensure default background is set for Sales
+                // Ensure default background is set for Sales
                 if (!visualSettings.value.background.assetUrl) {
                     visualSettings.value.background.mode = 'virtual';
                     visualSettings.value.background.assetUrl = '/bg/pro-studio.jpg';
@@ -1657,12 +1659,12 @@ export const useStudioStore = defineStore('studio', () => {
             case 'general':
             default:
                 updateStudioVibe('neutral');
-                visualSettings.value.atmosphereEffect = 'snow'; // Phase 23: Default subtle atmosphere
+                visualSettings.value.atmosphereEffect = 'snow';
                 switchScene('standard');
                 break;
         }
 
-        // Phase 23: Emit environmental shift for AI awareness
+        // Emit environmental shift for AI awareness
         window.dispatchEvent(new CustomEvent('environmental:shift', {
             detail: {
                 context,
@@ -2137,7 +2139,7 @@ export const useStudioStore = defineStore('studio', () => {
         },
 
         // ============================================
-        // Actions: AI Co-Host Layout Management (Phase 6)
+        // Actions: AI Co-Host Layout Management
         // ============================================
 
         /**

@@ -23,6 +23,16 @@ const buyNow = () => {
         window.open(activeProduct.value.link, '_blank');
     }
 };
+
+const qrCodeUrl = ref('');
+
+watch(landingPageUrl, async (newUrl) => {
+    if (newUrl) {
+        qrCodeUrl.value = await QRCodeGenerator.getProductQR(newUrl);
+    } else {
+        qrCodeUrl.value = '';
+    }
+}, { immediate: true });
 </script>
 
 <template>
@@ -65,7 +75,7 @@ const buyNow = () => {
 
                   <!-- QR Code Generator -->
                   <div class="w-16 h-16 bg-white p-1 rounded-xl shadow-lg transform rotate-3 hover:rotate-0 transition-transform flex-shrink-0 ml-2 cursor-pointer" @click="buyNow">
-                     <img :src="QRCodeGenerator.getProductQR(landingPageUrl)" class="w-full h-full" />
+                     <img :src="qrCodeUrl" class="w-full h-full" />
                   </div>
 
                  <!-- Close Tag -->

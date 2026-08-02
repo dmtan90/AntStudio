@@ -3,7 +3,7 @@
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-16 relative z-10">
             <div>
-                <h1 class="text-5xl font-black tracking-tighter text-white mb-2 relative inline-block">
+                <h1 class="text-4xl font-black tracking-tighter text-white mb-2 relative inline-block">
                     {{ t('licensePortal.header.title') }}
                     <div class="absolute -bottom-2 left-0 w-1/3 h-1.5 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
                 </h1>

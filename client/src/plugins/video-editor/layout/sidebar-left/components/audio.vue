@@ -45,9 +45,26 @@ const handleUpload = (options: any) => {
   return promise;
 };
 
+const getAudioSource = (audio) => {
+  let src = null;
+  if (audio?.source) {
+    src = getFileUrl(audio.source);
+  } else if (audio?.preview_url) {
+    src = getFileUrl(audio.preview_url);
+  } else if (audio?.url) {
+    src = audio.url;
+  }
+  return src;
+}
+
 const onAddAudio = async (audio: any) => {
   try {
-    const resolvedSource = await getFileUrl(audio.source, { cached: true });
+    const source = getAudioSource(audio);
+    if (!source) {
+      toast.error(t('videoEditor.audio.addError'));
+      return;
+    }
+    const resolvedSource = await getFileUrl(source, { cached: true });
     const promise = (editor.canvas as any).audio.add(resolvedSource, audio.name, false);
     toast.promise(promise, { loading: t('videoEditor.audio.addLoading'), success: t('videoEditor.audio.addSuccess'), error: t('videoEditor.audio.addError') });
   } catch (error) {

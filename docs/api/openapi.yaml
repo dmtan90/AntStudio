@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: AntFlow API
-  description: API documentation for the AntFlow platform, powering video editing, streaming, and AI features.
+  title: AntStudio API
+  description: API documentation for the AntStudio platform, powering video editing, streaming, and AI features.
   version: 1.0.0
 servers:
   - url: /api

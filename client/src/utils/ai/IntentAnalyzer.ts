@@ -10,7 +10,7 @@ export class IntentAnalyzer {
         'checkout', 'shop', 'order', 'limited', 'stock', 'hết hàng', 'còn hàng'
     ];
 
-    // Phase 25: Context-specific intent signal maps
+    // Context-specific intent signal maps
     private readonly CONTEXT_KEYWORDS: Record<string, string[]> = {
         sales: ['buy', 'price', 'deal', 'discount', 'voucher', 'checkout', 'order', 'shop', 'mua', 'giá', 'flash sale'],
         game_streaming: ['gg', 'clutch', 'rekt', 'carrying', 'ez', 'noob', 'carry', 'hype', 'poggers', 'lets go', 'insane'],
@@ -60,7 +60,7 @@ export class IntentAnalyzer {
     }
 
     /**
-     * Phase 25: Analyze text for context-specific audience signals.
+     * Analyze text for context-specific audience signals.
      * Returns a score from 0 to 1 based on the current streaming context.
      */
     public analyzeContextSignal(text: string, context: string): number {
@@ -72,7 +72,7 @@ export class IntentAnalyzer {
     }
 
     /**
-     * Phase 25: Returns sensitivity config for a given context.
+     * Returns sensitivity config for a given context.
      */
     public getContextSensitivity(context: string): { threshold: number, pivotReason: string } {
         switch (context) {

@@ -1,10 +1,23 @@
 import mongoose from 'mongoose';
-import { User } from '../models/User.js';
-import { Tenant } from '../models/Tenant.js';
+import { CreditTransactionType, CreditType, User } from '../models/User.js';
+import { Tenant, TenantType } from '../models/Tenant.js';
 import { CreditUsage } from '../models/CreditUsage.js';
 import { Logger } from './Logger.js';
+import { configService } from './ConfigService.js';
 
-export type ServiceType = 'streaming' | 'ai_translation' | 'face_swap' | 'storage' | 'image' | 'audio' | 'video' | 'text' | 'marketplace' | 'custom';
+export enum ServiceType {
+    STREAMING = 'streaming',
+    AI_TRANSLATION = 'ai_translation',
+    FACE_SWAP = 'face_swap',
+    STORAGE = 'storage',
+    IMAGE = 'image',
+    AUDIO = 'audio',
+    VIDEO = 'video',
+    TEXT = 'text',
+    MARKETPLACE = 'marketplace',
+    CUSTOM = 'custom',
+    MUSIC = 'music'
+}
 
 /**
  * Utility to handle credit deductions and usage auditing.
@@ -22,6 +35,10 @@ export const creditManager = {
         description: string,
         metadata: any = {}
     ): Promise<boolean> {
+        if(!configService.creditModeEnabled){
+            return true;
+        }
+
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -43,7 +60,7 @@ export const creditManager = {
             }
 
             // 2. Hierarchical Deduction (Sub-Enterprise Logic)
-            if (tenant.tenantType === 'sub' && tenant.organizationPool) {
+            if (tenant.tenantType === TenantType.SUB && tenant.organizationPool) {
                 const available = tenant.organizationPool.total - tenant.organizationPool.used;
                 const canSpend = available + tenant.organizationPool.negativeLimit;
 
@@ -68,7 +85,7 @@ export const creditManager = {
                     return true;
                 }
                 // If org pool empty, waterfall to individual user credits? 
-                // As per requirement: "credit này sẽ bị trừ dần khi các tài khoản trong nội bộ sử dụng"
+                // As per requirement: "this credit will be gradually deducted when internal accounts use it"
                 // This implies it stops if pool is empty unless master allows individual top-ups.
                 // For now, let's strictly enforce the Org Pool if it's a Sub-Enterprise.
                 Logger.warn(`[CreditManager] ORG POOL exhausted for ${tenant.name}`, 'CreditManager');
@@ -86,7 +103,7 @@ export const creditManager = {
             // Update User Balance
             user.credits.balance -= amount;
             user.creditLogs.push({
-                type: 'consumed',
+                type: CreditTransactionType.CONSUMED,
                 amount: amount,
                 description: `${description} (${serviceType})`,
                 timestamp: new Date()
@@ -135,7 +152,7 @@ export const creditManager = {
 
             user.credits.balance -= amount;
             user.creditLogs.push({
-                type: 'consumed',
+                type: CreditTransactionType.CONSUMED,
                 amount: amount,
                 description: `${description} (${serviceType})`,
                 timestamp: new Date()
@@ -160,7 +177,7 @@ export const creditManager = {
 
             user.credits.balance += amount;
             user.creditLogs.push({
-                type: 'obtained',
+                type: CreditTransactionType.OBTAINED,
                 amount: amount,
                 description: `REFUND: ${description}`,
                 timestamp: new Date()

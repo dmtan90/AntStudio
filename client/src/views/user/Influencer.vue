@@ -1,7 +1,7 @@
 <template>
     <div class="influencer-library min-h-screen bg-[#0a0a0c] text-white">
         <!-- Header Section -->
-        <header class="relative py-20 px-8 overflow-hidden border-b border-white/5">
+        <header class="relative py-8 px-8 overflow-hidden border-b border-white/5">
             <div class="absolute inset-0 bg-gradient-to-br from-purple-600/15 via-blue-600/5 to-transparent pointer-events-none"></div>
             <!-- Optimized background glows (Removed expensive animate-pulse and reduced blur) -->
             <div class="absolute -top-24 -left-24 w-96 h-96 bg-purple-500/5 rounded-full blur-[80px]"></div>
@@ -12,7 +12,7 @@
                     <div class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></div>
                     <span class="text-[10px] font-black uppercase tracking-widest text-purple-400">{{ t('influencers.badge') }}</span>
                 </div>
-                <h1 class="text-6xl font-black mb-6 tracking-tighter leading-[0.9]">
+                <h1 class="text-4xl font-black mb-6 tracking-tighter leading-[0.9]">
                     Influencer <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-blue-500 to-cyan-500">{{ t('influencers.avatars') }}</span><br />
                     {{ t('influencers.collection') }}
                 </h1>
@@ -44,10 +44,14 @@
                 <el-segmented v-model="activeTab" :options="tabs" class="premium-segmented h-14 rounded-2xl bg-white/5 p-1.5 border border-white/5">
                     <template #default="scope">
                         <div class="flex items-center gap-2.5 px-5 h-full transition-all">
-                            <User v-if="scope.item.value === 'my-influencers'" class="text-purple-400" />
-                            <VideoOne v-if="scope.item.value === 'live2d-presets'" class="text-pink-400" />
-                            <Avatar v-if="scope.item.value === 'static-presets'" class="text-blue-400" />
-                            <span class="font-black text-sm tracking-tight">{{ t('influencers.tabs.' + (scope.item.value === 'my-influencers' ? 'myInfluencers' : (scope.item.value === 'live2d-presets' ? 'live2d' : 'static'))) }}</span>
+                            <template v-if="scope.item.value === 'my-influencers'">
+                                <User class="text-purple-400" />
+                                <span class="font-black text-sm tracking-tight">{{ t('influencers.tabs.myInfluencers') }}</span>
+                            </template>
+                            <template v-if="scope.item.value === 'public'">
+                                <Avatar class="text-blue-400" />
+                                <span class="font-black text-sm tracking-tight">{{ t('influencers.tabs.public') }}</span>
+                            </template>
                         </div>
                     </template>
                 </el-segmented>
@@ -81,14 +85,14 @@
             </div>
 
             <!-- Live2D Presets Grid -->
-            <div v-else-if="activeTab === 'live2d-presets' && filteredLive2DPresets.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- <div v-else-if="activeTab === 'live2d-presets' && filteredLive2DPresets.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 <PresetCard v-for="preset in filteredLive2DPresets" :key="preset.id" :preset="preset" @use="usePreset" @preview="previewPreset" />
-            </div>
+            </div> -->
 
             <!-- Static Presets Grid -->
-            <div v-else-if="activeTab === 'static-presets' && filteredStaticPresets.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- <div v-else-if="activeTab === 'static-presets' && filteredStaticPresets.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 <PresetCard v-for="preset in filteredStaticPresets" :key="preset.id" :preset="preset" @use="usePreset" @preview="previewPreset" />
-            </div>
+            </div> -->
 
             <!-- Empty State -->
             <div v-else class="text-center py-32 border border-dashed border-white/10 rounded-3xl text-center">
@@ -157,9 +161,9 @@ const showDashboard = ref(false);
 
 const activeTab = ref('my-influencers');
 const tabs = [
-    { value: 'my-influencers', name: 'My Influencers' },
-    { value: 'live2d-presets', name: 'Live2D Presets' },
-    { value: 'static-presets', name: 'Static Presets' },
+    { value: 'my-influencers', name: 'My Influencers', disabled: false },
+    { value: 'public', name: 'Public Influencers', disabled: true },
+    // { value: 'static-presets', name: 'Static Presets', disabled: true },
 ];
 
 const filters = ref({

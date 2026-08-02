@@ -1,548 +1,160 @@
-# AntStudio Wiki
+# AntStudio Technical Wiki
 
-Welcome to the AntStudio documentation wiki. This guide covers all aspects of the platform.
+Welcome to the **AntStudio Knowledge Base & Technical Wiki**. This document provides in-depth technical documentation covering system architecture, autonomous FSM loops, real-time streaming protocols, AI service managers, and desktop packaging.
+
+---
 
 ## 📚 Table of Contents
 
-1. [Getting Started](#getting-started)
-2. [User Guide](#user-guide)
-3. [Admin Guide](#admin-guide)
-4. [Developer Guide](#developer-guide)
-5. [API Reference](#api-reference)
-6. [Troubleshooting](#troubleshooting)
+1. [System Architecture Overview](#system-architecture-overview)
+2. [Specialized AI Workflows](#specialized-ai-workflows)
+3. [24/7 Autonomous FSM Engine (`LiveSalesServiceV3`)](#247-autonomous-fsm-engine-livesalesservicev3)
+4. [Real-time Communication & Socket Protocols](#real-time-communication--socket-protocols)
+5. [Client-Side Decentralized Rendering Engine](#client-side-decentralized-rendering-engine)
+6. [Desktop Application Engine (Electron)](#desktop-application-engine-electron)
+7. [Internationalization & 5-Locale System](#internationalization--5-locale-system)
+8. [API & Health Check Reference](#api--health-check-reference)
 
 ---
 
-## Getting Started
+## 1. System Architecture Overview
 
-### What is AntStudio?
-
-AntStudio is an AI-powered video production platform that transforms scripts and ideas into professional cinematic videos. The platform automates the entire video production workflow from script analysis to final video assembly.
-
-### Key Concepts
-
-**Credits System:**
-- Credits are consumed for AI operations (text, image, video generation)
-- Balance = Membership Credits + Bonus Credits + Weekly Credits
-- Membership credits from subscription plans
-- Bonus credits from promotions
-- Weekly credits refresh every week
-
-**Project Workflow:**
-1. Create project (from topic or script upload)
-2. AI analyzes and generates creative brief
-3. Review storyboard with character and scene designs
-4. Generate visual assets (images/videos)
-5. Edit timeline with advanced editor
-6. Export final video
-
-**User Roles:**
-- **User**: Standard account with project creation and editing
-- **Admin**: Full system access including settings and user management
+AntStudio is built on a **Decentralized AI Rendering & Orchestration Architecture**:
+- **Backend (Node.js/Express/MongoDB/Socket.IO)**: Serves as a data repository, RAG vector lookup engine, streaming relay bridge (FFmpeg/NMS), and autonomous sales FSM state coordinator.
+- **Frontend (Vue 3/Vite/TypeScript)**: Handles UI interactions, WebGL virtual stages, real-time WebSockets, and client-side video composition using `@webav/av-cliper` & WebWorkers.
+- **Desktop Launcher (Electron)**: Wraps the web application into native binaries for Windows, macOS, and Linux with auto-hiding menu bars and dev server URL fallback logic.
 
 ---
 
-## User Guide
+## 2. Specialized AI Workflows
 
-### Creating Your First Project
+AntStudio exposes 6 distinct video production modes via `ProjectCreationDialog.vue`:
 
-1. **Navigate to Dashboard**
-   - Click "Start New Project" button
-
-2. **Choose Input Method**
-   - **Topic Mode**: Describe your video idea
-   - **Upload Mode**: Upload script file (txt, pdf, docx, pptx)
-
-3. **Enter Project Details**
-   - Project title
-   - Description (optional)
-   - Topic/idea or upload file
-
-4. **AI Analysis**
-   - Wait for AI to analyze content
-   - Review script analysis, creative brief, and storyboard
-   - Click "Re-Generate" if needed
-
-5. **Generate Visual Assets**
-   - Review character designs
-   - Customize characters if needed
-   - Generate scene images/videos
-   - Add voiceover and music
-
-6. **Edit Timeline**
-   - Arrange clips on timeline
-   - Adjust timing and transitions
-   - Add effects and filters
-   - Preview final video
-
-7. **Export**
-   - Click "Export" → "Full Video (.mp4)"
-   - Wait for processing
-   - Download or publish to YouTube/Facebook
-
-### Managing Credits
-
-**View Balance:**
-- Dashboard shows current credit balance
-- Click on balance to see breakdown
-
-**Purchase Credits:**
-- Navigate to Subscription page
-- Choose credit package
-- Complete Stripe checkout
-
-**Subscription Plans:**
-- **Free**: 500 credits/month
-- **Pro**: 2000 credits/month + priority support
-- **Enterprise**: 6000 credits/month + priority support
-
-**Credit Costs:**
-- Text generation: 1 credit
-- Image generation: 4 credits
-- Video generation: 10 credits
-- Audio/TTS: 1 credit
-- Music generation: 5 credits
-
-### Social Account Integration
-
-**Connect YouTube:**
-1. Open Account Dialog (click avatar)
-2. Go to "Integrations" tab
-3. Click "Connect YouTube"
-4. Authorize access
-5. Select channel
-
-**Connect Facebook:**
-1. Open Account Dialog
-2. Go to "Integrations" tab
-3. Click "Connect Facebook"
-4. Authorize access
-5. Select page
-
-**Publishing Videos:**
-- After exporting video
-- Click "Share" → "YouTube" or "Facebook"
-- Add title, description, tags
-- Publish
-
-### Live Studio & Commerce
-
-**Smart Showrunner & Aidol Clips:**
-- Live Studio uses an AI Director (Showrunner) to orchestrate scenes and dialogues.
-- For `Aidol` (Video-based) characters, you can map specific video clips to script gestures or product IDs. 
-- When the script mentions a product or a custom gesture, the AI automatically triggers the corresponding `aidolClip` for a seamless video transition.
-
-**Live Commerce Overlays:**
-- Products highlighted during the broadcast will automatically display a **Product Spotlight** card.
-- A dynamic, scannable **QR Code** is generated in <500ms and displayed alongside the product.
-- **Flash Sales**: If a flash sale is active, a real-time countdown timer overlay will appear to drive urgency.
-
-### Profile Settings
-
-**Update Profile:**
-- Name, avatar, language
-- Change password
-- View credit history
-
-**Notification Preferences:**
-- Email notifications
-- Project updates
-- Credit alerts
+| Workflow ID | Name | Route Target | Key Features |
+|---|---|---|---|
+| `ai-video` | Script-to-Video AI Engine | `/projects/new` | Storyboard generation, AI voiceover, BGM, animated captions |
+| `avatar` | AI Digital Avatars & Personas | `/influencer` | 2D Photo avatars, 3D VRM models, Gemini TTS & lip-sync |
+| `product-ads` | E-Commerce Product Ads Wizard | `/merchants` | URL scraper, product spec extraction, video ad generator |
+| `sales-studio` | 24/7 Autonomous Sale Studio | `/live/sales` | FSM sales loop, AI host, dynamic QR, Flash Sale banner |
+| `record` | Screen & Camera Recorder Studio | `/recorder` | Multi-track webcam, desktop screen & audio capture |
+| `blank` | Multi-Track Canvas & Timeline Studio | `/projects/new` | Non-linear canvas editor, multi-track timelines |
 
 ---
 
-## Admin Guide
+## 3. 24/7 Autonomous FSM Engine (`LiveSalesServiceV3`)
 
-### Accessing Admin Panel
+The autonomous selling loop runs 24/7 via `LiveSalesServiceV3.ts`:
 
-Navigate to `/admin` (visible only to admin users)
-
-### System Settings
-
-**General Tab:**
-
-1. **SMTP Configuration**
-   - Host, port, credentials
-   - From email and name
-   - Test email sending
-
-2. **AWS S3 Storage**
-   - Access key and secret
-   - Bucket name and region
-   - Endpoint (optional)
-
-3. **Stripe Payments**
-   - Public and secret keys
-   - Webhook secret
-   - Test mode toggle
-
-4. **Social Login (OAuth)**
-   - **Google OAuth**:
-     - Enable/disable toggle
-     - Client ID and secret
-   - **Facebook OAuth**:
-     - Enable/disable toggle
-     - App ID and secret
-
-**AI Models Tab:**
-
-1. **AI Providers**
-   - Add/edit/delete providers
-   - Configure API keys
-   - Set supported types
-   - Enable/disable providers
-
-2. **Task Defaults**
-   - Select default provider and model for:
-     - Text generation
-     - Image generation
-     - Video generation
-     - Audio/TTS
-     - Music generation
-   - Set credit costs per task
-
-3. **AI Models**
-   - Add custom models
-   - Configure credit costs
-   - Enable/disable models
-
-**Subscription Plans Tab:**
-
-1. **Membership Plans**
-   - Define tiers (Free, Pro, Enterprise)
-   - Set monthly/yearly pricing
-   - Configure monthly credits
-   - Enable priority support
-
-2. **Credit Packages**
-   - Create one-time credit packages
-   - Set credits and pricing
-   - Enable/disable packages
-
-### User Management
-
-**View Users:**
-- List all registered users
-- Search and filter
-- View user details
-
-**Manage Users:**
-- Change user role (user/admin)
-- Activate/deactivate accounts
-- View credit history
-- Reset passwords
-
-### OAuth Setup Guide
-
-**Google OAuth:**
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create new project or select existing
-3. Enable Google+ API
-4. Create OAuth 2.0 credentials
-5. Add authorized redirect URI:
-   ```
-   https://yourdomain.com/api/auth/google/callback
-   ```
-6. Copy Client ID and Client Secret
-7. Paste in Admin Settings → General → Social Login
-8. Enable Google OAuth toggle
-9. Save settings
-
-**Facebook OAuth:**
-
-1. Go to [Facebook Developers](https://developers.facebook.com)
-2. Create new app
-3. Add "Facebook Login" product
-4. Configure OAuth redirect URIs:
-   ```
-   https://yourdomain.com/api/auth/facebook/callback
-   ```
-5. Copy App ID and App Secret
-6. Paste in Admin Settings → General → Social Login
-7. Enable Facebook OAuth toggle
-8. Save settings
-
----
-
-## Developer Guide
-
-### Architecture Overview
-
-**Frontend (Client):**
-- Vue 3 + TypeScript
-- Vite build tool
-- Pinia state management
-- Vue Router for navigation
-- Element Plus UI components
-
-**Backend (Server):**
-- Express.js REST API
-- MongoDB with Mongoose
-- JWT authentication
-- AWS S3 file storage
-- Stripe payment processing
-
-### Project Structure
+### FSM State Transitions
 
 ```
-AntStudio/
-├── client/
-│   ├── src/
-│   │   ├── components/       # Reusable UI components
-│   │   │   ├── ui/           # Base components (GButton, GInput, etc.)
-│   │   │   ├── projects/     # Project-specific components
-│   │   │   └── layout/       # Layout components
-│   │   ├── views/            # Page components
-│   │   │   ├── auth/         # Login, Register, Reset Password
-│   │   │   ├── user/         # Dashboard, Projects, Gallery, Resources
-│   │   │   ├── project/      # Project Editor
-│   │   │   ├── admin/        # Admin Settings
-│   │   │   └── video-editor/ # Advanced video editor
-│   │   ├── stores/           # Pinia stores
-│   │   │   ├── user.ts       # User state and auth
-│   │   │   ├── project.ts    # Project state
-│   │   │   ├── media.ts      # Media management
-│   │   │   ├── admin.ts      # Admin settings
-│   │   │   └── ui.ts         # UI state
-│   │   ├── utils/            # Helper functions
-│   │   │   ├── api.ts        # Axios instance
-│   │   │   └── vidmateAdapter.ts # Video editor adapter
-│   │   ├── locales/          # i18n translations
-│   │   │   ├── en.json
-│   │   │   ├── vi.json
-│   │   │   └── ...
-│   │   └── composables/      # Vue composables
-│   └── package.json
-├── server/
-│   ├── src/
-│   │   ├── models/           # MongoDB schemas
-│   │   │   ├── User.ts
-│   │   │   ├── Project.ts
-│   │   │   ├── Media.ts
-│   │   │   ├── Payment.ts
-│   │   │   └── AdminSettings.ts
-│   │   ├── routes/           # API endpoints
-│   │   │   ├── auth.ts       # Authentication
-│   │   │   ├── projects.ts   # Project CRUD
-│   │   │   ├── media.ts      # Media upload/management
-│   │   │   ├── payment.ts    # Stripe integration
-│   │   │   ├── social.ts     # Social integrations
-│   │   │   ├── admin.ts      # Admin operations
-│   │   │   └── aiConfig.ts   # AI configuration
-│   │   ├── services/         # Business logic
-│   │   │   ├── email.ts
-│   │   │   ├── scriptAnalyzer.ts
-│   │   │   └── storyboardGenerator.ts
-│   │   ├── utils/            # Helper utilities
-│   │   │   ├── config.ts
-│   │   │   ├── db.ts
-│   │   │   ├── jwt.ts
-│   │   │   ├── s3.ts
-│   │   │   ├── gemini.ts
-│   │   │   ├── googleAuth.ts
-│   │   │   ├── facebookAuth.ts
-│   │   │   └── credits.ts
-│   │   ├── middleware/       # Express middleware
-│   │   │   └── auth.ts
-│   │   └── index.ts          # Server entry point
-│   └── package.json
-└── pnpm-workspace.yaml
+[GREETING] ──> [PITCHING] ──> [Q_AND_A (if chat detected)] ──> [CLOSING] ──> Rotate Next Product
 ```
 
-### Database Schema
+1. **State `GREETING`**: AI Host welcomes new viewers and introduces the live session atmosphere.
+2. **State `PITCHING`**:
+   - Queries MongoDB product documents or RAG vector spec indexes.
+   - Cleans product IDs into human-readable titles (e.g. *"Wyze Cam Floodlight v2"*).
+   - Generates script steps containing text, gestures (`wave`, `excited`, `happy`), and speaker metadata.
+3. **State `Q_AND_A`**:
+   - Intercepts viewer chat messages stored in `unhandledChats`.
+   - Generates a reactive Q&A response using Gemini text models.
+4. **State `CLOSING`**:
+   - Triggers urgency banners, flash-sale discount countdowns, and checkout QR code overlays.
 
-**User Collection:**
+### WS Directive Emission Code Pattern
 ```typescript
-{
-  email: string
-  passwordHash: string
-  name: string
-  avatar?: string
-  role: 'user' | 'admin'
-  subscription: {
-    plan: 'free' | 'pro' | 'enterprise'
-    status: 'active' | 'cancelled' | 'expired'
-    stripeCustomerId?: string
-    stripeSubscriptionId?: string
-  }
-  credits: {
-    balance: number
-    membership: number
-    bonus: number
-    weekly: number
-  }
-  creditLogs: [{
-    type: 'consumed' | 'obtained'
-    amount: number
-    description: string
-    timestamp: Date
-  }]
-  oauthProviders?: {
-    google?: { id: string, email: string }
-    facebook?: { id: string, email: string }
-  }
-  socialAccounts: {
-    youtube?: { accessToken, refreshToken, channelId }
-    facebook?: { accessToken, pageId }
-  }
-}
-```
+const stepPayload = {
+    sessionId,
+    state: step.state,
+    text: step.text,
+    type: step.type,
+    gesture: step.gesture,
+    speaker: step.speaker,
+    productId: step.productId || ctx.highlightedProductId,
+    title: step.title,
+    scriptText: step.text,
+    highlightProductId: step.productId || ctx.highlightedProductId,
+    triggerDiscount: step.state === 'CLOSING'
+};
 
-**Project Collection:**
-```typescript
-{
-  userId: ObjectId
-  title: string
-  description?: string
-  status: 'draft' | 'analyzing' | 'storyboard' | 'generating' | 'completed'
-  inputType: 'topic' | 'upload'
-  inputData: { topic?: string, fileUrl?: string }
-  analysis: { /* AI analysis results */ }
-  storyboard: { /* Generated storyboard */ }
-  advancedEditorState?: { /* Video editor state */ }
-  exportedVideoUrl?: string
-}
-```
-
-### API Endpoints
-
-**Authentication:**
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login with email/password
-- `GET /api/auth/google` - Initiate Google OAuth
-- `GET /api/auth/google/callback` - Google OAuth callback
-- `GET /api/auth/facebook` - Initiate Facebook OAuth
-- `GET /api/auth/facebook/callback` - Facebook OAuth callback
-- `GET /api/auth/oauth-config` - Get enabled OAuth providers
-- `GET /api/auth/me` - Get current user
-- `POST /api/auth/logout` - Logout
-- `POST /api/auth/forgot-password` - Request password reset
-- `POST /api/auth/reset-password` - Reset password
-- `POST /api/auth/change-password` - Change password
-
-**Projects:**
-- `GET /api/projects` - List user projects
-- `POST /api/projects` - Create new project
-- `GET /api/projects/:id` - Get project details
-- `PUT /api/projects/:id` - Update project
-- `DELETE /api/projects/:id` - Delete project
-- `POST /api/projects/:id/analyze` - Analyze script
-- `POST /api/projects/:id/generate-storyboard` - Generate storyboard
-- `POST /api/projects/:id/export` - Export video
-
-**Media:**
-- `GET /api/media` - List user media
-- `POST /api/media/upload` - Upload file
-- `DELETE /api/media/:id` - Delete media
-
-**Payments:**
-- `GET /api/payment/history` - Get payment history
-- `POST /api/payment/create-checkout` - Create Stripe checkout
-- `POST /api/payment/webhook` - Stripe webhook handler
-
-**Admin:**
-- `GET /api/admin/settings` - Get admin settings
-- `PUT /api/admin/settings` - Update admin settings
-- `GET /api/admin/users` - List all users
-- `PUT /api/admin/users/:id` - Update user
-
-### Adding New Features
-
-**1. Add New AI Provider:**
-
-```typescript
-// server/src/utils/newProvider.ts
-export const generateWithNewProvider = async (prompt: string) => {
-  // Implementation
-}
-
-// Add to Admin Settings UI
-// Configure in AI Providers section
-```
-
-**2. Add New Payment Plan:**
-
-```typescript
-// Update in Admin Settings → Subscription Plans
-{
-  name: 'Premium',
-  price: 49,
-  yearlyPrice: 490,
-  currency: 'usd',
-  features: {
-    monthlyCredits: 4000,
-    prioritySupport: true
-  }
-}
-```
-
-**3. Add New Language:**
-
-```typescript
-// client/src/locales/de.json
-{
-  "nav": {
-    "home": "Startseite",
-    // ... translations
-  }
-}
-
-// client/src/composables/useTranslations.ts
-export type Locale = 'en' | 'vi' | 'zh' | 'ja' | 'es' | 'de'
+socketServer.emitToRoom(sessionId, 'studio:state_change', stepPayload);
+socketServer.emitToAll('studio:state_change', stepPayload);
 ```
 
 ---
 
-## API Reference
+## 4. Real-time Communication & Socket Protocols
 
-See [API.md](./API.md) for detailed API documentation.
+All real-time collaboration and showrunner directives flow through Socket.IO (`path: '/socket.io'`):
 
----
+### Primary Socket Events
 
-## Troubleshooting
+- `studio:state_change`: Emitted by `LiveSalesServiceV3` when an FSM step or Q&A response is ready.
+  - **Client Listener**: `ActionSyncService.ts` receives `studio:state_change` and dispatches `showrunner:directive` window event.
+- `stream:relay`: Emitted by client WebRTC/Canvas encoder to stream raw video/audio chunks to backend FFmpeg NMS relay process.
+- `comment:new` / `comment:add`: Real-time chat message broadcast.
+- `users:update`: Active participant list and viewer count sync.
 
-### Common Issues
-
-**Issue: Login fails with "Invalid credentials"**
-- Verify email and password are correct
-- Check MongoDB connection
-- Ensure user exists in database
-
-**Issue: OAuth login redirects to error page**
-- Check OAuth credentials in Admin Settings
-- Verify redirect URIs match exactly
-- Ensure OAuth provider is enabled
-
-**Issue: Video upload fails**
-- Check S3 credentials and bucket permissions
-- Verify file size is within limits
-- Check network connectivity
-
-**Issue: Credits not deducted after AI operation**
-- Check credit logs in user profile
-- Verify AI provider is configured
-- Review server logs for errors
-
-**Issue: Stripe webhook not working**
-- Verify webhook secret matches Stripe dashboard
-- Check webhook endpoint is accessible
-- Review Stripe webhook logs
-
-### Getting Help
-
-- **Documentation**: Read this wiki thoroughly
-- **GitHub Issues**: Report bugs and feature requests
-- **Email Support**: dmtan90@gmail.com
-- **Discord Community**: Join for real-time help
+### Room Socket Management
+- `socketServer.emitToRoom(roomId, event, data)`: Delivers messages directly to clients connected in a specific session room.
+- `socketServer.getRoomSocketCount(roomId)`: Queries active WebSocket connections in a room to implement grace periods (60s empty room auto-stop).
 
 ---
 
-## Contributing
+## 5. Client-Side Decentralized Rendering Engine
 
-We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+To ensure infinite scalability without server-side GPU bottlenecks:
+- **Assembly Worker**: `client/src/views/video-editor/workers/videoAssembly.worker.ts` executes multi-track layer blending, audio mixing, and WebM/MP4 encoding entirely in the user's browser.
+- **Canvas Rendering**: Uses Fabric.js and WebGL shaders for real-time preview and export.
+- **Export Upload**: Upon completion, the client uploads the finished video binary to `/upload-final-video` or S3 bucket.
 
 ---
 
-**Last Updated**: January 2026
-**Version**: 2.0.0
+## 6. Desktop Application Engine (Electron)
+
+The desktop application (`electron/main.cjs`):
+- Detects development environment:
+  ```javascript
+  if (process.env.NODE_ENV === "development") {
+      mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL || serverUrl);
+      mainWindow.webContents.openDevTools();
+  } else {
+      mainWindow.loadURL(serverUrl);
+      mainWindow.setAutoHideMenuBar(true);
+  }
+  ```
+- Exposes IPC preload bridge (`electron/preload.cjs`) for native file system access and screen capture source enumeration.
+
+---
+
+## 7. Internationalization & 5-Locale System
+
+AntStudio supports 5 locales configured under `client/src/locales/`:
+- `en.json`: English (Default)
+- `vi.json`: Tiếng Việt
+- `es.json`: Español
+- `ja.json`: 日本語
+- `zh.json`: 中文
+
+Key translation structures:
+- `marketing.projects.new.options.*`: Card titles, descriptions, and CTA button labels on the marketing landing page.
+- `saleStudio.*`: Sale studio controls, live mode indicators, reconnecting alerts (`reconnectingMsg`), paused stream sub-banners.
+
+---
+
+## 8. API & Health Check Reference
+
+### REST Health Endpoints
+- `GET /health`: Returns `{ "status": "ok", "timestamp": "..." }`.
+- `GET /api/health`: Alias returning `{ "status": "ok", "timestamp": "..." }`.
+
+### Core API Groups
+- `/api/auth/*`: Authentication, registration, JWT refresh, OAuth callbacks.
+- `/api/projects/*`: Project workspace management & script analysis.
+- `/api/streaming/*`: Autonomous stream launching, NMS stream relay controls.
+- `/api/s3/*`: Asset uploads and signed URL generation.
+
+---
+
+*Last updated: August 2026 | Version: 1.0.0 (Singularity)*

@@ -6,7 +6,7 @@
         <p class="subtitle">{{ $t('projects.new.characterRosterDesc') }}</p>
       </div>
       <el-button type="primary" round @click="$emit('approve')" :loading="loading">
-        {{ $t('projects.new.lockAndContinue') }}
+        {{ $t('common.approve') || 'Approve Characters' }}
       </el-button>
     </div>
 
@@ -54,6 +54,14 @@
         </div>
       </div>
     </div>
+    <div class="approval-footer mt-8 pt-8 border-t border-white/5 flex justify-center pb-4" v-if="!approved">
+      <button
+        class="flex items-center gap-3 px-8 py-4 rounded-2xl bg-brand-primary text-black font-black hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-primary/20 group"
+        @click.stop="$emit('approve')">
+        <magic-wand theme="outline" size="20" class="group-hover:rotate-12 transition-transform" />
+        {{ $t('projects.new.results.analysis.approveAndCreateStoryboard') || 'Approve & Create Storyboard' }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -63,6 +71,7 @@ import { Microphone } from '@element-plus/icons-vue';
 defineProps<{
   characters: any[];
   loading?: boolean;
+  approved?: boolean
 }>();
 
 defineEmits(['approve']);

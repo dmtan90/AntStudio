@@ -65,6 +65,7 @@
     <ProductAdDialog
       v-model="adDialogVisible"
       :product="selectedProductForAd"
+      :initialUrl="adInitialUrl"
     />
 
     <ProductPreviewDialog
@@ -85,6 +86,7 @@ import ProductEditDialog from '@/components/merchant/dialogs/ProductEditDialog.v
 import ProductAdDialog from '@/components/merchant/dialogs/ProductAdDialog.vue';
 import ProductPreviewDialog from '@/components/merchant/dialogs/ProductPreviewDialog.vue';
 import { useI18n } from 'vue-i18n';
+import { useAntStudioAgent } from '@/composables/useAntStudioAgent';
 
 // Refactored Components
 import MerchantHeader from '@/components/merchant/MerchantHeader.vue';
@@ -96,6 +98,7 @@ import { ElMessageBox } from 'element-plus';
 
 const { t } = useI18n()
 const marketplaceStore = useMarketplaceStore();
+const agent = useAntStudioAgent();
 
 const activeTab = ref('inventory');
 const tabs = computed(() => [
@@ -113,9 +116,36 @@ const selectedProduct = ref<any>(null);
 
 const adDialogVisible = ref(false);
 const selectedProductForAd = ref<any>(null);
+const adInitialUrl = ref('');
 
 const previewVisible = ref(false);
 const selectedProductForPreview = ref<any>(null);
+
+// Watch for triggers from the AI Assistant Chatbot
+watch(() => agent.showProductDialog.value, (visible) => {
+  if (visible && agent.selectedProduct.value) {
+    selectedProductForPreview.value = agent.selectedProduct.value;
+    previewVisible.value = true;
+    agent.showProductDialog.value = false;
+  }
+});
+
+watch(() => agent.showEditDialog.value, (visible) => {
+  if (visible && agent.selectedProduct.value) {
+    selectedProduct.value = agent.selectedProduct.value;
+    dialogVisible.value = true;
+    agent.showEditDialog.value = false;
+  }
+});
+
+watch(() => agent.showAdDialog.value, (visible) => {
+  if (visible) {
+    selectedProductForAd.value = agent.selectedProduct.value;
+    adInitialUrl.value = agent.selectedProduct.value?.inventoryUrl || agent.adInitialUrl.value || '';
+    adDialogVisible.value = true;
+    agent.showAdDialog.value = false;
+  }
+});
 
 const fetchData = async () => {
     loading.value = true;
@@ -153,11 +183,13 @@ onMounted(fetchData);
 const handleAdd = () => {
   selectedProduct.value = null;
   dialogVisible.value = true;
+  agent.selectedProduct.value = null;
 };
 
 const handleEdit = (p: any) => {
   selectedProduct.value = p;
   dialogVisible.value = true;
+  agent.selectedProduct.value = p;
 };
 
 const handleDelete = async (p: any) => {
@@ -182,12 +214,57 @@ const handleDelete = async (p: any) => {
 const createAd = (p: any) => {
   selectedProductForAd.value = p;
   adDialogVisible.value = true;
+  agent.selectedProduct.value = p;
 };
 
 const handlePreview = (p: any) => {
   selectedProductForPreview.value = p;
   previewVisible.value = true;
+  agent.selectedProduct.value = p;
 };
+
+// Reset selectedProduct context when all dialogs are closed
+watch([previewVisible, dialogVisible, adDialogVisible], ([pVis, dVis, aVis]) => {
+  if (!pVis && !dVis && !aVis) {
+    agent.selectedProduct.value = null;
+    agent.adInitialUrl.value = '';
+    adInitialUrl.value = '';
+    agent.isEditingProduct.value = false;
+    agent.isCreatingAd.value = false;
+  }
+});
+
+// Synchronize active editing state with chatbot composable
+watch(dialogVisible, (visible) => {
+  agent.isEditingProduct.value = visible;
+});
+
+// Synchronize active advertising state with chatbot composable
+watch(adDialogVisible, (visible) => {
+  agent.isCreatingAd.value = visible;
+});
+
+// Keep open modal fields updated in real-time if agent updates the product model
+watch(() => agent.selectedProduct.value, (newProduct) => {
+  if (newProduct) {
+    if (dialogVisible.value) {
+      selectedProduct.value = newProduct;
+    }
+    if (previewVisible.value) {
+      selectedProductForPreview.value = newProduct;
+    }
+  }
+});
+
+// React to closing events triggered by chatbot commands
+watch(() => agent.closeAllDialogs.value, (shouldClose) => {
+  if (shouldClose) {
+    previewVisible.value = false;
+    dialogVisible.value = false;
+    adDialogVisible.value = false;
+    agent.closeAllDialogs.value = false;
+  }
+});
 </script>
 
 <style lang="scss" scoped>

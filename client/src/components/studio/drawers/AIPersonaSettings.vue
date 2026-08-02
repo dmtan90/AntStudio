@@ -148,7 +148,7 @@
                             </div>
                         </div>
 
-                        <!-- Music Performance (Phase 85) -->
+                        <!-- Music Performance -->
                         <div class="space-y-2 p-3 rounded-2xl bg-black/20 border border-white/5">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">🎤 {{ $t('studio.drawers.aiPersona.performance.music') }}</span>

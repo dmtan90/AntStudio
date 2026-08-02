@@ -1,4 +1,4 @@
-import { promptService } from '../PromptService.js';
+import { promptService } from './PromptService.js';
 import { generateJSON } from '../../utils/AIGenerator.js';
 import { Logger } from '../../utils/Logger.js';
 import { Types } from 'mongoose';
@@ -103,7 +103,7 @@ export class LiveSalesService {
      * Prepares a live session by ensuring all products have review videos.
      * If a video is missing in the Influencer's aidolClips, it triggers generation.
      */
-    public async prepareProductVideo(influencerId: string, productId: string) {
+    public async prepareProductVideo(influencerId: string, productId: string, language?: string) {
         const influencer = await Influencer.findOne({ entityId: influencerId });
         if (!influencer) {
             throw new Error(`Influencer ${influencerId} not found`);
@@ -136,7 +136,7 @@ export class LiveSalesService {
         Logger.info(`[SalesEngine] video missing or AIDOL generation required for product ${productId}. Triggering simplified AI generation...`);
         
         try {
-            const language = influencer?.meta?.voiceConfig?.language || 'en-US';
+            const finalLanguage = language || influencer?.meta?.voiceConfig?.language || 'en-US';
             const description = product.description;
             let images = [product.image];
             if (product.images && product.images.length > 0) {
@@ -152,13 +152,16 @@ export class LiveSalesService {
 
             // Trigger real generation via AIGenerator - SIMPLIFIED: 8s, No storyboard/script needed
             const { generateVideo } = await import('../../utils/AIGenerator.js');
+            const baseFrameUrl = influencer.visual?.thumbnailUrl as string;
             const videoResult = await generateVideo({
                 prompt: `Professional green screen video of ${influencer.identity.name} introducing ${product.name}. 
-                        Influencer should speak naturally about ${product.name} with the highlight features '${description}' exactly in '${language}' with expressive facial movements. 
+                        Influencer should speak naturally about ${product.name} with the highlight features '${description}' exactly in '${finalLanguage}' with expressive facial movements. 
                         Focus on high-quality product showcase. No background, transparent/green screen.`,
                 duration: 8, // Fixed to 8 seconds
                 aspectRatio: '9:16', 
-                characterImages: [influencer.visual?.thumbnailUrl as string, ...images],
+                characterImages: [baseFrameUrl, ...images],
+                imageStart: baseFrameUrl,
+                imageEnd: baseFrameUrl,
                 metadata: {
                     productId,
                     influencerId: influencer.entityId,

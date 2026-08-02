@@ -17,7 +17,7 @@
       <nav class="fixed top-0 left-0 w-full z-50 px-8 py-6 backdrop-blur-md bg-black/20 border-b border-white/5">
          <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-3">
-               <img v-if="product.brand_logo" :src="product.brand_logo" class="h-8 w-auto rounded-lg shadow-lg border border-white/10" />
+               <img v-if="product.brand_logo" :src="getFileUrl(product.brand_logo)" class="h-8 w-auto rounded-lg shadow-lg border border-white/10" />
                <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-black text-xs" v-else>
                   {{ product.brand_name ? product.brand_name[0] : 'P' }}
                </div>
@@ -72,11 +72,10 @@
                         :src="getFileUrl(product.video)" 
                         controls 
                         autoplay 
-                        muted 
                         loop
                         class="w-full h-full object-contain"
                      ></video>
-                     <img v-else :src="product.image || '/placeholder-product.png'" class="w-full h-full object-cover" />
+                     <img v-else :src="getFileUrl(product.image) || '/placeholder-product.png'" class="w-full h-full object-cover" />
                      
                      <div v-if="!product.video" class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white">{{ t('productLanding.previewUnavailable') }}</p>
@@ -136,6 +135,9 @@
             {{ t('productLanding.poweredBy', { appName: String(uiStore.appName) }) }} &bull; &copy; {{ new Date().getFullYear() }}
          </p>
       </footer>
+      
+      <!-- Embedded Virtual Personal Shopper Widget -->
+      <PersonalShopperWidget />
     </div>
 
     <div v-else class="flex flex-col items-center justify-center min-h-screen relative z-10 px-8">
@@ -157,6 +159,7 @@ import { useUserStore } from '@/stores/user';
 import api, { getFileUrl } from '@/utils/api';
 import { useI18n } from 'vue-i18n';
 import { useUIStore } from '@/stores/ui';
+import PersonalShopperWidget from '@/views/embed/PersonalShopperWidget.vue';
 
 const { t } = useI18n()
 const route = useRoute();

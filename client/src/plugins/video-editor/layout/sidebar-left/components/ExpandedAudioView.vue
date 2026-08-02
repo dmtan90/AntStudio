@@ -130,9 +130,7 @@ defineExpose({
 
 <template>
   <template v-if="match === 'sounds'">
-    <div v-if="sounds.length" class="flex flex-col gap-4">
-      <AudioItem v-for="audio in sounds" :key="audio.source" :audio="audio" @click="onAddAudio(audio)" />
-    </div>
+    <AudioItem v-if="sounds.length" class="flex flex-col gap-4" v-for="audio in sounds" :key="audio.source" :audio="audio" @click="onAddAudio(audio)" />
     <div v-else class="flex flex-col gap-4">
       <el-skeleton v-for="(_, index) in 6" :key="index" animated class="h-16 w-full rounded-xl !bg-white/5" />
       <span v-if="!loading"
@@ -141,9 +139,7 @@ defineExpose({
   </template>
 
   <template v-if="match === 'musics'">
-    <div v-if="musics.length" class="flex flex-col gap-4">
-      <AudioItem v-for="audio in musics" :key="audio.source" :audio="audio" @click="onAddAudio(audio)" />
-    </div>
+    <AudioItem v-if="musics.length" class="flex flex-col gap-4" v-for="audio in musics" :key="audio.source" :audio="audio" @click="onAddAudio(audio)" />
     <div v-else class="flex flex-col gap-4">
       <el-skeleton v-for="(_, index) in 6" :key="index" animated class="h-16 w-full rounded-xl !bg-white/5" />
       <span v-if="!loading"
@@ -163,11 +159,9 @@ defineExpose({
       </button>
     </div>
 
-    <div v-if="userMediaStore.audios.items.length" class="flex flex-col gap-4">
-      <AudioItem v-for="audio in userMediaStore.audios.items" :key="audio._id"
+    <AudioItem v-if="userMediaStore.audios.items.length" class="flex flex-col gap-4" v-for="audio in userMediaStore.audios.items" :key="audio._id"
         :audio="{ ...audio, source: audio.url, name: audio.fileName }"
         @click="onAddAudio({ ...audio, source: audio.url, name: audio.fileName })" />
-    </div>
     <div v-else class="flex flex-col gap-4">
       <el-skeleton v-for="(_, index) in 6" :key="index" animated class="h-16 w-full rounded-xl !bg-white/5" />
       <span v-if="!userMediaStore.audios.loading"

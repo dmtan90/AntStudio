@@ -1,18 +1,22 @@
-import { AIAccount } from '../../models/AIAccount.js'
+import { AIAccountProvider } from '~/models/AIAccount.js';
 import { aiAccountManager } from './AIAccountManager.js'
 import { CloudCodeClient } from '../../integrations/ai/CloudCodeClient.js'
-import { configService } from '../configService.js'
-import { genkit } from 'genkit'
-import { googleAI } from '@genkit-ai/google-genai'
+import { configService, EnvConfig } from '../ConfigService.js'
 import { CustomAIAdapter } from './CustomAIAdapter.js'
 import { privateLLMClient } from './PrivateLLMClient.js'
-import { buildCharacterSheetPrompt, buildScenePrompt, buildVeoVideoPrompt } from '../PromptBuilder.js'
+import { buildCharacterSheetPrompt, buildScenePrompt, buildVeoVideoPrompt, buildVoiceoverPrompt, buildMusicPrompt } from '../PromptBuilder.js'
 
 import { Logger } from '../Logger.js';
+import { config } from '../config.js';
+import { AIModelType } from '~/models/AdminSettings.js';
+import { GeminiClient } from '~/integrations/ai/GeminiClient.js';
+import { GoogleTTSProvider } from './providers/GoogleTTSProvider.js';
+import { getFileBuffer } from '../AIGenerator.js';
+import { flowAdapter } from './providers/FlowAdapter.js';
 
 // Singleton instance cache
 let providerInstances: Record<string, any> = {}
-let currentSettings: any = null
+// let currentSettings: any = null
 
 export class AIServiceManager {
     private static instance: AIServiceManager
@@ -34,9 +38,9 @@ export class AIServiceManager {
         try {
             // Ensure config is fresh
             await configService.refresh();
-            currentSettings = configService.ai;
+            // currentSettings = configService.aiSettings;
         } catch (error) {
-            Logger.error('[AIServiceManager] Failed to load settings:', 'AIServiceManager', error);
+            Logger.error('Failed to load settings:', 'AIServiceManager', error);
         }
     }
 
@@ -57,19 +61,33 @@ export class AIServiceManager {
         if (providerInstances[providerId]) return;
 
         try {
-            if (!currentSettings) await this.initialize();
-            const providers = currentSettings?.providers || [];
+            // if (!currentSettings) await this.initialize();
+            const providers = configService.aiProviders || []; //currentSettings?.providers || [];
             const providerConfig = providers.find((p: any) => p.id === providerId);
-
-            if (providerId === 'google') {
+            Logger.info(`Initializing provider: ${providerId} with config: ${providerConfig ? JSON.stringify(providerConfig) : '{}'}`, 'AIServiceManager');
+            if (providerId === AIAccountProvider.GOOGLE || providerId === AIAccountProvider.GOOGLE_VERTEX) {
                 const apiKey = providerConfig?.isActive ? providerConfig.apiKey : process.env.GEMINI_API_KEY;
-                if (apiKey) {
-                    const { GeminiClient } = await import('../../integrations/ai/GeminiClient.js');
-                    providerInstances['google'] = new GeminiClient({ apiKey });
-                    Logger.info('[AIServiceManager] Google Gemini Client (Unified) initialized.');
+                const serviceAccount = EnvConfig.googleApplicationCredentials;
+                let client = null;
+                if(apiKey || serviceAccount){
+                    client = new GeminiClient({ apiKey, serviceAccount });
+                    Logger.info(`Google Gemini/Vertex Client (Unified) initialized by ${apiKey ? 'api key' : 'service account'}.`, 'AIServiceManager');
                 }
-            } else if (providerId === 'private') {
-                providerInstances['private'] = privateLLMClient;
+                else{
+                    Logger.error('Google Gemini/Vertex Client (Unified) not initialized. No API key or ADC found.', 'AIServiceManager');
+                }
+
+                if(client){
+                    if(providerId === AIAccountProvider.GOOGLE){
+                        providerInstances[AIAccountProvider.GOOGLE] = client;
+                    }
+                    else{
+                        providerInstances[AIAccountProvider.GOOGLE_VERTEX] = client;
+                    }
+                }
+            }
+            else if (providerId === AIAccountProvider.PRIVATE) {
+                providerInstances[AIAccountProvider.PRIVATE] = privateLLMClient;
             } else if (providerConfig?.baseUrl) {
                 // Custom Adapter
                 providerInstances[providerId] = new CustomAIAdapter(
@@ -77,39 +95,38 @@ export class AIServiceManager {
                     providerConfig.baseUrl,
                     providerConfig.taskConfigs
                 );
-                Logger.info(`[AIServiceManager] Custom Provider "${providerId}" initialized.`);
-            } else if (providerId === 'google-flow') {
-                const { flowAdapter } = await import('./providers/FlowAdapter.js');
-                providerInstances['google-flow'] = flowAdapter;
-                Logger.info('[AIServiceManager] Google Flow Adapter initialized.');
+                Logger.info(`Custom Provider "${providerId}" initialized.`,'AIServiceManager');
+            } else if (providerId === AIAccountProvider.GOOGLE_FLOW) {
+                providerInstances[AIAccountProvider.GOOGLE_FLOW] = flowAdapter;
+                Logger.info('Google Flow Adapter initialized.', 'AIServiceManager');
             }
         } catch (error: any) {
-            Logger.error(`[AIServiceManager] Failed to initialize provider "${providerId}":`, error.message);
+            Logger.error(`Failed to initialize provider "${providerId}":`, error.message, 'AIServiceManager');
         }
     }
 
     /**
      * Resolve Provider and Model based on Defaults
      */
-    private async resolveProvider(type: 'text' | 'image' | 'video' | 'audio' | 'music', requestedProviderId?: string, requestedModelId?: string) {
+    private async resolveProvider(type: AIModelType, requestedProviderId?: string, requestedModelId?: string) {
         // Ensure settings are loaded
-        if (!currentSettings) await this.initialize()
+        // if (!currentSettings) await this.initialize()
         
-        let providerId = requestedProviderId || "google";
+        let providerId = requestedProviderId || AIAccountProvider.GOOGLE;//vertex
         let modelId = requestedModelId;
-        const defaultConfig = currentSettings?.defaults?.[type];
+        const defaultConfig = configService.aiDefaultModels?.[type];
         // Logger.debug("resolveProvider", 'AIServiceManager', {type, requestedProviderId, requestedModelId, defaultConfig: JSON.stringify(defaultConfig)});
         // 1. If not requested, check DB defaults for this type
         if (defaultConfig) {
             providerId = providerId || defaultConfig.providerId;
             modelId = modelId || defaultConfig.modelId;
-            Logger.info(`[AIServiceManager] Resolved default for ${type}: ${providerId}/${modelId}`);
+            Logger.info(`Resolved default for ${type}: ${providerId}/${modelId}`, 'AIServiceManager');
         }
 
         // 2. Mapping legacy IDs to the unified Google provider
         const legacyGeminiIds = ['aistudio', 'gemini-chat', 'gemini-veo', 'gemini-music', 'gemini-content', 'google-tts'];
         if (providerId && legacyGeminiIds.includes(providerId)) {
-            providerId = 'google';
+            providerId = AIAccountProvider.GOOGLE;//'vertex';
         }
 
         // 3. PRIORITY: Fallbacks if still no provider specified
@@ -121,7 +138,7 @@ export class AIServiceManager {
         //         // Last resort fallback
         //         providerId = Object.keys(providerInstances).find(k => k !== 'private') || 'google';
         //     }
-        //     Logger.info(`[AIServiceManager] Using resolved fallback for ${type}: ${providerId}/${modelId}`);
+        //     Logger.info(`Using resolved fallback for ${type}: ${providerId}/${modelId}`, 'AIServiceManager');
         // }
 
         // Get Provider Instance
@@ -130,8 +147,8 @@ export class AIServiceManager {
              // Second chance fallback if the specific ID failed but others exist
              const fallback = Object.keys(providerInstances).find(k => k !== 'private');
              if (fallback) {
-                 Logger.warn(`[AIServiceManager] Provider ${providerId} not found. Falling back to ${fallback}.`);
-                 return { provider: providerInstances[fallback], providerId: fallback, modelId: modelId || 'gemini-2.5-flash' };
+                 Logger.warn(`Provider ${providerId} not found. Falling back to ${fallback}.`, 'AIServiceManager');
+                 return { provider: providerInstances[fallback], providerId: fallback, modelId: modelId || config.geminiModelTextAnalysis };
              }
              throw new Error(`Provider ${providerId} not found or not initialized`)
         }
@@ -143,20 +160,20 @@ export class AIServiceManager {
      * Generate text using a specific model
      */
     public async generateText(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}): Promise<string> {
-        let { provider, providerId, modelId } = await this.resolveProvider('text', inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'gemini-2.5-flash'
+        let { provider, providerId, modelId } = await this.resolveProvider(AIModelType.TEXT, inputProviderId, inputModelName)
+        const finalModelName = modelId || inputModelName || config.geminiModelTextAnalysis;
 
-        // SOVEREIGN HYBRID ROUTING (Phase 9)
-        if (options.usePrivateAI || (currentSettings?.usePrivateAI && providerId === 'google')) {
+        // SOVEREIGN HYBRID ROUTING
+        if (options.usePrivateAI || (providerId === AIAccountProvider.PRIVATE)) {
             if (await privateLLMClient.testConnection()) {
-                Logger.info(`[AIServiceManager] 🛡️ Routing text task to Private AI (Local)`);
+                Logger.info(`🛡️ Routing text task to Private AI (Local)`, 'AIServiceManager');
                 const result = await privateLLMClient.chat(prompt, { model: options.localModel || 'llama3' });
                 if (result) return result;
             }
         }
 
         try {
-            if (providerId === 'google') {
+            if (providerId === AIAccountProvider.GOOGLE || providerId === AIAccountProvider.GOOGLE_VERTEX) {
                 const result = await provider.generateContent(prompt, finalModelName, options);
                 return result.text;
             } else {
@@ -166,9 +183,9 @@ export class AIServiceManager {
         } catch (error: any) {
             Logger.error(`AI Text Generation failed (${finalModelName}) via ${providerId}:`, error.message)
 
-            if (providerId !== 'google') {
-                Logger.info(`[AIServiceManager] Falling back to primary Gemini for text generation...`);
-                return this.generateText(prompt, finalModelName, 'google', options);
+            if (providerId !== AIAccountProvider.GOOGLE && providerId !== AIAccountProvider.GOOGLE_VERTEX) {
+                Logger.info(`Falling back to primary Gemini for text generation...`, 'AIServiceManager');
+                return this.generateText(prompt, finalModelName, AIAccountProvider.GOOGLE, options);
             }
             throw error
         }
@@ -178,29 +195,52 @@ export class AIServiceManager {
      * Generate image using a specific model
      */
     public async generateImage(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
-        let { provider, providerId, modelId } = await this.resolveProvider('image', inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'imagen-3.0'
+        let { provider, providerId, modelId } = await this.resolveProvider(AIModelType.IMAGE, inputProviderId, inputModelName)
+        const finalModelName = modelId || inputModelName || config.geminiModelImageGeneration;
 
         try {
-            let result: any;
-            if (providerId === 'google') {
-                result = await provider.generateImage(prompt, finalModelName, options);
-                if(!result){
-                    const account = await aiAccountManager.getOptimalAccount('image', 'google-flow');
-                    if(account){
-                        ({ provider, providerId, modelId } = await this.resolveProvider('image', 'google-flow', finalModelName));
-                        Logger.info(`[AIServiceManager] Using Google Flow account for image generation: ${account.email}`);
-                        if(provider){
-                            result = await provider.generateImage(account, prompt, modelId, options);
+            let result: any = null;
+            Logger.info(`generateImage inputModelName:${inputModelName} inputProviderId:${inputProviderId} providerId:${providerId} modelId:${modelId}`, "AIServiceManager");
+            //priority google-flow first
+            if (!inputProviderId && providerId != AIAccountProvider.GOOGLE_FLOW) {
+                Logger.info("Try Google Flow provider first", "AIServiceManager");
+                let { provider: flowProvider, providerId: flowProviderId } = await this.resolveProvider(AIModelType.IMAGE, AIAccountProvider.GOOGLE_FLOW, inputModelName);
+                if (flowProviderId == AIAccountProvider.GOOGLE_FLOW) {
+                    const account = await aiAccountManager.getOptimalAccount(AIModelType.IMAGE, AIAccountProvider.GOOGLE_FLOW);
+                    if (account) {
+                        try{
+                            result = await flowProvider.generateImage(account, prompt, finalModelName, options);
+                            if (result && (result.jobId || result.status === 'pending')) {
+                                return result;
+                            }
+                        }catch(err: any){
+                            Logger.error(`AI Image Generation failed (${finalModelName}) via ${flowProviderId}: ${err.message}`, 'AIServiceManager');
+                            result = null;
                         }
                     }
                 }
-            } else if (providerId === 'google-flow') {
-                const account = await aiAccountManager.getOptimalAccount('image', 'google-flow');
-                if (!account) throw new Error('No active Google Flow account found');
-                result = await provider.generateImage(account, prompt, finalModelName, options);
-            } else {
-                result = await provider.generateImage(prompt, finalModelName, options);
+            }
+
+            if(!result){
+                if (providerId === AIAccountProvider.GOOGLE || providerId === AIAccountProvider.GOOGLE_VERTEX) {
+                    result = await provider.generateImage(prompt, finalModelName, options);
+                    if(!result && inputProviderId){
+                        const account = await aiAccountManager.getOptimalAccount(AIModelType.IMAGE, AIAccountProvider.GOOGLE_FLOW);
+                        if(account){
+                            ({ provider, providerId, modelId } = await this.resolveProvider(AIModelType.IMAGE, AIAccountProvider.GOOGLE_FLOW, finalModelName));
+                            Logger.info(`Using Google Flow account for image generation: ${account.email}`, 'AIServiceManager');
+                            if(provider){
+                                result = await provider.generateImage(account, prompt, modelId, options);
+                            }
+                        }
+                    }
+                } else if (providerId === AIAccountProvider.GOOGLE_FLOW) {
+                    const account = await aiAccountManager.getOptimalAccount(AIModelType.IMAGE, AIAccountProvider.GOOGLE_FLOW);
+                    if (!account) throw new Error('No active Google Flow account found');
+                    result = await provider.generateImage(account, prompt, finalModelName, options);
+                } else {
+                    result = await provider.generateImage(prompt, finalModelName, options);
+                }
             }
 
             if(!result){
@@ -220,7 +260,7 @@ export class AIServiceManager {
             }
 
             if (typeof media.url === 'string' && media.url.startsWith('http')) {
-                const { getFileBuffer } = await import('../AIGenerator.js');
+                
                 const buffer = await getFileBuffer(media.url);
                 return { buffer, mimeType: media.mimeType || 'image/png' };
             }
@@ -242,32 +282,58 @@ export class AIServiceManager {
      * Generate video using a specific model
      */
     public async generateVideo(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
-        let { provider, providerId, modelId } = await this.resolveProvider('video', inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'veo-2.0'
+        let { provider, providerId, modelId } = await this.resolveProvider(AIModelType.VIDEO, inputProviderId, inputModelName)
+        const finalModelName = modelId || inputModelName || config.geminiModelVideoGeneration;
 
         try {
-            let result: any;
-            if (providerId === 'google') {
-                result = await provider.generateVideo(prompt, finalModelName, options);
-                if(!result){
-                    const account = await aiAccountManager.getOptimalAccount('video', 'google-flow');
-                    if(account){
-                        ({ provider, providerId, modelId } = await this.resolveProvider('video', 'google-flow', finalModelName));
-                        if(provider){
-                            Logger.info(`[AIServiceManager] Using Google Flow account for video generation: ${account.email}`);
-                            result = await provider.generateVideo(account, prompt, finalModelName, options);
+            let result: any = null;
+            Logger.info(`generateVideo inputModelName:${inputModelName} inputProviderId:${inputProviderId} providerId:${providerId} modelId:${modelId}`, "AIServiceManager");
+            //priority google-flow first
+            if (!inputProviderId && providerId != AIAccountProvider.GOOGLE_FLOW) {
+                let { provider: flowProvider, providerId: flowProviderId } = await this.resolveProvider(AIModelType.VIDEO, AIAccountProvider.GOOGLE_FLOW, inputModelName);
+                Logger.info(`Try Google Flow provider first flowProvider:${flowProvider} flowProviderId:${flowProviderId}`, "AIServiceManager");
+                if (flowProviderId == AIAccountProvider.GOOGLE_FLOW) {
+                    const account = await aiAccountManager.getOptimalAccount(AIModelType.VIDEO, AIAccountProvider.GOOGLE_FLOW);
+                    if (account) {
+                        try{
+                            result = await flowProvider.generateVideo(account, prompt, finalModelName, options);
+                            if (result && (result.jobId || result.status === 'pending')) {
+                                return result;
+                            }
+                        }catch(err: any){
+                            Logger.error(`AI Video Generation failed (${finalModelName}) via ${flowProviderId}: ${err.message}`, 'AIServiceManager');
+                            result = null;
                         }
                     }
+                    else{
+                        Logger.error('Can\'t find the optimal Flow account => please check your flow cookie and sync again', 'AIServiceManager');
+                    }
                 }
-            } else if (providerId === 'google-flow') {
-                const account = await aiAccountManager.getOptimalAccount('video', 'google-flow');
-                if (!account) throw new Error('No active Google Flow account found');
-                result = await provider.generateVideo(account, prompt, finalModelName, options);
-            } else {
-                if (typeof provider.generateVideo !== 'function') throw new Error(`Provider ${providerId} does not support video generation`);
-                result = await provider.generateVideo(prompt, finalModelName, options);
             }
 
+            if(!result){
+                if (providerId === AIAccountProvider.GOOGLE || providerId === AIAccountProvider.GOOGLE_VERTEX) {
+                    result = await provider.generateVideo(prompt, finalModelName, options);
+                    if(!result && inputProviderId){
+                        const account = await aiAccountManager.getOptimalAccount(AIModelType.VIDEO, AIAccountProvider.GOOGLE_FLOW);
+                        if(account){
+                            ({ provider, providerId, modelId } = await this.resolveProvider(AIModelType.VIDEO, AIAccountProvider.GOOGLE_FLOW, finalModelName));
+                            if(provider){
+                                Logger.info(`Using Google Flow account for video generation: ${account.email}`, 'AIServiceManager');
+                                result = await provider.generateVideo(account, prompt, finalModelName, options);
+                            }
+                        }
+                    }
+                } else if (providerId === AIAccountProvider.GOOGLE_FLOW) {
+                    const account = await aiAccountManager.getOptimalAccount(AIModelType.VIDEO, AIAccountProvider.GOOGLE_FLOW);
+                    if (!account) throw new Error('No active Google Flow account found => please check your flow cookie and sync again');
+                    result = await provider.generateVideo(account, prompt, finalModelName, options);
+                } else {
+                    if (typeof provider.generateVideo !== 'function') throw new Error(`Provider ${providerId} does not support video generation`);
+                    result = await provider.generateVideo(prompt, finalModelName, options);
+                }
+            }
+            
             if(!result){
                 throw new Error('No video generated');
             }
@@ -283,7 +349,6 @@ export class AIServiceManager {
             if (media.buffer) return { buffer: media.buffer, mimeType: media.mimeType || 'video/mp4' };
 
             if (typeof media.url === 'string' && media.url.startsWith('http')) {
-                const { getFileBuffer } = await import('../AIGenerator.js');
                 const buffer = await getFileBuffer(media.url);
                 return { buffer, mimeType: media.mimeType || 'video/mp4', url: media.url };
             }
@@ -296,7 +361,7 @@ export class AIServiceManager {
             const base64Data = typeof media.url === 'string' ? media.url : '';
             return { buffer: Buffer.from(base64Data, 'base64'), mimeType: media.mimeType || 'video/mp4', url: media.url }
         } catch (error: any) {
-            Logger.error(`AI Video Generation failed (${finalModelName}) via ${providerId}:`, error.message)
+            Logger.error(`AI Video Generation failed (${finalModelName}) via ${providerId}: ${error.message}`, 'AIServiceManager')
             throw error
         }
     }
@@ -306,23 +371,23 @@ export class AIServiceManager {
      */
     public async generateAudio(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
         // gemini will inherit modelId from google setting in admin
-        let { provider, providerId, modelId } = await this.resolveProvider('audio', (inputProviderId && inputProviderId == 'gemini') ? 'google' : inputProviderId, inputModelName)
-        const finalModelName = modelId || inputModelName || 'tts-1'
-
-        if (providerId === 'google') {
+        let { provider, providerId, modelId } = await this.resolveProvider(AIModelType.AUDIO, (inputProviderId && inputProviderId == AIAccountProvider.GEMINI) ? AIAccountProvider.GOOGLE : inputProviderId, inputModelName)
+        const finalModelName = modelId || inputModelName || config.geminiModelTTS;
+        
+        Logger.info(`generateAudio inputModelName:${inputModelName} inputProviderId:${inputProviderId} providerId:${providerId} modelId:${modelId}`, "AIServiceManager");
+        if (providerId === AIAccountProvider.GOOGLE || providerId === AIAccountProvider.GOOGLE_VERTEX) {
             try {
-                const voiceProvider = options.providerId || 'gemini';
-                if(voiceProvider === 'gemini'){
+                const voiceProvider = options.providerId || AIAccountProvider.GEMINI;
+                if(voiceProvider === AIAccountProvider.GEMINI){
                     const result = await provider.generateAudio(prompt, options.voiceId || 'Puck', finalModelName, options);
-                    return { media: result };    
+                    return { media: result }; 
                 } else {
-                    const { GoogleTTSProvider } = await import('./providers/GoogleTTSProvider.js');
-                    const client = new GoogleTTSProvider();
+                    const client = GoogleTTSProvider.getInstance();
                     const result = await client.generateAudio(prompt, options.voiceId || 'en-US-Standard-A', options);
                     return result;
                 }
             } catch (err: any) {
-                Logger.error(`[AIServiceManager] Gemini direct audio failed:`, err.message);
+                Logger.error(`Gemini direct audio failed:${err.message}`, 'AIServiceManager');
             }
         }
 
@@ -339,10 +404,11 @@ export class AIServiceManager {
      * Generate Music using a specific model
      */
     public async generateMusic(prompt: string, inputModelName?: string, inputProviderId?: string, options: any = {}) {
-        let { provider, providerId, modelId } = await this.resolveProvider('audio', inputProviderId, inputModelName);
-        const finalModelName = modelId || inputModelName || 'music-fx-default';
-
-        if (providerId === 'google') {
+        let { provider, providerId, modelId } = await this.resolveProvider(AIModelType.MUSIC, inputProviderId, inputModelName);
+        const finalModelName = modelId || inputModelName || config.geminiModelMusic;
+        
+        Logger.info(`generateMusic inputModelName:${inputModelName} inputProviderId:${inputProviderId} providerId:${providerId} modelId:${modelId}`, "AIServiceManager");
+        if (providerId === AIAccountProvider.GOOGLE || providerId === AIAccountProvider.GOOGLE_VERTEX) {
             try {
                 const result = await provider.generateMusic(prompt, finalModelName, options);
                 const media = result as any;
@@ -352,7 +418,7 @@ export class AIServiceManager {
                 }
                 return { buffer: Buffer.from(''), mimeType: media.mimeType || 'audio/mpeg', url: media.url };
             } catch (err: any) {
-                Logger.error(`[AIServiceManager] Gemini direct music failed:`, err.message);
+                Logger.error(`Gemini direct music failed:${err.message}`, 'AIServiceManager');
             }
         }
 
@@ -367,6 +433,23 @@ export class AIServiceManager {
         }
     }
 
+    public async getVoiceList(providerId: AIAccountProvider, language?: string){
+        try{
+            if(providerId == AIAccountProvider.GEMINI){
+                let { provider } = await this.resolveProvider(AIModelType.AUDIO, AIAccountProvider.GOOGLE);
+                return (provider as GeminiClient).listVoices(language);
+            }
+            else if(providerId == AIAccountProvider.GOOGLE){
+                const client = GoogleTTSProvider.getInstance();
+                return client.listVoices(language);
+            }
+        }catch(error: any){
+            Logger.error(`getVoiceList error:${error.message}`, 'AIServiceManager');
+        }
+        
+        return [];
+    }
+
     /**
      * Generate optimized English prompts for AI generation
      */
@@ -375,23 +458,23 @@ export class AIServiceManager {
             return await this.generateText(prompt, undefined, undefined, { ...options, usePrivateAI: false });
         };
 
-        if (type === 'segment' || type === 'video' || type === 'image') {
+        if (type === 'segment' || type === AIModelType.VIDEO || type === AIModelType.IMAGE) {
             const videoStyle = payload.videoStyle || payload.projectAnalysis?.creativeBrief?.visualStyle || payload.projectAnalysis?.visuals?.visualStyle?.label || 'Cinematic';
-            const imagePrompt = await buildScenePrompt(payload.description, payload.characters_context || [], videoStyle, payload.projectAnalysis, 'vi', translator);
-            const videoPrompt = await buildVeoVideoPrompt(payload, payload.all_characters || [], payload.projectAnalysis || payload, 'vi', translator);
+            const imagePrompt = await buildScenePrompt(payload.description, payload.characters_context || [], videoStyle, payload.projectAnalysis, 'en', translator);
+            const videoPrompt = await buildVeoVideoPrompt(payload, payload.all_characters || [], payload.projectAnalysis || payload, 'en', translator);
 
             return { imagePrompt, videoPrompt };
         } else if (type === 'character') {
             const videoStyle = payload.videoStyle || payload.projectAnalysis?.creativeBrief?.visualStyle || payload.projectAnalysis?.visuals?.visualStyle?.label || 'Cinematic';
-            const characterPrompt = await buildCharacterSheetPrompt(payload, videoStyle, payload.projectAnalysis, 'vi', translator);
+            const characterPrompt = await buildCharacterSheetPrompt(payload, videoStyle, payload.projectAnalysis, 'en', translator);
             return { characterPrompt };
-        } else if (type === 'audio') {
-            const { buildVoiceoverPrompt } = await import('../PromptBuilder.js');
-            const audioPrompt = await buildVoiceoverPrompt(payload.text, payload.characterName, payload.all_characters || [], 'vi', translator);
+        } else if (type === AIModelType.AUDIO) {
+            
+            const audioPrompt = await buildVoiceoverPrompt(payload.text, payload.characterName, payload.all_characters || [], 'en', translator);
             return { audioPrompt };
-        } else if (type === 'music') {
-            const { buildMusicPrompt } = await import('../PromptBuilder.js');
-            const musicPrompt = await buildMusicPrompt(payload.mood, payload.projectAnalysis, 'vi', translator);
+        } else if (type === AIModelType.MUSIC) {
+            
+            const musicPrompt = await buildMusicPrompt(payload.mood, payload.projectAnalysis, 'en', translator);
             return { musicPrompt };
         }
         throw new Error(`Unsupported prompt generation type: ${type}`);

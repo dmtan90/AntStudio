@@ -1,6 +1,6 @@
 import { generateJSON } from '../../utils/AIGenerator.js';
 import { Logger } from '../../utils/Logger.js';
-import { promptService } from '../PromptService.js';
+import { promptService } from './PromptService.js';
 
 export interface AgentDecision {
     agentId: string;

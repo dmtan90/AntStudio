@@ -14,7 +14,7 @@
             <span class="text-[10px] font-black uppercase tracking-widest text-green-400">{{ t('dashboard.header.systemOperational') }}</span>
           </div>
           
-          <h1 id="tour-welcome" class="text-6xl font-black mb-4 tracking-tighter leading-[0.9] text-white">
+          <h1 id="tour-welcome" class="text-4xl font-black mb-4 tracking-tighter leading-[0.9] text-white">
             {{ t('dashboard.header.welcomeBack') }} <br/>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">
               {{ user?.name || t('common.creator') }}

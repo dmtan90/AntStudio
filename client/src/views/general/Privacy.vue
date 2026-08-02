@@ -9,7 +9,7 @@
       <transition name="fade-up" appear>
         <div class="content-inner">
           <h1 class="glow-title" v-if="!embedded">{{ $t('marketing.privacy.title') }}</h1>
-          <p class="last-updated" v-if="!embedded">{{ $t('marketing.privacy.lastUpdated') }}</p>
+          <p class="last-updated" v-if="!embedded">{{ $t('marketing.privacy.lastUpdated', { date: (new Date()).toLocaleDateString('en-US') }) }}</p>
 
           <div class="legal-sections card" :class="{ glass: !embedded }">
             <section>
@@ -19,7 +19,7 @@
 
             <section>
               <h2>{{ $t('marketing.privacy.sections.collection.title') }}</h2>
-              <p>{{ $t('marketing.privacy.sections.collection.content') }}</p>
+              <p>{{ $t('marketing.privacy.sections.collection.content', { appName: uiStore.appName }) }}</p>
             </section>
 
             <section>
@@ -29,7 +29,7 @@
 
             <section>
               <h2>{{ $t('marketing.privacy.sections.security.title') }}</h2>
-              <p>{{ $t('marketing.privacy.sections.security.content') }}</p>
+              <p>{{ $t('marketing.privacy.sections.security.content', { appName: uiStore.appName }) }}</p>
             </section>
           </div>
         </div>

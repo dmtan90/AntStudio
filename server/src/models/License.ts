@@ -1,10 +1,27 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export enum LicenseType {
+    TRIAL = 'trial',
+    BASIC = 'basic',
+    PRO = 'pro',
+    ENTERPRISE = 'enterprise'
+};
+
+export enum LicenseStatus {
+    VALID = 'valid',
+    EXPIRED = 'expired',
+    INVALID = 'invalid',
+    REVOKED = 'revoked',
+    ACTIVE = 'active',
+    TRIAL = 'trial',
+    SUSPENDED = 'suspended'
+};
+
 export interface ILicense extends Document {
     key: string;
     owner: string; // Email of the owner on Master
-    tier: 'trial' | 'basic' | 'pro' | 'enterprise';
-    status: 'valid' | 'expired' | 'revoked';
+    tier: LicenseType | string;
+    status: LicenseStatus | string;
     instancesLimit: number; // Max Edge servers for this key
     activeInstances: number;
     maxUsersPerInstance: number;
@@ -26,8 +43,8 @@ const LicenseSchema = new Schema<ILicense>(
     {
         key: { type: String, required: true, unique: true },
         owner: { type: String, required: true },
-        tier: { type: String, enum: ['trial', 'basic', 'pro', 'enterprise'], default: 'trial' },
-        status: { type: String, enum: ['valid', 'expired', 'revoked'], default: 'valid' },
+        tier: { type: String, enum: Object.values(LicenseType), default: LicenseType.TRIAL },
+        status: { type: String, enum: Object.values(LicenseStatus), default: LicenseStatus.VALID },
         instancesLimit: { type: Number, default: 1 },
         activeInstances: { type: Number, default: 0 },
         maxUsersPerInstance: { type: Number, default: 10 },

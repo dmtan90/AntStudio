@@ -1,6 +1,6 @@
 import { generateJSON } from '../../utils/AIGenerator.js';
 import { Logger } from '../../utils/Logger.js';
-import { promptService } from '../../services/PromptService.js';
+import { promptService } from './PromptService.js';
 
 /**
  * SceneDetectionService: Detects scene boundaries in video content.

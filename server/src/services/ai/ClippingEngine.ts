@@ -1,18 +1,18 @@
 import ffmpeg from 'fluent-ffmpeg';
-import { config } from '../../utils/config.js';
+import { EnvConfig } from '~/utils/ConfigService.js';
 import path from 'path';
 import fs from 'fs';
-import { Project } from '../../models/Project.js';
-import { Logger } from '../../utils/Logger.js';
-import { socialSyndicationService } from '../SocialSyndicationService.js';
-import { generateJSON } from '../../utils/AIGenerator.js';
-import { aiManager } from '../../utils/ai/AIServiceManager.js';
-import { promptService } from '../PromptService.js';
-import { uploadToS3 } from '../../utils/s3.js';
+import { Project } from '~/models/Project.js';
+import { Logger } from '~/utils/Logger.js';
+import { socialSyndicationService } from '../streaming/SocialSyndicationService.js';
+import { generateJSON } from '~/utils/AIGenerator.js';
+import { aiManager } from '~/utils/ai/AIServiceManager.js';
+import { promptService } from './PromptService.js';
+import { uploadToS3 } from '~/utils/s3.js';
 
 // FFmpeg setup - use portable installer from config
-ffmpeg.setFfmpegPath(config.ffmpegPath);
-ffmpeg.setFfprobePath(config.ffprobePath);
+ffmpeg.setFfmpegPath(EnvConfig.ffmpegPath);
+ffmpeg.setFfprobePath(EnvConfig.ffprobePath);
 
 /**
  * Service for autonomous short-form clipping of live sessions.

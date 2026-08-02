@@ -3,6 +3,8 @@
  * Uses Web Audio API to extract peak data from audio buffers
  */
 
+import { getFileUrl } from "../api"
+
 export interface WaveformOptions {
     width: number
     height?: number
@@ -39,7 +41,8 @@ export class WaveformGenerator {
         }
 
         try {
-            const response = await fetch(audioUrl)
+            const url = getFileUrl(audioUrl);
+            const response = await fetch(url)
             const arrayBuffer = await response.arrayBuffer()
             const peaks = await this.generateFromBuffer(arrayBuffer, width)
 

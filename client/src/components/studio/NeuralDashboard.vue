@@ -20,7 +20,7 @@
       </div>
     </div>
 
-    <!-- Context-Specific Metrics (Phase 20 Redesign) -->
+    <!-- Context-Specific Metrics -->
     <div v-if="contextMetrics" class="context-metrics-section">
       <div class="box-label">{{ contextMetrics.label.toUpperCase() }} MONITOR</div>
       <div class="metrics-grid">
@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <!-- Phase 34: Engagement Heatmap -->
+    <!-- Engagement Heatmap -->
     <div class="engagement-section" v-if="guestScores.length > 0">
       <div class="box-label">CAST ENGAGEMENT HEATMAP</div>
       <div class="engagement-grid">
@@ -70,7 +70,7 @@
       </div>
     </div>
 
-    <!-- Phase 35: Commerce HUD -->
+    <!-- Commerce HUD -->
     <div class="commerce-hud" v-if="studioStore.liveProducts.length > 0">
       <div class="box-label">NEURAL COMMERCE HUD</div>
       <div class="intent-gauge">
@@ -88,7 +88,7 @@
       </div>
     </div>
 
-    <!-- Phase 36: Neural Knowledge Stream -->
+    <!-- Neural Knowledge Stream -->
     <div class="knowledge-stream" v-if="showrunner.researchState.currentTopic">
       <div class="box-label">NEURAL KNOWLEDGE STREAM</div>
       <div class="knowledge-item" :class="{ 'scanning': showrunner.researchState.isSearching }">
@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <!-- Phase 44: Neural Archive (Persistence) -->
+    <!-- Neural Archive (Persistence) -->
     <div class="archive-section" v-if="neuralMemory.state.learnings.length > 0">
       <div class="box-label">NEURAL ARCHIVE (LONG-TERM MEMORY)</div>
       <div class="archive-items">
@@ -115,7 +115,7 @@
       </div>
     </div>
 
-    <!-- Phase 45: Viral Highlights & Syndication -->
+    <!-- Viral Highlights & Syndication -->
     <div class="viral-section" v-if="recapOrchestrator.state.moments.length > 0">
       <div class="box-label">NEURAL VIRAL ASSETS & SYNDICATION</div>
       <div class="viral-moments">
@@ -136,7 +136,7 @@
       </div>
     </div>
 
-    <!-- Phase 41: Neural Evidence Stream -->
+    <!-- Neural Evidence Stream -->
     <div class="evidence-stream" v-if="evidenceOverlay.state.activeCards.length > 0">
       <div class="box-label">NEURAL EVIDENCE STREAM</div>
       <div class="evidence-items">
@@ -160,7 +160,7 @@
       </div>
     </div>
 
-    <!-- Phase 43: Neural Session Recap -->
+    <!-- Neural Session Recap -->
     <div class="recap-section" v-if="recapOrchestrator.state.currentRecap">
       <div class="box-label">NEURAL SESSION RECAP</div>
       <div class="recap-card">
@@ -177,7 +177,7 @@
       </div>
     </div>
 
-    <!-- Phase 39: Autonomous Poll HUD -->
+    <!-- Autonomous Poll HUD -->
     <div class="poll-hud" v-if="showrunner.activePoll">
       <div class="box-label">NEURAL INTERACTIVE POLL</div>
       <div class="poll-question">{{ showrunner.activePoll.question }}</div>
@@ -194,7 +194,7 @@
       </div>
     </div>
 
-    <!-- Phase 33: Neural Pivot Log -->
+    <!-- Neural Pivot Log -->
     <div class="pivot-log" v-if="showrunner.pivots.length > 0">
       <div class="box-label">NEURAL PIVOT LOG</div>
       <div class="pivot-items">
@@ -205,7 +205,7 @@
       </div>
     </div>
 
-    <!-- Phase 33: Neural Reasoning Central (Consensus Visualization) -->
+    <!-- Neural Reasoning Central (Consensus Visualization) -->
     <div class="reasoning-section" v-if="latestDirectorLogs.length > 0">
       <div class="box-label">NEURAL REASONING CENTRAL</div>
       <div class="reasoning-timeline">
@@ -227,7 +227,7 @@
       </div>
     </div>
 
-    <!-- Phase 28: Neural Audio Director HUD -->
+    <!-- Neural Audio Director HUD -->
     <div class="audio-hud">
       <div class="box-label">{{ $t('studio.audioDirector.title') }}</div>
       <div class="audio-status">
@@ -288,7 +288,7 @@
         🎬 IMPORT PROJECT
       </el-button>
     </div>
-    <!-- Phase 7: Import Storyboard Dialog -->
+    <!-- Import Storyboard Dialog -->
     <ImportStoryboardDialog 
       :visible="showImportDialog" 
       @close="showImportDialog = false"
@@ -322,14 +322,14 @@ const showImportDialog = ref(false);
 const latestSignal = ref<any>(null);
 let audioTimer: any = null;
 
-// Phase 28: Audio State
+// Audio State
 const audioState = ref({
   currentVibe: 'chill',
   isDucking: false,
   volume: 40
 });
 
-// Phase 45: Syndication Tracking
+// Syndication Tracking
 const syndicationLogs = ref<Record<string, any>>({});
 
 onMounted(() => {
@@ -369,7 +369,7 @@ function triggerRecap() {
   recapOrchestrator.generateFullRecap();
 }
 
-// Phase 7: Storyboard-to-Live Bridge
+// Storyboard-to-Live Bridge
 function handleScriptLoaded(script: any) {
   neuralShowrunner.loadExternalScript(script);
 }
@@ -590,7 +590,7 @@ const contextMetrics = computed(() => {
   transition: width 1s linear;
 }
 
-/* Phase 20: Context Metrics Styles */
+/* Context Metrics Styles */
 .context-metrics-section {
   margin-bottom: 2rem;
   background: rgba(0, 242, 255, 0.05);
@@ -647,7 +647,7 @@ const contextMetrics = computed(() => {
 .m-trend.down { color: #ff4757; }
 .m-trend.neutral { color: #ffa502; }
 
-/* Phase 35: Commerce HUD Styles */
+/* Commerce HUD Styles */
 .commerce-hud {
   background: rgba(255, 165, 2, 0.05);
   border-left: 3px solid #ffa502;
@@ -702,7 +702,7 @@ const contextMetrics = computed(() => {
   font-family: monospace;
 }
 
-/* Phase 36: Knowledge Stream Styles */
+/* Knowledge Stream Styles */
 .knowledge-stream {
   background: rgba(155, 89, 182, 0.05);
   border-left: 3px solid #9b59b6;
@@ -759,7 +759,7 @@ const contextMetrics = computed(() => {
   100% { opacity: 0.5; }
 }
 
-/* Phase 34: Engagement Styles */
+/* Engagement Styles */
 .engagement-section {
   margin-bottom: 2rem;
 }
@@ -875,7 +875,7 @@ const contextMetrics = computed(() => {
   50% { opacity: 1; transform: scale(1.1); }
   100% { opacity: 0.6; transform: scale(0.9); }
 }
-/* Phase 44: Archive Styles */
+/* Archive Styles */
 .archive-section {
   background: rgba(0, 242, 255, 0.03);
   border-left: 3px solid #00f2ff;
@@ -992,7 +992,7 @@ const contextMetrics = computed(() => {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Phase 43: Recap Section Styles */
+/* Recap Section Styles */
 .recap-section {
   background: rgba(46, 204, 113, 0.05);
   border-left: 3px solid #2ecc71;
@@ -1153,7 +1153,7 @@ const contextMetrics = computed(() => {
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* Phase 28: Neural Audio Director */
+/* Neural Audio Director */
 .audio-hud {
   margin-top: 15px;
   background: rgba(10, 15, 30, 0.5);
@@ -1209,7 +1209,7 @@ const contextMetrics = computed(() => {
   50% { opacity: 0.6; text-shadow: none; }
 }
 
-/* Phase 45: Viral Highlights & Syndication Styles */
+/* Viral Highlights & Syndication Styles */
 .viral-moments {
   display: grid;
   grid-template-columns: 1fr 1fr;

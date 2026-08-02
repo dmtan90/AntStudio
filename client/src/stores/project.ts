@@ -22,6 +22,7 @@ export const useProjectStore = defineStore('project', () => {
     const loadingList = ref(false)
     const editorMode = ref<'simple' | 'studio'>('simple')
     const generationLogs = ref<string[]>([])
+    const exportDialogVisible = ref(false)
 
     // Getters
     const projectId = computed(() => currentProject.value?._id)
@@ -466,9 +467,38 @@ export const useProjectStore = defineStore('project', () => {
         }
     }
 
-    async function startStreaming(id: string, streamId: string) {
+    async function generateAllCaptions(id: string) {
         try {
-            const res : any = await api.post(`/projects/${id}/stream`, { streamId })
+            const res : any = await api.post(`/projects/${id}/generate-all-captions`)
+            if (currentProject.value && res.data?.storyboard) {
+                currentProject.value.storyboard = res.data.storyboard
+            }
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function updateCaptions(id: string, segmentId: string, captions: any[]) {
+        try {
+            const res : any = await api.put(`/projects/${id}/segments/${segmentId}/captions`, { captions })
+            if (currentProject.value?.storyboard?.segments) {
+                const segment = currentProject.value.storyboard.segments.find((s: any) => s._id === segmentId || s.order?.toString() === segmentId?.toString())
+                if (segment) {
+                    segment.captions = res.data.captions
+                }
+            }
+            return res.data
+        } catch (error) {
+            handleError(error)
+            throw error
+        }
+    }
+
+    async function startStreaming(id: string, streamId: string, accountId?: string) {
+        try {
+            const res : any = await api.post(`/projects/${id}/stream`, { streamId, accountId })
             return res.data
         } catch (error) {
             throw error
@@ -562,6 +592,10 @@ export const useProjectStore = defineStore('project', () => {
         segments,
         scriptAnalysis,
         generationLogs,
+        exportDialogVisible,
+        setExportDialogState: (state: boolean) => {
+            exportDialogVisible.value = state
+        },
         fetchProjects,
         fetchProject,
         createProject,
@@ -577,6 +611,8 @@ export const useProjectStore = defineStore('project', () => {
         uploadAsset,
         generateVoiceover,
         generateCaptions,
+        generateAllCaptions,
+        updateCaptions,
         // assembleVideo,
         setProject,
         updateVisualAssetStatus,

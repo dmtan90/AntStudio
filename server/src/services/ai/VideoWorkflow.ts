@@ -1,8 +1,8 @@
 import { WorkflowEngine, WorkflowNode } from './WorkflowEngine.js';
-import { promptService } from '../PromptService.js';
+import { promptService } from './PromptService.js';
 import { generateText, generateJSON } from '../../utils/AIGenerator.js';
 import { projectContext } from '../../utils/ProjectContext.js';
-import { generateStoryboardIteratively } from '../iterativeStoryboard.js';
+import { generateStoryboardIteratively } from '../streaming/IterativeStoryboard.js';
 import { Logger } from '../../utils/Logger.js';
 
 export interface VideoContext {
@@ -184,7 +184,8 @@ const characterNode: WorkflowNode<VideoContext> = async (context) => {
     const logs = ['[Artist] Designing character visual references...'];
     
     const prompt = await promptService.get('video_creation/character_design', {
-        script: context.script
+        script: context.script,
+        language: context.language
     });
 
     try {

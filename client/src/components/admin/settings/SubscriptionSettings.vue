@@ -1,5 +1,19 @@
 <template>
     <div class="subscription-settings space-y-8 animate-in">
+        <!-- Credit Mode Configuration -->
+        <section class="settings-section cinematic-panel p-6 bg-gradient-to-br from-blue-500/5 to-transparent">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-black uppercase tracking-wider mb-1">Credit Mode Settings</h3>
+                    <p class="text-[10px] text-gray-400">
+                        Enable or disable credit constraints for users. If disabled, users can generate video content without credit limits. 
+                        Note: Credits will automatically be disabled if no Payment Gateway (Stripe or PayPal) is configured.
+                    </p>
+                </div>
+                <el-switch :model-value="creditModeEnabled" @update:model-value="$emit('update:credit-mode-enabled', $event)" size="large" />
+            </div>
+        </section>
+
         <!-- Membership Plans -->
         <section>
             <div class="section-title text-xs font-black uppercase tracking-widest opacity-40 mb-6 px-4">{{ $t('admin.subscription.plans.title') }}</div>
@@ -88,9 +102,10 @@ const { t } = useI18n();
 defineProps<{
     plans: any[];
     creditPackages: any[];
+    creditModeEnabled: boolean;
 }>();
 
-defineEmits(['add-package', 'remove-package']);
+defineEmits(['add-package', 'remove-package', 'update:credit-mode-enabled']);
 </script>
 
 <style scoped lang="scss">

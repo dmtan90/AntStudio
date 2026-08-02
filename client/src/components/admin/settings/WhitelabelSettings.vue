@@ -12,8 +12,8 @@
                 <el-input v-model="whitelabel.appName" :placeholder="t('admin.settings.whitelabel.placeholders.appName')" class="glass-input" />
             </el-form-item>
 
-            <el-form-item :label="t('admin.settings.system.domain.label')" v-if="apiConfigs">
-                <el-input v-model="apiConfigs.publicDomain" :placeholder="t('admin.settings.system.domain.placeholder')" class="glass-input" />
+            <el-form-item :label="t('admin.settings.system.domain.label')">
+                <el-input v-model="whitelabel.publicDomain" :placeholder="t('admin.settings.system.domain.placeholder')" class="glass-input" />
                 <div class="text-[11px] text-gray-500 mt-1">{{ $t('admin.settings.system.domain.info', { url: 'https://your-domain.com/api/platforms/callback/...' }) }}</div>
             </el-form-item>
 
@@ -78,7 +78,6 @@ import { getFileUrl } from '@/utils/api';
 
 const props = defineProps<{
     whitelabel: any;
-    apiConfigs?: any;
 }>();
 
 const { t } = useI18n();

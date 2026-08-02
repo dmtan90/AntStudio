@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { Edit, Delete, Magic } from '@icon-park/vue-next';
+import { getFileUrl } from '@/utils/api';
 
 const { t } = useI18n();
 
@@ -27,7 +28,7 @@ const emit = defineEmits(['edit', 'delete', 'create-ad', 'preview']);
          >
             <!-- Image -->
             <div class="aspect-square bg-black relative overflow-hidden">
-               <img :src="p.image || '/placeholder-product.png'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+               <img :src="p.image ? getFileUrl(p.image) : '/placeholder-product.png'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
                
                <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">

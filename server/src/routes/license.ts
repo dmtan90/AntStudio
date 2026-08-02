@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import axios from 'axios';
-import config from '../utils/config.js';
+import { configService, EnvConfig } from '../utils/ConfigService.js';
 import { License } from '../models/License.js';
 import { connectDB } from '../utils/db.js';
 import { authMiddleware, adminMiddleware, sysAdminMiddleware, AuthRequest } from '../middleware/auth.js';
 
 import { LicensePackage } from '../models/LicensePackage.js';
 import { Release } from '../models/Release.js';
+import { LicenseStatus, LicenseType } from '~/models/License.js';
 
 const router = Router();
 
@@ -44,14 +45,14 @@ router.post('/activate', authMiddleware, async (req: AuthRequest, res) => {
         if (!key) return res.status(400).json({ success: false, error: 'Key Identity required.' });
 
         // 1. Call Master Hub for validation
-        const response = await axios.post(`${config.masterServerUrl}/api/license/license-status`, {
+        const response = await axios.post(`${EnvConfig.masterServerUrl}/api/license/license-status`, {
             key,
             instanceId: process.env.INSTANCE_ID || 'edge-default',
-            version: '1.4.0'
+            version: '1.0.0'
         });
 
         const remote = response.data;
-        if (remote.status !== 'valid') {
+        if (remote.status !== LicenseStatus.VALID) {
             return res.status(402).json({ success: false, error: remote.message || 'Registry Handshake Failed.' });
         }
 
@@ -63,7 +64,7 @@ router.post('/activate', authMiddleware, async (req: AuthRequest, res) => {
             tier: remote.tier,
             startDate: new Date(),
             endDate: new Date(remote.endDate),
-            status: 'valid',
+            status: LicenseStatus.VALID,
             instancesLimit: 1, // Edge doesn't manage multiple units
             maxUsersPerInstance: remote.limits.maxUsersPerInstance,
             maxProjectsPerInstance: remote.limits.maxProjectsPerInstance
@@ -92,7 +93,7 @@ router.post('/renew', authMiddleware, async (req: AuthRequest, res) => {
         else if (pkg.billingPeriod === 'yearly') newEnd.setFullYear(newEnd.getFullYear() + 1);
 
         lic.endDate = newEnd;
-        lic.status = 'valid';
+        lic.status = LicenseStatus.VALID;
         lic.tier = pkg.tier;
         lic.instancesLimit = pkg.limits.instances;
         lic.maxUsersPerInstance = pkg.limits.usersPerInstance;
@@ -119,12 +120,12 @@ router.post('/generate', authMiddleware, sysAdminMiddleware, async (req: AuthReq
         const license = await License.create({
             key,
             owner,
-            tier: tier || 'trial',
+            tier: tier || LicenseType.TRIAL,
             instancesLimit: instancesLimit || 1,
             maxUsersPerInstance: maxUsersPerInstance || 10,
             startDate,
             endDate,
-            status: 'valid'
+            status: LicenseStatus.VALID
         });
 
         res.json({ success: true, data: { license } });
@@ -149,16 +150,16 @@ router.post('/license-status', async (req, res) => {
         const { key, instanceId, ip, version } = req.body;
 
         const license = await License.findOne({ key });
-        if (!license) return res.json({ status: 'invalid', message: 'Registry identity not found.' });
-        if (license.status === 'revoked') return res.json({ status: 'revoked', message: 'License access terminated.' });
+        if (!license) return res.json({ status: LicenseStatus.INVALID, message: 'Registry identity not found.' });
+        if (license.status === LicenseStatus.REVOKED) return res.json({ status: LicenseStatus.REVOKED, message: 'License access terminated.' });
 
         const now = new Date();
         if (now > license.endDate) {
-            if (license.status !== 'expired') {
-                license.status = 'expired';
+            if (license.status !== LicenseStatus.EXPIRED) {
+                license.status = LicenseStatus.EXPIRED;
                 await license.save();
             }
-            return res.json({ status: 'expired', endDate: license.endDate.getTime() });
+            return res.json({ status: LicenseStatus.EXPIRED, endDate: license.endDate.getTime() });
         }
 
         // Fleet Telemetry Update
@@ -166,7 +167,7 @@ router.post('/license-status', async (req, res) => {
         if (!telemetry) {
             // New instance pairing
             if (license.instancesLimit !== -1 && license.activeInstances >= license.instancesLimit) {
-                return res.json({ status: 'invalid', message: 'Instance limit reached. Upgrade required.' });
+                return res.json({ status: LicenseStatus.INVALID, message: 'Instance limit reached. Upgrade required.' });
             }
             license.fleetTelemetry.push({
                 instanceId,
@@ -185,7 +186,7 @@ router.post('/license-status', async (req, res) => {
         await license.save();
 
         res.json({
-            status: 'valid',
+            status: LicenseStatus.VALID,
             licenseId: license._id,
             tier: license.tier,
             owner: license.owner,

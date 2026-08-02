@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { configService } from './configService.js';
 import { Logger } from './Logger.js';
 
 export interface AntMediaBroadcastParams {
@@ -9,51 +8,96 @@ export interface AntMediaBroadcastParams {
     streamUrl?: string;
 }
 
+export interface AntMediaConfig {
+    baseUrl?: string;
+    appName?: string;
+    email?: string;
+    password?: string;
+}
+
 export class AntMediaService {
-    private get config() {
-        return configService.antMedia;
-    }
+    public getConfig(overrideConfig?: AntMediaConfig) {
+        let baseUrl = overrideConfig?.baseUrl || process.env.ANT_MEDIA_BASE_URL || '';
+        if (baseUrl && !baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+            baseUrl = `http://${baseUrl}`;
+        }
+        baseUrl = baseUrl.replace(/\/$/, '');
 
-    private get apiBaseUrl() {
-        return `${this.config.baseUrl}/rest/v2`;
-    }
+        const appName = overrideConfig?.appName || process.env.ANT_MEDIA_APP_NAME || 'LiveApp';
+        const email = overrideConfig?.email || process.env.ANT_MEDIA_EMAIL || '';
+        const password = overrideConfig?.password || process.env.ANT_MEDIA_PASSWORD || '';
 
-    private get app() {
-        return this.config.appName || 'WebRTCAppEE';
+        // Build single clean API URL. If baseUrl already ends with appName, omit duplicating it
+        let apiUrl = '';
+        if (baseUrl) {
+            const hasApp = appName && baseUrl.toLowerCase().endsWith(`/${appName.toLowerCase()}`);
+            apiUrl = hasApp ? `${baseUrl}/rest/v2` : `${baseUrl}/${appName}/rest/v2`;
+        }
+
+        return { baseUrl, apiUrl, appName, email, password };
     }
 
     /**
-     * Authenticate with Ant Media Server and return the JSESSIONID or success
+     * Retrieve session cookie JSESSIONID from AMS
      */
-    async authenticate(): Promise<boolean> {
+    public async getSessionCookie(overrideConfig?: AntMediaConfig): Promise<string> {
+        const { apiUrl, email, password } = this.getConfig(overrideConfig);
+        if (!apiUrl || (!email && !password)) return '';
         try {
-            const response = await axios.post(`${this.apiBaseUrl}/users/authenticate`, {
-                email: this.config.email,
-                password: this.config.password
-            });
-            return response.data.success;
-        } catch (error) {
-            Logger.error('[AntMedia] Authentication failed', 'AntMedia', { error });
-            return false;
+            const { default: crypto } = await import('crypto');
+            const hashedPassword = crypto.createHash('md5').update(password).digest('hex');
+
+            let res = await axios.post(`${apiUrl}/users/authenticate`, {
+                email,
+                password: hashedPassword
+            }).catch(() => null);
+
+            if (!res || !res.data?.success) {
+                res = await axios.post(`${apiUrl}/users/authenticate`, {
+                    email,
+                    password
+                }).catch(() => null);
+            }
+
+            if (res && res.headers['set-cookie']) {
+                const cookies = res.headers['set-cookie'];
+                return Array.isArray(cookies) ? cookies.join('; ') : cookies || '';
+            }
+        } catch (e) {
+            Logger.warn('[AntMedia] Session authentication warning', 'AntMedia', { error: e });
         }
+        return '';
+    }
+
+    /**
+     * Authenticate with Ant Media Server
+     */
+    async authenticate(overrideConfig?: AntMediaConfig): Promise<boolean> {
+        const cookie = await this.getSessionCookie(overrideConfig);
+        return !!cookie;
     }
 
     /**
      * Create a new broadcast stream
      */
-    async createBroadcast(params: AntMediaBroadcastParams): Promise<any> {
+    async createBroadcast(params: AntMediaBroadcastParams, overrideConfig?: AntMediaConfig): Promise<any> {
+        const { apiUrl } = this.getConfig(overrideConfig);
+        if (!apiUrl) return null;
+        const cookie = await this.getSessionCookie(overrideConfig);
+        const headers: Record<string, string> = {};
+        if (cookie) headers['Cookie'] = cookie;
+
         try {
-            const response = await axios.post(`${this.apiBaseUrl}/broadcasts/create`, {
+            const response = await axios.post(`${apiUrl}/broadcasts/create`, {
                 name: params.name,
                 streamId: params.streamId,
-                type: params.type || 'liveStream',
-                streamUrl: params.streamUrl,
-                status: 'finished'
+                type: params.type || 'streamSource',
+                streamUrl: params.streamUrl
             }, {
-                params: { app: this.app }
+                headers
             });
             return response.data;
-        } catch (error) {
+        } catch (error: any) {
             Logger.error('[AntMedia] Failed to create broadcast', 'AntMedia', { error });
             return null;
         }
@@ -62,33 +106,58 @@ export class AntMediaService {
     /**
      * Start a stream source
      */
-    async startStreamSource(streamId: string): Promise<boolean> {
+    async startStreamSource(streamId: string, overrideConfig?: AntMediaConfig): Promise<boolean> {
+        const { apiUrl } = this.getConfig(overrideConfig);
+        if (!apiUrl) return false;
+        const cookie = await this.getSessionCookie(overrideConfig);
+        const headers: Record<string, string> = {};
+        if (cookie) headers['Cookie'] = cookie;
+
         try {
-            const response = await axios.post(`${this.apiBaseUrl}/broadcasts/start/${streamId}`, {}, {
-                params: { app: this.app }
+            const response = await axios.post(`${apiUrl}/broadcasts/${streamId}/start`, {}, {
+                headers
             });
-            return response.data.success;
-        } catch (error) {
-            Logger.error('[AntMedia] Failed to start stream', 'AntMedia', { error });
+            return response.data?.success ?? true;
+        } catch (error: any) {
+            Logger.error('[AntMedia] Start stream failed', 'AntMedia', { error });
             return false;
         }
     }
 
     /**
-     * Upload a VoD asset
+     * Upload or Import a VoD asset
      */
-    async uploadVoD(buffer: Buffer, fileName: string): Promise<any> {
-        try {
-            const { default: FormData } = await import('form-data');
-            const formData = new FormData();
-            formData.append('file', buffer, { filename: fileName });
+    async uploadVoD(data: { name: string; streamUrl: string } | Buffer, fileName?: string, overrideConfig?: AntMediaConfig): Promise<any> {
+        const { apiUrl } = this.getConfig(overrideConfig);
+        if (!apiUrl) return null;
+        const cookie = await this.getSessionCookie(overrideConfig);
+        const headers: Record<string, string> = {};
+        if (cookie) headers['Cookie'] = cookie;
 
-            const response = await axios.post(`${this.apiBaseUrl}/vods/create`, formData, {
-                params: { app: this.app },
-                headers: { ...formData.getHeaders() }
-            });
-            return response.data;
-        } catch (error) {
+        try {
+            if (Buffer.isBuffer(data)) {
+                const { default: FormData } = await import('form-data');
+                const formData = new FormData();
+                formData.append('file', data, { filename: fileName || 'video.mp4' });
+
+                const response = await axios.post(`${apiUrl}/vods/create`, formData, {
+                    headers: {
+                        ...headers,
+                        ...formData.getHeaders()
+                    }
+                });
+                return response.data;
+            } else {
+                const response = await axios.post(`${apiUrl}/vods/create`, {
+                    name: data.name,
+                    streamUrl: data.streamUrl,
+                    type: 'vod'
+                }, {
+                    headers
+                });
+                return response.data;
+            }
+        } catch (error: any) {
             Logger.error('[AntMedia] Failed to upload VoD', 'AntMedia', { error });
             return null;
         }
@@ -97,16 +166,22 @@ export class AntMediaService {
     /**
      * Add RTMP Endpoint for Restreaming (Simulcast)
      */
-    async addEndpoint(streamId: string, rtmpUrl: string): Promise<boolean> {
+    async addEndpoint(streamId: string, rtmpUrl: string, overrideConfig?: AntMediaConfig): Promise<boolean> {
+        const { apiUrl } = this.getConfig(overrideConfig);
+        if (!apiUrl) return false;
+        const cookie = await this.getSessionCookie(overrideConfig);
+        const headers: Record<string, string> = {};
+        if (cookie) headers['Cookie'] = cookie;
+
         try {
-            const response = await axios.post(`${this.apiBaseUrl}/broadcasts/${streamId}/endpoint`, {
+            const response = await axios.post(`${apiUrl}/broadcasts/${streamId}/endpoint`, {
                 rtmpUrl: rtmpUrl,
                 endpointServiceId: 'generic'
             }, {
-                params: { app: this.app }
+                headers
             });
-            return response.data.success;
-        } catch (error) {
+            return response.data?.success ?? true;
+        } catch (error: any) {
             Logger.error('[AntMedia] Failed to add endpoint', 'AntMedia', { error });
             return false;
         }
@@ -115,13 +190,19 @@ export class AntMediaService {
     /**
      * Stop a broadcast
      */
-    async stopBroadcast(streamId: string): Promise<boolean> {
+    async stopBroadcast(streamId: string, overrideConfig?: AntMediaConfig): Promise<boolean> {
+        const { apiUrl } = this.getConfig(overrideConfig);
+        if (!apiUrl) return false;
+        const cookie = await this.getSessionCookie(overrideConfig);
+        const headers: Record<string, string> = {};
+        if (cookie) headers['Cookie'] = cookie;
+
         try {
-            const response = await axios.post(`${this.apiBaseUrl}/broadcasts/${streamId}/stop`, {}, {
-                params: { app: this.app }
+            const response = await axios.post(`${apiUrl}/broadcasts/${streamId}/stop`, {}, {
+                headers
             });
-            return response.data.success;
-        } catch (error) {
+            return response.data?.success ?? true;
+        } catch (error: any) {
             Logger.error('[AntMedia] Failed to stop broadcast', 'AntMedia', { error });
             return false;
         }

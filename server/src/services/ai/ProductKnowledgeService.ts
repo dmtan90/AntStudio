@@ -11,7 +11,7 @@
 import { Logger } from '~/utils/Logger.js';
 import { Product, IProduct } from '~/models/Product.js';
 import { generateText } from '~/utils/AIGenerator.js';
-import { parseDocument } from '~/utils/documentParser.js';
+import { parseDocument } from '~/utils/DocumentParser.js';
 
 const MAX_CONTENT_CHARS = 40_000;   // ~10k tokens
 const DISTILL_MAX_CHARS = 3_000;     // Final summary fits comfortably in system prompt

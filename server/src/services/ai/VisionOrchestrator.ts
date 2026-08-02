@@ -1,6 +1,6 @@
 import { generateText, generateJSON } from '../../utils/AIGenerator.js';
 import { Logger } from '../../utils/Logger.js';
-import { promptService } from '../PromptService.js';
+import { promptService } from './PromptService.js';
 
 /**
  * Orchestrates Vision-based analysis for the AI Director.

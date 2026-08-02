@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { socketServer } from '../SocketServer.js';
+import { socketServer } from '../streaming/SocketServer.js';
 import { showRunnerService } from './ShowRunnerService.js';
 
 export interface HivePoll {

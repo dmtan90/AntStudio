@@ -12,7 +12,7 @@
       <div class="flex gap-3">
         <button class="px-5 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group hover:text-blue-400" @click="addAccount(true)">
           <google-ads theme="filled" size="14" />
-          {{ t('admin.aiAccounts.addAntigravity') }}
+          {{ t('admin.aiAccounts.addAntigravity') || "Antigravity" }}
         </button>
         <button class="px-5 py-3 rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group text-blue-400" @click="showAddFlowDialog = true">
           <robot theme="filled" size="14" />
@@ -20,7 +20,7 @@
         </button>
         <button class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all flex items-center gap-2" @click="addAccount(false)">
           <google theme="outline" size="14" />
-          {{ t('admin.aiAccounts.addGoogle') }}
+          {{ t('admin.aiAccounts.addGoogle') || "Google Cloud" }}
         </button>
       </div>
     </div>
@@ -56,7 +56,7 @@
           <div v-if="account.isActive !== false" class="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] group-hover:bg-blue-500/10 transition-colors pointer-events-none"></div>
 
           <!-- Card Header -->
-          <div class="flex justify-between items-start relative z-10">
+          <div class="justify-between items-start relative z-10">
             <div class="flex items-center gap-4">
               <div class="relative">
                 <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg relative overflow-hidden" 
@@ -93,7 +93,7 @@
               </div>
             </div>
             
-            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-4 group-hover:translate-x-0">
+            <div class="ml-14 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-4 group-hover:translate-x-0">
                <button :class="['w-8 h-8 rounded-lg flex items-center justify-center transition-colors', account.isActive !== false ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' : 'bg-white/5 text-gray-500 hover:bg-white/10']"
                 @click="toggleActive(account)" :title="account.isActive !== false ? t('common.disable') : t('common.enable')">
                 <power theme="outline" size="14" />
@@ -494,9 +494,13 @@ const fetchAccounts = async (silent = false) => {
 const addAccount = async (isAntigravity = false) => {
   try {
     const redirectUri = `${window.location.origin}/platforms/callback/google?type=ai-account`;
-    const data = await adminStore.getAuthUrl('google', redirectUri);
+    const data = await adminStore.getAIAuthUrl(isAntigravity, redirectUri);
     if (data && data.url) {
-      window.location.href = data.url;
+		(window as any).activeOAuthPopup = window.open(
+			data.url,
+			"OAuthPopup",
+			"width=600,height=400,left=200,top=100"
+		  );
     }
   } catch (e) {
     toast.error(t('admin.aiAccounts.toast.oauthFailed'));

@@ -424,10 +424,22 @@ export const useAdminStore = defineStore('admin', () => {
         }
     }
 
-    async function getAuthUrl(platform: string, redirectUri?: string) {
+    // async function getAuthUrl(platform: string, redirectUri?: string) {
+    //     try {
+    //         const res : any = await api.get(`/admin/ai/auth/${platform}`, {
+    //             params: { redirectUri }
+    //         })
+    //         return res.data
+    //     } catch (error) {
+    //         handleError(error)
+    //         throw error
+    //     }
+    // }
+
+    async function getAIAuthUrl(isAntigravity: boolean = false, redirectUri?: string) {
         try {
-            const res : any = await api.get(`/admin/ai/auth/${platform}`, {
-                params: { redirectUri }
+            const res : any = await api.get(`/admin/ai/accounts/auth-url`, {
+                params: { isAntigravity, redirectUri }
             })
             return res.data
         } catch (error) {
@@ -438,7 +450,8 @@ export const useAdminStore = defineStore('admin', () => {
 
     async function handleAIAuthCallback(platform: string, code: string, state?: string, redirectUri?: string) {
         try {
-            const res : any = await api.post(`/admin/ai/auth/${platform}/callback`, { code, state, redirectUri })
+            ///admin/ai/accounts/callback
+            const res : any = await api.post(`admin/ai/accounts/callback`, { code, state, redirectUri })
             toast.success('AI Account connected successfully')
             return res.data
         } catch (error) {
@@ -554,11 +567,12 @@ export const useAdminStore = defineStore('admin', () => {
         triggerNetworkEvent,
         updateAIAccount,
         fetchAIAccounts,
-        getAuthUrl,
+        // getAuthUrl,
         addDirectAccount,
         syncAccount,
         updateFlowToken,
         deleteAIAccount,
+        getAIAuthUrl,
         handleAIAuthCallback,
         createProject,
         fetchAIPerformance,

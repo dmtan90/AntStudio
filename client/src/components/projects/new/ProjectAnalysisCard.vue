@@ -10,7 +10,7 @@
     <div :class="msg.expandAnalysis ? 'document-content expanded' : 'document-content'" @mouseup="$emit('text-selection', $event, 'Resource Analysis')">
       <div class="analysis-type"><strong>{{ t('projects.new.results.analysis.type') }}:</strong> {{ t('projects.new.results.analysis.document') }}</div>
       <div class="analysis-title">
-        {{ t('projects.new.results.analysis.scriptAnalysisTitle') }}: {{ msg.result.cumulative?.creativeBrief?.title || 'Untitled' }}
+        {{ t('projects.new.results.analysis.scriptAnalysisTitle') }}: {{ msg.result.cumulative?.creativeBrief?.title || msg.result.cumulative?.analysis?.creativeBrief?.title || 'Untitled' }}
         <div class="inline-comment-icon" @click.stop="$emit('comment', 'Script Title')"><comment theme="outline" size="12"/></div>
         
         <div class="analysis-actions" style="margin-left: auto;">
@@ -48,7 +48,7 @@
             <div class="char-sub-details" v-if="char.physical_traits">
               <span class="sub-label">{{ t('projects.new.results.analysis.physical') }}:</span> {{ Object.values(char.physical_traits).filter(Boolean).join(', ') }} | <span class="sub-label">{{ t('projects.new.results.analysis.voice') }}:</span> {{ char.voice_profile }}
             </div>
-            <!-- Actor Consistency: Visual Reference Sheets (Phase 5) -->
+            <!-- Actor Consistency: Visual Reference Sheets -->
             <div class="character-reference-sheet" v-if="char.visualDescription || char.imagePrompt">
               <div class="ref-label">VISUAL ANCHOR POINTS:</div>
               <p class="ref-text">{{ char.visualDescription }}</p>
@@ -119,7 +119,7 @@
         </ul>
       </div>
 
-      <!-- Expert Board Review (Phase 5) -->
+      <!-- Expert Board Review -->
       <div v-if="msg.result.cumulative?.analysis?.expertFeedback?.length" class="doc-section expert-review-section">
         <div class="section-title-row">
           <h4 class="text-brand-secondary">7. BOARD OF EXPERTS REVIEW</h4>

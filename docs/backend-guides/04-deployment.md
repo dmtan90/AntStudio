@@ -1,6 +1,8 @@
-# AntFlow Deployment Guide
+# AntStudio Deployment Guide
 
-This document covers how to deploy the AntFlow backend and its related infrastructure.
+This document covers how to deploy the AntStudio backend and its related infrastructure.
+
+---
 
 ## 1. Docker Deployment (Recommended)
 
@@ -8,20 +10,20 @@ The backend comes with a `Dockerfile` for easy containerization.
 
 ### Build the Image
 ```bash
-docker build -t antflow-backend:latest ./server
+docker build -t antstudio-backend:latest ./server
 ```
 
 ### Run with Docker Compose
 It is recommended to use `docker-compose` to manage the backend, MongoDB, and Redis.
 
-**`docker-compose.yml` (Example)**:
+**`docker-compose.yml`**:
 ```yaml
 version: '3.8'
 services:
   backend:
-    image: antflow-backend:latest
+    image: antstudio-backend:latest
     ports:
-      - "3000:3000"
+      - "4000:4000"
     env_file: .env
     depends_on:
       - mongodb
@@ -43,40 +45,38 @@ volumes:
   mongodb_data:
 ```
 
-## 2. Manual Deployment
+---
 
-If not using Docker:
-1.  Ensure **Node.js 18+**, **FFmpeg**, and **MongoDB** are installed on the host.
-2.  Clone the repository and `npm install` in the `server` directory.
-3.  Set up the `.env` file.
-4.  Run `npm run build` and then `npm start`.
-5.  Use a process manager like **PM2** to keep the app alive:
-    ```bash
-    pm2 start dist/index.js --name "antflow-backend"
-    ```
+## 2. Manual & GCP Deployment
+
+If deploying manually or on GCP:
+1. Ensure **Node.js 18+**, **FFmpeg**, and **MongoDB** are installed on the host.
+2. Run automated script:
+   - Linux/GCP: `./deploy-gcp.sh`
+   - Windows: `deploy-gcp.cmd`
+3. Set up the `.env` file.
+4. Run `pnpm run build` and start using PM2:
+   ```bash
+   pm2 start server/dist/index.js --name "antstudio-backend"
+   ```
+
+---
 
 ## 3. Infrastructure Integrations
 
-### Ant Media Server (AMS)
-AntFlow requires an active Ant Media Server instance for WebRTC and RTMP processing.
-1.  **Installation**: Install AMS on a dedicated Ubuntu server.
-2.  **WebRTC**: Ensure SSL (HTTPS) is enabled on AMS for WebRTC to function in browsers/mobile.
-3.  **App Secret**: Configure the `ANT_MEDIA_SECRET` in your backend `.env` to match the secret in the AMS app settings.
+### Streaming Ingest & NMS Relay
+AntStudio uses built-in Node-Media-Server (NMS) and FFmpeg for RTMP stream relaying:
+1. **RTMP Port**: Configured via `RTMP_PORT=1935` in `.env`.
+2. **WebRTC**: Ensure SSL (HTTPS) is enabled on your domain for browser camera streaming.
 
-### File Storage (S3)
--   Create an S3 bucket with public-read permissions for assets (or use a CloudFront distribution).
--   Ensure the IAM user has `s3:PutObject`, `s3:GetObject`, and `s3:DeleteObject` permissions.
+### File Storage (S3 / Blaze B2)
+- Create an S3 bucket with public-read permissions for assets.
+- Ensure IAM credentials have `s3:PutObject`, `s3:GetObject`, and `s3:DeleteObject` permissions.
 
-## 4. CI/CD Pipeline
+---
 
-A typical pipeline should:
-1.  Run `npm test` to ensure stability.
-2.  Run `pnpm build` (or `npm run build`).
-3.  Build and push the Docker image to a registry.
-4.  Deploy to the staging/production server and restart the container.
+## 4. Monitoring & Maintenance
 
-## 5. Monitoring & Maintenance
-
--   **Logs**: Check `server/logs/` or use a logging service.
--   **Health Checks**: `/api/health` (if implemented) monitors database and service connectivity.
--   **Backups**: Regularly backup the MongoDB database using `mongodump`.
+- **Logs**: Check `server/logs/` or use a logging service.
+- **Health Checks**: `/health` and `/api/health` endpoints monitor core service connectivity.
+- **Backups**: Regularly backup the MongoDB database using `mongodump`.

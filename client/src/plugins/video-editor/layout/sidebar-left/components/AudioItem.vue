@@ -41,11 +41,29 @@ const options = ref({
   url: '',
 })
 
-onMounted(() => {
-  if (props.audio.source) {
-    options.value.url = getFileUrl(props.audio.source);
+onMounted(async () => {
+  if (getAudioSource(props.audio)) {
+    options.value.url = await getAudioSource(props.audio);
   }
 });
+
+watch(() => props.audio, async () => {
+  if (getAudioSource(props.audio)) {
+    options.value.url = await getAudioSource(props.audio);
+  }
+});
+
+const getAudioSource = async (audio) => {
+  let src = null;
+  if (audio?.source) {
+    src = await getFileUrl(audio.source, { cached: true });
+  } else if (audio?.preview_url) {
+    src = await getFileUrl(audio.preview_url, { cached: true });
+  } else if (audio?.url) {
+    src = await getFileUrl(audio.url, { cached: true });
+  }
+  return src;
+}
 
 const currentTime = ref<string>('00:00')
 const totalDuration = ref<string>('00:00')
@@ -58,6 +76,7 @@ const timeUpdateHandler = (time: number) => {
 }
 
 const readyHandler = (duration: any) => {
+  console.log("readyHandler", duration);
   totalDuration.value = formatTime(duration)
   loading.value = false;
 }
@@ -85,7 +104,7 @@ const handlePlay = (event: MouseEvent) => {
       class="group shrink-0 h-16 w-full border border-white/5 bg-white/5 overflow-hidden rounded-xl shadow-sm relative transition-all duration-300 hover:bg-white/10 hover:border-white/10 hover:shadow-lg hover:shadow-purple-500/5">
       
       <div class="opacity-50 group-hover:opacity-100 transition-opacity px-2 flex items-center h-full">
-        <WaveSurferPlayer 
+        <WaveSurferPlayer v-if="options.url"
           class="h-8 w-full rounded-md z-1" 
           :options="options" 
           @timeupdate="(time: number) => timeUpdateHandler(time)"
@@ -101,11 +120,9 @@ const handlePlay = (event: MouseEvent) => {
         <el-button 
           :icon="isPlaying ? Pause : Play" 
           size="large" 
-          text 
-          bg 
-          circle 
+          type="primary"
+          plain bg circle 
           @click="handlePlay" 
-          class="!bg-white/10 !backdrop-blur-md !border-white/20 !text-white hover:!bg-brand-primary hover:!border-brand-primary transition-all scale-90 group-hover:scale-100" 
         />
       </div>
 

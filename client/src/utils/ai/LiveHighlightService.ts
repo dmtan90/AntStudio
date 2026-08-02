@@ -42,7 +42,7 @@ export class LiveHighlightService {
 
     /**
      * Manually or autonomously trigger a highlight capture from the current buffer.
-     * Phase 24: Now supports context and viralityScore in metadata.
+     * Now supports context and viralityScore in metadata.
      */
     public async exportHighlight(metadata: { type: string, score: number, title?: string, context?: string }): Promise<string | null> {
         if (this.chunks.length === 0) return null;

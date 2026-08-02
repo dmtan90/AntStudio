@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="$t('projects.previewModal.title')"
+    :title="project?.title || $t('projects.previewModal.title')"
     width="800px"
     class="preview-dialog"
     destroy-on-close
@@ -10,7 +10,7 @@
       <div class="video-container">
         <video 
           v-if="videoUrl" 
-          :src="videoUrl" 
+          :src="getFileUrl(videoUrl)" 
           controls 
           class="preview-player"
         ></video>
@@ -302,17 +302,24 @@ const getAiPeakTime = async () => {
     const acc = accounts.value.find(a => a._id === selectedAccountIds.value[0]);
     const timeStr = await platformStore.getBestPostingTime(acc?.platform || 'youtube');
     if (timeStr) {
-      // Suggest for today or tomorrow at that time
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      const suggested = new Date();
-      suggested.setUTCHours(hours, minutes, 0, 0);
-      
-      if (suggested < new Date()) {
-        suggested.setUTCDate(suggested.getUTCDate() + 1);
+      const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+      if (match) {
+        const hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const suggested = new Date();
+        suggested.setHours(hours, minutes, 0, 0);
+        
+        if (suggested < new Date()) {
+          suggested.setDate(suggested.getDate() + 1);
+        }
+        
+        isScheduled.value = true;
+        scheduledDate.value = new Date(suggested.getTime());
+        const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        toast.success(t('projects.previewModal.toasts.peakTimeSuccess', { time: formattedTime }));
+      } else {
+        toast.error(t('projects.previewModal.toasts.peakTimeFailed'));
       }
-      
-      scheduledDate.value = suggested;
-      toast.success(t('projects.previewModal.toasts.peakTimeSuccess', { time: timeStr }));
     }
   } catch (err) {
     toast.error(t('projects.previewModal.toasts.peakTimeFailed'));

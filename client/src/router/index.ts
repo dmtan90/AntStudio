@@ -5,7 +5,7 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         name: 'home',
-        component: () => import('@/views/general/Home.vue'),
+        component: () => import('@/views/general/LandingPage.vue'),
         meta: { requiresAuth: false, layout: 'auth' }
     },
     {
@@ -18,6 +18,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '/register',
         name: 'register',
         component: () => import('@/views/auth/Register.vue'),
+        meta: { requiresAuth: false, requiresGuest: true, layout: 'auth' }
+    },
+    {
+        path: '/reset-password',
+        name: 'reset-password',
+        component: () => import('@/views/auth/ResetPassword.vue'),
         meta: { requiresAuth: false, requiresGuest: true, layout: 'auth' }
     },
     {
@@ -132,71 +138,71 @@ const routes: Array<RouteRecordRaw> = [
         props: true
     },
     {
-        path: '/live/sales-legacy',
-        name: 'live-sales-legacy',
+        path: '/live/sales',
+        name: 'live-sales',
         component: () => import('@/views/live/SaleStudio.vue'),
         meta: { requiresAuth: true, layout: 'none' }
     },
     {
-        path: '/live/sales',
-        name: 'live-sales',
-        component: () => import('@/views/live/SaleStudioV2.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
+        path: '/embed/personal-shopper',
+        name: 'embed-personal-shopper',
+        component: () => import('@/views/embed/PersonalShopperWidget.vue'),
+        meta: { requiresAuth: false, layout: 'none' }
     },
-    {
-        path: '/live/talkshow',
-        name: 'live-talkshow',
-        component: () => import('@/views/live/TalkshowStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
-    {
-        path: '/live/news',
-        name: 'live-news',
-        component: () => import('@/views/live/NewsStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
-    {
-        path: '/live/music',
-        name: 'live-music',
-        component: () => import('@/views/live/MusicStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
-    {
-        path: '/live/gameshow',
-        name: 'live-gameshow',
-        component: () => import('@/views/live/GameShowStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
-    {
-        path: '/live/game_streaming',
-        name: 'live-game-streaming',
-        component: () => import('@/views/live/GameStreamingStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
-    {
-        path: '/live/sport',
-        name: 'live-sport',
-        component: () => import('@/views/live/SportStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
-    {
-        path: '/live/education',
-        name: 'live-education',
-        component: () => import('@/views/live/EducationStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
-    {
-        path: '/live/commentary',
-        name: 'live-commentary',
-        component: () => import('@/views/live/CommentaryStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
-    {
-        path: '/live/general',
-        name: 'live-general',
-        component: () => import('@/views/live/GeneralStudio.vue'),
-        meta: { requiresAuth: true, layout: 'none' }
-    },
+    // {
+    //     path: '/live/talkshow',
+    //     name: 'live-talkshow',
+    //     component: () => import('@/views/live/TalkshowStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
+    // {
+    //     path: '/live/news',
+    //     name: 'live-news',
+    //     component: () => import('@/views/live/NewsStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
+    // {
+    //     path: '/live/music',
+    //     name: 'live-music',
+    //     component: () => import('@/views/live/MusicStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
+    // {
+    //     path: '/live/gameshow',
+    //     name: 'live-gameshow',
+    //     component: () => import('@/views/live/GameShowStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
+    // {
+    //     path: '/live/game_streaming',
+    //     name: 'live-game-streaming',
+    //     component: () => import('@/views/live/GameStreamingStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
+    // {
+    //     path: '/live/sport',
+    //     name: 'live-sport',
+    //     component: () => import('@/views/live/SportStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
+    // {
+    //     path: '/live/education',
+    //     name: 'live-education',
+    //     component: () => import('@/views/live/EducationStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
+    // {
+    //     path: '/live/commentary',
+    //     name: 'live-commentary',
+    //     component: () => import('@/views/live/CommentaryStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
+    // {
+    //     path: '/live/general',
+    //     name: 'live-general',
+    //     component: () => import('@/views/live/GeneralStudio.vue'),
+    //     meta: { requiresAuth: true, layout: 'none' }
+    // },
     {
         path: '/gemini-live-chat',
         name: 'gemini-live-chat',
@@ -388,7 +394,6 @@ router.beforeEach(async (to, from, next) => {
     const isAuthenticated = userStore.isAuthenticated
     const isAdmin = userStore.user?.role === 'admin'
     const isSysAdmin = userStore.user?.role === 'sys-admin'
-
     if (to.meta.requiresAuth && !isAuthenticated) {
         console.log("token", to.query.token, "path", to.path);
         // Feature: Allow Guest Access to Studio with token

@@ -30,11 +30,11 @@
                         <div class="flex items-center gap-2">
                             <span class="text-[8px] font-black opacity-30 uppercase tracking-widest">{{ $t('influencers.voiceLibrary.gender') }}</span>
                             <div class="flex gap-1">
-                                <div v-for="g in ['all', 'female', 'male', 'neutral']" :key="g"
-                                     @click="genderFilter = g"
-                                     class="trait-tag !py-1 !px-3 !text-[8px]" :class="{'active': genderFilter === g}">
+                                <el-tag v-for="g in ['all', 'female', 'male', 'neutral']" 
+                                :key="g" :type="genderFilter === g ? 'primary' : 'info'"
+                                @click="genderFilter = g">
                                     {{ $t(`influencers.voiceLibrary.genders.${g}`).toUpperCase() }}
-                                </div>
+                                </el-tag>
                             </div>
                         </div>
                     </div>

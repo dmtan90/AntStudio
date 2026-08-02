@@ -9,7 +9,7 @@ export interface AudienceSignal {
 }
 
 /**
- * Phase 25: Aggregates all audience signals (chat velocity, intent, vibe)
+ * Aggregates all audience signals (chat velocity, intent, vibe)
  * and fires events to trigger autonomous show pivots.
  */
 export class AudienceIntelligenceService {

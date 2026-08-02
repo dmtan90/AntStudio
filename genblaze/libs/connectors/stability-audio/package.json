@@ -1,0 +1,7 @@
+{
+  "name": "genblaze-stability-audio",
+  "version": "0.3.2-ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module"
+}

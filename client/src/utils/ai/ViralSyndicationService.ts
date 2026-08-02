@@ -19,8 +19,8 @@ export class ViralSyndicationService {
     }
 
     /**
-     * Phase 43: Public method to manually (or via AI) publish a viral moment.
-     * Phase 24: Now accepts context and viralityScore for targeted distribution.
+     * Public method to manually (or via AI) publish a viral moment.
+     * Now accepts context and viralityScore for targeted distribution.
      */
     public async publishViralMoment(moment: { 
         title: string, 
@@ -40,7 +40,7 @@ export class ViralSyndicationService {
     }
 
     /**
-     * Phase 33: Automatically syndicates the final session recap.
+     * Automatically syndicates the final session recap.
      */
     public async syndicateFullRecap(recap: any) {
         console.log(`[ViralSyndication] Syndicating Full Session Recap: ${recap.title}`);
@@ -78,7 +78,7 @@ export class ViralSyndicationService {
 
         console.log(`[ViralSyndication] Syndicating: ${moment.reason} → Platforms: ${platforms.join(', ')}`);
 
-        // Phase 24: Generate a context-aware caption via Gemini
+        // Generate a context-aware caption via Gemini
         let caption = `🔥 ${moment.reason} ${hashtags}`;
         try {
             const api = (await import('@/utils/api')).default;

@@ -13,14 +13,14 @@
         {{ t('projects.editor.storyboard.productionSegments') }}
       </button>
       <button class="px-5 py-2 rounded-lg text-xs font-bold transition-all"
-        :class="activeSection === 'style' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'text-white/40 hover:text-white'"
-        @click="activeSection = 'style'">
-        {{ t('projects.editor.storyboard.styleRules') || 'Style Rules' }}
-      </button>
-      <button class="px-5 py-2 rounded-lg text-xs font-bold transition-all"
         :class="activeSection === 'audio' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'text-white/40 hover:text-white'"
         @click="activeSection = 'audio'">
         {{ t('projects.editor.storyboard.audio') || 'Audio' }}
+      </button>
+      <button class="px-5 py-2 rounded-lg text-xs font-bold transition-all"
+        :class="activeSection === 'style' ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'text-white/40 hover:text-white'"
+        @click="activeSection = 'style'">
+        {{ t('projects.editor.storyboard.styleRules') || 'Style Rules' }}
       </button>
     </div>
 
@@ -198,10 +198,32 @@
             <text-message theme="outline" size="18" class="text-white/20" />
           </div>
           <div class="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5">
-            <span class="text-xs text-white/70">{{ t('projects.editor.timeline.subtitleTrack') || 'Subtitle Track' }}</span>
-            <el-switch :model-value="true" disabled />
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-white/70">{{ t('projects.editor.timeline.subtitleTrack') || 'Subtitle Track' }}</span>
+              <span v-if="subtitlesGeneratedCount > 0" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-semibold border border-emerald-500/30">
+                {{ subtitlesGeneratedCount }}/{{ (project.storyboard?.segments || []).length }} {{ t('projects.editor.storyboard.captionsReady') || 'Ready' }}
+              </span>
+            </div>
+            <el-switch :model-value="subtitlesEnabled" @change="toggleSubtitles" />
           </div>
           <p class="text-[10px] text-white/30 italic mt-2">{{ t('projects.editor.storyboard.subtitlesInfo') || 'Auto-generated based on voiceover and script analysis.' }}</p>
+
+          <!-- Subtitle Buttons -->
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              class="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-bold hover:bg-yellow-500 hover:text-black transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_4px_15px_rgba(234,179,8,0.1)]"
+              :disabled="isAnyLoading"
+              @click="$emit('generate-all-subtitles')">
+              <text-message theme="outline" size="14" />
+              {{ t('projects.editor.storyboard.generateSubtitles') || 'Generate All' }}
+            </button>
+            <button
+              class="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition-all"
+              @click="showCaptionEditor = true">
+              <edit theme="outline" size="14" />
+              {{ t('projects.editor.storyboard.editCaptions') || 'Edit Captions' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -214,13 +236,11 @@
           <peoples theme="outline" size="22" class="text-blue-400" />
           {{ t('projects.editor.storyboard.keyElements') }}
         </h3>
-        <button
-          class="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 text-xs font-bold hover:bg-blue-600 hover:text-white transition-all group disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale shadow-[0_4px_15px_rgba(59,130,246,0.1)]"
-          :disabled="isAnyLoading" @click="$emit('regenerate-all-characters')">
-          <refresh theme="outline" size="14"
-            :class="[isAnyLoading ? '' : 'group-hover:rotate-180 transition-transform duration-500']" />
-          {{ t('projects.editor.storyboard.regenerateAi') }}
-        </button>
+        <div class="flex items-center flex-end">
+          <el-button plain round bg :icon="Refresh" :disabled="isAnyLoading" @click="$emit('regenerate-all-characters')">
+            <span>{{ t('projects.editor.storyboard.regenerateCharacters') || 'Generate Characters' }}</span>
+          </el-button>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -290,25 +310,18 @@
           <movie theme="outline" size="22" class="text-blue-400" />
           {{ t('projects.editor.storyboard.productionSegments') }}
         </h3>
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-all group disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale shadow-[0_4px_15px_rgba(59,130,246,0.3)]"
-            :disabled="isAnyLoading" @click="$emit('generate-all-sequential')">
-            <magic-wand theme="outline" size="14" />
-            {{ t('projects.editor.storyboard.generateAllAssets') || 'Generate All Assets' }}
-          </button>
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 text-xs font-bold hover:bg-blue-600 hover:text-white transition-all group disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale"
-            :disabled="isAnyLoading" @click="$emit('generate-all-frames')">
-            <pic theme="outline" size="14" />
+        <div class="flex items-center flex-end gap-2">
+          <el-button plain round bg :icon="MagicWand" :disabled="isAnyLoading" @click="$emit('generate-all-sequential')">
+            <span>{{ t('projects.editor.storyboard.generateAllAssets') || 'Generate All Assets' }}</span>
+          </el-button>
+          <el-button plain round bg :icon="Pic" :disabled="isAnyLoading" @click="$emit('generate-all-frames')">
             {{ t('projects.editor.storyboard.regenerateAllFrames') }}
-          </button>
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400 text-xs font-bold hover:bg-blue-600 hover:text-white transition-all group disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale"
-            :disabled="isAnyLoading" @click="$emit('generate-all-videos')">
-            <play theme="outline" size="14" />
+          </el-button>
+          <el-button plain round bg :icon="Video" :disabled="isAnyLoading" @click="$emit('generate-all-videos')">
             {{ t('projects.editor.storyboard.regenerateAllVideos') }}
-          </button>
+          </el-button>
         </div>
+      </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <div v-for="(seg, idx) in (project.storyboard?.segments || (Array.isArray(project.storyboard) ? project.storyboard : []))" :key="seg.order || idx"
@@ -446,155 +459,155 @@
           </div>
         </div>
 
-            <!-- Meta Column -->
-            <div class="col-span-12 lg:col-span-7 h-[600px] flex flex-col">
-              <el-tabs v-model="activeCharTab" class="cinematic-tabs flex-1 overflow-hidden">
-                <el-tab-pane :label="t('projects.editor.storyboard.charDialog.general')" name="general">
-                  <div class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar">
-                    <div class="form-group border-b border-white/5 pb-6">
-                      <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
-                        t('projects.editor.storyboard.charDialog.general') }}</label>
-                      <div class="grid grid-cols-2 gap-4">
-                        <el-input v-model="editingChar.name" :placeholder="t('projects.editor.storyboard.charDialog.name')"
-                          class="cinematic-input col-span-2" />
-                        <el-select v-model="editingChar.species" filterable allow-create default-first-option
-                          :placeholder="t('projects.editor.storyboard.charDialog.species')" class="cinematic-select"
-                          :teleported="false">
-                          <el-option v-for="s in speciesOptions" :key="s.key"
-                            :label="t('projects.editor.storyboard.charDialog.options.' + s.key)" :value="s.value" />
+        <!-- Meta Column -->
+        <div class="col-span-12 lg:col-span-7 h-[600px] flex flex-col">
+          <el-tabs v-model="activeCharTab" class="cinematic-tabs flex-1 overflow-hidden">
+            <el-tab-pane :label="t('projects.editor.storyboard.charDialog.general')" name="general">
+              <div class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar">
+                <div class="form-group border-b border-white/5 pb-6">
+                  <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
+                    t('projects.editor.storyboard.charDialog.general') }}</label>
+                  <div class="grid grid-cols-2 gap-4">
+                    <el-input v-model="editingChar.name" :placeholder="t('projects.editor.storyboard.charDialog.name')"
+                      class="cinematic-input col-span-2" />
+                    <el-select v-model="editingChar.species" filterable allow-create default-first-option
+                      :placeholder="t('projects.editor.storyboard.charDialog.species')" class="cinematic-select"
+                      :teleported="false">
+                      <el-option v-for="s in speciesOptions" :key="s.key"
+                        :label="t('projects.editor.storyboard.charDialog.options.' + s.key)" :value="s.value" />
+                    </el-select>
+                    <el-select v-model="editingChar.gender" filterable allow-create default-first-option
+                      :placeholder="t('projects.editor.storyboard.charDialog.gender')" class="cinematic-select"
+                      :teleported="false">
+                      <el-option v-for="g in genderOptions" :key="g.key"
+                        :label="t('projects.editor.storyboard.charDialog.options.' + g.key)" :value="g.value" />
+                    </el-select>
+                    <el-input v-model="editingChar.age" :placeholder="t('projects.editor.storyboard.charDialog.age')"
+                      class="cinematic-input" />
+                    <el-select v-model="editingChar.body_build" filterable allow-create default-first-option
+                      :placeholder="t('projects.editor.storyboard.charDialog.bodyBuild')" class="cinematic-select"
+                      :teleported="false">
+                      <el-option v-for="b in bodyBuildOptions" :key="b.key"
+                        :label="t('projects.editor.storyboard.charDialog.options.' + b.key)" :value="b.value" />
+                    </el-select>
+                  </div>
+                </div>
+
+                <div class="form-group border-b border-white/5 pb-6">
+                  <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
+                    t('projects.detail.summary') }}</label>
+                  <el-input v-model="editingChar.description" type="textarea" :rows="4"
+                    :placeholder="t('projects.detail.summary')" class="cinematic-input" />
+                </div>
+
+                <div class="form-group border-b border-white/5 pb-6">
+                  <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
+                    t('projects.editor.storyboard.charDialog.physical') }}</label>
+                  <div class="grid grid-cols-2 gap-4">
+                    <el-select v-model="editingChar.face_shape" filterable allow-create default-first-option
+                      :placeholder="t('projects.editor.storyboard.charDialog.faceShape')" class="cinematic-select"
+                      :teleported="false">
+                      <el-option v-for="f in faceShapeOptions" :key="f.key"
+                        :label="t('projects.editor.storyboard.charDialog.options.' + f.key)" :value="f.value" />
+                    </el-select>
+                    <el-select v-model="editingChar.hair" filterable allow-create default-first-option
+                      :placeholder="t('projects.editor.storyboard.charDialog.hair')" class="cinematic-select"
+                      :teleported="false">
+                      <el-option v-for="h in hairOptions" :key="h.key"
+                        :label="t('projects.editor.storyboard.charDialog.options.' + h.key)" :value="h.value" />
+                    </el-select>
+                    <el-select v-model="editingChar.skin_or_fur_color" filterable allow-create default-first-option
+                      :placeholder="t('projects.editor.storyboard.charDialog.skinColor')" class="cinematic-select"
+                      :teleported="false">
+                      <el-option v-for="sk in skinColorOptions" :key="sk.key"
+                        :label="t('projects.editor.storyboard.charDialog.options.' + sk.key)" :value="sk.value" />
+                    </el-select>
+                    <el-input v-model="editingChar.eyes"
+                      :placeholder="t('projects.editor.storyboard.charDialog.eyes') || 'Eyes (Color, Shape)'" class="cinematic-input" />
+                    <el-input v-model="editingChar.signature_feature"
+                      :placeholder="t('projects.editor.storyboard.charDialog.features')" class="cinematic-input" />
+                  </div>
+                </div>
+
+                <div class="form-group border-b border-white/5 pb-6">
+                  <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
+                    t('projects.editor.storyboard.charDialog.costume') }}</label>
+                  <div class="grid grid-cols-2 gap-4">
+                    <el-input v-model="editingChar.outfit_top"
+                      :placeholder="t('projects.editor.storyboard.charDialog.outfitTop')"
+                      class="cinematic-input col-span-2" />
+                    <el-input v-model="editingChar.outfit_bottom"
+                      :placeholder="t('projects.editor.storyboard.charDialog.outfitBottom')" class="cinematic-input" />
+                    <el-input v-model="editingChar.shoes_or_footwear"
+                      :placeholder="t('projects.editor.storyboard.charDialog.footwear')" class="cinematic-input" />
+                    <el-input v-model="editingChar.helmet_or_hat"
+                      :placeholder="t('projects.editor.storyboard.charDialog.headwear')" class="cinematic-input" />
+                    <el-input v-model="editingChar.props" :placeholder="t('projects.editor.storyboard.charDialog.props')"
+                      class="cinematic-input" />
+                  </div>
+                </div>
+
+                <div class="form-group pb-6">
+                  <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
+                    t('projects.editor.storyboard.charDialog.voice') }}</label>
+                  <div v-if="editingChar.tts_config" class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-2 col-span-2">
+                      <span class="text-[10px] text-white/40">{{ t('projects.editor.storyboard.charDialog.voiceId')
+                        }}</span>
+                      <div class="flex gap-2">
+                        <el-select v-model="editingChar.tts_config.voice_id" filterable
+                          :placeholder="t('projects.editor.storyboard.charDialog.voiceId')"
+                          class="cinematic-select flex-1" :teleported="false">
+                          <el-option v-for="v in googleVoices" :key="v.id" :label="`${v.name} (${v.lang}) - ${v.gender}`"
+                            :value="v.id" />
                         </el-select>
-                        <el-select v-model="editingChar.gender" filterable allow-create default-first-option
-                          :placeholder="t('projects.editor.storyboard.charDialog.gender')" class="cinematic-select"
-                          :teleported="false">
-                          <el-option v-for="g in genderOptions" :key="g.key"
-                            :label="t('projects.editor.storyboard.charDialog.options.' + g.key)" :value="g.value" />
-                        </el-select>
-                        <el-input v-model="editingChar.age" :placeholder="t('projects.editor.storyboard.charDialog.age')"
-                          class="cinematic-input" />
-                        <el-select v-model="editingChar.body_build" filterable allow-create default-first-option
-                          :placeholder="t('projects.editor.storyboard.charDialog.bodyBuild')" class="cinematic-select"
-                          :teleported="false">
-                          <el-option v-for="b in bodyBuildOptions" :key="b.key"
-                            :label="t('projects.editor.storyboard.charDialog.options.' + b.key)" :value="b.value" />
-                        </el-select>
+                        <el-button circle class="!bg-blue-600 !text-white !border-none"
+                          :disabled="!editingChar.tts_config.voice_id"
+                          @click="playVoiceSample(editingChar.tts_config.voice_id)"
+                          :title="t('projects.editor.storyboard.charDialog.listen')">
+                          <play theme="outline" size="14" fill="#fff" />
+                        </el-button>
                       </div>
                     </div>
-
-                    <div class="form-group border-b border-white/5 pb-6">
-                      <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
-                        t('projects.detail.summary') }}</label>
-                      <el-input v-model="editingChar.description" type="textarea" :rows="4"
-                        :placeholder="t('projects.detail.summary')" class="cinematic-input" />
-                    </div>
-
-                    <div class="form-group border-b border-white/5 pb-6">
-                      <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
-                        t('projects.editor.storyboard.charDialog.physical') }}</label>
-                      <div class="grid grid-cols-2 gap-4">
-                        <el-select v-model="editingChar.face_shape" filterable allow-create default-first-option
-                          :placeholder="t('projects.editor.storyboard.charDialog.faceShape')" class="cinematic-select"
-                          :teleported="false">
-                          <el-option v-for="f in faceShapeOptions" :key="f.key"
-                            :label="t('projects.editor.storyboard.charDialog.options.' + f.key)" :value="f.value" />
-                        </el-select>
-                        <el-select v-model="editingChar.hair" filterable allow-create default-first-option
-                          :placeholder="t('projects.editor.storyboard.charDialog.hair')" class="cinematic-select"
-                          :teleported="false">
-                          <el-option v-for="h in hairOptions" :key="h.key"
-                            :label="t('projects.editor.storyboard.charDialog.options.' + h.key)" :value="h.value" />
-                        </el-select>
-                        <el-select v-model="editingChar.skin_or_fur_color" filterable allow-create default-first-option
-                          :placeholder="t('projects.editor.storyboard.charDialog.skinColor')" class="cinematic-select"
-                          :teleported="false">
-                          <el-option v-for="sk in skinColorOptions" :key="sk.key"
-                            :label="t('projects.editor.storyboard.charDialog.options.' + sk.key)" :value="sk.value" />
-                        </el-select>
-                        <el-input v-model="editingChar.eyes"
-                          :placeholder="t('projects.editor.storyboard.charDialog.eyes') || 'Eyes (Color, Shape)'" class="cinematic-input" />
-                        <el-input v-model="editingChar.signature_feature"
-                          :placeholder="t('projects.editor.storyboard.charDialog.features')" class="cinematic-input" />
-                      </div>
-                    </div>
-
-                    <div class="form-group border-b border-white/5 pb-6">
-                      <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
-                        t('projects.editor.storyboard.charDialog.costume') }}</label>
-                      <div class="grid grid-cols-2 gap-4">
-                        <el-input v-model="editingChar.outfit_top"
-                          :placeholder="t('projects.editor.storyboard.charDialog.outfitTop')"
-                          class="cinematic-input col-span-2" />
-                        <el-input v-model="editingChar.outfit_bottom"
-                          :placeholder="t('projects.editor.storyboard.charDialog.outfitBottom')" class="cinematic-input" />
-                        <el-input v-model="editingChar.shoes_or_footwear"
-                          :placeholder="t('projects.editor.storyboard.charDialog.footwear')" class="cinematic-input" />
-                        <el-input v-model="editingChar.helmet_or_hat"
-                          :placeholder="t('projects.editor.storyboard.charDialog.headwear')" class="cinematic-input" />
-                        <el-input v-model="editingChar.props" :placeholder="t('projects.editor.storyboard.charDialog.props')"
-                          class="cinematic-input" />
-                      </div>
-                    </div>
-
-                    <div class="form-group pb-6">
-                      <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block mb-3">{{
-                        t('projects.editor.storyboard.charDialog.voice') }}</label>
-                      <div v-if="editingChar.tts_config" class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-2 col-span-2">
-                          <span class="text-[10px] text-white/40">{{ t('projects.editor.storyboard.charDialog.voiceId')
-                            }}</span>
-                          <div class="flex gap-2">
-                            <el-select v-model="editingChar.tts_config.voice_id" filterable
-                              :placeholder="t('projects.editor.storyboard.charDialog.voiceId')"
-                              class="cinematic-select flex-1" :teleported="false">
-                              <el-option v-for="v in googleVoices" :key="v.id" :label="`${v.name} (${v.lang}) - ${v.gender}`"
-                                :value="v.id" />
-                            </el-select>
-                            <el-button circle class="!bg-blue-600 !text-white !border-none"
-                              :disabled="!editingChar.tts_config.voice_id"
-                              @click="playVoiceSample(editingChar.tts_config.voice_id)"
-                              :title="t('projects.editor.storyboard.charDialog.listen')">
-                              <play theme="outline" size="14" fill="#fff" />
-                            </el-button>
-                          </div>
-                        </div>
-                        <el-input v-model="editingChar.tts_config.style_category"
-                          :placeholder="t('projects.editor.storyboard.charDialog.styleCategory')" class="cinematic-input" />
-                        <div class="flex flex-col gap-1">
-                          <span class="text-[10px] text-white/40">{{ t('projects.editor.storyboard.charDialog.pitch') }} ({{
-                            editingChar.tts_config.base_pitch }})</span>
-                          <el-slider v-model="editingChar.tts_config.base_pitch" :min="-20" :max="20" :step="0.5" />
-                        </div>
-                      </div>
+                    <el-input v-model="editingChar.tts_config.style_category"
+                      :placeholder="t('projects.editor.storyboard.charDialog.styleCategory')" class="cinematic-input" />
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[10px] text-white/40">{{ t('projects.editor.storyboard.charDialog.pitch') }} ({{
+                        editingChar.tts_config.base_pitch }})</span>
+                      <el-slider v-model="editingChar.tts_config.base_pitch" :min="-20" :max="20" :step="0.5" />
                     </div>
                   </div>
-                </el-tab-pane>
+                </div>
+              </div>
+            </el-tab-pane>
 
-                <el-tab-pane :label="t('projects.editor.storyboard.segDialog.tabs.prompt')" name="prompt">
-                  <div class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar" v-loading="promptLoading">
-                    <div class="form-group">
-                      <div class="flex items-center justify-between mb-2">
-                        <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">{{ t('projects.editor.storyboard.englishAiPrompt') }}</label>
-                        <div class="flex items-center gap-3">
-                          <button
-                            class="flex items-center gap-1 text-[10px] text-white/40 hover:text-blue-400 transition-colors"
-                            @click="fetchPrompts('character', editingChar)">
-                            <refresh theme="outline" size="12" />
-                            {{ t('common.refresh') }}
-                          </button>
-                          <button
-                            class="flex items-center gap-1 text-[10px] text-white/40 hover:text-blue-400 transition-colors"
-                            @click="copyToClipboard(generatedPrompts.characterPrompt)">
-                            <copy theme="outline" size="12" />
-                            {{ t('common.copy') }}
-                          </button>
-                        </div>
-                      </div>
-                      <el-input :model-value="generatedPrompts.characterPrompt" type="textarea" :rows="16" readonly
-                        class="cinematic-input readonly-input" />
+            <el-tab-pane :label="t('projects.editor.storyboard.segDialog.tabs.prompt')" name="prompt">
+              <div class="p-2 space-y-6 h-[500px] overflow-y-auto custom-scrollbar" v-loading="promptLoading">
+                <div class="form-group">
+                  <div class="flex items-center justify-between mb-2">
+                    <label class="text-[10px] uppercase text-blue-400 font-bold tracking-widest block">{{ t('projects.editor.storyboard.englishAiPrompt') }}</label>
+                    <div class="flex items-center gap-3">
+                      <button
+                        class="flex items-center gap-1 text-[10px] text-white/40 hover:text-blue-400 transition-colors"
+                        @click="fetchPrompts('character', editingChar)">
+                        <refresh theme="outline" size="12" />
+                        {{ t('common.refresh') }}
+                      </button>
+                      <button
+                        class="flex items-center gap-1 text-[10px] text-white/40 hover:text-blue-400 transition-colors"
+                        @click="copyToClipboard(generatedPrompts.characterPrompt)">
+                        <copy theme="outline" size="12" />
+                        {{ t('common.copy') }}
+                      </button>
                     </div>
                   </div>
-                </el-tab-pane>
-              </el-tabs>
-            </div>
+                  <el-input :model-value="generatedPrompts.characterPrompt" type="textarea" :rows="16" readonly
+                    class="cinematic-input readonly-input" />
+                </div>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
+        </div>
       </div>
       <template #footer>
         <div class="flex justify-end gap-3 px-2 py-4">
@@ -866,6 +879,10 @@
         </div>
       </template>
     </el-dialog>
+    <!-- Caption Editor Dialog -->
+    <CaptionEditorDialog
+      v-model="showCaptionEditor"
+      :project="project" />
   </div>
 </template>
 
@@ -885,14 +902,19 @@ import {
   Play,
   PauseOne,
   Voice,
-  TextMessage
+  TextMessage,
+  Edit,
+  VideoTwo as Video
 } from '@icon-park/vue-next'
+import CaptionEditorDialog from './CaptionEditorDialog.vue'
 import { useProjectStore } from '@/stores/project'
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 import GMedia from '@/components/ui/GMedia.vue'
+import { getFileUrl } from '@/utils/api';
 
 const activeSection = ref('characters')
+const showCaptionEditor = ref(false)
 const projectStore = useProjectStore()
 const { t } = useI18n()
 
@@ -907,8 +929,19 @@ const emit = defineEmits([
   'regenerate-all-characters', 'generate-all-frames', 'generate-all-videos',
   'generate-all-sequential',
   'upload-character-image', 'upload-image-video',
-  'generate-music', 'generate-voiceover', 'generate-all-voiceovers'
+  'generate-music', 'generate-voiceover', 'generate-all-voiceovers',
+  'generate-subtitles', 'generate-all-subtitles'
 ])
+
+const subtitlesEnabled = ref(true)
+const toggleSubtitles = (val: boolean) => {
+  subtitlesEnabled.value = val
+}
+
+const subtitlesGeneratedCount = computed(() => {
+  const segments = props.project?.storyboard?.segments || []
+  return segments.filter((s: any) => s.captions && s.captions.length > 0).length
+})
 
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text)
@@ -939,8 +972,8 @@ const playAudio = (s3Key: string) => {
   if (playingAudio.value) {
     playingAudio.value.pause()
   }
-
-  const audio = new Audio(`/api/s3/stream?key=${encodeURIComponent(s3Key)}`)
+  const url = getFileUrl(s3Key);
+  const audio = new Audio(url)
   playingAudio.value = audio
   playingS3Key.value = s3Key
 

@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { aiManager } from '../utils/ai/AIServiceManager.js';
+import { aiManager } from '~/utils/ai/AIServiceManager.js';
 
-import { Logger } from '../utils/Logger.js';
+import { Logger } from '~/utils/Logger.js';
+import { AIModelType } from '~/models/AdminSettings.js';
+import { aiAccountManager } from '~/utils/ai/AIAccountManager.js';
+import { AIAccountProvider } from '~/models/AIAccount.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -21,15 +24,18 @@ const getElevenLabs = async () => {
 
 // Helper to get Google TTS provider with standard account token
 const getGoogleTTS = async () => {
-    const provider = await aiManager.getProvider('google-tts');
+    let provider = await aiManager.getProvider(AIAccountProvider.GOOGLE);
     if (!provider) {
-        throw new Error('Google TTS provider not initialized');
+        // Fallback to 'vertex' if it exists
+        provider = await aiManager.getProvider(AIAccountProvider.GOOGLE_VERTEX);
+        if (!provider) {
+            throw new Error('Google TTS provider not initialized');
+        }
     }
 
     // Dynamic token sourcing from standard accounts
-    const { aiAccountManager } = await import('../utils/ai/AIAccountManager.js');
-    const account = await aiAccountManager.getOptimalAccount('audio');
-    if (account && account.providerId === 'google') {
+    const account = await aiAccountManager.getOptimalAccount(AIModelType.AUDIO);
+    if (account && account.providerId === AIAccountProvider.GOOGLE) {
         const token = await aiAccountManager.refreshAccessToken(account);
         if (typeof (provider as any).updateClient === 'function') {
             (provider as any).updateClient({ 

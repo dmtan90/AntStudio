@@ -1,5 +1,5 @@
 import express, { Response } from 'express';
-import { ApiKeyService } from '../services/ApiKeyService.js';
+import { ApiKeyService } from '../services/system/ApiKeyService.js';
 import { WebhookSubscription } from '../models/WebhookSubscription.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import crypto from 'crypto';

@@ -105,8 +105,6 @@ const topUp = () => {
     // Simulate payment flow
     toast.success(t('studio.drawers.economy.simulatedTopUp', { n: 500 }));
     // We can't update balance locally, must come from server via some event?
-    // For Phase 68, let's assume `topUp` is an API/Socket call not implemented yet
-    // OR just use a debug command.
     // Actually, VirtualEconomyService.addCredits exists.
     // Let's assume we have a "debug:add_credits" socket event or similar for testing.
     // Or just console log for now as user can't "buy credits" without real money integration logic.

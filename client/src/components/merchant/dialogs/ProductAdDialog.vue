@@ -85,8 +85,10 @@
                      <input v-model="extractedData.product.name" type="text" class="glass-input w-full" />
                    </div>
                    <div>
-                     <label class="block text-[8px] font-black opacity-30 uppercase mb-2">{{ t('merchant.adDialog.refineStep.price') }}</label>
-                     <input v-model="extractedData.product.price" type="text" class="glass-input w-full" />
+                     <label class="block text-[8px] font-black opacity-30 uppercase mb-2">{{ t('merchant.adDialog.refineStep.price') + ' (' + extractedData.product.currency + ')' }}</label>
+                     <input v-model="extractedData.product.price" 
+                      type="number" 
+                      class="glass-input w-full" />
                    </div>
                 </div>
                 <div>
@@ -108,7 +110,7 @@
                       <label class="block text-[8px] font-black opacity-30 uppercase mb-2">{{ t('merchant.adDialog.refineStep.brandLogo') }}</label>
                       <div class="flex gap-3 items-start">
                          <div class="w-20 h-20 rounded-xl bg-black/40 border border-white/5 overflow-hidden flex items-center justify-center p-2 group relative">
-                            <img v-if="extractedData.brand.logo" :src="extractedData.brand.logo" class="max-w-full max-h-full object-contain" />
+                            <img v-if="getFileUrl(extractedData.brand.logo)" :src="getFileUrl(extractedData.brand.logo)" class="max-w-full max-h-full object-contain" />
                             <div v-else class="text-[8px] font-black opacity-20 uppercase">{{ t('merchant.adDialog.refineStep.noLogo') }}</div>
                          </div>
                          <div class="flex-1">
@@ -175,7 +177,7 @@
                       :class="selectedImageIndex === idx ? 'border-blue-500 ring-2 ring-blue-500/30' : 'border-white/5 hover:border-white/20'"
                       @click="selectedImageIndex = idx"
                     >
-                       <img :src="img" class="w-full h-full object-cover transition-opacity" :class="selectedImageIndex === idx ? 'opacity-100' : 'opacity-60 group-hover:opacity-80'" />
+                       <img :src="getFileUrl(img)" class="w-full h-full object-cover transition-opacity" :class="selectedImageIndex === idx ? 'opacity-100' : 'opacity-60 group-hover:opacity-80'" />
                        <div v-if="selectedImageIndex === idx" class="absolute top-2 right-2">
                           <div class="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">
                              <check size="10" theme="filled" fill="white" />
@@ -349,7 +351,16 @@
                     <p class="text-[10px] font-bold text-white group-hover:text-blue-400 transition-colors">{{ props.product?.name || 'ad_preview' }}.mp4</p>
                   </div>
                   <div class="flex gap-2 justify-center">
-                    <button class="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/30 transition-all cursor-pointer group" @click="openLink(`/p/${props.product?._id || props.product?.id}`)">
+                    <el-button type="" :icon="LinkOne" @click="openLink(`/p/${props.product?._id || props.product?.id}`)">
+                      <span>{{ t('merchant.adDialog.renderStep.landingPage') }}</span>
+                    </el-button>
+                    <el-button type="success" :icon="Check" @click="publishToProduct" :loading="isPublishing">
+                      <span>{{ t('merchant.adDialog.renderStep.publish') }}</span>
+                    </el-button>
+                    <el-button type="primary" :icon="Share" @click="shareVideo">
+                      <span>{{ t('merchant.adDialog.renderStep.share') }}</span>
+                    </el-button>
+                    <!--<button class="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/30 transition-all cursor-pointer group" @click="openLink(`/p/${props.product?._id || props.product?.id}`)">
                       <div class="flex items-center gap-2 mb-2">
                         <LinkOne size="14" class="text-purple-400" />
                         <span class="text-[10px] font-black uppercase text-gray-400">{{ t('merchant.adDialog.renderStep.landingPage') }}</span>
@@ -366,7 +377,7 @@
                       <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 mx-auto mb-2 group-hover:bg-purple-500 group-hover:text-white transition-all">
                         <share size="16" />
                       </div>
-                    </button>
+                    </button>-->
                   </div>
                 </div>
                 <div class="p-6 rounded-3xl bg-blue-500/10 border border-blue-500/20 text-left flex items-start gap-4 mb-8">
@@ -474,6 +485,7 @@ import type { EditorTemplate } from 'video-editor/types/editor';
 const props = defineProps<{
   modelValue: boolean;
   product?: any; 
+  initialUrl?: string;
 }>();
 
 const emit = defineEmits(['update:modelValue', 'update:product']);
@@ -536,7 +548,7 @@ const template = ref<EditorTemplate | null>(null);
 const extractedData = reactive({
   product: {
     name: '',
-    price: '',
+    price: 0,
     description: '',
     currency: 'USD',
     stock: 0,
@@ -615,9 +627,9 @@ const resetWizard = () => {
     // Only reset if closed and opening fresh (handled by watch largely)
     if (!props.product) {
         step.value = 1;
-        productUrl.value = '';
+        productUrl.value = props.initialUrl || '';
         extractedData.product = { 
-          name: '', price: '', description: '', images: [], 
+          name: '', price: 0, description: '', images: [], 
           currency: 'USD', stock: 0, inventoryUrl: '', isActive: true,
           features: [], primary_colors: [], secondary_colors: [] 
         };
@@ -640,7 +652,7 @@ watch(() => props.product, (val) => {
   if (val) {
     extractedData.product = {
       name: val.name,
-      price: `${val.currency} ${val.price}`,
+      price: val.price,
       description: val.description,
       currency: val.currency,
       stock: val.stock,
@@ -663,6 +675,25 @@ watch(() => props.product, (val) => {
   }
 }, { immediate: true });
 
+// Handle initialUrl if provided
+watch(() => props.initialUrl, (url) => {
+  if (url) {
+    productUrl.value = url;
+    step.value = 1;
+    if (isVisible.value) {
+      analyzeProduct();
+    }
+  }
+});
+
+watch(isVisible, (visible) => {
+  if (visible && props.initialUrl) {
+    productUrl.value = props.initialUrl;
+    step.value = 1;
+    analyzeProduct();
+  }
+});
+
 const analyzeProduct = async () => {
   if (!productUrl.value) return;
   loading.value = true;
@@ -671,7 +702,7 @@ const analyzeProduct = async () => {
     
     if (data) {
       extractedData.product.name = data.name || '';
-      extractedData.product.price = data.price ? `${data.currency || 'USD'} ${data.price}` : '';
+      extractedData.product.price = data.price || 0;
       extractedData.product.description = data.description || '';
       extractedData.product.currency = data.currency || 'USD';
       extractedData.product.stock = data.stock || 0;
@@ -764,10 +795,11 @@ const launchEditor = async (headless: boolean) => {
       objective: 'E-commerce Ad',
       adapter: 'edit',//create
       ratio: ratioLabel,
-      template: template,
+      template: template.value,
       headless: headless
     };
 
+    // console.log("payload", JSON.stringify(payload));
     const encodedState = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
     isVisible.value = false;
     const ratioStr = ratioLabel === "square" ? "1:1" : (ratioLabel === "portrait" ? "9:16" : "16:9");
@@ -779,7 +811,8 @@ const launchEditor = async (headless: boolean) => {
         mode: 'template',
         aspectRatio: ratioStr as any,
         videoStyle: 'ads',
-        targetDuration: 15
+        targetDuration: 15,
+        // pages: template.value.pages
       });
 
       const project = data.project;
@@ -935,6 +968,7 @@ const publishToProduct = async () => {
         //   return toast.error(t('merchant.adDialog.toasts.publishFailed'));
         // }
         let productId = props.product?._id || props.product?.id;
+        console.log('publishToProduct', productId);
         if(!productId){
           const data = await marketplaceStore.createProduct({
             name: extractedData.product.name,
@@ -954,27 +988,45 @@ const publishToProduct = async () => {
             secondary_colors: extractedData.product.secondary_colors
           });
           toast.success(t('merchant.adDialog.toasts.productUpdateSuccess'));
-          emit('update:product', data.product);
-          productId = data.product._id;
+          emit('update:product', data.product ? data.product : data);
+          productId = data.product ? data.product._id : data._id;
         }
 
         if(!adVideoKey.value){
-          const formData = new FormData();
-          formData.append('video', videoBlob.value, `ad_${extractedData.product.name}.mp4`);
+          const projectData = await useProjectStore().createProject({
+              title: extractedData.product.name,
+              description: extractedData.product.description,
+              mode: 'template',
+              aspectRatio: selectedRatio.value === 'square' ? '1:1' : (selectedRatio.value === 'portrait' ? '9:16' : '16:9'),
+              videoStyle: 'ads',
+              targetDuration: 15,
+              pages: template.value.pages
+          });
+          const projectIdFromDB = projectData.project?._id;
+          if(projectIdFromDB && videoBlob.value){
+            const formData = new FormData();
+            formData.append('video', videoBlob.value, `ad_${extractedData.product.name}.mp4`);
 
-          const data = await useProjectStore().publishProject(productId, formData);
-          toast.success(t('merchant.adDialog.toasts.productUpdateSuccess'));
-          emit('update:product', data.product);
+            const data = await useProjectStore().publishProject(projectIdFromDB, formData);
+            if(data?.publish?.s3Key){
+              adVideoKey.value = data.publish.s3Key;
+            }
+          }
         }
-        else{
+
+        if(adVideoKey.value && productId){
           const data = await marketplaceStore.updateProduct(productId, {
             video: adVideoKey.value
           });
           toast.success(t('merchant.adDialog.toasts.productUpdateSuccess'));
-          emit('update:product', data.product);
+          emit('update:product', data.product ? data.product : data);
+        }
+        else{
+          toast.error(t('merchant.adDialog.toasts.updateFailed'));
         }
     } catch (err) {
         toast.error(t('merchant.adDialog.toasts.updateFailed'));
+        console.log(err);
     } finally {
         isPublishing.value = false;
     }

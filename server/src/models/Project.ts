@@ -1,5 +1,73 @@
 import mongoose, { Schema, Document, Model, Types } from 'mongoose'
 
+export enum MediaStatus {
+    DRAFT = 'draft',
+    PENDING = 'pending',
+    GENERATING = 'generating',
+    COMPLETED = 'completed',
+    FAILED = 'failed'
+}
+
+export enum ProjectMode {
+    TOPIC = 'topic',
+    UPLOAD = 'upload',
+    AVATAR = 'avatar',
+    TEMPLATE = 'template',
+    BLANK = 'blank',
+    LIVESTREAM = 'livestream'
+}
+
+export enum CollaborationRole {
+    VIEWER = 'viewer',
+    EDITOR = 'editor',
+    ADMIN = 'admin'
+}
+
+export enum AspectRatio {
+    LANDSCAPE = '16:9',
+    PORTRAIT = '9:16',
+    SQUARE = '1:1',
+    RECT = '4:3'
+}
+
+export enum ProJectStatus {
+    DRAFT = 'draft',
+    ANALYZING = 'analyzing',
+    STORYBOARD = 'storyboard',
+    GENERATING = 'generating',
+    EDITING = 'editing',
+    COMPLETED = 'completed',
+    FAILED = 'failed',
+    PROCESSING = 'processing'
+}
+
+export enum ChatHistoryAuthor {
+    USER = 'user',
+    AI = 'ai',
+    SYSTEM = 'system'
+}
+
+export enum ChatHistoryType {
+    TEXT = 'text',
+    THINKING = 'thinking',
+    RESULT = 'result',
+    VISUAL_GUIDE = 'visual-guide',
+    VISUAL_PATH = 'visual-path',
+    VISUAL_ASSETS = 'visual-assets'
+}
+
+export enum VisualAssetStatus {
+    PENDING = 'pending',
+    READY = 'ready',
+    ERROR = 'error'
+}
+
+export enum VisualAssetType {
+    IMAGE = 'image',
+    VIDEO = 'video',
+    AUDIO = 'audio'
+}
+
 interface ISegment {
     _id: Types.ObjectId
     uuid?: string
@@ -55,14 +123,14 @@ interface ISegment {
     volume?: number // 0 to 1
     generatedVideo?: {
         s3Key: string
-        status: 'pending' | 'generating' | 'completed' | 'failed'
+        status: MediaStatus | string
         veoJobId?: string
         generatedAt?: Date
         duration?: number
     }
     generatedAudio?: {
         s3Key: string
-        status: 'pending' | 'generating' | 'completed' | 'failed'
+        status: MediaStatus | string
         generatedAt?: Date
     }
 }
@@ -111,8 +179,8 @@ const SegmentSchema = new Schema<ISegment>({
         s3Key: String,
         status: {
             type: String,
-            enum: ['pending', 'generating', 'completed', 'failed'],
-            default: 'pending'
+            enum: Object.values(MediaStatus),
+            default: MediaStatus.PENDING
         },
         veoJobId: String,
         generatedAt: Date,
@@ -122,8 +190,8 @@ const SegmentSchema = new Schema<ISegment>({
         s3Key: String,
         status: {
             type: String,
-            enum: ['pending', 'generating', 'completed', 'failed'],
-            default: 'pending'
+            enum: Object.values(MediaStatus),
+            default: MediaStatus.PENDING
         },
         generatedAt: Date
     }
@@ -169,13 +237,13 @@ export interface IProject extends Document {
     organizationId?: Types.ObjectId // Shared Team Context
     collaborators?: Array<{
         userId: Types.ObjectId;
-        role: 'viewer' | 'editor' | 'admin';
+        role: CollaborationRole | string;
         addedAt: Date;
     }>
     title: string
     description: string
-    mode: 'topic' | 'upload' | 'avatar' | 'template' | 'blank' | 'livestream'
-    aspectRatio: '16:9' | '9:16' | '1:1' | '4:3'
+    mode: ProjectMode | string
+    aspectRatio: AspectRatio | string
     videoStyle: string
     targetDuration: number
     input: {
@@ -225,11 +293,11 @@ export interface IProject extends Document {
             status: string
         }
     }
-    status: 'draft' | 'analyzing' | 'storyboard' | 'generating' | 'editing' | 'completed' | 'failed'
+    status: ProJectStatus | string
     chatHistory?: Array<{
-        author: 'user' | 'ai' | 'system'
+        author: ChatHistoryAuthor | string
         content?: string
-        type?: 'text' | 'thinking' | 'result' | 'visual-guide' | 'visual-path' | 'visual-assets'
+        type?: ChatHistoryType | string
         result?: any
         files?: Array<{ name: string, s3Key?: string }>
         timestamp?: Date
@@ -239,8 +307,8 @@ export interface IProject extends Document {
         _id?: string | any // Types.ObjectId
         name: string
         description: string
-        type: 'image' | 'video' | 'audio'
-        status: 'pending' | 'ready' | 'error'
+        type: VisualAssetType | string
+        status: VisualAssetStatus | string
         s3Key?: string
         metadata?: any
         createdAt: Date
@@ -277,7 +345,7 @@ const ProjectSchema = new Schema<IProject>(
         collaborators: [
             {
                 userId: { type: Schema.Types.ObjectId, ref: 'User' },
-                role: { type: String, enum: ['viewer', 'editor', 'admin'], default: 'viewer' },
+                role: { type: String, enum: Object.values(CollaborationRole), default: CollaborationRole.VIEWER },
                 addedAt: { type: Date, default: Date.now }
             }
         ],
@@ -292,17 +360,17 @@ const ProjectSchema = new Schema<IProject>(
         },
         mode: {
             type: String,
-            enum: ['topic', 'upload', 'avatar', 'template', 'blank', 'livestream'],
+            enum: Object.values(ProjectMode),
             required: true
         },
         aspectRatio: {
             type: String,
-            enum: ['16:9', '9:16', '1:1', '4:3'],
-            default: '16:9'
+            enum: Object.values(AspectRatio),
+            default: AspectRatio.LANDSCAPE
         },
         videoStyle: {
             type: String,
-            default: 'cinematic'
+            default: "cinematic"
         },
         targetDuration: {
             type: Number,
@@ -360,8 +428,8 @@ const ProjectSchema = new Schema<IProject>(
         },
         status: {
             type: String,
-            enum: ['draft', 'analyzing', 'storyboard', 'generating', 'editing', 'completed', 'failed'],
-            default: 'draft'
+            enum: Object.values(ProJectStatus),
+            default: ProJectStatus.DRAFT
         },
         chatHistory: [
             {
@@ -383,8 +451,8 @@ const ProjectSchema = new Schema<IProject>(
             {
                 name: String,
                 description: String,
-                type: { type: String, enum: ['image', 'video', 'audio'], default: 'image' },
-                status: { type: String, enum: ['pending', 'ready', 'error'], default: 'pending' },
+                type: { type: String, enum: Object.values(VisualAssetType), default: VisualAssetType.IMAGE },
+                status: { type: String, enum: Object.values(VisualAssetStatus), default: VisualAssetStatus.PENDING },
                 s3Key: String,
                 metadata: Schema.Types.Mixed,
                 createdAt: { type: Date, default: Date.now }

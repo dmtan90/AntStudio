@@ -1,8 +1,8 @@
 import { uploadToS3 } from '../../utils/s3.js';
-import { InfluencerService } from '../InfluencerService.js';
+import { InfluencerService } from '../streaming/InfluencerService.js';
 import { Logger } from '../../utils/Logger.js';
 import { generateText, generateImage } from '../../utils/AIGenerator.js';
-import { promptService } from '../PromptService.js';
+import { promptService } from './PromptService.js';
 
 export class DigitalDoubleService {
     constructor() {}

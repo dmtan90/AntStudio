@@ -6,7 +6,7 @@ import { Logger } from '../Logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const MEMORY_DIR = path.join(process.cwd(), 'tmp/ai-memory');
+const MEMORY_DIR = path.join(process.env.APP_USER_DATA_PATH || process.cwd(), 'tmp/ai-memory');
 
 /**
  * Adapter for local, encrypted AI vector memory (Project RAG).

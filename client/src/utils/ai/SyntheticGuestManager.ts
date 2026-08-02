@@ -132,7 +132,7 @@ export interface AIGuestPersona {
     personality?: string;
     customization?: any;
 
-    // Added for VirtualStudioStage compatibility (Phase 64)
+    // Added for VirtualStudioStage compatibility
     visualIdentity?: {
         modelUrl?: string;
         thumbnailUrl?: string;
@@ -147,8 +147,12 @@ export class SyntheticGuestManager {
         persona: AIGuestPersona, 
         isSpeaking: boolean, 
         isThinking: boolean,
+        isAudioPlaying?: boolean,
         emotion?: string,
-        gesture?: string
+        gesture?: string,
+        activeProductId?: string,
+        lastAudioTime?: number,
+        isTurnComplete?: boolean
     }>());
     private audioAnalysers: Map<string, { stop: () => void }> = new Map();
     // Reactive state for Vue components
@@ -186,7 +190,7 @@ export class SyntheticGuestManager {
             this.currentDirective = detail.directive;
             this.currentVibe = detail.vibe;
 
-            // Phase 112: Identify Targeted Guest
+            // Identify Targeted Guest
             const activeIds = Array.from(this.activeGuests.keys());
             let targetGuestId = activeIds.find(id => {
                 const g = this.activeGuests.get(id);
@@ -198,19 +202,44 @@ export class SyntheticGuestManager {
             }
 
             if (targetGuestId) {
+                const guest = this.activeGuests.get(targetGuestId);
+                if (guest) {
+                    const resolvedProductId = detail.productId || detail.highlightProductId || detail.productContext?._id || detail.productContext?.id || undefined;
+                    if (resolvedProductId) {
+                        guest.activeProductId = resolvedProductId;
+                    }
+
+                    if (detail.gesture) {
+                        guest.gesture = detail.gesture;
+                    } else if (guest.persona.visual?.modelType === 'aidol') {
+                        guest.gesture = detail.type;
+                    }
+
+                    // Map generic gestures to product-specific clips if applicable
+                    if (guest.persona.visual?.modelType === 'aidol' && guest.activeProductId) {
+                        const pid = guest.activeProductId;
+                        if (guest.gesture === 'use_product' || guest.gesture === 'handon') {
+                            const handonClip = guest.persona.visual.aidolClips?.[`${pid}:handon`];
+                            guest.gesture = handonClip ? `${pid}:handon` : pid;
+                        } else if (guest.gesture === 'intro_product' || guest.gesture === 'product_intro' || guest.gesture === 'product') {
+                            const introClip = guest.persona.visual.aidolClips?.[pid];
+                            guest.gesture = introClip ? pid : 'product_intro';
+                        }
+                    }
+                }
+
                 // Trigger Gesture if provided
                 if (detail.gesture) {
                     this.triggerGesture(targetGuestId, detail.gesture);
                 }
 
-                // Phase 112: AIDOL Dynamic Clip Triggering via Segment Type
-                const guest = this.activeGuests.get(targetGuestId);
+                // AIDOL Dynamic Clip Triggering via Segment Type
                 if (guest?.persona.visual?.modelType === 'aidol') {
                     // Logic: segment.type now contains the exact mapping key (speaking, product, or PRODUCT_ID)
                     this.notifyWorker('update-3d-expression', { 
                         id: targetGuestId, 
-                        gesture: detail.type,
-                        productId: detail.productContext?._id || detail.productContext?.id || null
+                        gesture: guest.gesture || detail.type,
+                        productId: guest.activeProductId || null
                     });
                 }
             }
@@ -318,7 +347,7 @@ export class SyntheticGuestManager {
 
         console.log(`[InfluencerManager] AI reacting to vision data for context: ${context}`);
         
-        // Phase 22: Notify RecapOrchestrator of the event if it's significant
+        // Notify RecapOrchestrator of the event if it's significant
         if (data.objects?.length > 0) {
             import('./RecapOrchestrator').then(({ recapOrchestrator }) => {
                 recapOrchestrator.recordMoment(
@@ -391,6 +420,31 @@ export class SyntheticGuestManager {
             }
         });
 
+        // --- Autonomous Agentic FSM Directives ---
+        window.addEventListener('showrunner:directive', async (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            if (!detail || !detail.scriptText) return;
+
+            console.log('[InfluencerManager] Received FSM directive payload:', detail);
+
+            // Determine speaker: find first active master/host guest, or fallback to first available
+            const activeIds = Array.from(this.activeGuests.keys());
+            if (activeIds.length === 0) return;
+
+            const speakerId = activeIds.find(id => this.activeGuests.get(id)?.persona.isMaster) || activeIds[0];
+            const targetGuest = this.activeGuests.get(speakerId);
+
+            if (targetGuest) {
+                console.log(`[InfluencerManager] FSM directing ${targetGuest.persona.name} to pitch: ${detail.scriptText}`);
+                
+                // Directly trigger the avatar speaking using our safe talk flow
+                await this.talk(speakerId, `[DIRECTOR INSTRUCTION] Spoken Pitch: "${detail.scriptText}"`, { 
+                    vibe: detail.state === 'CLOSING' ? 'assertive' : (detail.state === 'Q_AND_A' ? 'informative' : 'hype'),
+                    state: detail.state
+                });
+            }
+        });
+
         this.resetBanterTimer();
         //this.startHypeDecay();
         //this.startEngagementDecay();
@@ -408,7 +462,7 @@ export class SyntheticGuestManager {
                 this.chatHypeScore = Math.max(0, this.chatHypeScore - 0.05);
                 this.notifyWorker('update-hype-level', { level: this.chatHypeScore });
                 
-                // Phase 33: Autonomous Viral Peak
+                // Autonomous Viral Peak
                 if (this.chatHypeScore > 1.8) {
                     const socket = ActionSyncService.getSocket();
                     if (socket) {
@@ -443,7 +497,7 @@ export class SyntheticGuestManager {
         const now = Date.now();
         const anySpeaking = this.isAnyGuestSpeaking();
 
-        // Phase 33: Autonomous Interruption Logic
+        // Autonomous Interruption Logic
         if (anySpeaking) {
             for (const guestId of activeIds) {
                 const guest = this.activeGuests.get(guestId);
@@ -530,7 +584,7 @@ export class SyntheticGuestManager {
             break;
         }
 
-        // Phase 33: Reactive Listening & Collaborative Impulse
+        // Reactive Listening & Collaborative Impulse
         if (this.isAnyGuestSpeaking() || (window as any).isHostSpeaking) {
             for (const guestId of activeIds) {
                 const guest = this.activeGuests.get(guestId);
@@ -545,14 +599,14 @@ export class SyntheticGuestManager {
             }
         }
 
-        // Phase 33: Collaborative Impulse (High-Five / Look At Each Other)
+        // Collaborative Impulse (High-Five / Look At Each Other)
         if (activeIds.length >= 2 && Math.random() < 0.02) {
              this.triggerCollaborativeGesture(activeIds[0], activeIds[1], 'look_at_each_other');
         }
     }
 
     /**
-     * Phase 33: Syncs two Influencers for a shared interaction.
+     * Syncs two Influencers for a shared interaction.
      */
     public triggerCollaborativeGesture(idA: string, idB: string, type: 'high_five' | 'look_at_each_other' | 'cheer') {
         console.log(`[InfluencerManager] Collaborative Impulse: ${type} between ${idA} and ${idB}`);
@@ -671,7 +725,7 @@ export class SyntheticGuestManager {
             vibe: 'hype'
         } as any);
 
-        // Phase 15: Physical coordination - trigger a victory gesture
+        // Physical coordination - trigger a victory gesture
         this.triggerGesture(speakingId, 'victory', 5000);
         
         this.chatHypeScore = Math.min(2.0, this.chatHypeScore + 0.8);
@@ -699,7 +753,7 @@ export class SyntheticGuestManager {
         this.chatHypeScore = Math.min(2.0, this.chatHypeScore + hypeInc);
         this.notifyWorker('update-hype-level', { level: this.chatHypeScore });
 
-        // Phase 34: Update Engagement Scores based on mentions
+        // Update Engagement Scores based on mentions
         for (const [guestId, guest] of this.activeGuests.entries()) {
             const name = guest.persona.name.toLowerCase();
             if (text.includes(name)) {
@@ -739,7 +793,7 @@ export class SyntheticGuestManager {
         this.recentChatSentiment.push(sentiment);
         if (this.recentChatSentiment.length > 20) this.recentChatSentiment.shift();
 
-        // Phase 33: Neural Pivot Trigger
+        // Neural Pivot Trigger
         const negCount = this.recentChatSentiment.filter(s => s === 'negative').length;
         if (negCount > 10) {
             const { neuralShowrunner } = await import('./NeuralShowrunner');
@@ -810,7 +864,7 @@ export class SyntheticGuestManager {
         const getName = () => influencer.identity?.name || influencer.name || 'Unnamed Influencer';
         const getDescription = () => influencer.identity?.description || influencer.description || '';
         const getTraits = () => influencer.identity?.traits || influencer.traits || [];
-        const getRole = () => influencer.identity?.role || influencer.role || 'guest';
+        const getRole = () => influencer.identity?.role || influencer.role || 'AI Agent';
         const getVoiceConfig = () => influencer.meta?.voiceConfig || influencer.voiceConfig || {
             provider: 'gemini',
             voiceId: influencer.meta?.voiceId || influencer.voiceId || 'en-US-Neural2-F',
@@ -897,10 +951,21 @@ export class SyntheticGuestManager {
     }
 
     public async summonGuest(persona: AIGuestPersona) {
+        // Clean up any existing guest with the same entityId or name to avoid duplicates
+        const existingKey = Array.from(this.activeGuests.entries()).find(([id, g]) => 
+            (persona.entityId && g.persona.entityId === persona.entityId) || 
+            (persona.identity?.name && g.persona.identity?.name === persona.identity?.name) ||
+            (persona.name && g.persona.name === persona.name)
+        );
+        if (existingKey) {
+            console.log(`[SyntheticGuestManager] Summoning duplicate guest '${persona.name}'. Removing old guest instance: ${existingKey[0]}`);
+            this.removeGuest(existingKey[0]);
+        }
+
         if (!persona.uuid) persona.uuid = generateUUID();
         if (this.activeGuests.has(persona.uuid)) return;
 
-        this.activeGuests.set(persona.uuid, { persona, isSpeaking: false, isThinking: false });
+        this.activeGuests.set(persona.uuid, { persona, isSpeaking: false, isThinking: false, isAudioPlaying: false });
         toast.success(`AI Orchestrator: Summoning ${persona.name || persona.identity?.name}...`);
 
         const modelType = persona.visual?.modelType || '3d';
@@ -920,7 +985,7 @@ export class SyntheticGuestManager {
         }
         */
 
-        // Phase 35: Add to store for slot assignment and rendering
+        // Add to store for slot assignment and rendering
         if (this.studioStore) {
             this.studioStore.addGuest({
                 uuid: persona.uuid,
@@ -985,9 +1050,11 @@ export class SyntheticGuestManager {
             const connection = connections[guestId];
 
             if (connection && connection.isConnected) {
-                const originalCallback = (connection.geminiLive as any).getTextResponseCallback 
-                    ? (connection.geminiLive as any).getTextResponseCallback() 
-                    : null;
+                // Use the baseTextResponseCallback saved during initialization, falling back to the current callback if not found
+                const originalCallback = connection.baseTextResponseCallback || 
+                    ((connection.geminiLive as any).getTextResponseCallback 
+                        ? (connection.geminiLive as any).getTextResponseCallback() 
+                        : null);
                 
                 return new Promise((resolve) => {
                     connection.geminiLive.setTextResponseCallback((text: string, metadata?: any) => {
@@ -1016,7 +1083,7 @@ export class SyntheticGuestManager {
                             if (gesture) {
                                 guest.gesture = gesture;
                                 
-                                // Phase 15: Aidol Clip Swapping based on Gesture
+                                // Aidol Clip Swapping based on Gesture
                                 if (guest.persona.visual?.modelType === 'aidol') {
                                     const activeProductId = this.studioStore?.highlightedProduct?.id || this.studioStore?.highlightedProduct?._id;
                                     if (activeProductId) {
@@ -1038,6 +1105,13 @@ export class SyntheticGuestManager {
                                     }
                                 }
                             }
+                        }
+
+                        // Restore original base callback immediately to break the callback wrapper chain and avoid memory leaks
+                        if (connection.baseTextResponseCallback) {
+                            connection.geminiLive.setTextResponseCallback(connection.baseTextResponseCallback);
+                        } else if (originalCallback) {
+                            connection.geminiLive.setTextResponseCallback(originalCallback);
                         }
 
                         if (typeof originalCallback === 'function') originalCallback(text, metadata);
@@ -1175,7 +1249,11 @@ export class SyntheticGuestManager {
             this.audioAnalysers.delete(id);
         }
         const guest = this.activeGuests.get(id);
-        if (guest) guest.isSpeaking = false;
+        if (guest) {
+            guest.isSpeaking = false;
+            guest.gesture = undefined;
+            guest.activeProductId = undefined;
+        }
     }
 
     public setSpeaking(id: string, speaking: boolean) {
@@ -1203,7 +1281,7 @@ export class SyntheticGuestManager {
             this.triggerVisualGiftEffect(guestId, data.item);
         }
 
-        // Phase 120: Interrupt Storyboard for Gift Reaction
+        // Interrupt Storyboard for Gift Reaction
         const { neuralShowrunner } = await import('./NeuralShowrunner');
         neuralShowrunner.pause();
         const director = (await import('./StudioDirector')).studioDirector;
@@ -1324,7 +1402,7 @@ export class SyntheticGuestManager {
         
         await this.generateResponse(speakerId, prompt, { vibe: 'happy' } as any);
 
-        // Phase 93: Synchronized Reaction
+        // Synchronized Reaction
         activeIds.forEach(id => {
             if (id !== speakerId) {
                 this.setEmotion(id, 'happy');
@@ -1334,7 +1412,7 @@ export class SyntheticGuestManager {
     }
 
     /**
-     * Phase 93: Group Mood Influencing
+     * Group Mood Influencing
      * If one guest is very emotional, others catch the vibe.
      */
     private broadcastGroupMood(sourceId: string, emotion: string) {
@@ -1376,7 +1454,7 @@ export class SyntheticGuestManager {
         const speakerId = activeIds.find(id => this.activeGuests.get(id)?.persona.isMaster) || activeIds[0];
         const guest = this.activeGuests.get(speakerId);
         
-        // Phase 15: Coordinated Pitch Logic
+        // Coordinated Pitch Logic
         // 1. Check for pre-generated storyboard script
         let pitch = `Các bạn ơi, nhìn xem mình đang có gì nè! Đây là ${product.name}, một sản phẩm cực kỳ xịn sò luôn! Giá chỉ có ${product.price} ${product.currency || 'VNĐ'} thôi. Mọi người nhanh tay nhấn vào link hoặc quét mã QR trên màn hình để sở hữu ngay nhé! 🔥 (Trình bày tự nhiên và hào hứng)`;
         

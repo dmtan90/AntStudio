@@ -12,6 +12,7 @@ import { toast } from 'vue-sonner';
 import { getFileUrl } from '@/utils/api';
 import { useUserMediaStore } from 'video-editor/hooks/use-user-media';
 import GMedia from '@/components/ui/GMedia.vue';
+import { formatMediaDuration } from 'video-editor/lib/time';
 
 const props = defineProps<{ match: string, query: string | null }>();
 const { t } = useI18n();
@@ -295,7 +296,7 @@ defineExpose({
         <div
           class="absolute bottom-2 right-2 bg-black/40 backdrop-blur-md rounded-md px-2 py-0.5 border border-white/10 z-20 group-hover:opacity-0 transition-opacity"
           v-if="!pixelsVideos[index].play">
-          <span class="text-[9px] font-bold text-white/60 uppercase tracking-widest">{{ t('videoEditor.video.videoLabel') }}</span>
+          <span class="text-[9px] font-bold text-white/60 uppercase tracking-widest">{{ formatMediaDuration(((pixelsVideos[index] as any)?.details?.duration || 0)*1000, false) }}</span>
         </div>
       </button>
     </template>

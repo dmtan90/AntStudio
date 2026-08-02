@@ -1,23 +1,26 @@
 import { Response, NextFunction, Request } from 'express';
 import { AuthRequest } from './auth.js';
-import config from '../utils/config.js';
+import { configService } from '../utils/ConfigService.js';
+import { LicenseType, LicenseStatus } from '~/models/License.js';
+import { LicenseService } from '../services/system/LicenseService.js';
+import { User } from '~/models/User.js';
+import { Project } from '~/models/Project.js';
 
 /**
  * Tactical License Gating Middleware.
  * Enforces tier-based access and valid heartbeat checks.
  */
-export const licenseGating = (requiredTier: 'trial' | 'basic' | 'pro' | 'enterprise') => {
+export const licenseGating = (requiredTier: LicenseType) => {
     return async (req: AuthRequest, res: Response, next: NextFunction) => {
         // Master server is exempt from local license gating
-        if (config.systemMode === 'master') {
+        if (configService.isMasterServer) {
             return next();
         }
 
         // Edge servers retrieve license state from local cache/service
-        const { LicenseWorker } = await import('../services/LicenseWorker.js');
-        const localLicense = await LicenseWorker.getLicense();
+        const localLicense = await LicenseService.getLicense();
 
-        if (!localLicense || localLicense.status !== 'valid') {
+        if (!localLicense || localLicense.status !== LicenseStatus.VALID) {
             return res.status(402).json({
                 success: false,
                 error: 'Tactical Block: valid license registry not found or expired on this Edge unit.'
@@ -49,12 +52,9 @@ export const licenseGating = (requiredTier: 'trial' | 'basic' | 'pro' | 'enterpr
 };
 
 export const checkUserLimit = async (req: Request, res: Response, next: NextFunction) => {
-    if (config.systemMode === 'master') return next();
+    if (configService.isMasterServer) return next();
 
-    const { LicenseWorker } = await import('../services/LicenseWorker.js');
-    const { User } = await import('../models/User.js');
-    
-    const localLicense = await LicenseWorker.getLicense();
+    const localLicense = await LicenseService.getLicense();
     if (!localLicense) return next();
 
     const maxUsers = localLicense.maxUsersPerInstance ?? 5;
@@ -68,12 +68,9 @@ export const checkUserLimit = async (req: Request, res: Response, next: NextFunc
 };
 
 export const checkProjectLimit = async (req: Request, res: Response, next: NextFunction) => {
-    if (config.systemMode === 'master') return next();
+    if (configService.isMasterServer) return next();
 
-    const { LicenseWorker } = await import('../services/LicenseWorker.js');
-    const { Project } = await import('../models/Project.js');
-    
-    const localLicense = await LicenseWorker.getLicense();
+    const localLicense = await LicenseService.getLicense();
     if (!localLicense) return next();
 
     const maxProjects = localLicense.maxProjectsPerInstance ?? 10;

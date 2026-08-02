@@ -307,7 +307,7 @@ import api, { getFileUrl } from '@/utils/api';
 import Live2DViewer from '@/components/influencer/Live2DViewer.vue';
 import VRMViewer from '@/components/influencer/VRMViewer.vue';
 import StaticPhotoViewer from '@/components/influencer/StaticPhotoViewer.vue';
-import { ElMessage } from 'element-plus';
+import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import { 
     Back, 
@@ -396,7 +396,7 @@ async function viewSessionDetails(session: any) {
             showSessionDialog.value = true;
         }
     } catch (error) {
-        ElMessage.error(t('influencers.geminiChat.toasts.loadDetailFailed'));
+        toast.error(t('influencers.geminiChat.toasts.loadDetailFailed'));
     }
 }
 
@@ -407,7 +407,7 @@ function formatDate(date: string) {
 // Select archive
 function selectArchive(archive: any) {
     if (isConnected.value) {
-        ElMessage.warning(t('influencers.geminiChat.toasts.endCurrentSession'));
+        toast.warning(t('influencers.geminiChat.toasts.endCurrentSession'));
         return;
     }
     selectedArchive.value = archive;
@@ -430,7 +430,7 @@ async function startSession() {
         await startMicrophone();
     } catch (error: any) {
         console.error('[GeminiLiveChat] Failed to start session:', error);
-        ElMessage.error(t('influencers.geminiChat.toasts.startFailed'));
+        toast.error(t('influencers.geminiChat.toasts.startFailed'));
     }
 }
 
@@ -474,26 +474,26 @@ function handleToolCall(toolCall: any) {
                 break;
             case 'switch_scene':
             case 'switch_layout':
-                ElMessage.info(t('influencers.geminiChat.toasts.switchedScene', { name: args.sceneId || args.layoutId }));
+                toast.info(t('influencers.geminiChat.toasts.switchedScene', { name: args.sceneId || args.layoutId }));
                 break;
             case 'trigger_hype_event':
-                ElMessage.success(t('influencers.geminiChat.toasts.hypeEvent', { reason: args.reason }));
+                toast.success(t('influencers.geminiChat.toasts.hypeEvent', { reason: args.reason }));
                 break;
             case 'shoutout_viewer':
-                ElMessage.success(t('influencers.geminiChat.toasts.shoutout', { name: args.viewerName }));
+                toast.success(t('influencers.geminiChat.toasts.shoutout', { name: args.viewerName }));
                 break;
             case 'start_quest':
-                ElMessage.warning(t('influencers.geminiChat.toasts.questStarted', { title: args.title }));
+                toast.warning(t('influencers.geminiChat.toasts.questStarted', { title: args.title }));
                 break;
             case 'trigger_dynamic_deal':
-                ElMessage.success(t('influencers.geminiChat.toasts.aiDeal', { reason: args.reason }));
+                toast.success(t('influencers.geminiChat.toasts.aiDeal', { reason: args.reason }));
                 break;
             case 'generate_background':
-                ElMessage.info(t('influencers.geminiChat.toasts.generatingBg', { prompt: args.prompt }));
+                toast.info(t('influencers.geminiChat.toasts.generatingBg', { prompt: args.prompt }));
                 break;
             case 'capture_moment':
             case 'archive_moment':
-                ElMessage.info(t('influencers.geminiChat.toasts.momentCaptured', { description: args.description }));
+                toast.info(t('influencers.geminiChat.toasts.momentCaptured', { description: args.description }));
                 break;
             default:
                 console.warn('[GeminiLiveChat] Unknown tool:', functionName);
@@ -521,7 +521,7 @@ function changeExpression(expression: string) {
         vrmViewer.value.setExpression(expression);
     }
     
-    ElMessage.info(t('influencers.geminiChat.toasts.expression', { name: expression }));
+    toast.info(t('influencers.geminiChat.toasts.expression', { name: expression }));
 }
 
 function playAnimation(animation: string) {
@@ -537,7 +537,7 @@ function playAnimation(animation: string) {
         vrmViewer.value.playAnimation(animation);
     }
     
-    ElMessage.info(t('influencers.geminiChat.toasts.animation', { name: animation }));
+    toast.info(t('influencers.geminiChat.toasts.animation', { name: animation }));
 }
 
 function changeMood(mood: string) {
@@ -553,13 +553,13 @@ function changeMood(mood: string) {
         vrmViewer.value.setMood(mood);
     }
     
-    ElMessage.info(t('influencers.geminiChat.toasts.mood', { name: mood }));
+    toast.info(t('influencers.geminiChat.toasts.mood', { name: mood }));
 }
 
 // End live session
 function endSession() {
     disconnect();
-    ElMessage.info(t('influencers.geminiChat.toasts.sessionEnded'));
+    toast.info(t('influencers.geminiChat.toasts.sessionEnded'));
 }
 
 // Toggle microphone

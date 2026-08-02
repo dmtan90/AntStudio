@@ -2,50 +2,64 @@ version: '3.8'
 
 services:
   # ==========================================
-  # DATABASE
+  # DATABASE (MongoDB)
   # ==========================================
   mongo:
-    image: mongo:latest
+    image: mongo:6
     container_name: antstudio-mongo
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
     networks:
       - antstudio-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ==========================================
-  # BACKEND SERVER
+  # BACKEND SERVER (Express + Socket.IO + NMS)
   # ==========================================
   antstudio-server:
     container_name: antstudio-server
+    restart: unless-stopped
     build:
       context: ./server
       dockerfile: Dockerfile
     ports:
-      - "4000:4000"
+      - "${PORT:-4000}:${PORT:-4000}"
+      - "1935:1935" # RTMP Stream Ingest Port
+    env_file:
+      - .env
     environment:
-      - PORT=4000
-      - MONGO_URI=mongodb://mongo:27017/antstudio
-      - JWT_SECRET=change_me_in_prod
-      # Add your AI Keys here or use .env file
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
-      - VEO_API_ENDPOINT=${VEO_API_ENDPOINT}
-      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - NODE_ENV=production
+      - PORT=${PORT:-4000}
+      - MONGODB_URI=${DOCKER_MONGODB_URI:-mongodb://mongo:27017/antstudio}
+    depends_on:
+      mongo:
+        condition: service_healthy
     networks:
       - antstudio-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ==========================================
-  # FRONTEND CLIENT
+  # FRONTEND CLIENT (Vue 3 + Nginx SPA)
   # ==========================================
   antstudio-client:
     container_name: antstudio-client
+    restart: unless-stopped
     build:
       context: ./client
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "3000:80"
     depends_on:
       - antstudio-server
     networks:

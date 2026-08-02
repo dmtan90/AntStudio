@@ -23,7 +23,7 @@
             selectedPackage?.credits === pkg.credits ? 'border-brand-primary bg-brand-primary/[0.05] shadow-[0_15px_35px_rgba(59,130,246,0.2)]' : 'border-white/5 hover:border-white/10')"
           @click="selectPackage(pkg)"
         >
-          <div v-if="(pkg.credits / pkg.price) > 100" class="absolute -top-2 right-4 bg-brand-primary text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg">
+          <div v-if="(pkg.credits / pkg.price) > 100" :class="cn('absolute -top-2 right-6 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg', selectedPackage?.credits === pkg.credits ? 'bg-white text-black' : 'bg-brand-primary/20 text-brand-primary')">
             +{{ Math.round(((pkg.credits / pkg.price) - 100)) }}% {{ t('subscription.dialogs.buyCredits.bonus') }}
           </div>
           <div class="flex flex-col items-center">

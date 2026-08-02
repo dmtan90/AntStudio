@@ -6,7 +6,7 @@ export interface EmotionResult {
     intensity: number; // 0 to 1
     duration: number; // How long to hold the expression in seconds
 }
-import { promptService } from '../../services/PromptService.js';
+import { promptService } from './PromptService.js';
 
 /**
  * Service to analyze contextual emotions from text or audio 

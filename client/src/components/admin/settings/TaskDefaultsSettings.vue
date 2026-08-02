@@ -12,7 +12,7 @@
                 <div class="col-span-2 text-right">{{ $t('admin.settings.taskDefaults.table.costConfig') }}</div>
             </div>
             <div class="cinematic-table-body">
-                <div v-for="type in ['text', 'image', 'video', 'audio', 'music']" :key="type"
+                <div v-for="type in ['text', 'image', 'video', 'audio', 'music', 'voice', 'agent']" :key="type"
                     class="cinematic-row grid grid-cols-12 gap-4 p-4 items-center border-b border-white/5 hover:bg-white/2 transition-all">
                     <div class="col-span-2 capitalize font-bold text-blue-400 text-xs">
                         {{ $t(`admin.settings.ai.capabilities.${type}`) }}

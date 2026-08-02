@@ -547,7 +547,11 @@ export class Recorder {
     this.instance.insertAt(artboard, 0, false);
     this.instance.clipPath = artboard;
     FabricUtils.applyTransformationsAfterLoad(this.instance);
-    this.instance.renderAll();
+    try{
+		this.instance.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
 
     // Re-initialize animations for this specific duration
     const timeline = anime.timeline({ duration: duration, loop: false, autoplay: false, update: this.instance.renderAll.bind(this.instance) });
@@ -580,10 +584,18 @@ export class Recorder {
     const artboard: fabric.Object = await createPromise<fabric.Object>((resolve) => this.artboard.clone((clone: fabric.Object) => resolve(clone), propertiesToInclude));
     this.instance.insertAt(artboard, 0, false);
     this.instance.clipPath = artboard;
-    this.instance.renderAll();
+    try{
+		this.instance.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
 
     FabricUtils.applyTransformationsAfterLoad(this.instance);
-    this.instance.renderAll();
+    try{
+		this.instance.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
 
     const blob: Blob = await createPromise((resolve) => this.instance.getElement().toBlob((blob) => resolve(blob), "image/png"));
     const source: string = await uploadAssetToS3(convertBlobToFile(blob, this.editor.canvas.id + ".png"), "thumbnail")
@@ -649,7 +661,11 @@ export class Recorder {
     this.instance.clipPath = artboard;
 
     FabricUtils.applyTransformationsAfterLoad(this.instance);
-    this.instance.renderAll();
+    try{
+		this.instance.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
     this.duration = data.duration;
 
     this.timeline = anime.timeline({ 

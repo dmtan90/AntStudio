@@ -357,7 +357,10 @@ import Terms from '@/views/general/Terms.vue'
 import Privacy from '@/views/general/Privacy.vue'
 import { useUserStore } from '@/stores/user'
 import { useConfigStore } from '@/stores/config'
+import { useUIStore } from '@/stores/ui'
 import { storeToRefs } from 'pinia'
+
+const uiStore = useUIStore()
 
 const props = defineProps<{
   modelValue: boolean
@@ -408,16 +411,25 @@ const notifications = reactive({
   security: true
 })
 
-const menuItems = [
-  { id: 'profile', icon: UserIcon },
-  { id: 'notification', icon: Message },
-  { id: 'credits', icon: Wallet },
-  { id: 'integrations', icon: Connection },
-  { id: 'price', icon: TableFile },
-  { id: 'terms', icon: DocDetail },
-  { id: 'privacy', icon: Shield },
-  { id: 'signout', icon: Logout }
-]
+const menuItems = computed(() => {
+  const items = [
+    { id: 'profile', icon: UserIcon },
+    { id: 'notification', icon: Message }
+  ]
+  if (uiStore.creditModeEnabled) {
+    items.push({ id: 'credits', icon: Wallet })
+  }
+  items.push({ id: 'integrations', icon: Connection })
+  if (uiStore.creditModeEnabled) {
+    items.push({ id: 'price', icon: TableFile })
+  }
+  items.push(
+    { id: 'terms', icon: DocDetail },
+    { id: 'privacy', icon: Shield },
+    { id: 'signout', icon: Logout }
+  )
+  return items
+})
 
 const languages = [
   { code: 'en', name: 'English', flag: 'us' },

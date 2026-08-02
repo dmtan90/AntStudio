@@ -14,8 +14,18 @@ export interface TimelineSegment {
     transitionDuration?: number // duration of transition overlap
     transitionDirection?: 'left' | 'right' | 'up' | 'down'
     trimOffset?: number
+    sceneImage?: string
     voiceUrl?: string
-    captions?: { start: number, end: number, text: string, style?: string }[]
+    voiceVolume?: number
+    captions?: Array<{
+        start?: number
+        startTime?: number
+        end?: number
+        endTime?: number
+        text?: string
+        content?: string
+        style?: string
+    }>
     lowerThirds?: Array<{
         id: string
         text: string
@@ -189,55 +199,81 @@ export const useTimelinePlayer = (options: PlayerOptions) => {
         const active = getSegmentAtTime(currentTime.value)
 
         // --- AUDIO DUCKING LOGIC ---
-        // Check if there is an active voiceover in this segment
-        // If yes, duck background music volume
         let isVoiceActive = false
 
-        if (active && videoElements.has(active.segment._id)) {
-            // Handle Video Playback
-            const video = videoElements.get(active.segment._id)!
-            if (video.readyState >= 1) {
-                const targetTime = (active.segment.trimOffset || 0) + active.relativeTime
+        if (active) {
+            let hasDrawnVideo = false
 
-                if (isPlaying.value) {
-                    if (Math.abs(video.currentTime - targetTime) > 0.2) {
-                        video.currentTime = targetTime
+            // Handle Video Playback & Rendering
+            if (videoElements.has(active.segment._id)) {
+                const video = videoElements.get(active.segment._id)!
+                if (video.readyState >= 1) {
+                    const targetTime = (active.segment.trimOffset || 0) + active.relativeTime
+
+                    if (isPlaying.value) {
+                        if (Math.abs(video.currentTime - targetTime) > 0.15) {
+                            video.currentTime = targetTime
+                        }
+                        if (video.paused) video.play().catch(() => { })
+                        video.playbackRate = active.segment.speed || 1
+                        video.volume = Math.max(0, Math.min(1, active.segment.volume ?? 1))
+                    } else {
+                        video.pause()
                     }
-                    if (video.paused) video.play().catch(() => { })
-                    video.playbackRate = active.segment.speed || 1
-                    video.volume = active.segment.volume ?? 1
-                } else {
-                    video.pause()
-                }
 
-                // Draw Video Frame
-                const videoRatio = video.videoWidth / video.videoHeight
-                let dWidth, dHeight, dx, dy
+                    // Draw Video Frame
+                    const videoRatio = (video.videoWidth || 16) / (video.videoHeight || 9)
+                    let dWidth, dHeight, dx, dy
 
-                if (videoRatio > canvasRatio) {
-                    dWidth = width
-                    dHeight = width / videoRatio
-                    dx = 0
-                    dy = (height - dHeight) / 2
-                } else {
-                    dHeight = height
-                    dWidth = height * videoRatio
-                    dx = (width - dWidth) / 2
-                    dy = 0
+                    if (videoRatio > canvasRatio) {
+                        dWidth = width
+                        dHeight = width / videoRatio
+                        dx = 0
+                        dy = (height - dHeight) / 2
+                    } else {
+                        dHeight = height
+                        dWidth = height * videoRatio
+                        dx = (width - dWidth) / 2
+                        dy = 0
+                    }
+                    ctx.drawImage(video, dx, dy, dWidth, dHeight)
+                    hasDrawnVideo = true
                 }
-                ctx.drawImage(video, dx, dy, dWidth, dHeight)
+            }
+
+            // Fallback: If video is loading/buffering or unavailable, draw scene thumbnail so canvas is fluid and never black
+            if (!hasDrawnVideo && active.segment.sceneImage) {
+                let img = (useTimelinePlayer as any)._imageCache?.get(active.segment.sceneImage)
+                if (!img) {
+                    if (!(useTimelinePlayer as any)._imageCache) (useTimelinePlayer as any)._imageCache = new Map()
+                    img = new Image()
+                    img.crossOrigin = 'anonymous'
+                    getFileUrl(active.segment.sceneImage, { cached: true }).then(u => { if (img) img.src = u })
+                    ;(useTimelinePlayer as any)._imageCache.set(active.segment.sceneImage, img)
+                }
+                if (img.complete && img.naturalWidth > 0) {
+                    const imgRatio = img.naturalWidth / img.naturalHeight
+                    let dWidth, dHeight, dx, dy
+                    if (imgRatio > canvasRatio) {
+                        dWidth = width; dHeight = width / imgRatio; dx = 0; dy = (height - dHeight) / 2
+                    } else {
+                        dHeight = height; dWidth = height * imgRatio; dx = (width - dWidth) / 2; dy = 0
+                    }
+                    ctx.drawImage(img, dx, dy, dWidth, dHeight)
+                }
             }
 
             // Handle Voiceover Playback
             const voice = voiceElements.get(active.segment._id)
             if (voice) {
-                // If we are within the voiceover duration
-                if (active.relativeTime < voice.duration && active.relativeTime >= 0) {
+                const voiceDuration = voice.duration || active.segment.duration
+                if (active.relativeTime < voiceDuration && active.relativeTime >= 0) {
                     isVoiceActive = true
+                    voice.volume = Math.max(0, Math.min(1, active.segment.voiceVolume ?? 1))
+                    voice.playbackRate = active.segment.speed || 1
                     if (isPlaying.value) {
                         if (voice.paused) voice.play().catch(() => { })
-                        // Sync check
-                        if (Math.abs(voice.currentTime - active.relativeTime) > 0.3) {
+                        if (Math.abs(voice.currentTime - active.relativeTime) > 0.15) {
                             voice.currentTime = active.relativeTime
                         }
                     } else {
@@ -248,20 +284,17 @@ export const useTimelinePlayer = (options: PlayerOptions) => {
                 }
             }
 
-            // Pause other videos
+            // Pause inactive videos & voices
             videoElements.forEach((v, id) => {
                 if (id !== active.segment._id && !v.paused) v.pause()
             })
-            // Pause other voices
             voiceElements.forEach((v, id) => {
                 if (id !== active.segment._id && !v.paused) v.pause()
             })
         } else {
-            // No active segment or video
             ctx.fillStyle = '#1a1a1a'
             ctx.fillRect(0, 0, width, height)
 
-            // Still need to silence others
             videoElements.forEach(v => !v.paused && v.pause())
             voiceElements.forEach(v => !v.paused && v.pause())
         }
@@ -270,27 +303,24 @@ export const useTimelinePlayer = (options: PlayerOptions) => {
         if (bgMusicElement.value) {
             const bgm = bgMusicElement.value
 
-            // Loop logic
-            if (bgm.currentTime >= bgm.duration - 0.5) {
+            if (bgm.currentTime >= (bgm.duration || 60) - 0.5) {
                 bgm.currentTime = 0
             }
 
             if (isPlaying.value) {
                 if (bgm.paused) bgm.play().catch(() => { })
 
-                // Ducking Logic
-                // Target volume is 0.1 if voice is active, else 1.0 (or configured project volume)
-                // We perform a simple linear interpolation (lerp) for smoothness
-                const targetVolume = isVoiceActive ? 0.1 : 0.8 // Default BGM volume 0.8
+                // Respect configured music volume from project/options
+                const configuredVolume = backgroundMusic.value?.volume ?? 0.5
+                const targetVolume = isVoiceActive ? Math.min(configuredVolume, configuredVolume * 0.25) : configuredVolume
                 const currentVolume = bgm.volume
-                const lerpSpeed = 0.05 // Adjust for speed of ducking (approx 20 frames to transition)
+                const lerpSpeed = 0.1
 
                 if (Math.abs(currentVolume - targetVolume) > 0.01) {
-                    bgm.volume = currentVolume + (targetVolume - currentVolume) * lerpSpeed
+                    bgm.volume = Math.max(0, Math.min(1, currentVolume + (targetVolume - currentVolume) * lerpSpeed))
                 } else {
-                    bgm.volume = targetVolume
+                    bgm.volume = Math.max(0, Math.min(1, targetVolume))
                 }
-
             } else {
                 if (!bgm.paused) bgm.pause()
             }
@@ -490,25 +520,51 @@ export const useTimelinePlayer = (options: PlayerOptions) => {
         }
 
         // --- CAPTION RENDERING ---
-        if (active && active.segment.captions) {
-            const segmentTime = active.relativeTime; // Time inside the current segment in seconds
-            // Find current active caption
-            // Assuming captions are { start: number, end: number, text: string, style?: string }
-            // start and end are relative to segment start
-            const currentCaption = active.segment.captions.find((cap: any) =>
-                segmentTime >= cap.start && segmentTime <= cap.end
-            );
+        if (active && active.segment.captions && active.segment.captions.length > 0) {
+            const segmentTime = active.relativeTime;
+            const currentCaption = active.segment.captions.find((cap: any) => {
+                const s = cap.start ?? cap.startTime ?? 0
+                const e = cap.end ?? cap.endTime ?? 999
+                return segmentTime >= s && segmentTime <= e
+            });
 
-            if (currentCaption) {
+            if (currentCaption && (currentCaption.text || currentCaption.content)) {
+                const captionText = (currentCaption.text || currentCaption.content).trim();
                 const styleDef = CAPTION_STYLES[currentCaption.style] || DEFAULT_CAPTION_STYLE;
 
                 ctx.save();
-                ctx.font = styleDef.canvasFont;
+                ctx.font = styleDef.canvasFont || 'bold 22px Inter, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.textBaseline = 'bottom';
+                ctx.textBaseline = 'middle';
 
                 const x = width / 2;
-                const y = height - (height * 0.1); // 10% from bottom
+                const y = height - (height * 0.12);
+
+                const metrics = ctx.measureText(captionText);
+                const textWidth = metrics.width;
+                const paddingX = 14;
+                const pillHeight = 30;
+
+                // Background Box / Pill
+                if (styleDef.canvasBg) {
+                    ctx.fillStyle = styleDef.canvasBg;
+                    ctx.beginPath();
+                    if (typeof ctx.roundRect === 'function') {
+                        ctx.roundRect(x - textWidth / 2 - paddingX, y - pillHeight / 2, textWidth + paddingX * 2, pillHeight, 8);
+                    } else {
+                        ctx.rect(x - textWidth / 2 - paddingX, y - pillHeight / 2, textWidth + paddingX * 2, pillHeight);
+                    }
+                    ctx.fill();
+                } else if (!styleDef.canvasStroke && !styleDef.canvasShadow) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                    ctx.beginPath();
+                    if (typeof ctx.roundRect === 'function') {
+                        ctx.roundRect(x - textWidth / 2 - paddingX, y - pillHeight / 2, textWidth + paddingX * 2, pillHeight, 8);
+                    } else {
+                        ctx.rect(x - textWidth / 2 - paddingX, y - pillHeight / 2, textWidth + paddingX * 2, pillHeight);
+                    }
+                    ctx.fill();
+                }
 
                 // Shadow
                 if (styleDef.canvasShadow) {
@@ -519,15 +575,15 @@ export const useTimelinePlayer = (options: PlayerOptions) => {
                 }
 
                 // Fill
-                ctx.fillStyle = styleDef.canvasFill;
-                ctx.fillText(currentCaption.text, x, y);
+                ctx.fillStyle = styleDef.canvasFill || '#ffffff';
+                ctx.fillText(captionText, x, y);
 
-                // Stroke (optional)
+                // Stroke
                 if (styleDef.canvasStroke) {
-                    ctx.shadowColor = 'transparent'; // Reset shadow for stroke
-                    ctx.lineWidth = 2; // Fixed or config?
+                    ctx.shadowColor = 'transparent';
+                    ctx.lineWidth = 2;
                     ctx.strokeStyle = styleDef.canvasStroke;
-                    ctx.strokeText(currentCaption.text, x, y);
+                    ctx.strokeText(captionText, x, y);
                 }
 
                 ctx.restore();

@@ -32,20 +32,20 @@ import {
     buildTrendingTopicsPrompt
 } from '../utils/PromptBuilder.js';
 import { aiManager } from '../utils/ai/AIServiceManager.js';
-import { parseDocument } from '../utils/documentParser.js';
-import { enhanceAudioFile } from '../utils/audioEnhancer.js'; // Added for audio enhancement
+import { parseDocument } from '../utils/DocumentParser.js';
+import { enhanceAudioFile } from '../utils/AudioEnhancer.js'; // Added for audio enhancement
 import multer from 'multer';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { uploadToS3, getFromS3 } from '../utils/s3.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
-import { licenseGating } from '../middleware/licenseGating.js';
+import { licenseGating } from '../middleware/LicenseGating.js';
 import { Media } from '../models/Media.js';
 import { connectDB } from '../utils/db.js';
-import config from '../utils/config.js';
+import { configService } from '../utils/ConfigService.js';
 import { aiPerformanceService } from '../services/ai/AIPerformanceService.js';
 import { styleABTestingEngine } from '../services/ai/StyleABTestingEngine.js';
-import { deductCredits, CREDIT_PRICES, getCreditCost } from '../utils/credits.js';
+import { deductCredits, getCreditCost } from '../utils/credits.js';
 import { sceneDetectionService } from '../services/ai/SceneDetectionService.js';
 import { audioAnalysisService } from '../services/ai/AudioAnalysisService.js';
 import { silenceDetectionService } from '../services/ai/SilenceDetectionService.js';
@@ -56,14 +56,17 @@ import { ttsService } from '../services/ai/TTSService.js';
 import { videoWorkflow } from '../services/ai/VideoWorkflow.js';
 
 import { Logger } from '../utils/Logger.js';
-import { promptService } from '../services/PromptService.js';
+import { promptService } from '../services/ai/PromptService.js';
+import { AIModelCost, AIModelType } from '~/models/AdminSettings.js';
+import { ServiceType } from '~/utils/CreditManager.js';
+import { LicenseType } from '~/models/License.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Middleware for auth & license
 router.use(authMiddleware);
-router.use(licenseGating('trial'));
+router.use(licenseGating(LicenseType.TRIAL));
 
 // Helper to clean and validate response
 const cleanResponse = (data: any[]) => {
@@ -150,7 +153,8 @@ router.post('/generate-broll', async (req: AuthRequest, res) => {
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'image', CREDIT_PRICES.IMAGE_GEN, `Generate B-Roll: ${topic || finalPrompt.substring(0, 30)}`);
+            const creditCost = await getCreditCost(AIModelType.IMAGE);
+            await deductCredits(userId, ServiceType.IMAGE, creditCost, `Generate B-Roll: ${topic || finalPrompt.substring(0, 30)}`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -187,7 +191,8 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'image', CREDIT_PRICES.IMAGE_GEN, `Generate AI Image: ${basePrompt.substring(0, 30)}...`);
+            const creditCost = await getCreditCost(AIModelType.IMAGE);
+            await deductCredits(userId, ServiceType.IMAGE, creditCost, `Generate AI Image: ${basePrompt.substring(0, 30)}...`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -209,7 +214,7 @@ router.post('/generate-image', async (req: AuthRequest, res) => {
             fileName: `AI Image - ${basePrompt.substring(0, 20)}...`,
             contentType: 'image/png', // AIGenerator usually returns png or jpg
             size: 0, // We might not know size without head request or from buffer in util
-            bucket: config.awsS3Bucket,
+            bucket: configService.bucketName,
             purpose: 'ai-image',
             metadata: {
                 prompt: basePrompt,
@@ -235,7 +240,8 @@ router.post('/generate-voice', async (req: AuthRequest, res) => {
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'audio', CREDIT_PRICES.VOICE_GEN, `Generate AI Voice: ${text.substring(0, 30)}...`);
+            const creditCost = await getCreditCost(AIModelType.AUDIO);
+            await deductCredits(userId, ServiceType.AUDIO, creditCost, `Generate AI Voice: ${text.substring(0, 30)}...`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -258,7 +264,7 @@ router.post('/generate-voice', async (req: AuthRequest, res) => {
             fileName: `AI Voice - ${text.substring(0, 20)}...`,
             contentType: 'audio/mpeg',
             size: 0,
-            bucket: config.awsS3Bucket,
+            bucket: configService.bucketName,
             purpose: 'ai-voice',
             metadata: {
                 text,
@@ -283,7 +289,8 @@ router.post('/generate-music', async (req: AuthRequest, res) => {
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'audio', CREDIT_PRICES.VOICE_GEN, `Generate AI Music: ${prompt.substring(0, 30)}...`);
+            const creditCost = await getCreditCost(AIModelType.MUSIC);
+            await deductCredits(userId, ServiceType.MUSIC, creditCost, `Generate AI Music: ${prompt.substring(0, 30)}...`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -302,7 +309,7 @@ router.post('/generate-music', async (req: AuthRequest, res) => {
             fileName: `AI Music - ${prompt.substring(0, 20)}...`,
             contentType: 'audio/wav',
             size: 0,
-            bucket: config.awsS3Bucket,
+            bucket: configService.bucketName,
             purpose: 'ai-music',
             metadata: {
                 prompt,
@@ -324,12 +331,12 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
         const effectiveDuration = duration || 5;
 
         // Credit Deduction
-        const baseCreditCost = await getCreditCost('video');
+        const baseCreditCost = await getCreditCost(AIModelType.VIDEO);
         const creditAmount = Math.ceil(effectiveDuration * baseCreditCost);
         const deductionDescription = `Generate Video (Generic) - ${effectiveDuration}s @ ${baseCreditCost} cr/s`;
 
         try {
-            await deductCredits(req.user!.userId, 'video', creditAmount, deductionDescription);
+            await deductCredits(req.user!.userId, ServiceType.VIDEO, creditAmount, deductionDescription);
         } catch (creditError: any) {
             return res.status(402).json({ success: false, error: creditError.message || 'Insufficient credits' });
         }
@@ -364,7 +371,7 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
                 fileName: `AI Video - ${jobId}`,
                 contentType: 'video/mp4',
                 size: 0,
-                bucket: config.awsS3Bucket, // Consistent with images
+                bucket: configService.bucketName, // Consistent with images
                 purpose: 'ai-video',
                 metadata: {
                     jobId,
@@ -409,7 +416,7 @@ router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
                 fileName: `AI Video - ${jobId}`,
                 contentType: 'video/mp4',
                 size: 0,
-                bucket: config.awsS3Bucket,
+                bucket: configService.bucketName,
                 purpose: 'ai-video',
                 metadata: {
                     jobId,
@@ -436,10 +443,9 @@ router.post('/generate-storyboard', async (req: AuthRequest, res) => {
         const { scriptOrTopic, projectAnalysis, targetDuration, language } = req.body;
         const userId = req.user!.userId;
 
-        // Credit Deduction
-        const cost = await getCreditCost('text');
         try {
-            await deductCredits(userId, 'text', cost, `Generate Storyboard: ${scriptOrTopic?.substring(0, 30)}...`);
+            const creditCost = await getCreditCost(AIModelType.TEXT);
+            await deductCredits(userId, ServiceType.TEXT, creditCost, `Generate Storyboard: ${scriptOrTopic?.substring(0, 30)}...`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -469,7 +475,8 @@ router.post('/extract-highlights', async (req: AuthRequest, res) => {
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'text', 10, 'Extract Highlights');
+            const creditCost = await getCreditCost(AIModelType.TEXT);
+            await deductCredits(userId, ServiceType.TEXT, creditCost, 'Extract Highlights');
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -493,7 +500,8 @@ router.post('/generate-social-meta', async (req: AuthRequest, res) => {
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'text', 5, 'Generate Social Meta');
+            const creditCost = await getCreditCost(AIModelType.TEXT);
+            await deductCredits(userId, ServiceType.TEXT, creditCost, 'Generate Social Meta');
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -517,7 +525,8 @@ router.post(['/translate-media', '/translate-project'], async (req: AuthRequest,
 
         // Credit Deduction
         try {
-            await deductCredits(userId, 'text', 5, `Translate Content to ${targetLanguage}`);
+            const creditCost = await getCreditCost(AIModelType.TEXT);
+            await deductCredits(userId, ServiceType.TEXT, creditCost, `Translate Content to ${targetLanguage}`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -622,7 +631,8 @@ router.post('/detect-scenes', upload.single('file'), async (req: AuthRequest, re
         // Credit Deduction (1 credit per 2 seconds of video, simplified)
         // Hardcoding 10 credits for now as we don't know duration easily without ffprobe
         try {
-            await deductCredits(userId, 'video', 10, 'AI Scene Detection');
+            const creditCost = await getCreditCost(AIModelType.VIDEO);
+            await deductCredits(userId, ServiceType.VIDEO, creditCost, 'AI Scene Detection');
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -647,8 +657,8 @@ router.post('/detect-beats', upload.single('file'), async (req: AuthRequest, res
         const { buffer: audioBuffer, mimeType } = await resolveMediaInput(req.file, mediaId);
 
         try {
-            // Deduct 5 credits for beat analysis
-            await deductCredits(userId, 'audio', 5, 'AI Beat Detection');
+            const creditCost = await getCreditCost(AIModelType.AUDIO);
+            await deductCredits(userId, ServiceType.AUDIO, creditCost, 'AI Beat Detection');
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -673,7 +683,8 @@ router.post('/detect-silence', upload.single('file'), async (req: AuthRequest, r
         const { buffer: videoBuffer, mimeType } = await resolveMediaInput(req.file, mediaId);
 
         try {
-            await deductCredits(userId, 'video', 5, 'AI Silence Detection');
+            const creditCost = await getCreditCost(AIModelType.VIDEO);
+            await deductCredits(userId, ServiceType.VIDEO, creditCost, 'AI Silence Detection');
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -766,7 +777,7 @@ router.post('/vision/analyze', async (req: AuthRequest, res) => {
         const analysisPrompt = await buildVisionAnalyzePrompt({ prompt: prompt || '' });
         
         // Use AI Manager with image support
-        const result = await aiManager.generateText(analysisPrompt, undefined, 'google', {
+        const result = await aiManager.generateText(analysisPrompt, undefined, undefined, {
             images: [buffer.toString('base64')] // Array of base64 strings
         });
 
@@ -787,7 +798,8 @@ router.post('/generate-captions', upload.single('file'), async (req: AuthRequest
         const { buffer: videoBuffer, mimeType } = await resolveMediaInput(req.file, mediaId);
 
         try {
-            await deductCredits(userId, 'audio', 5, 'AI Caption Generation');
+            const creditCost = await getCreditCost(AIModelType.AUDIO);
+            await deductCredits(userId, ServiceType.AUDIO, creditCost, 'AI Caption Generation');
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }
@@ -975,9 +987,9 @@ router.post('/generate-avatar-video', async (req: AuthRequest, res) => {
         const avatarDuration = Math.ceil(Math.max(5, avatarWordCount / 2.5));
 
         // Credit Deduction
-        const creditAmount = Math.ceil(avatarDuration * CREDIT_PRICES.VIDEO_GEN_PER_SECOND);
+        const creditAmount = Math.ceil(avatarDuration * AIModelCost.VIDEO);
         try {
-            await deductCredits(userId, 'video', creditAmount, `Generate Avatar Video (${avatarDuration}s)`);
+            await deductCredits(userId, ServiceType.VIDEO, creditAmount, `Generate Avatar Video (${avatarDuration}s)`);
         } catch (ce: any) {
             return res.status(402).json({ success: false, error: ce.message });
         }

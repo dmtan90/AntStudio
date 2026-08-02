@@ -1,6 +1,6 @@
-# AntFlow Video Editor Guide
+# AntStudio Video Editor Guide
 
-AntFlow provides a powerful mobile video editing experience with two distinct modes: **Simple Editor** for quick edits and **Advanced Editor** for professional control.
+AntStudio provides a powerful mobile video editing experience with two distinct modes: **Simple Editor** for quick edits and **Advanced Editor** for professional control.
 
 ## 1. Simple Editor
 *Best for: Quick trimming, social media shorts, and simple montage.*
@@ -59,6 +59,6 @@ AntFlow provides a powerful mobile video editing experience with two distinct mo
     -   **Save to Device**: Save the MP4 file to your local gallery.
 
 ## Tips for Success
--   **Auto-Save**: AntFlow saves your changes locally as you edit.
+-   **Auto-Save**: AntStudio saves your changes locally as you edit.
 -   **Zoom In**: Use the zoom controls for precise frame-by-frame trimming.
 -   **Performance**: For complex projects with many effects, use the "Proxy" mode (if enabled in settings) for smoother playback.

@@ -1,1 +1,6287 @@
-{}
+{
+  "app": {
+    "name": "蚂蚁工作室",
+    "beta": "测试版",
+    "loading": "正在加载经验..."
+  },
+  "nav": {
+    "home": "家",
+    "overview": "概述",
+    "capabilities": "能力",
+    "partners": "合作伙伴",
+    "dashboard": "仪表板",
+    "projects": "项目",
+    "gallery": "画廊",
+    "signIn": "登入",
+    "signUp": "报名",
+    "admin": "行政",
+    "users": "用户",
+    "licenseHub": "许可证中心",
+    "resources": "资源",
+    "merchant": "商人",
+    "viral": "病毒中心",
+    "influencers": "影响者",
+    "templates": "模板",
+    "platforms": "平台",
+    "subscription": "订阅",
+    "avatars": "头像",
+    "license": "执照",
+    "pricing": "定价",
+    "features": "特征",
+    "whyUs": "为什么选择我们",
+    "showcase": "展示柜",
+    "team": "团队",
+    "settings": "设置",
+    "aiAccounts": "人工智能账户",
+    "fleetCommand": "人工智能节点",
+    "monitoring": "监控",
+    "infrastructure": "基础设施",
+    "network": "网络控制",
+    "developer": "开发商",
+    "marketplace": "市场",
+    "aiStreamer": "AI 直播",
+    "b2b": "企业方案",
+    "liveMetrics": "实时指标"
+  },
+  "common": {
+    "logout": "退出",
+    "profile": "我的个人资料",
+    "password": "密码",
+    "updateSuccess": "更新成功",
+    "failed": "操作失败",
+    "generating": "生成...",
+    "saving": "保存...",
+    "save": "保存更改",
+    "cancel": "取消",
+    "ok": "好的",
+    "warning": "警告",
+    "copy": "复制",
+    "copySuccess": "已复制到剪贴板",
+    "auto": "汽车",
+    "seconds": "秒",
+    "approve": "批准",
+    "reject": "拒绝",
+    "open": "打开",
+    "close": "关闭",
+    "refresh": "刷新",
+    "retry": "重试",
+    "delete": "删除",
+    "edit": "编辑",
+    "approved": "得到正式认可的",
+    "rejected": "被拒绝",
+    "completed": "完全的",
+    "pending": "待办的",
+    "locale": "zh",
+    "loading": "加载中...",
+    "search": "搜索",
+    "confirm": "确认",
+    "next": "下一个",
+    "back": "后退",
+    "finish": "结束",
+    "guide": {
+      "back": "后退",
+      "next": "下一个",
+      "gotIt": "知道了",
+      "skip": "跳过"
+    },
+    "creator": "创作者",
+    "optional": "选修的",
+    "processing": "加工...",
+    "actions": {
+      "cancel": "取消",
+      "edit": "编辑",
+      "link": "关联",
+      "delete": "删除",
+      "back": "后退"
+    },
+    "subject": "主题",
+    "disable": "禁用",
+    "enable": "使能够",
+    "unknown": "未知",
+    "platforms": {
+      "google": "谷歌",
+      "facebook": "Facebook"
+    },
+    "unknownProduct": "未知产品",
+    "verifiedCollection": "已验证的集合",
+    "na": "钠",
+    "returnHome": "回家",
+    "mute": "沉默的",
+    "unmute": "取消静音",
+    "stopCamera": "停止摄像头",
+    "startCamera": "启动相机",
+    "connecting": "正在连接",
+    "disconnect": "断开",
+    "returnDashboard": "返回仪表板",
+    "time": {
+      "justNow": "现在"
+    },
+    "revoke": "撤销",
+    "noData": "无数据",
+    "getStarted": "开始使用",
+    "connect": "连接",
+    "unknownProject": "未知项目",
+    "settings": "设置",
+    "left": "左边",
+    "right": "正确的",
+    "top": "顶部",
+    "bottom": "底部",
+    "center": "中心",
+    "unlimited": "无限",
+    "add": "添加",
+    "remove": "消除",
+    "generate": "产生",
+    "generateImage": "生成图像",
+    "generateVideo": "生成视频"
+  },
+  "dashboard": {
+    "header": {
+      "systemOperational": "系统运行",
+      "welcomeBack": "欢迎回来，",
+      "subtitle": "通过人工智能驱动的视频制作将您的创意愿景变为现实",
+      "newProject": "新项目",
+      "goLive": "上线"
+    },
+    "stats": {
+      "credits": "制作人员",
+      "plan": "计划",
+      "free": "免费套餐",
+      "activeProjects": "活跃项目",
+      "viewAll": "查看全部",
+      "connectedPlatforms": "互联平台",
+      "manageConnections": "管理连接",
+      "commerce": "商业收入",
+      "pendingOrders": "待处理订单"
+    },
+    "recentProjects": {
+      "title": "最近的项目",
+      "viewAll": "查看全部",
+      "noProjects": "还没有项目。",
+      "startJourney": "今天开始您的创意之旅。",
+      "createProject": "创建项目"
+    },
+    "connectedAccounts": {
+      "title": "互联平台",
+      "connected": "已连接",
+      "managePlatforms": "管理连接"
+    },
+    "systemStatus": {
+      "title": "系统状态",
+      "aiEngine": "人工智能合成引擎",
+      "renderingNodes": "云渲染节点",
+      "storage": "对象存储",
+      "status": {
+        "operational": "操作",
+        "idle": "闲置的",
+        "healthy": "健康"
+      }
+    },
+    "tour": {
+      "welcome": {
+        "title": "欢迎",
+        "desc": "您的创意中心。"
+      },
+      "stats": {
+        "title": "快速统计",
+        "desc": "监控您的使用情况。"
+      },
+      "actions": {
+        "title": "行动",
+        "desc": "开始或继续您的工作流程。"
+      },
+      "recent": {
+        "title": "最近的工作",
+        "desc": "从上次停下的地方继续。"
+      }
+    },
+    "upgrade": "升级计划"
+  },
+  "projects": {
+    "header": {
+      "title": "您的项目",
+      "subtitle": "管理和监督您的所有创意项目、模板和草稿。"
+    },
+    "actions": {
+      "newProject": "新项目",
+      "edit": "编辑",
+      "duplicate": "复制",
+      "delete": "删除"
+    },
+    "filters": {
+      "searchPlaceholder": "搜索项目...",
+      "all": "全部",
+      "draft": "草稿",
+      "processing": "加工...",
+      "generating": "生成",
+      "storyboard": "故事板",
+      "completed": "完全的",
+      "failed": "失败的"
+    },
+    "status": {
+      "draft": "草稿",
+      "processing": "加工...",
+      "generating": "生成",
+      "storyboard": "故事板",
+      "completed": "完全的",
+      "failed": "失败的",
+      "analyzing": "分析中"
+    },
+    "placeholders": {
+      "noDescription": "没有提供描述。"
+    },
+    "modes": {
+      "video": "视频流",
+      "live-stream": "直播",
+      "avatar": "阿凡达",
+      "commerce": "商业",
+      "template": "模板",
+      "blank": "工作室",
+      "marketing": "营销",
+      "topic": "人工智能视频"
+    },
+    "empty": {
+      "title": "没有活跃的项目",
+      "description": "初始化一个新项目以开始生成创意资产。"
+    },
+    "confirmDelete": "您确定要终止该项目吗？此操作无法撤消。",
+    "deleteSuccess": "项目删除成功。",
+    "duplicateSuccess": "项目复制成功。",
+    "duplicateFailed": "无法复制项目。",
+    "tour": {
+      "create": {
+        "title": "初始化项目",
+        "desc": "单击此处开始新的创意项目。"
+      },
+      "filters": {
+        "title": "排序和过滤项目",
+        "desc": "按状态过滤您的项目或在此处执行快速搜索。"
+      }
+    },
+    "editor": {
+      "title": "视频编辑器",
+      "messagePlaceholder": "输入您的消息，@提及...",
+      "storyboard": {
+        "title": "故事板",
+        "keyElements": "关键要素",
+        "productionSegments": "生产部门",
+        "styleRules": "风格规则",
+        "audio": "声音的",
+        "worldPhysics": "世界物理",
+        "physicsModel": "物理模型",
+        "lightingModel": "灯光模型",
+        "noGlobalRules": "没有全球规则",
+        "colorHarmony": "色彩和谐",
+        "noPalette": "无调色板",
+        "coreStyle": "核心风格",
+        "visualStyle": "视觉风格",
+        "characteristics": "特征",
+        "audioTitle": "音频制作和配乐",
+        "musicSection": "背景音乐",
+        "generatedBgm": "生成的背景音乐",
+        "voiceoverSection": "画外音和声乐元素",
+        "ambience": "环境",
+        "sfxCues": "音效提示",
+        "segmentStatus": "分段状态",
+        "generateVoiceovers": "生成所有配音",
+        "subtitlesSection": "字幕和文本元素",
+        "subtitlesInfo": "字幕信息",
+        "regenerateCharacters": "重生角色",
+        "generateCharacters": "生成角色",
+        "generateAllAssets": "生成所有资产",
+        "regenerateAllFrames": "重新生成所有帧",
+        "regenerateAllVideos": "重新生成所有视频",
+        "batchStart": "开始批量再生",
+        "batchComplete": "批次完成：",
+        "charsUpdated": "人物更新",
+        "framesUpdated": "帧已更新",
+        "videosRequested": "请求视频",
+        "videoBatchStart": "开始批量视频生成",
+        "assetReady": "资产已生成并同步！",
+        "backgroundJobStarted": "一代人在后台开始......",
+        "segDialog": {
+          "generalInfo": "一般信息",
+          "description": "视觉描述",
+          "camera": "相机详情",
+          "location": "地点详情",
+          "character": "特点",
+          "line": "线",
+          "delivery": "送货",
+          "style": "风格",
+          "timing": "计时（例如0-2秒）",
+          "lang": "语言",
+          "suggestions": {
+            "generateFrames": "生成帧",
+            "generateMotion": "生成运动",
+            "generateAudio": "生成音频"
+          },
+          "videoProcessing": "视频处理...",
+          "imageProcessing": "图像处理...",
+          "tabs": {
+            "environment": "环境",
+            "general": "一般的",
+            "cinematic": "电影般的",
+            "audio": "音频与对话",
+            "prompt": "人工智能提示"
+          },
+          "locationType": "类型",
+          "atmosphere": "气氛",
+          "title": "细分详情",
+          "noMedia": "没有生成媒体",
+          "regenerateFrame": "生成帧",
+          "regenerateVideo": "生成视频",
+          "uploadImageVideo": "上传图片/视频",
+          "segTitle": "标题",
+          "duration": "持续时间",
+          "lipSync": "需要口型同步",
+          "framing": "取景",
+          "angle": "角度",
+          "movement": "移动",
+          "focus": "重点",
+          "lighting": "灯光",
+          "objects": "关键对象",
+          "voiceover": "画外音脚本",
+          "audioDetails": "音频详情",
+          "detailedDialogue": "详细对话",
+          "imagePrompt": "图像生成提示",
+          "videoPrompt": "视频生成提示",
+          "options": {
+            "extremeCloseUp": "极端特写",
+            "closeUp": "特写",
+            "mediumShot": "中景",
+            "fullShot": "全景图",
+            "wideShot": "广角镜头",
+            "extremeWideShot": "超广角镜头",
+            "ultraWideShot": "超广角镜头",
+            "pov": "观点",
+            "eyeLevel": "视线水平",
+            "highAngle": "高角度",
+            "lowAngle": "低角度",
+            "dutchAngle": "荷兰角",
+            "overShoulder": "过肩",
+            "birdsEye": "鸟眼",
+            "wormsEye": "虫眼",
+            "static": "静止的",
+            "pan": "平底锅",
+            "tilt": "倾斜",
+            "zoomIn": "放大",
+            "zoomOut": "缩小",
+            "dolly": "多莉",
+            "tracking": "追踪",
+            "handheld": "手持式",
+            "craneFlycam": "起重机飞行摄像头",
+            "deepFocus": "深度聚焦",
+            "shallowFocus": "浅焦点",
+            "rackFocus": "机架焦点",
+            "softFocus": "柔焦",
+            "studio": "工作室",
+            "indoor": "室内的",
+            "outdoor": "户外的",
+            "urban": "城市的",
+            "nature": "自然",
+            "scifi": "科幻",
+            "cyberpunk": "赛博朋克",
+            "cinematicInterior": "影院般的内饰"
+          },
+          "ambience": "环境",
+          "sfx": "音效",
+          "music": "音乐"
+        },
+        "addVisualCues": "添加视觉提示...",
+        "addAudioCues": "添加音频提示...",
+        "charDialog": {
+          "title": "角色详情",
+          "noImage": "无图像",
+          "regenerateVisual": "生成图像",
+          "uploadImage": "上传图片",
+          "general": "一般身份",
+          "physical": "物理细节",
+          "costume": "服装和道具",
+          "voice": "配音 (TTS)",
+          "voiceId": "选择语音",
+          "pitch": "沥青",
+          "name": "姓名",
+          "species": "物种",
+          "gender": "性别",
+          "age": "年龄",
+          "bodyBuild": "身体",
+          "faceShape": "脸型",
+          "hair": "头发",
+          "skinColor": "肤色",
+          "eyes": "眼睛",
+          "features": "特征",
+          "outfitTop": "服装上衣",
+          "outfitBottom": "服装下装",
+          "footwear": "鞋类",
+          "headwear": "头饰",
+          "props": "道具",
+          "listen": "听",
+          "styleCategory": "风格类别",
+          "options": {
+            "human": "人类",
+            "robot": "机器人",
+            "animal": "动物",
+            "mystical": "神秘",
+            "alien": "外星人",
+            "male": "男性",
+            "female": "女性",
+            "other": "其他",
+            "unknown": "未知",
+            "slender": "修长",
+            "balanced": "均衡",
+            "muscular": "肌肉发达",
+            "chubby": "胖乎乎的",
+            "petite": "娇小",
+            "athletic": "运动型",
+            "oval": "椭圆形",
+            "round": "圆形的",
+            "square": "正方形",
+            "long": "长的",
+            "diamond": "钻石",
+            "heart": "心",
+            "blackShort": "黑色短裤",
+            "blondeLong": "金发长",
+            "brownCurly": "棕色卷发",
+            "bald": "秃",
+            "silverBun": "银包子",
+            "shoulder": "肩膀",
+            "white": "白色的",
+            "yellow": "黄色的",
+            "tan": "谭",
+            "black": "黑色的",
+            "grey": "灰色的",
+            "green": "绿色的"
+          }
+        },
+        "englishAiPrompt": "英语AI提示",
+        "visualKeywords": "视觉关键词",
+        "audioKeywords": "音频关键字",
+        "suggestions": {
+          "generateFrames": "生成帧",
+          "generateMotion": "生成运动",
+          "generateAudio": "生成音频"
+        },
+        "generateMusic": "生成音乐",
+        "bgmTrack": "背景音乐曲目",
+        "musicReady": "音乐就绪",
+        "regenerateMusic": "重生音乐",
+        "voiceoverReady": "配音就绪",
+        "regenerateVoiceover": "重新生成画外音",
+        "captionsGenerated": "字幕生成成功！",
+        "captionsReady": "字幕准备就绪",
+        "captionsFailed": "生成字幕失败！",
+        "generateSubtitles": "生成字幕",
+        "generateAllSubtitles": "生成所有字幕",
+        "subtitlesGenerating": "正在生成字幕...",
+        "editCaptions": "编辑字幕和说明文字",
+        "editCaptionsSubtitle": "调整每个片段的文本时间、内容和样式",
+        "captionTextPlaceholder": "字幕文字...",
+        "startTime": "开始时间",
+        "endTime": "结束时间",
+        "captionStyle": "标题样式",
+        "addCaptionLine": "添加标题行",
+        "noCaptionsYet": "该片段还没有字幕行。",
+        "captionsSaved": "字幕已保存",
+        "transitions": "过渡"
+      },
+      "timeline": {
+        "title": "时间轴",
+        "subtitleTrack": "字幕轨道",
+        "generateAction": "生成动作",
+        "manualGeneration": "手动生成",
+        "createAllVoiceovers": "创建所有配音",
+        "createAllSubtitles": "创建所有字幕",
+        "regenBgm": "再生Bgm",
+        "volume": "体积",
+        "musicVolume": "音乐音量",
+        "videoVolume": "视频音量",
+        "fadeOut": "淡出",
+        "speed": "速度",
+        "duration": "期间",
+        "trimOffset": "修剪偏移",
+        "live": "居住",
+        "tracks": "曲目",
+        "videoTrack": "视频轨道",
+        "voiceTrack": "语音轨",
+        "musicTrack": "音乐曲目",
+        "aiVoice": "艾语音",
+        "noCaptions": "无字幕",
+        "noLowerThirds": "没有下三分之一",
+        "addLowerThird": "添加下三分之一",
+        "backgroundMusic": "背景音乐",
+        "generatingAiMusic": "生成人工智能音乐",
+        "generateAiBgm": "生成AI Bgm",
+        "voiceoverGenerating": "正在生成画外音...",
+        "voiceoverSuccess": "配音准备就绪",
+        "voiceoverFailed": "无法生成画外音",
+        "transitionSettings": "过渡",
+        "dialogueSegment": "对话",
+        "volumeUpdated": "卷已更新",
+        "failedUpdateVolume": "更新音量失败",
+        "speedUpdated": "更新速度",
+        "failedUpdateSpeed": "更新速度失败",
+        "durationUpdated": "持续时间已更新",
+        "failedUpdateDuration": "无法更新持续时间",
+        "fadeUpdated": "淡入淡出更新",
+        "transitionUpdated": "过渡已更新",
+        "generating": "正在生成...",
+        "generate": "生成画外音",
+        "ready": "准备好",
+        "transitions": {
+          "none": "没有任何",
+          "fade": "褪色",
+          "dissolve": "溶解",
+          "blur": "模糊",
+          "zoomBlur": "变焦模糊",
+          "morph": "变形",
+          "glitch": "毛刺",
+          "lightLeak": "漏光",
+          "cube": "立方体",
+          "flip": "翻动",
+          "wipe": "擦拭",
+          "circle": "圆圈",
+          "slide": "滑动"
+        },
+        "selectedSegment": "已选择：#{id}",
+        "captionsGenerated": "字幕生成成功！",
+        "transitionsTitle": "过渡",
+        "regenVoiceover": "再生画外音",
+        "voiceVolume": "语音音量",
+        "voiceSpeed": "语音速度",
+        "regenCaptions": "再生字幕"
+      },
+      "chatAssistant": "人工智能助手",
+      "video": {
+        "serverStart": "开始服务器端组装...",
+        "started": "视频集结开始！",
+        "failedStart": "无法启动视频组装",
+        "starting": "正在启动渲染序列...",
+        "cancelled": "渲染序列已中止",
+        "completed": "渲染完成。",
+        "progress": "合成正在进行中：{p}%",
+        "exportSettings": "导出设置",
+        "format": "格式",
+        "codec": "编解码器",
+        "resolution": "解决",
+        "fps": "帧率",
+        "quality": "质量",
+        "globalAudio": "全球音频",
+        "includeAllTracks": "包括所有曲目",
+        "audioCodec": "音频编解码器",
+        "sampleRate": "采样率",
+        "optimizing": "优化",
+        "startExport": "开始导出",
+        "abortProcess": "中止进程",
+        "viewResult": "查看结果",
+        "resetProcess": "重置过程",
+        "exporting": "出口",
+        "initializing": "正在初始化",
+        "processing": "加工...",
+        "complete": "完全的",
+        "done": "完毕",
+        "error": "视频拼接失败",
+        "noSegments": "没有视频片段。请先概括视频片段！",
+        "recommended": "受到推崇的",
+        "hd": "高清",
+        "fullHd": "全高清",
+        "2k": "2K",
+        "4k": "4K",
+        "fpsLabel": "{fps} FPS",
+        "low": "低的",
+        "medium": "中等的",
+        "high": "高的",
+        "hzLabel": "{hz} 赫兹",
+        "errorTitle": "视频拼接失败",
+        "noProject": "没有找到项目。",
+        "uploading": "正在上传视频...",
+        "success": "视频上传成功！",
+        "cancel": "视频上传失败"
+      },
+      "lowerThird": {
+        "edit": "编辑",
+        "add": "添加",
+        "text": "文本",
+        "subtitle": "字幕",
+        "style": "风格",
+        "position": "位置",
+        "animation": "动画片",
+        "startTime": "开始时间",
+        "duration": "期间",
+        "options": {
+          "styles": {
+            "default": "默认",
+            "defaultDesc": "默认描述",
+            "minimal": "最小",
+            "minimalDesc": "最小描述",
+            "bold": "大胆的",
+            "boldDesc": "粗体描述",
+            "gradient": "坡度",
+            "gradientDesc": "梯度描述"
+          },
+          "positions": {
+            "left": "左边",
+            "center": "中心",
+            "right": "正确的"
+          },
+          "animations": {
+            "fade": "褪色",
+            "slide": "滑动",
+            "none": "没有任何"
+          }
+        }
+      },
+      "chat": {
+        "attachFiles": "附加文件",
+        "mentionFiles": "提及文件",
+        "keywords": {
+          "visualPlan": "视觉计划",
+          "generatePlan": "生成计划"
+        },
+        "visualStrategyFailed": "无法生成视觉计划",
+        "error": "抱歉，我在处理您的请求时遇到错误。"
+      },
+      "assistant": "人工智能助手",
+      "header": {
+        "untitled": "无标题项目",
+        "credits": "制作人员",
+        "studio": "工作室",
+        "title": "项目编辑",
+        "back": "后退",
+        "rename": "重命名项目",
+        "renameSuccess": "项目更名",
+        "renameError": "项目重命名失败",
+        "export": "出口",
+        "exportMp4": "完整视频 (.mp4)",
+        "exportCapcut": "封盖项目",
+        "exportPremiere": "首映项目",
+        "exportAssets": "资产 ZIP（图像、语音、音乐）",
+        "exportComingSoon": "即将出口",
+        "featureComingSoon": "编辑器视图中即将推出的功能",
+        "renamed": "项目更名",
+        "renameFailed": "项目重命名失败",
+        "comingSoon": "即将推出",
+        "simple": "流动"
+      },
+      "publish": {
+        "title": "发布视频",
+        "syncing": "正在同步",
+        "storage": "贮存",
+        "archived": "已存档",
+        "download": "下载",
+        "specifications": "规格",
+        "fileSize": "文件大小",
+        "syndicate": "辛迪加",
+        "noAccounts": "没有账户",
+        "connect": "连接",
+        "syndicateNow": "现在辛迪加",
+        "antMedia": "蚂蚁媒体服务器",
+        "antMediaDesc": "可扩展的流媒体解决方案",
+        "connected": "已连接",
+        "streamId": "流ID",
+        "streamIdDesc": "流 ID 描述",
+        "pushRtmp": "推送RTMP",
+        "liveStream": "直播",
+        "saveVod": "保存视频点播",
+        "metrics": "指标",
+        "viewers": "观众",
+        "bitrate": "比特率",
+        "simulcast": "联播",
+        "addEndpoint": "添加端点",
+        "exit": "出口",
+        "syndicationTitle": "视频标题",
+        "syndicationDescription": "视频说明",
+        "toasts": {
+          "vodFailed": "无法将视频保存到 VOD",
+          "vodSaved": "视频保存成功",
+          "endpointFailed": "添加端点失败",
+          "endpointAdded": "端点添加成功",
+          "broadcastStarted": "广播开始成功",
+          "broadcastFailed": "无法开始广播"
+        },
+        "platforms": "平台"
+      },
+      "music": {
+        "generated": "背景音乐已生成"
+      }
+    },
+    "recorder": {
+      "title": "录音机",
+      "getReady": "准备摄入...",
+      "liveCam": "实时摄像头",
+      "micChangeDisabled": "录音期间无法更改声音输入。",
+      "finishDialog": {
+        "title": "标题",
+        "save": "节省",
+        "download": "下载",
+        "discard": "丢弃"
+      },
+      "tabs": {
+        "camera": "相机",
+        "cameraScreen": "摄像头&屏幕",
+        "screen": "屏幕",
+        "audio": "声音的"
+      },
+      "overlay": {
+        "aslZone": "ASL 捕获区",
+        "audioLevel": "等级"
+      },
+      "settings": {
+        "blur": "视觉模糊"
+      },
+      "dialog": {
+        "title": "录音完成",
+        "desc": "您的录音已准备就绪。你想做什么？",
+        "download": "下载",
+        "save": "保存到项目"
+      },
+      "status": {
+        "syncing": "正在同步录音...",
+        "persistenceSuccess": "使命执着。",
+        "persistenceError": "坚持期间的战术失败",
+        "extractionSoon": "增强的文件提取功能即将推出。",
+        "accessError": "战略失败：无法访问神经捕获单元",
+        "stopFirst": "切换模式前停止录音"
+      },
+      "projectDefault": "神经会话"
+    },
+    "new": {
+      "title": "开始您的项目创建",
+      "subtitle": "选择您的项目模式",
+      "success": "项目创建成功。",
+      "setup": {
+        "blank": {
+          "title": "空白项目",
+          "desc": "从一个空白项目开始。",
+          "projectTitle": "项目名称",
+          "aspectRatio": "纵横比",
+          "creating": "创造"
+        },
+        "flow": "项目流程",
+        "template": "旧版模板",
+        "avatar": {
+          "selectInfluencer": "选择影响者",
+          "selectInfluencerDesc": "选择影响者描述",
+          "uploadCustom": "上传自定义",
+          "uploadSupport": "上传支持",
+          "scriptVoice": "脚本语音",
+          "scriptVoiceDesc": "脚本语音描述",
+          "scriptLabel": "脚本标签",
+          "voiceSelection": "语音选择",
+          "advancedSettings": "高级设置",
+          "allLanguages": "所有语言",
+          "allGenders": "所有性别",
+          "male": "男性",
+          "female": "女性",
+          "neutral": "中性的",
+          "speed": "速度",
+          "stability": "稳定",
+          "similarity": "相似",
+          "trainVoice": "火车语音",
+          "videoPreview": "视频预览",
+          "generatingVideo": "生成视频",
+          "videoReady": "视频就绪",
+          "download": "下载",
+          "saveLibrary": "保存库",
+          "createNew": "新建",
+          "modal": {
+            "title": "标题",
+            "desc": "描述",
+            "voiceName": "声音名称",
+            "startTraining": "开始训练"
+          },
+          "initializingEngine": "初始化引擎"
+        },
+        "liveStream": {
+          "title": "标题",
+          "desc": "描述",
+          "studioMode": "工作室模式",
+          "studioDesc": "工作室描述",
+          "restreamMode": "重播模式",
+          "restreamDesc": "重新流描述",
+          "selectContent": "选择内容",
+          "selectDestinations": "选择目的地",
+          "loading": "加工...",
+          "noPlatforms": "无平台",
+          "connectFirst": "首先连接",
+          "studioBtn": "工作室 Btn",
+          "restreamBtn": "重新流媒体按钮",
+          "toasts": {
+            "failed": "失败的"
+          }
+        },
+        "presentation": {
+          "title": "标题",
+          "desc": "描述",
+          "presenterAvatar": "主持人头像",
+          "noAvatars": "没有头像",
+          "uploadSlides": "上传幻灯片",
+          "uploadPresentation": "上传演示文稿",
+          "support": "支持",
+          "selectFile": "选择文件"
+        },
+        "productAds": {
+          "source": "来源",
+          "sourceDesc": "来源描述",
+          "productUrl": "产品网址",
+          "uploadAssets": "上传资源",
+          "urlLabel": "网址标签",
+          "uploadPrompt": "上传提示",
+          "analysis": "分析",
+          "analysisDesc": "分析说明",
+          "productName": "产品名称",
+          "price": "价格",
+          "sellingPoints": "卖点",
+          "brandVibe": "品牌氛围",
+          "noVibes": "没有共鸣",
+          "productImages": "产品图片",
+          "selectTemplate": "选择模板",
+          "selectTemplateDesc": "选择模板描述"
+        }
+      },
+      "flow": {
+        "threeDRender": "3D 神经渲染",
+        "sceneSynthesis": "场景合成",
+        "landscape": "景观",
+        "portrait": "肖像",
+        "square": "正方形",
+        "classic": "经典的",
+        "cinematic": "电影般的",
+        "realistic": "实际的",
+        "anime": "日本动画片",
+        "targetDuration": "目标持续时间",
+        "resetFlow": "重置流程",
+        "mentionHeader": "提及标题",
+        "confirmCreate": "现在开始",
+        "reGenerate": "再生",
+        "approve_script": "我认可这个剧本。请继续进行资源分析。",
+        "approve_analysis": "我批准资源分析。请继续生成故事板。",
+        "thinking": "我正在处理你的想法...",
+        "analyzing": "正在分析...",
+        "resetTitle": "重置",
+        "attachFiles": "支持图片、视频、文字、文档"
+      },
+      "topicPlaceholder": "描述您的视频主题、故事或想法。尽可能详细。",
+      "results": {
+        "analysis": {
+          "summaryBar": "资源分析",
+          "isReady": "准备好了",
+          "type": "类型",
+          "document": "文档",
+          "scriptAnalysisTitle": "脚本分析",
+          "generalOverview": "总体概述",
+          "genre": "类型",
+          "mood": "情绪",
+          "duration": "预计持续时间",
+          "setting": "环境",
+          "themes": "核心主题",
+          "characterSystem": "人物系统",
+          "physical": "身体的",
+          "voice": "嗓音",
+          "narrativeStructure": "叙事结构",
+          "act1": "第一幕",
+          "act2": "第二幕",
+          "act3": "第三幕",
+          "segmentsCount": "生产部门",
+          "scenes": "场景",
+          "visualElements": "视觉与艺术指导",
+          "palette": "调色板",
+          "worldRules": "世界规则",
+          "lighting": "灯光",
+          "colorHarmony": "色彩和谐",
+          "visualKeywords": "视觉关键词",
+          "cameraAngles": "相机角度",
+          "audioElements": "音频元素",
+          "sfx": "音效",
+          "music": "背景音乐",
+          "ambience": "环境",
+          "approveAndCreateStoryboard": "批准并创建故事板"
+        },
+        "brief": {
+          "summaryBar": "创意简介",
+          "videoType": "视频类型",
+          "narrativeDriver": "叙事驱动力",
+          "tone": "情绪基调",
+          "visualStyle": "视觉风格",
+          "pacing": "起搏",
+          "soundDesign": "声音设计",
+          "aspectRatio": "纵横比",
+          "language": "语言",
+          "audience": "目标受众"
+        },
+        "closing": {
+          "intro": "为了制作高质量的视频，我需要更多细节。您对此有何看法？",
+          "happy": "对这个愿景感到满意吗？"
+        },
+        "script": {
+          "summaryBar": "剧本",
+          "title": "生成的剧本",
+          "hint": "查看上面的脚本。您可以批准它以继续进行电影分析。",
+          "approveBtn": "批准和分析"
+        },
+        "storyboard": {
+          "summaryBar": "故事板",
+          "isUpdated": "已更新",
+          "hint": "查看上面的故事板片段。如果您满意，请批准创建您的项目并进入编辑器。",
+          "approveBtn": "批准并创建项目"
+        },
+        "visualAssets": {
+          "summaryBar": "摘要栏"
+        },
+        "visualPath": {
+          "summaryBar": "摘要栏"
+        }
+      },
+      "back": "后退",
+      "create": "创建项目",
+      "next": "下一个",
+      "options": {
+        "aiVideo": {
+          "label": "人工智能视频",
+          "desc": "根据提示生成完整的视频。"
+        },
+        "aiAvatar": {
+          "label": "人工智能头像",
+          "desc": "使用数字演示者创建视频。"
+        },
+        "urlToVideo": {
+          "label": "产品广告",
+          "desc": "将产品 URL 或文章转换为视频。"
+        },
+        "cloneStyle": {
+          "label": "克隆风格",
+          "desc": "复制任何视频的视觉和音频风格。"
+        },
+        "scriptToVideo": {
+          "label": "脚本到视频",
+          "desc": "从您的自定义脚本生成场景和音频。"
+        },
+        "presentation": {
+          "label": "推介会",
+          "desc": "将幻灯片或 PDF 转换为视频。"
+        },
+        "record": {
+          "label": "录音机",
+          "desc": "录制您的屏幕、摄像头和声音。"
+        },
+        "liveStudio": {
+          "label": "直播",
+          "desc": "在人工智能辅助下向多个平台广播。"
+        },
+        "productAds": {
+          "label": "产品广告",
+          "desc": "将产品 URL 或文章转换为视频。"
+        },
+        "blank": {
+          "label": "空白项目",
+          "desc": "从工作室里一块干净的画布开始。"
+        },
+        "saleStudio": {
+          "label": "销售工作室",
+          "desc": "通过人工智能代理向客户推广您的产品。"
+        }
+      },
+      "clonePrompt": "我想创建一个类似于这种风格的视频：[在此处粘贴 URL]。要求：",
+      "suggestions": {
+        "marketing": "为 [产品名称] 制作 15 秒的营销广告",
+        "script": "写一个关于[主题]的短片剧本",
+        "convert": "将 [@file] 转换为视频",
+        "clone": "从 [@reference] 克隆样式",
+        "presentation": "报告数据的MC演示"
+      },
+      "toasts": {
+        "analysisFailed": "分析失败",
+        "resetSuccess": "清除历史记录成功",
+        "resetFailed": "清除历史记录失败",
+        "created": "项目创建成功",
+        "createFailed": "创建项目失败"
+      },
+      "projectPrefix": "项目前缀",
+      "characterRoster": "人物",
+      "characterRosterDesc": "你的角色和角色",
+      "lockAndContinue": "批准并继续"
+    },
+    "detail": {
+      "duration": "期间",
+      "summary": "概括",
+      "pending": "待办的",
+      "backDashboard": "返回仪表板",
+      "continue": "继续 →",
+      "created": "已创建",
+      "scriptInput": "脚本输入",
+      "ready": "准备好",
+      "topic": "话题",
+      "uploadedFile": "上传的文件",
+      "fileType": "文件类型",
+      "uploaded": "已上传",
+      "noInput": "尚未输入脚本",
+      "analysis": "脚本分析",
+      "complete": "完全的",
+      "genre": "类型",
+      "mood": "情绪",
+      "characters": "人物",
+      "locations": "地点",
+      "generateImages": "生成角色和位置图像",
+      "analysisNotStarted": "分析尚未开始",
+      "startAnalysis": "开始分析",
+      "storyboard": "故事板",
+      "segments": "段",
+      "notCreated": "未创建",
+      "totalDuration": "总持续时间",
+      "viewStoryboard": "查看故事板",
+      "generateVideos": "生成所有视频",
+      "storyboardNotCreated": "故事板尚未创建",
+      "generateStoryboard": "生成故事板",
+      "finalVideo": "最终视频",
+      "notGenerated": "未生成",
+      "assembling": "正在组装...",
+      "resolution": "解决",
+      "openEditor": "打开视频编辑器",
+      "videoNotAssembled": "视频还没组装好",
+      "goEditor": "前往编辑器",
+      "notFound": "未找到项目"
+    },
+    "list": {
+      "title": "项目管理",
+      "subtitle": "管理您的项目和管道",
+      "create": "启动新项目",
+      "search": "搜索项目...",
+      "empty": "未检测到项目。",
+      "table": {
+        "title": "项目名称",
+        "createdAt": "创建时间",
+        "status": "地位",
+        "actions": "行动"
+      },
+      "status": {
+        "draft": "草稿",
+        "processing": "加工...",
+        "rendered": "渲染的"
+      }
+    },
+    "avatarCreator": {
+      "title": "头像创建者",
+      "selectInfluencer": "选择影响者",
+      "noDescription": "无描述",
+      "availableAvatars": "可用头像",
+      "search": "搜索",
+      "static": "静止的",
+      "stopPreview": "停止预览",
+      "realTimePreview": "实时预览",
+      "lipSyncPreview": "口型同步预览",
+      "lipSyncDesc": "测试您的头像的嘴巴如何随着所选的语音配置文件移动。",
+      "voiceProfile": "语音配置文件",
+      "openLibrary": "开放图书馆",
+      "selectVoice": "选择语音",
+      "speechSpeed": "语速",
+      "pitchAdjustment": "音调调节",
+      "scriptContent": "脚本内容",
+      "aiWrite": "艾写",
+      "scriptPlaceholder": "在此处输入您的脚本或粘贴文本。我们将分析文本并相应地生成语音。",
+      "enhancedSync": "增强同步",
+      "aiVisemeMapping": "Ai 发音嘴型映射",
+      "captureComplete": "捕获完成",
+      "captureCompleteDesc": "捕获完整描述",
+      "continueToPreview": "继续预览",
+      "readyToRender": "准备渲染",
+      "renderDesc": "创建您的人工智能角色...",
+      "avatar": "阿凡达",
+      "estDuration": "预计持续时间",
+      "startRendering": "开始渲染",
+      "abortRendering": "中止渲染",
+      "metadata": "元数据",
+      "aiHookLab": "人工智能建议",
+      "videoTitle": "视频标题",
+      "videoDescription": "视频说明",
+      "syndicateToPlatforms": "联合平台",
+      "noAccounts": "没有账户",
+      "connectAccounts": "连接账户",
+      "download": "下载",
+      "saveToProjects": "保存到项目",
+      "syndicateFinish": "辛迪加完成",
+      "back": "后退",
+      "previewResults": "预览结果",
+      "renderPreview": "渲染预览",
+      "continue": "继续",
+      "toasts": {
+        "voicePreviewDefault": "语音预览默认值",
+        "scriptGenerated": "脚本生成",
+        "renderFailed": "生成视频失败。请再试一次。",
+        "videoCaptured": "视频拍摄成功！",
+        "saving": "保存...",
+        "hooksGenerated": "视频标题和描述已成功生成！"
+      },
+      "defaultScriptFallback": "大家好！我很高兴能够在这里帮助您使用人工智能头像创建令人惊叹的内容。这种客户端渲染技术可确保您的作品具有高质量和低延迟。",
+      "defaultTitlePrefix": "你的视频标题",
+      "steps": [
+        "Select Your Influencer",
+        "Script & Voice",
+        "Capture Video",
+        "Preview & Share"
+      ],
+      "step": "头像创建者步骤 {step}（共 {totalSteps}）",
+      "chars": "总字符数：{count}",
+      "defaultScript": "大家好！我很高兴能够在这里帮助您使用人工智能头像创建令人惊叹的内容。这种客户端渲染技术可确保您的作品具有高质量和低延迟。"
+    },
+    "createDialog": {
+      "title": "创建视频",
+      "subtitle": "选择创建方法",
+      "options": {
+        "aiVideo": {
+          "label": "人工智能视频",
+          "desc": "根据文本提示生成"
+        },
+        "aiAvatar": {
+          "label": "人工智能头像",
+          "desc": "会说话的头部视频"
+        },
+        "productAds": {
+          "label": "产品广告",
+          "desc": "从 URL 创建产品广告"
+        },
+        "cloneStyle": {
+          "label": "克隆风格",
+          "desc": "来自参考视频"
+        },
+        "liveStudio": {
+          "label": "现场工作室",
+          "desc": "广播到社交媒体"
+        },
+        "presentation": {
+          "label": "推介会",
+          "desc": "来自幻灯片或 PDF"
+        },
+        "record": {
+          "label": "记录",
+          "desc": "屏幕&摄像头"
+        },
+        "blank": {
+          "label": "空白项目",
+          "desc": "从头开始"
+        }
+      }
+    },
+    "previewModal": {
+      "title": "预览",
+      "noVideo": "没有视频",
+      "syndicate": "辛迪加",
+      "loadingPlatforms": "装载平台",
+      "noAccounts": "没有账户",
+      "connectAccounts": "连接账户",
+      "metadata": "元数据",
+      "generating": "生成",
+      "aiHookLab": "人工智能建议",
+      "titleLabel": "标题",
+      "descriptionLabel": "描述",
+      "scheduleDistribution": "时间表分配",
+      "selectDateTime": "选择日期时间",
+      "analyzing": "分析中",
+      "aiPeakTime": "人工智能建议",
+      "aiPeakDesc": "是时候发布您的视频了",
+      "download": "下载",
+      "syndicateBtn": "辛迪加",
+      "defaultVideoName": "默认视频名称",
+      "toasts": {
+        "publishFailed": "发布失败",
+        "hookApplied": "AI标题和描述已应用",
+        "noVideo": "没有视频",
+        "selectDate": "请选择日期和时间",
+        "selectPlatform": "选择您的流媒体平台",
+        "peakTimeSuccess": "高峰时间 {time} 已设置",
+        "peakTimeFailed": "未能赶上高峰时间",
+        "hooksFailed": "无法生成建议标题和描述"
+      }
+    }
+  },
+  "studio": {
+    "quests": {
+      "audienceQuest": "观众探索",
+      "timeRemaining": "剩余时间",
+      "success": "任务完成！",
+      "failure": "任务失败",
+      "rewardUnlocked": "解锁奖励：{reward}",
+      "types": {
+        "hype_train": "炒作列车：达到 {target} 条消息/分钟！",
+        "sentiment_surge": "积极性激增：发送 {target} 积极的氛围！",
+        "gift_goal": "礼物目标：收集 {target} 支持代币！"
+      }
+    },
+    "audio": {
+      "director": "神经音频总监",
+      "bgm": "背景音乐级别",
+      "sfx": "特效引擎",
+      "autoDucking": "自动闪避激活",
+      "currentVibe": "当前氛围：{vibe}"
+    },
+    "context": {
+      "sales": "商业模式",
+      "game_streaming": "游戏模式",
+      "general": "一般聊天",
+      "shift": "检测到上下文转移：为 {context} 设置阶段"
+    },
+    "accessibility": {
+      "translating": "翻译语音...",
+      "liveAudio": "现场音频",
+      "aslTitle": "美国手语实践"
+    },
+    "header": {
+      "godMode": "上帝模式",
+      "live": "居住",
+      "ready": "准备好",
+      "professionalStudio": "专业工作室",
+      "addDescription": "添加描述",
+      "noDescription": "无描述",
+      "swarm": "蜂群",
+      "engaged": "已订婚的",
+      "off": "离开",
+      "directorsLog": "董事日志",
+      "throttling": "节流",
+      "awaitingAi": "等待艾",
+      "autoEmotion": "自动情感",
+      "demoStats": "演示统计数据",
+      "mockViewers": "模拟观众",
+      "heartbeat": "心跳",
+      "optimal": "最佳的",
+      "simulatedMsg": "模拟消息",
+      "autoAtmosphere": "汽车氛围",
+      "demoMode": "演示模式"
+    },
+    "messages": {
+      "liveError": "无法开始广播",
+      "visionCaptured": "视觉捕捉",
+      "questStartedText": "任务开始文本",
+      "aiDealTriggeredTitle": "艾交易触发",
+      "checkProductionPanel": "检查生产面板",
+      "live": "广播是现场直播！",
+      "autoAtmosphereDisabled": "禁用自动氛围",
+      "godModeDisabled": "禁用上帝模式",
+      "demoModeDisabled": "禁用演示模式",
+      "autoAtmosphereEnabled": "启用自动氛围",
+      "godModeEnabled": "开启上帝模式",
+      "demoModeEnabled": "启用演示模式",
+      "stopped": "广播停止",
+      "recordingStart": "录音会话...",
+      "recordingSaved": "录音保存至云端",
+      "godModeOn": "开启上帝模式",
+      "godModeOff": "恢复手动控制",
+      "inviteCopied": "邀请链接已复制",
+      "mockChat": "惊人的流媒体质量！",
+      "aiChoice": "AI 导演：将场景切换到 {payload}",
+      "aiShowingInfoCard": "AI 总监：显示信息卡",
+      "aiShowcasingProduct": "AI 总监：展示产品 {name}",
+      "aiCelebration": "AI导演：触发庆祝！",
+      "aiHighlight": "AI导演：抓到一个亮点！",
+      "aiVisualEffectsActive": "AI导演：增强视觉效果活跃",
+      "aiCinematicCam": "AI 导演：应用电影 {path} 相机",
+      "aiAtmosphereChange": "AI 总监：将嘉宾氛围更改为 {effect}",
+      "aiGlobalAtmosphere": "AI导演：应用全场景氛围：{effect}",
+      "aiGiftEscalation": "AI 总监：来自 {user} 的大量 {gift}！扩大生产！",
+      "aiGiftReaction": "AI 总监：从 {user} 确认 {gift}",
+      "aiHypeBoost": "AI总监：聊天火了！掀起环保热潮！",
+      "aiGroupAction": "AI导演：触发群演！",
+      "aiGestureDrink": "AI 总监：{name} 正在喝酒",
+      "aiGesturePhone": "AI 总监：{name} 正在检查他们的手机",
+      "aiGestureLookAround": "AI总监：{name}正在观察环境",
+      "aiAutonomyImpulse": "AI 总监：{name} 触发了自主冲动",
+      "contextApplied": "AI 总监：应用情境",
+      "selectPlatform": "选择您的流媒体平台",
+      "aiDealTriggered": "交易触发",
+      "aiShowcase": "AI 总监：展示产品 {name}"
+    },
+    "title": "无标题流",
+    "filters": {
+      "none": "普通的",
+      "dream": "梦幻般的",
+      "noir": "黑色",
+      "vibrant": "充满活力"
+    },
+    "stats": {
+      "connection": "联系",
+      "unstable": "不稳定",
+      "stable": "稳定的"
+    },
+    "stageControls": {
+      "live": "居住",
+      "goLive": "上线",
+      "highlight": "强调",
+      "recording": "记录",
+      "rec": "记录",
+      "onAir": "正在播出",
+      "inviteGuest": "邀请嘉宾"
+    },
+    "interactions": {
+      "tabs": {
+        "layout": "布局",
+        "guests": "嘉宾",
+        "chat": "聊天",
+        "moments": "精彩瞬间",
+        "stats": "统计数据"
+      },
+      "replyAs": "回复为",
+      "waitingEngagement": "等待订婚",
+      "viralPeaks": "病毒高峰",
+      "draftPost": "草稿帖子",
+      "shareNow": "立即分享",
+      "noViralMoments": "没有病毒时刻",
+      "liveAudience": "现场观众",
+      "peak": "顶峰",
+      "uplinkStability": "上行稳定性",
+      "bitrate": "比特率",
+      "latency": "延迟",
+      "engagementIndex": "敬业度指数",
+      "likes": "喜欢",
+      "shares": "股份",
+      "sendMessagePlaceholder": "发送消息占位符",
+      "simulateInteraction": "模拟互动"
+    },
+    "videoEditor": {
+      "export": {
+        "extractingFrames": "正在提取帧...",
+        "processingAudio": "处理音频...",
+        "compilingVideo": "正在编译视频...",
+        "completed": "完全的",
+        "error": "导出时出错",
+        "uploading": "正在上传视频...",
+        "loading": "正在加载资源...",
+        "success": "视频导出并保存成功！",
+        "uploadFailed": "视频上传失败",
+        "startingStream": "开始导出流...",
+        "exportingProgress": "导出：{percent}%",
+        "exportComplete": "导出完成！",
+        "renderingScene": "渲染场景 {current}/{total}...",
+        "capturingScene": "捕获场景 {current}： {percent}%",
+        "readyForAssembly": "准备组装！"
+      },
+      "messages": {
+        "splitError": "无法分割：播放头距离场景开始或结束太近。",
+        "untitledTemplate": "无标题模板"
+      }
+    },
+    "loading": {
+      "initializing": "正在初始化",
+      "hardwareAccelerationRequired": "需要硬件加速",
+      "hardwareAccelerationDesc": "WebGL 初始化失败。为了提供专业的广播体验，AntStudio 需要在浏览器中启用 GPU 加速。",
+      "troubleshooting": "故障排除",
+      "retry": "重试",
+      "exit": "出口",
+      "browsers": {
+        "chrome": {
+          "name": "铬合金",
+          "title": "在 Chrome 中启用硬件加速",
+          "steps[0]": "转到 chrome://settings/system",
+          "steps[1]": "开启“在可用时使用硬件加速”",
+          "steps[2]": "如果出现提示，请单击“重新启动”",
+          "steps[3]": "访问 chrome://flags 并搜索“WebGL”",
+          "steps[4]": "启用“WebGL 草稿扩展”和“WebGL 开发人员扩展”",
+          "steps[5]": "重新启动浏览器以应用更改",
+          "troubleshoot": "访问 get.webgl.org 进行验证。检查 chrome://gpu 的“硬件加速”状态。"
+        },
+        "firefox": {
+          "name": "火狐浏览器",
+          "title": "在 Firefox 中启用硬件加速",
+          "steps[0]": "在地址栏中输入 about:config",
+          "steps[1]": "单击“接受风险并继续”",
+          "steps[2]": "搜索 webgl.disabled 并设置为 false",
+          "steps[3]": "搜索 webgl.force-enabled 并设置为 true",
+          "steps[4]": "重新启动 Firefox 以使设置生效",
+          "troubleshoot": "访问 get.webgl.org 进行验证。检查：对“WebRender”状态的支持。"
+        },
+        "safari": {
+          "name": "狩猎之旅",
+          "title": "在 Safari 中启用硬件加速",
+          "steps[0]": "打开 Safari 并转到 Safari > 设置",
+          "steps[1]": "单击高级选项卡",
+          "steps[2]": "选中“在菜单栏中显示开发菜单”",
+          "steps[3]": "关闭设置并单击菜单栏中的开发",
+          "steps[4]": "将鼠标悬停在“实验功能”上并启用“WebGL 2.0”和“WebGL 1.0”（如果可用）",
+          "troubleshoot": "访问 get.webgl.org 进行验证。检查：对“WebRender”状态的支持。"
+        }
+      },
+      "status": {
+        "syncing": "正在同步",
+        "starting": "开始",
+        "loading": "加载中",
+        "initializing": "正在初始化",
+        "hardwareAccelerationRequired": "需要硬件加速",
+        "hardwareAccelerationDesc": "硬件加速说明",
+        "troubleshooting": "故障排除",
+        "retry": "重试",
+        "exit": "出口"
+      }
+    },
+    "rail": {
+      "vibe": "氛围",
+      "assets": "资产",
+      "coHosts": "联合主持人"
+    },
+    "stage": {
+      "sessionPaused": "会话已暂停",
+      "beRightBack": "马上回来",
+      "sponsor": "赞助"
+    },
+    "guest": "客人",
+    "project": {
+      "defaultTitle": "新项目"
+    },
+    "common": {
+      "changeBtn": "改变",
+      "aiOptimized": "人工智能优化",
+      "promote": "推动",
+      "initializingEntity": "初始化实体",
+      "highFidelity": "高保真度",
+      "syncing": "正在同步",
+      "noPreview": "没有可用的预览",
+      "fileInfo": "文件信息",
+      "size": "尺寸",
+      "created": "已创建",
+      "metaData": "元数据",
+      "type": "类型",
+      "purpose": "目的",
+      "downloadFile": "下载文件",
+      "deleteAsset": "删除资产",
+      "dismiss": "解雇",
+      "level": "等级",
+      "experience": "经验",
+      "xp": "XP",
+      "toggleLyrics": "切换歌词",
+      "stopPerformance": "停止表演",
+      "showrunnerTitle": "人工智能节目主持人",
+      "showrunnerStep": "步骤 {current} / {total}",
+      "showrunnerSays": "{agent} 说：",
+      "showrunnerAction": "动作触发器：{action}",
+      "showrunnerUpNext": "下一个：",
+      "hiveMindPollTitle": "蜂巢思维民意调查",
+      "pollRemaining": "剩余 {count} 秒",
+      "pollVotesCast": "{count} 投票",
+      "pollVoteRecorded": "投票记录",
+      "download": "下载",
+      "title": "标题",
+      "description": "描述",
+      "levelUp": "升级！",
+      "levelInfo": "级别 {level}",
+      "newRewards": "解锁新奖励",
+      "intensity": "强度",
+      "positivity": "积极性",
+      "active": "积极的",
+      "paused": "已暂停",
+      "discard": "丢弃",
+      "live": "居住",
+      "pin": "别针",
+      "send": "发送",
+      "unlock": "开锁",
+      "copy": "复制",
+      "copied": "复制了！",
+      "approve": "批准",
+      "reject": "拒绝",
+      "cancel": "取消",
+      "upload": "上传",
+      "video": "视频",
+      "clear": "清除",
+      "close": "关闭",
+      "uploading": "正在上传...",
+      "languages": {
+        "en-US": "英语（美国）",
+        "vi-VN": "越南语",
+        "ja-JP": "日本人",
+        "zh-CN": "中文（简体）",
+        "es-ES": "西班牙语"
+      }
+    },
+    "analytics": {
+      "hookPerformance": "钩性能",
+      "hookInsightsDesc": "由人工智能驱动的视频开场分析",
+      "noAbData": "尚无 A/B 测试数据",
+      "hookLabHint": "在 Hook 实验室中运行更多实验以查看性能比较。",
+      "winningConcept": "制胜理念",
+      "experimentalRuns": "实验运行",
+      "avgPulse": "平均。脉冲",
+      "avgLikes": "平均。喜欢",
+      "viralGrowth": "病毒式增长",
+      "historicalViews": "随着时间的推移，观看次数和参与度",
+      "platformShare": "平台分享",
+      "syndicationFootprint": "跨社交网络的流量分布",
+      "totalReach": "总覆盖范围",
+      "audienceForecast": "观众预测",
+      "aiRecommendation": "人工智能推荐",
+      "contentCalendar": "内容日历",
+      "distributionSchedule": "跨所有平台安排和发布的内容",
+      "analyzing": "正在分析...",
+      "reasoningFollowers": "基于当前股票流通速度和利基饱和度，病毒式突破的可能性很高。",
+      "reasoningRevenue": "由于高峰时段优化，转化率比之前的基准高出 14%。",
+      "reasoningDefault": "人工智能模型根据当前的参与度峰值预测持续增长期。",
+      "hooks": {
+        "Curiosity": "好奇心钩",
+        "Controversial": "有争议的角度",
+        "Educational": "教育框架",
+        "Problem/Solution": "问题/解决方案",
+        "Behind the Scenes": "幕后花絮",
+        "Quick Tip": "快速提示",
+        "Comparison": "比较",
+        "Myth Busting": "打破神话"
+      },
+      "liveNow": "现在直播",
+      "liveAnalyticsTitle": "实时分析",
+      "audience": "观众",
+      "economy": "经济",
+      "chatVel": "查维尔",
+      "hypeMeter": "炒作计",
+      "liveFeed": "直播"
+    },
+    "calendar": {
+      "weekDays": {
+        "sun": "太阳",
+        "mon": "周一",
+        "tue": "星期二",
+        "wed": "周三",
+        "thu": "星期四",
+        "fri": "周五",
+        "sat": "星期六"
+      }
+    },
+    "drawers": {
+      "aiPersona": {
+        "neuralPersonas": "人工智能角色",
+        "syntheticIntelligence": "综合智能",
+        "role": {
+          "master": "掌握",
+          "agent": "代理人"
+        },
+        "expression": "表达",
+        "quickEmotions": "快速的情绪",
+        "prompts": {
+          "introduce": "介绍",
+          "react": "反应"
+        },
+        "actions": {
+          "introduce": "介绍",
+          "react": "反应",
+          "liveVoice": "现场语音",
+          "vision": "想象"
+        },
+        "animation": {
+          "intensity": "强度",
+          "gesture": "手势",
+          "tilt": "倾斜",
+          "nod": "点头"
+        },
+        "performance": {
+          "fx": "FX",
+          "aura": "光环",
+          "particles": "颗粒",
+          "lighting": "灯光",
+          "music": "音乐",
+          "selectSong": "选择歌曲",
+          "unknownArtist": "未知艺术家",
+          "perform": "履行",
+          "noSong": "无歌"
+        },
+        "options": {
+          "none": "没有任何",
+          "sakura": "樱花",
+          "snow": "雪",
+          "glitter": "闪光",
+          "studio": "工作室",
+          "neon": "氖",
+          "dramatic": "戏剧性",
+          "vocalOrange": "人声橙"
+        },
+        "background": "背景",
+        "promptPlaceholder": "提示占位符",
+        "autoGuest": {
+          "title": "自动访客逻辑",
+          "desc": "启用后，AI 总监将自动召唤角色来填补安静时刻或辩论特定的聊天主题。"
+        }
+      },
+      "cinematic": {
+        "title": "电影工作室",
+        "desc": "启用沉浸式渲染，将所有 AI 代理置于统一的高保真环境中。",
+        "activeEnvironment": "活跃环境",
+        "autoCamera": "自动相机",
+        "status": {
+          "prod": "产品"
+        },
+        "influencerLink": "影响者链接",
+        "activeVfx": "主动视觉特效",
+        "options": {
+          "none": "没有任何",
+          "bloom": "盛开"
+        },
+        "immersiveDisabled": "沉浸式舞台已禁用"
+      },
+      "collaboration": {
+        "title": "联合主持工作室",
+        "invite": "邀请",
+        "desc": "邀请客人实时加入您的直播。他们将作为现场参与者出现，具有完整的音频和视频功能。",
+        "you": "你",
+        "connected": "已连接",
+        "offline": "离线",
+        "noMembers": "没有会员"
+      },
+      "comments": {
+        "title": "社区工作室",
+        "platformEngagement": "平台参与度",
+        "moderation": "适度",
+        "analyzing": "分析中",
+        "noComments": "暂无评论",
+        "waiting": "等待",
+        "aiSuggest": "艾建议",
+        "reply": "回复",
+        "replyPlaceholder": "回复占位符",
+        "sending": "发送",
+        "postReply": "发表回复"
+      },
+      "layout": {
+        "availableLayouts": "可用布局",
+        "activeLayout": "活动布局",
+        "transitionStyle": "过渡风格",
+        "transitionStyleDesc": "过渡样式描述",
+        "transitionDuration": "过渡持续时间",
+        "transitionDurationDesc": "过渡持续时间说明",
+        "transitionEasing": "过渡宽松",
+        "transitionEasingDesc": "过渡宽松说明",
+        "transitions": {
+          "instant": "没有任何",
+          "fade": "褪色",
+          "slide": "滑动",
+          "zoom": "飞涨",
+          "custom": "风俗",
+          "wipe": "擦拭"
+        }
+      },
+      "guest": {
+        "inviteGuest": "邀请嘉宾",
+        "inviteGuestDesc": "邀请客人加入您的直播",
+        "inviteGuestPlaceholder": "邀请客人加入您的直播",
+        "inviteGuestButton": "邀请嘉宾",
+        "inviteGuestButtonDesc": "邀请客人加入您的直播",
+        "addMobileCam": "移动摄像头",
+        "personaGallery": "画廊",
+        "roles": {
+          "agent": "代理人",
+          "master": "掌握",
+          "host": "主持人",
+          "guest": "客人",
+          "mobileCam": "移动摄像头"
+        },
+        "inviteGuests": "邀请嘉宾",
+        "connectAudience": "邀请嘉宾参加您的直播",
+        "joinLink": "加入链接",
+        "secureLink": "安全链接",
+        "generatingUrl": "生成网址",
+        "scanToJoin": "扫描加入",
+        "fastestForMobile": "最快的移动设备",
+        "permissions": "权限",
+        "autoApprove": "自动批准",
+        "micEnabled": "麦克风",
+        "camEnabled": "相机",
+        "guestLimitInfo": "等待客人批准",
+        "linkCopied": "链接已复制",
+        "linkSecondaryDevice": "添加移动摄像头以摄取视频",
+        "activeGuests": "活跃嘉宾",
+        "slot": "投币口",
+        "swapTitle": "交换",
+        "waitingRoom": "候诊室",
+        "knocking": "敲门",
+        "waiting": "等待",
+        "approved": "得到正式认可的",
+        "rejected": "被拒绝",
+        "waitingStatus": "客人等候",
+        "guestApproved": "宾客批准",
+        "guestRejected": "客人被拒绝"
+      },
+      "graphics": {
+        "hostIdentity": "主机名",
+        "primaryName": "广播主要名称",
+        "placeholders": {
+          "primaryName": "例如AntStudio Prime",
+          "subtitleRole": "例如人工智能新闻主播"
+        },
+        "subtitleRole": "副标题/角色",
+        "brandColor": "品牌颜色",
+        "liveOverlays": "实时叠加",
+        "lowerThird": "下三分之一",
+        "dynamicTicker": "动态股票行情指示器",
+        "identityOverlay": "身份叠加",
+        "brandLogo": "品牌标志",
+        "changeLogo": "更改标志",
+        "logoPosition": "标志位置",
+        "logoScale": "标志比例",
+        "logoOpacity": "标志不透明度",
+        "utilityModes": "公用事业",
+        "breakMode": "中断模式",
+        "specialTemplates": "特殊模板",
+        "sponsorshipBadge": "赞助徽章",
+        "sponsorshipDesc": "赞助说明",
+        "positions": {
+          "top-left": "左上",
+          "top-right": "右上",
+          "bottom-left": "左下角",
+          "bottom-right": "右下角"
+        },
+        "statusMessage": "状态信息"
+      },
+      "linguistic": {
+        "globalSync": "全球同步",
+        "voiceInputLanguage": "语音输入语言",
+        "subtitleTarget": "字幕目标",
+        "neuralDubbing": "神经配音",
+        "voiceCloneRelay": "语音克隆中继",
+        "canvasSubtitles": "画布字幕",
+        "burnInLiveText": "刻录实时文本",
+        "canvasSubtitlesDesc": "转录的文本将直接呈现在广播画布上供观众观看。"
+      },
+      "economy": {
+        "storefrontSync": "店面同步",
+        "flashDeal": "闪购",
+        "salesIntelligence": "销售情报",
+        "totalOrders": "订单总数",
+        "revenue": "收入",
+        "buyNow": "立即购买",
+        "addToCart": "添加到购物车",
+        "endFlash": "结束闪购优惠",
+        "flashSaleActive": "闪购活跃",
+        "endingIn": "结束于",
+        "wallet": {
+          "balance": "平衡"
+        },
+        "giftCatalog": "礼品目录",
+        "powerups": "通电"
+      },
+      "vibe": {
+        "script": {
+          "title": "AI ShowRunner 逻辑",
+          "desc": "生成自主的演出脚本。",
+          "openGenerator": "打开脚本生成器",
+          "generate": "产生",
+          "regenerate": "再生",
+          "loading": "加载中...",
+          "empty": "无脚本",
+          "activeScript": "活动脚本"
+        },
+        "atmosphereCore": "大气核心",
+        "currentState": "当前状态",
+        "neuralAdaptation": "神经适应",
+        "dynamicMusic": "动态音乐效果",
+        "musicSyncDesc": "将节拍与聊天能量同步 ({status})",
+        "trackingInProgress": "情绪追踪正在进行中",
+        "tabs": {
+          "classic": "经典的",
+          "pano": "360全景"
+        },
+        "presets": {
+          "Late Night Talk": "深夜谈话",
+          "Morning Vibes": "早晨的氛围",
+          "Cyberpunk Stream": "赛博朋克流",
+          "Cozy Fireside": "舒适的炉边",
+          "Nebula Void": "星云虚空",
+          "Digital Forest": "数字森林",
+          "Neon City Peak": "霓虹城峰",
+          "Minimal Stage": "最小阶段"
+        },
+        "moodDesc": "{mood} 心情",
+        "scenePresets": "工作室场景预设"
+      },
+      "showrunner": {
+        "title": "表演者人工智能",
+        "selectProfile": "选择显示个人资料",
+        "generateAiScript": "生成AI脚本",
+        "loadProfilesFailed": "无法加载显示配置文件",
+        "scriptInputs": "脚本输入",
+        "dreaming": "梦想着演出...",
+        "scriptReady": "脚本就绪：{title}",
+        "startProduction": "开始生产",
+        "generateScriptSuccess": "脚本生成成功！",
+        "showrunnerActive": "表演者活跃！高枕无忧。"
+      },
+      "engagement": {
+        "livePolls": "现场民意调查",
+        "startNew": "开始新的民意调查",
+        "noActivePoll": "没有活跃的民意调查",
+        "createNewPoll": "创建新投票",
+        "qaQueueHeader": "问答 实时队列",
+        "ending": "结束...",
+        "question": "问题",
+        "questionPlaceholder": "输入您的问题",
+        "options": "选项",
+        "launchPoll": "发起民意调查"
+      }
+    },
+    "tabs": {
+      "ai": "人工智能角色",
+      "graphics": "图形",
+      "linguistic": "语言学",
+      "commerce": "商业",
+      "engagement": "订婚",
+      "guests": "嘉宾",
+      "store": "店铺",
+      "cinematic": "电影般的",
+      "script": "脚本",
+      "chat": "聊天",
+      "platforms": "平台",
+      "broadcasting": "广播",
+      "enhancement": "强化",
+      "background": "背景",
+      "filters": "过滤器",
+      "branding": "品牌推广",
+      "overlays": "叠加层",
+      "accessibility": "无障碍"
+    },
+    "settings": {
+      "title": "设置",
+      "version": "1.0.0",
+      "resetBtn": "重置",
+      "streamingQuality": "质量",
+      "enableAiFeatures": "人工智能特点",
+      "aiFeaturesDesc": "启用人脸识别、手势、美颜、滤镜等AI功能……",
+      "enhancementPresets": "强化",
+      "advancedSettings": "优势",
+      "bgStandard": "默认",
+      "bgBlur": "模糊",
+      "bgVirtual": "虚拟的",
+      "lensProfile": "过滤器",
+      "lensNone": "没有任何",
+      "lensNoir": "黑色",
+      "lensVintage": "优质的",
+      "lensCool": "凉爽的",
+      "lensWarm": "温暖的",
+      "lensCinema": "电影",
+      "greenScreen": "绿屏",
+      "studioIdentity": "工作室身份",
+      "studioName": "工作室名称",
+      "addStudioName": "更新工作室名称",
+      "subHeader": "管理您的 AI Studio 设置",
+      "addHeaderTitle": "添加工作室名称",
+      "addHeaderDesc": "将您的工作室名称添加到您的 AI Studio",
+      "brandingStyle": "品牌",
+      "accentColor": "强调色",
+      "lowerThird": "下三分之一",
+      "lowerThirdDesc": "将您的下三分之一添加到您的 AI Studio",
+      "tickerBar": "股票行情栏",
+      "tickerBarDesc": "将您的股票行情栏添加到您的 AI Studio",
+      "breakMode": "中断模式",
+      "breakModeDesc": "将您的休息模式添加到您的 AI Studio",
+      "aiTranslations": "人工智能翻译",
+      "aiTranslationsDesc": "将您的 AI 翻译添加到您的 AI Studio",
+      "sourceLang": "源语言",
+      "targetLang": "目标语言",
+      "liveCaptions": "实时字幕",
+      "liveCaptionsDesc": "将实时字幕添加到 AI Studio",
+      "tabs": {
+        "ai": "人工智能角色",
+        "graphics": "图形",
+        "linguistic": "语言学",
+        "commerce": "商业",
+        "engagement": "订婚",
+        "guests": "嘉宾",
+        "store": "店铺",
+        "cinematic": "电影般的",
+        "script": "脚本",
+        "chat": "聊天",
+        "platforms": "平台",
+        "broadcasting": "广播",
+        "enhancement": "强化",
+        "background": "背景",
+        "filters": "过滤器",
+        "branding": "品牌推广",
+        "overlays": "叠加层",
+        "accessibility": "无障碍"
+      }
+    },
+    "vibes": {
+      "technoChill": "科技寒潮"
+    },
+    "modals": {
+      "recordingComplete": {
+        "title": "录音完成",
+        "desc": "您的录音已完成。您现在可以与观众分享。",
+        "actions": {
+          "share": "分享",
+          "download": "下载",
+          "delete": "删除"
+        }
+      }
+    },
+    "swarm": {
+      "header": "集群模式",
+      "emptyState": "没有群体洞察",
+      "density": "密度",
+      "nodes": "节点",
+      "latency": "延迟",
+      "hiveMood": "蜂巢心情",
+      "status": "地位"
+    },
+    "godMode": {
+      "title": "上帝模式",
+      "humanFreeMode": "人类自由模式",
+      "humanFreeModeDesc": "禁用主机网络摄像头和麦克风。完全由人工智能影响者驱动的节目以节省资源。",
+      "directorStatus": "董事身份",
+      "active": "积极的",
+      "silence": "沉默",
+      "speaking": "说话",
+      "sensitivity": "灵敏度",
+      "switchDelay": "切换延迟",
+      "autoEffects": "自动效果",
+      "autoEffectsDesc": "自动效果",
+      "autoCam": "自动相机",
+      "autoCamDesc": "自动相机",
+      "autoPilot": "人工智能自动驾驶仪",
+      "autoPilotDesc": "让AI独立主宰话题、管理宾客",
+      "hypeMeter": "观众炒作程度",
+      "boardConsensus": "董事会共识",
+      "awaitingEvaluation": "等待评估",
+      "awaitingEvaluationDesc": "等待评估",
+      "decisionLog": "决策日志",
+      "decisionLogDesc": "决策日志",
+      "autoPublishViral": "自动发布病毒"
+    },
+    "director": {
+      "roomVibe": "房间氛围",
+      "vibeTense": "紧张",
+      "vibeNeutral": "中性的",
+      "vibeHype": "炒作",
+      "audienceActions": "观众行动",
+      "pollCreatorTitle": "投票创建者",
+      "newHivePoll": "新蜂巢民意调查",
+      "pollQuestionLabel": "问题",
+      "pollQuestionPlaceholder": "接下来会发生什么？",
+      "pollOptionsLabel": "选项",
+      "pollOptionPlaceholder": "选项",
+      "cancelButton": "取消",
+      "launchPollButton": "发射",
+      "actions": {
+        "airHorn": "空气霍姆",
+        "airHornDesc": "瞬间炒作",
+        "confetti": "五彩纸屑",
+        "confettiDesc": "庆祝胜利",
+        "dramaticCut": "戏剧性剪辑",
+        "dramaticCutDesc": "专注于演讲者",
+        "randomClip": "随机剪辑",
+        "randomClipDesc": "插入混乱的 B 卷"
+      },
+      "insufficientCredits": "学分不足",
+      "actionRequested": "请求 {name}",
+      "pollRequestSent": "投票请求已发送至主持人！",
+      "createHivePoll": "创建 Hive 民意调查"
+    },
+    "resources": {
+      "title": "资源",
+      "searchLibrary": "搜索资产",
+      "noAssets": "未找到资产",
+      "uploadDesc": "上传您的节目的图片或视频",
+      "actions": {
+        "bg": "背景",
+        "media": "媒体"
+      },
+      "fetchingHub": "加载中...",
+      "libraryEmpty": "没有资产",
+      "addToSession": "添加到会话",
+      "tabs": {
+        "pool": "水池",
+        "library": "图书馆"
+      }
+    },
+    "guides": {
+      "liveStudioWelcomeTitle": "欢迎来到直播工作室！",
+      "step": "步",
+      "liveStudioWelcomeDesc": "LiveStudio 是您的专业广播平台。让我们快速浏览一下，帮助您开始直播和录制。",
+      "skipTip": "您可以随时按 ESC 或单击外部来跳过本教程。",
+      "studioCanvasTitle": "工作室画布",
+      "studioCanvasDesc": "这是您的主画布，您的直播将在其中显示。您可以实时看到自己、客人以及所有视觉效果。",
+      "studioCanvasTip": "画布会自动调整以适应您选择的布局和分辨率。",
+      "effectsRailTitle": "效果轨",
+      "effectsRailDesc": "从此侧边栏访问强大的效果。从布局、过滤器、叠加、背景等中进行选择以增强您的直播。",
+      "effectsRailTip": "单击任何选项卡即可打开效果面板并自定义您的流。",
+      "stageControlsTitle": "舞台控制",
+      "stageControlsTip": "绿色按钮表示活动，灰色按钮表示不活动。",
+      "liveChatTitle": "实时聊天和互动",
+      "liveChatDesc": "与观众实时互动。在直播期间查看消息、产生点赞并与观看者互动。",
+      "liveChatTip": "当观众对您的直播发表评论时，消息会立即出现。",
+      "guestManagementTitle": "宾客管理",
+      "guestManagementDesc": "邀请客人加入您的直播！管理访客位置、召唤人工智能角色或邀请真正的合作者。",
+      "guestManagementTip": "您可以在不同的布局中容纳多名客人。",
+      "goLiveTitle": "上线吧！",
+      "goLiveDesc": "准备好后，单击“直播”按钮开始向您连接的平台进行广播。确保您的麦克风和相机已打开！",
+      "goLiveTip": "在上线之前从“平台”选项卡连接平台。",
+      "allSetTitle": "一切就绪！",
+      "allSetDesc": "您已准备好创建令人惊叹的直播内容！探索效果、尝试布局并享受流媒体的乐趣。",
+      "allSetTip": "按 ？随时查看键盘快捷键。",
+      "recorderWelcomeTitle": "欢迎来到录音机！",
+      "recorderWelcomeDesc": "录制器可让您使用网络摄像头、屏幕共享或 AI 头像捕捉专业视频。让我们来探索一下功能吧！",
+      "recorderWelcomeTip": "使用顶部的选项卡在模式之间切换。",
+      "recordingModesTitle": "录音模式",
+      "recordingModesDesc": "选择您的录制模式：用于面部摄像头的网络摄像头、用于屏幕捕获的屏幕或用于人工智能演示的阿凡达。",
+      "recordingModesTip": "每种模式都具有针对不同用例进行优化的独特功能。",
+      "previewAreaTitle": "预览区",
+      "previewAreaDesc": "录制前实时查看您自己或您的屏幕。您在这里看到的就是将被记录的。",
+      "previewAreaTip": "在录制之前调整相机角度和灯光。",
+      "recordingControlsTitle": "录音控制",
+      "recordingControlsDesc": "开始/停止录音、切换麦克风、启用美颜滤镜等。所有必要的控制都在这里。",
+      "recordingControlsTip": "红色按钮开始录制，再次单击停止。",
+      "sidePanelToolsTitle": "侧面板工具",
+      "sidePanelToolsDesc": "从侧面板访问过滤器、背景、提词器和设置等高级功能。",
+      "sidePanelToolsTip": "单击控制栏上的图标可打开不同的面板。",
+      "teleprompterTitle": "提词器（专业提示！）",
+      "teleprompterDesc": "录音时使用提词器阅读脚本。非常适合专业演示！",
+      "teleprompterTip": "根据您的喜好调整滚动速度和字体大小。",
+      "startRecordingTitle": "开始录音！",
+      "startRecordingDesc": "你准备好录音了！准备好后单击“录制”按钮，即可创建令人惊叹的内容。",
+      "startRecordingTip": "录音会自动保存到您的项目库中。",
+      "avatarWelcomeTitle": "欢迎使用人工智能头像设置！",
+      "avatarWelcomeDesc": "使用人工智能头像创建专业视频。按照以下步骤，通过逼真的 AI 演示者让您的脚本变得栩栩如生。",
+      "avatarWelcomeTip": "此过程分为 4 个步骤，大约需要 2 分钟。",
+      "step1Title": "第 1 步：选择您的头像",
+      "step1Desc": "从我们的专业 AI 头像库中进行选择，或上传您自己的自定义头像图像。",
+      "step1Tip": "每个化身都有独特的特征和风格。",
+      "uploadCustomTitle": "上传自定义头像",
+      "uploadCustomDesc": "想用自己的脸吗？单击+卡上传自定义头像照片。",
+      "uploadCustomTip": "使用清晰的正面照片以获得最佳效果。",
+      "step2Title": "第 2 步：编写脚本",
+      "step2Desc": "输入您希望头像说出的文字。保持自然和对话！",
+      "step2Tip": "您可以使用 AI 生成脚本或编写自己的脚本。",
+      "step3Title": "第 3 步：选择语音",
+      "step3Desc": "选择与您的头像相匹配的声音。我们有多种语言和口音的声音。",
+      "step3Tip": "单击播放按钮预览每个语音。",
+      "step4Title": "高级语音设置",
+      "step4Desc": "使用音高、速度和情感等高级控制来微调您的声音。",
+      "step4Tip": "切换此选项可访问专业语音定制。",
+      "generateTitle": "生成您的视频！",
+      "generateDesc": "一切就绪！点击“生成视频”，我们的人工智能将在几分钟内为您创建专业的头像视频。",
+      "generateTip": "当您的视频准备就绪时，您会收到通知。"
+    },
+    "virtual": {
+      "aiSuffix": "人工智能"
+    },
+    "influencerSelector": {
+      "title": "为您的直播选择影响者",
+      "subtitle": "直播最多 3 位影响者",
+      "launch": "发射",
+      "agentsSelected": "选定的代理商"
+    },
+    "audioDirector": {
+      "title": "音频总监",
+      "vibe": "氛围",
+      "ducking": "闪避",
+      "standby": "支持",
+      "masterVol": "主音量"
+    },
+    "contextSelector": {
+      "greeting": "您在哪种情况下进行流式传输？",
+      "question": "在下面选择您的主要流媒体类别以定制您的体验",
+      "modes": {
+        "sales": {
+          "name": "销售量",
+          "desc": "电子商务、产品演示、拍卖"
+        },
+        "talkshow": {
+          "name": "脱口秀",
+          "desc": "访谈、小组讨论、辩论"
+        },
+        "news": {
+          "name": "消息",
+          "desc": "突发新闻、天气、股市"
+        },
+        "education": {
+          "name": "教育",
+          "desc": "在线课程、讲座、网络研讨会"
+        },
+        "music": {
+          "name": "音乐",
+          "desc": "现场音乐会、音乐视频、音乐表演"
+        },
+        "sport": {
+          "name": "运动的",
+          "desc": "比赛直播、体育分析、体育节目"
+        },
+        "gameshow": {
+          "name": "游戏展",
+          "desc": "智力竞赛、游戏锦标赛、游戏比赛"
+        },
+        "game_streaming": {
+          "name": "游戏串流",
+          "desc": "游戏直播、游戏锦标赛、游戏竞赛"
+        },
+        "commentary": {
+          "name": "评论",
+          "desc": "现场解说、比赛解说、体育解说"
+        },
+        "general": {
+          "name": "一般的",
+          "desc": "一般流媒体、现场活动、视频博客"
+        }
+      },
+      "skip": "跳过",
+      "continue": "继续"
+    },
+    "dashboard": {
+      "directiveTitle": "指令"
+    }
+  },
+  "subscription": {
+    "title": "订阅和计费",
+    "description": "管理您的订阅",
+    "currentPlan": "当前计划",
+    "upgrade": "升级计划",
+    "cancel": "取消计划",
+    "credits": "制作人员",
+    "consumed": "已消耗",
+    "balance": "平衡",
+    "membership": "会员资格",
+    "bonus": "奖金",
+    "weekly": "每周津贴",
+    "consumedThisMonth": "本月消费量",
+    "creditUsagePercent": "信用使用百分比",
+    "status": "地位",
+    "renewsOn": "续订开启",
+    "manage": "管理",
+    "subtitle": "概览您当前的计划、查看计费历史记录并充值您的渲染积分。",
+    "plans": {
+      "free": "免费套餐",
+      "pro": "专业计划",
+      "enterprise": "企业"
+    },
+    "active": "积极的",
+    "inactive": "不活跃",
+    "canceled": "取消",
+    "renewalDate": "下次续订日期",
+    "creditsBalance": "积分余额",
+    "topUp": "充值积分",
+    "available": "可用的",
+    "usedThisMonth": "本月使用过",
+    "planLimit": "计划限额",
+    "billingHistory": "账单历史记录",
+    "date": "日期",
+    "plan": "计划",
+    "task": "任务",
+    "amount": "数量",
+    "noHistory": "没有可用的账单历史记录。",
+    "toasts": {
+      "loadFailed": "无法加载订阅详细信息。"
+    },
+    "resetInfo": "重置信息",
+    "dialogs": {
+      "buyCredits": {
+        "title": "购买积分",
+        "subtitle": "购买积分以使用 AI 功能",
+        "bonus": "奖金",
+        "credits": "制作人员",
+        "custom": "风俗",
+        "policy": "⚠️信用规则、奖金政策和奖励计划可能会根据运营需要随时调整，无论是否提前通知",
+        "purchase": "购买",
+        "toasts": {
+          "paymentFailed": "付款失败",
+          "contactSupport": "联系支持人员"
+        },
+        "customDesc": "联系我们"
+      },
+      "plans": {
+        "title": "定价计划",
+        "subtitle": "选择适合您的计划",
+        "monthly": "每月",
+        "annually": "每年",
+        "recommended": "受到推崇的",
+        "currentPlan": "当前计划",
+        "upgradeNow": "立即升级",
+        "payment": {
+          "card": {
+            "title": "信用卡",
+            "desc": "使用信用卡安全付款"
+          },
+          "paypal": {
+            "title": "贝宝",
+            "desc": "使用 PayPal 安全付款"
+          }
+        },
+        "save": "折扣 20%",
+        "features": {
+          "rewards": "奖励",
+          "aivision": "人工智能特点",
+          "motion": "运动",
+          "rights": "权利",
+          "portal": "门户网站"
+        }
+      }
+    }
+  },
+  "profile": {
+    "title": "用户资料",
+    "name": "姓名",
+    "email": "电子邮件",
+    "language": "界面语言",
+    "upload": "点击上传新的身份签名",
+    "save": "保存个人资料",
+    "cancel": "取消",
+    "plan": "计划",
+    "upgrade": "升级"
+  },
+  "account": {
+    "title": "用户资料",
+    "menu": {
+      "profile": "配置文件设置",
+      "notification": "通知",
+      "credits": "制作人员",
+      "integrations": "一体化",
+      "price": "定价",
+      "terms": "条款",
+      "privacy": "隐私",
+      "signout": "登出"
+    },
+    "credits": {
+      "title": "积分余额",
+      "balance": "当前学分",
+      "membership": "会员分配",
+      "bonus": "战略红利",
+      "weekly": "每周刷新",
+      "all": "全部",
+      "consumed": "消耗",
+      "obtained": "获得的",
+      "noTransactions": "没有找到数据",
+      "resetInfo": "重置信息"
+    },
+    "pricing": {
+      "title": "定价",
+      "subtitle": "每个操作的动态资源消耗率",
+      "columns": {
+        "classification": "分类",
+        "model": "人工智能模型",
+        "price": "信贷成本",
+        "remarks": "单位/备注"
+      },
+      "types": {
+        "text": "对话流程",
+        "image": "视觉合成",
+        "video": "运动渲染",
+        "audio": "人声合成",
+        "music": "声音氛围"
+      },
+      "units": {
+        "text": "1k 代币",
+        "image": "图像",
+        "video": "第二",
+        "audio": "1k 个字符",
+        "music": "追踪"
+      },
+      "remarks": {
+        "dialogue": "对话与背景",
+        "beta": "测试版引擎",
+        "quota": "标准配额",
+        "highQuality": "高保真度"
+      }
+    },
+    "integrations": {
+      "youtube": "YouTube",
+      "facebook": "Facebook",
+      "connected": "已连接",
+      "notConnected": "未连接",
+      "connect": "连接",
+      "disconnect": "断开",
+      "confirmDisconnect": "您确定要断开 {platform} 链接吗？",
+      "disconnectSuccess": "{platform} 链接已断开",
+      "disconnectFailed": "无法断开 {platform} 链接"
+    },
+    "notifications": {
+      "email": {
+        "title": "电子邮件",
+        "desc": "通过电子邮件接收关键系统警报。"
+      },
+      "project": {
+        "title": "项目",
+        "desc": "有关项目进展的警报。"
+      },
+      "marketing": {
+        "title": "营销",
+        "desc": "有关新发动机功能的信息。"
+      },
+      "security": {
+        "title": "安全",
+        "desc": "多因素和登录异常警报。"
+      }
+    }
+  },
+  "admin": {
+    "overview": {
+      "title": "管理概述",
+      "stats": {
+        "users": "用户总数",
+        "revenue": "总收入",
+        "processing": "处理能力",
+        "uptime": "系统正常运行时间",
+        "totalUsers": "用户总数",
+        "monthlyRevenue": "每月收入",
+        "cpuUsage": "中央处理器使用率",
+        "storageUsed": "已用存储空间",
+        "stable": "稳定的"
+      },
+      "charts": {
+        "velocity": "平台速度",
+        "userGrowth": "用户增长",
+        "revenue": "收入",
+        "totalUsers": "用户总数"
+      },
+      "recent": {
+        "signups": "最近注册",
+        "viewAll": "查看全部",
+        "migrations": "最近的迁移",
+        "upgradedPlan": "升级计划"
+      },
+      "infrastructure": {
+        "pulse": "基础设施脉搏",
+        "load": "系统负载",
+        "cpuFulfillment": "CPU 履行",
+        "manage": "管理基础设施"
+      }
+    },
+    "users": {
+      "title": "用户管理",
+      "subtitle": "管理身份和访问",
+      "searchPlaceholder": "按姓名或电子邮件搜索",
+      "table": {
+        "identity": "身份",
+        "role": "角色",
+        "subscription": "订阅",
+        "status": "地位",
+        "actions": "行动"
+      },
+      "roles": {
+        "admin": "行政",
+        "user": "用户",
+        "sys-admin": "超级管理员"
+      },
+      "plans": {
+        "free": "自由的",
+        "pro": "专业版",
+        "enterprise": "企业"
+      },
+      "status": {
+        "activated": "活性",
+        "deactivated": "已停用"
+      },
+      "actions": {
+        "viewDetails": "查看详情",
+        "deleteUser": "删除用户"
+      },
+      "toasts": {
+        "loadFailed": "加载用户失败",
+        "statusUpdated": "用户状态已更新为 {status}",
+        "updateFailed": "无法更新用户状态"
+      },
+      "deleteConfirm": {
+        "message": "您确定要删除该用户吗？",
+        "title": "删除用户",
+        "confirm": "确认",
+        "cancel": "取消"
+      }
+    },
+    "userDetails": {
+      "title": "用户资料",
+      "loading": "正在加载用户个人资料...",
+      "status": {
+        "active": "积极的",
+        "inactive": "暂停"
+      },
+      "subscription": {
+        "free": "自由的",
+        "status": "合约状态",
+        "plan": "活跃层",
+        "currentStatus": "网络状态",
+        "renewsOn": "更新区块"
+      },
+      "userId": "用户身份",
+      "joinedDate": "初始化日期",
+      "lastLogin": "最后入住",
+      "never": "从未初始化过",
+      "creditsBalance": "可用学分"
+    },
+    "growth": {
+      "title": "网络扩展",
+      "subtitle": "全球轨迹和增长分析",
+      "status": {
+        "liveOptimizing": "实时优化"
+      },
+      "stats": {
+        "impressions": "全球印象",
+        "vsPrevWeek": "与上周相比 {n}%",
+        "conversion": "转换增量",
+        "abWinner": "A/B 获胜者已部署",
+        "discoveryIndex": "发现索引",
+        "seoHealth": "SEO 健康状况：最佳",
+        "viralVelocity": "病毒速度",
+        "clippingEngine": "剪辑引擎激活"
+      },
+      "abTesting": {
+        "missionTitle": "A/B 测试编排",
+        "newTest": "初始化测试",
+        "variantA": "变体A",
+        "variantB": "变体B",
+        "crLabel": "CR {n}%"
+      },
+      "seo": {
+        "engine": "SEO发现引擎",
+        "schema": "模式注入",
+        "verified": "已验证且活跃",
+        "socialMeta": "社交元图",
+        "tagsActive": "OG标签活跃",
+        "autoIndex": "自动索引",
+        "calibrating": "正在校准 ({n}%)",
+        "topKeywords": "热门关键词"
+      },
+      "getStarted": "开始使用"
+    },
+    "fleet": {
+      "title": "机队部署",
+      "subtitle": "全局渲染节点和边缘编排",
+      "totalActiveUnits": "活跃单位总数",
+      "refreshCommand": "刷新遥测",
+      "establishingDownlink": "正在建立下行链路...",
+      "activeRegistries": "活跃的注册表",
+      "enterpriseTiers": "{count} 企业级别",
+      "fleetIntegrity": "舰队完整性",
+      "statusOptimal": "状态最佳",
+      "globalIngest": "全球摄取",
+      "s3ThroughputOptimal": "S3 吞吐量最佳",
+      "latestEngine": "最新引擎",
+      "orchestrateRelease": "编排发布",
+      "registryDatabase": "注册数据库",
+      "searchPlaceholder": "搜索许可证...",
+      "table": {
+        "licenseIdentity": "许可证身份",
+        "ownerContext": "所有者上下文",
+        "tacticalTier": "战术层",
+        "activeUnits": "活跃单位",
+        "missionStatus": "任务状态",
+        "operationalActions": "运营行动"
+      },
+      "expires": "过期",
+      "units": "单位",
+      "telemetry": "遥测",
+      "terminate": "删除",
+      "confirmTerminate": "您确定要终止许可证 {key} 吗？",
+      "toasts": {
+        "downlinkFailure": "无法与车队注册表建立下行链路"
+      }
+    },
+    "financials": {
+      "title": "财务分类账",
+      "subtitle": "全球收入和价值速度",
+      "downloadCsv": "下载分类账 CSV",
+      "mrr": "每月经常性收入",
+      "vsLastMonth": "{val} 与上个月相比",
+      "activeSubscribers": "积极承诺",
+      "newThisWeek": "{val} 本周新承诺",
+      "transactionVolume": "交易量",
+      "lifetimeGross": "生命周期总处理量",
+      "churnRate": "流失率",
+      "acceptableLimits": "在可接受的阈值范围内",
+      "globalLedger": "全球交易账本",
+      "liveFeed": "实时捕获源",
+      "table": {
+        "txId": "交易ID",
+        "customer": "客户实体",
+        "type": "分类",
+        "amount": "价值",
+        "status": "清关状态",
+        "gateway": "处理网关"
+      },
+      "fleetDistribution": "舰队等级分布",
+      "units": "单位"
+    },
+    "network": {
+      "title": "网络控制",
+      "subtitle": "实时全局生成拓扑",
+      "totalNodes": "输出节点总数",
+      "liveViewers": "全球观众动态",
+      "globalHype": "全球炒作触发因素",
+      "triggerEffects": "在所有活动直播节点上部署同步效果。",
+      "celebration": "最初的庆祝序列",
+      "breakingNews": "突发新闻警报序列",
+      "activePipeline": "主动渲染管线",
+      "synchronizing": "同步码流",
+      "autonomyDepth": "自主深度",
+      "uptime": "节点正常运行时间",
+      "stability": "网格稳定性",
+      "statusNominal": "标称",
+      "noNodes": "没有活动的流媒体节点",
+      "noNodesDesc": "从中央演播室部署新的实时投影实体以开始广播。"
+    },
+    "infra": {
+      "title": "基础设施健康",
+      "subtitle": "全局节点状态和精心安排的故障转移",
+      "systemOperational": "系统运行",
+      "latency": "延迟",
+      "load": "加载",
+      "nodes": "节点",
+      "noRegions": "未检测到活动区域",
+      "databaseCluster": "数据库集群",
+      "optimizeIndexes": "优化索引",
+      "uptime": "正常运行时间",
+      "failoverTitle": "故障转移编排",
+      "standbyReady": "待机就绪",
+      "failoverDesc": "管理高可用性并启动到备用区域的手动故障转移序列。",
+      "aiRedistribute": "AI重新分配负载",
+      "validateBackups": "验证备份",
+      "liveHeartbeat": "实时心跳",
+      "pulse": "脉冲",
+      "loadLabel": "装载标签",
+      "waitingHeartbeat": "等待心跳"
+    },
+    "monitoring": {
+      "title": "监测站",
+      "subtitle": "实时遥测和指标可观测性",
+      "support": "支持控制台",
+      "exportLogs": "导出诊断",
+      "exporting": "包装...",
+      "config": "警报配置",
+      "clean": "清除日志",
+      "settingsTitle": "遥测配置",
+      "emailAlerts": "电子邮件警报流",
+      "recipientEmail": "接收端点",
+      "alertLevel": "阈值触发",
+      "errorOnly": "仅严重异常",
+      "warnError": "警告与异常",
+      "logRetention": "保留期限",
+      "days": "天",
+      "cpuUsage": "CPU利用率",
+      "ramActive": "VRAM/RAM 活动",
+      "diskSpace": "存储量",
+      "networkThroughput": "带宽吞吐量",
+      "total": "全部的",
+      "cpuRamTrends": "CPU/内存速度",
+      "networkActivity": "网络IO",
+      "systemLogs": "系统日志",
+      "realtimeStream": "实时串流",
+      "clientErrors": "客户端错误",
+      "analytics": "分析",
+      "liveEngineStream": "实时引擎流",
+      "connected": "已连接",
+      "connecting": "正在连接",
+      "allLevels": "所有级别",
+      "debug": "调试",
+      "normal": "普通的",
+      "warning": "警告",
+      "error": "错误",
+      "records": "记录",
+      "noRecords": "没有记录",
+      "noClientErrors": "无客户端错误",
+      "comingSoon": "即将推出"
+    },
+    "logs": {
+      "title": "原始遥测",
+      "subtitle": "未过滤的系统事件和错误流",
+      "logSettings": "遥测配置文件",
+      "clearLogs": "清除指标",
+      "notificationRules": "警报路由规则",
+      "enableEmailAlerts": "将关键点击发送至电子邮件",
+      "active": "积极的",
+      "inactive": "支持",
+      "recipientEmail": "目标电子邮件地址",
+      "minAlertLevel": "严重性阈值",
+      "alertLevels": {
+        "error": "严重故障",
+        "warn": "异常与警告",
+        "info": "所有咨询流量"
+      },
+      "logRetention": "数据保留周期",
+      "days": "天",
+      "settingsHint": "对遥测规则的更改会立即在网格中传播。",
+      "level": "分类",
+      "allLevels": "所有分类",
+      "debug": "深迹",
+      "normal": "标准信息",
+      "warning": "警告状态",
+      "error": "严重错误",
+      "search": "过滤模式",
+      "searchPlaceholder": "输入正则表达式或关键字...",
+      "autoRefresh": "实时同步",
+      "recordsFound": "跟踪 {count} 参与度",
+      "connecting": "建立网状链路...",
+      "noLogs": "电线上一片寂静。没有遥测符合标准。",
+      "collapse": "折叠哈希",
+      "viewMetadata": "展开对象数据",
+      "confirmClear": "警告：清除遥测是永久性的。继续擦除指标块吗？",
+      "toasts": {
+        "loadLogsFailed": "与遥测数据库的连接已断开",
+        "saveSettingsFailed": "无法将规则传播到边缘",
+        "clearLogsFailed": "无法擦除指标块"
+      }
+    },
+    "moderation": {
+      "title": "审核日志",
+      "subtitle": "自动化内容安全和生成监督",
+      "stats": {
+        "flaggedToday": "今日风险提示",
+        "blocked": "接线端子"
+      },
+      "filters": {
+        "status": "审核状态",
+        "all": "所有审核",
+        "flagged": "标记/评论",
+        "blocked": "硬阻止",
+        "approved": "明确批准",
+        "searchPlaceholder": "按生成提示或实例搜索..."
+      },
+      "loading": "扫描审计跟踪...",
+      "card": {
+        "violation": "{type} 违反政策",
+        "risk": "风险量子",
+        "vulnerability": "漏洞索引 {score}",
+        "hardBlock": "硬块生成",
+        "forceApprove": "强制输出批准"
+      },
+      "toasts": {
+        "resolved": "审计跟踪 {id} 因偏见而终止：{decision}"
+      }
+    },
+    "analytics": {
+      "title": "分析引擎",
+      "subtitle": "机器学习性能和系统洞察",
+      "autonomousOptimization": "自主优化网格",
+      "autonomousOptimizationDesc": "允许人工智能动态调整渲染权重以匹配观众保留率。",
+      "engagementVsConfig": "观众参与度与渲染配置文件",
+      "optimalStyle": "最佳审美",
+      "optimalPersona": "高保留角色",
+      "analyzing": "正在分析...",
+      "directorInsights": "AI 总监神经洞察",
+      "gatheringData": "收集神经网络观察结果...",
+      "toasts": {
+        "disengaged": "自主优化已停用。",
+        "toggleFailed": "无法协商优化切换。"
+      },
+      "retentionScore": "保留分数 (%)"
+    },
+    "settings": {
+      "title": "系统架构控制台",
+      "subtitle": "全局系统参数和子系统",
+      "sync": "同步注册表",
+      "committing": "承诺...",
+      "save": "保存架构",
+      "tabs": {
+        "license": "身份和访问",
+        "system": "基础设施",
+        "media": "媒体 API",
+        "ai": "神经网络",
+        "billing": "经济"
+      },
+      "loading": "正在获取系统参数...",
+      "toasts": {
+        "syncSuccess": "系统架构同步",
+        "syncFailed": "无法同步架构",
+        "saveSuccess": "架构配置已提交",
+        "saveFailed": "提交失败",
+        "stagedProtocol": "为 {name} 上演的协议：{type}",
+        "keyRemoved": "API 密钥已撤销",
+        "keysRegistered": "{count} 注册了唯一的 API 密钥",
+        "noUniqueKeys": "未找到新的唯一密钥",
+        "cookiesStaged": "为调度而准备的会话cookie",
+        "validatingCookies": "正在验证通用会话 cookie...",
+        "noCookies": "缺少所需的会话负载",
+        "invalidCookies": "格式错误的 cookie 负载被拒绝",
+        "syncCookiesSuccess": "身份验证cookie已同步",
+        "syncCookiesFailed": "同步失败：{error}",
+        "applyConfig": "应用配置",
+        "abort": "取消",
+        "generateProtocol": "生成协议"
+      },
+      "ai": {
+        "captchaService": "验证码解析网络",
+        "captchaSubtitle": "为 AI 工作流程配置自动挑战解决。",
+        "captchaMode": "解决策略",
+        "yesCaptchaKey": "API密钥",
+        "yesCaptchaApi": "API网址",
+        "captchaStatus": "自动路由",
+        "sessionSync": "神经会话同步",
+        "sessionSyncSubtitle": "用于无头 AI Studio 和 Labs Flow 身份验证的全局 cookie。",
+        "googleCookies": "AIStudio / Gemini Cookies（JSON/Raw）",
+        "flowCookies": "实验室 Flow Cookie（JSON/原始）",
+        "applyCookies": "应用同步引擎",
+        "providerRegistry": "提供商注册处",
+        "geminiPoolManager": "双子座泳池经理",
+        "addIntelligenceCore": "添加智能核心",
+        "customProvider": "定制提供商",
+        "bulkAddKeys": "批量添加密钥",
+        "aiAssist": "人工智能辅助",
+        "config": {
+          "method": "方法",
+          "endpoint": "端点",
+          "headers": "标头",
+          "payload": "有效载荷",
+          "models": "型号",
+          "responseMapping": "响应应用程序",
+          "contentPath": "内容名称",
+          "mediaUrlPath": "媒体路径",
+          "base64Path": "Base64 ath",
+          "jobIdPath": "工作日期"
+        },
+        "pollConfig": "民意调查",
+        "poll": {
+          "desc": "描述",
+          "endpoint": "端点",
+          "interval": "间隔",
+          "timeout": "暂停",
+          "statusPath": "状态 ath",
+          "successValues": "成功的价值",
+          "failureValues": "失败的教训",
+          "responseMapping": "响应应用程序"
+        },
+        "aiAssistDesc": "艾西斯特ESC",
+        "aiAssistTitle": "人工智能助手设置",
+        "docUrl": "文档网址",
+        "capabilities": {
+          "text": "文本",
+          "image": "图像",
+          "video": "视频",
+          "audio": "声音的",
+          "music": "音乐",
+          "voice": "嗓音",
+          "agent": "代理人"
+        },
+        "protocol": "协议"
+      },
+      "table": {
+        "identity": "身份",
+        "security": "安全",
+        "capabilities": "能力",
+        "status": "地位",
+        "actions": "行动",
+        "apiKey": "API密钥",
+        "baseUrl": "基础 API 网址",
+        "protocols": "协议"
+      },
+      "license": {
+        "activation": "激活",
+        "fields": {
+          "type": "类型",
+          "maxUsers": "最大系列数",
+          "maxProjects": "最大项目数",
+          "expires": "过期"
+        },
+        "instruction": "输入您的许可证密钥并单击“保存所有更改”以激活完整的系统功能。",
+        "key": "许可证密钥",
+        "keyPlaceholder": "输入您的许可证密钥"
+      },
+      "media": {
+        "giphy": {
+          "title": "吉菲",
+          "info": "搜索并分享 GIF",
+          "apiKey": "API密钥",
+          "placeholder": "输入API密钥"
+        },
+        "pexels": {
+          "title": "像素",
+          "info": "搜索并分享照片",
+          "apiKey": "API密钥",
+          "placeholder": "输入API密钥"
+        },
+        "unsplash": {
+          "title": "未飞溅",
+          "info": "搜索并分享照片",
+          "apiKey": "API密钥",
+          "placeholder": "输入API密钥"
+        }
+      },
+      "system": {
+        "domain": {
+          "title": "领域",
+          "label": "您的域名",
+          "placeholder": "输入您的域名。例如https://antstudio.com",
+          "info": ""
+        },
+        "proxy": {
+          "title": "代理人",
+          "integration": "一体化",
+          "user": "用户",
+          "pass": "密码",
+          "domain": "代理域",
+          "port": "港口"
+        },
+        "smtp": {
+          "title": "邮件传输协议",
+          "user": "用户",
+          "pass": "密码",
+          "host": "主持人",
+          "port": "港口",
+          "fromEmail": "来自电子邮件",
+          "fromName": "来自姓名"
+        },
+        "payment": {
+          "title": "支付",
+          "webhookInfo": "Webhook 信息",
+          "sandbox": "沙盒",
+          "live": "居住",
+          "modeInfo": "模式信息",
+          "stripe": "条纹",
+          "paypal": "贝宝",
+          "publicKey": "公钥",
+          "secretKey": "秘密钥匙",
+          "webhookSecret": "Webhook 秘密",
+          "clientId": "客户ID",
+          "clientSecret": "客户秘密",
+          "webhookSecretOptional": "Webhook 秘密 可选",
+          "mode": "模式",
+          "enabled": "启用"
+        },
+        "storage": {
+          "title": "贮存",
+          "awsS3": "AWS S3",
+          "googleDrive": "谷歌云端硬盘",
+          "amazonS3": "亚马逊 S3（S3 兼容）",
+          "s3Info": "S3信息",
+          "driveInfo": "驱动器信息",
+          "customEndpoint": "自定义端点",
+          "accessKeyId": "访问密钥",
+          "secretAccessKey": "秘密钥匙",
+          "region": "地区",
+          "bucketName": "桶名称",
+          "serviceAccountEmail": "服务帐户电子邮件",
+          "privateKey": "私钥",
+          "rootFolderId": "根文件夹",
+          "b2": "逆光B2",
+          "b2Info": "Backblaze B2 云存储配置",
+          "b2ApplicationKeyId": "应用程序密钥 ID",
+          "b2ApplicationKey": "应用密钥"
+        },
+        "oauth": {
+          "title": "开放认证",
+          "googleIdentity": "谷歌ID",
+          "facebook": "Facebook",
+          "tiktok": "抖音",
+          "redirectUriOverride": "重定向 URI 覆盖",
+          "redirectInfo": "重定向 URI 信息",
+          "appId": "应用程序ID",
+          "appSecret": "应用秘密",
+          "clientKey": "客户端密钥",
+          "clientSecret": "客户秘密"
+        }
+      },
+      "taskDefaults": {
+        "title": "任务默认值",
+        "table": {
+          "taskType": "任务类型",
+          "defaultCore": "默认核心",
+          "neuralModelId": "神经模型ID",
+          "costConfig": "成本配置"
+        },
+        "perSec": "每秒",
+        "selectProvider": "选择提供商",
+        "selectModel": "选择型号"
+      },
+      "whitelabel": {
+        "title": "白标",
+        "core": "核",
+        "logoPreview": "标志回顾",
+        "faviconPreview": "网站图标评论",
+        "appName": "应用程序名称",
+        "appLogo": "应用程序标志",
+        "favicon": "网站图标",
+        "placeholders": {
+          "appName": "输入您的应用程序名称。例如蚂蚁工作室",
+          "appLogo": "上传您的应用程序徽标。例如AntStudio.png",
+          "favicon": "上传您的网站图标。例如AntStudio.ico",
+          "logo": "上传您的徽标。例如AntStudio.png"
+        }
+      }
+    },
+    "support": {
+      "title": "支持命令",
+      "subtitle": "支持票",
+      "openIncidents": "公开事件",
+      "searchPlaceholder": "按主题或 ID 搜索事件...",
+      "unknownAgent": "未知特工",
+      "status": {
+        "open": "打开",
+        "inProgress": "进行中",
+        "solved": "已解决",
+        "closed": "关闭"
+      },
+      "dataBundles": "附加数据包",
+      "dataAuthorized": "授权进行深度系统调查",
+      "replyPlaceholder": "操作指令草案...",
+      "selectIncident": "从分类帐中选择一个事件开始。",
+      "toasts": {
+        "statusUpdated": "事件状态已更新"
+      }
+    },
+    "tenant": {
+      "title": "网络与租户",
+      "subtitle": "全局命名空间和部署范围",
+      "licenseBadge": "V2 {type} 许可证",
+      "branding": {
+        "title": "品牌形象",
+        "companyName": "公司名称",
+        "placeholderCompanyName": "艾克美公司",
+        "primaryColor": "主要强调色",
+        "logoHint": "1024x1024 透明 PNG",
+        "uploadLogo": "上传徽章"
+      },
+      "deployment": {
+        "title": "部署方式",
+        "internal": "内部的",
+        "public": "面向公众",
+        "internalModeActive": "内部模式激活。",
+        "internalModeDesc": "系统是密封的。注册需要明确的邀请链接或管理配置。",
+        "publicModeActive": "公共模式激活。",
+        "publicModeDesc": "系统是开放的。任何人都可以爬行到门户并实例化租户。"
+      },
+      "credits": {
+        "title": "基础能力更新",
+        "tierLabel": "{tier} 层基线",
+        "perMonth": "学分/月",
+        "autoRefreshTitle": "自动刷新同步器",
+        "autoRefreshDesc": "每月 {day} 天刷新"
+      },
+      "contract": {
+        "title": "智能合约",
+        "status": "合约状态",
+        "active": "积极的",
+        "renewsOn": "续订开启",
+        "renewsOnDate": "每月 24 日",
+        "seatCapacity": "座位数",
+        "manageSeats": "管理座位分配",
+        "upgradePerpetual": "升级至永久"
+      },
+      "support": {
+        "title": "高级支持",
+        "vipLineActive": "VIP 线路活跃",
+        "managerConnected": "已连接客户经理"
+      },
+      "payment": {
+        "title": "金融路由",
+        "stripeConnect": "条纹连接",
+        "connectedTo": "连接到 {appName} 主帐户",
+        "configureCustom": "配置自定义网关"
+      },
+      "managedSubs": {
+        "title": "托管分租户",
+        "onboard": "机上客户",
+        "verifiedSubdomain": "已验证的子域",
+        "creditsConsumed": "消耗的积分"
+      },
+      "orgPool": {
+        "title": "组织池",
+        "remainingCredits": "剩余学分",
+        "nextRefill": "下次补充",
+        "credits": "制作人员"
+      },
+      "team": {
+        "title": "组织团队",
+        "invite": "供应会员",
+        "minUsed": "{n} 使用分钟数"
+      },
+      "provision": {
+        "title": "拨备账户",
+        "workEmail": "工作电子邮件地址",
+        "placeholderEmail": "neo@matrix.io",
+        "firstName": "名",
+        "lastName": "姓",
+        "accessLevel": "访问级别间隙",
+        "roles": {
+          "admin": "系统管理员",
+          "editor": "内容编辑",
+          "viewer": "观察者（只读）"
+        },
+        "cancel": "取消",
+        "confirm": "拨备账户"
+      },
+      "consumption": {
+        "title": "产能消耗",
+        "services": {
+          "streaming": "直播计算",
+          "audio": "音频合成引擎",
+          "visuals": "视觉生成管道"
+        },
+        "quota": "{n}% 配额"
+      },
+      "footer": {
+        "cancel": "丢弃",
+        "save": "保存网络配置"
+      },
+      "toasts": {
+        "onboardingInitiated": "为 {name} 启动入职序列",
+        "accountProvisioned": "为 {email} 配置的帐户",
+        "configUpdated": "网络配置已复制",
+        "perpetualCheckout": "正在启动永久升级序列..."
+      }
+    },
+    "aiAccounts": {
+      "title": "人工智能账户池",
+      "subtitle": "管理智能账户和配额",
+      "addAntigravity": "反重力",
+      "addGoogle": "谷歌云",
+      "addGoogleFlow": "谷歌流",
+      "sessionToken": "会话令牌 (flowST)",
+      "howToGetToken": "如何获得这个代币？",
+      "stats": {
+        "totalAccounts": "账户总数",
+        "activeNodes": "活跃账户",
+        "rateLimited": "价格有限",
+        "systemsDown": "系统故障"
+      },
+      "account": {
+        "disabled": "残疾人",
+        "syncQuota": "同步配额",
+        "remove": "删除帐户",
+        "showLess": "坍塌",
+        "moreModels": "查看 {n} 更多型号",
+        "noQuotaData": "未获取配额数据",
+        "addedAt": "额外",
+        "updatedAt": "已更新",
+        "changeProjectId": "更改项目 ID",
+        "createNewProject": "创建新项目",
+        "enableApi": "启用API",
+        "enableBilling": "启用计费",
+        "never": "绝不",
+        "justNow": "现在",
+        "credits": "制作人员",
+        "minsAgo": "分钟前",
+        "hoursAgo": "几小时前",
+        "daysAgo": "几天前",
+        "updateToken": "更新令牌"
+      },
+      "toasts": {
+        "loadFailed": "无法加载车队数据",
+        "statusUpdated": "节点状态已更新",
+        "updateFailed": "更新节点失败",
+        "synced": "节点配额已同步",
+        "syncFailed": "同步节点失败",
+        "deleted": "节点已从队列中删除",
+        "deleteFailed": "删除节点失败",
+        "deleteConfirm": "您确定要删除该智能节点吗？",
+        "syncing": "正在同步..."
+      },
+      "empty": {
+        "title": "没有人工智能账户",
+        "description": "添加AI账户以使用AI功能"
+      },
+      "toast": {
+        "enabled": "启用",
+        "disabled": "残疾人",
+        "stRequired": "需要会话令牌"
+      },
+      "updateToken": "更新令牌",
+      "tokenExpiredHelp": "如何获取 Google Flow 会话令牌？"
+    },
+    "activation": {
+      "title": "系统激活",
+      "subtitle": "验证终端许可证密钥",
+      "coreStatus": "核心正品",
+      "welcome": "{tier} 等级已解锁",
+      "unlocked": "许可证已激活",
+      "goDashboard": "前往指挥中心",
+      "licenseKey": "加密许可证密钥",
+      "connectHub": "连接到主集线器",
+      "eula": "通过连接到网状网络，您可以授权遥测传输以进行持续优化。",
+      "toasts": {
+        "enterKey": "提供有效的加密密钥",
+        "success": "密钥已验证。欢迎指挥官。",
+        "failed": "钥匙被拒绝。握手中止。",
+        "handshakeFailure": "无法与许可服务器协商握手"
+      }
+    },
+    "licenses": {
+      "title": "许可证中心",
+      "generate": "生成许可证",
+      "table": {
+        "key": "许可证密钥",
+        "type": "类型",
+        "status": "地位",
+        "limits": "限制",
+        "expiry": "到期日",
+        "actions": "行动"
+      },
+      "status": {
+        "active": "积极的",
+        "expired": "已到期",
+        "revoked": "已撤销"
+      },
+      "limits": {
+        "unlimited": "无限",
+        "never": "绝不"
+      },
+      "actions": {
+        "revoke": "吊销许可证"
+      },
+      "empty": "未找到许可证。",
+      "form": {
+        "type": "许可证类型",
+        "selectType": "选择类型",
+        "maxUsers": "最大用户数",
+        "maxProjects": "最大项目",
+        "expiry": "到期日",
+        "pickDate": "选择日期",
+        "cancel": "取消",
+        "generate": "产生"
+      },
+      "planTypes": {
+        "trial": "审判",
+        "free": "自由的",
+        "enterprise": "企业"
+      },
+      "deleteConfirm": {
+        "title": "删除许可证",
+        "confirm": "确认",
+        "cancel": "取消"
+      }
+    },
+    "release": {
+      "title": "发布中心",
+      "subtitle": "将构建工件推送到边缘终端",
+      "publishBuild": "发布构建",
+      "deployVersion": "部署语义版本",
+      "semanticVersion": "语义版本",
+      "placeholderVersion": "例如2.1.0",
+      "releaseChannel": "发布渠道",
+      "channels": {
+        "stable": "稳定的",
+        "beta": "贝塔",
+        "nightly": "每晚/边缘"
+      },
+      "tacticalNotes": "战术发行说明",
+      "placeholderNotes": "详细介绍神经网络权重调整和 UI 改进...",
+      "artifactUrl": "二进制工件 URL (S3/CDN)",
+      "deploy": "部署发布",
+      "channelSuffix": "渠道",
+      "downloadArtifact": "下载神器",
+      "toasts": {
+        "fetchFailed": "无法与发布清单同步"
+      }
+    },
+    "common": {
+      "import": "进口",
+      "calls": "通话",
+      "unlimited": "无限",
+      "never": "绝不",
+      "label": "管理设置"
+    },
+    "subscription": {
+      "plans": {
+        "title": "计划",
+        "monthlyPrice": "每月价格",
+        "yearlyPrice": "年费",
+        "quotas": "配额",
+        "monthlyCredits": "每月积分",
+        "prioritySupport": "优先支持"
+      },
+      "packages": {
+        "title": "套餐",
+        "addPack": "添加包",
+        "creditsVolume": "学分数量",
+        "price": "价格",
+        "packageActive": "套餐活跃",
+        "packageName": "封装名称"
+      }
+    }
+  },
+  "license": {
+    "title": "许可证管理器",
+    "description": "管理用户许可证",
+    "add": "+ 添加许可证",
+    "search": "搜索许可证...",
+    "filterAll": "所有许可证",
+    "filterValid": "有效许可证",
+    "filterExpired": "许可证过期",
+    "filterBlocked": "被封锁的许可证",
+    "noLicenses": "未添加许可证",
+    "noLicensesDesc": "添加许可证以开始使用",
+    "preview": "预览",
+    "download": "下载",
+    "delete": "删除",
+    "confirmDelete": "您确定要删除该许可证吗？",
+    "storageUsed": "已用存储空间",
+    "ownerRequired": "业主必填",
+    "typeRequired": "类型为必填项",
+    "maxUsersRequired": "最大用户数为必填项",
+    "maxProjectsRequired": "最大项目数为必填项",
+    "durationDaysRequired": "需要持续天数",
+    "issue": "颁发许可证",
+    "owner": "所有者",
+    "type": "类型",
+    "maxUsers": "最大用户数",
+    "maxProjects": "最大项目",
+    "durationDays": "持续天数",
+    "typeTrial": "审判",
+    "typeFree": "自由的",
+    "typeEnterprise": "企业",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "status": "地位",
+    "valid": "有效的",
+    "expired": "已到期",
+    "blocked": "被阻止",
+    "update": "更新许可证",
+    "subtitle": "管理用户许可证",
+    "columns": {
+      "owner": "所有者",
+      "type": "类型",
+      "limits": "限制",
+      "created": "已创建",
+      "actions": "行动",
+      "status": "地位",
+      "expires": "过期"
+    },
+    "empty": {
+      "title": "无许可证"
+    },
+    "dialog": {
+      "issueTitle": "颁发许可证",
+      "ownerLabel": "所有者",
+      "tierLabel": "等级",
+      "maxUsers": "最大用户数",
+      "maxProjects": "最大项目",
+      "duration": "期间",
+      "cancel": "取消",
+      "issue": "问题",
+      "editTitle": "编辑许可证",
+      "keyLabel": "钥匙",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "update": "更新",
+      "ownerPlaceholder": "输入所有者电子邮件"
+    },
+    "typeBasic": "基本型",
+    "typePro": "专业型"
+  },
+  "marketing": {
+    "nav": {
+      "features": "功能特性",
+      "aiStreamer": "AI 主播",
+      "b2bEnterprise": "企业级 B2B",
+      "aiPersonas": "AI 数字人",
+      "login": "登录",
+      "getStarted": "启动 Studio"
+    },
+    "hero": {
+      "badge": "自主 AI 直播与自动化带货引擎",
+      "title": "使用自主 AI 数字人实现 <br/><span class=\"text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-pink-500\">24/7 全天候带货直播</span>",
+      "desc": "利用智能 AI 主播、Gemini 实时语音合成、自动化商品推介循环，以及向 YouTube、TikTok、Facebook 和 AntMedia 同步多平台推流，全面赋能您的直播电商。",
+      "cta": {
+        "start": "启动 Sale Studio",
+        "demo": "探索 AI 数字人"
+      },
+      "stats": {
+        "nonStop": "24/7 不间断直播",
+        "platforms": "4+ 平台支持",
+        "push": "多平台同步推流",
+        "latency": "实时 AI 语音"
+      },
+      "demo": {
+        "live": "直播模式",
+        "viewers": "14,820 观看人数",
+        "flashSale": "限时秒杀",
+        "productName": "智能 HD 高清门铃",
+        "hudTitle": "AI 主播脚本触发器",
+        "hudText": "“欢迎来到直播间！今天我们为您带来智能门铃的专属限时特惠——无需插线、1080p 超清画质……”"
+      }
+    },
+    "features": {
+      "tag": "下一代 AI 直播电商平台",
+      "title": "运行自主带货直播所需的 <br/><span class=\"text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-pink-500\">全套自动化功能</span>",
+      "desc": "AntStudio 将先进的有限状态机（FSM）自动化、Gemini 实时语音合成、动态商品焦点叠加和多目标推流完美整合在一个统一的控制台中。",
+      "fsm": {
+        "title": "自主带货 FSM",
+        "desc": "无需人工干预，24/7 全天候自动循环执行商品讲解、亮点介绍、秒杀倒计时和从众购买触发。",
+        "link": "智能状态转换"
+      },
+      "speech": {
+        "title": "Gemini 实时语音合成",
+        "desc": "低于 50ms 延迟的 AI 语音流。为 2D、3D VRM 和 Aidol 视频数字人提供具有实时口型同步的自然人声。",
+        "link": "多数字人发音"
+      },
+      "multicast": {
+        "title": "多目标同步推流",
+        "desc": "同时向 YouTube、TikTok Live、Facebook 和 Ant Media Server 推流。内置连接断开自动暂停与自动重连引擎。",
+        "link": "WebRTC 与 FFmpeg 中继"
+      },
+      "catalog": {
+        "title": "商品知识库导入",
+        "desc": "导入商品目录、库存 URL 和 FAQ 文件，使 AI 主播能够精准讲解商品参数并实时回答观众提问。",
+        "link": "上下文 Q&A 应答"
+      },
+      "overlays": {
+        "title": "直播电商动态叠加",
+        "desc": "即时生成当前商品的扫码购买二维码、动态折扣标签、限时秒杀倒计时以及专属视觉特效。",
+        "link": "买家一键扫码下单"
+      },
+      "analytics": {
+        "title": "实时数据分析与高光检测",
+        "desc": "实时跟踪观看人数、互动速率和观众情绪得分。自动检测爆点时刻以便剪辑社交媒体高光切片。",
+        "link": "互动遥测数据"
+      }
+    },
+    "showcase": {
+      "tag": "SALE STUDIO 套件",
+      "title": "直接在浏览器中构建的编排化虚拟演播室",
+      "desc": "Sale Studio 将 WebGL 画布渲染、多轨音频混合、动态商品切换与自主脚本执行融为一体。",
+      "item1Title": "多格式数字人:",
+      "item1Desc": "在 2D 静态图像、3D VRM 数字人和 Aidol 视频切片之间无缝切换。",
+      "item2Title": "无缝网络控制:",
+      "item2Desc": "具有实时 RTT 延迟和 FPS 遥测功能的自适应码率推流。",
+      "item3Title": "高可用连接恢复:",
+      "item3Desc": "服务器重启时自动暂停 FSM 循环并自动重试 WebSocket 与 WebRTC 连接。",
+      "cta": "体验 Sale Studio 直播"
+    },
+    "b2b": {
+      "badge": "企业级 B2B 架构",
+      "title": "专为 MCN 机构、品牌方与多租户运营商打造",
+      "desc": "通过自定义白标品牌、多级组织架构和集中化点数管理，轻松扩展您的直播带货业务。",
+      "whiteLabel": {
+        "title": "白标与自定义品牌",
+        "desc": "在您自己的独立域名、自定义 Logo、专属 SMTP 和定制化 UI 配色下部署客户端门户。",
+        "f1": "自定义域名与 SSL 映射",
+        "f2": "品牌 Logo 与 UI 色板",
+        "f3": "自定义 SMTP 邮件通知"
+      },
+      "hierarchy": {
+        "title": "多级租户管理",
+        "desc": "通过细粒度的权限角色和隔离的工作区环境管理子机构、商家和团队成员。",
+        "f1": "子租户开通与资源隔离",
+        "f2": "基于角色的细粒度权限控制",
+        "f3": "多用户团队工作区"
+      },
+      "pools": {
+        "title": "组织配额与点数池",
+        "desc": "在客户账号之间动态分配直播时长、AI 语音点数和存储配额，并提供详细的审计日志。",
+        "f1": "动态点数与时长分配",
+        "f2": "每月自动配额刷新",
+        "f3": "详细的使用审计与分析"
+      },
+      "cta": {
+        "title": "需要专属企业方案或私有化部署？",
+        "desc": "我们与数字营销机构和媒体公司合作，提供专属推流节点部署、私有 LLM 集成和专属 SLA 支持。",
+        "button": "联系企业销售"
+      }
+    },
+    "projects": {
+      "new": {
+        "title": "创建新 AI 视频项目",
+        "subtitle": "选择生产工作流以启动您的创意视频项目",
+        "options": {
+          "aiVideo": {
+            "label": "文本/脚本生成 AI 视频",
+            "desc": "从文本提示词自动生成完整分镜、AI 配音、背景音乐和动态字幕。"
+          },
+          "aiAvatar": {
+            "label": "AI 数字人与虚拟主播",
+            "desc": "创建并自定义 2D 照片、3D VRM 模型及 Aidol 视频数字人，支持 Gemini 语音与唇形同步。"
+          },
+          "productAds": {
+            "label": "电商商品 URL 视频广告向导",
+            "desc": "粘贴任意商品页面 URL，自动生成高转化率的视频广告及营销文案。"
+          },
+          "saleStudio": {
+            "label": "24/7 全自动 AI 直播播控室",
+            "desc": "配备智能 AI 主播、FSM 商品循环讲解、实时问答及二维码的 24 小时无人直播。"
+          },
+          "record": {
+            "label": "屏幕与摄像头录制工作室",
+            "desc": "捕获摄像头、桌面屏幕、演示文稿及多轨录音。"
+          },
+          "blank": {
+            "label": "多轨画布与时间轴工作室",
+            "desc": "包含多轨视频/音频时间轴、转场效果和动态图层的全功能视频编辑器。"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "uptime": "推流在线率",
+      "latency": "语音延迟",
+      "destinations": "多平台推流",
+      "selling": "自主带货"
+    },
+    "bottomCta": {
+      "tag": "立即开始使用 ANTSTUDIO",
+      "title": "准备好实现直播电商自动化了吗？",
+      "desc": "几分钟内即可部署您的首个 AI 主播，开始在 YouTube、TikTok、Facebook 和 AntMedia 上全天候出单。",
+      "start": "立即免费试用",
+      "signIn": "登录控制台"
+    },
+    "footer": {
+      "brandDesc": "AntStudio 是一个专为 24/7 全天候多平台直播打造的自主 AI 直播与电商自动化平台。",
+      "platform": "平台功能",
+      "enterprise": "企业方案",
+      "resources": "资源与法律",
+      "whiteLabel": "白标独立 Portal",
+      "quotas": "组织配额管理",
+      "isolation": "子租户隔离",
+      "documentation": "帮助文档",
+      "privacy": "隐私政策",
+      "terms": "服务条款",
+      "rights": "© 2026 {appName}. 保留所有权利。"
+    },
+    "privacy": {
+      "title": "隐私政策",
+      "lastUpdated": "最后更新于: 2026年7月",
+      "sections": {
+        "introduction": {
+          "title": "1. 引言",
+          "content": "您的隐私对我们至关重要。本隐私政策旨在说明 {appName}（下称“我们”）在您使用我们的网站和服务时，如何收集、使用和保护您的个人信息。"
+        },
+        "collection": {
+          "title": "2. 我们收集的信息",
+          "content": "我们收集您直接向我们提供的信息，例如创建账户、生成视频或联系客服支持时。这包括您的姓名、电子邮件地址和支付信息。"
+        },
+        "ai": {
+          "title": "3. AI 技术的使用",
+          "content": "我们利用 AI 技术根据您的输入生成视频内容。使用我们的服务即表示您同意为 AI 生成目的处理您的数据。"
+        },
+        "security": {
+          "title": "4. 数据安全",
+          "content": "我们采取行业标准的安全措施来保护您的数据。然而，通过互联网传输的任何方法都无法保证 100% 的绝对安全。"
+        }
+      }
+    },
+    "terms": {
+      "title": "服务条款",
+      "lastUpdated": "最后更新于: 2026年1月",
+      "sections": {
+        "acceptance": {
+          "title": "1. 条款接受",
+          "content": "通过访问或使用 {appName}，即表示您同意受本服务条款的约束。如果您不同意，请勿使用我们的服务。"
+        },
+        "use": {
+          "title": "2. 服务使用",
+          "content": "您同意仅出于合法目的使用 {appName}。您需对自己账户下生成的所有内容承担全部责任。"
+        },
+        "property": {
+          "title": "3. 知识产权",
+          "content": "通过我们平台生成的所有内容归您所有。但是，通过使用我们的服务，您授予我们仅为提供和改进服务目的使用该内容的许可。"
+        },
+        "conduct": {
+          "title": "4. 用户行为规范",
+          "content": "您同意不使用我们的平台生成或分发任何违法、有害或侵犯他人合法权益的内容。"
+        }
+      }
+    }
+  },
+  "influencers": {
+    "badge": "数字角色",
+    "avatars": "头像",
+    "collection": "＆ 收藏",
+    "subtitle": "管理您的虚拟主机、导入自定义 Live2D/VRM 模型或从我们的高质量预设中进行选择。",
+    "syncing": "正在同步...",
+    "sync": "同步库",
+    "tabs": {
+      "live2d": "Live2D 预设",
+      "static": "静态预设",
+      "myInfluencers": "我的影响者",
+      "public": "民众"
+    },
+    "search": "搜索人物角色...",
+    "all": "全部",
+    "empty": {
+      "noInfluencers": "未找到影响者",
+      "myInfluencersDesc": "您尚未添加任何影响者角色。",
+      "presetsDesc": "没有符合您条件的预设。"
+    },
+    "confirmDelete": "终止 {name} 的神经链接？此操作无法撤消。",
+    "toasts": {
+      "cloning": "克隆神经网络...",
+      "cloneSuccess": "预设克隆成功",
+      "cloneFailed": "克隆预设失败",
+      "previewSoon": "预览模块即将推出"
+    },
+    "newInfluencer": "新影响者",
+    "dashboard": {
+      "title": "仪表板",
+      "activeSession": "活跃的现场会议",
+      "stats": {
+        "activeHours": "活跃时间",
+        "sessions": "总会话数",
+        "salesGenerated": "产生的销售额",
+        "audienceReach": "受众范围"
+      },
+      "engines": {
+        "content": "24/7 内容引擎",
+        "live": "24/7 实时引擎",
+        "status": "发动机状态",
+        "operational": "操作",
+        "processing": "加工",
+        "idle": "闲置的"
+      },
+      "videoPool": {
+        "title": "产品视频池",
+        "desc": "针对该影响者的自动产品评论和指南。",
+        "generateForProduct": "生成评论",
+        "empty": "尚未生成产品视频。"
+      },
+      "memory": {
+        "title": "角色记忆",
+        "desc": "主动知识条目和历史背景。",
+        "activeKnowledge": "主动知识",
+        "history": "互动历史"
+      },
+      "collaborators": {
+        "title": "协作网络",
+        "invite": "邀请共同主持人",
+        "connected": "与 {name} 建立神经债券"
+      }
+    },
+    "create": {
+      "title": "初始化影响者",
+      "projectionPending": "等待投影",
+      "liveLinkTooltip": "切换实时 WebRTC 跟踪",
+      "isolatingSilhouette": "隔离对象...",
+      "synthesizingVisuals": "合成视觉...",
+      "generateSnapshot": "捕获缩略图",
+      "uploadPortrait": "上传肖像",
+      "generateVideo": "生成视频",
+      "visionSource": "视觉源",
+      "projectionType": "投影类型",
+      "vrm3d": "VRM",
+      "live2d": "直播2D",
+      "static": "静态照片",
+      "aidol": "人工智能代理",
+      "video": "视频",
+      "videoPhoi": "基于上下文视频",
+      "deployEntityFile": "部署实体文件",
+      "acceptsPhotos": "接受 .vrm、.zip 或标准图像格式",
+      "fileSynchronized": "文件同步",
+      "live2dAssetSynced": "Live2D资源同步成功",
+      "influencerPhotoProcessed": "照片处理成功",
+      "videoPhôiSynced": "视频母版同步成功",
+      "personaIdentity": "角色身份",
+      "namePlaceholder": "输入角色名称...",
+      "vocalSignature": "声音特征",
+      "signatureLoaded": "语音签名已加载",
+      "openLibrary": "打开神经语音库",
+      "promptDescription": "系统提示/说明",
+      "descriptionPlaceholder": "描述性格和行为特征...",
+      "environment": "环境",
+      "hideSpecialized": "隐藏专用参数",
+      "refineIntelligence": "细化情报参数",
+      "coreTraits": "核心行为特征",
+      "traits": {
+        "friendly": "友好的",
+        "professional": "专业的",
+        "creative": "有创造力的",
+        "energetic": "精力充沛",
+        "calm": "冷静的",
+        "mysterious": "神秘"
+      },
+      "gestureIntensity": "手势强度",
+      "tiltFactor": "头部倾斜系数",
+      "emphasisPower": "点头强调力量",
+      "cinematicMode": "电影摄影机模式",
+      "dynamicFraming": "动态框架和角度",
+      "directorMode": "导演AI模式",
+      "autoFX": "汽车视觉特效",
+      "keywordTriggered": "由对话关键词触发",
+      "autoCamera": "自动镜头剪辑",
+      "emphasisZoom": "放大强调对话",
+      "directorAutonomy": "董事自主权级别",
+      "backgroundMusic": "环境音轨",
+      "lyrics": "显示歌词",
+      "selectMusic": "选择背景音乐",
+      "lyricsLinesSync": "{count} 同步点",
+      "initializeAvatar": "初始化头像",
+      "backgrounds": {
+        "studio": "专业工作室",
+        "cyberpunk": "赛博朋克",
+        "nature": "禅园",
+        "abstract": "霓虹灯抽象",
+        "solidBlack": "纯黑"
+      },
+      "tts": {
+        "defaultTest": "你好，这是我的神经语音签名。",
+        "syncTesting": "测试人声同步参数...",
+        "voicePreview": "语音预览已初始化",
+        "updatedPreview": "更新预览"
+      },
+      "wizard": {
+        "step1": {
+          "title": "视觉和声音",
+          "desc": "合成与调整",
+          "header": "生物特征与视觉合成"
+        },
+        "step2": {
+          "title": "人工智能大脑",
+          "desc": "个性与角色",
+          "header": "神经架构和背景故事"
+        },
+        "step3": {
+          "title": "环境",
+          "desc": "背景及道具",
+          "header": "环境"
+        },
+        "step4": {
+          "title": "最终确定",
+          "desc": "完成和初始化",
+          "header": "完成和初始化"
+        },
+        "title": "向导",
+        "desc": "使用人工智能创建头像。",
+        "actions": {
+          "back": "后退",
+          "next": "下一个",
+          "finish": "结束",
+          "nextStep": "下一步",
+          "initializeEntity": "初始化"
+        },
+        "fields": {
+          "liveAutomation": "自动直播",
+          "liveAutomationDesc": "启用自动直播",
+          "vodGeneration": "自动生成 VOD",
+          "vodGenerationDesc": "启用自动 VOD 生成",
+          "socialConnections": "社交关系",
+          "connect": "连接",
+          "jobRole": "工作角色",
+          "selectRole": "选择角色",
+          "everyday": "每天",
+          "activeScheduleSlots": "活动日程时段"
+        }
+      },
+      "toasts": {
+        "musicSynced": "已同步音轨：{title}",
+        "generateSuccess": "影响者图像合成成功。",
+        "generateFailed": "AI合成失败。",
+        "voicePreviewFailed": "生成语音预览失败",
+        "linkEstablished": "追踪链接已建立",
+        "cameraAccessFailed": "无法访问摄像设备",
+        "uploadFailed": "资产上传失败",
+        "vrmUploaded": "VRM资源已上传",
+        "live2dUploaded": "Live2D 资源已上传",
+        "avatarUploaded": "头像图片已上传",
+        "portraitUploaded": "肖像上传成功",
+        "unsupportedFormat": "不支持的资源格式",
+        "videoUploaded": "视频大师已上传",
+        "videoUpdated": "视频大师已更新",
+        "backgroundUploaded": "环境资产已上传",
+        "uploadAvatarFirst": "先上传头像主题",
+        "backgroundRemoved": "环境删除成功",
+        "segmentationFailed": "未能隔离对象",
+        "removalFailed": "对象隔离失败：{error}",
+        "loadModelFirst": "请先加载视觉模型",
+        "thumbnailGenerated": "已注册清单缩略图",
+        "syncFailed": "同步失败",
+        "previewFailed": "生成预览视频失败",
+        "videoAudioGenerated": "预览视频已生成",
+        "visemeSynthesisStarted": "正在生成视位精灵表...",
+        "visemeSynthesisFailed": "无法生成视位 spritesheet",
+        "visemeSynthesisComplete": "Viseme spritesheet 已成功生成",
+        "voiceConfigMissing": "首先选择您的影响者声音"
+      },
+      "emotions": {
+        "happy": "快乐的",
+        "sad": "伤心",
+        "angry": "生气的",
+        "surprised": "惊讶",
+        "neutral": "中性的",
+        "thinking": "思维"
+      },
+      "knowledgeBank": "知识库",
+      "contentPlaceholder": "在此输入内容...",
+      "uploadingData": "上传数据",
+      "updateEntityFile": "更新实体文件",
+      "live2dAssetConnected": "Live2d 资产连接",
+      "influencerProfileSynchronized": "影响者资料已同步",
+      "synchronized": "同步",
+      "corePersonalityPlaceholder": "核心个性占位符",
+      "performanceTest": "性能测试",
+      "history": "历史",
+      "titlePlaceholder": "标题占位符",
+      "stylisticWeights": "风格权重",
+      "loraPlaceholder": "劳拉占位符",
+      "socialConnectivity": "社交联系",
+      "targetPlaceholder": "目标占位符",
+      "relationships": {
+        "friend": "朋友",
+        "rival": "竞争对手",
+        "mentor": "导师",
+        "stranger": "陌生人"
+      },
+      "stageEffects": "舞台效果",
+      "autoDirector": "汽车总监",
+      "autonomousProduction": "自主生产",
+      "vocalAura": "声音气场",
+      "reactivePulse": "无功脉冲",
+      "atmosphericAtmosphere": "大气 大气",
+      "stageLighting": "舞台灯光",
+      "voiceReactivity": "语音反应",
+      "pulsingVolume": "脉动量",
+      "stageCamera": "舞台摄像机",
+      "stageLyrics": "舞台歌词",
+      "showLyrics": "显示歌词",
+      "synchronizedText": "同步文本",
+      "changeMusic": "改变音乐",
+      "selectStageMusic": "选择舞台音乐",
+      "digitalInstruments": "数字仪器",
+      "synchronizeInfluencer": "同步影响者",
+      "particles": {
+        "title": "颗粒",
+        "sakura": "樱花",
+        "snow": "雪",
+        "fireworks": "烟花",
+        "rain": "雨",
+        "none": "没有任何",
+        "glitter": "闪光"
+      },
+      "lightingPresets": {
+        "title": "灯光预设",
+        "studio": "工作室",
+        "cyberpunk": "赛博朋克",
+        "nature": "自然",
+        "abstract": "抽象的",
+        "solidBlack": "纯黑",
+        "neon": "氖",
+        "cinematic": "电影般的",
+        "dramatic": "戏剧性",
+        "vocal_orange": "人声橙"
+      },
+      "intensity": "强度",
+      "cameraPaths": {
+        "title": "相机路径",
+        "orbit": "轨道",
+        "slow_zoom": "慢速变焦",
+        "side_sweep": "侧扫",
+        "dramatic_low": "戏剧性的低点"
+      },
+      "lyricsStyles": {
+        "title": "歌词风格",
+        "neon": "氖",
+        "minimal": "最小",
+        "kinetic": "动力学"
+      },
+      "lyricsPositions": {
+        "title": "歌词位置",
+        "top": "顶部",
+        "bottom": "底部"
+      },
+      "weight": "重量",
+      "selection": {
+        "title": "创建人工智能影响者",
+        "desc": "使用人工智能构建您的影响者头像。",
+        "upload": {
+          "title": "上传",
+          "desc": "从您的计算机上传 VRM/Live2D/Avatar/视频。"
+        },
+        "ai": {
+          "title": "人工智能综合",
+          "desc": "使用 AI 生成头像。"
+        }
+      },
+      "aiGenerator": {
+        "title": "人工智能生成器",
+        "bgPromptMemory": "后台提示记忆",
+        "animationIntelligence": "动画智能",
+        "characterStyle": "人物风格",
+        "characterType": "字符类型",
+        "gender": "性别",
+        "ethnicity": "种族",
+        "nationality": "国籍",
+        "skinColor": "肤色",
+        "eyeColor": "眼睛颜色",
+        "eyesSubtype": "眼睛亚型",
+        "builder": "建设者",
+        "prompt": "人工智能提示",
+        "generateAI": "产生",
+        "buildKOL": "构建代理",
+        "ageProfile": "年龄",
+        "visualPrompt": "视觉提示",
+        "visualPromptPlaceholder": "输入视觉特征以生成影响者",
+        "architecting": "架构设计",
+        "bendingLatent": "潜在弯曲",
+        "options": {
+          "styles": {
+            "realistic": "实际的",
+            "anime": "日本动画片",
+            "cartoon": "卡通片",
+            "2d": "二维"
+          },
+          "roles": {
+            "sales": "销售量",
+            "news": "消息",
+            "talkshow": "脱口秀",
+            "entertainer": "艺人",
+            "educator": "教育家",
+            "influencer": "影响者",
+            "custom": "风俗",
+            "gamer": "游戏玩家"
+          },
+          "characterTypes": {
+            "human": "人类",
+            "alien": "外星人",
+            "mechanical": "机械的",
+            "elf": "精灵",
+            "amphibian": "两栖类",
+            "ant": "蚂蚁",
+            "bee": "蜜蜂",
+            "bird": "鸟",
+            "cat": "猫",
+            "dog": "狗",
+            "dragon": "龙",
+            "fish": "鱼",
+            "fox": "狐狸",
+            "rabbit": "兔子",
+            "reptile": "爬虫",
+            "lyzard": "利扎德",
+            "mantis": "螳螂",
+            "octopus": "章鱼",
+            "panda": "熊猫",
+            "pig": "猪",
+            "shark": "鲨鱼",
+            "spider": "蜘蛛",
+            "tiger": "老虎",
+            "wolf": "狼",
+            "bear": "熊",
+            "cow": "奶牛",
+            "goat": "山羊",
+            "horse": "马",
+            "sheep": "羊",
+            "chicken": "鸡",
+            "duck": "鸭子",
+            "eagle": "鹰",
+            "owl": "猫头鹰",
+            "penguin": "企鹅",
+            "parrot": "鹦鹉",
+            "swan": "天鹅",
+            "turkey": "火鸡",
+            "lion": "狮子",
+            "monkey": "猴",
+            "mouse": "老鼠",
+            "crocodile": "鳄鱼",
+            "iguana": "鬣蜥",
+            "beetle": "甲虫"
+          },
+          "genders": {
+            "female": "女性",
+            "male": "男性",
+            "neutral": "中性的"
+          },
+          "ethnicities": {
+            "asian": "亚洲人",
+            "white": "白色的",
+            "black": "黑色的",
+            "latino": "拉丁裔",
+            "middle_eastern": "中东",
+            "european": "欧洲的",
+            "african": "非洲人",
+            "indian": "印度人",
+            "mixed": "混合"
+          },
+          "nationalities": {
+            "vietnamese": "越南语",
+            "japanese": "日本人",
+            "chinese": "中国人",
+            "korean": "韩国人",
+            "thai": "泰国",
+            "indian": "印度人",
+            "british": "英国人",
+            "french": "法语",
+            "german": "德语",
+            "american": "美国人",
+            "brazilian": "巴西人",
+            "nigerian": "尼日利亚人",
+            "egyptian": "埃及人"
+          },
+          "ages": {
+            "child": "孩子",
+            "teen": "青少年",
+            "adult": "成人",
+            "mature": "成熟",
+            "senior": "高级的"
+          },
+          "eyeTypes": {
+            "human": "人类",
+            "reptile": "爬虫",
+            "mechanical": "机械的",
+            "void": "空白",
+            "glow": "辉光",
+            "cartoon": "卡通片",
+            "glowing": "发光",
+            "blink": "眨",
+            "differentColor": "差异颜色",
+            "scarred": "伤痕累累"
+          },
+          "eyeColors": {
+            "amber": "琥珀色",
+            "black": "黑色的",
+            "blue": "蓝色的",
+            "brown": "棕色的",
+            "deepBrown": "深棕色",
+            "green": "绿色的",
+            "grey": "灰色的",
+            "purple": "紫色的",
+            "red": "红色的",
+            "white": "白色的",
+            "blackVoid": "黑色虚空",
+            "whiteVoid": "白色虚空"
+          },
+          "skinTypes": {
+            "human": "人类",
+            "fur": "毛皮",
+            "fish": "鱼",
+            "amphibian": "两栖类",
+            "scales": "秤",
+            "metallic": "金属的"
+          },
+          "skinConditions": {
+            "albinism": "白化病",
+            "birthmarks": "胎记",
+            "burns": "烧伤",
+            "cracked": "破裂的",
+            "freckles": "雀斑",
+            "pigmentation": "色素沉着",
+            "scars": "伤疤",
+            "vitiligo": "白癜风",
+            "wrinkled": "皱"
+          },
+          "hairTypes": {
+            "afro": "非洲式",
+            "bald": "秃",
+            "fur": "毛皮",
+            "long": "长的",
+            "punk": "朋克",
+            "short": "短的",
+            "spines": "刺",
+            "tentacles": "触手"
+          }
+        },
+        "toasts": {
+          "generateFailed": "AI合成失败。",
+          "generateSuccess": "AI合成成功。"
+        },
+        "skinType": "皮肤类型",
+        "hairType": "头发类型",
+        "eyeType": "眼型",
+        "age": "年龄",
+        "skinCondition": "皮肤状况"
+      },
+      "aidols": {
+        "clipLibrary": {
+          "title": "神经视频库",
+          "desc": "为每个角色状态生成并上传绿屏视频，以实现高保真神经切换。",
+          "copyPrompt": "复制 Veo/Sora 提示",
+          "generate": "产生",
+          "uploadSuccess": "上传成功",
+          "promptCopied": "提示已复制",
+          "initialIdle": "初始空闲",
+          "mandatoryDesc": "在继续之前生成基础视频。",
+          "ready": "准备好",
+          "regenerate": "再生",
+          "customPromptPlaceholder": "输入自定义提示"
+        },
+        "states": {
+          "idle": "闲置的",
+          "speaking": "请讲",
+          "product": "产品介绍",
+          "checkout": "结账/号召性用语",
+          "hype": "炒作/高能",
+          "gift_react": "礼物反应",
+          "dance": "唱歌/跳舞",
+          "wave": "波浪/尾奏"
+        }
+      }
+    },
+    "edit": {
+      "title": "编辑影响者",
+      "desc": "使用人工智能编辑您的影响者头像。"
+    },
+    "preset": {
+      "live2d": "直播2D",
+      "static": "静止的",
+      "useTemplate": "使用模板",
+      "preview": "预览"
+    },
+    "ready": "准备好",
+    "live": "居住",
+    "startLiveVoice": "开始直播",
+    "identityAwaitingSync": "身份等待同步",
+    "neuralLinkEstablishing": "影响者加载",
+    "music": {
+      "title": "音乐选择",
+      "searchPlaceholder": "在 YouTube 上搜索歌曲...",
+      "searchButton": "搜索",
+      "noMusicFound": "未找到音乐",
+      "tryDifferentSearch": "尝试不同的搜索查询",
+      "fetching": "正在获取...",
+      "fetchAndApply": "获取并应用",
+      "lyricsPreview": "歌词预览",
+      "moreLines": "...还有 {count} 更多行",
+      "animationStyle": "动画风格",
+      "position": "位置",
+      "styles": {
+        "title": "音乐风格",
+        "neon": "氖",
+        "minimal": "最小",
+        "kinetic": "动力学"
+      },
+      "positions": {
+        "title": "歌词位置",
+        "top": "顶部",
+        "bottom": "底部"
+      },
+      "selectedSong": "精选歌曲",
+      "noLyrics": "没有找到这首歌的歌词",
+      "lyricsFetched": "歌词获取成功",
+      "fetchFailed": "无法获取音乐或歌词",
+      "applied": "音乐和歌词应用成功",
+      "toasts": {
+        "enterQuery": "请输入搜索查询",
+        "noResults": "没有找到结果",
+        "lyricsFetched": "歌词获取成功",
+        "noLyrics": "没有找到这首歌的歌词",
+        "fetchFailed": "无法获取音乐或歌词",
+        "applied": "音乐和歌词应用成功"
+      },
+      "trending": "流行趋势",
+      "regions": "地区",
+      "preferCovers": "更喜欢封面",
+      "target": "目标",
+      "languages": "语言",
+      "lyricsLabel": "歌词标签",
+      "lyricsLanguages": "歌词语言"
+    },
+    "voiceLibrary": {
+      "title": "语音库",
+      "filterPlaceholder": "搜索声音...",
+      "provider": "提供者",
+      "gender": "性别",
+      "language": "语言",
+      "genders": {
+        "all": "全部",
+        "female": "女性",
+        "male": "男性",
+        "neutral": "中性的"
+      },
+      "tts": {
+        "preview": "你好，这是我的神经语音签名。"
+      }
+    },
+    "musicPerformance": {
+      "loading": "加载中..."
+    },
+    "viewer": {
+      "noModel": "无型号",
+      "resetViewTooltip": "重置视图",
+      "reset": "重置"
+    },
+    "geminiChat": {
+      "title": "双子座聊天",
+      "subtitle": "与您的影响者聊天",
+      "placeholder": "输入您的消息...",
+      "send": "发送",
+      "loading": "加载中...",
+      "error": "错误",
+      "retry": "重试",
+      "clear": "清除",
+      "tabs": {
+        "liveChat": "实时聊天",
+        "history": "历史"
+      },
+      "sidebar": {
+        "selectInfluencer": "选择影响者",
+        "geminiOnly": "仅限双子座",
+        "liveReady": "现场准备就绪",
+        "voiceLabel": "嗓音",
+        "empty": {
+          "title": "没有实时兼容的影响者",
+          "action": "前往影响者图书馆"
+        }
+      },
+      "session": {
+        "ready": {
+          "title": "准备聊天",
+          "connectTo": "连接到 {name}",
+          "selectToBegin": "选择一位影响者开始",
+          "startAction": "开始会话"
+        },
+        "live": "居住",
+        "visionActive": "视觉活跃",
+        "controls": {
+          "startVision": "开始愿景",
+          "stopVision": "停止视力",
+          "endSession": "结束会议"
+        },
+        "info": {
+          "archive": "档案",
+          "voice": "嗓音",
+          "sessionId": "会话ID"
+        },
+        "connected": {
+          "title": "与 {name} 进行实时会话",
+          "status": "地位",
+          "statusConnected": "已连接",
+          "statusDisconnected": "已断开连接",
+          "stats": {
+            "title": "统计数据",
+            "messages": "留言",
+            "duration": "期间",
+            "toolsUsed": "使用的工具"
+          },
+          "actions": {
+            "title": "行动",
+            "endSession": "结束会议",
+            "viewTranscript": "查看文字记录",
+            "toggleMicrophone": "切换麦克风",
+            "toggleCamera": "切换相机",
+            "resetView": "重置视图",
+            "changeExpression": "改变表达",
+            "playAnimation": "播放动画",
+            "changeMood": "改变心情"
+          },
+          "controls": {
+            "microphone": "麦克风",
+            "camera": "相机",
+            "expressions": "表达式",
+            "animations": "动画",
+            "moods": "心情"
+          },
+          "dialogs": {
+            "transcript": {
+              "title": "成绩单",
+              "noMessages": "还没有消息",
+              "usedTool": "使用的工具：{name}"
+            },
+            "expression": {
+              "title": "改变表达",
+              "select": "选择表达式"
+            },
+            "animation": {
+              "title": "播放动画",
+              "select": "选择动画"
+            },
+            "mood": {
+              "title": "改变心情",
+              "select": "选择心情"
+            }
+          },
+          "toasts": {
+            "sessionEnded": "会议成功结束",
+            "sessionFailed": "无法结束会话",
+            "loadDetailFailed": "无法加载会话详细信息",
+            "endCurrentSession": "请先结束当前会话",
+            "startFailed": "无法启动会话",
+            "messageSent": "消息发送成功",
+            "messageFailed": "发送消息失败",
+            "clearSuccess": "聊天记录成功清除",
+            "clearFailed": "清除聊天记录失败",
+            "switchedScene": "切换到场景：{name}",
+            "hypeEvent": "触发炒作事件：{reason}",
+            "shoutout": "向 {name} 致敬！",
+            "questStarted": "任务开始：{title}",
+            "aiDeal": "触发 AI 交易：{reason}",
+            "generatingBg": "生成背景：{prompt}",
+            "momentCaptured": "捕获的瞬间：{description}",
+            "expression": "表达式设置为：{name}",
+            "animation": "播放动画：{name}",
+            "mood": "心情设置为：{name}"
+          }
+        }
+      },
+      "history": {
+        "title": "历史",
+        "subtitle": "查看您过去的直播会话",
+        "empty": "未找到会话历史记录。",
+        "filters": {
+          "title": "过滤器",
+          "searchPlaceholder": "搜索会话...",
+          "dateRange": "日期范围",
+          "influencer": "影响者",
+          "all": "全部"
+        },
+        "sessionCard": {
+          "title": "与 {name} 的会话",
+          "date": "日期",
+          "duration": "期间",
+          "messages": "留言",
+          "viewDetails": "查看详情",
+          "delete": "删除",
+          "deleteConfirm": "您确定要删除此会话吗？",
+          "deleteSuccess": "会话删除成功",
+          "deleteFailed": "删除会话失败"
+        }
+      },
+      "detail": {
+        "title": "会议详情",
+        "subtitle": "查看会话详细信息",
+        "empty": {
+          "title": "无详细信息",
+          "action": "启动新会话以查看详细信息"
+        },
+        "filters": {
+          "title": "过滤器",
+          "searchPlaceholder": "搜索会话...",
+          "dateRange": "日期范围",
+          "influencer": "影响者",
+          "all": "全部"
+        },
+        "sessionCard": {
+          "title": "与 {name} 的会话",
+          "date": "日期",
+          "duration": "期间",
+          "messages": "留言",
+          "viewDetails": "查看详情",
+          "delete": "删除",
+          "deleteConfirm": "您确定要删除此会话吗？",
+          "deleteSuccess": "会话删除成功",
+          "deleteFailed": "删除会话失败"
+        }
+      },
+      "dialogs": {
+        "transcript": {
+          "title": "成绩单",
+          "noMessages": "还没有消息",
+          "usedTool": "使用的工具：{name}"
+        },
+        "expression": {
+          "title": "改变表达",
+          "select": "选择表达式"
+        },
+        "animation": {
+          "title": "播放动画",
+          "select": "选择动画"
+        },
+        "mood": {
+          "title": "改变心情",
+          "select": "选择心情"
+        }
+      },
+      "toasts": {
+        "sessionEnded": "会议成功结束",
+        "sessionFailed": "无法结束会话",
+        "loadDetailFailed": "无法加载会话详细信息",
+        "endCurrentSession": "请先结束当前会话",
+        "startFailed": "无法启动会话",
+        "messageSent": "消息发送成功",
+        "messageFailed": "发送消息失败",
+        "clearSuccess": "聊天记录成功清除",
+        "clearFailed": "清除聊天记录失败",
+        "switchedScene": "切换到场景：{name}",
+        "hypeEvent": "触发炒作事件：{reason}",
+        "shoutout": "向 {name} 致敬！",
+        "questStarted": "任务开始：{title}",
+        "aiDeal": "触发 AI 交易：{reason}",
+        "generatingBg": "生成背景：{prompt}",
+        "momentCaptured": "捕获的瞬间：{description}",
+        "expression": "表达式设置为：{name}",
+        "animation": "播放动画：{name}",
+        "mood": "心情设置为：{name}"
+      }
+    }
+  },
+  "marketplace": {
+    "badge": "市场",
+    "magic": "魔法",
+    "template": "模板",
+    "hub": "中心",
+    "subtitle": "发现并导入预先构建的创意流程、自定义影响者和智能结构。",
+    "importUrl": "导入网址",
+    "importPptx": "导入PPTX",
+    "importingPptx": "正在导入 PPTX...",
+    "trustedBy": "值得信赖",
+    "globalCreators": "全球创作者",
+    "search": "搜索模板...",
+    "tabs": {
+      "public": "民众",
+      "canva": "帆布",
+      "capcut": "封盖切割",
+      "private": "我的模板"
+    },
+    "canva": {
+      "title": "Canva 集成",
+      "professionalVideo": "专业视频",
+      "allFilters": "所有过滤器"
+    },
+    "capcut": {
+      "title": "CapCut 模板"
+    },
+    "types": {
+      "video": "视频",
+      "image": "图像"
+    },
+    "filters": {
+      "style": "风格",
+      "theme": "主题",
+      "price": "价格",
+      "color": "颜色"
+    },
+    "categories": {
+      "peaceVideos": "和平视频",
+      "birthday": "生日",
+      "education": "教育",
+      "nature": "自然",
+      "business": "商业",
+      "forYou": "为你",
+      "trending": "流行趋势",
+      "newYear": "新年",
+      "tiktok": "抖音",
+      "vlog": "视频博客",
+      "student": "学生"
+    },
+    "sections": {
+      "featured": "精选",
+      "personal": "个人的",
+      "community": "社区模板",
+      "myLibrary": "我的模板库"
+    },
+    "empty": {
+      "noTemplates": "未找到模板",
+      "privateDesc": "您尚未保存任何模板。",
+      "publicDesc": "没有符合您条件的社区模板。"
+    },
+    "templateCard": {
+      "free": "自由的",
+      "credits": "制作人员",
+      "viewDetail": "查看详情"
+    },
+    "title": "市场",
+    "importDialog": {
+      "title": "智能模板导入器",
+      "supports": "从 Capcut、Canva 等导入模板",
+      "pasteUrl": "粘贴网址",
+      "urlPlaceholder": "输入模板网址",
+      "processing": "加工...",
+      "startMagic": "开始导入",
+      "importing": "输入",
+      "privacySafe": "隐私安全",
+      "errors": {
+        "unsupportedUrl": "不支持的网址",
+        "failed": "失败的"
+      }
+    },
+    "previewDialog": {
+      "defaultAuthor": "默认作者",
+      "clips": "剪辑",
+      "duration": "期间",
+      "texts": "文本",
+      "editable": "可编辑",
+      "uses": "用途",
+      "selectRatio": "选择比例",
+      "description": "描述",
+      "defaultDesc": "默认描述",
+      "useTemplate": "使用模板",
+      "customizable": "可定制",
+      "defaultRatio": "违约率"
+    },
+    "balance": "平衡",
+    "listAsset": "列出资产",
+    "badges": {
+      "official": "官方的"
+    },
+    "actions": {
+      "getNow": "立即获取",
+      "cancel": "取消",
+      "confirm": "确认"
+    },
+    "dialogs": {
+      "purchase": {
+        "desc": "描述",
+        "priceLabel": "价格标签",
+        "feeLabel": "费用标签",
+        "securityNote": "安全说明"
+      }
+    }
+  },
+  "merchant": {
+    "header": {
+      "liveCommerce": "直播商务",
+      "title": "商人",
+      "hub": "中心",
+      "subtitle": "管理您的数字产品、跟踪订单并监控性能。",
+      "totalRevenue": "总收入",
+      "pendingOrders": "待处理订单"
+    },
+    "tabs": {
+      "inventory": "存货",
+      "orders": "订单",
+      "analytics": "分析"
+    },
+    "actions": {
+      "addProduct": "添加产品"
+    },
+    "confirmDelete": {
+      "message": "您确定要删除 {name} 吗？",
+      "title": "删除产品"
+    },
+    "inventory": {
+      "inStock": "{count} 库存",
+      "generateAd": "生成广告视频"
+    },
+    "orders": {
+      "table": {
+        "orderId": "订单号",
+        "customer": "用户",
+        "product": "产品",
+        "amount": "数量",
+        "source": "来源",
+        "status": "地位",
+        "actions": "行动"
+      },
+      "sources": {
+        "live": "直播",
+        "video": "短视频"
+      },
+      "details": "细节",
+      "statuses": {
+        "pending": "待办的",
+        "processing": "加工",
+        "shipped": "已发货",
+        "delivered": "发表",
+        "cancelled": "取消"
+      }
+    },
+    "analytics": {
+      "landingViews": "登陆页面浏览量",
+      "orderClicks": "订单点击次数",
+      "userAgeGroups": "用户年龄组",
+      "topRegions": "热门地区",
+      "gender": {
+        "male": "男性",
+        "female": "女性",
+        "other": "其他"
+      },
+      "device": {
+        "desktop": "桌面",
+        "mobile": "移动的",
+        "tablet": "药片"
+      },
+      "stats": {
+        "totalViews": "总观看次数",
+        "viewsSub": "涵盖所有产品",
+        "totalClicks": "总点击次数",
+        "clicksSub": "点击率",
+        "conversionRate": "转化率",
+        "conversionSub": "点击观看次数",
+        "totalOrders": "订单总数",
+        "ordersSub": "待履行"
+      },
+      "engagementFlow": "参与流程",
+      "viewsVsClicks": "观看次数与点击次数",
+      "audienceProfile": "观众概况",
+      "deviceDistribution": "设备分布",
+      "geographicReach": "地理范围",
+      "productPerformance": "产品性能",
+      "conversionByProduct": "按产品换算",
+      "table": {
+        "productName": "产品名称",
+        "views": "意见",
+        "clicks": "点击次数",
+        "conversion": "转换"
+      }
+    },
+    "adDialog": {
+      "title": "制作产品广告",
+      "steps": {
+        "analyze": "分析",
+        "review": "审查",
+        "template": "模板",
+        "finalize": "最终确定",
+        "render": "使成为"
+      },
+      "stepIndicator": "{total} 的步骤 {step}",
+      "analyzeStep": {
+        "title": "分析产品",
+        "placeholder": "粘贴 Shopify 或 Amazon URL...",
+        "or": "- 或者 -",
+        "uploadBtn": "上传产品图片",
+        "analyzeBtn": "用人工智能进行分析"
+      },
+      "refineStep": {
+        "productName": "产品名称",
+        "price": "价格",
+        "description": "描述",
+        "brandName": "品牌名称",
+        "brandSlogan": "品牌口号",
+        "brandSloganPlaceholder": "可选标语...",
+        "brandLogo": "品牌标志",
+        "noLogo": "无标志",
+        "logoUrlPlaceholder": "徽标网址...",
+        "keyFeatures": "主要特点",
+        "addFeaturePlaceholder": "添加功能...",
+        "colorPalette": "调色板",
+        "primary": "基本的",
+        "secondary": "中学",
+        "selectImage": "选择产品图片",
+        "or": "- 或者 -",
+        "uploadBtn": "上传产品图片"
+      },
+      "templateStep": {
+        "targetFormat": "目标格式",
+        "selectTemplate": "选择模板",
+        "searchPlaceholder": "搜索模板...",
+        "noTemplates": "找不到该比例的模板",
+        "total": "总计：{total}"
+      },
+      "finalizeStep": {
+        "title": "准备启动",
+        "subtitle": "您的高转化广告配置已准备就绪。选择增强的工作流程。",
+        "editorStudio": "编辑工作室",
+        "editorStudioDesc": "完全控制。手动编辑每个帧、过渡和品牌资源。",
+        "quickRender": "快速渲染",
+        "quickRenderDesc": "AI 在后台立即构建并导出视频。"
+      },
+      "renderStep": {
+        "success": "广告准备好了！",
+        "successSubtitle": "生成高转化率广告素材",
+        "preparingPreview": "正在准备预览...",
+        "landingPage": "登陆页面",
+        "publish": "发布",
+        "liveStudioIntegrated": "LiveStudio 集成",
+        "liveStudioDesc": "此广告已自动添加到您产品的广告素材位中。当该产品出现在您的直播中时，它将向观看者显示。",
+        "done": "完毕",
+        "rendering": "渲染广告",
+        "share": "分享"
+      },
+      "toasts": {
+        "extractSuccess": "产品提取成功！",
+        "extractError": "AI 无法分析该 URL。请手动填写。",
+        "selectTemplate": "请选择一个模板以继续",
+        "renderFailed": "生成广告失败。请再试一次。",
+        "publishSuccess": "广告视频发布并成功链接到产品！",
+        "publishFailed": "广告视频发布失败",
+        "renderSuccess": "广告呈现并下载成功！",
+        "renderFailedDetailed": "无法呈现广告。请尝试编辑器工作室。",
+        "productUpdateSuccess": "产品更新了新的广告视频！",
+        "productNotFound": "未找到产品或视频",
+        "updateFailed": "更新产品失败",
+        "copySuccess": "着陆页链接已复制到剪贴板！"
+      }
+    },
+    "editDialog": {
+      "titleEdit": "编辑产品",
+      "titleAdd": "添加产品",
+      "purchaseUrl": "购买网址",
+      "autoFill": "自动填充",
+      "analyzing": "正在分析...",
+      "urlHint": "粘贴来自 Shopify、Amazon 或 TikTok 的产品链接以自动提取详细信息。",
+      "productName": "产品名称",
+      "price": "价格",
+      "stock": "库存",
+      "images": "产品图片",
+      "imageHint": "通过 URL 添加产品图片或上传。",
+      "description": "营销说明",
+      "brandIdentity": "品牌形象",
+      "brandName": "品牌名称",
+      "brandLogo": "品牌标志（网址）",
+      "brandSlogan": "品牌口号",
+      "videoUrl": "专题视频网址",
+      "previewVideo": "预览视频",
+      "primaryColors": "原色",
+      "secondaryColors": "次要颜色",
+      "updateProduct": "更新产品",
+      "createProduct": "创建产品",
+      "extractError": "无法提取产品详细信息",
+      "extracted": "提取的 {count} 图像和详细信息",
+      "mainLabel": "主图",
+      "placeholders": {
+        "url": "https://store.example.com/product...",
+        "name": "输入产品名称...",
+        "image": "粘贴图片网址...",
+        "description": "简短的营销描述...",
+        "brandName": "品牌名称...",
+        "brandLogo": "徽标图像网址...",
+        "brandSlogan": "品牌口号...",
+        "video": "视频网址或路径..."
+      }
+    },
+    "previewDialog": {
+      "noImage": "未找到图像",
+      "units": "单位",
+      "views": "意见",
+      "clicks": "点击次数",
+      "sales": "销售量",
+      "launchWizard": "启动广告向导",
+      "brand": "品牌",
+      "defaultBrand": "蚂蚁工作室",
+      "defaultSlogan": "产品"
+    }
+  },
+  "resources": {
+    "badge": "资源库",
+    "assets": "创意资产",
+    "archives": "工作室档案",
+    "subtitle": "管理您上传的文件、查看过去的直播并下载生成的视频导出。",
+    "upload": "上传媒体",
+    "tabs": {
+      "assets": "媒体资产",
+      "archives": "工作室档案",
+      "gallery": "制作画廊"
+    },
+    "search": "搜索...",
+    "categories": {
+      "all": "所有文件",
+      "image": "图片",
+      "video": "视频",
+      "audio": "声音的",
+      "application": "文件"
+    },
+    "empty": {
+      "noAssets": "未找到资产",
+      "uploadDesc": "上传您的第一个媒体文件以在项目中使用。",
+      "nothingHere": "这里还什么都没有",
+      "archivesDesc": "您录制的直播和原始素材将显示在此处。",
+      "galleryDesc": "您最终的渲染视频将保存在此处。"
+    },
+    "dialogs": {
+      "upload": {
+        "title": "上传媒体",
+        "processing": "加工...",
+        "drop": "将文件拖放到此处或单击浏览",
+        "supported": "支持 JPG、PNG、MP4、MP3、PDF、PPTX（最大 200MB）"
+      }
+    },
+    "toasts": {
+      "uploading": "正在上传文件...",
+      "uploadSuccess": "文件上传成功。",
+      "uploadFailed": "上传文件失败。"
+    },
+    "confirmDelete": "您确定要删除该文件吗？"
+  },
+  "auth": {
+    "login": {
+      "subtitle": "登录以访问您的仪表板。",
+      "emailPlaceholder": "电子邮件",
+      "passwordPlaceholder": "密码",
+      "forgotPassword": "忘记密码？",
+      "signIn": "登入",
+      "orContinue": "或者继续",
+      "newTo": "{appName} 新用户？",
+      "createAccount": "创建一个帐户",
+      "backHome": "返回首页",
+      "toasts": {
+        "fillAll": "请填写所有字段",
+        "success": "登录成功",
+        "failed": "登录失败。请再试一次。",
+        "oauthFailed": "OAuth 登录失败。请再试一次。"
+      }
+    },
+    "register": {
+      "subtitle": "创建一个帐户以开始创建。",
+      "namePlaceholder": "姓名",
+      "emailPlaceholder": "电子邮件",
+      "passwordPlaceholder": "密码",
+      "confirmPasswordPlaceholder": "确认密码",
+      "createAccount": "创建账户",
+      "alreadyHave": "已经有帐户？",
+      "login": "登入",
+      "rules": {
+        "mismatch": "密码不匹配",
+        "nameRequired": "请输入您的姓名",
+        "emailRequired": "请输入您的电子邮件",
+        "emailInvalid": "请输入有效的电子邮件地址",
+        "passwordRequired": "请输入密码",
+        "passwordMin": "密码必须至少为 8 个字符",
+        "confirmRequired": "请确认您的密码"
+      },
+      "toasts": {
+        "success": "注册成功",
+        "failed": "注册失败。请再试一次。"
+      }
+    },
+    "forgot": {
+      "title": "重置密码",
+      "description": "输入您的电子邮件地址，我们将向您发送用于重置密码的链接。",
+      "emailPlaceholder": "电子邮件",
+      "cancel": "取消",
+      "reset": "发送重置链接",
+      "toasts": {
+        "enterEmail": "请输入您的电子邮件地址"
+      }
+    },
+    "resetPassword": {
+      "title": "创建新密码",
+      "subtitle": "请在下面输入您的新密码。",
+      "newPasswordPlaceholder": "新密码",
+      "confirmPasswordPlaceholder": "确认新密码",
+      "resetButton": "重置密码",
+      "backToLogin": "返回登录",
+      "toasts": {
+        "fillAll": "请填写所有字段",
+        "mismatch": "密码不匹配",
+        "tooShort": "密码必须至少为 6 个字符",
+        "invalidToken": "重置令牌无效或过期"
+      }
+    },
+    "onboarding": {
+      "setupAssistant": "设置助手",
+      "initializeTitle": "初始化核心系统",
+      "steps": {
+        "regional": "区域设置",
+        "identity": "业主身份",
+        "security": "安全与许可",
+        "finish": "部署"
+      },
+      "step0": {
+        "title": "区域参数",
+        "desc": "选择您的系统首选语言和区域设置。",
+        "continue": "继续设置"
+      },
+      "step1": {
+        "title": "业主身份",
+        "desc": "创建主管理员帐户用于系统管理。",
+        "fullName": "姓名",
+        "email": "管理员邮箱",
+        "password": "管理员密码",
+        "initIdentity": "初始化身份",
+        "creating": "创造..."
+      },
+      "step2": {
+        "title": "系统握手",
+        "desc": "输入您的许可证密钥以激活 AntFlow 生态系统。",
+        "placeholder": "XXXX-XXXX-XXXX-XXXX",
+        "authorize": "授权节点",
+        "validating": "正在验证...",
+        "getTrial": "获取试用许可证"
+      },
+      "step3": {
+        "title": "系统校准",
+        "desc": "配置核心模块并准备您的工作区。",
+        "cloudStorage": "云存储",
+        "influencerUnits": "影响力单位",
+        "deployHub": "部署控制中心"
+      },
+      "toasts": {
+        "identityEstablished": "身份确立",
+        "regFailed": "创建身份失败",
+        "handshakeEstablished": "握手建立",
+        "activationFailed": "激活许可证失败",
+        "missionReady": "系统就绪。欢迎来到 AntStudio。"
+      }
+    },
+    "password": {
+      "current": "当前的",
+      "new": "新的",
+      "confirm": "确认",
+      "failed": "失败的"
+    }
+  },
+  "sidebar": {
+    "updateAvailable": "更新 {version} 可用"
+  },
+  "password": {
+    "current": "当前密码",
+    "currentPlaceholder": "输入当前密码",
+    "new": "新密码",
+    "newPlaceholder": "输入新密码",
+    "confirm": "确认新密码",
+    "confirmPlaceholder": "重复新密码",
+    "update": "更新身份密码",
+    "mismatch": "密码不匹配",
+    "tooShort": "密码必须至少为 6 个字符",
+    "success": "密码更新成功",
+    "failed": "更新密码失败"
+  },
+  "gallery": {
+    "download": "下载",
+    "showcase": {
+      "createdBy": "创建者",
+      "watch": "手表",
+      "disclaimer": "免责声明",
+      "films": {
+        "electricPink": {
+          "title": "电光粉",
+          "synopsis": "概要"
+        },
+        "dearStranger": {
+          "title": "亲爱的陌生人",
+          "synopsis": "概要"
+        },
+        "freelancers": {
+          "title": "自由职业者",
+          "synopsis": "概要"
+        }
+      }
+    }
+  },
+  "drawers": {
+    "aiPersona": {
+      "neuralPersonas": "人工智能角色",
+      "syntheticIntelligence": "综合智能",
+      "role": {
+        "master": "掌握",
+        "agent": "代理人"
+      },
+      "expression": "表达",
+      "quickEmotions": "快速的情绪",
+      "prompts": {
+        "introduce": "介绍",
+        "react": "反应"
+      },
+      "actions": {
+        "introduce": "介绍",
+        "react": "反应",
+        "liveVoice": "现场语音",
+        "vision": "想象"
+      },
+      "animation": {
+        "intensity": "强度",
+        "gesture": "手势",
+        "tilt": "倾斜",
+        "nod": "点头"
+      },
+      "performance": {
+        "fx": "FX",
+        "aura": "光环",
+        "particles": "颗粒",
+        "lighting": "灯光",
+        "music": "音乐",
+        "selectSong": "选择歌曲",
+        "unknownArtist": "未知艺术家",
+        "perform": "履行",
+        "noSong": "无歌"
+      },
+      "options": {
+        "none": "没有任何",
+        "sakura": "樱花",
+        "snow": "雪",
+        "glitter": "闪光",
+        "studio": "工作室",
+        "neon": "氖",
+        "dramatic": "戏剧性",
+        "vocalOrange": "人声橙"
+      },
+      "background": "背景",
+      "promptPlaceholder": "提示占位符",
+      "autoGuest": {
+        "title": "自动访客逻辑",
+        "desc": "启用后，AI 总监将自动召唤角色来填补安静时刻或辩论特定的聊天主题。"
+      }
+    },
+    "cinematic": {
+      "title": "电影工作室",
+      "desc": "启用沉浸式渲染，将所有 AI 代理置于统一的高保真环境中。",
+      "activeEnvironment": "活跃环境",
+      "autoCamera": "自动相机",
+      "status": {
+        "prod": "产品"
+      },
+      "influencerLink": "影响者链接",
+      "activeVfx": "主动视觉特效",
+      "options": {
+        "none": "没有任何",
+        "bloom": "盛开"
+      },
+      "immersiveDisabled": "沉浸式舞台已禁用"
+    },
+    "collaboration": {
+      "title": "团队会议",
+      "invite": "邀请",
+      "desc": "邀请其他人实时编辑图层并管理流。更改在所有主机之间同步。",
+      "you": "你",
+      "connected": "已连接",
+      "offline": "离线",
+      "noMembers": "没有分配团队成员"
+    },
+    "comments": {
+      "title": "平台参与度",
+      "platformEngagement": "情感感知人工智能调节",
+      "moderation": "适度",
+      "analyzing": "分析对话...",
+      "noComments": "暂无评论",
+      "waiting": "等待病毒火花！一旦您的受众开始参与，评论就会出现在此处。",
+      "aiSuggest": "艾建议",
+      "reply": "回复",
+      "replyPlaceholder": "回复占位符",
+      "sending": "发送",
+      "postReply": "发表回复"
+    }
+  },
+  "support": {
+    "ticket": {
+      "title": "支持票",
+      "subtitle": "将操作异常情况上报给指挥中心。",
+      "objective": "客观的",
+      "urgency": "紧迫性",
+      "priorities": {
+        "low": "低的",
+        "medium": "中等的",
+        "high": "高的",
+        "critical": "批判的"
+      },
+      "sitrep": "西特雷普",
+      "attachments": "附件",
+      "extractLogs": "提取日志",
+      "dragDrop": "拖放",
+      "supports": "支持",
+      "dataAuth": "数据认证",
+      "dataAuthDesc": "数据认证说明",
+      "cancel": "取消",
+      "transmitting": "发射",
+      "submit": "提交"
+    }
+  },
+  "pricing": {
+    "title": "定价",
+    "subtitle": "通过我们灵活的定价计划释放您的全部创意潜力。",
+    "mostPopular": "最受欢迎",
+    "perMonth": "每月",
+    "features": {
+      "prioritySupport": "优先支持",
+      "standardSupport": "标准支持"
+    },
+    "getStarted": "开始使用",
+    "subscribeNow": "立即订阅",
+    "faq": {
+      "title": "常见问题解答",
+      "a1": "什么是AntStudio？",
+      "a2": "如何创建项目？",
+      "a3": "如何将 AI 角色添加到我的项目中？"
+    },
+    "plans": {
+      "free": "自由的",
+      "pro": "专业版",
+      "enterprise": "企业"
+    }
+  },
+  "productLanding": {
+    "loading": "加工...",
+    "orderNow": "立即订购",
+    "freeShipping": "免运费",
+    "secureCheckout": "安全结账",
+    "previewUnavailable": "预览不可用",
+    "visualGallery": "视觉画廊",
+    "authenticProduct": "正品",
+    "stockStatus": "库存状况",
+    "limitedStock": "库存有限",
+    "outOfStock": "缺货",
+    "getItNow": "立即获取",
+    "notFound": {
+      "title": "未找到产品",
+      "desc": "您正在寻找的产品不存在。",
+      "backHome": "返回首页"
+    }
+  },
+  "affiliate": {
+    "title": "联盟计划",
+    "join": {
+      "desc": "加入我们的联属计划，为您推荐给 AntStudio 的每位客户赚取佣金。",
+      "button": "立即加入"
+    },
+    "engine": {
+      "title": "联盟引擎",
+      "linkTitle": "附属链接",
+      "copy": "复制",
+      "rate": "速度",
+      "recurring": "再次发生的",
+      "cookie": "曲奇饼"
+    },
+    "commissions": {
+      "title": "佣金",
+      "viewAll": "查看全部",
+      "empty": "空的",
+      "paid": "有薪酬的",
+      "approved": "得到正式认可的",
+      "user": "用户"
+    },
+    "wallet": {
+      "title": "钱包",
+      "available": "可用的",
+      "request": "要求",
+      "lifetime": "寿命"
+    },
+    "tips": {
+      "title": "尖端",
+      "tip1": "提示1"
+    }
+  },
+  "analytics": {
+    "title": "分析",
+    "subtitle": "流分析的可见性",
+    "metrics": {
+      "peakViewers": "观看人数高峰",
+      "engagementScore": "参与度分数",
+      "highViral": "高病毒性",
+      "stableEngagement": "稳定的参与度",
+      "avgWatchTime": "平均观看时间",
+      "zeroTime": "零时间",
+      "stable": "稳定的",
+      "commerceRevenue": "商业收入"
+    },
+    "heatmap": {
+      "title": "热图",
+      "viewers": "观众",
+      "chatVelocity": "聊天速度",
+      "pollStarted": "投票开始",
+      "flashDeal": "闪购"
+    },
+    "highlights": {
+      "title": "亮点",
+      "score": "分数",
+      "generateShort": "生成短片"
+    }
+  },
+  "developer": {
+    "title": "开发者工具",
+    "subtitle": "管理 API 密钥和 Webhook 集成以进行外部编排。",
+    "apiVersion": "API版本",
+    "keys": {
+      "title": "API 密钥",
+      "generate": "产生",
+      "lastUsed": "最后使用",
+      "never": "绝不",
+      "empty": "空的",
+      "dialog": {
+        "abort": "取消",
+        "initialize": "初始化"
+      },
+      "success": {
+        "warning": "警告",
+        "copy": "复制",
+        "stored": "已存储"
+      }
+    },
+    "webhooks": {
+      "title": "网络钩子",
+      "add": "添加",
+      "revoke": "撤销",
+      "empty": "空的",
+      "dialog": {
+        "cancel": "取消",
+        "establish": "建立"
+      }
+    },
+    "headless": {
+      "title": "无头",
+      "auth": "授权",
+      "verify": "核实"
+    },
+    "toasts": {
+      "genFailed": "发电机失败",
+      "webhookFailed": "Webhook 失败"
+    }
+  },
+  "guestRoom": {
+    "loading": "加工...",
+    "error": {
+      "title": "错误",
+      "noToken": "无令牌",
+      "invalidOrExpired": "无效或过期"
+    },
+    "join": {
+      "title": "加入房间",
+      "subtitle": "输入您的姓名即可加入房间",
+      "activeSession": "活动会话",
+      "displayName": "显示名称",
+      "action": "行动",
+      "hostStudio": "{name} 的工作室",
+      "placeholder": "输入你的名字"
+    },
+    "live": {
+      "title": "居住",
+      "status": "实时连接健康",
+      "desc": "主持人现在可以看到并听到您的声音。使用左侧的控件调整麦克风和摄像头。",
+      "subtitle": "您的提要现在正在混合到 {name} 的现场制作中。"
+    },
+    "poweredBy": "由 AntStudio WebRTC 桥提供支持",
+    "toasts": {
+      "hostUnmutedMic": "主持未静音的麦克风",
+      "hostMutedMic": "主持人麦克风静音",
+      "hostEnabledCam": "主机启用摄像头",
+      "hostDisabledCam": "主持人禁用摄像头",
+      "requestSent": "请求已发送",
+      "requestAccepted": "请求已接受",
+      "requestRejected": "请求被拒绝",
+      "kickedOut": "被踢出局",
+      "muted": "静音",
+      "unmuted": "取消静音",
+      "cameraOn": "相机开启",
+      "cameraOff": "相机关闭",
+      "hostApproved": "主持人批准"
+    }
+  },
+  "joinOrg": {
+    "validating": "正在验证",
+    "validatingDesc": "验证描述",
+    "invite": {
+      "title": "邀请",
+      "desc1": "您已被邀请加入该组织",
+      "desc2": "请确认加入组织",
+      "decline": "衰退",
+      "accept": "接受"
+    },
+    "error": {
+      "title": "错误",
+      "invalidOrExpired": "无效或过期",
+      "validationFailed": "验证失败"
+    },
+    "toasts": {
+      "error": "错误"
+    }
+  },
+  "licensePortal": {
+    "header": {
+      "title": "许可证门户",
+      "subtitle": "管理您的许可证"
+    },
+    "actions": {
+      "support": "支持",
+      "upgrade": "升级"
+    },
+    "sidebar": {
+      "registries": "登记处"
+    },
+    "license": {
+      "keyId": "密钥 ID",
+      "units": "单位"
+    },
+    "empty": {
+      "title": "无许可证"
+    },
+    "telemetry": {
+      "title": "遥测",
+      "operational": "操作",
+      "extend": "延长",
+      "active": "积极的",
+      "lastHeartbeat": "最后一次心跳",
+      "empty": {
+        "title": "无遥测",
+        "desc": "没有可用的遥测数据"
+      },
+      "selectRegistry": "选择注册表"
+    },
+    "pricing": {
+      "operationalTiers": "运营层级",
+      "title": "定价",
+      "subtitle": "定价计划",
+      "popular": "受欢迎的",
+      "edgeUnits": "边缘单位",
+      "usersPerUnit": "每单位用户数",
+      "projectsPerUnit": "每单位项目数"
+    },
+    "toasts": {
+      "checkoutFailed": "结账失败",
+      "paymentFailed": "付款失败",
+      "paymentExpired": "付款已过期",
+      "paymentVerificationFailed": "付款验证失败",
+      "paymentProcessingError": "付款处理错误"
+    },
+    "payment": {
+      "gateway": "网关"
+    }
+  },
+  "mobileIngest": {
+    "status": {
+      "live": "居住",
+      "standby": "支持"
+    },
+    "stats": {
+      "bitrate": "比特率",
+      "latency": "延迟",
+      "deviceTemp": "设备温度",
+      "tempNormal": "温度正常",
+      "resolution": "解决"
+    },
+    "pairing": {
+      "title": "移动摄取",
+      "desc": "将您的移动设备与房间配对"
+    }
+  },
+  "organization": {
+    "title": "组织",
+    "actions": {
+      "sync": "同步",
+      "create": "创造"
+    },
+    "members": {
+      "title": "会员",
+      "invite": "邀请",
+      "actions": {
+        "modifyAccess": "修改访问权限",
+        "revoke": "撤销"
+      }
+    },
+    "invitations": {
+      "pending": "待办的",
+      "status": {
+        "pending": "待办的"
+      }
+    },
+    "sidebar": {
+      "activeContext": "主动语境",
+      "seats": {
+        "title": "座位数",
+        "engaged": "已订婚的"
+      },
+      "identity": {
+        "title": "身份",
+        "discovery": "发现",
+        "customize": "定制"
+      }
+    },
+    "empty": {
+      "title": "无组织",
+      "desc": "没有找到组织"
+    },
+    "dialogs": {
+      "create": {
+        "submit": "提交"
+      },
+      "invite": {
+        "submit": "提交"
+      }
+    }
+  },
+  "paymentSuccess": {
+    "viewSubscription": "查看订阅"
+  },
+  "platformCallback": {
+    "waitDesc": "正在连接到您的平台...",
+    "error": {
+      "title": "错误",
+      "action": "行动"
+    },
+    "paymentGateway": "支付网关",
+    "service": "服务",
+    "errors": {
+      "paymentCancelled": "付款已取消",
+      "exchangeFailed": "兑换失败"
+    },
+    "connecting": "正在连接...",
+    "connected": "已连接",
+    "disconnected": "已断开连接"
+  },
+  "platformCMS": {
+    "header": {
+      "subtitle": "管理您的平台内容"
+    },
+    "actions": {
+      "upload": "上传",
+      "uploading": "上传中"
+    },
+    "stats": {
+      "subscribers": "订阅者",
+      "views": "意见",
+      "library": "图书馆",
+      "published": "已发表"
+    },
+    "empty": {
+      "title": "没有内容",
+      "desc": "没有找到内容"
+    },
+    "analytics": {
+      "engagement": "订婚",
+      "avgViews": "平均观看次数",
+      "topPerforming": "表现最佳"
+    },
+    "comments": {
+      "empty": "空的"
+    },
+    "dialogs": {
+      "upload": {
+        "title": "上传视频",
+        "fields": {
+          "title": "标题",
+          "description": "描述"
+        },
+        "placeholders": {
+          "clickToUpload": "点击上传",
+          "selectArchive": "选择存档"
+        },
+        "tabs": {
+          "local": "当地的",
+          "archive": "档案"
+        }
+      },
+      "live": {
+        "title": "上线",
+        "fields": {
+          "title": "标题",
+          "privacy": "隐私"
+        },
+        "refresh": "刷新",
+        "launch": "发射",
+        "privacy": {
+          "public": "民众",
+          "private": "私人的",
+          "unlisted": "未上市"
+        }
+      }
+    },
+    "tabs": {
+      "videos": "视频",
+      "analytics": "分析",
+      "comments": "评论",
+      "overview": "概述"
+    },
+    "filters": {
+      "search": "搜索",
+      "published": "已发表",
+      "draft": "草稿",
+      "live": "居住",
+      "offline": "离线",
+      "sortBy": "排序方式",
+      "newest": "最新",
+      "mostViews": "观看次数最多"
+    }
+  },
+  "platforms": {
+    "status": {
+      "connected": "已连接",
+      "disconnected": "已断开连接",
+      "expired": "已到期"
+    },
+    "actions": {
+      "goLive": "上线",
+      "connectNew": "连接新",
+      "manage": "管理",
+      "disconnect": "断开",
+      "connected": "已连接"
+    },
+    "dialogs": {
+      "connect": {
+        "fields": {
+          "rtmpUrl": "RTMP 网址",
+          "streamKey": "串流密钥",
+          "internalName": "内部名称",
+          "serverUrl": "服务器网址",
+          "adminEmail": "管理员邮箱",
+          "password": "密码",
+          "appName": "应用程序名称"
+        },
+        "title": "连接平台",
+        "oauthDesc": "将 {platform} 连接到 {appName}",
+        "placeholders": {
+          "internalName": "内部名称",
+          "serverUrl": "服务器网址",
+          "adminEmail": "管理员邮箱",
+          "password": "密码",
+          "appName": "应用程序名称",
+          "amsName": "AMS 应用程序名称",
+          "rtmpName": "RTMP 流名称"
+        }
+      }
+    },
+    "header": {
+      "connected": "已连接",
+      "platforms": "平台",
+      "subtitle": "管理您的流媒体平台"
+    },
+    "empty": {
+      "title": "无平台",
+      "desc": "没有找到平台"
+    },
+    "noEmail": "没有电子邮件",
+    "confirmDisconnect": "您确定要断开该平台的连接吗？",
+    "toasts": {
+      "authUrlFailed": "OAuth 失败",
+      "nameRequired": "请输入平台名称",
+      "serverAndEmailRequired": "服务器 URL 和电子邮件为必填项",
+      "passwordRequired": "需要密码",
+      "rtmpAndKeyRequired": "RTMP URL 和 Stream Key 为必填项",
+      "syncing": "正在同步 {name}",
+      "syncSuccess": "同步成功",
+      "authError": ""
+    }
+  },
+  "remoteCam": {
+    "header": {
+      "title": "远程摄像头"
+    },
+    "pairing": {
+      "title": "配对远程摄像头",
+      "subtitle": "将您的远程摄像头与房间配对",
+      "enableAction": "启用操作"
+    },
+    "status": {
+      "live": "居住",
+      "ready": "准备好",
+      "onAir": "正在播出",
+      "awaitingApproval": "等待批准"
+    },
+    "actions": {
+      "startBroadcast": "开始广播",
+      "disconnect": "断开"
+    },
+    "footer": {
+      "p2pBridge": "P2p桥接器"
+    },
+    "toasts": {
+      "front": "正面",
+      "back": "后退",
+      "hostUnmuted": "主机取消静音",
+      "hostMuted": "主机静音",
+      "hostEnabledCam": "主机启用摄像头",
+      "hostDisabledCam": "主持人禁用摄像头",
+      "cameraActive": "相机激活",
+      "cameraInactive": "相机不活动"
+    }
+  },
+  "viral": {
+    "header": {
+      "viral": "流行趋势",
+      "syndication": "分配",
+      "hub": "中心"
+    },
+    "subtitle": "管理您的病毒式内容洞察",
+    "sync": "同步",
+    "refresh": "刷新",
+    "stats": {
+      "vsLastWeek": "与上周相比",
+      "views": "意见",
+      "engagement": "订婚",
+      "ctr": "点击率",
+      "conversions": "转换",
+      "totalViews": "总观看次数",
+      "totalEngagement": "全面参与",
+      "totalCtr": "总点击率",
+      "totalConversions": "总转化次数",
+      "totalReach": "总覆盖范围",
+      "shares": "股份",
+      "stability": "稳定",
+      "growth": "生长"
+    },
+    "views": {
+      "overview": "概述",
+      "analytics": "分析",
+      "calendar": "日历",
+      "abLab": "抗体实验室"
+    },
+    "history": {
+      "title": "历史",
+      "filters": {
+        "all": "全部",
+        "success": "成功",
+        "failed": "失败的"
+      },
+      "syncing": "正在同步",
+      "empty": {
+        "title": "没有历史记录",
+        "desc": "没有找到历史记录",
+        "start": "开始"
+      },
+      "columns": {
+        "content": "内容",
+        "channel": "渠道",
+        "status": "地位",
+        "performance": "表现",
+        "date": "日期",
+        "actions": "行动"
+      },
+      "actions": {
+        "view": "看法",
+        "edit": "编辑",
+        "delete": "删除",
+        "manageComments": "管理评论",
+        "viewExternal": "查看外部",
+        "retry": "重试",
+        "cancelSchedule": "取消日程"
+      }
+    },
+    "status": {
+      "success": "成功",
+      "failed": "失败的",
+      "pending": "待办的"
+    }
+  },
+  "videoEditor": {
+    "sidebar": {
+      "scene": "场景",
+      "template": "模板",
+      "magic": "魔法",
+      "element": "元素",
+      "text": "文本",
+      "image": "图片",
+      "video": "视频",
+      "audio": "声音的",
+      "upload": "上传",
+      "record": "记录",
+      "cloud": "云",
+      "layers": "层数",
+      "formats": "格式"
+    },
+    "scene": {
+      "title": "场景",
+      "add": "添加场景",
+      "edit": "编辑",
+      "moveUp": "向上移动",
+      "moveDown": "下移",
+      "duplicate": "复制",
+      "delete": "删除",
+      "sceneIndex": "场景 {index}"
+    },
+    "template": {
+      "title": "模板",
+      "searchPlaceholder": "搜索模板...",
+      "public": "民众",
+      "private": "私人的",
+      "unknownMode": "未知模式",
+      "noTemplatesFound": "未找到模板",
+      "replaceScene": "替换场景",
+      "newScene": "新场景",
+      "localTemplates": "本地模板",
+      "loadJson": "加载 JSON",
+      "noLocalTemplates": "没有本地模板"
+    },
+    "ai": {
+      "title": "双子座人工智能",
+      "breadcrumbTools": "工具",
+      "creativeSuite": "创意套件",
+      "creativeSuiteDesc": "使用 Google 最强大的 AI 模型为您的工作流程提供支持。",
+      "voiceGeneration": "语音生成",
+      "voiceGenerationDesc": "使用情感 AI 进行文本转语音",
+      "imageGeneration": "图像生成",
+      "imageGenerationDesc": "生成生产就绪资产",
+      "videoGeneration": "视频生成",
+      "videoGenerationDesc": "根据提示创建视频剪辑",
+      "captionGeneration": "字幕生成",
+      "captionGenerationDesc": "自动生成字幕",
+      "musicGeneration": "音乐一代",
+      "musicGenerationDesc": "根据提示创建原创曲目",
+      "aiCreativeDirector": "人工智能创意总监",
+      "aiCreativeDirectorDesc": "脚本到视频的零到一自动化",
+      "aiTalkingHeads": "人工智能说话头",
+      "aiTalkingHeadsDesc": "口型同步头像视频生成",
+      "viralHighlights": "病毒式亮点",
+      "viralHighlightsDesc": "用于社交媒体的提取和裁剪剪辑",
+      "kineticTypography": "动态版式",
+      "kineticTypographyDesc": "动画字幕和运动跟踪",
+      "visualEnrichment": "视觉丰富",
+      "visualEnrichmentDesc": "AI 花絮和电影润色",
+      "aiAnalytics": "人工智能分析",
+      "aiAnalyticsDesc": "参与度分数和导出优化器",
+      "brandKit": "品牌套件",
+      "brandKitDesc": "风格转移和品牌强化",
+      "aiDubbing": "人工智能配音",
+      "aiDubbingDesc": "全球项目本地化和同步",
+      "sceneDetection": "场景检测",
+      "sceneDetectionDesc": "自动将视频分割成场景",
+      "autoCut": "自动切换节拍",
+      "autoCutDesc": "将场景与音频节奏同步",
+      "smartTrim": "智能修剪",
+      "smartTrimDesc": "自动消除无声间隙",
+      "backgroundRemoval": "背景去除",
+      "backgroundRemovalDesc": "删除图像背景",
+      "upscale": "高档",
+      "denoise": "去噪",
+      "imageVectorizer": "图像矢量化器",
+      "imageVectorizerDesc": "将图像转换为 SVG",
+      "autoReframe": "自动重构",
+      "autoReframeDesc": "将视频聚焦于主题",
+      "objectTracking": "物体追踪",
+      "objectTrackingDesc": "跟踪和查询对象",
+      "faceBlur": "脸部模糊",
+      "faceBlurDesc": "自动模糊脸部"
+    },
+    "timeline": {
+      "transitions": "过渡",
+      "showTiming": "显示时间",
+      "subtitle": "字幕",
+      "voiceover": "画外音",
+      "audio": "声音的",
+      "subtitleUpdated": "字幕已更新",
+      "uploadingVoiceover": "正在上传配音...",
+      "voiceoverSaved": "画外音已保存",
+      "voiceoverFailed": "保存画外音失败",
+      "timelineNotInitialized": "时间线未初始化"
+    },
+    "text": {
+      "title": "文本",
+      "searchPlaceholder": "搜索排版...",
+      "basicTexts": "基础课文",
+      "addTitle": "添加标题",
+      "addHeading": "添加标题",
+      "addParagraph": "添加一个段落",
+      "defaultTitle": "你的标题放在这里",
+      "defaultHeading": "您的标题位于此处",
+      "defaultParagraph": "你的段落放在这里"
+    },
+    "image": {
+      "title": "图片",
+      "searchPlaceholder": "搜索图片...",
+      "popular": "受欢迎的",
+      "uploads": "上传",
+      "upload": "上传",
+      "seeAll": "查看全部",
+      "noUploads": "没有上传",
+      "pixels": "像素",
+      "unsplash": "未飞溅",
+      "userImages": "我的图片",
+      "pixelsImages": "Pexels 库",
+      "unsplashImages": "Unsplash 库",
+      "replaceLoading": "图片正在更换中...",
+      "replaceSuccess": "图片已被替换",
+      "replaceError": "替换图像时遇到错误",
+      "addLoading": "图片正在加载中...",
+      "addSuccess": "图像已添加到画板",
+      "addError": "添加图像时遇到错误",
+      "loadError": "加载图像资源失败",
+      "noImagesFound": "未找到图像"
+    },
+    "video": {
+      "title": "视频",
+      "searchPlaceholder": "搜索视频...",
+      "popular": "受欢迎的",
+      "uploads": "上传",
+      "upload": "上传",
+      "seeAll": "查看全部",
+      "noUploads": "没有上传",
+      "stockVideos": "库存视频",
+      "userVideos": "我的视频",
+      "pixelsVideos": "Pexels 库",
+      "uploadLoading": "您的视频正在上传中...",
+      "uploadSuccess": "视频已成功上传",
+      "uploadError": "上传视频时遇到错误",
+      "replaceLoading": "视频正在更换中...",
+      "replaceSuccess": "视频已更换",
+      "replaceError": "替换视频时遇到错误",
+      "addLoading": "视频正在加载中...",
+      "addSuccess": "视频已添加到画板",
+      "addError": "添加视频时遇到错误",
+      "loadError": "无法加载视频资源",
+      "videoLabel": "视频"
+    },
+    "recorder": {
+      "title": "录音机",
+      "recording": "建议 {time}",
+      "studioMode": "工作室模式",
+      "masterControl": "主控",
+      "recordingLive": "现场录音",
+      "idle": "闲置的",
+      "stopRecording": "停止录音",
+      "startSession": "开始工作室会议",
+      "settings": "设置",
+      "settingsDesc": "过滤器、布局、设备、AI",
+      "captureReady": "捕捉就绪",
+      "addToTimeline": "添加到时间轴",
+      "saveFile": "保存文件",
+      "teleprompter": "提词器",
+      "stop": "停止",
+      "scroll": "滚动",
+      "selectAvatar": "选择演示头像",
+      "avatarPrompt": "您希望人工智能影响者来主持您的白板演示吗？您也可以跳过此步骤并仅用您的声音进行演示。",
+      "noAvatar": "无头像",
+      "voiceOnly": "仅语音",
+      "cancel": "取消",
+      "addSuccess": "录音已添加到时间线！",
+      "saveError": "保存录音失败"
+    },
+    "layers": {
+      "title": "层数",
+      "hide": "隐藏层",
+      "show": "显示图层",
+      "unlock": "解锁层",
+      "lock": "锁定层",
+      "delete": "删除图层",
+      "unnamed": "未命名层",
+      "noLayers": "无层",
+      "emptyStateDesc": "添加元素以开始使用"
+    },
+    "element": {
+      "title": "元素",
+      "searchPlaceholder": "搜索元素...",
+      "popular": "受欢迎的",
+      "basicShapes": "基本形状",
+      "abstractShapes": "抽象形状",
+      "frames": "镜框",
+      "lines": "线路",
+      "gifs": "动图",
+      "stickers": "贴纸",
+      "emoji": "表情符号",
+      "seeAll": "查看全部",
+      "replaceGifLoading": "gif 正在更换...",
+      "replaceGifSuccess": "gif已被替换",
+      "replaceGifError": "替换 gif 时遇到错误",
+      "addGifLoading": "gif 资源正在加载...",
+      "addGifSuccess": "gif 资源已添加到画板",
+      "addGifError": "添加 gif 资源时遇到错误",
+      "loadGifError": "无法加载 gif 资源",
+      "replaceEmojiLoading": "表情符号正在被替换...",
+      "replaceEmojiSuccess": "表情符号已被替换",
+      "replaceEmojiError": "替换表情符号时遇到错误",
+      "addEmojiLoading": "表情符号正在加载中...",
+      "addEmojiSuccess": "表情符号已添加到画板",
+      "addEmojiError": "添加表情符号时遇到错误",
+      "loadEmojiError": "无法加载表情符号资源"
+    },
+    "chart": {
+      "title": "图表",
+      "searchPlaceholder": "搜索图表...",
+      "basicCharts": "基本图表",
+      "bar": "条形图",
+      "line": "折线图",
+      "pie": "饼图"
+    },
+    "cloud": {
+      "title": "云盘",
+      "subtitle": "您的统一资产中心",
+      "searchPlaceholder": "搜索云资产...",
+      "noAssets": "未找到云资产",
+      "corsWarning": "必须在存储桶上启用跨源 (CORS) 才能直接浏览器导入。",
+      "unsupportedFormat": "不支持的文件格式",
+      "syncSuccess": "资产同步成功",
+      "importError": "导入资源失败"
+    },
+    "prompt": {
+      "title": "人工智能提示器",
+      "selectFormat": "选择内容格式",
+      "topicInstructions": "主题与创意说明",
+      "placeholder": "生成高转化视频广告...",
+      "generateScene": "生成场景",
+      "footerNote": "我们的人工智能将分析您的提示，以生成具有最佳时间和资源的可用于制作的视频场景。",
+      "generating": "正在生成您的视频广告...",
+      "generated": "您的视频广告已生成",
+      "generateError": "生成广告时遇到错误",
+      "feed": "喂养",
+      "story": "故事",
+      "banner": "横幅",
+      "loadingSession": "正在加载提示会话...",
+      "sessionLoaded": "提示会话已加载",
+      "loadSessionError": "无法加载提示会话",
+      "searchPlaceholder": "搜索会话...",
+      "newSession": "新会议",
+      "recentSessions": "最近的会议",
+      "seeAll": "查看全部",
+      "duration": "期间"
+    },
+    "format": {
+      "title": "格式",
+      "searchPlaceholder": "搜索格式..."
+    },
+    "export": {
+      "title": "导出视频",
+      "exportingStatus": "出口...",
+      "chooseQuality": "选择质量预设",
+      "cancelExport": "取消导出",
+      "exportVideo": "导出视频",
+      "cancel": "取消",
+      "advancedSettings": "高级设置",
+      "resolution": "解决",
+      "frameRate": "帧率",
+      "bitrate": "比特率",
+      "codec": "编解码器",
+      "bitrateLow": "低的",
+      "bitrateMedium": "中等的",
+      "bitrateHigh": "高的",
+      "bitrateUltra": "极端主义者",
+      "codecCompatible": "兼容的",
+      "codecEfficient": "文件较小",
+      "timeRemaining": "剩余时间",
+      "estimatedSize": "预计尺寸",
+      "successMessage": "视频导出成功！",
+      "failedMessage": "导出失败",
+      "confirmCancel": "您确定要取消导出吗？",
+      "cancelledMessage": "出口取消",
+      "presets": {
+        "draft": "草稿",
+        "draftDesc": "快速导出预览",
+        "standard": "标准",
+        "standardDesc": "平衡的质量和尺寸",
+        "high": "高的",
+        "highDesc": "高品质分享",
+        "ultra": "极端主义者",
+        "ultraDesc": "最高画质 (4K)"
+      }
+    },
+    "shortcuts": {
+      "title": "键盘快捷键",
+      "subtitle": "定制您的工作流程",
+      "searchPlaceholder": "搜索快捷方式...",
+      "reset": "重置",
+      "pressKeys": "按键...",
+      "edit": "编辑",
+      "save": "节省",
+      "cancel": "取消",
+      "tip": "提示：单击任意快捷方式旁边的“编辑”，然后按所需的组合键",
+      "categories": {
+        "playback": "回放",
+        "editing": "编辑",
+        "timeline": "时间轴",
+        "selection": "选择",
+        "effects": "效果和工具",
+        "general": "一般的"
+      }
+    },
+    "audio": {
+      "title": "音频",
+      "searchPlaceholder": "搜索音频...",
+      "uploads": "上传",
+      "music": "音乐",
+      "soundFx": "音效",
+      "userAudios": "我的音频",
+      "musics": "音乐库",
+      "sounds": "音效",
+      "seeAll": "查看全部",
+      "noUploads": "没有上传",
+      "upload": "上传",
+      "uploadLoading": "正在上传您的音频资源...",
+      "uploadSuccess": "音频已成功上传",
+      "uploadError": "上传音频时遇到错误",
+      "noAudiosFound": "未找到音频",
+      "noMusicFound": "未找到音乐",
+      "voiceLab": "语音实验室",
+      "addLoading": "正在加载音频资源...",
+      "addSuccess": "音频资源已添加到画板",
+      "addError": "添加音频资源时遇到错误",
+      "loadError": "无法加载音频资源"
+    },
+    "upload": {
+      "title": "上传",
+      "searchPlaceholder": "搜索上传...",
+      "images": "图片",
+      "videos": "视频",
+      "audios": "音频",
+      "upload": "上传",
+      "seeAll": "查看全部",
+      "uploadLoading": "您的资源正在上传...",
+      "uploadSuccess": "资源已成功上传",
+      "uploadError": "上传资产时遇到错误",
+      "replaceImageLoading": "图片正在更换中...",
+      "replaceImageSuccess": "图片已被替换",
+      "replaceImageError": "替换图像时遇到错误",
+      "addImageLoading": "图片正在加载中...",
+      "addImageSuccess": "图像已添加到画板",
+      "addImageError": "添加图像资源时遇到错误",
+      "addVideoLoading": "视频资源正在加载中...",
+      "addVideoSuccess": "视频资源已添加到画板",
+      "addVideoError": "添加视频资源时遇到错误",
+      "addAudioLoading": "正在加载音频资源...",
+      "addAudioSuccess": "音频资源已添加到画板",
+      "addAudioError": "添加音频资源时遇到错误"
+    },
+    "arrange": {
+      "title": "安排",
+      "align": "对齐",
+      "distribution": "分配",
+      "position": "位置",
+      "timelineManagement": "时间线管理",
+      "duration": "期间",
+      "offset": "抵消",
+      "layerOrder": "层顺序",
+      "alignment": "结盟",
+      "mirroring": "镜像",
+      "horizontal": "水平的",
+      "vertical": "垂直的",
+      "transform": "转换",
+      "width": "宽度",
+      "height": "高度",
+      "positionX": "位置 X",
+      "positionY": "位置 Y",
+      "angle": "角度",
+      "top": "顶部",
+      "bottom": "底部",
+      "left": "左边",
+      "right": "正确的",
+      "verticalCenter": "垂直中心",
+      "horizontalCenter": "水平居中",
+      "distributeVertically": "垂直分布",
+      "distributeHorizontally": "水平分布",
+      "forward": "向前",
+      "backward": "落后",
+      "front": "正面",
+      "back": "后退"
+    },
+    "visual": {
+      "title": "视觉的",
+      "showLayer": "显示图层",
+      "hideLayer": "隐藏层",
+      "visualizerMode": "展示台模式",
+      "barWidth": "条形宽度",
+      "barSpace": "酒吧空间",
+      "barColor": "条形颜色",
+      "symmetric": "对称",
+      "capsHeight": "瓶盖高度",
+      "dropSpeed": "下降速度",
+      "capsColor": "瓶盖颜色",
+      "brickHeight": "砖高度",
+      "brickSpace": "砖空间",
+      "lineWidth": "线宽",
+      "lineSpace": "行间距",
+      "lineColor": "线条颜色",
+      "outline": "大纲",
+      "color": "颜色",
+      "progressBar": "进度条",
+      "width": "宽度",
+      "clockwise": "顺时针",
+      "meterSpace": "米空间",
+      "rotateGraph": "旋转图表",
+      "playtimeDisplay": "播放时间显示",
+      "playtimeSlider": "游戏时间滑块",
+      "fontSize": "字体大小",
+      "family": "家庭",
+      "sliderWidth": "滑块宽度",
+      "sliderColor": "滑块颜色",
+      "playedWidth": "演奏宽度",
+      "playedColor": "玩色",
+      "includeMilliseconds": "包括毫秒",
+      "positionBottom": "位置底部",
+      "bars": "酒吧",
+      "wave": "波形",
+      "circle": "圆圈",
+      "meter": "仪表"
+    },
+    "toolbar": {
+      "text": "文本",
+      "shape": "形状",
+      "line": "线",
+      "image": "图像",
+      "video": "视频",
+      "audio": "声音的",
+      "crop": "庄稼",
+      "trim": "修剪",
+      "activeSelection": "选择",
+      "fill": "充满",
+      "stroke": "中风",
+      "opacity": "不透明度",
+      "position": "位置",
+      "timeline": "时间轴",
+      "bringForward": "提出",
+      "sendBackward": "向后发送",
+      "duplicate": "复制",
+      "delete": "删除",
+      "group": "团体",
+      "ungroup": "取消分组",
+      "reset": "重置",
+      "cancel": "取消",
+      "apply": "申请",
+      "volume": "体积",
+      "filters": "过滤器",
+      "mask": "面具",
+      "intensity": "强度"
+    },
+    "menubar": {
+      "file": "文件",
+      "edit": "编辑",
+      "view": "看法",
+      "help": "帮助",
+      "newProject": "新项目",
+      "openProject": "开放项目",
+      "saveProject": "保存项目",
+      "export": "出口",
+      "undo": "撤消",
+      "redo": "重做",
+      "copy": "复制",
+      "paste": "粘贴",
+      "delete": "删除",
+      "selectAll": "选择全部",
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "fitToScreen": "适合屏幕",
+      "shortcuts": "快捷方式",
+      "documentation": "文档",
+      "unnamedProject": "未命名项目"
+    },
+    "animation": {
+      "title": "动画",
+      "page": "页",
+      "element": "元素",
+      "onEnter": "输入时",
+      "display": "展示",
+      "onExit": "退出时",
+      "motion": "运动",
+      "motionTracks": "运动轨迹",
+      "addKeyframesPath": "添加关键帧以创建路径",
+      "clearAll": "全部清除",
+      "addKeyframe": "添加关键帧",
+      "noKeyframesYet": "尚未为此元素添加关键帧",
+      "previewMotion": "预览动作",
+      "at": "在",
+      "basicAnimations": "基本动画",
+      "textAnimations": "文字动画",
+      "easingType": "缓动型",
+      "durationS": "持续时间",
+      "springPhysics": "弹簧物理",
+      "adjustPhysics": "调整物理",
+      "mass": "大量的",
+      "stiffness": "刚性",
+      "damping": "减震",
+      "velocity": "速度",
+      "textStyle": "文字样式",
+      "textStyles": {
+        "letter": "信",
+        "word": "单词",
+        "line": "线"
+      },
+      "names": {
+        "none": "没有任何",
+        "fade": "褪色",
+        "slide-left": "向左滑动",
+        "slide-right": "向右滑动",
+        "pan-left": "向左平移",
+        "pan-right": "向右平移",
+        "rise-up": "崛起",
+        "sink-down": "沉下去",
+        "wipe": "擦拭",
+        "baseline": "基线",
+        "pop": "流行音乐",
+        "typewriter": "打字机",
+        "block": "堵塞",
+        "merge": "合并",
+        "burst": "爆裂",
+        "clarify": "阐明",
+        "bounce": "弹跳",
+        "ascend": "登高",
+        "rotate": "旋转",
+        "zoom-in": "放大",
+        "zoom-out": "缩小",
+        "blink": "眨"
+      },
+      "easings": {
+        "linear": "线性",
+        "easeInSine": "缓入",
+        "easeOutSine": "缓出",
+        "easeInOutSine": "缓入缓出",
+        "easeOutInSine": "缓入",
+        "easeInElastic": "轻松弹力",
+        "easeOutElastic": "缓出弹性",
+        "easeInOutElastic": "缓入缓出弹性",
+        "easeOutInElastic": "在弹性中缓出",
+        "spring": "春天"
+      }
+    },
+    "clip": {
+      "title": "剪辑蒙版",
+      "removeMask": "删除剪辑蒙版",
+      "basicShapes": "基本形状",
+      "abstract": "抽象的",
+      "frames": "镜框",
+      "seeAll": "查看全部",
+      "noElements": "无元素样品",
+      "noSceneElements": "没有可用的场景元素",
+      "shapes": "形状"
+    },
+    "fill": {
+      "title": "充满",
+      "solid": "坚硬的",
+      "gradient": "坡度"
+    },
+    "filters": {
+      "title": "过滤器",
+      "reset": "重置",
+      "filter": "筛选",
+      "adjust": "调整",
+      "intensity": "强度",
+      "none": "没有任何",
+      "brightness": "亮度",
+      "contrast": "对比",
+      "saturation": "饱和",
+      "vibrance": "活力",
+      "noise": "噪音",
+      "pixelate": "像素化",
+      "hue": "色调",
+      "blur": "模糊",
+      "gamma": "伽玛",
+      "sepia": "棕褐色",
+      "blackWhite": "黑与白",
+      "brownie": "布朗尼",
+      "vintage": "优质的",
+      "kodachrome": "柯达彩色",
+      "technicolor": "特艺彩色",
+      "polaroid": "宝丽来",
+      "invert": "倒置",
+      "grayscale": "灰度",
+      "blendColor": "混合颜色",
+      "duotone": "双色调",
+      "removeColor": "去除颜色",
+      "tolerance": "宽容",
+      "opacity": "不透明度",
+      "blendControls": "混合控制",
+      "light": "光",
+      "dark": "黑暗的",
+      "filmGrain": "胶片颗粒",
+      "vignette": "小插图",
+      "chromaticAberration": "色差",
+      "ice-water": "冰水",
+      "summer-heat": "夏季炎热",
+      "fever": "发烧",
+      "strawberry": "草莓",
+      "ibiza": "伊维萨岛",
+      "sweet-sunset": "甜蜜的夕阳",
+      "blue-rock": "蓝岩",
+      "ocean-way": "海洋之路",
+      "little-red": "小红",
+      "vintage-may": "复古五月"
+    },
+    "fonts": {
+      "title": "字体",
+      "searchPlaceholder": "搜索字体..."
+    },
+    "audioSettings": {
+      "title": "音频设置",
+      "showLayer": "显示图层",
+      "hideLayer": "隐藏层",
+      "volume": "体积",
+      "fadeIn": "淡入",
+      "fadeOut": "淡出",
+      "clipName": "剪辑名称",
+      "aiUtilities": "人工智能实用程序",
+      "generateVoiceover": "生成 AI 配音",
+      "aiDescription": "将此剪辑的文本转换为工作室质量的旁白。"
+    },
+    "stroke": {
+      "title": "中风",
+      "pickColorError": "无法从页面选择颜色"
+    },
+    "aiMagic": {
+      "title": "人工智能魔法",
+      "magicWrite": "魔写"
+    },
+    "transition": {
+      "title": "过渡",
+      "duration": "期间",
+      "direction": "方向",
+      "presets": "转场预设",
+      "none": "没有任何",
+      "fade": "交叉淡入淡出",
+      "blur": "模糊溶解",
+      "glitch": "数字故障",
+      "lightLeak": "漏光",
+      "morph": "液体变形",
+      "zoomBlur": "变焦模糊",
+      "wipe": "经典擦拭",
+      "slide": "滑动推",
+      "cube": "3D立方体",
+      "flip": "3D翻转",
+      "circle": "虹膜圈",
+      "left": "左边",
+      "right": "正确的",
+      "up": "向上",
+      "down": "向下"
+    },
+    "position": {
+      "title": "位置",
+      "arrange": "安排",
+      "layers": "层数"
+    },
+    "footer": {
+      "tracks": "曲目",
+      "scenes": "场景",
+      "visuals": "视觉效果",
+      "audio": "声音的",
+      "subtitles": "字幕",
+      "scene": "场景",
+      "selectTransition": "选择过渡",
+      "duplicate": "复制",
+      "copy": "复制",
+      "delete": "删除"
+    },
+    "playback": {
+      "splitClip": "分割剪辑",
+      "splitKeepLeft": "分开并保持左侧",
+      "splitKeepRight": "分开并靠右",
+      "duplicateClip": "重复剪辑",
+      "deleteElement": "删除元素",
+      "viewportFormat": "视口画布格式",
+      "canvasScale": "画布比例",
+      "timelineZoom": "时间轴缩放",
+      "presets": "预设",
+      "duration": "期间",
+      "globalTimeline": "全球项目时间表",
+      "timeLimit": "时限",
+      "toggleTimeline": "切换时间轴面板",
+      "timeline": "时间轴"
+    }
+  },
+  "ai": {
+    "greetings": {
+      "script": {
+        "title": "你好！我收到了你的电影剧本。 📄",
+        "steps": "接下来，我将自动执行以下步骤：",
+        "step1": "分析您上传的文件中的脚本内容",
+        "step2": "根据脚本创建项目摘要",
+        "step3": "为视频构建详细的故事板",
+        "footer": "故事板完成后，我将在生成视觉效果之前暂停以供您确认。请稍等！ ⏳"
+      },
+      "topic": {
+        "title": "你好！我正在开始设置您的视频项目。 🚀",
+        "steps": "接下来，我将执行以下步骤：",
+        "step1": "分析想法和最新趋势",
+        "step2": "创建详细的创意简介",
+        "step3": "构建完整的故事板",
+        "footer": "在创建视觉效果之前，我会停下来听听您的评论。请继续关注！ ⏳"
+      },
+      "visualGuide": {
+        "title": "系统已经完成了该项目的详细故事板，包括关键人物和设置。",
+        "footer": "请查看上面的故事板内容。如果您想在我计划视觉制作之前调整有关角色设计或设置的任何细节，请告诉我。",
+        "steps": "以下是开始实现这些场景的后续步骤：",
+        "step1": "设计视觉策略以确定最合适的技术方法和艺术模式。",
+        "step2": "创建角色和关键物品。这是我们设计运动场景之前确保视觉一致性的强制性步骤。",
+        "step3": "生成背景音乐和画外音来营造气氛。"
+      }
+    },
+    "settings": {
+      "ai": {
+        "capabilities": {}
+      }
+    }
+  },
+  "saleWizard": {
+    "title": "实时设置向导",
+    "badge": "销售",
+    "step": "步骤 {step}（共 7 步）：{name}",
+    "steps": {
+      "agent": "AI智能体选择",
+      "product": "产品选型",
+      "influencer": "影响者分配",
+      "video": "AI 视频助手准备",
+      "script": "脚本编排",
+      "config": "场景&平台配置",
+      "review": "最终审查"
+    },
+    "agents": {
+      "title": "人工智能代理",
+      "subtitle": "选择您的AI代理进行直播",
+      "empty": "没有出现任何人工智能实体",
+      "emptySub": "首先在面板中创建AI影响者"
+    },
+    "products": {
+      "autoMode": "自动（智能）模式",
+      "autoModeDesc": "根据买家意图自动选择产品并对其进行排名",
+      "search": "搜索产品...",
+      "noProducts": "没有找到产品"
+    },
+    "videos": {
+      "language": "智能语言",
+      "languageDesc": "在直播中选择您的语言",
+      "generate": "生成人工智能视频",
+      "generating": "生成...",
+      "awaiting": "等待视频助手",
+      "generateVideo": "生成视频",
+      "copyPrompt": "复制提示",
+      "upload": "上传",
+      "promptCopied": "提示已复制到剪贴板"
+    },
+    "script": {
+      "title": "故事板",
+      "subtitle": "生成直播故事板",
+      "generate": "人工智能一代",
+      "emptyDesc": "尚未生成脚本",
+      "generateStoryboard": "生成故事板",
+      "placeholder": "影响者怎么说？"
+    },
+    "config": {
+      "title": "平台&场景",
+      "subtitle": "选择您的流媒体平台",
+      "targetPlatforms": "目标平台",
+      "noAccounts": "没有关联账户。请在设置中添加一项。",
+      "frameRatio": "帧率",
+      "landscape": "景观",
+      "portrait": "肖像",
+      "background": "背景",
+      "searchBg": "搜索..."
+    },
+    "review": {
+      "ready": "准备上线",
+      "readyDesc": "我们准备了 {products} 产品并与 {agents} 影响者进行协调。所有视觉辅助工具和脚本都是同步的。",
+      "selectedProducts": "精选产品",
+      "language": "语言",
+      "aspectRatio": "纵横比",
+      "targetPlatforms": "目标平台",
+      "aiAgents": "人工智能代理",
+      "noPlatforms": "未选择平台"
+    },
+    "buttons": {
+      "back": "后退",
+      "next": "下一个",
+      "goLive": "上线"
+    }
+  },
+  "saleStudio": {
+    "title": "人工智能主播",
+    "subtitle": "自主销售引擎",
+    "setup": "设置",
+    "liveMode": "现场模式",
+    "viewers": "{count} 观众",
+    "exit": "出口",
+    "spotlightPitch": "焦点推介",
+    "spotlight": "工作室聚光灯",
+    "socialProof": "社会证明：42 位客户结账活跃！",
+    "loading": "加载销售堆栈",
+    "loadingSub": "绿地渲染加载中...",
+    "liveDialogue": "现场对话",
+    "aiMode": "人工智能模式",
+    "storyboardMode": "故事板模式",
+    "awaitingIngestion": "等待实时摄取...",
+    "startBroadcast": "开始广播",
+    "stopBroadcast": "停止广播",
+    "networkStatus": "WebRTC网络",
+    "excellent": "出色的",
+    "good": "好的",
+    "poor": "贫穷的"
+  }
+}

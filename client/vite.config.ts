@@ -5,11 +5,11 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 // import { VitePWA } from 'vite-plugin-pwa'
-import basicSsl from '@vitejs/plugin-basic-ssl';
+// import basicSsl from '@vitejs/plugin-basic-ssl';
 //local dev server
-const HOST = "localhost:4000";
-const WEB_URL = `http://localhost:4000`;
-const SOCKET_URL = `ws://localhost:4001/socket.io`;
+const HOST = "127.0.0.1:5000";
+const WEB_URL = `http://127.0.0.1:5000`;
+const SOCKET_URL = `http://127.0.0.1:5000`;
 //production server
 // const HOST = "antstudio.agrhub.com"
 // const WEB_URL = `https://${HOST}`;
@@ -21,7 +21,19 @@ const SOCKET_URL = `ws://localhost:4001/socket.io`;
 export default defineConfig({
     plugins: ([
         vue(),
-        basicSsl(),
+        // basicSsl(),
+        {
+            name: 'ignore-mediapipe-sourcemap',
+            enforce: 'pre',
+            transform(code: string, id: string) {
+                if (id.includes('@mediapipe') || id.includes('vision_bundle_mjs')) {
+                    return {
+                        code: code.replace(/\/\/# sourceMappingURL=.*/g, ''),
+                        map: null
+                    }
+                }
+            }
+        },
         AutoImport({
             imports: [
                 'vue',
@@ -32,14 +44,14 @@ export default defineConfig({
                 }
             ],
             resolvers: [ElementPlusResolver()],
-            dts: 'src/auto-imports.d.ts',
+            dts: false,
             eslintrc: {
                 enabled: true
             }
         }),
         Components({
             resolvers: [ElementPlusResolver()],
-            dts: 'src/components.d.ts',
+            dts: false,
             dirs: ['src/components']
         }),
         // VitePWA({
@@ -122,10 +134,9 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
         port: 3000,
-        https: {},
-
+        // https: {},
         headers: {
-            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
             // "Cross-Origin-Embedder-Policy": "credentialless",
         },
         proxy: {
@@ -136,7 +147,12 @@ export default defineConfig({
                 secure: false,
                 configure: (proxy: any, _options: any) => {
                     proxy.on('error', (err: any, _req: any, _res: any) => {
-                        console.log('[Proxy] Error:', err.message);
+                        if (err.code !== 'ECONNRESET' && err.code !== 'ECONNABORTED') {
+                            console.log('[Proxy] Error:', err.message);
+                        }
+                    });
+                    proxy.on('proxyReqWs', (_proxyReq: any, _req: any, socket: any) => {
+                        socket.on('error', (_err: any) => {});
                     });
                 }
             },
@@ -145,7 +161,17 @@ export default defineConfig({
                 ws: true,
                 changeOrigin: true,
                 secure: false,
-                rewrite: (path: string) => path.replace(/^\/api\/socket\.io/, '/socket.io')
+                rewrite: (path: string) => path.replace(/^\/api\/socket\.io/, '/socket.io'),
+                configure: (proxy: any, _options: any) => {
+                    proxy.on('error', (err: any, _req: any, _res: any) => {
+                        if (err.code !== 'ECONNRESET' && err.code !== 'ECONNABORTED') {
+                            console.log('[Proxy] Error:', err.message);
+                        }
+                    });
+                    proxy.on('proxyReqWs', (_proxyReq: any, _req: any, socket: any) => {
+                        socket.on('error', (_err: any) => {});
+                    });
+                }
             },
             '/api': {
                 target: WEB_URL,
@@ -158,7 +184,10 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
-        sourcemap: true
+        sourcemap: false,
+        minify: 'esbuild',
+        cssMinify: true,
+        target: 'esnext'
     },
     optimizeDeps: {
         exclude: ['mediabunny', '@ffmpeg/ffmpeg', '@ffmpeg/util', '@huggingface/transformers', '@mediapipe/tasks-vision']

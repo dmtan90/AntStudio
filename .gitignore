@@ -10,7 +10,6 @@ _server
 _pages
 _video-editor
 ams
-dist
 aistudio
 aistudio_source
 aistudio-data
@@ -18,6 +17,8 @@ server/logs
 server/node_modules
 server/server.log
 server/tmp
+server/dist
+server/src/scripts
 flow2api
 flow2api_tupdater
 Flow2API-Token-Updater
@@ -27,6 +28,13 @@ node_modules
 backup
 tmp
 standalone
+client/node_modules
+# Build outputs
+dist
+dist-*
+client/dist
+server/dist
+electron/dist
 
 # Logs
 logs
@@ -41,7 +49,9 @@ logs
 .env
 .env.*
 !.env.example
+!.env.electron
 pnpm-lock.yaml
+pnpm-workspace.yaml
 .vscode/settings.json
 server/build_log_utf8.txt
 server/build_log_v2.txt
@@ -55,3 +65,16 @@ server/migrate_systemLogger.mjs
 server/tsc_output.txt
 server/tsc_output_fixed.txt
 server/tsc_output_utf8.txt
+
+# Electron server dependencies build folder
+electron/server-deps
+electron/dist
+electron/.env.enc
+gcp-service-account.json
+client/package-lock.json
+server/package-lock.json
+electron/package-lock.json
+server/scripts/bin
+server/scripts/test_gmicloud_all_features.ts
+server/scripts/test_gmicloud_exact.ts
+*/*._

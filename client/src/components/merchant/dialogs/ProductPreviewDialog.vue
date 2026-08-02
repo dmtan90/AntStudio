@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Edit, Delete, Magic, CloseOne, Left, Right, 
-    Pic, Link, Eyes as Eye, FourArrows 
+    Pic, Link, Eyes as Eye, FourArrows, PlayOne
 } from '@icon-park/vue-next';
 import { getFileUrl } from '@/utils/api';
 import { useUIStore } from '@/stores/ui';
 import { useI18n } from 'vue-i18n';
+import { toast } from 'vue-sonner';
 
 const uiStore = useUIStore();
 const { t } = useI18n()
@@ -25,17 +26,48 @@ const visible = computed({
 // Gallery state
 const activeGalleryIndex = ref(0);
 
-const galleryImages = computed(() => {
-    if (!props.product) return [];
-    const imgs: string[] = [];
-    if (props.product.image) imgs.push(props.product.image);
-    if (props.product.images?.length) {
+const galleryItems = computed(() => {
+    const items: Array<{ type: 'image' | 'video'; url: string; embedUrl?: string; videoType?: string }> = [];
+    
+    // Add video as first item if it exists
+    if (props.product?.video) {
+        const details = getVideoDetails(props.product.video);
+        if (details.type) {
+            items.push({
+                type: 'video',
+                url: props.product.video,
+                embedUrl: details.url,
+                videoType: details.type
+            });
+        }
+    }
+    
+    // Add images
+    if (props.product?.image) {
+        items.push({ type: 'image', url: props.product.image });
+    }
+    if (props.product?.images?.length) {
         props.product.images.forEach((img: string) => {
-            if (img && !imgs.includes(img)) imgs.push(img);
+            if (img && !items.some(item => item.type === 'image' && item.url === img)) {
+                items.push({ type: 'image', url: img });
+            }
         });
     }
-    return imgs;
+    
+    return items;
 });
+
+const getVideoThumbnail = (item: any) => {
+    if (item.videoType === 'youtube') {
+        const youtubeReg = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+        const match = item.url.match(youtubeReg);
+        if (match) {
+            return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+        }
+    }
+    // Fallback to product image or placeholder
+    return props.product?.image ? getFileUrl(props.product.image) : '/placeholder-product.png';
+};
 
 watch(() => props.modelValue, (val) => {
     if (val) activeGalleryIndex.value = 0;
@@ -43,11 +75,11 @@ watch(() => props.modelValue, (val) => {
 
 const prevImage = () => {
     if (activeGalleryIndex.value > 0) activeGalleryIndex.value--;
-    else activeGalleryIndex.value = galleryImages.value.length - 1;
+    else activeGalleryIndex.value = galleryItems.value.length - 1;
 };
 
 const nextImage = () => {
-    if (activeGalleryIndex.value < galleryImages.value.length - 1) activeGalleryIndex.value++;
+    if (activeGalleryIndex.value < galleryItems.value.length - 1) activeGalleryIndex.value++;
     else activeGalleryIndex.value = 0;
 };
 
@@ -73,7 +105,53 @@ const landingUrl = computed(() => {
 
 const copyLink = () => {
     navigator.clipboard.writeText(landingUrl.value);
+    toast.success(t('common.copySuccess'));
 };
+
+const getVideoDetails = (videoUrl: string) => {
+    if (!videoUrl) return { type: null, url: '' };
+
+    const url = videoUrl.trim();
+
+    // YouTube matches
+    const youtubeReg = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    const ytMatch = url.match(youtubeReg);
+    if (ytMatch) {
+        return {
+            type: 'youtube',
+            url: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${ytMatch[1]}`
+        };
+    }
+
+    // Vimeo matches
+    const vimeoReg = /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/i;
+    const vimeoMatch = url.match(vimeoReg);
+    if (vimeoMatch) {
+        return {
+            type: 'vimeo',
+            url: `https://player.vimeo.com/video/${vimeoMatch[3]}?autoplay=1&muted=1&loop=1`
+        };
+    }
+
+    // Facebook matches
+    if (url.includes('facebook.com') || url.includes('fb.watch')) {
+        return {
+            type: 'facebook',
+            url: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&t=0`
+        };
+    }
+
+    // Direct link
+    return {
+        type: 'direct',
+        url: getFileUrl(url)
+    };
+};
+
+const videoDetails = computed(() => {
+    if (!props.product?.video) return { type: null, url: '' };
+    return getVideoDetails(props.product.video);
+});
 </script>
 
 <template>
@@ -97,69 +175,94 @@ const copyLink = () => {
                 <div class="lg:w-[55%] flex flex-col md:flex-row bg-[#08080a]">
                     
                     <!-- Vertical Thumbnail Strip (Desktop) -->
-                    <div v-if="galleryImages.length > 1" class="hidden md:flex flex-col gap-2 p-3 w-[80px] shrink-0 overflow-y-auto scrollbar-hide">
+                    <div v-if="galleryItems.length > 1" class="hidden md:flex flex-col gap-2 p-3 w-[80px] max-h-[480px] shrink-0 overflow-y-auto scrollbar-hide">
                         <button 
-                            v-for="(img, i) in galleryImages" :key="i" 
+                            v-for="(item, i) in galleryItems" :key="i" 
                             @click="activeGalleryIndex = i"
-                            class="shrink-0 w-[56px] h-[56px] rounded-xl overflow-hidden border-2 transition-all duration-300"
+                            class="shrink-0 w-[56px] h-[56px] rounded-xl overflow-hidden border-2 transition-all duration-300 relative"
                             :class="activeGalleryIndex === i ? 'border-blue-500 ring-1 ring-blue-500/40' : 'border-white/5 hover:border-white/20 opacity-50 hover:opacity-100'"
                         >
-                            <img :src="getFileUrl(img)" class="w-full h-full object-cover" />
+                            <template v-if="item.type === 'video'">
+                                <img :src="getVideoThumbnail(item)" class="w-full h-full object-cover" />
+                                <div class="absolute inset-0 bg-black/45 flex items-center justify-center text-white">
+                                    <play-one theme="filled" size="18" />
+                                </div>
+                            </template>
+                            <img v-else :src="getFileUrl(item.url)" class="w-full h-full object-cover" />
                         </button>
                     </div>
                     
                     <!-- Main Image Viewer -->
                     <div class="flex-1 relative flex items-center justify-center p-4 md:p-6 min-h-[280px] md:min-h-[480px]">
                         <!-- Navigation Arrows -->
-                        <button v-if="galleryImages.length > 1" @click="prevImage" class="absolute left-2 md:left-4 z-10 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white transition-all">
+                        <button v-if="galleryItems.length > 1" @click="prevImage" class="absolute left-2 md:left-4 z-10 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white transition-all">
                             <left size="16" />
                         </button>
-                        <button v-if="galleryImages.length > 1" @click="nextImage" class="absolute right-2 md:right-4 z-10 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white transition-all">
+                        <button v-if="galleryItems.length > 1" @click="nextImage" class="absolute right-2 md:right-4 z-10 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white transition-all">
                             <right size="16" />
                         </button>
 
                         <!-- Video or Image -->
                         <div class="w-full h-full flex items-center justify-center">
-                            <video 
-                                v-if="product.video"
-                                :src="getFileUrl(product.video)" 
-                                autoplay muted loop
-                                class="max-w-full max-h-[460px] rounded-2xl object-contain"
-                            ></video>
-                            <transition v-else name="gallery-fade" mode="out-in">
-                                <el-image 
-                                    :key="activeGalleryIndex" 
-                                    :src="galleryImages.length ? getFileUrl(galleryImages[activeGalleryIndex]) : ''"
-                                    fit="contain"
-                                    class="max-w-full max-h-[460px] rounded-2xl"
-                                    :preview-src-list="galleryImages.map(i => getFileUrl(i))"
-                                    :initial-index="activeGalleryIndex"
-                                >
-                                    <template #error>
-                                        <div class="w-full h-[300px] flex flex-col items-center justify-center text-gray-600 gap-2">
-                                            <Pic size="40" />
-                                            <span class="text-[10px] font-bold uppercase tracking-widest">{{ t('merchant.previewDialog.noImage') }}</span>
-                                        </div>
-                                    </template>
-                                </el-image>
-                            </transition>
+                            <template v-if="galleryItems[activeGalleryIndex]">
+                                <!-- Direct Video File -->
+                                <video 
+                                    v-if="galleryItems[activeGalleryIndex].type === 'video' && galleryItems[activeGalleryIndex].videoType === 'direct'"
+                                    :src="galleryItems[activeGalleryIndex].embedUrl" 
+                                    autoplay loop playsinline controls
+                                    class="max-w-full max-h-[460px] rounded-2xl object-contain"
+                                ></video>
+
+                                <!-- Embedded Video (YouTube / Vimeo / Facebook) -->
+                                <iframe
+                                    v-else-if="galleryItems[activeGalleryIndex].type === 'video' && ['youtube', 'vimeo', 'facebook'].includes(galleryItems[activeGalleryIndex].videoType)"
+                                    :src="galleryItems[activeGalleryIndex].embedUrl"
+                                    class="w-full aspect-video max-h-[460px] rounded-2xl border-0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen
+                                ></iframe>
+
+                                <transition v-else name="gallery-fade" mode="out-in">
+                                    <el-image 
+                                        :key="activeGalleryIndex" 
+                                        :src="getFileUrl(galleryItems[activeGalleryIndex].url)"
+                                        fit="contain"
+                                        class="max-w-full max-h-[460px] rounded-2xl"
+                                        :preview-src-list="galleryItems.filter(i => i.type === 'image').map(i => getFileUrl(i.url))"
+                                        :initial-index="galleryItems.filter(i => i.type === 'image').findIndex(i => i.url === galleryItems[activeGalleryIndex].url)"
+                                    >
+                                        <template #error>
+                                            <div class="w-full h-[300px] flex flex-col items-center justify-center text-gray-600 gap-2">
+                                                <Pic size="40" />
+                                                <span class="text-[10px] font-bold uppercase tracking-widest">{{ t('merchant.previewDialog.noImage') }}</span>
+                                            </div>
+                                        </template>
+                                    </el-image>
+                                </transition>
+                            </template>
                         </div>
 
                         <!-- Image Counter -->
-                        <div v-if="galleryImages.length > 1" class="absolute bottom-3 right-3 md:bottom-5 md:right-5 px-3 py-1 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-black text-gray-300">
-                            {{ activeGalleryIndex + 1 }} / {{ galleryImages.length }}
+                        <div v-if="galleryItems.length > 1" class="absolute bottom-3 right-3 md:bottom-5 md:right-5 px-3 py-1 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-[10px] font-black text-gray-300">
+                            {{ activeGalleryIndex + 1 }} / {{ galleryItems.length }}
                         </div>
                     </div>
 
                     <!-- Horizontal Thumbnail Strip (Mobile) -->
-                    <div v-if="galleryImages.length > 1" class="md:hidden flex gap-2 px-4 pb-4 overflow-x-auto scrollbar-hide">
+                    <div v-if="galleryItems.length > 1" class="md:hidden flex gap-2 px-4 pb-4 overflow-x-auto scrollbar-hide">
                         <button 
-                            v-for="(img, i) in galleryImages" :key="i" 
+                            v-for="(item, i) in galleryItems" :key="i" 
                             @click="activeGalleryIndex = i"
-                            class="shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all duration-300"
+                            class="shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all duration-300 relative"
                             :class="activeGalleryIndex === i ? 'border-blue-500 ring-1 ring-blue-500/40' : 'border-white/5 opacity-50 hover:opacity-100'"
                         >
-                            <img :src="getFileUrl(img)" class="w-full h-full object-cover" />
+                            <template v-if="item.type === 'video'">
+                                <img :src="getVideoThumbnail(item)" class="w-full h-full object-cover" />
+                                <div class="absolute inset-0 bg-black/45 flex items-center justify-center text-white">
+                                    <play-one theme="filled" size="16" />
+                                </div>
+                            </template>
+                            <img v-else :src="getFileUrl(item.url)" class="w-full h-full object-cover" />
                         </button>
                     </div>
                 </div>
@@ -247,7 +350,7 @@ const copyLink = () => {
                                 <span class="text-[8px] font-black uppercase tracking-widest text-gray-400 group-hover:text-white">{{ t('common.actions.edit') }}</span>
                             </button>
                             <button @click="copyLink" class="flex items-center justify-center gap-1.5 py-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all group">
-                                <link size="14" class="text-gray-400 group-hover:text-blue-400" />
+                                <Link size="14" class="text-gray-400 group-hover:text-blue-400" />
                                 <span class="text-[8px] font-black uppercase tracking-widest text-gray-400 group-hover:text-blue-400">{{ t('common.actions.link') }}</span>
                             </button>
                             <button @click="handleRemove" class="flex items-center justify-center gap-1.5 py-3 rounded-xl bg-white/5 border border-white/5 hover:bg-red-500/10 hover:border-red-500/30 transition-all group">

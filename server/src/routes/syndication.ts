@@ -3,7 +3,7 @@ import { connectDB } from '../utils/db.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { rbacMiddleware } from '../middleware/rbac.js';
 import { Permission } from '../utils/permissions.js';
-import { socialSyndicationService } from '../services/SocialSyndicationService.js';
+import { socialSyndicationService } from '../services/streaming/SocialSyndicationService.js';
 import { Project } from '../models/Project.js';
 import { SyndicationRecord } from '../models/SyndicationRecord.js';
 

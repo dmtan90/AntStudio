@@ -11,8 +11,8 @@
         v-if="type === 'video'"
         v-bind="$attrs"
         :src="resolvedUrl"
-        class="object-cover"
-      ></video>
+        class="object-none"
+      />
       <img
         v-else
         v-bind="$attrs"

@@ -1,4 +1,4 @@
-import { InfluencerService } from '../InfluencerService.js';
+import { InfluencerService } from '../streaming/InfluencerService.js';
 import { Logger } from '../../utils/Logger.js';
 import { buildGuestSystemPrompt, buildGuestNormalizePrompt } from '../../utils/PromptBuilder.js';
 import { generateJSON } from '../../utils/AIGenerator.js';

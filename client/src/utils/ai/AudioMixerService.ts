@@ -94,6 +94,35 @@ export class AudioMixerService {
     }
 
     /**
+     * Plays a one-shot audio cue from a URL.
+     * Useful for AI Agent sound effects or short voice clips.
+     */
+    public async playCue(url: string) {
+        if (!this.audioCtx || !this.masterGain) this.init();
+        const ctx = this.audioCtx!;
+        
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+            
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            
+            const gain = ctx.createGain();
+            gain.gain.value = 0.8; // Default cue volume
+            
+            source.connect(gain);
+            gain.connect(this.masterGain!);
+            
+            source.start(0);
+            console.log(`[AudioMixer] Playing cue: ${url}`);
+        } catch (error) {
+            console.error(`[AudioMixer] Failed to play cue ${url}:`, error);
+        }
+    }
+
+    /**
      * Stop all tracks and close the audio context.
      */
     public stopAll() {

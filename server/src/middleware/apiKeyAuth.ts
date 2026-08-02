@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { ApiKeyService } from '../services/ApiKeyService.js';
+import { ApiKeyService } from '../services/system/ApiKeyService.js';
 import { AuthRequest } from './auth.js';
 import { User } from '../models/User.js';
 

@@ -1,16 +1,16 @@
 import ffmpeg from 'fluent-ffmpeg';
 import { Readable } from 'stream';
-import { config } from '../../utils/config.js';
+import { EnvConfig } from '~/utils/ConfigService.js';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Logger } from '../../utils/Logger.js';
+import { Logger } from '~/utils/Logger.js';
 
 // Set FFmpeg paths from config
-ffmpeg.setFfmpegPath(config.ffmpegPath);
-ffmpeg.setFfprobePath(config.ffprobePath);
+ffmpeg.setFfmpegPath(EnvConfig.ffmpegPath);
+ffmpeg.setFfprobePath(EnvConfig.ffprobePath);
 
 /**
  * Service for detecting non-silent regions in audio/video using FFmpeg.

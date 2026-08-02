@@ -1,5 +1,5 @@
 import { WorkflowEngine, WorkflowNode } from './WorkflowEngine.js';
-import { promptService } from '../PromptService.js';
+import { promptService } from './PromptService.js';
 import { generateJSON } from '../../utils/AIGenerator.js';
 import { consensusService } from './ConsensusService.js';
 import { Logger } from '../../utils/Logger.js';

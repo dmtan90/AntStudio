@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
-import { socketServer } from '../SocketServer.js';
+import { socketServer } from '../streaming/SocketServer.js';
 import { SHOW_PROFILES, ShowProfileType, ShowProfile } from '../../constants/ShowProfiles.js';
 import { EmotionAnalysisService } from './EmotionAnalysisService.js';
 import { TrendFetchService } from './TrendFetchService.js';
 import { Logger } from '../../utils/Logger.js';
 import { generateJSON } from '../../utils/AIGenerator.js';
-import { promptService } from '../PromptService.js';
+import { promptService } from './PromptService.js';
 import { aiManager } from '../../utils/ai/AIServiceManager.js';
 
 export interface ScriptStep {

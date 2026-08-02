@@ -137,14 +137,14 @@ const onBack = () => {
         <div class="flex gap-2">
           <button
             class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap"
-            :class="[!query ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white']"
+            :class="[!query ? 'bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/20' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white']"
             @click='handleSearchImage(null)'>
             {{ t('videoEditor.image.popular') }}
           </button>
           <template v-for="item in PIXELS_IMAGE_CATEGORIES" :key="item">
             <button
               class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border capitalize whitespace-nowrap"
-              :class="[query == item ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/20' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white']"
+              :class="[query == item ? 'bg-brand-primary text-black border-brand-primary shadow-lg shadow-brand-primary/20' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:text-white']"
               @click='handleSearchImage(item)'>
               {{ item }}
             </button>

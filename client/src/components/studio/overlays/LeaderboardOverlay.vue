@@ -9,7 +9,7 @@
             <div v-for="(user, index) in users" :key="user.id" class="user-row" :class="{ 'highlight': user.isMe }">
                 <div class="rank" :class="getRankClass(index)">{{ index + 1 }}</div>
                 <div class="avatar">
-                    <img :src="user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.id" />
+                    <img :src="getFileUrl(user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.id)" />
                 </div>
                 <div class="info">
                     <div class="name">{{ user.name }}</div>
@@ -25,6 +25,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { Crown } from '@icon-park/vue-next';
 import { useStudioStore } from '@/stores/studio';
+import { getFileUrl } from '@/utils/api'
 
 const studioStore = useStudioStore();
 

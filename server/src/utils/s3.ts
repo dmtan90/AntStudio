@@ -1,142 +1,84 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { configService } from './configService.js'
-
-let s3Client: S3Client | null = null
-
-export const getS3Client = () => {
-    // Always recreate client if needed, or we can cache it and clear cache on config refresh.
-    // For now, let's allow it to be dynamic but simple. Since typical usage is per-request, 
-    // creating a client is cheap if we don't cache deeply or if we handle 'reset' properly.
-    // However, existing singleton pattern (let s3Client...) prevents updates.
-    // So we should verify if config changed.
-    // Simpler approach: Just always return the singleton, but provide a way to reset it.
-
-    if (s3Client) {
-        return s3Client
-    }
-
-    const awsConfig = configService.aws;
-
-    s3Client = new S3Client({
-        region: awsConfig.region,
-        credentials: {
-            accessKeyId: awsConfig.accessKeyId || '',
-            secretAccessKey: awsConfig.secretAccessKey || ''
-        },
-        endpoint: awsConfig.endpoint || undefined,
-        forcePathStyle: true,
-    })
-
-    return s3Client
-}
-
-export const resetS3Client = () => {
-    s3Client = null;
-}
+import { StorageFactory } from '../services/storage/StorageFactory.js';
+import { LocalStorageAdapter } from '../services/storage/LocalStorageAdapter.js';
+import { Logger } from './Logger.js';
 
 export const uploadToS3 = async (
     key: string,
     body: Buffer | Uint8Array | string,
     contentType: string = 'application/octet-stream'
 ) => {
-    const client = getS3Client()
-
-    const command = new PutObjectCommand({
-        Bucket: configService.aws.bucketName,
-        Key: key,
-        Body: body,
-        ContentType: contentType
-    })
-
-    await client.send(command)
-
-    let url = `https://${configService.aws.bucketName}.s3.${configService.aws.region}.amazonaws.com/${key}`
-    if (configService.aws.endpoint) {
-        url = `${configService.aws.endpoint}/${configService.aws.bucketName}/${key}`
+    try {
+        const adapter = await StorageFactory.getActiveAdapter();
+        const result = await adapter.uploadFile(key, body, contentType);
+        return {
+            key: result.key,
+            url: result.url
+        };
+    } catch (error: any) {
+        Logger.warn(`[Storage] Primary cloud storage upload failed (${error?.message || error}). Falling back to local disk storage...`, 'uploadToS3');
+        const localAdapter = LocalStorageAdapter.getInstance();
+        const result = await localAdapter.uploadFile(key, body, contentType);
+        return {
+            key: result.key,
+            url: result.url
+        };
     }
-
-    return {
-        key,
-        url
-    }
-}
+};
 
 export const getFromS3 = async (key: string) => {
-    const client = getS3Client()
-
-    const command = new GetObjectCommand({
-        Bucket: configService.aws.bucketName,
-        Key: key
-    })
-
-    const response = await client.send(command)
-    return response.Body
-}
+    try {
+        const adapter = await StorageFactory.getActiveAdapter();
+        return await adapter.getFileStream(key);
+    } catch (error) {
+        const localAdapter = LocalStorageAdapter.getInstance();
+        return await localAdapter.getFileStream(key);
+    }
+};
 
 export const deleteFromS3 = async (key: string) => {
-    const client = getS3Client()
-
-    const command = new DeleteObjectCommand({
-        Bucket: configService.aws.bucketName,
-        Key: key
-    })
-
-    await client.send(command)
-}
-
-/**
- * Delete all objects with a specific prefix
- */
-export const deleteFolderFromS3 = async (prefix: string) => {
-    const client = getS3Client()
-
-    // 1. List all objects with prefix
-    const listCommand = new ListObjectsV2Command({
-        Bucket: configService.aws.bucketName,
-        Prefix: prefix
-    })
-
-    const listResponse = await client.send(listCommand)
-
-    if (!listResponse.Contents || listResponse.Contents.length === 0) {
-        return
+    try {
+        const adapter = await StorageFactory.getActiveAdapter();
+        await adapter.deleteFile(key);
+    } catch (error) {
+        const localAdapter = LocalStorageAdapter.getInstance();
+        await localAdapter.deleteFile(key);
     }
+};
 
-    // 2. Prepare for delete
-    const objectsToDelete = listResponse.Contents.map(obj => ({ Key: obj.Key }))
-
-    const deleteCommand = new DeleteObjectsCommand({
-        Bucket: configService.aws.bucketName,
-        Delete: {
-            Objects: objectsToDelete
-        }
-    })
-
-    await client.send(deleteCommand)
-}
+export const deleteFolderFromS3 = async (prefix: string) => {
+    try {
+        const adapter = await StorageFactory.getActiveAdapter();
+        await adapter.deleteFolder(prefix);
+    } catch (error) {
+        const localAdapter = LocalStorageAdapter.getInstance();
+        await localAdapter.deleteFolder(prefix);
+    }
+};
 
 export const getSignedS3Url = async (key: string, expiresIn: number = 3600) => {
-    const client = getS3Client()
-
-    const command = new GetObjectCommand({
-        Bucket: configService.aws.bucketName,
-        Key: key
-    })
-
-    return await getSignedUrl(client, command, { expiresIn })
-}
+    try {
+        const adapter = await StorageFactory.getActiveAdapter();
+        return await adapter.getFileUrl(key, expiresIn);
+    } catch (error) {
+        const localAdapter = LocalStorageAdapter.getInstance();
+        return await localAdapter.getFileUrl(key, expiresIn);
+    }
+};
 
 export const getFileInfo = async (key: string) => {
-    const client = getS3Client()
+    try {
+        const adapter = await StorageFactory.getActiveAdapter();
+        const exists = await adapter.exists(key);
+        if (exists) return { exists: true };
+    } catch (error) {}
 
-    const command = new HeadObjectCommand({
-        Bucket: configService.aws.bucketName,
-        Key: key
-    })
-
-    return await client.send(command)
-}
+    const localAdapter = LocalStorageAdapter.getInstance();
+    const localExists = await localAdapter.exists(key);
+    if (!localExists) {
+        throw new Error('File not found');
+    }
+    return { exists: true };
+};
 
 /**
  * Standardized S3 Key Generator
@@ -154,6 +96,8 @@ export const S3KeyGenerator = {
 
     sceneVideo: (projectId: string, segmentOrder: number) => `projects/${projectId}/scenes/segment_${segmentOrder}.mp4`,
 
+    sceneAudio: (projectId: string, segmentOrder: number) => `projects/${projectId}/scenes/segment_${segmentOrder}.mp3`,
+
     finalVideo: (projectId: string, ext = 'mp4') => `projects/${projectId}/final.${ext}`,
 
     audio: (projectId: string, type: 'bgm' | 'voice' | 'sfx', name: string, ext = 'mp3') => {
@@ -166,5 +110,9 @@ export const S3KeyGenerator = {
         return `projects/${projectId}/assets/${entityType}_${entityId}.${ext}`;
     },
 
-    timelapse: (projectId: string) => `projects/${projectId}/timelapse.mp4`
-}
+    timelapse: (projectId: string) => `projects/${projectId}/timelapse.mp4`,
+
+    userAvatar: (userId: string) => `users/${userId}/avatar.png`,
+
+    tempFile: (filename: string) => `temp/${Date.now()}_${filename}`
+};

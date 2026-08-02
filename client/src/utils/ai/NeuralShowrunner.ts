@@ -38,7 +38,7 @@ export class NeuralShowrunner {
     private ticker: any = null;
 
     /**
-     * Phase 38: Plans a new session autonomously using Gemini.
+     * Plans a new session autonomously using Gemini.
      */
     public async planSession(topic: string = 'The Future of AI Singularity') {
         this.active.isPlanning = true;
@@ -53,7 +53,7 @@ export class NeuralShowrunner {
             const api = (await import('@/utils/api')).default;
             const res: any = await api.post('/ai/plan-session', {
                 topic,
-                streamingContext, // Phase 22: Context-aware planning
+                streamingContext,
                 constraints: {
                     minSegments: 3,
                     maxSegments: 6,
@@ -64,7 +64,7 @@ export class NeuralShowrunner {
             if (res?.data?.segments && Array.isArray(res.data.segments)) {
                 this.active.segments = res.data.segments;
                 
-                // Phase 34.6: Prime initial context-specific data
+                // Prime initial context-specific data
                 this.primeInitialContextData(topic, streamingContext);
 
                 this.active.isPlanning = false;
@@ -163,12 +163,12 @@ export class NeuralShowrunner {
     }
 
     /**
-     * Phase 7: Load an externally-generated script from a Project storyboard.
+     * Load an externally-generated script from a Project storyboard.
      * Converts LiveScript steps into NeuralShowrunner segments and readies the show.
      */
     public loadExternalScript(script: { id: string; title: string; steps: any[] }) {
         const mapped: ShowSegment[] = script.steps.map((step: any, i: number) => {
-            // Phase 9: Dynamic Duration based on dialogue length
+            // Dynamic Duration based on dialogue length
             const text = step.text || step.dialogue || step.description || '';
             const wordCount = text.split(/\s+/).length;
             // ~450ms per word + 4s buffer for natural flow/video play
@@ -228,7 +228,7 @@ export class NeuralShowrunner {
         
         console.log('[NeuralShowrunner] INITIATING GRACEFUL NEURAL SHUTDOWN...');
         
-        // Phase 44: Graceful Termination Workflow
+        // Graceful Termination Workflow
         // 1. Final Recap Cycle
         const { recapOrchestrator } = await import('./RecapOrchestrator');
         await recapOrchestrator.generateFullRecap();
@@ -281,12 +281,12 @@ export class NeuralShowrunner {
         const currentSegment = this.active.segments[this.active.currentSegmentIndex];
         if (!currentSegment) return;
 
-        // Phase 34: Check for Cast Rotation every 30s
+        // Check for Cast Rotation every 30s
         if (Math.floor(this.active.elapsedMs / 1000) % 30 === 0) {
             this.checkForRotation();
         }
 
-        // Context-Aware Frequencies (Phase 22)
+        // Context-Aware Frequencies
         const ctx = studioStore.streamingContext;
 
         const intervalFactor = (() => {
@@ -302,28 +302,28 @@ export class NeuralShowrunner {
             }
         })();
 
-        // Phase 35: Commerce Orchestration
+        // Commerce Orchestration
         if (Math.floor(this.active.elapsedMs / 1000) % Math.floor(45 * intervalFactor) === 0) {
             this.orchestrateCommerce();
         }
 
-        // Phase 40: Visual B-Roll Orchestration
+        // Visual B-Roll Orchestration
         if (Math.floor(this.active.elapsedMs / 1000) % Math.floor(75 * intervalFactor) === 0) {
             this.triggerBRollOrchestration();
         }
 
-        // Phase 36: Neural Research (skip in sales context — avoid off-topic topic injection)
+        // Neural Research (skip in sales context — avoid off-topic topic injection)
         const isSalesCtx = ctx === 'sales';
         if (!isSalesCtx && Math.floor(this.active.elapsedMs / 1000) % Math.floor(120 * intervalFactor) === 0) {
             this.researchTopic();
         }
 
-        // Phase 39: Autonomous Polling
+        // Autonomous Polling
         if (Math.floor(this.active.elapsedMs / 1000) % Math.floor(300 * intervalFactor) === 0) {
             this.triggerAutonomousPoll();
         }
 
-        // Check for segment transition (Phase 9: Audio-Aware)
+        // Check for segment transition
         const isSpeaking = await this.isAISpeaking();
         const overDuration = this.active.elapsedMs > currentSegment.durationMs;
         const safetyCutoff = this.active.elapsedMs > currentSegment.durationMs + 30000; // Force transition after 30s overage
@@ -332,7 +332,7 @@ export class NeuralShowrunner {
             this.nextSegment();
         }
 
-        // Phase 52: Education Slide Auto-Progression
+        // Education Slide Auto-Progression
         if (ctx === 'education' && (studioStore.contextData as any).education?.slides?.length > 0) {
             const totalSlides = (studioStore.contextData as any).education.slides.length;
             const slideDuration = currentSegment.durationMs / totalSlides;
@@ -399,7 +399,7 @@ export class NeuralShowrunner {
     }
 
     /**
-     * Phase 25: Autonomously pivots the current show segment in response to an audience signal.
+     * Autonomously pivots the current show segment in response to an audience signal.
      */
     public pivotSegment(reason: string, suggestedType: ShowSegment['type'] = 'qa') {
         const currentTitle = this.active.segments[this.active.currentSegmentIndex]?.title || 'Unknown';
@@ -423,7 +423,7 @@ export class NeuralShowrunner {
             vibe: 'hype'
         };
 
-        // Phase 29: RPG Quest Injection
+        // RPG Quest Injection
         if (reason.includes('velocity_surge') && Math.random() > 0.4) {
             urgentSegment.type = 'rpg_quest';
             urgentSegment.title = "COMMUNITY CHALLENGE!";
@@ -451,14 +451,14 @@ export class NeuralShowrunner {
             this.active.startTime = Date.now();
             this.active.elapsedMs = 0;
             this.emitDirective();
-            // Phase 32: Trigger session recap when arc ends
+            // Trigger session recap when arc ends
             import('./RecapOrchestrator').then(({ recapOrchestrator }) => {
                 recapOrchestrator.generateFullRecap().then(async () => {
                     if (recapOrchestrator.state.currentRecap) {
                         const { useStudioStore } = await import('@/stores/studio');
                         useStudioStore().activeRecap = recapOrchestrator.state.currentRecap;
                         
-                        // Phase 33: Autonomous Social Syndication of the Recap
+                        // Autonomous Social Syndication of the Recap
                         import('./ViralSyndicationService').then(({ viralSyndicationService }) => {
                             viralSyndicationService.syndicateFullRecap(recapOrchestrator.state.currentRecap);
                         });
@@ -466,7 +466,7 @@ export class NeuralShowrunner {
                 });
             });
 
-            // Phase 29: Quest Activation
+            // Quest Activation
             const segment = this.active.segments[this.active.currentSegmentIndex];
             if (segment.type === 'rpg_quest') {
                 import('./AudienceQuestService').then(({ audienceQuestService }) => {
@@ -484,7 +484,7 @@ export class NeuralShowrunner {
 
         console.log(`[NeuralShowrunner] NEW DIRECTIVE: [${segment.title}] - ${segment.directive}`);
 
-        // Context-Aware Memory Injection (Phase 44)
+        // Context-Aware Memory Injection
         const currentTopic = segment.title + (this.active.researchState.currentTopic || "");
         const { neuralMemoryService } = await import('./NeuralMemoryService');
         const memory = neuralMemoryService.getDeepRecallContext(currentTopic);
@@ -496,10 +496,10 @@ export class NeuralShowrunner {
 
         const slideDirective = slide ? ` [CURRENT SLIDE: "${slide.title}" - Points: ${slide.bullets.join('; ')}]` : "";
 
-        // Phase 109/110/111: Attach product context if we are in sales mode
+        // Attach product context if we are in sales mode
         let productContext = null;
         if (studioStore.streamingContext === 'sales' && studioStore.liveProducts?.length > 0) {
-            // Phase 111: Use explicit productId or type if it matches a productId
+            // Use explicit productId or type if it matches a productId
             const pid = segment.productId || (segment.type.length > 20 ? segment.type : null);
             if (pid) {
                 productContext = studioStore.liveProducts.find((p: any) => p._id === pid || p.id === pid);
@@ -522,7 +522,7 @@ export class NeuralShowrunner {
                 vibe: segment.vibe,
                 memoryContext: memory,
                 slideContext: slide,
-                productContext: productContext, // Phase 109/110
+                productContext: productContext,
                 gesture: segment.gesture,
                 originSpeaker: segment.speaker
             }
@@ -572,7 +572,7 @@ export class NeuralShowrunner {
     }
 
     /**
-     * Phase 35: Autonomous Commerce Orchestration
+     * Autonomous Commerce Orchestration
      * Connects narrative flow with a commerce strategy.
      */
     private async orchestrateCommerce() {
@@ -607,7 +607,7 @@ export class NeuralShowrunner {
     }
 
     /**
-     * Phase 110: Helper to pick the best product based on engagement/relevance
+     * Helper to pick the best product based on engagement/relevance
      */
     private pickBestProduct(studioStore: any): any {
         if (!studioStore.liveProducts || studioStore.liveProducts.length === 0) return null;
@@ -653,7 +653,7 @@ export class NeuralShowrunner {
     }
 
     /**
-     * Phase 36/37: Neural External Intelligence
+     * Neural External Intelligence
      * Triggers an autonomous research pulse, now powered by Gemini.
      */
     private async researchTopic() {
@@ -673,7 +673,7 @@ export class NeuralShowrunner {
         this.active.researchState.currentTopic = insight.topic;
         console.log(`[NeuralShowrunner] RESEARCH PULSE SUCCESS: ${insight.topic}`);
 
-        // Phase 41: Trigger Evidence Overlay if statistics detected
+        // Trigger Evidence Overlay if statistics detected
         if (insight.visualData) {
             const { evidenceOverlayService } = await import('./EvidenceOverlayService');
             evidenceOverlayService.triggerEvidence({
@@ -686,7 +686,7 @@ export class NeuralShowrunner {
             });
         }
 
-        // Phase 44: Record this as a long-term learning
+        // Record this as a long-term learning
         const { neuralMemoryService } = await import('./NeuralMemoryService');
         neuralMemoryService.recordLearning(insight.topic, insight.fact);
 
@@ -703,7 +703,7 @@ export class NeuralShowrunner {
     }
 
     /**
-     * Phase 39: Autonomous Polling
+     * Autonomous Polling
      * Creates a Gemini-powered poll based on current debate context.
      */
     private async triggerAutonomousPoll() {
@@ -758,7 +758,7 @@ export class NeuralShowrunner {
             }
         }));
 
-        // Phase 43: Record the poll result as a viral moment
+        // Record the poll result as a viral moment
         const { recapOrchestrator } = await import('./RecapOrchestrator');
         recapOrchestrator.recordMoment(
             `Poll Result: ${winner} won`,
@@ -775,7 +775,7 @@ export class NeuralShowrunner {
     }
 
     /**
-     * Phase 40: Autonomous B-Roll & Visual Narrative
+     * Autonomous B-Roll & Visual Narrative
      * Orchestrates visual context changes based on the debate.
      */
     private async triggerBRollOrchestration() {
@@ -819,7 +819,7 @@ export class NeuralShowrunner {
 
     /**
      * Seeds the studioStore.contextData with initial topic-relevant values.
-     * Phase 51: Enhanced with dynamic AI generation for realistic overlay content.
+     * Enhanced with dynamic AI generation for realistic overlay content.
      */
     private async primeInitialContextData(topic: string, context: string) {
         const { useStudioStore } = await import('@/stores/studio');
@@ -828,7 +828,7 @@ export class NeuralShowrunner {
 
         console.log(`[NeuralShowrunner] Priming ${context} data for topic: ${topic}`);
 
-        // Phase 51: Request Gemini to generate topic-specific dynamic data seeds
+        // Request Gemini to generate topic-specific dynamic data seeds
         try {
             const api = (await import('@/utils/api')).default;
             const res: any = await api.post('/ai/generate-dynamic-content', {

@@ -17,7 +17,7 @@
             <!-- Real-time Render Canvas (Injected via slot from Parent) -->
             <slot name="canvas"></slot>
 
-            <!-- Video Embed Layer (Phase 20 Redesign) -->
+            <!-- Video Embed Layer -->
             <div v-if="studioStore.embeddedVideoUrl" 
                  class="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden">
                 <iframe 
@@ -50,7 +50,7 @@
                     </div>
                 </div>
  
-                 <!-- Break Mode Overlay (Phase 18) -->
+                 <!-- Break Mode Overlay -->
                  <transition name="fade">
                      <div v-if="studioStore.visualSettings.breakMode.enabled" 
                          class="absolute inset-0 z-[20] flex flex-col items-center justify-center p-12 text-center break-overlay">
@@ -73,7 +73,7 @@
                     </div>
                 </transition>
 
-                <!-- Sponsorship Badge (Phase 18) -->
+                <!-- Sponsorship Badge -->
                 <transition name="slide-up">
                     <div v-if="studioStore.visualSettings.specialOverlays.showSponsorship"
                         class="absolute bottom-8 left-8 z-[15] animate-in slide-in-from-left-4 duration-500">

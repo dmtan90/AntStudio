@@ -1,17 +1,38 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { IStorageAdapter } from './StorageAdapter.js';
-import { configService } from '../../utils/configService.js';
+import { configService } from '../../utils/ConfigService.js';
+import { Logger } from '~/utils/Logger.js';
 
 /**
  * AWS S3 Storage Provider implementation.
  */
 export class S3StorageAdapter implements IStorageAdapter {
-    private client: S3Client;
+    private client: S3Client | null;
     private bucket: string;
+    private static instance: S3StorageAdapter | null;
+
+    public static getInstance(): S3StorageAdapter {
+        if(this.instance == null){
+            this.instance = new S3StorageAdapter();
+        }
+        return this.instance;
+    }
+
+    public destroy() {
+        this.client = null;
+        S3StorageAdapter.instance = null;
+        Logger.info("S3 is destroyed");
+    }
 
     constructor() {
-        this.bucket = configService.aws.bucketName;
+        const bucket = configService.aws.bucketName;
+        const accessKeyId = configService.aws.accessKeyId || '';
+        const secretAccessKey = configService.aws.secretAccessKey || '';
+        if(!bucket || !accessKeyId || !secretAccessKey){
+            throw new Error('S3 is not configured properly.');
+        }
+        this.bucket = bucket;
         this.client = new S3Client({
             region: configService.aws.region,
             credentials: {
@@ -21,9 +42,14 @@ export class S3StorageAdapter implements IStorageAdapter {
             endpoint: configService.aws.endpoint || undefined,
             forcePathStyle: true,
         });
+        Logger.info('✅ S3 Client authorized successfully', 'S3StorageAdapter');
     }
 
     async uploadFile(key: string, body: Buffer | Uint8Array | string, contentType: string = 'application/octet-stream'): Promise<{ key: string, url: string }> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
+
         const command = new PutObjectCommand({
             Bucket: this.bucket,
             Key: key,
@@ -42,6 +68,9 @@ export class S3StorageAdapter implements IStorageAdapter {
     }
 
     async getFileUrl(key: string, expiresIn: number = 3600): Promise<string> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
         const command = new GetObjectCommand({
             Bucket: this.bucket,
             Key: key
@@ -51,6 +80,9 @@ export class S3StorageAdapter implements IStorageAdapter {
     }
 
     async deleteFile(key: string): Promise<void> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
         const command = new DeleteObjectCommand({
             Bucket: this.bucket,
             Key: key
@@ -60,6 +92,9 @@ export class S3StorageAdapter implements IStorageAdapter {
     }
 
     async deleteFolder(prefix: string): Promise<void> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
         const listCommand = new ListObjectsV2Command({
             Bucket: this.bucket,
             Prefix: prefix
@@ -82,6 +117,9 @@ export class S3StorageAdapter implements IStorageAdapter {
     }
 
     async exists(key: string): Promise<boolean> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
         try {
             const command = new HeadObjectCommand({
                 Bucket: this.bucket,
@@ -96,6 +134,9 @@ export class S3StorageAdapter implements IStorageAdapter {
     }
 
     async listFiles(prefix?: string): Promise<Array<{ key: string, url: string, size?: number, lastModified?: Date }>> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
         const command = new ListObjectsV2Command({
             Bucket: this.bucket,
             Prefix: prefix
@@ -117,5 +158,29 @@ export class S3StorageAdapter implements IStorageAdapter {
                 lastModified: obj.LastModified
             };
         }));
+    }
+
+    async getFileStream(key: string): Promise<any> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
+        const command = new GetObjectCommand({
+            Bucket: this.bucket,
+            Key: key
+        });
+        const response = await this.client.send(command);
+        return response.Body;
+    }
+
+    async getUploadUrl(key: string, contentType: string = 'application/octet-stream', expiresIn: number = 3600): Promise<string> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
+        const command = new PutObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            ContentType: contentType
+        });
+        return await getSignedUrl(this.client, command, { expiresIn });
     }
 }

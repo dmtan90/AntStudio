@@ -67,7 +67,7 @@
                            t('studio.accessibility.liveAudio') }}</span>
                   </div>
 
-                <!-- Phase 32: Neural Singularity Dashboard -->
+                <!-- Neural Singularity Dashboard -->
                 <NeuralDashboard v-if="!isGuest" class="absolute top-24 left-8 z-50 animate-fade-in pointer-events-none" />
 
                 <!-- Context-Specific UI Layers -->
@@ -221,7 +221,7 @@
       <!-- Analytics Drawer -->
       <AnalyticsDrawer v-model="showAnalyticsDrawer" />
       
-      <!-- Phase 65: Show Script Config -->
+      <!-- Show Script Config -->
       <el-drawer v-model="showScriptConfig" direction="rtl" size="400px" :with-header="false" custom-class="no-padding-drawer">
          <ShowScriptConfig @close="showScriptConfig = false" />
       </el-drawer>
@@ -250,7 +250,7 @@
         @close="showRecordingDialog = false"
       />
 
-      <!-- Music Selection Dialog (Phase 85) -->
+      <!-- Music Selection Dialog -->
       <MusicSelectionDialog
         v-model="musicSelectorVisible"
         @select="handleMusicSelected"
@@ -271,7 +271,7 @@
         />
       </transition>
 
-      <!-- Swarm Monitor (Phase 28) -->
+      <!-- Swarm Monitor -->
       <SwarmMonitor 
         :visible="showSwarmMonitor"
         :messages="swarmMessages"
@@ -538,7 +538,7 @@ onMounted(async () => {
         }
     }
 
-    // V2C Initialization (Phase 25)
+    // V2C Initialization
     visionCommerceService.init();
     if (outputCanvas.value) {
         visionAnalyzer.start(outputCanvas.value);
@@ -546,13 +546,13 @@ onMounted(async () => {
 
     isStudioReady.value = true;
 
-    // Phase 32: Neural Singularity Activation
+    // Neural Singularity Activation
     if (!isGuest.value && studioStore.visualSettings.ai.autonomousProduction) {
         neuralShowrunner.start();
         viralSyndicationService.init();
     }
 
-    // Phase 25: Start Audience Intelligence Loop
+    // Start Audience Intelligence Loop
     audienceIntelligenceService.start();
 });
 
@@ -681,7 +681,7 @@ const streamReport = ref({
 const suggestedCaptions = ref([]);
 const commerceReport = ref(null);
 
-// Cinematic State (Phase 26)
+// Cinematic State
 const cameraZoom = ref(1.0);
 const cameraPanX = ref(0);
 const cameraPanY = ref(0);
@@ -690,7 +690,7 @@ const showBRoll = ref(false);
 const bRollTopic = ref('');
 const currentBRollUrl = ref('');
 
-// RPG & Game State (Phase 29)
+// RPG & Game State
 const activeQuest = ref<{
     title: string;
     type: string;
@@ -756,12 +756,12 @@ const geminiAudioLevel = computed(() => {
 // Media Resources
 const activeMediaVideo = ref<HTMLVideoElement | null>(null);
 
-// Swarm State (Phase 28)
+// Swarm State
 const swarmMessages = ref<any[]>([]);
 const showSwarmMonitor = ref(false);
 const swarmAgents = reactive<Record<string, any>>({});
 
-// Phase 85: Music Performance State
+// Music Performance State
 const musicSelectorVisible = ref(false);
 const performanceModalVisible = ref(false);
 const selectedInfluencerId = ref<string | null>(null);
@@ -1025,7 +1025,7 @@ const turnTakingCoordinator = useTurnTakingCoordinator(liveChatConnections);
 const lastSpeakerId = ref<string | null>(null);
 const currentSpeakerId = turnTakingCoordinator.currentSpeakerId;
 
-// Swarm State (Phase 28)
+// Swarm State
 // const showSwarmMonitor = ref(false);
 // const swarmAgents = reactive<Record<string, any>>({});
 // Ref swarmAgents duplicate removed.
@@ -1068,7 +1068,7 @@ const handleToggleLiveVoice = async (persona: any) => {
                 if (!showSwarmMonitor.value) showSwarmMonitor.value = true;
             });
 
-            // Native Text & Metadata Handler (Phase 8)
+            // Native Text & Metadata Handler
             // Backend sends Consolidated JSON (Text + Metadata)
             // WebRTC handles Audio separately. We just need to sync behavior.
             agent.setTextResponseCallback(async (text: string, metadata?: any) => {
@@ -1101,7 +1101,7 @@ const handleToggleLiveVoice = async (persona: any) => {
                 }
             });
 
-            // Quest Event Handler (Phase 31)
+            // Quest Event Handler
             agent.setQuestCallback((event: any) => {
                 console.log('[Quest] Event received:', event.type, event);
                 if (event.type === 'quest_created') {
@@ -1233,7 +1233,7 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
             showBRoll.value = args.enabled;
             if (args.enabled) {
                 bRollTopic.value = args.topic;
-                // Phase 64: Resolve real asset if possible
+                // Resolve real asset if possible
                 const asset = studioStore.bRollLibrary.find(a => a.topic.toLowerCase().includes(args.topic.toLowerCase()));
                 if (asset && bRollVideo.value) {
                     bRollVideo.value.src = getFileUrl(asset.url);
@@ -1241,7 +1241,7 @@ const executeAgentTool = async (agent: any, persona: any, callId: string, fn: st
                 }
             }
         } else if (fn === 'trigger_data_overlay') {
-            // Phase 65: Dynamic Data Overlay
+            // Dynamic Data Overlay
             showDynamicOverlay.value = true;
             dynamicOverlayType.value = args.type;
             dynamicOverlayData.value = args.data;
@@ -1427,7 +1427,7 @@ const handleToggleRole = (personaId: string) => {
     }
 };
 
-// Phase 85: Music Performance Handlers
+// Music Performance Handlers
 const handleOpenMusicSelector = (id: string) => {
     selectedInfluencerId.value = id;
     musicSelectorVisible.value = true;
@@ -1671,7 +1671,7 @@ const processGodModeDecisions = async () => {
         toast(t('studio.messages.aiVisualEffectsActive'));
     }
 
-    // Phase 28/29: Trigger SFX Foley based on AI actions
+    // Trigger SFX Foley based on AI actions
     if (decision.action === 'publish_viral_moment') neuralAudioDirector.playSFX('publish_viral');
     if (decision.action === 'react_to_gift') neuralAudioDirector.playSFX('react_gift');
     if ((decision.action as string) === 'show_lower_third' || (decision.action as string) === 'switch_scene' || (decision.action as string) === 'trigger_quest') neuralAudioDirector.playSFX('ui_swoosh');
@@ -1710,7 +1710,7 @@ watch(frameCount, (val) => {
        return Math.max(0.1, Math.min(0.95, normalized));
    };
 
-   // 1. Studio Vibe & Environment (Phase 3)
+   // 1. Studio Vibe & Environment
    if (val % 150 === 0 && !isGuest.value) { // Every 5 seconds at 30fps
       studioVibeAnalyzer.update({
          voiceLevel: audioLevel.value,
@@ -1769,7 +1769,7 @@ const toggleLive = async () => {
           showPostStreamSummary.value = true;
           broadcastToInfluencers("[Stream Synthesis Request] The live session has ended. Please generate a stream summary and suggest social captions for any highlights captured.");
           
-          // Fetch Commercial Report (Phase 17)
+          // Fetch Commercial Report
           if (currentSessionId.value) {
               try {
                   const data = await studioStore.fetchCommerceReport(currentSessionId.value);
@@ -1849,7 +1849,7 @@ const handleMetadataUpdate = async (metadata: { title?: string, description?: st
 };
 
 
-// Demo Mode Simulated Engagement (Phase 82)
+// Demo Mode Simulated Engagement
 let demoInterval: any = null;
 watch(() => studioStore.demoMode, (active) => {
     if (active) {
@@ -1959,7 +1959,7 @@ watch(messages, (newList) => {
     // Feed the message to orchestrator history
     conversationOrchestrator.recordInteraction(lastMsg.user, lastMsg.text);
 
-    // Phase 25: Feed into Audience Intelligence loop
+    // Feed into Audience Intelligence loop
     import('@/utils/ai/AudienceIntelligenceService').then(({ audienceIntelligenceService }) => {
         audienceIntelligenceService.ingestChatMessage(lastMsg.text);
     });
@@ -2049,12 +2049,12 @@ const triggerCollectiveReaction = (gesture: string) => {
         }
     });
 
-    // Phase 29: RPG Quest Listeners
+    // RPG Quest Listeners
     window.addEventListener('quest:start', () => neuralAudioDirector.playSFX('ui_swoosh'));
     window.addEventListener('quest:success', () => neuralAudioDirector.playSFX('react_gift'));
 
 
-    // Phase 22: Live Subtitles (CapCut Style)
+    // Live Subtitles (CapCut Style)
     const postToWorker = (type: string, payload: any) => {
         window.dispatchEvent(new CustomEvent('studio-worker-command', { detail: { type, payload } }));
     };
@@ -2210,7 +2210,7 @@ watch(() => studioStore.currentCaption, (cap) => {
 }, { deep: true });
 
 /**
- * Phase 23: Vibe Shop 2.0 - Dynamic Product Pitching & Media Coordination
+ * Vibe Shop 2.0 - Dynamic Product Pitching & Media Coordination
  * When a product is showcased, trigger transitions, scripts, and relevant media.
  */
 watch(() => studioStore.highlightedProduct, async (product) => {
@@ -2249,7 +2249,7 @@ watch(() => studioStore.highlightedProduct, async (product) => {
     if (activeAI) {
         // AIDOL: Switch Neural Video clip + Generate Voice
         
-        // Inject product specific clip if available from Phase 24 linking
+        // Inject product specific clip if available
         const productClip = (product as any).eventClip?.['product'];
         if (productClip) {
             if (!activeAI.persona.visual.aidolClips) activeAI.persona.visual.aidolClips = {};
@@ -2626,11 +2626,11 @@ onMounted(() => {
    window.addEventListener('studio:chat', (e: any) => {
       const comment = e.detail;
       const msg = {
-         id: comment.id,
-         user: comment.userName,
-         text: comment.text,
-         timestamp: new Date(comment.createdAt).getTime(),
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`
+        id: comment.id,
+        user: comment.userName,
+        text: comment.text,
+        timestamp: new Date(comment.createdAt).getTime(),
+		avatar: getFileUrl(`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.userId}`)
       };
       
       messages.value.push(msg);
@@ -2829,19 +2829,19 @@ onMounted(() => {
          socket.off('commerce:purchase');
             socket.on('commerce:purchase', (data: { userName: string, productName: string }) => {
                spawnPurchaseNotification(data.userName, data.productName);
-               toast.info(`�� ${data.userName} just bought ${data.productName}!`);
+               toast.info(`${data.userName} just bought ${data.productName}!`);
             });
 
-            // Listen for Real Order Tracking (Phase 17)
+            // Listen for Real Order Tracking
             socket.off('commerce:order_recorded');
             socket.on('commerce:order_recorded', (data: any) => {
                spawnPurchaseNotification(data.customerName, data.productName);
-               toast.success(`�� Order Recorded: ${data.customerName} bought ${data.productName}!`, {
+               toast.success(`Order Recorded: ${data.customerName} bought ${data.productName}!`, {
                    description: `${data.amount} ${data.currency}`
                });
             });
 
-            // Listen for Virtual Gifting (Phase 82)
+            // Listen for Virtual Gifting
             socket.on('economy:gift_received', (data: any) => {
                 const { senderId, item } = data;
                 const fxType = item.effectId || 'hearts';
@@ -2853,10 +2853,10 @@ onMounted(() => {
                 if (item.cost >= 100) triggerCollectiveReaction('cheer');
             });
 
-            // Listen for Omnichannel Chat (Phase 16)
+            // Listen for Omnichannel Chat
 
-         // Listen for Omnichannel Chat (Phase 16) - Now handled centrally by ActionSyncService emitting 'studio:chat'
-         // --- AI Hive Synchronizers (Phase 61) ---
+         // Listen for Omnichannel Chat Now handled centrally by ActionSyncService emitting 'studio:chat'
+         // --- AI Hive Synchronizers ---
          socket.on('ai:tool_call', (data: any) => {
             const persona = guestPersonas.value.find((p: any) => p.entityId === data.archiveId || p.id === data.archiveId);
             if (!persona) return;
@@ -2983,7 +2983,7 @@ onMounted(async () => {
        }
     });
 
-   // Handle Autonomous Style Switches (Phase 26)
+   // Handle Autonomous Style Switches
     window.addEventListener('style:switch', (e: any) => {
         const { style } = e.detail;
         studioMood.value = style;

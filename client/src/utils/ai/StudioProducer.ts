@@ -58,7 +58,7 @@ export class StudioProducer {
         };
 
         try {
-            // Puter.js Backend Proxy (Phase 30.2)
+            // Puter.js Backend Proxy
             // Centralized AI Director calling GPT-4o via Backend
             const prompt = `
 You are a professional Live Stream Director. Analyze the studio state and provide ONE specific, actionable suggestion.

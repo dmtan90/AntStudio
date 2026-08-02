@@ -28,10 +28,10 @@ export class RelayEncoder {
             });
         }
 
-        const recorderOptions = {
-            mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=h264') 
-                ? 'video/webm;codecs=h264' 
-                : 'video/webm;codecs=vp8,opus',
+        const recorderOptions: MediaRecorderOptions = {
+            mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
+                ? 'video/webm;codecs=vp8,opus'
+                : (MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : ''),
             videoBitsPerSecond: quality.video * 1000
         };
 
@@ -43,10 +43,18 @@ export class RelayEncoder {
             this.mediaRecorder = new MediaRecorder(canvasStream);
         }
 
-        this.mediaRecorder.ondataavailable = (e) => {
+        this.mediaRecorder.ondataavailable = async (e) => {
             if (e.data.size > 0) {
-                ActionSyncService.sendStreamRelay(this.sessionId, e.data);
-                this.bytesSentInInterval += e.data.size;
+                try {
+                    const arrayBuffer = await e.data.arrayBuffer();
+                    // console.log(`[RelayEncoder] Chunk ready: ${e.data.size} bytes, mimeType=${e.data.type}, sending to sessionId=${this.sessionId}`);
+                    ActionSyncService.sendStreamRelay(this.sessionId, arrayBuffer);
+                    this.bytesSentInInterval += e.data.size;
+                } catch (err) {
+                    console.error("[RelayEncoder] Failed to convert blob to ArrayBuffer:", err);
+                }
+            } else {
+                console.warn('[RelayEncoder] ondataavailable fired but e.data.size === 0');
             }
         };
 
@@ -71,7 +79,7 @@ export class RelayEncoder {
             this.bytesSentInInterval = 0;
         }, 2000);
 
-        this.mediaRecorder.start(100);
+        this.mediaRecorder.start(500);
     }
 
     public startHighlightBuffering(canvasStream: MediaStream) {

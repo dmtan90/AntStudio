@@ -8,7 +8,7 @@
             <el-steps :active="activeStep" align-center finish-status="success" class="custom-steps">
                 <el-step :title="$t('influencers.create.wizard.step1.title')" :description="$t('influencers.create.wizard.step1.desc')" />
                 <el-step :title="$t('influencers.create.wizard.step2.title')" :description="$t('influencers.create.wizard.step2.desc')" />
-                <el-step :title="$t('influencers.create.wizard.step3.title')" :description="$t('influencers.create.wizard.step3.desc')" />
+                <!-- <el-step :title="$t('influencers.create.wizard.step3.title')" :description="$t('influencers.create.wizard.step3.desc')" /> -->
                 <el-step :title="$t('influencers.create.wizard.step4.title')" :description="$t('influencers.create.wizard.step4.desc')" />
             </el-steps>
         </div>
@@ -74,11 +74,12 @@
                                     <el-image v-else :src="getFileUrl(aiIdolImage)" class="w-full aspect-9/16 rounded-[32px]" fit="contain" />
                                 </template>
                             </div>
-                            <div v-else class="w-full h-full flex flex-col items-center justify-center bg-black/40 rounded-[32px] cursor-pointer hover:bg-black/50 transition-colors border-2 border-dashed border-white/5" @click="triggerPortraitUpload">
+                            <div v-loading="loading" class="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center bg-black/10 rounded-[32px] cursor-pointer hover:bg-black/50 transition-colors border-2 border-dashed border-white/5" 
+                                @click="triggerPortraitUpload">
                                 <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                     <upload-one theme="outline" size="32" class="text-white/40" />
                                 </div>
-                                <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">AWAITING AVATAR PROJECTION</p>
+                                <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Generate your AI Agent</p>
                                 <span class="text-[9px] font-bold text-blue-400/60 mt-2 uppercase tracking-widest hover:text-blue-400 transition-colors">OR CLICK TO UPLOAD PORTRAIT</span>
                             </div>
 
@@ -518,7 +519,7 @@
                                 :placeholder="$t('influencers.create.descriptionPlaceholder')" class="soul-glass-input" />
                         </div>
 
-                        <div class="space-y-4 pt-4 border-t border-white/5">
+                        <!-- <div class="space-y-4 pt-4 border-t border-white/5">
                             <label class="section-label">{{ $t('influencers.create.aiGenerator.animationIntelligence') }}</label>
                             <div class="grid grid-cols-2 gap-x-8 gap-y-4">
                                 <StudioSlider 
@@ -546,7 +547,7 @@
                                      <el-input v-model="k.content" type="textarea" :rows="2" :placeholder="$t('influencers.create.contentPlaceholder')" class="soul-glass-input" />
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
 
                     <!-- STEP 3: STAGE & PERFORMANCE (Integrated from InfluencerUpdate) -->
@@ -556,9 +557,8 @@
                             <h2 class="text-xl font-black text-white">{{ $t('influencers.create.wizard.step3.header') }}</h2>
                         </div>
 
-                        <StudioSection :title="$t('influencers.create.stageEffects')">
-                             <!-- AI Auto-Director Master Toggle -->
-                             <div class="flex items-center justify-between mb-4 bg-blue-500/10 p-4 rounded-3xl border border-blue-500/20">
+                        <!-- <StudioSection :title="$t('influencers.create.stageEffects')">
+                            <div class="flex items-center justify-between mb-4 bg-blue-500/10 p-4 rounded-3xl border border-blue-500/20">
                                 <div class="flex flex-col">
                                     <span class="text-[10px] font-black uppercase text-blue-400">{{ $t('influencers.create.autoDirector') }}</span>
                                     <span class="text-[8px] opacity-40 italic">{{ $t('influencers.create.autonomousProduction') }}</span>
@@ -568,7 +568,6 @@
 
                             <div :class="{'opacity-30 pointer-events-none': newInfluencer.directorConfig.autoDirectorEnabled}">
                                 <div class="grid grid-cols-2 gap-4 mb-4">
-                                     <!-- Aura -->
                                     <div class="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/5">
                                         <div class="flex flex-col">
                                             <span class="text-[9px] font-bold uppercase tracking-widest text-cyan-400">{{ $t('influencers.create.vocalAura') }}</span>
@@ -578,7 +577,6 @@
                                             <el-switch v-model="newInfluencer.visual.auraEnabled" size="small" />
                                         </div>
                                     </div>
-                                    <!-- Cinematic -->
                                     <div class="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/5">
                                         <div class="flex flex-col">
                                             <span class="text-[9px] font-bold uppercase tracking-widest text-purple-400">{{ $t('influencers.create.cinematicMode') }}</span>
@@ -587,7 +585,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Lighting -->
                                 <div class="space-y-4 pt-2">
                                     <label class="section-label !text-[7px]">{{ $t('influencers.create.stageLighting') }}</label>
                                     <div class="grid grid-cols-4 gap-2">
@@ -600,7 +597,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Particles -->
                                 <div class="space-y-3 mt-4">
                                     <label class="section-label !text-[7px]">{{ $t('influencers.create.atmosphericAtmosphere') }}</label>
                                     <div class="flex flex-wrap gap-2">
@@ -613,7 +609,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </StudioSection>
+                        </StudioSection> -->
 
                         <!-- Relocated Neural Video Library with Custom Prompts -->
                         <div v-if="newInfluencer.visual.modelType === 'aidol'" class="space-y-6 pt-8 border-t border-white/5 animate-fade-in">
@@ -699,13 +695,12 @@
                     </div>
 
                     <!-- STEP 4: DISTRIBUTION & AUTOMATION -->
-                    <div v-show="activeStep === 4" class="space-y-6 animate-fade-in pb-10">
+                    <!-- <div v-show="activeStep === 4" class="space-y-6 animate-fade-in pb-10">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/50 text-green-400 font-bold">4</div>
                             <h2 class="text-xl font-black text-white">{{ $t('influencers.create.wizard.step4.header') }}</h2>
                         </div>
 
-                        <!-- 24/7 Live -->
                         <div class="p-6 bg-white/5 rounded-2xl border border-white/10 relative overflow-hidden">
                             <div class="absolute inset-0 bg-gradient-to-r from-green-500/10 to-transparent"></div>
                             <div class="relative z-10">
@@ -728,7 +723,6 @@
                             </div>
                         </div>
 
-                        <!-- VOD Generation -->
                         <div class="p-6 bg-white/5 rounded-2xl border border-white/10 relative overflow-hidden">
                             <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent"></div>
                             <div class="relative z-10">
@@ -759,7 +753,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <!-- Hidden File Inputs -->
@@ -771,7 +765,7 @@
             <div class="flex items-center justify-between px-6 pb-2 w-full">
                 <el-button @click="handleBack" :disabled="activeStep === 0 && mode === 'create'" class="soul-glass-btn px-8 !rounded-xl">{{ $t('influencers.create.wizard.actions.back') }}</el-button>
                 <div class="flex gap-4">
-                    <el-button v-if="activeStep < 4" @click="handleNext" type="primary" 
+                    <el-button v-if="activeStep < MAX_STEP" @click="handleNext" type="primary" 
                         :disabled="activeStep === 1 && creationSource === 'ai' && newInfluencer.visual.modelType === 'aidol' && (!newInfluencer.visual.thumbnailUrl || !newInfluencer.visual.aidolClips.idle)"
                         class="soul-glass-btn px-8 !rounded-xl !bg-blue-600 !text-white !border-blue-500 shadow-lg shadow-blue-500/30 disabled:!opacity-40 disabled:!cursor-not-allowed">
                         <span>{{ $t('influencers.create.wizard.actions.nextStep') }}</span>
@@ -779,7 +773,7 @@
                             {{ !newInfluencer.visual.thumbnailUrl ? '(generate AI image first)' : '(generate idle video)' }}
                         </span>
                     </el-button>
-                    <el-button v-if="activeStep === 4" type="primary" @click="mode === 'edit' ? handleUpdateInfluencer() : handleCreateInfluencer()" :loading="loading" class="soul-initialize-btn px-12 h-[46px] !rounded-[16px]">{{ mode === 'edit' ? $t('influencers.create.synchronizeInfluencer') : $t('influencers.create.wizard.actions.initializeEntity') }}</el-button>
+                    <el-button v-if="activeStep === MAX_STEP" type="primary" @click="mode === 'edit' ? handleUpdateInfluencer() : handleCreateInfluencer()" :loading="loading" class="soul-initialize-btn px-12 h-[46px] !rounded-[16px]">{{ mode === 'edit' ? $t('influencers.create.synchronizeInfluencer') : $t('influencers.create.wizard.actions.initializeEntity') }}</el-button>
                 </div>
             </div>
         </template>
@@ -836,6 +830,8 @@ const props = withDefaults(defineProps<{
 }>(), {
     mode: 'create'
 });
+
+const MAX_STEP = 3;//4
 
 const emit = defineEmits(['update:modelValue', 'success', 'update:influencer']);
 
@@ -1150,7 +1146,7 @@ const handleNext = async () => {
     //     await handleRemoveBackground();
     // }
 
-    if (activeStep.value < 4) {
+    if (activeStep.value < MAX_STEP) {
         activeStep.value++;
     }
 };
@@ -1529,7 +1525,6 @@ const stopWebcam = () => {
 const startTrackingLoop = () => {
     if (trackingInterval) clearInterval(trackingInterval);
     
-    // Phase 40: Optimized for 5 FPS (200ms) to reduce CPU load as requested
     trackingInterval = setInterval(async () => {
         if (!enableTracking.value) return;
         
@@ -1644,6 +1639,7 @@ const handlePortraitSelected = async (e: Event) => {
     if (!file) return;
 
     try {
+        loading.value = true;
         const url = await handleGenericUpload(file);
         if (url) {
             aiIdolImage.value = url;
@@ -1657,6 +1653,7 @@ const handlePortraitSelected = async (e: Event) => {
         toast.error(t('influencers.create.toasts.uploadFailed'));
     } finally {
         if (portraitInput.value) portraitInput.value.value = '';
+        loading.value = false;
     }
 };
 

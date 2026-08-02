@@ -27,7 +27,7 @@
     </div>
 
     <div class="header-right">
-      <div class="credit-wrapper" v-if="user">
+      <div class="credit-wrapper" v-if="user && uiStore.creditModeEnabled">
        <GPopover trigger="hover" placement="bottom" :width="300">
           <template #reference>
             <div class="credit-balance glass-premium">
@@ -80,11 +80,15 @@
         </GPopover>
       </div>
 
+      <el-button type="primary" text round bg :icon="Export" @click="handleExport">
+        {{ t('videoEditor.menubar.export') }}
+      </el-button>
+
       <div class="action-divider" />
 
-      <GButton type="primary" :icon="ApplicationOne" class="premium-button" @click="handleEditorMode('studio')">
-        <span>{{ t('projects.editor.header.studio') }}</span>
-      </GButton>
+      <el-button type="" text round bg :icon="ApplicationOne" @click="handleEditorMode('studio')">
+        {{ t('projects.editor.header.studio') }}
+      </el-button>
 
       <GDropdown @command="handleUserCommand" placement="bottom">
         <div class="user-profile">
@@ -135,10 +139,11 @@ import { ref, computed, nextTick } from 'vue'
 import { 
   ArrowLeft, Edit, Ticket, Upload, Down, Movie, ApplicationOne, 
   ApplicationOne as AdobePremiere, Zip, User as UserIcon, Diamond, Key as KeyIcon, 
-  Logout as LogoutIcon, Robot, RobotOne, 
+  Logout as LogoutIcon, Robot, RobotOne, Export
 } from '@icon-park/vue-next'
 import { useProjectStore } from '@/stores/project'
 import { useUserStore } from '@/stores/user'
+import { useUIStore } from '@/stores/ui'
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner'
 
@@ -158,6 +163,7 @@ const emits = defineEmits(['toggle-left', 'toggle-right', 'export', 'view-mode']
 
 const projectStore = useProjectStore()
 const userStore = useUserStore()
+const uiStore = useUIStore()
 const project = computed(() => projectStore.currentProject)
 const user = computed(() => userStore.user)
 
@@ -216,10 +222,8 @@ const handlePlanSelection = (data: any) => {
 // Navigation & Actions
 const goBack = () => router.push('/projects')
 
-
-
-const handleExport = (command: string) => {
-  emits('export', command)
+const handleExport = () => {
+  emits('export')
 }
 
 const handleEditorMode = (command: string) => {

@@ -1,7 +1,7 @@
 <template>
   <div class="platforms-view min-h-screen bg-[#0a0a0c] text-white font-outfit">
     <!-- Header Section -->
-    <header class="relative py-16 px-8 overflow-hidden border-b border-white/5">
+    <header class="relative py-8 px-8 overflow-hidden border-b border-white/5">
       <div class="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/10 to-transparent pointer-events-none"></div>
       
       <!-- Ambient Glows -->
@@ -10,7 +10,7 @@
 
       <div class="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
         <div>
-          <h1 class="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
+          <h1 class="text-4xl font-black mb-4 tracking-tighter leading-[0.9]">
             {{ t('platforms.header.connected') }}
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">
               {{ t('platforms.header.platforms') }}
@@ -107,11 +107,18 @@
                      <refresh theme="outline" size="18" />
                   </button>
 
-                  <router-link 
-                     :to="account.platform === 'custom-rtmp' ? { name: 'live-studio', query: { platformId: account._id } } : { name: 'platforms-cms', query: { accountId: account._id } }"
+                  
+                  <button class="flex-1 h-10 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wide flex items-center justify-center hover:scale-[1.02] transition-transform" 
+                    v-if="account.platform == 'custom-rtmp'" 
+                    @click="goStudioLive(account._id)">
+                    {{ t('platforms.actions.goLive') }}
+                  </button>
+                  
+                  <router-link v-else
+                     :to="{ name: 'platforms-cms', query: { accountId: account._id } }"
                      class="flex-1 h-10 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wide flex items-center justify-center hover:scale-[1.02] transition-transform"
                   >
-                     {{ account.platform === 'custom-rtmp' ? t('platforms.actions.goLive') : t('platforms.actions.manage') }}
+                     {{ t('platforms.actions.manage') }}
                   </router-link>
 
                   <button 
@@ -222,6 +229,8 @@ import { usePlatformStore } from '@/stores/platform';
 import { getFileUrl } from '@/utils/api';
 import { useI18n } from 'vue-i18n';
 import { useUIStore } from '@/stores/ui';
+import { useStudioStore } from '@/stores/studio';
+import router from '@/router';
 
 const { t } = useI18n()
 const platformStore = usePlatformStore();
@@ -255,11 +264,17 @@ const initiateOAuth = async (platform: string) => {
   try {
     const data = await platformStore.getAuthUrl(platform);
     if (data && data.url) {
-      window.location.href = data.url;
+      (window as any).activeOAuthPopup = window.open(
+        data.url,
+        "OAuthPopup",
+        "width=600,height=400,left=200,top=100"
+      );
     } else {
       toast.error(t('platforms.toasts.authUrlFailed'));
     }
-  } catch (e) {
+  } catch (e: any) {
+    const errorMsg = e.response?.data?.error || e.message;
+    toast.error(t('platforms.toasts.authUrlFailed') + ': ' + errorMsg);
   }
 };
 
@@ -336,6 +351,12 @@ const resetForm = () => {
 const syncAccount = async (account: any) => {
   toast.info(t('platforms.toasts.syncing', { name: account.accountName }));
   setTimeout(() => toast.success(t('platforms.toasts.syncSuccess')), 1000);
+};
+
+const goStudioLive = async (id: string) => {
+  // const studioStore = useStudioStore();
+  // studioStore.showOnboarding = true;
+  router.push({name: "live-sales", params: {platformId: id}});
 };
 
 onMounted(() => {

@@ -7,7 +7,7 @@ const marketplaceStore = useMarketplaceStore();
 </script>
 
 <template>
-  <header class="relative py-20 px-8 overflow-hidden border-b border-white/5">
+  <header class="relative py-8 px-8 overflow-hidden border-b border-white/5">
     <div class="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/10 to-transparent pointer-events-none"></div>
     
     <!-- Ambient Glows -->
@@ -21,7 +21,7 @@ const marketplaceStore = useMarketplaceStore();
           <span class="text-[10px] font-black uppercase tracking-widest text-green-400">{{ $t('merchant.header.liveCommerce') }}</span>
         </div>
         
-        <h1 class="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
+        <h1 class="text-4xl font-black mb-4 tracking-tighter leading-[0.9]">
           {{ $t('merchant.header.title') }} <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">{{ $t('merchant.header.hub') }}</span>
         </h1>
         <p class="text-xl text-gray-400 max-w-xl leading-relaxed font-medium">

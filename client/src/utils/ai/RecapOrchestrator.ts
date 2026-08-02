@@ -8,7 +8,7 @@ export interface ViralMoment {
     segmentTitle: string;
     reason: string;
     hypeScore: number;
-    viralityScore: number; // Phase 24: context-weighted score
+    viralityScore: number;
     transcriptSnippet: string;
 }
 
@@ -19,7 +19,7 @@ export interface SessionRecap {
     highlights: string[];
     performanceScore: number;
     timestamp: number;
-    contextMetrics?: Record<string, any>; // Phase 22: Added context metrics
+    contextMetrics?: Record<string, any>;
 }
 
 /**
@@ -34,7 +34,7 @@ export class RecapOrchestrator {
     });
 
     constructor() {
-        // Phase 22: Listen for vision events for autonomous highlights
+        // Listen for vision events for autonomous highlights
         if (typeof window !== 'undefined') {
             window.addEventListener('vision:detection_result', (e: Event) => {
                 const detail = (e as CustomEvent).detail;
@@ -42,7 +42,7 @@ export class RecapOrchestrator {
             });
         }
 
-        // Phase 32: Listen for fact checks
+        // Listen for fact checks
         factCheckingService.on('fact:verified', (result: FactCheckResult) => {
             this.handleFactCheck(result);
         });
@@ -88,7 +88,7 @@ export class RecapOrchestrator {
         const studioStore = useStudioStore();
         const ctx = studioStore.streamingContext;
 
-        // Phase 24: Context-weighted virality scoring
+        // Context-weighted virality scoring
         const contextBoost = this.getContextBoost(ctx, reason);
         const viralityScore = Math.min(1.0, hypeScore * contextBoost);
 
@@ -110,7 +110,7 @@ export class RecapOrchestrator {
             this.triggerAutoHighlight(moment);
         }
 
-        // Phase 24: Auto-clip on high virality moments
+        // Auto-clip on high virality moments
         if (viralityScore >= 0.85) {
             this.triggerAutoClip(moment, ctx || 'general');
         }

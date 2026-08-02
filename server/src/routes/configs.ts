@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { AdminSettings } from '../models/AdminSettings.js';
-import { connectDB } from '../utils/db.js';
-
-import { Logger } from '../utils/Logger.js';
-
+import { getAdminSettings } from '~/models/AdminSettings.js';
+import { connectDB } from '~/utils/db.js';
+import { Logger } from '~/utils/Logger.js';
+import { configService } from '~/utils/ConfigService.js';
 const router = Router();
 
 /**
@@ -13,7 +12,7 @@ const router = Router();
 router.get('/plans', async (req, res) => {
     try {
         await connectDB();
-        const settings = await AdminSettings.findOne().select('plans creditPackages aiSettings');
+        const settings = await getAdminSettings();
 
         if (!settings) {
             return res.status(404).json({
@@ -24,7 +23,7 @@ router.get('/plans', async (req, res) => {
         }
 
         // Filter active credit packages
-        const activePackages = (settings.creditPackages || []).filter(pkg => pkg.isActive);
+        const activePackages = (settings.creditPackages || []).filter((pkg: any) => pkg.isActive);
 
         res.json({
             success: true,
@@ -33,7 +32,7 @@ router.get('/plans', async (req, res) => {
                 creditPackages: activePackages,
                 aiSettings: {
                     defaults: settings.aiSettings?.defaults || {},
-                    models: (settings.aiSettings?.models || []).filter(m => m.isActive)
+                    models: (settings.aiSettings?.models || []).filter((m: any) => m.isActive)
                 }
             },
             error: null
@@ -51,17 +50,18 @@ router.get('/plans', async (req, res) => {
 router.get('/public', async (req, res) => {
     try {
         await connectDB();
-        const adminSettings = await AdminSettings.findOne();
-        const settings = adminSettings?.whitelabel;
-        const domain = adminSettings?.apiConfigs?.publicDomain;
+        const whitelabel = configService.whitelabel;
+        const domain = configService.domain;
 
         res.json({
             success: true,
             data: {
-                appName: settings?.appName || 'AntStudio',
-                logo: settings?.logo || '/logo.png',
-                favicon: settings?.favicon || '/favicon.png',
-                domain: domain || 'https://studio.agrhub.com'
+                appName: whitelabel?.appName || 'AntStudio',
+                logo: whitelabel?.logo || '/logo.png',
+                favicon: whitelabel?.favicon || '/favicon.png',
+                domain: domain,
+                creditModeEnabled: configService.creditModeEnabled,
+                isLicenseServer: configService.isMasterServer
             }
         });
     } catch (error: any) {

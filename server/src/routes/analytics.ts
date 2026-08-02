@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { connectDB } from '../utils/db.js';
 import { Project } from '../models/Project.js';
-import { monitoringService } from '../services/monitoringService.js';
-import { GrowthService } from '../services/GrowthService.js';
+import { monitoringService } from '../services/system/MonitoringService.js';
+import { GrowthService } from '../services/streaming/GrowthService.js';
 import { adminMiddleware } from '../middleware/auth.js';
 
 const router = Router();

@@ -11,116 +11,180 @@
           <div
             class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
             <el-button circle class="!w-16 !h-16 !bg-blue-600 !text-white !border-none shadow-[0_0_30px_rgba(59,130,246,0.4)]" @click="togglePlay">
-              <Play v-if="!isPlaying" theme="filled" size="32" />
+              <PlayOne v-if="!isPlaying" theme="filled" size="32" />
               <Pause v-else theme="filled" size="32" />
             </el-button>
           </div>
         </div>
 
-        <!-- Floating Tooltips/Adustments -->
-        <div v-if="selectedAssetId" class="absolute top-10 right-10 flex flex-col gap-4 z-50">
-          <el-popover placement="left" :width="280" trigger="click" popper-class="cinematic-popper">
-            <template #reference>
-              <button class="tool-btn bg-blue-600/10 border-blue-500/20 text-blue-400 shadow-[0_4px_15px_rgba(59,130,246,0.1)]">
-                <magic theme="outline" size="18" /> <span>{{ t('projects.editor.timeline.generateAction') }}</span>
-              </button>
-            </template>
-            <div class="p-4 space-y-4">
-              <div class="flex flex-col gap-3">
-                <div class="text-[11px] uppercase font-bold text-white/40 mb-1">{{ t('projects.editor.timeline.manualGeneration') }}</div>
-                
-                <el-button class="!w-full !justify-start !bg-blue-600/10 !text-blue-400 !border-blue-500/20 !text-[11px] !font-bold hover:!bg-blue-600 hover:!text-white transition-all shadow-lg"
-                  @click="handleGenerateAllVoiceovers">
-                  <voice theme="outline" size="14" class="mr-2" /> {{ t('projects.editor.timeline.createAllVoiceovers') }}
-                </el-button>
+        <!-- Dynamic Floating Action Toolbar matching Selected Element -->
+        <div v-if="selectedAssetId" class="absolute top-10 right-10 flex flex-col gap-2 z-50">
 
-                <el-button class="!w-full !justify-start !bg-yellow-500/10 !text-yellow-500 !border-yellow-500/20 !text-[11px] !font-bold"
-                  @click="handleGenerateAllCaptions">
-                  <text-message theme="outline" size="14" class="mr-2" /> {{ t('projects.editor.timeline.createAllSubtitles') }}
-                </el-button>
+          <!-- VIDEO TRACK CONTROLS -->
+          <template v-if="selectedTrack === 'video'">
+            <el-button
+              type="primary"
+              plain
+              round
+              bg
+              :icon="MagicWand"
+              @click="openTransitionMenu(selectedSegment)">
+              {{ t('projects.editor.timeline.transitionsTitle') || 'Transitions' }}
+            </el-button>
 
-                <el-button class="!w-full !justify-start !bg-blue-500/10 !text-blue-400 !border-blue-500/20 !text-[11px] !font-bold"
-                  @click="handleGenerateMusic">
-                  <music-one theme="outline" size="14" class="mr-2" /> {{ t('projects.editor.timeline.regenBgm') }}
+            <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
+              <template #reference>
+                <el-button plain round bg :icon="VolumeNotice">
+                  {{ t('projects.editor.timeline.volume') }}
                 </el-button>
+              </template>
+              <div class="p-4 space-y-4">
+                <div class="flex flex-col gap-2">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.videoVolume') }}</div>
+                  <div class="flex items-center gap-3">
+                    <el-slider v-model="currentVolume" :min="0" :max="1" :step="0.01" class="flex-1" @change="updateVolume" />
+                    <span class="text-[10px] w-8 text-right">{{ Math.round(currentVolume * 100) }}%</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </el-popover>
+            </el-popover>
 
-          <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
-            <template #reference>
-              <button class="tool-btn"><volume-notice theme="outline" size="18" /> <span>{{
-                t('projects.editor.timeline.volume') }}</span></button>
-            </template>
-            <div class="p-4 space-y-4">
-              <div class="flex flex-col gap-4">
-                <!-- Music Volume (Always visible) -->
+            <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
+              <template #reference>
+                <el-button plain round bg :icon="Speed">
+                  {{ t('projects.editor.timeline.speed') }}
+                </el-button>
+              </template>
+              <div class="p-4 space-y-4">
+                <div class="flex flex-col gap-2">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.speed') }}</div>
+                  <div class="flex items-center gap-3">
+                    <el-slider v-model="currentSpeed" :min="0.1" :max="5" :step="0.1" class="flex-1" @change="updateSpeed" />
+                    <span class="text-[10px] w-8 text-right">{{ currentSpeed }}x</span>
+                  </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.duration') }}</div>
+                  <div class="flex items-center gap-2">
+                    <el-input-number v-model="currentDuration" :min="1" :max="60" size="small" @change="updateDuration" />
+                    <span class="text-[10px] text-white/40">{{ t('common.seconds') }}</span>
+                  </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.trimOffset') }}</div>
+                  <div class="flex items-center gap-2">
+                    <el-input-number v-model="currentTrimOffset" :min="0" :step="0.1" size="small" @change="updateTrimOffset" />
+                    <span class="text-[10px] text-white/40">{{ t('common.seconds') }}</span>
+                  </div>
+                </div>
+              </div>
+            </el-popover>
+          </template>
+
+          <!-- AI VOICE TRACK CONTROLS -->
+          <template v-else-if="selectedTrack === 'voice'">
+            <el-button
+              type="primary"
+              plain
+              round
+              bg
+              :icon="Voice"
+              @click="handleGenerateVoiceover(selectedSegment)">
+              {{ t('projects.editor.timeline.regenVoiceover') || 'Regen Voice' }}
+            </el-button>
+
+            <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
+              <template #reference>
+                <el-button plain round bg :icon="VolumeNotice">
+                  {{ t('projects.editor.timeline.volume') }}
+                </el-button>
+              </template>
+              <div class="p-4 space-y-4">
+                <div class="flex flex-col gap-2">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.voiceVolume') || 'Voice Volume' }}</div>
+                  <div class="flex items-center gap-3">
+                    <el-slider v-model="currentVolume" :min="0" :max="1" :step="0.01" class="flex-1" @change="updateVolume" />
+                    <span class="text-[10px] w-8 text-right">{{ Math.round(currentVolume * 100) }}%</span>
+                  </div>
+                </div>
+              </div>
+            </el-popover>
+
+            <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
+              <template #reference>
+                <el-button plain round bg :icon="Speed">
+                  {{ t('projects.editor.timeline.speed') }}
+                </el-button>
+              </template>
+              <div class="p-4 space-y-4">
+                <div class="flex flex-col gap-2">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.voiceSpeed') || 'Voice Speed' }}</div>
+                  <div class="flex items-center gap-3">
+                    <el-slider v-model="currentSpeed" :min="0.5" :max="2" :step="0.1" class="flex-1" @change="updateSpeed" />
+                    <span class="text-[10px] w-8 text-right">{{ currentSpeed }}x</span>
+                  </div>
+                </div>
+              </div>
+            </el-popover>
+          </template>
+
+          <!-- SUBTITLE / CAPTION TRACK CONTROLS -->
+          <template v-else-if="selectedTrack === 'subtitle'">
+            <el-button
+              type="warning"
+              plain
+              round
+              bg
+              :icon="Edit"
+              @click="showCaptionEditor = true">
+              {{ t('projects.editor.storyboard.editCaptions') || 'Edit Captions' }}
+            </el-button>
+
+            <el-button
+              type="success"
+              plain
+              round
+              bg
+              :icon="TextMessage"
+              @click="handleGenerateCaptions(selectedSegment)">
+              {{ t('projects.editor.timeline.regenCaptions') || 'Regen Subtitles' }}
+            </el-button>
+          </template>
+
+          <!-- MUSIC / BGM TRACK CONTROLS -->
+          <template v-else-if="selectedTrack === 'music'">
+            <el-button
+              type="danger"
+              plain
+              round
+              bg
+              :icon="MusicOne"
+              @click="handleGenerateMusic">
+              {{ t('projects.editor.timeline.regenBgm') }}
+            </el-button>
+
+            <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
+              <template #reference>
+                <el-button plain round bg :icon="VolumeNotice">
+                  {{ t('projects.editor.timeline.volume') }}
+                </el-button>
+              </template>
+              <div class="p-4 space-y-4">
                 <div class="flex flex-col gap-2">
                   <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.musicVolume') }}</div>
                   <div class="flex items-center gap-3">
-                    <el-slider v-model="musicVolume" :min="0" :max="1" :step="0.01" class="flex-1"
-                      @change="updateMusicVolume" />
+                    <el-slider v-model="musicVolume" :min="0" :max="1" :step="0.01" class="flex-1" @change="updateMusicVolume" />
                     <span class="text-[10px] w-8 text-right">{{ Math.round(musicVolume * 100) }}%</span>
                   </div>
                 </div>
-
-                <!-- Segment Volume (Only if segment selected and is not BGM) -->
-                <div v-if="selectedAssetId && !selectedAssetId.startsWith('bgm')" class="flex flex-col gap-4 pt-4 border-t border-white/5">
-                   <div class="text-[10px] uppercase font-bold text-blue-400 px-1">{{ t('projects.editor.timeline.selectedSegment', { id: selectedAssetId }) }}</div>
-                   <div class="flex flex-col gap-2">
-                    <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.videoVolume') }}</div>
-                    <div class="flex items-center gap-3">
-                      <el-slider v-model="currentVolume" :min="0" :max="1" :step="0.01" class="flex-1"
-                        @change="updateVolume" />
-                      <span class="text-[10px] w-8 text-right">{{ Math.round(currentVolume * 100) }}%</span>
-                    </div>
-                  </div>
-                </div>
-                
                 <div class="flex flex-col gap-2 pt-4 border-t border-white/5">
-                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{
-                    t('projects.editor.timeline.fadeOut') }}</div>
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{ t('projects.editor.timeline.fadeOut') }}</div>
                   <el-slider v-model="fadeOut" :min="0" :max="5" :step="0.1" @change="updateFade" />
                 </div>
               </div>
-            </div>
-          </el-popover>
+            </el-popover>
+          </template>
 
-          <el-popover placement="left" :width="240" trigger="click" popper-class="cinematic-popper">
-            <template #reference>
-              <button class="tool-btn">
-                <speed theme="outline" size="18" /> <span>{{ t('projects.editor.timeline.speed') }}</span>
-              </button>
-            </template>
-            <div class="p-4 space-y-4">
-              <div class="flex flex-col gap-2">
-                <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{
-                  t('projects.editor.timeline.speed') }}</div>
-                <div class="flex items-center gap-3">
-                  <el-slider v-model="currentSpeed" :min="0.1" :max="5" :step="0.1" class="flex-1"
-                    @change="updateSpeed" />
-                  <span class="text-[10px] w-8 text-right">{{ currentSpeed }}x</span>
-                </div>
-              </div>
-              <div class="flex flex-col gap-2">
-                <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{
-                  t('projects.editor.timeline.duration') }}</div>
-                <div class="flex items-center gap-2">
-                  <el-input-number v-model="currentDuration" :min="1" :max="60" size="small" @change="updateDuration" />
-                  <span class="text-[10px] text-white/40">{{ t('common.seconds') }}</span>
-                </div>
-              </div>
-              <div class="flex flex-col gap-2">
-                <div class="flex justify-between text-[11px] uppercase font-bold text-white/40">{{
-                  t('projects.editor.timeline.trimOffset') }}</div>
-                <div class="flex items-center gap-2">
-                  <el-input-number v-model="currentTrimOffset" :min="0" :step="0.1" size="small"
-                    @change="updateTrimOffset" />
-                  <span class="text-[10px] text-white/40">{{ t('common.seconds') }}</span>
-                </div>
-              </div>
-            </div>
-          </el-popover>
         </div>
 
         <el-dialog v-model="transitionMenuVisible" :title="t('projects.editor.timeline.transitionSettings')"
@@ -145,7 +209,7 @@
             <back theme="outline" size="20" />
           </button>
           <button class="ctrl-btn-large bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]" @click="togglePlay">
-            <Play v-if="!isPlaying" theme="filled" size="24" />
+            <PlayOne v-if="!isPlaying" theme="filled" size="24" />
             <Pause v-else theme="filled" size="24" />
           </button>
           <button class="ctrl-btn-small hover:text-blue-400" @click="handleSeek(5)">
@@ -186,7 +250,7 @@
 
           <div class="h-4 w-px bg-white/10 mx-2"></div>
 
-          <button class="ctrl-btn-small hover:text-blue-400" @click="handleAssemble">
+          <button class="ctrl-btn-small hover:text-blue-400" @click="handleExport">
             <Export theme="outline" size="20" />
           </button>
 
@@ -202,12 +266,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Export Settings Dialog -->
-    <ExportSettingsDialog v-model="showExportSettings" @complete="onExportComplete" />
-
-    <!-- Publish / Result Dialog -->
-    <PublishDialog v-model="showPublishDialog" :project="project" />
 
     <!-- Resize Handle -->
     <div
@@ -447,6 +505,15 @@
   <!-- Lower-Third Editor Dialog -->
   <LowerThirdEditor v-model="lowerThirdEditorVisible" :lower-third="currentLowerThird"
     :max-start-time="currentLowerThirdSegment?.duration || 60" @save="handleSaveLowerThird" />
+
+  <!-- Caption Editor Dialog -->
+  <CaptionEditorDialog v-model="showCaptionEditor" :project="project" />
+
+  <!-- Export Settings Dialog -->
+  <ExportSettingsDialog v-model="showExportSettings" :project-data="exportProjectData" @complete="onExportComplete"/>
+
+  <!-- Publish Dialog -->
+  <PublishDialog v-model="showPublishDialog" :project="project"/>
 </template>
 
 <script setup lang="ts">
@@ -455,7 +522,7 @@ import {
   VideoTwo, Pic, Voice, MusicOne, ZoomIn,
   ZoomOut, Magic, Check, Timeline, TextMessage,
   MusicOne as Music, Refresh, Back, Next, Export,
-  Speed, VolumeNotice, Play, Pause
+  Speed, VolumeNotice, PlayOne, Pause, MagicWand, Edit
 } from '@icon-park/vue-next'
 import { cn } from '@/utils/ui'
 import { useProjectStore } from '@/stores/project'
@@ -465,6 +532,7 @@ import { toast } from 'vue-sonner'
 import ExportSettingsDialog from './ExportSettingsDialog.vue'
 import PublishDialog from './PublishDialog.vue'
 import LowerThirdEditor from './LowerThirdEditor.vue'
+import CaptionEditorDialog from './CaptionEditorDialog.vue'
 import GMedia from '@/components/ui/GMedia.vue'
 import WaveformDisplay from '@/components/ui/WaveformDisplay.vue'
 
@@ -478,6 +546,7 @@ const { t } = useI18n()
 // Canvas Ref
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const pxPerSec = ref(15)
+const showCaptionEditor = ref(false)
 
 const currentDuration = ref(0)
 const currentVolume = ref(1)
@@ -491,7 +560,7 @@ const totalTimeRef = ref<HTMLElement | null>(null)
 const playheadRef = ref<HTMLElement | null>(null)
 
 const segments = computed(() => props.project?.pages || props.project?.storyboard?.segments || [])
-
+const anyLoading = ref(false);
 // Compute aspect ratio CSS class from project setting
 const previewAspectClass = computed(() => {
   switch (props.project?.aspectRatio) {
@@ -542,19 +611,23 @@ watch(segments, (newSegs) => {
     const durationInSeconds = isTemplatePage ? rawDuration / 1000 : rawDuration;
 
     return {
-      _id: s._id || s.order || 0,
-      url: s.preview || s.generatedVideo?.s3Key || s.s3Key || '',
+      _id: s._id || s.uuid || s.order || 0,
+      uuid: s.uuid,
+      order: s.order != undefined ? s.order : 0,
+      title: s.title,
+      description: s.description,
       duration: durationInSeconds,
-      sourceDuration: s.generatedVideo?.duration || durationInSeconds, // Update this if needed
-      speed: s.speed || 1,
-      volume: s.volume || 1,
-      order: s.order || 0,
-      trimOffset: s.trimOffset || 0,
-      voiceUrl: s.generatedAudio?.s3Key || s.generatedAudio?.url || '',
-      voiceVolume: 1,
-      captions: s.captions,
-      templatePage: isTemplatePage ? s : undefined,
-      sceneImage: s.thumbnail || s.sceneImage
+      speed: s.speed != undefined ? s.speed : 1,
+      volume: s.volume != undefined ? s.volume : 1,
+      trimOffset: s.trimOffset != undefined ? s.trimOffset : 0,
+      voiceVolume: s.voiceVolume != undefined ? s.voiceVolume : 1,
+      url: s.url || s.generatedVideo?.s3Key || s.preview || '',
+      voiceUrl: s.voiceUrl || s.generatedAudio?.s3Key || '',
+      sceneImage: s.sceneImage || s.thumbnail || '',
+      generatedVideo: s.generatedVideo,
+      generatedAudio: s.generatedAudio,
+      captions: s.captions || [],
+      transition: s.transition
     }
   }))
 }, { immediate: true, deep: true })
@@ -590,8 +663,12 @@ const selectedSegment = computed(() => {
   return segments.value.find((s: any) => (s.uuid === id || s.order.toString() === id || s._id === id))
 })
 const selectedTrack = computed(() => {
-  if (!selectedAssetId.value) return null
-  return selectedAssetId.value.split(':')[0]
+  if (!selectedAssetId.value) return 'video'
+  const prefix = selectedAssetId.value.split(':')[0]
+  if (prefix === 'voice') return 'voice'
+  if (prefix === 'cap' || prefix === 'subtitle') return 'subtitle'
+  if (prefix === 'bgm' || prefix === 'music') return 'music'
+  return 'video'
 })
 
 const togglePlay = () => {
@@ -611,15 +688,18 @@ const selectAsset = (assetId: string, seg: any) => {
     // bgm selection, no segment specifics
     return
   }
-  currentVolume.value = seg.volume || 1
-  currentSpeed.value = seg.speed || 1
-  currentDuration.value = seg.duration || 5
-  currentTrimOffset.value = seg.trimOffset || 0
+  const isVoice = assetId.startsWith('voice:')
+  currentVolume.value = isVoice 
+    ? (seg.voiceVolume != undefined ? seg.voiceVolume : 1)
+    : (seg.volume != undefined ? seg.volume : 1)
+  currentSpeed.value = seg.speed != undefined ? seg.speed : 1
+  currentDuration.value = seg.duration != undefined ? seg.duration : 5
+  currentTrimOffset.value = seg.trimOffset != undefined ? seg.trimOffset : 0
 
   let elapsed = 0
   for (const s of timelineSegments.value) {
     if (s.order === seg.order) break
-    elapsed += (s.duration / (s.speed || 1))
+    elapsed += (s.duration / (s.speed != undefined ? s.speed : 1))
   }
   player.seek(elapsed)
 }
@@ -638,11 +718,16 @@ const updateMusicVolume = async () => {
 
 const saveProjectUpdate = async () => {
   try {
+    const payload: any = {}
     if (props.project.pages) {
-      await projectStore.updateProject({ pages: props.project.pages })
+      payload.pages = props.project.pages
     } else {
-      await projectStore.updateProject({ storyboard: props.project.storyboard })
+      payload.storyboard = props.project.storyboard
     }
+    if (props.project.musics) {
+      payload.musics = props.project.musics
+    }
+    await projectStore.updateProject(payload)
     return true
   } catch (e) {
     return false
@@ -652,7 +737,16 @@ const saveProjectUpdate = async () => {
 const updateVolume = async () => {
   if (!selectedSegment.value) return
   try {
-    selectedSegment.value.volume = currentVolume.value
+    const isVoice = selectedTrack.value === 'voice'
+    if (isVoice) {
+      selectedSegment.value.voiceVolume = currentVolume.value
+      const ts = timelineSegments.value.find((s: any) => s._id === selectedSegment.value._id || s.uuid === selectedSegment.value.uuid || s.order === selectedSegment.value.order)
+      if (ts) ts.voiceVolume = currentVolume.value
+    } else {
+      selectedSegment.value.volume = currentVolume.value
+      const ts = timelineSegments.value.find((s: any) => s._id === selectedSegment.value._id || s.uuid === selectedSegment.value.uuid || s.order === selectedSegment.value.order)
+      if (ts) ts.volume = currentVolume.value
+    }
     await saveProjectUpdate()
     toast.success(t('projects.editor.timeline.volumeUpdated'))
   } catch (e) {
@@ -664,6 +758,8 @@ const updateSpeed = async () => {
   if (!selectedSegment.value) return
   try {
     selectedSegment.value.speed = currentSpeed.value
+    const ts = timelineSegments.value.find((s: any) => s._id === selectedSegment.value._id || s.order === selectedSegment.value.order)
+    if (ts) ts.speed = currentSpeed.value
     await saveProjectUpdate()
     toast.success(t('projects.editor.timeline.speedUpdated'))
   } catch (e) {
@@ -675,6 +771,8 @@ const updateDuration = async () => {
   if (!selectedSegment.value) return
   try {
     selectedSegment.value.duration = currentDuration.value
+    const ts = timelineSegments.value.find((s: any) => s._id === selectedSegment.value._id || s.order === selectedSegment.value.order)
+    if (ts) ts.duration = currentDuration.value
     await saveProjectUpdate()
     toast.success(t('projects.editor.timeline.durationUpdated'))
   } catch (e) {
@@ -686,6 +784,8 @@ const updateTrimOffset = async () => {
   if (!selectedSegment.value) return
   try {
     selectedSegment.value.trimOffset = currentTrimOffset.value
+    const ts = timelineSegments.value.find((s: any) => s._id === selectedSegment.value._id || s.order === selectedSegment.value.order)
+    if (ts) ts.trimOffset = currentTrimOffset.value
     await saveProjectUpdate()
     toast.success(t('common.updateSuccess'))
   } catch (e) {
@@ -749,21 +849,25 @@ const handleGenerateCaptions = async (seg: any) => {
 }
 
 const handleGenerateAllVoiceovers = async () => {
+  anyLoading.value = true
   toast.info(t('projects.editor.timeline.voiceoverGenerating'))
   for (const seg of timelineSegments.value) {
     if (!seg.voiceUrl) {
       await handleGenerateVoiceover(seg)
     }
   }
+  anyLoading.value = false;
 }
 
 const handleGenerateAllCaptions = async () => {
+  anyLoading.value = true;
   toast.info(t('projects.editor.timeline.captionsGenerated'))
   for (const seg of timelineSegments.value) {
     if (!seg.captions || seg.captions.length === 0) {
       await handleGenerateCaptions(seg)
     }
   }
+  anyLoading.value = false;
 }
 
 const isGeneratingMusic = ref(false)
@@ -836,20 +940,38 @@ const toggleTimeline = () => {
   timelineHeight.value = timelineHeight.value > 0 ? 0 : 250
 }
 
-const showExportSettings = ref(false)
+const showExportSettings = computed({
+  get(){
+    return projectStore.exportDialogVisible
+  },
+  set(value){
+    projectStore.setExportDialogState(value)
+  }
+});
 const showPublishDialog = ref(false)
 
-const handleAssemble = () => {
-  const completedSegments = timelineSegments.value.filter((s: any) => s.url)
+const exportProjectData = computed(() => {
+  return {
+    ...props.project,
+    storyboard: {
+      ...props.project?.storyboard,
+      segments: timelineSegments.value
+    }
+  }
+})
+
+const handleExport = () => {
+  const completedSegments = timelineSegments.value.filter((s: any) => s.generatedVideo?.s3Key || s.sceneImage)
   if (completedSegments.length === 0) {
     toast.error(t('projects.editor.video.noSegments'))
     return
   }
-  showExportSettings.value = true
+  projectStore.setExportDialogState(true)
 }
 
-const onExportComplete = async () => {
+const onExportComplete = (data) => {
   showPublishDialog.value = true
+  console.log("onExportComplete", data);
 }
 
 const formatTime = (seconds: number) => {

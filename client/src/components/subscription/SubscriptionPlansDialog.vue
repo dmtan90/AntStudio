@@ -23,7 +23,7 @@
             :class="cn('px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2', isYearly ? 'bg-brand-primary text-black shadow-[0_8px_20px_rgba(59,130,246,0.3)]' : 'text-white/30 hover:text-white/60')">
             {{ t('subscription.dialogs.plans.annually') }}
             <span
-              :class="cn('text-[8px] px-1.5 py-0.5 rounded-full font-black', isYearly ? 'bg-black/60 text-black' : 'bg-brand-primary/20 text-brand-primary')">{{ t('subscription.dialogs.plans.save', { percent: '17' }) }}</span>
+              :class="cn('text-[8px] px-1.5 py-0.5 rounded-full font-black', isYearly ? 'bg-black/60 text-white' : 'bg-brand-primary/20 text-brand-primary')">{{ t('subscription.dialogs.plans.save', { percent: '17' }) }}</span>
           </button>
         </div>
       </div>

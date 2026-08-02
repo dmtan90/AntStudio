@@ -1,4 +1,4 @@
-import { AdminSettings } from '../models/AdminSettings.js';
+import { getAdminSettings } from '../models/AdminSettings.js';
 import { Logger } from './Logger.js';
 
 /**
@@ -20,7 +20,7 @@ export class ClusterService {
         }
 
         try {
-            const settings = await AdminSettings.findOne().lean();
+            const settings = await getAdminSettings();
             this.cachedSettings = settings;
             this.lastUpdate = now;
             Logger.info('📡 Cluster Sync: Configuration registry refreshed.');

@@ -1,9 +1,24 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export enum AssetType {
+    OVERLAY = 'overlay',
+    PERSONA = 'persona',
+    TEMPLATE = 'template',
+    MUSIC = 'music',
+    SFX = 'sfx',
+}
+
+export enum AssetStatus {
+    PENDING = 'pending',
+    PUBLISHED = 'published',
+    HIDDEN = 'hidden',
+    DELETED = 'deleted',
+}
+
 export interface IMarketplaceAsset extends Document {
     title: string;
     description: string;
-    type: 'overlay' | 'persona' | 'template' | 'music' | 'sfx';
+    type: AssetType | string;
     authorId: mongoose.Types.ObjectId; // User or Tenant
     priceCredits: number;
     fileUrl: string; // S3 Key/URL for the actual asset
@@ -15,7 +30,7 @@ export interface IMarketplaceAsset extends Document {
         rating: number;
         reviewsCount: number;
     };
-    status: 'pending' | 'published' | 'hidden' | 'deleted';
+    status: AssetStatus | string;
     isOfficial: boolean; // Verified by AntStudio
     createdAt: Date;
     updatedAt: Date;
@@ -26,7 +41,7 @@ const MarketplaceAssetSchema = new Schema<IMarketplaceAsset>({
     description: { type: String, required: true },
     type: {
         type: String,
-        enum: ['overlay', 'persona', 'template', 'music', 'sfx'],
+        enum: Object.values(AssetType),
         required: true,
         index: true
     },
@@ -43,8 +58,8 @@ const MarketplaceAssetSchema = new Schema<IMarketplaceAsset>({
     },
     status: {
         type: String,
-        enum: ['pending', 'published', 'hidden', 'deleted'],
-        default: 'pending',
+        enum: Object.values(AssetStatus),
+        default: AssetStatus.PENDING,
         index: true
     },
     isOfficial: { type: Boolean, default: false }

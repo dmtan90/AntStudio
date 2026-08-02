@@ -1,36 +1,5 @@
 <template>
     <div class="api-grid grid grid-cols-1 md:grid-cols-3 xl:grid-cols-3 gap-6">        <!-- Proxy Configuration -->
-        <el-card class="settings-section" v-if="apiConfigs.proxy">
-            <template #header>
-                <div class="flex justify-between items-center w-full">
-                    <span>{{ $t('admin.settings.system.proxy.title') }}</span>
-                    <el-switch v-model="apiConfigs.proxy.enabled" size="small" />
-                </div>
-            </template>
-            
-            <el-form :model="apiConfigs.proxy.webshare" label-position="top" :disabled="!apiConfigs.proxy.enabled">
-                <el-row :gutter="20">
-                    <el-col :span="16">
-                        <el-form-item :label="t('admin.settings.system.proxy.domain')">
-                            <el-input v-model="apiConfigs.proxy.webshare.domainName" placeholder="p.webshare.io" class="glass-input" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="8">
-                        <el-form-item :label="t('admin.settings.system.proxy.port')">
-                            <el-input-number v-model="apiConfigs.proxy.webshare.proxyPort" :controls="false" style="width: 100%" class="glass-input" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-                <el-form-item :label="t('admin.settings.system.proxy.user')">
-                    <el-input v-model="apiConfigs.proxy.webshare.proxyUsername" class="glass-input" />
-                </el-form-item>
-                <el-form-item :label="t('admin.settings.system.proxy.pass')">
-                    <el-input v-model="apiConfigs.proxy.webshare.proxyPassword" type="password" show-password class="glass-input" />
-                </el-form-item>
-            </el-form>
-            <div class="text-[10px] text-gray-500 mt-2 uppercase tracking-widest font-bold opacity-50">{{ $t('admin.settings.system.proxy.integration') }}</div>
-        </el-card>
-
         <!-- SMTP -->
         <el-card class="settings-section">
             <template #header>{{ $t('admin.settings.system.smtp.title') }}</template>
@@ -74,51 +43,58 @@
             <template #header>{{ $t('admin.settings.system.payment.title') }}</template>
             <el-tabs class="nested-tabs">
                 <el-tab-pane :label="t('admin.settings.system.payment.stripe')">
-                    <el-form :model="apiConfigs.stripe" label-position="top" v-if="apiConfigs">
+                    <el-form :model="apiConfigs.payment.stripe" label-position="top" v-if="apiConfigs">
+                        <el-form-item :label="t('admin.settings.system.payment.enabled')">
+                            <el-switch v-model="apiConfigs.payment.stripe.enabled" class="glass-input" />
+                        </el-form-item>
                         <el-form-item :label="t('admin.settings.system.payment.publicKey')">
-                            <el-input v-model="apiConfigs.stripe.publicKey" class="glass-input" />
+                            <el-input v-model="apiConfigs.payment.stripe.publicKey" :disabled="!apiConfigs.payment.stripe.enabled" class="glass-input" />
                         </el-form-item>
                         <el-form-item :label="t('admin.settings.system.payment.secretKey')">
-                            <el-input v-model="apiConfigs.stripe.secretKey" type="password" show-password
-                                class="glass-input" />
+                            <el-input v-model="apiConfigs.payment.stripe.secretKey" type="password" show-password :disabled="!apiConfigs.payment.stripe.enabled" class="glass-input" />
                         </el-form-item>
                         <el-form-item :label="t('admin.settings.system.payment.webhookSecret')">
-                            <el-input v-model="apiConfigs.stripe.webhookSecret" type="password" show-password
-                                class="glass-input" />
+                            <el-input v-model="apiConfigs.payment.stripe.webhookSecret" type="password" show-password :disabled="!apiConfigs.payment.stripe.enabled" class="glass-input" />
                         </el-form-item>
                     </el-form>
                 </el-tab-pane>
                 <el-tab-pane :label="t('admin.settings.system.payment.paypal')">
-                    <el-form :model="apiConfigs.paypal" label-position="top" v-if="apiConfigs">
+                    <el-form :model="apiConfigs.payment.paypal" label-position="top" v-if="apiConfigs">
+                        <el-form-item :label="t('admin.settings.system.payment.enabled')">
+                            <el-switch v-model="apiConfigs.payment.paypal.enabled" class="glass-input" />
+                        </el-form-item>
                         <el-form-item :label="t('admin.settings.system.payment.clientId')">
-                            <el-input v-model="apiConfigs.paypal.clientId" 
+                            <el-input v-model="apiConfigs.payment.paypal.clientId" 
                                 :placeholder="t('admin.settings.system.payment.clientId')" 
+                                :disabled="!apiConfigs.payment.paypal.enabled"
                                 class="glass-input" />
                             <div class="text-[11px] text-gray-500 mt-1">
                                 Get this from PayPal Developer Dashboard → My Apps & Credentials
                             </div>
                         </el-form-item>
                         <el-form-item :label="t('admin.settings.system.payment.clientSecret')">
-                            <el-input v-model="apiConfigs.paypal.clientSecret" 
+                            <el-input v-model="apiConfigs.payment.paypal.clientSecret" 
                                 type="password" 
                                 show-password
                                 :placeholder="t('admin.settings.system.payment.clientSecret')"
+                                :disabled="!apiConfigs.payment.paypal.enabled"
                                 class="glass-input" />
                         </el-form-item>
                         <el-form-item :label="t('admin.settings.system.payment.webhookSecretOptional')">
-                            <el-input v-model="apiConfigs.paypal.webhookSecret" 
+                            <el-input v-model="apiConfigs.payment.paypal.webhookSecret" 
                                 type="password" 
                                 show-password
                                 placeholder="Webhook ID from PayPal"
+                                :disabled="!apiConfigs.payment.paypal.enabled"
                                 class="glass-input" />
                             <div class="text-[11px] text-gray-500 mt-1">
                                 {{ $t('admin.settings.system.payment.webhookInfo') }}
                             </div>
                         </el-form-item>
                         <el-form-item :label="t('admin.settings.system.payment.mode')">
-                            <el-radio-group v-model="apiConfigs.paypal.mode" size="small">
-                                <el-radio-button value="sandbox">{{ $t('admin.settings.system.payment.sandbox') }}</el-radio-button>
-                                <el-radio-button value="live">{{ $t('admin.settings.system.payment.live') }}</el-radio-button>
+                            <el-radio-group v-model="apiConfigs.payment.paypal.mode" size="small">
+                                <el-radio-button value="sandbox" :disabled="!apiConfigs.payment.paypal.enabled">{{ $t('admin.settings.system.payment.sandbox') }}</el-radio-button>
+                                <el-radio-button value="live" :disabled="!apiConfigs.payment.paypal.enabled">{{ $t('admin.settings.system.payment.live') }}</el-radio-button>
                             </el-radio-group>
                             <div class="text-[11px] text-gray-500 mt-1">
                                 {{ $t('admin.settings.system.payment.modeInfo') }}
@@ -129,6 +105,37 @@
             </el-tabs>
         </el-card>
 
+        <el-card class="settings-section" v-if="apiConfigs.proxy">
+            <template #header>
+                <div class="flex justify-between items-center w-full">
+                    <span>{{ $t('admin.settings.system.proxy.title') }}</span>
+                    <el-switch v-model="apiConfigs.proxy.enabled" size="small" />
+                </div>
+            </template>
+            
+            <el-form :model="apiConfigs.proxy.webshare" label-position="top" :disabled="!apiConfigs.proxy.enabled">
+                <el-row :gutter="20">
+                    <el-col :span="16">
+                        <el-form-item :label="t('admin.settings.system.proxy.domain')">
+                            <el-input v-model="apiConfigs.proxy.webshare.domainName" placeholder="p.webshare.io" class="glass-input" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="8">
+                        <el-form-item :label="t('admin.settings.system.proxy.port')">
+                            <el-input-number v-model="apiConfigs.proxy.webshare.proxyPort" :controls="false" style="width: 100%" class="glass-input" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-form-item :label="t('admin.settings.system.proxy.user')">
+                    <el-input v-model="apiConfigs.proxy.webshare.proxyUsername" class="glass-input" />
+                </el-form-item>
+                <el-form-item :label="t('admin.settings.system.proxy.pass')">
+                    <el-input v-model="apiConfigs.proxy.webshare.proxyPassword" type="password" show-password class="glass-input" />
+                </el-form-item>
+            </el-form>
+            <div class="text-[10px] text-gray-500 mt-2 uppercase tracking-widest font-bold opacity-50">{{ $t('admin.settings.system.proxy.integration') }}</div>
+        </el-card>
+
         <!-- Multi-Cloud Storage Hub -->
         <el-card class="settings-section md:col-span-3 xl:col-span-3">
             <template #header>
@@ -136,17 +143,18 @@
                     <span>{{ $t('admin.settings.system.storage.title') }}</span>
                     <el-radio-group v-model="apiConfigs.storage.activeProvider" size="small" class="premium-radio">
                         <el-radio-button value="s3">{{ $t('admin.settings.system.storage.awsS3') }}</el-radio-button>
+                        <el-radio-button value="b2">{{ $t('admin.settings.system.storage.b2') }}</el-radio-button>
                         <el-radio-button value="google_drive">{{ $t('admin.settings.system.storage.googleDrive') }}</el-radio-button>
                     </el-radio-group>
                 </div>
             </template>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-2">
+            <div class="grid grid-cols-1 xl:grid-cols-3 md:grid-cols-2 gap-8 py-2">
                 <!-- AWS S3 (Active/Inactive state based on selection) -->
                 <div :class="['storage-provider-card p-6 rounded-3xl border transition-all', apiConfigs.storage.activeProvider === 's3' ? 'bg-blue-600/5 border-blue-500/30' : 'bg-white/2 border-white/5 opacity-50 grayscale']">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-10 h-10 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-400">
-                            <i class="at-brand-aws text-xl"></i>
+                            <span class="at-brand-aws text-xl">S3</span>
                         </div>
                         <div>
                             <h3 class="text-white font-black uppercase text-xs tracking-widest">{{ $t('admin.settings.system.storage.amazonS3') }}</h3>
@@ -158,29 +166,54 @@
                         <el-row :gutter="20">
                             <el-col :span="12">
                                 <el-form-item :label="t('admin.settings.system.storage.accessKeyId')">
-                                    <el-input v-model="apiConfigs.aws.accessKeyId" class="glass-input" />
+                                    <el-input v-model="apiConfigs.storage.aws.accessKeyId" class="glass-input" />
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
                                 <el-form-item :label="t('admin.settings.system.storage.secretAccessKey')">
-                                    <el-input v-model="apiConfigs.aws.secretAccessKey" type="password" show-password class="glass-input" />
+                                    <el-input v-model="apiConfigs.storage.aws.secretAccessKey" type="password" show-password class="glass-input" />
                                 </el-form-item>
                             </el-col>
                         </el-row>
                         <el-row :gutter="20">
                             <el-col :span="12">
                                 <el-form-item :label="t('admin.settings.system.storage.bucketName')">
-                                    <el-input v-model="apiConfigs.aws.bucketName" class="glass-input" />
+                                    <el-input v-model="apiConfigs.storage.aws.bucketName" class="glass-input" />
                                 </el-form-item>
                             </el-col>
                             <el-col :span="12">
                                 <el-form-item :label="t('admin.settings.system.storage.region')">
-                                    <el-input v-model="apiConfigs.aws.region" class="glass-input" />
+                                    <el-input v-model="apiConfigs.storage.aws.region" class="glass-input" />
                                 </el-form-item>
                             </el-col>
                         </el-row>
                         <el-form-item :label="t('admin.settings.system.storage.customEndpoint')">
-                            <el-input v-model="apiConfigs.aws.endpoint" placeholder="https://..." class="glass-input" />
+                            <el-input v-model="apiConfigs.storage.aws.endpoint" placeholder="https://..." class="glass-input" />
+                        </el-form-item>
+                    </el-form>
+                </div>
+
+                <!-- Backblaze B2 -->
+                <div :class="['storage-provider-card p-6 rounded-3xl border transition-all', apiConfigs.storage.activeProvider === 'b2' ? 'bg-red-600/5 border-red-500/30' : 'bg-white/2 border-white/5 opacity-50 grayscale']">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-2xl bg-red-500/20 flex items-center justify-center text-red-400">
+                            <span class="at-server text-xl">B2</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-black uppercase text-xs tracking-widest">{{ $t('admin.settings.system.storage.b2') }}</h3>
+                            <p class="text-[10px] text-gray-500">{{ $t('admin.settings.system.storage.b2Info') }}</p>
+                        </div>
+                    </div>
+
+                    <el-form v-if="apiConfigs.storage" :model="apiConfigs.storage.b2 = apiConfigs.storage.b2 || { applicationKeyId: '', applicationKey: '', bucketName: '' }" label-position="top" size="small">
+                        <el-form-item :label="t('admin.settings.system.storage.b2ApplicationKeyId')">
+                            <el-input v-model="apiConfigs.storage.b2.applicationKeyId" class="glass-input" />
+                        </el-form-item>
+                        <el-form-item :label="t('admin.settings.system.storage.b2ApplicationKey')">
+                            <el-input v-model="apiConfigs.storage.b2.applicationKey" type="password" show-password class="glass-input" />
+                        </el-form-item>
+                        <el-form-item :label="t('admin.settings.system.storage.bucketName')">
+                            <el-input v-model="apiConfigs.storage.b2.bucketName" class="glass-input" />
                         </el-form-item>
                     </el-form>
                 </div>
@@ -189,7 +222,7 @@
                 <div :class="['storage-provider-card p-6 rounded-3xl border transition-all', apiConfigs.storage.activeProvider === 'google_drive' ? 'bg-green-600/5 border-green-500/30' : 'bg-white/2 border-white/5 opacity-50 grayscale']">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-10 h-10 rounded-2xl bg-green-500/20 flex items-center justify-center text-green-400">
-                            <i class="at-brand-drive text-xl"></i>
+                            <span class="at-brand-drive text-xl">Drive</span>
                         </div>
                         <div>
                             <h3 class="text-white font-black uppercase text-xs tracking-widest">{{ $t('admin.settings.system.storage.googleDrive') }}</h3>

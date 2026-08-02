@@ -3,6 +3,7 @@
  * Supports multi-cloud storage strategy (S3, Google Drive, etc.)
  */
 export interface IStorageAdapter {
+    destroy(): void;
     /**
      * Uploads a file buffer or stream to the storage provider.
      */
@@ -32,4 +33,14 @@ export interface IStorageAdapter {
      * Lists files in the storage.
      */
     listFiles(prefix?: string): Promise<Array<{ key: string, url: string, size?: number, lastModified?: Date }>>;
+
+    /**
+     * Retrieves a file as a readable stream.
+     */
+    getFileStream(key: string): Promise<any>;
+
+    /**
+     * Gets a signed/presigned upload URL.
+     */
+    getUploadUrl(key: string, contentType?: string, expiresIn?: number): Promise<string>;
 }

@@ -18,14 +18,14 @@ export class GuestKnowledgeService {
 
     /**
      * Retrieves specific knowledge for a guest dialogue prompt.
-     * Phase 41: Returns structured visualData if the fact contains statistics.
-     * Phase 44: Integrates long-term memory (recall).
+     * Returns structured visualData if the fact contains statistics.
+     * Integrates long-term memory (recall).
      */
     public async retrieveKnowledge(prompt: string, contextId?: string): Promise<{ fact: string, visualData?: any, isHistorical?: boolean }> {
         const promptPreview = typeof prompt === 'string' ? prompt.substring(0, 30) : 'Non-string prompt';
         console.log(`[KnowledgeService] Searching context for: "${promptPreview}..."`);
 
-        // Phase 44: Recall from long-term memory
+        // Recall from long-term memory
         const { neuralMemoryService } = await import('./NeuralMemoryService');
         const memory = neuralMemoryService.recall(prompt);
         let historicalContext = '';
@@ -44,10 +44,10 @@ export class GuestKnowledgeService {
             const api = (await import('@/utils/api')).default;
             const res: any = await api.post('/ai/knowledge-search', {
                 prompt,
-                historicalContext, // Phase 44: Inject memory into Gemini prompt
+                historicalContext, // Inject memory into Gemini prompt
                 language: studioStore.visualSettings.accessibility.targetLang || 'vi-VN',
                 context: studioStore.streamingContext || 'AntStudio Neural Singularity',
-                streamingContext: studioStore.streamingContext, // Phase 21: Context-aware RAG
+                streamingContext: studioStore.streamingContext, // Context-aware RAG
                 extractVisuals: true
             }).catch(() => null);
 
@@ -84,7 +84,7 @@ export class GuestKnowledgeService {
     }
 
     private detectVisualDataHeuristic(text: string): any {
-        // Simple regex-based extraction for Phase 41 demo
+        // Simple regex-based extraction
         if (text.includes('%')) {
             const match = text.match(/(\d+\.?\d*)%/);
             if (match) return { type: 'stat', value: match[1], unit: '%' };
@@ -97,7 +97,7 @@ export class GuestKnowledgeService {
     }
 
     /**
-     * Phase 37: Fetches dynamic trending topics from Gemini.
+     * Fetches dynamic trending topics from Gemini.
      */
     public async retrieveTrendingTopics(): Promise<string[]> {
         const now = Date.now();

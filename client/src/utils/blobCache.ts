@@ -12,10 +12,12 @@ export class BlobCache {
     private objectUrls = new Map<string, string>() // Key: original URL, Value: Object URL
 
     private constructor() {
-        if ('caches' in window) {
-            this.cachePromise = caches.open(CACHE_NAME)
+        if (typeof window !== 'undefined' && 'caches' in window) {
+            this.cachePromise = window.caches.open(CACHE_NAME)
+        } else if (typeof self !== 'undefined' && 'caches' in self) {
+            this.cachePromise = self.caches.open(CACHE_NAME)
         } else {
-            console.warn('Cache API not supported in this browser.')
+            console.warn('Cache API not supported in this environment.')
         }
     }
 

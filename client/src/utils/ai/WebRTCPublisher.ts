@@ -24,10 +24,22 @@ export class WebRTCPublisher {
     private localStream: MediaStream | null = null;
     private pingInterval: any = null;
     private statsInterval: any = null;
+    private connectionResolve: (() => void) | null = null;
+    private connectionReject: ((err: Error) => void) | null = null;
+    private connectionTimeout: any = null;
     private lastStats: any = {};
 
     constructor(config: WebRTCConfig) {
         this.config = config;
+    }
+
+    private cleanupConnection(reason?: string) {
+        if (this.connectionTimeout) {
+            clearTimeout(this.connectionTimeout);
+            this.connectionTimeout = null;
+        }
+        this.connectionResolve = null;
+        this.connectionReject = null;
     }
 
     /**
@@ -41,6 +53,14 @@ export class WebRTCPublisher {
         this.ws = new WebSocket(this.config.websocketUrl);
 
         return new Promise<void>((resolve, reject) => {
+            this.connectionResolve = resolve;
+            this.connectionReject = reject;
+
+            this.connectionTimeout = setTimeout(() => {
+                this.cleanupConnection('Connection timeout');
+                reject(new Error("WEBRTC_CONNECTION_TIMEOUT"));
+            }, 15000);
+
             this.ws!.onopen = () => {
                 console.log("[WebRTC] Signaling socket opened");
                 this.startHeartbeat();
@@ -56,7 +76,7 @@ export class WebRTCPublisher {
             this.ws!.onerror = (err) => {
                 console.warn("[WebRTC] WebSocket connection failed. Ant Media Server may be offline.");
                 this.config.onDisconnect?.();
-                // Instead of rejecting immediately, we can check for a mock mode or retry
+                this.cleanupConnection('WS error');
                 reject(new Error("AMS_OFFLINE"));
             };
 
@@ -72,7 +92,6 @@ export class WebRTCPublisher {
                 if (msg.command === "start") {
                     // 2. Received start confirmation from server, now create offer
                     await this.initPeerConnection();
-                    resolve();
                 } else if (msg.command === "takeConfiguration") {
                     // 4. Received answer from server
                     if (msg.type === "answer") {
@@ -90,6 +109,7 @@ export class WebRTCPublisher {
                     }));
                 } else if (msg.command === "error") {
                     console.error("[WebRTC] Server error:", msg.definition);
+                    this.cleanupConnection(msg.definition);
                     reject(new Error(msg.definition));
                 }
             };
@@ -149,13 +169,27 @@ export class WebRTCPublisher {
         };
 
         this.pc.oniceconnectionstatechange = () => {
-            console.log("[WebRTC] Connection state:", this.pc?.iceConnectionState);
+            // console.log("[WebRTC] Connection state:", this.pc?.iceConnectionState);
             if (this.pc?.iceConnectionState === 'connected') {
                 console.log("[WebRTC] ICE connected, starting stats interval...");
                 this.applyBitrateConstraints();
                 this.startStatsInterval();
+
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
+                if (this.connectionResolve) {
+                    this.connectionResolve();
+                    this.connectionResolve = null;
+                    this.connectionReject = null;
+                }
             } else if (this.pc?.iceConnectionState === 'disconnected' || this.pc?.iceConnectionState === 'failed' || this.pc?.iceConnectionState === 'closed') {
                 this.config.onDisconnect?.();
+                if (this.connectionReject) {
+                    this.connectionReject(new Error(`WebRTC ICE connection failed: ${this.pc?.iceConnectionState}`));
+                    this.cleanupConnection('ICE failed');
+                }
             }
         };
 
@@ -220,12 +254,12 @@ export class WebRTCPublisher {
 
                 const reportTypes = new Set();
                 stats.forEach(r => reportTypes.add(r.type));
-                console.log("[WebRTC Stats] Available report types:", Array.from(reportTypes));
+                // console.log("[WebRTC Stats] Available report types:", Array.from(reportTypes));
 
                 stats.forEach(report => {
                     // 1. Get RTT from remote-inbound-rtp (Standard but sometimes missing)
                     if (report.type === 'remote-inbound-rtp' && report.kind === 'video') {
-                        console.log("[WebRTC Stats] Found remote-inbound-rtp:", report);
+                        // console.log("[WebRTC Stats] Found remote-inbound-rtp:", report);
                         if (report.roundTripTime !== undefined) {
                             currentStats.rtt = Math.round(report.roundTripTime * 1000);
                         }
@@ -236,13 +270,13 @@ export class WebRTCPublisher {
                     if (report.type === 'candidate-pair' && report.state === 'succeeded' && !currentStats.rtt) {
                         if (report.currentRoundTripTime !== undefined) {
                             currentStats.rtt = Math.round(report.currentRoundTripTime * 1000);
-                            console.log("[WebRTC Stats] Found RTT from candidate-pair:", currentStats.rtt);
+                            // console.log("[WebRTC Stats] Found RTT from candidate-pair:", currentStats.rtt);
                         }
                     }
 
                     // 3. Get Bitrate from outbound-rtp
                     if (report.type === 'outbound-rtp' && (report.kind === 'video' || report.mediaType === 'video')) {
-                        console.log("[WebRTC Stats] Found outbound-rtp:", report);
+                        // console.log("[WebRTC Stats] Found outbound-rtp:", report);
                         if (this.lastStats[report.id]) {
                             const lastReport = this.lastStats[report.id];
                             const deltaBytes = report.bytesSent - lastReport.bytesSent;
@@ -253,7 +287,7 @@ export class WebRTCPublisher {
                                 if (deltaBytes >= 0) {
                                     // bits/ms = kbps
                                     currentStats.bitrate = Math.round((deltaBytes * 8) / deltaTime); 
-                                    console.log("[WebRTC Stats] Calculated Bitrate:", currentStats.bitrate);
+                                    // console.log("[WebRTC Stats] Calculated Bitrate:", currentStats.bitrate);
                                 }
                                 if (deltaFrames >= 0) {
                                     currentStats.fps = Math.round((deltaFrames * 1000) / deltaTime);
@@ -276,7 +310,7 @@ export class WebRTCPublisher {
                         const socketLatency = ActionSyncService.getLatency();
                         if (socketLatency > 0) {
                             currentStats.rtt = socketLatency;
-                            console.log("[WebRTC Stats] Using ActionSync fallback RTT:", socketLatency);
+                            // console.log("[WebRTC Stats] Using ActionSync fallback RTT:", socketLatency);
                         }
                     } catch (e) {}
                 }

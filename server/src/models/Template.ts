@@ -1,5 +1,28 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export enum TemplateCategory {
+    INTRO = 'intro',
+    OUTRO = 'outro',
+    TRANSITION = 'transition',
+    FULL_VIDEO = 'full-video',
+    SOCIAL_MEDIA = 'social-media',
+    AD = 'ad',
+    TUTORIAL = 'tutorial'
+}
+
+export enum TemplateSourcePlatform {
+    CAPCUT = 'capcut',
+    CANVA = 'canva',
+    ZOCKET = 'zocket',
+    PRIVATE = 'private'
+}
+
+export enum TemplatePricingType {
+    FREE = 'free',
+    PREMIUM = 'premium',
+    PRO_ONLY = 'pro-only'
+}
+
 export interface ITemplate extends Document {
     // Legacy/Migration ID
     id: string;
@@ -7,7 +30,7 @@ export interface ITemplate extends Document {
     // Basic info
     name: string;
     description: string;
-    category: 'intro' | 'outro' | 'transition' | 'full-video' | 'social-media' | 'ad' | 'tutorial';
+    category: TemplateCategory | string;
     thumbnail: string;
     previewVideo?: string;
 
@@ -47,7 +70,7 @@ export interface ITemplate extends Document {
 
     // External source tracking
     source: {
-        platform?: 'capcut' | 'canva' | 'zocket' | 'private';
+        platform?: TemplateSourcePlatform | string;
         originalId?: string;
         importedAt?: Date;
         originalUrl?: string;
@@ -55,7 +78,7 @@ export interface ITemplate extends Document {
 
     // Pricing & monetization
     pricing: {
-        type: 'free' | 'premium' | 'pro-only';
+        type: TemplatePricingType | string;
         price?: number;
         creatorRevenue?: number;
     };
@@ -89,8 +112,8 @@ const TemplateSchema = new Schema<ITemplate>(
         description: { type: String, default: '' },
         category: {
             type: String,
-            enum: ['intro', 'outro', 'transition', 'full-video', 'social-media', 'ad', 'tutorial'],
-            default: 'full-video',
+            enum: Object.values(TemplateCategory),
+            default: TemplateCategory.FULL_VIDEO,
             index: true
         },
         thumbnail: { type: String },
@@ -130,14 +153,14 @@ const TemplateSchema = new Schema<ITemplate>(
         }],
 
         source: {
-            platform: { type: String, enum: ['capcut', 'canva', 'zocket', 'private'], default: 'zocket' },
+            platform: { type: String, enum: Object.values(TemplateSourcePlatform), default: TemplateSourcePlatform.ZOCKET },
             originalId: String,
             importedAt: Date,
             originalUrl: String
         },
 
         pricing: {
-            type: { type: String, enum: ['free', 'premium', 'pro-only'], default: 'free' },
+            type: { type: String, enum: Object.values(TemplatePricingType), default: TemplatePricingType.FREE },
             price: Number,
             creatorRevenue: { type: Number, default: 70 }
         },

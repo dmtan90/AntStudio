@@ -57,7 +57,9 @@ export function useInitializeEditor() {
   const handleEvent = (event: MessageEvent) => {
     if (isInitialized.value || !payload.value) return;
     try {
-      const data = JSON.parse(atob(payload.value));
+      const json = decodeURIComponent(escape(atob(payload.value)));
+      // console.log("json", json);
+      const data = JSON.parse(json);
       if(data.product){
         const schema = Schema.parse(data);
         if (schema.headless) editor.isHeadless = true;

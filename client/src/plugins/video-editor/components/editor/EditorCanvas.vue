@@ -114,8 +114,14 @@ onUnmounted(() => {
   resizeObserver.disconnect();
   // Cleanup the shared instance
   if (fabricInstance) {
-    fabricInstance.dispose();
-    fabricInstance = null;
+    try {
+      console.log("Disposing fabricInstance");
+      fabricInstance.dispose();
+    } catch (err) {
+      console.warn("Fabric dispose error", err);
+    } finally {
+      fabricInstance = null;
+    }
   }
 });
 

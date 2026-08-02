@@ -37,23 +37,6 @@
                 />
 
                 <!-- Step 4: Analysis -->
-                <ProjectAnalysisCard 
-                  v-if="msg.result.cumulative?.analysis && msg.result.stage === 'analysis'" 
-                  :msg="msg" 
-                  :approved="msg.result.approved || msg.result.stage !== 'analysis'"
-                  @text-selection="handleTextSelection" 
-                  @comment="commentOn" 
-                  @approve="approveStage(idx, 'analysis')"
-                />
-
-                <!-- Step 4.5: Character Roster -->
-                <ProjectCharacterRoster
-                  v-if="msg.result.cumulative?.analysis?.analysis?.characters && msg.result.stage === 'character-roster'"
-                  :characters="msg.result.cumulative.analysis.analysis.characters"
-                  :loading="loading"
-                  @approve="approveStage(idx, 'character-roster')"
-                />
-
                 <ProjectBriefCard 
                   v-if="msg.result.cumulative?.creativeBrief && msg.result.stage === 'analysis'"
                   :msg="msg" 
@@ -62,7 +45,24 @@
                   @comment="commentOn" 
                 />
 
-                <!-- Step 5: Storyboard -->
+                <ProjectAnalysisCard 
+                  v-if="msg.result.cumulative?.analysis && (msg.result.stage === 'analysis' || msg.result.stage === 'character')" 
+                  :msg="msg" 
+                  :approved="msg.result.approved || msg.result.stage !== 'analysis'"
+                  @text-selection="handleTextSelection" 
+                  @comment="commentOn" 
+                  @approve="approveStage(idx, 'analysis')"
+                />
+
+                <!-- Step 5: Character Roster -->
+                <ProjectCharacterRoster
+                  v-if="msg.result.cumulative?.characters && msg.result.stage === 'character'"
+                  :characters="msg.result.cumulative.characters"
+                  :loading="loading"
+                  @approve="approveStage(idx, 'character')"
+                />
+
+                <!-- Step 6: Storyboard -->
                 <ProjectStoryboardCard 
                   v-if="msg.result.cumulative?.storyboard && msg.result.stage === 'storyboard'" 
                   :msg="msg" 
@@ -345,18 +345,21 @@ const approveStage = async (idx: number, stage: string) => {
   if (!msg || !msg.result) return
 
   msg.result.approved = true
+
+  console.log("approveStage", idx, stage);
   
-  if (stage === 'analysis') {
-    // Inject Character Roster stage
-    msg.result.stage = 'character-roster'
-    msg.result.approved = false
-    scrollToBottom()
-    return
-  }
+  // if (stage === 'analysis') {
+  //   // Inject Character Roster stage
+  //   msg.result.stage = 'character'
+  //   msg.result.approved = false
+  //   scrollToBottom()
+  //   return
+  // }
   
   if (stage === 'script') {
     await startAnalysis('analysis', msg.result.script, undefined, t('projects.new.flow.approve_script'))
-  } else if (stage === 'analysis') {
+  } 
+  else if (stage === 'analysis') {
     await startAnalysis('storyboard', msg.result.cumulative?.script || msg.result.script, msg.result.analysis, t('projects.new.flow.approve_analysis'))
   } else if (stage === 'storyboard') {
     // Stage storyboard approval is the final step
@@ -366,7 +369,7 @@ const approveStage = async (idx: number, stage: string) => {
 
 const startAnalysis = async (stage: string = 'script', script?: string, analysis?: any, customPrompt?: string) => {
   if ((!prompt.value.trim() && !selectedFiles.value.length && !script && !analysis && !customPrompt) || loading.value) return
-
+  console.log("startAnalysis", stage, script, analysis, customPrompt);
   const displayPrompt = customPrompt || prompt.value
   lastInput.prompt = displayPrompt
   lastInput.files = [...selectedFiles.value]

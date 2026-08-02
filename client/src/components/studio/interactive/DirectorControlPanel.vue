@@ -158,7 +158,6 @@ const createPoll = () => {
     // Let's use a mocked API call since I didn't add createPoll listener in SocketService (my bad).
     // Or just emit 'hive:request' with type 'create_poll' if flexible?
     // Proper way: Add API endpoint. 
-    // Fallback for Phase 66 velocity: Emit 'hive:request' and handle generically?
     
     // Actually, Studio Store `createShowScript` uses API. 
     // I should probably skip poll creation from the "Viewer" panel as viewers don't create polls.

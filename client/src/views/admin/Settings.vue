@@ -100,7 +100,7 @@
                         </div>
                     </template>
                     <div class="animate-in slide-up">
-                        <SubscriptionSettings :plans="settings.plans" :credit-packages="settings.creditPackages"
+                        <SubscriptionSettings v-model:credit-mode-enabled="settings.creditModeEnabled" :plans="settings.plans" :credit-packages="settings.creditPackages"
                             @add-package="addPackage" @remove-package="removePackage" />
                     </div>
                 </el-tab-pane>
@@ -157,8 +157,8 @@ const suggestedRedirectUri = computed(() => {
 
 const KNOWN_PROVIDERS = [
     // { id: 'gemini_chat', name: 'Gemini Chat (Native)', supportedTypes: ['text'] },
-    { id: 'google', name: 'Gemini', supportedTypes: ['text', 'image', 'video', 'audio'] },
-    { id: 'vertex', name: 'Google Cloud (Vertex AI)', supportedTypes: ['text', 'image', 'video', 'audio'], baseUrl: 'https://aiplatform.googleapis.com/v1/publishers/google/models/' },
+    // { id: 'google', name: 'Gemini', supportedTypes: ['text', 'image', 'video', 'audio'] },
+    { id: 'google', name: 'Google Gemini (Vertex)', supportedTypes: ['text', 'image', 'video', 'audio'], baseUrl: 'https://aiplatform.googleapis.com/v1/publishers/google/models/' },
     // { id: 'geminigen_ai', name: 'GeminiGen AI', supportedTypes: ['image', 'video'] },
     // { id: 'labs_flow', name: 'Labs Flow (Native)', supportedTypes: ['image', 'video'] },
     // { id: '11labs_direct', name: '11Labs Direct', supportedTypes: ['image', 'video', 'audio'] },
@@ -166,7 +166,8 @@ const KNOWN_PROVIDERS = [
     // { id: 'anthropic', name: 'Anthropic (Claude)', supportedTypes: ['text'] },
     // { id: 'stability_ai', name: 'Stability AI', supportedTypes: ['image', 'video'] },
     // { id: 'eleven_labs', name: 'Eleven Labs', supportedTypes: ['audio'] },
-    // { id: 'suno', name: 'Suno', supportedTypes: ['music'] }
+    // { id: 'suno', name: 'Suno', supportedTypes: ['music'] },
+    { id: 'gmicloud', name: 'GMICloud', supportedTypes: ['text', 'image', 'video', 'audio'], baseUrl: 'https://api.gmi-serving.com/v1' },
 ];
 
 // Methods

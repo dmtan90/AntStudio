@@ -198,7 +198,12 @@ const fetchOAuthConfig = async () => {
 }
 
 const handleOAuthLogin = (provider: 'google' | 'facebook') => {
-  window.location.href = `/api/auth/${provider}`
+  // window.location.href = `/api/auth/${provider}`
+  (window as any).activeOAuthPopup = window.open(
+    `/api/auth/${provider}`,
+    "OAuthPopup",
+    "width=600,height=400,left=200,top=100"
+  );
 }
 
 onMounted(() => {

@@ -1,16 +1,19 @@
 import express from 'express';
+import fs from 'fs';
+import http from 'http';
+import net from 'net';
+// @ts-ignore
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import cors from 'cors';
-import config from './utils/config.js';
-import { configService } from './utils/configService.js';
+import { configService, EnvConfig } from './utils/ConfigService.js';
 import { connectDB } from './utils/db.js';
 import authRouter from './routes/auth.js';
 import s3Router from './routes/s3.js';
 import projectsRouter from './routes/projects.js';
 import adminRouter from './routes/admin.js';
-import aiConfigRouter from './routes/aiConfig.js'; // Changed from aiConfigRoutes
+import aiConfigRouter from './routes/AiConfig.js'; // Changed from aiConfigRoutes
 import mediaRouter from './routes/media.js';
 import aiRouter from './routes/ai.js';
 import promptsRouter from './routes/prompts.js';
@@ -18,7 +21,7 @@ import promptsRouter from './routes/prompts.js';
 import voiceRouter from './routes/voice.js';
 import platformsRouter from './routes/platforms.js';
 import streamingRouter from './routes/streaming.js';
-import mobileStreamingRouter from './routes/mobileStreaming.js';
+import mobileStreamingRouter from './routes/MobileStreaming.js';
 import broadcasterRouter from './routes/broadcaster.js';
 import networkRouter from './routes/network.js';
 import organizationRoutes from './routes/organizations.js';
@@ -35,20 +38,20 @@ import videosRouter from './routes/videos.js';
 import analyticsRouter from './routes/analytics.js';
 import licenseRouter from './routes/license.js';
 import collaborationRouter from './routes/collaboration.js';
-import aiAccountsRouter from './routes/aiAccounts.js';
-import aiAuthRouter from './routes/aiAuth.js';
+import aiAccountsRouter from './routes/AiAccounts.js';
+import aiAuthRouter from './routes/AiAuth.js';
 import commerceRouter from './routes/commerce.js';
 import monitoringRouter from './routes/monitoring.js';
-import { monitoringService } from './services/monitoringService.js';
+import { monitoringService } from './services/system/MonitoringService.js';
 import { Logger } from './utils/Logger.js';
 import { authMiddleware } from './middleware/auth.js';
-import { apiKeyAuthMiddleware } from './middleware/apiKeyAuth.js';
+import { apiKeyAuthMiddleware } from './middleware/ApiKeyAuth.js';
 import { tenantMiddleware } from './middleware/tenant.js';
-import { creditRefreshService } from './services/CreditRefreshService.js';
+import { creditRefreshService } from './services/system/CreditRefreshService.js';
 import { referralMiddleware } from './middleware/referral.js';
-import resaleBillingRouter from './routes/resaleBilling.js';
+import resaleBillingRouter from './routes/ResaleBilling.js';
 import affiliateRouter from './routes/affiliate.js';
-import subTenantRouter from './routes/subTenant.js';
+import subTenantRouter from './routes/SubTenant.js';
 import marketplaceRouter from './routes/marketplace.js';
 import headlessRouter from './routes/headless.js';
 import mobileRouter from './routes/mobile.js';
@@ -56,27 +59,32 @@ import moderationRouter from './routes/moderation.js';
 import commentsRouter from './routes/comments.js';
 import versionsRouter from './routes/versions.js';
 // import { recoveryService } from './services/RecoveryService.js';
-import { apiKeyMiddleware } from './middleware/apiKey.js';
+import { apiKeyMiddleware } from './middleware/ApiKey.js';
 import showRouter from './routes/show.js';
 import economyRouter from './routes/economy.js';
 import gamificationRouter from './routes/gamification.js';
 import { createServer } from 'http';
-import { socketServer, SocketServer } from './services/SocketServer.js';
-import { collaborationService } from './services/CollaborationService.js';
-import { LicenseWorker } from './services/LicenseWorker.js';
+import { socketServer } from './services/streaming/SocketServer.js';
+import { collaborationService } from './services/streaming/CollaborationService.js';
+import { LicenseService } from './services/system/LicenseService.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initializeLiveWebSocket } from './routes/live.js';
-import { streamingService } from './services/StreamingService.js';
+import { streamingService } from './services/streaming/StreamingService.js';
 import envRouter from './routes/env.js';
 import { flowSyncService } from './utils/ai/FlowSyncService.js';
 import webhooksRouter from './routes/webhooks.js';
+import agentChatRouter from './routes/AgentChat.js';
+import googleAgentRouter from './routes/GoogleAgent.js';
+import { aiManager } from '~/utils/ai/AIServiceManager.js';
+import { ensurePlaywrightBrowsers } from '~/utils/PlaywrightHelper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 // Trust proxy if behind Nginx/Load Balancer
 app.set('trust proxy', 1);
@@ -87,14 +95,15 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin for S3/Media
     contentSecurityPolicy: false, // Disable CSP for now as it can break some frontend features if not tuned
 }));
+
 app.use(cors({
-    origin: config.public.baseUrl,
+    origin: EnvConfig.baseUrl,
     credentials: true
 }));
 
-// Security headers for FFmpeg.js (SharedArrayBuffer support)
+// Security headers for FFmpeg.js (SharedArrayBuffer support) & OAuth Popups
 app.use((req, res, next) => {
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     next();
 });
@@ -108,22 +117,24 @@ app.use(express.json({
         }
     }
 }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1024mb' }));
 
 // NoSQL Injection Protection
 app.use(mongoSanitize());
 
-// detect if we are running in a pkg binary
 const isPkg = typeof (process as any).pkg !== 'undefined';
-const clientDistPath = isPkg 
-    ? path.join(__dirname, './client') // internal to pkg binary
-    : path.join(__dirname, '../../../client/dist');
+const resourcesClientDist = (process as any).resourcesPath ? path.join((process as any).resourcesPath, 'client/dist') : '';
+
+const clientDistPath = (resourcesClientDist && fs.existsSync(path.join(resourcesClientDist, 'index.html')))
+    ? resourcesClientDist
+    : (isPkg ? path.join(__dirname, './client') : path.join(__dirname, '../../client/dist'));
 
 const publicPath = isPkg 
     ? path.join(__dirname, './public') 
     : path.join(__dirname, '../../public');
 
 app.use(express.static(publicPath));
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 app.use(express.static(clientDistPath));
 app.use(apiKeyAuthMiddleware);
 
@@ -137,7 +148,7 @@ app.use(apiKeyMiddleware);
 app.use(referralMiddleware);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -189,6 +200,8 @@ app.use('/api/webhooks', webhooksRouter);
 app.use('/api/admin/env', envRouter);
 app.use('/api/economy', economyRouter);
 app.use('/api/gamification', gamificationRouter);
+app.use('/api/agent', agentChatRouter);
+app.use('/api/google-agent', googleAgentRouter);
 
 // Rate Limiting
 const globalLimiter = rateLimit({
@@ -253,15 +266,20 @@ const startServer = async () => {
         // Connect to MongoDB
         await connectDB();
 
+        // Ensure Playwright browsers are installed
+        // const { ensurePlaywrightBrowsers } = await import('~/utils/PlaywrightHelper.js');
+        await ensurePlaywrightBrowsers();
+
         // Initialize dynamic config from DB (Must happen after DB connection)
         await configService.initialize();
+        await aiManager.initialize();
 
         // Initialize EnvironmentManager for process.env overrides
         const { envManager } = await import('./utils/EnvironmentManager.js');
         await envManager.initialize();
 
         // Initialize Redis cache (Optional - continues without cache if unavailable)
-        const { redisService } = await import('./services/RedisService.js');
+        const { redisService } = await import('./services/system/RedisService.js');
         await redisService.connect();
 
         // Start Monitoring Service
@@ -271,7 +289,7 @@ const startServer = async () => {
         creditRefreshService.startScheduler();
 
         // Start License Heartbeat (Edge Mode Only)
-        LicenseWorker.start();
+        LicenseService.start();
 
         // Initialize Streaming Service (NMS) - Async to prevent blocking startup
         await streamingService.initialize();
@@ -279,6 +297,7 @@ const startServer = async () => {
         // Start Google Flow token synchronization service
         flowSyncService.start();
 
+        // Create main HTTP Server and attach Socket.io directly to it
         const httpServer = createServer(app);
         socketServer.initialize(httpServer);
 
@@ -292,7 +311,7 @@ const startServer = async () => {
         collaborationService.initialize(socketServer.getIO()!);
 
         // Initialize commerce sync service
-        const { commerceSyncService } = await import('./services/CommerceSyncService.js');
+        const { commerceSyncService } = await import('./services/streaming/CommerceSyncService.js');
         commerceSyncService.setSocketServer(socketServer.getIO()!);
 
         // Initialize autonomous style testing engine

@@ -1,6 +1,6 @@
 import { audiencePredictor } from './AudiencePredictor.js';
 import { aiPerformanceService } from './AIPerformanceService.js';
-import { InfluencerService } from '../InfluencerService.js';
+import { InfluencerService } from '../streaming/InfluencerService.js';
 import { Logger } from '../../utils/Logger.js';
 import { directorWorkflow } from './DirectorWorkflow.js';
 

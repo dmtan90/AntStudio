@@ -34,7 +34,7 @@
                     
                     <!-- Performance Overview -->
  
-                     <!-- Commercial Success (Phase 17) -->
+                     <!-- Commercial Success -->
                      <section v-if="commerceReport" class="animate-in slide-in-from-bottom-4 duration-700 delay-200">
                          <h3 class="text-xs font-black opacity-30 uppercase tracking-widest mb-6">{{ $t('studio.synthesis.commercialSuccess') }}</h3>
                          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

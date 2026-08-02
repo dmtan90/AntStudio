@@ -51,7 +51,11 @@ export class CanvasTimeline {
         this._toggleElement(object, ms);
       }
     }
-    this.canvas.renderAll();
+    try{
+		this.canvas.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
   }
 
   private _toggleElement(object: fabric.Object, ms = this.seek) {

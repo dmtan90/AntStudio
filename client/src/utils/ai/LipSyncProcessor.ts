@@ -118,7 +118,7 @@ export function computeLipDeform(shape: VisemeShape, mouthHeight: number, mouthW
     const closeWeight = 1.0 - shape.open;
     
     // Vertical close: each lip moves toward center proportionally
-    // Reduced from 0.55 to 0.42 for a gentler "bóp nhẹ" instead of "ép chặt"
+    // Reduced from 0.55 to 0.42 for a gentler lip closure instead of tight compression
     const verticalClose = mouthHeight * closeWeight * 0.42;
     
     // Horizontal stretch for I (wide smile)

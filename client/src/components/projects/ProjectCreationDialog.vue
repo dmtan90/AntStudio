@@ -28,8 +28,11 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
-    MagicWand, User, Link, Copy, Monitor, Camera, Plus
+    MagicWand, User, Link, Copy, Monitor, Camera, Plus, ShoppingCart
 } from '@icon-park/vue-next'
+
+import { useStudioStore } from '@/stores/studio';
+const studioStore = useStudioStore();
 
 const props = defineProps<{
     modelValue: boolean
@@ -62,27 +65,27 @@ const options = computed(() => [
         class: 'bg-gradient-green',
         value: 'product-ads'
     },
+    // {
+    //     label: t('projects.new.options.cloneStyle.label'),
+    //     desc: t('projects.new.options.cloneStyle.desc'),
+    //     icon: Copy,
+    //     class: 'bg-gradient-orange',
+    //     value: 'clone-style'
+    // },
     {
-        label: t('projects.new.options.cloneStyle.label'),
-        desc: t('projects.new.options.cloneStyle.desc'),
-        icon: Copy,
-        class: 'bg-gradient-orange',
-        value: 'clone-style'
-    },
-    {
-        label: t('projects.new.options.liveStudio.label'),
-        desc: t('projects.new.options.liveStudio.desc'),
-        icon: Monitor,
+        label: t('projects.new.options.saleStudio.label'),
+        desc: t('projects.new.options.saleStudio.desc'),
+        icon: ShoppingCart,
         class: 'bg-gradient-pink',
-        value: 'live-studio'
+        value: 'sales-studio'
     },
-    {
-        label: t('projects.new.options.presentation.label'),
-        desc: t('projects.new.options.presentation.desc'),
-        icon: Monitor,
-        class: 'bg-gradient-cyan',
-        value: 'presentation'
-    },
+    // {
+    //     label: t('projects.new.options.presentation.label'),
+    //     desc: t('projects.new.options.presentation.desc'),
+    //     icon: Monitor,
+    //     class: 'bg-gradient-cyan',
+    //     value: 'presentation'
+    // },
     {
         label: t('projects.new.options.record.label'),
         desc: t('projects.new.options.record.desc'),
@@ -124,8 +127,9 @@ const handleSelect = (opt: any) => {
         case 'record':
             router.push({ name: "recorder", query: { mode: "camera" } })
             break
-        case 'live-studio':
-            router.push('/live/studio')
+        case 'sales-studio':
+            router.push({ name: "live-sales" })
+            // studioStore.showOnboarding = true;
             break
         default:
             router.push('/projects/new')

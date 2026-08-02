@@ -35,6 +35,7 @@ export const useUserStore = defineStore('user', () => {
     function setUser(userData: any) {
         user.value = userData
         lastFetch.value = Date.now()
+        localStorage.setItem('preferred-language', userData.language || 'en');
     }
 
     function clearAuth() {
@@ -273,7 +274,7 @@ export const useUserStore = defineStore('user', () => {
         isInitialized,
         lastFetch,
         systemMode: computed(() => user.value?.systemMode || 'edge'),
-        preferredLanguage: computed(() => user.value?.preferredLanguage || 'en-US'),
+        preferredLanguage: computed(() => user.value?.language || localStorage.getItem('preferred-language') || 'en'),
         setToken,
         setUser,
         clearAuth,

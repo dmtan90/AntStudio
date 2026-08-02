@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { gamificationService } from '../services/gamification/GamificationService.js';
+import { gamificationService } from '../services/streaming/GamificationService.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();

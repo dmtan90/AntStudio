@@ -348,7 +348,7 @@ export const usePlatformStore = defineStore('platform', {
                 if (res.success) {
                     toast.success('Engagement sync started');
                     // We might need to fetch records again after a short delay or just let the user refresh
-                    await this.fetchSyndicationRecords();
+                    // await this.fetchSyndicationRecords();
                 }
             } catch (error: any) {
                 console.error('Sync Metrics Error:', error);
@@ -364,7 +364,7 @@ export const usePlatformStore = defineStore('platform', {
                 const res: any = await api.post(`/syndication/retry/${recordId}`);
                 if (res.success) {
                     toast.success('Retry started successfully');
-                    await this.fetchSyndicationRecords();
+                    // await this.fetchSyndicationRecords();
                 }
             } catch (error: any) {
                 console.error('Retry Syndication Error:', error);
@@ -418,7 +418,7 @@ export const usePlatformStore = defineStore('platform', {
                 const res: any = await api.post('/syndication/schedule', payload);
                 if (res.success) {
                     toast.success('Video scheduled successfully');
-                    await this.fetchSyndicationRecords();
+                    // await this.fetchSyndicationRecords();
                     return true;
                 }
             } catch (error: any) {
@@ -436,7 +436,7 @@ export const usePlatformStore = defineStore('platform', {
                 const res: any = await api.post('/syndication/publish-video', payload);
                 if (res.success) {
                     toast.success('Syndication started successfully');
-                    await this.fetchSyndicationRecords();
+                    // await this.fetchSyndicationRecords();
                     return true;
                 }
             } catch (error: any) {
@@ -465,7 +465,7 @@ export const usePlatformStore = defineStore('platform', {
                 const res: any = await api.delete(`/syndication/schedule/${recordId}`);
                 if (res.success) {
                     toast.success('Schedule cancelled');
-                    await this.fetchSyndicationRecords();
+                    // await this.fetchSyndicationRecords();
                     return true;
                 }
             } catch (error: any) {

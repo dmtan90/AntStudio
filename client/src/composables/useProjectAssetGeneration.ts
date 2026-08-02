@@ -258,11 +258,36 @@ export function useProjectAssetGeneration(projectId: string) {
         }
     }
 
+    const handleGenerateSubtitles = async (segmentOrder?: number) => {
+        const id = segmentOrder ? `subtitles-${segmentOrder}` : 'subtitles-all'
+        generatingStates.value[id] = true
+        try {
+            toast.info(t('projects.editor.storyboard.subtitlesGenerating') || 'Generating subtitles...')
+            if (segmentOrder !== undefined) {
+                await projectStore.generateCaptions(projectId, segmentOrder.toString())
+            } else {
+                const segments = projectStore.currentProject?.storyboard?.segments || []
+                for (const seg of segments) {
+                    await projectStore.generateCaptions(projectId, seg.order)
+                }
+            }
+            await projectStore.fetchProject(projectId)
+            toast.success(t('projects.editor.storyboard.captionsGenerated') || 'Captions generated successfully!')
+            return true
+        } catch (error: any) {
+            console.error('Failed to generate subtitles:', error)
+            toast.error(error.response?.data?.error || error.message || t('common.failed'))
+            return false
+        } finally {
+            generatingStates.value[id] = false
+        }
+    }
+
     const handleGenerateAllSequential = async (project: any) => {
         if (!project || projectStore.isProcessing) return
         
         try {
-            // PHASE 1: Characters
+            // Characters
             const chars = project?.scriptAnalysis?.characters || []
             if (chars.length > 0) {
                 toast.info(`${t('projects.editor.storyboard.batchStart')} ${chars.length} characters...`)
@@ -273,7 +298,7 @@ export function useProjectAssetGeneration(projectId: string) {
                 }
             }
 
-            // PHASE 2: Frames
+            // Frames
             const segments = project?.storyboard?.segments || []
             if (segments.length > 0) {
                 toast.info(`${t('projects.editor.storyboard.batchStart')} ${segments.length} frames...`)
@@ -284,11 +309,11 @@ export function useProjectAssetGeneration(projectId: string) {
                 }
             }
 
-            // PHASE 3: Videos (Batch)
+            // Videos (Batch)
             toast.info(t('projects.editor.storyboard.videoBatchStart'))
             await projectStore.generateStoryboardAssetsBatch(projectId)
 
-            // PHASE 4: Audio (VO)
+            // Audio (VO)
             toast.info('Generating Voiceovers for all segments...')
             for (const seg of segments) {
                 if (seg.voiceover && seg.voiceover.trim().length > 0) {
@@ -382,6 +407,8 @@ export function useProjectAssetGeneration(projectId: string) {
         handleGenerateMusic,
         handleGenerateVoiceover,
         handleGenerateAllVoiceovers,
+        handleGenerateSubtitles,
+        handleGenerateAllSubtitles: handleGenerateSubtitles,
         handleGenerateAllSequential,
         handleUploadCharacterImage,
         handleUploadImageVideo

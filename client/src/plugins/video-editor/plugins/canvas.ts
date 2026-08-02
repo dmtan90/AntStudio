@@ -1171,7 +1171,11 @@ export class Canvas {
 
     // Jump to representative time
     this.timeline?.set("seek", timeMs / 1000);
-    this.instance.renderAll();
+    try{
+		this.instance.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
 
     try {
       const artboard = this.artboard;
@@ -1200,7 +1204,11 @@ export class Canvas {
 
     // Restore original seek
     this.timeline?.set("seek", originalSeek / 1000);
-    this.instance.renderAll();
+    try{
+		this.instance.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
 
     // Trigger specific thumbnail tick to update UI
     this.editor.onThumbnailUpdated?.();

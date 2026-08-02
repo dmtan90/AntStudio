@@ -5,16 +5,27 @@
         <!-- Background Decorative Glows -->
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[800px] bg-primary/5 rounded-full blur-[200px] pointer-events-none"></div>
 
-        <div class="relative w-full max-w-6xl overflow-hidden rounded-[3rem] border border-white/5 bg-[#0a0a0f]/40 p-16 shadow-[0_0_120px_rgba(0,0,0,0.8)] backdrop-blur-[60px]">
+        <div class="relative w-full max-w-6xl overflow-hidden rounded-[3rem] border border-white/5 bg-[#0a0a0f]/40 p-8 shadow-[0_0_120px_rgba(0,0,0,0.8)] backdrop-blur-[60px]">
           
           <!-- STEP 1: CONTEXT SELECTION -->
           <div v-if="step === 1" class="relative z-10 text-center animate-in fade-in zoom-in duration-500">
-            <h1 class="text-5xl font-black uppercase tracking-tighter text-white mb-2">
+            <h1 class="text-2xl font-black uppercase tracking-tighter text-white mb-2">
               {{ $t('studio.contextSelector.greeting', { name: userName }) }}
             </h1>
-            <p class="text-lg font-medium text-white/30 mb-16">{{ $t('studio.contextSelector.question') }}</p>
-
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <p class="font-medium text-white/30 mb-8">{{ $t('studio.contextSelector.question') }}</p>
+            <el-row :gutter="12" justify="center">
+              <el-col :span="4" v-for="ctx in contexts" :key="ctx.id">
+                <ContextCard
+                  :label="$t(`studio.contextSelector.modes.${ctx.id}.name`)"
+                  :description="$t(`studio.contextSelector.modes.${ctx.id}.desc`)"
+                  :icon="ctx.icon"
+                  :color="ctx.color"
+                  :active="selectedContextId === ctx.id"
+                  @select="selectedContextId = ctx.id"
+                />
+              </el-col>
+            </el-row>
+            <!-- <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
               <ContextCard
                 v-for="ctx in contexts"
                 :key="ctx.id"
@@ -25,10 +36,10 @@
                 :active="selectedContextId === ctx.id"
                 @select="selectedContextId = ctx.id"
               />
-            </div>
+            </div> -->
 
             <!-- Action Bar -->
-            <div class="mt-20 flex flex-col items-center gap-6">
+            <div class="mt-10 flex flex-col items-center gap-6">
               <button 
                 @click="goToStep2"
                 class="group relative h-16 w-full max-w-md overflow-hidden rounded-2xl bg-primary px-12 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
@@ -60,12 +71,12 @@
             </div>
 
             <div class="text-center mb-10">
-              <h2 class="text-4xl font-black uppercase tracking-tighter text-white">Select Your Host Agent</h2>
-              <p class="mt-2 text-sm font-medium text-white/30 uppercase tracking-widest">Choose who will lead the broadcast network</p>
+              <h2 class="text-2xl font-black uppercase tracking-tighter text-white">Select Your Host Agent</h2>
+              <p class="mt-2 font-medium text-white/30 uppercase tracking-widest">Choose who will lead the broadcast network</p>
             </div>
 
             <!-- Real Host Option (Human Free focus but still selectable) -->
-            <div class="w-full mb-10">
+            <!-- <div class="w-full mb-10">
                 <div 
                   class="host-type-card flex items-center gap-6 p-6 rounded-[2rem] border transition-all duration-300 cursor-pointer"
                   :class="isRealHost ? 'bg-blue-600/10 border-blue-500/60 shadow-[0_0_30px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'"
@@ -82,7 +93,7 @@
                     <CheckOne theme="outline" size="16" />
                   </div>
                 </div>
-            </div>
+            </div> -->
 
             <!-- AI Persona Grid -->
             <div class="w-full h-[400px] overflow-y-auto pr-2 custom-scrollbar">
@@ -144,7 +155,7 @@
                   </div>
                 </button>
                 <p class="mt-4 text-center text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
-                  {{ selectedPersonaUuids.length }} / 3 AGENTS SELECTED
+                  {{ selectedPersonaUuids.length }} / {{ MAX_AI_AGENTS }} AGENTS SELECTED
                 </p>
             </div>
           </div>
@@ -197,6 +208,8 @@ import { syntheticGuestManager } from '@/utils/ai/SyntheticGuestManager';
 import { getFileUrl } from '@/utils/api';
 import { toast } from 'vue-sonner';
 
+const MAX_AI_AGENTS = 1;
+
 const WIZARD_MAP: Record<string, any> = {
   sales: defineAsyncComponent(() => import('./SaleWizard.vue'))
 };
@@ -221,15 +234,15 @@ const isRealHost = ref(false);
 
 const contexts: { id: StreamingContext; icon: any, color: string }[] = [
   { id: 'sales', icon: ShoppingCart, color: '#f97316' },
-  { id: 'talkshow', icon: User, color: '#06b6d4' },
-  { id: 'news', icon: Globe, color: '#3b82f6' },
-  { id: 'music', icon: Music, color: '#a855f7' },
-  { id: 'gameshow', icon: Lightning, color: '#22c55e' },
-  { id: 'game_streaming', icon: Gamepad, color: '#10b981' },
-  { id: 'sport', icon: Trophy, color: '#ef4444' },
-  { id: 'education', icon: DegreeHat, color: '#3b82f6' },
-  { id: 'commentary', icon: Message, color: '#8b5cf6' },
-  { id: 'general', icon: Star, color: '#eab308' },
+  // { id: 'talkshow', icon: User, color: '#06b6d4' },
+  // { id: 'news', icon: Globe, color: '#3b82f6' },
+  // { id: 'music', icon: Music, color: '#a855f7' },
+  // { id: 'gameshow', icon: Lightning, color: '#22c55e' },
+  // { id: 'game_streaming', icon: Gamepad, color: '#10b981' },
+  // { id: 'sport', icon: Trophy, color: '#ef4444' },
+  // { id: 'education', icon: DegreeHat, color: '#3b82f6' },
+  // { id: 'commentary', icon: Message, color: '#8b5cf6' },
+  // { id: 'general', icon: Star, color: '#eab308' },
 ];
 
 const contextColors: Record<string, string> = {
@@ -292,17 +305,17 @@ const togglePersona = (persona: any) => {
   const idx = selectedPersonaUuids.value.indexOf(persona.uuid);
   if (idx !== -1) {
     selectedPersonaUuids.value.splice(idx, 1);
-  } else if (selectedPersonaUuids.value.length < 3) {
+  } else if (selectedPersonaUuids.value.length < MAX_AI_AGENTS) {
     selectedPersonaUuids.value.push(persona.uuid);
   } else {
-    toast.warning('Neural Limit Reached: Max 3 AI Agents');
+    toast.warning('Agent Limit Reached: Max '+MAX_AI_AGENTS+' AI Agents');
   }
 };
 
 const launchStudio = async (extraData?: any) => {
   if (!selectedContextId.value) return;
 
-  toast.info('Manifesting Neural Environment...', { icon: '🌌' });
+  toast.info('Manifesting Agent Environment...', { icon: '🌌' });
   
   // Apply Context
   studioStore.applyContextPreset(selectedContextId.value);

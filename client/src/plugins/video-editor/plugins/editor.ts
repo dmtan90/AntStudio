@@ -38,7 +38,7 @@ const t = (key: string, params?: Record<string, string>): string => (i18n.global
 let ffmpegInstance: FFmpeg | null = null;
 let ffmpegLoadingPromise: Promise<void> | null = null;
 
-const getFFmpeg = () => {
+export const getFFmpeg = () => {
   if (!ffmpegInstance) {
     ffmpegInstance = createInstance(FFmpeg);
   }

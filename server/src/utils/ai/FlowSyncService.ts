@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { chromium, BrowserContext, Browser } from 'playwright';
-import { AIAccount, IAIAccount } from '../../models/AIAccount.js';
+import { AIAccount, AIAccountStatus, IAIAccount } from '../../models/AIAccount.js';
 import { Logger } from '../Logger.js';
 
 export class FlowSyncService {
@@ -14,6 +14,36 @@ export class FlowSyncService {
             FlowSyncService.instance = new FlowSyncService();
         }
         return FlowSyncService.instance;
+    }
+
+    /**
+     * Build unified request headers mimicking the Python flow_client
+     */
+    private getHeaders(st?: string, at?: string, extraHeaders: Record<string, string> = {}): Record<string, string> {
+        const headers: Record<string, string> = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Content-Type': 'application/json',
+            'Origin': 'https://labs.google',
+            'Referer': 'https://labs.google/',
+            'sec-ch-ua': '"Google Chrome";v="149", "Chromium";v="149", "Not)A;Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'cross-site',
+            ...extraHeaders
+        };
+
+        if (st) {
+            headers['Cookie'] = `__Secure-next-auth.session-token=${st}`;
+        }
+        if (at) {
+            headers['Authorization'] = `Bearer ${at}`;
+        }
+
+        return headers;
     }
 
     /**
@@ -92,7 +122,7 @@ export class FlowSyncService {
                     // Google's endpoint will still decode validly signed JWTs even if expired, but we cannot use the AT.
                     if (expiresAt < Date.now()) {
                         Logger.warn(`[FlowSyncService] Session for ${account.email} returned an expired token (${session.expires}). The flowST needs to be updated.`);
-                        account.status = 'unauthorized';
+                        account.status = AIAccountStatus.UNAUTHORIZED;
                         account.flowAT = undefined;
                         account.flowATExpiresAt = undefined;
                         await account.save();
@@ -113,7 +143,7 @@ export class FlowSyncService {
                 await this.ensureProject(account, session);
 
                 // IMPORTANT: Save token to DB FIRST before fetching credits
-                account.status = 'ready';
+                account.status = AIAccountStatus.READY;
                 account.errorMessage = undefined;
                 await account.save();
 
@@ -124,12 +154,7 @@ export class FlowSyncService {
                     try {
                         const GOOGLE_FLOW_API_KEY = 'AIzaSyBtrm0o5ab1c-Ec8ZuLcGt3oJAA5VWt3pY';
                         const creditsRes = await axios.get(`https://aisandbox-pa.googleapis.com/v1/credits?key=${GOOGLE_FLOW_API_KEY}`, {
-                            headers: {
-                                'Authorization': `Bearer ${account.flowAT}`,
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
-                                'Referer': 'https://labs.google',
-                                'Origin': 'https://labs.google',
-                            }
+                            headers: this.getHeaders(undefined, account.flowAT)
                         });
                         if (creditsRes.data?.credits !== undefined) {
                             account.credits = creditsRes.data.credits;
@@ -143,7 +168,7 @@ export class FlowSyncService {
                         // even though we could decode it. We must mark the account as unauthorized so the user knows to update it.
                         if (status === 401) {
                             Logger.warn(`[FlowSyncService] CRITICAL: New access token was immediately rejected (401). The session cookie (flowST) for ${account.email} has expired.`);
-                            account.status = 'unauthorized';
+                            account.status = AIAccountStatus.UNAUTHORIZED;
                             account.flowAT = undefined; // Clear the invalid token
                             await account.save();
                             throw new Error('Session token has expired. Please update it in the UI.');
@@ -158,14 +183,9 @@ export class FlowSyncService {
                     if (!creditsFetched && account.flowST) {
                         try {
                             const trpcRes = await axios.post('https://labs.google/fx/api/trpc/videoFx.credits', { json: null }, {
-                                headers: {
-                                    'Authorization': `Bearer ${account.flowAT}`,
-                                    'Cookie': `__Secure-next-auth.session-token=${account.flowST}`,
-                                    'Content-Type': 'application/json',
-                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                                    'Referer': 'https://labs.google/fx/tools/flow',
-                                    'Origin': 'https://labs.google',
-                                }
+                                headers: this.getHeaders(account.flowST, account.flowAT, {
+                                    'Referer': 'https://labs.google/fx/tools/flow'
+                                })
                             });
                             // Parse as per flow_client.py: result.data.json.credits
                             const trpcData = trpcRes.data?.result?.data?.json;
@@ -187,14 +207,9 @@ export class FlowSyncService {
                         try {
                             const GOOGLE_FLOW_API_KEY = 'AIzaSyBtrm0o5ab1c-Ec8ZuLcGt3oJAA5VWt3pY';
                             const creditsRes = await axios.get(`https://aisandbox-pa.googleapis.com/v1/credits`, {
-                                headers: {
-                                    'Cookie': `__Secure-next-auth.session-token=${account.flowST}`,
-                                    'x-goog-api-key': GOOGLE_FLOW_API_KEY,
-                                    'Content-Type': 'application/json',
-                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                                    'Referer': 'https://labs.google',
-                                    'Origin': 'https://labs.google',
-                                }
+                                headers: this.getHeaders(account.flowST, undefined, {
+                                    'x-goog-api-key': GOOGLE_FLOW_API_KEY
+                                })
                             });
                             if (creditsRes.data?.credits !== undefined) {
                                 account.credits = creditsRes.data.credits;
@@ -213,12 +228,6 @@ export class FlowSyncService {
                         Logger.warn(`[FlowSyncService] All credit fetch attempts failed for ${account.email}, using cached: ${account.credits || 0}`);
                     }
                 }
-
-
-
-
-
-
                 Logger.info(`[FlowSyncService] Tokens refreshed successfully for ${account.email} (Credits: ${account.credits || 0}, Project: ${account.projectId || 'None'})`);
             } else {
                 throw new Error('Invalid session response: No access token or user info found');
@@ -227,11 +236,10 @@ export class FlowSyncService {
             Logger.error(`[FlowSyncService] Token refresh failed for ${account.email}:`, err.message);
             
             if (axios.isAxiosError(err) && err.response?.status === 401) {
-                account.status = 'unauthorized';
+                account.status = AIAccountStatus.UNAUTHORIZED;
                 await account.save();
             }
-
-            throw err;
+            // Do not throw to prevent unhandled promise rejections that might crash the background sync process
         }
     }
 
@@ -273,12 +281,9 @@ export class FlowSyncService {
                         toolName: "PINHOLE"
                     }
                 }, {
-                    headers: {
-                        'Cookie': `__Secure-next-auth.session-token=${account.flowST}`,
-                        'Content-Type': 'application/json',
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    headers: this.getHeaders(account.flowST, undefined, {
                         'Referer': 'https://labs.google/fx/tools/flow'
-                    }
+                    })
                 });
 
                 const projectId = createRes.data?.result?.data?.json?.result?.projectId;
@@ -301,17 +306,10 @@ export class FlowSyncService {
      */
     private async stToAt(st: string): Promise<any> {
         const url = 'https://labs.google/fx/api/auth/session';
-        // Add CSRF token if possible, but usually session token is enough
-        // Ensure headers mimic a real browser to avoid 401/403
-        const headers = {
-            'Cookie': `__Secure-next-auth.session-token=${st}`,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': '*/*',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Referer': 'https://labs.google/fx/tools/flow',
+        const headers = this.getHeaders(st, undefined, {
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache'
-        };
+        });
 
         try {
             const response = await axios.get(url, { 
@@ -320,11 +318,11 @@ export class FlowSyncService {
                 validateStatus: (status) => status < 500 // Don't throw on 401 so we can log it custom
             });
 
-            if (response.status === 401) {
+            if (response.status === 401 || !response.data.access_token || !response.data.user) {
                 Logger.error(`[FlowSyncService] Unauthorized: Session token (ST) seems invalid or expired.`);
                 throw new Error('Unauthorized: Session token expired');
             }
-
+            Logger.info(`[FlowSyncService] Session token (ST) converted to access token: ${JSON.stringify(response.data)}`);
             return response.data;
         } catch (err: any) {
             Logger.error(`[FlowSyncService] stToAt request failed: ${err.message}`);
@@ -343,7 +341,7 @@ export class FlowSyncService {
         try {
             browser = await chromium.launch({ headless: true });
             context = await browser.newContext({
-                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
                 viewport: { width: 1280, height: 720 }
             });
 

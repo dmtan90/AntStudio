@@ -2,6 +2,7 @@
 // const require = createRequire(import.meta.url)
 import { fileURLToPath } from 'url'
 import path from 'path'
+// @ts-ignore
 import { PDFParse } from 'pdf-parse'
 import mammoth from 'mammoth'
 import * as pkgPptxtojson from 'pptxtojson'

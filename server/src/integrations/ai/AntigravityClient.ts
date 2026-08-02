@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { IAIAccount } from '../../models/AIAccount.js';
 import { aiAccountManager } from '../../utils/ai/AIAccountManager.js';
 import { GeminiClient } from './GeminiClient.js';
-
+import { EnvConfig } from '~/utils/ConfigService.js';
 import { Logger } from '../../utils/Logger.js';
 
 /**
@@ -60,7 +60,7 @@ export class AntigravityClient {
     /**
      * Common generateContent wrapper (Agentic Architecture)
      */
-    public async generateContent(prompt: string | any[], modelId: string = 'gemini-2.5-flash', options: any = {}): Promise<{ text: string }> {
+    public async generateContent(prompt: string | any[], modelId: string = EnvConfig.geminiModelTextAnalysis, options: any = {}): Promise<{ text: string }> {
         const token = await aiAccountManager.refreshAccessToken(this.account);
         const headers = this.getHeaders(token);
         const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;
@@ -92,7 +92,7 @@ export class AntigravityClient {
                     temperature: 1,
                     topP: 0.85,
                     topK: 50,
-                    maxOutputTokens: 65536,//fix truncate JSON string
+                    maxOutputTokens: 65535,//fix truncate JSON string
                     // Merge caller-provided overrides (e.g. responseMimeType, maxOutputTokens from generateJSON)
                     ...options.generationConfig,
                 }
@@ -161,7 +161,7 @@ export class AntigravityClient {
     /**
      * Generate Image (Imagen 3.5 via Agent Gateway)
      */
-    public async generateImage(prompt: string | any[], modelId: string = 'gemini-3-pro-image'): Promise<{ url: string }> {
+    public async generateImage(prompt: string | any[], modelId: string = EnvConfig.geminiModelImageGeneration): Promise<{ url: string }> {
         const token = await aiAccountManager.refreshAccessToken(this.account);
         const headers = this.getHeaders(token);
         const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;
@@ -290,7 +290,7 @@ export class AntigravityClient {
     /**
      * Generate Audio (Multimodal TTS via Agent Gateway)
      */
-    public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = 'gemini-2.5-flash-tts', options: any = {}) {
+    public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = EnvConfig.geminiModelTTS, options: any = {}) {
         const token = await aiAccountManager.refreshAccessToken(this.account);
         const headers = this.getHeaders(token);
         const url = `${AntigravityClient.AGENT_ENDPOINT}/v1internal:generateContent`;

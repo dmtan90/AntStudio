@@ -32,7 +32,11 @@ fabric.Object.prototype.update = function () {
         backend.evictCachesForKey(this.cacheKey + "_filtered");
       }
       this.applyFilters();
-      this.canvas.renderAll();
+      try{
+		this.canvas.renderAll();
+	  }catch(err){
+		console.warn(err);
+	  }
       fabric.util.requestAnimFrame(this.update.bind(this));
     }catch(error){
       console.error(error);

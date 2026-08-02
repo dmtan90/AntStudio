@@ -1,6 +1,6 @@
-# Live Streaming with AntFlow
+# Live Streaming with AntStudio
 
-AntFlow's Mobile Live Studio allows you to broadcast professional-grade streams directly from your device, featuring AI automation and multi-platform support.
+AntStudio's Mobile Live Studio allows you to broadcast professional-grade streams directly from your device, featuring AI automation and multi-platform support.
 
 ## 1. Setting Up a Stream
 

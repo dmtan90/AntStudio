@@ -6,11 +6,44 @@ export interface IQuota {
     resetAt?: Date;
 }
 
+export enum AIAccountProvider {
+    GOOGLE = 'google',
+    GOOGLE_VERTEX = 'vertex',
+    ANTHROPIC = 'anthropic',
+    DEEPSEEK = 'deepseek',
+    OPENROUTER = 'openrouter',
+    ELEVENLABS = 'elevenlabs',
+    OPENAI = 'openai',
+    CUSTOM = 'custom',
+    PRIVATE = 'private',
+    GOOGLE_FLOW = 'google-flow',
+    GEMINI = 'gemini',
+    AISTUDIO = 'aistudio'
+};
+
+export enum AIAccountType {
+    STANDARD = 'standard',
+    ANTIGRAVITY = 'antigravity',
+    GOOGLE_FLOW = 'google-flow',
+    GOOGLE_CLOUD = 'google-cloud',
+    API_KEY = 'apikey',
+    GOOGLE_VERTEX = 'vertex',
+    OPENAI = 'openai',
+    CUSTOM = 'custom',
+};
+
+export enum AIAccountStatus {
+    READY = 'ready',
+    ERROR = 'error',
+    RATE_LIMITED = 'rate-limited',
+    UNAUTHORIZED = 'unauthorized'
+};
+
 export interface IAIAccount extends Document {
     email: string;
     name?: string; // Display name from provider
-    providerId: string; // e.g., 'google', 'anthropic'
-    accountType: 'standard' | 'antigravity' | 'google-flow'; // Distinction for OAuth credentials
+    providerId: AIAccountProvider | string; // e.g., 'google', 'anthropic'
+    accountType: AIAccountType | string; // 'standard' | 'antigravity' | 'google-flow' | 'google-cloud'; // Distinction for OAuth credentials
 
     // OAuth Tokens
     refreshToken?: string;
@@ -33,7 +66,7 @@ export interface IAIAccount extends Document {
     quotas: Map<string, IQuota>; // key: modelId (e.g., 'gemini-1.5-pro')
 
     // Status
-    status: 'ready' | 'error' | 'rate-limited' | 'unauthorized';
+    status: AIAccountStatus | string;
     errorMessage?: string;
     isActive: boolean;
     isPaid: boolean;
@@ -48,13 +81,8 @@ const AIAccountSchema = new Schema<IAIAccount>(
     {
         email: { type: String, required: true },
         name: String,
-        providerId: { type: String, required: true, default: 'google' },
-        accountType: {
-            type: String,
-            enum: ['standard', 'antigravity', 'google-flow'],
-            default: 'standard',
-            required: true
-        },
+        providerId: { type: String, required: true, default: AIAccountProvider.GOOGLE },
+        accountType: { type: String, enum: Object.values(AIAccountType), default: AIAccountType.STANDARD, required: true },
 
         refreshToken: String,
         accessToken: String,
@@ -91,9 +119,10 @@ const AIAccountSchema = new Schema<IAIAccount>(
 
         status: {
             type: String,
-            enum: ['ready', 'error', 'rate-limited', 'unauthorized'],
-            default: 'ready'
+            enum: Object.values(AIAccountStatus),
+            default: AIAccountStatus.READY
         },
+
         errorMessage: String,
         isActive: { type: Boolean, default: true },
         isPaid: { type: Boolean, default: false },

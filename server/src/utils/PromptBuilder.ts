@@ -1,6 +1,6 @@
 import { IDetailedCharacter } from '../models/Project.js'
 import { Logger } from './Logger.js';
-import { promptService } from '../services/PromptService.js';
+import { promptService } from '../services/ai/PromptService.js';
 
 /**
  * PROMPT BUILDER UTILITIES

@@ -1,7 +1,7 @@
 <template>
   <div class="marketplace-view min-h-screen bg-[#0a0a0c] text-white">
     <!-- Header Section -->
-    <header class="relative py-24 px-8 overflow-hidden border-b border-white/5">
+    <header class="relative py-8 px-8 overflow-hidden border-b border-white/5">
       <div
         class="absolute inset-0 bg-gradient-to-br from-blue-600/15 via-purple-600/5 to-transparent pointer-events-none">
       </div>
@@ -16,7 +16,7 @@
           <div class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
           <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">{{ t('marketplace.badge') }}</span>
         </div>
-        <h1 class="text-7xl font-black mb-6 tracking-tighter leading-[0.9]">
+        <h1 class="text-4xl font-black mb-6 tracking-tighter leading-[0.9]">
           {{ t('marketplace.magic') }} <span
             class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">{{ t('marketplace.template') }}</span><br />
           {{ t('marketplace.hub') }}
@@ -26,7 +26,7 @@
         </p>
 
         <div class="flex flex-wrap gap-4">
-          <button @click="importDialog.show = true"
+          <button @click="importDialog.show = true" disabled
             class="group px-8 py-4 bg-white text-black rounded-2xl font-black hover:scale-105 transition-all shadow-xl shadow-white/5 flex items-center gap-3 relative overflow-hidden">
             <div
               class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-10 transition-opacity">
@@ -35,7 +35,7 @@
             {{ t('marketplace.importUrl') }}
           </button>
 
-          <button @click="triggerPptxUpload" :disabled="isImportingPptx"
+          <button @click="triggerPptxUpload" disabled
             class="group px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black hover:bg-white/10 hover:scale-105 transition-all flex items-center gap-3 relative overflow-hidden disabled:opacity-50">
             <div
               class="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 opacity-0 group-hover:opacity-10 transition-opacity">
@@ -52,8 +52,7 @@
           <div class="flex -space-x-4">
             <div v-for="i in 3" :key="i"
               class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] overflow-hidden bg-white/5 backdrop-blur-md">
-              <img :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`"
-                class="w-full h-full object-cover" />
+              <img :src="getFileUrl('https://api.dicebear.com/7.x/avataaars/svg?seed=' + (i + 10))" class="w-full h-full object-cover" />
             </div>
             <div
               class="w-12 h-12 rounded-2xl border-2 border-[#0a0a0c] bg-white/10 backdrop-blur-md flex items-center justify-center text-[10px] font-black text-white">
@@ -71,7 +70,7 @@
     <!-- Content Section -->
     <main class="max-w-7xl mx-auto py-16 px-8">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
-        <el-segmented v-model="activeTab" :options="tabs"
+        <el-segmented v-model="activeTab" :options="tabs" :props="props"
           class="premium-segmented h-14 rounded-2xl bg-white/5 p-1.5 border border-white/5">
           <template #default="scope">
             <div class="flex items-center gap-2.5 px-5 h-full transition-all">
@@ -234,6 +233,7 @@ import TemplatePreviewDialog from '@/components/marketplace/TemplatePreviewDialo
 import { useMarketplaceStore } from '@/stores/marketplace'
 import { useProjectStore } from '@/stores/project'
 import { useI18n } from 'vue-i18n';
+import { getFileUrl } from '@/utils/api'
 
 const router = useRouter()
 const marketplaceStore = useMarketplaceStore()
@@ -245,11 +245,17 @@ const templates = ref<any[]>([])
 
 const activeTab = ref('public');
 
+const props = {
+  label: 'name',
+  value: 'value',
+  disabled: 'disabled',
+}
+
 const tabs = [
-  { value: 'public', name: 'Public' },
-  { value: 'canva', name: 'Canva' },
-  { value: 'capcut', name: 'Capcut' },
-  { value: 'private', name: 'My Templates' },
+  { value: 'public', name: 'Public', disabled: false },
+  { value: 'canva', name: 'Canva', disabled: true },
+  { value: 'capcut', name: 'Capcut', disabled: true },
+  { value: 'private', name: 'My Templates', disabled: true },
 ];
 
 const filters = reactive({

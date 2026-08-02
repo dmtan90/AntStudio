@@ -310,7 +310,7 @@ export abstract class FabricUtils {
 
   static async applyModificationsAfterLoad(objects: fabric.Object[], { product, objective, brand }: any, mode: EditorMode) {
     console.log("applyModificationsAfterLoad", objects, mode, product, objective, brand);
-    if (mode === "creator") return;
+    // if (mode === "creator") return;
 
     if (brand) {
       const elements = objects.filter((object) => object.meta?.label === "brand-image" && this.isImageElement(object)) as fabric.Image[];
@@ -326,6 +326,8 @@ export abstract class FabricUtils {
                 const props = this.calculateReplacementImageProps(element, image, true);
                 element.setElement(image);
                 element.set(props).setCoords();
+                //replace origin src of object
+                element.originalSrc = brand.brand_logo;
                 resolve();
               }
             },
@@ -354,6 +356,8 @@ export abstract class FabricUtils {
                 const props = this.calculateReplacementImageProps(element, image);
                 element.setElement(image);
                 element.set(props).setCoords();
+                //replace origin src of object
+                element.originalSrc = url;
                 resolve();
               }
             },

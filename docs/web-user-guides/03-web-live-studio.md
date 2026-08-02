@@ -1,4 +1,4 @@
-# AntFlow Web Live Studio Guide
+# AntStudio Web Live Studio Guide
 
 The Web Live Studio allows you to broadcast directly from your browser without needing external software like OBS (though OBS is also supported via RTMP).
 

@@ -9,7 +9,7 @@
     <!-- Header Bar -->
     <ProjectEditorHeader class="relative z-10" :left-visible="isLeftVisible" :right-visible="isRightVisible"
       @toggle-left="isLeftVisible = !isLeftVisible" @toggle-right="isRightVisible = !isRightVisible"
-      @export="handleExportAction" @view-mode="switchStudioMode" />
+      @export="openExportDialog" @view-mode="switchStudioMode" />
 
     <div class="editor-body">
       <!-- <StudioEditor v-if="editorMode === 'studio' && project" :project="project" /> -->
@@ -37,7 +37,9 @@
             @generate-all-sequential="() => assetGeneration.handleGenerateAllSequential(project)"
             @generate-music="assetGeneration.handleGenerateMusic"
             @generate-voiceover="assetGeneration.handleGenerateVoiceover"
-            @generate-all-voiceovers="() => assetGeneration.handleGenerateAllVoiceovers(project)" />
+            @generate-all-voiceovers="() => assetGeneration.handleGenerateAllVoiceovers(project)"
+            @generate-subtitles="(order) => assetGeneration.handleGenerateSubtitles(order)"
+            @generate-all-subtitles="() => assetGeneration.handleGenerateAllSubtitles()" />
           <ProjectTimeline :project="project" v-if="activeTab === 'timeline'" />
         </template>
         <div v-else-if="!loading" class="p-10 bg-[#0a0a0c]/40 backdrop-blur-xl">
@@ -55,8 +57,6 @@
         ref="chatSidebarRef" />
     </div>
 
-    <!-- Export Progress Overlay -->
-    <ProjectEditorExportOverlay :is-visible="isAssembling" :progress="exportProgress" :status="exportStatus" />
   </div>
 </template>
 
@@ -79,7 +79,6 @@ import ProjectTimeline from '@/components/projects/editor/ProjectTimeline.vue'
 // import StudioEditor from '@/components/projects/editor/StudioEditor.vue'
 import ProjectEditorSidebar from '@/components/projects/editor/ProjectEditorSidebar.vue'
 import ProjectEditorChatSidebar from '@/components/projects/editor/ProjectEditorChatSidebar.vue'
-import ProjectEditorExportOverlay from '@/components/projects/editor/ProjectEditorExportOverlay.vue'
 import { EditorTemplate } from 'video-editor/types/editor'
 import { useMarketplaceStore } from '@/stores/marketplace'
 // import router from '@/router'
@@ -140,25 +139,31 @@ const chat = useProjectChat(projectId, computed(() => chatSidebarRef.value?.chat
 useProjectNotifications(projectId)
 
 // Export logic
-const handleExportAction = async (command: string) => {
-  if (command === 'video') {
-    try {
-      toast.info(t('projects.editor.video.starting'))
-      await assemble({
-        format: 'mp4',
-        codec: 'h264',
-        resolution: '1080p',
-        fps: 30,
-        bitrate: 'medium',
-        includeAudio: true
-      })
-    } catch (error: any) {
-      toast.error(error.message || t('projects.editor.video.error'))
-    }
-  } else {
-    toast.info(`${command} ${t('projects.editor.header.exportComingSoon')}`)
-  }
-}
+const openExportDialog = () => {
+  console.log("openExportDialog");
+  activeTab.value = 'timeline';
+  projectStore.setExportDialogState(true);
+};
+
+// const handleExportAction = async (command: string) => {
+//   if (command === 'video') {
+//     try {
+//       toast.info(t('projects.editor.video.starting'))
+//       await assemble({
+//         format: 'mp4',
+//         codec: 'h264',
+//         resolution: '1080p',
+//         fps: 30,
+//         bitrate: 'medium',
+//         includeAudio: true
+//       })
+//     } catch (error: any) {
+//       toast.error(error.message || t('projects.editor.video.error'))
+//     }
+//   } else {
+//     toast.info(`${command} ${t('projects.editor.header.exportComingSoon')}`)
+//   }
+// }
 
 const switchStudioMode = () => {
   router.push({name: 'project-studio', params: {id: projectId}})

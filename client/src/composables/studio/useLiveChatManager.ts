@@ -3,8 +3,8 @@ import { useGeminiLive } from '@/composables/useGeminiLive';
 import { useStudioStore } from '@/stores/studio';
 import { useUserStore } from '@/stores/user';
 import { useRoute } from 'vue-router';
-import { ElMessage } from 'element-plus';
 import { AgentEventBus } from './services/AgentEventBus';
+import { toast } from 'vue-sonner';
 
 export interface LiveChatConnection {
     personaId: string;
@@ -16,6 +16,8 @@ export interface LiveChatConnection {
     isAudioPlaying: boolean;
     isMicrophoneStarted: boolean;
     audioLevel: number;
+    isTurnComplete: boolean;
+    baseTextResponseCallback?: (text: string, metadata?: any) => void;
 }
 
 export const connections = reactive<Record<string, LiveChatConnection>>({});
@@ -42,19 +44,32 @@ export function useLiveChatManager() {
     );
 
     const connectInfluencer = async (personaId: string, persona: any, hostStream?: MediaStream, liveContext?: string, productIds?: string) => {
-        if (connections[personaId]?.isConnected || connectingIds.has(personaId)) {
-            return;
-        }
-
-        connectingIds.add(personaId);
-
-        const archiveId = (persona as any).entityId || persona.uuid || persona.id;
+        const archiveId = (persona as any).entityId || persona.uuid || persona.id || persona._id;
         
         if (!archiveId) {
             console.warn(`[LiveChatManager] ${persona.name} doesn't have archiveId, skipping LiveChat`);
-            connectingIds.delete(personaId);
             return;
         }
+
+        // Prevent duplicate connections if already connected
+        const existingConn = Object.values(connections).find(c => c.archiveId === archiveId || c.personaId === personaId);
+        if (existingConn?.isConnected) {
+            console.warn(`[LiveChatManager] ${persona.name} (${archiveId}) is already connected, skipping duplicate connect.`);
+            return;
+        }
+
+        if (existingConn && !existingConn.isConnected) {
+            console.log(`[LiveChatManager] Cleaning up stale/disconnected connection for ${persona.name} (${archiveId})...`);
+            try {
+                existingConn.geminiLive.disconnect();
+            } catch (e) {}
+            delete connections[personaId];
+            connectingIds.delete(personaId);
+            connectingIds.delete(archiveId);
+        }
+
+        connectingIds.add(personaId);
+        connectingIds.add(archiveId);
 
         try {
             console.log(`[LiveChatManager] Connecting ${persona.name} to LiveChat with context ${liveContext}...`);
@@ -66,7 +81,8 @@ export function useLiveChatManager() {
                 projectId: route.params.id as string,
                 token: userStore.token || undefined,
                 liveContext: liveContext,
-                productIds: productIds
+                productIds: productIds,
+                language: studioStore.visualSettings?.language
             });
 
             if (hostStream) {
@@ -77,12 +93,12 @@ export function useLiveChatManager() {
                 eventBus.dispatchToolCall(personaId, toolCall);
             });
 
-            geminiLive.setTextResponseCallback(async (text: string, metadata?: any) => {
+            const baseCallback = async (text: string, metadata?: any) => {
                 if (metadata) {
                     eventBus.parseMetadataToToolCalls(personaId, metadata);
                 }
 
-                // Phase 9: Autonomous Commerce Pivot on high intent
+                // Autonomous Commerce Pivot on high intent
                 if (liveContext === 'sales') {
                     const { commerceIntelligenceEngine } = await import('@/utils/ai/CommerceIntelligenceEngine');
                     const intentResult = await commerceIntelligenceEngine.analyzeSpeech(text);
@@ -93,7 +109,9 @@ export function useLiveChatManager() {
                         neuralShowrunner.pivotSegment('closing');
                     }
                 }
-            });
+            };
+
+            geminiLive.setTextResponseCallback(baseCallback);
 
             connections[personaId] = {
                 personaId,
@@ -104,7 +122,9 @@ export function useLiveChatManager() {
                 isSpeaking: geminiLive.isSpeaking.value,
                 isAudioPlaying: geminiLive.isAudioPlaying.value,
                 isMicrophoneStarted: !!hostStream,
-                audioLevel: geminiLive.audioLevel.value
+                audioLevel: geminiLive.audioLevel.value,
+                isTurnComplete: geminiLive.isTurnComplete.value,
+                baseTextResponseCallback: baseCallback
             };
 
             watch(() => geminiLive.isConnected.value, (connected) => {
@@ -117,6 +137,28 @@ export function useLiveChatManager() {
 
             watch(() => geminiLive.isAudioPlaying.value, (playing) => {
                 if (connections[personaId]) connections[personaId].isAudioPlaying = playing;
+                import('@/utils/ai/SyntheticGuestManager').then(({ syntheticGuestManager }) => {
+                    const guest = syntheticGuestManager.activeGuests.get(personaId);
+                    if (guest) {
+                        guest.isSpeaking = playing;
+                        guest.isAudioPlaying = playing;
+                    }
+                });
+            });
+
+            watch(() => geminiLive.isTurnComplete.value, (completed) => {
+                if (connections[personaId]) connections[personaId].isTurnComplete = completed;
+                import('@/utils/ai/SyntheticGuestManager').then(({ syntheticGuestManager }) => {
+                    const guest = syntheticGuestManager.activeGuests.get(personaId);
+                    if (guest) guest.isTurnComplete = completed;
+                });
+            });
+
+            watch(() => geminiLive.lastAudioTime.value, (time) => {
+                import('@/utils/ai/SyntheticGuestManager').then(({ syntheticGuestManager }) => {
+                    const guest = syntheticGuestManager.activeGuests.get(personaId);
+                    if (guest) guest.lastAudioTime = time;
+                });
             });
 
             watch(() => geminiLive.audioLevel.value, (level) => {
@@ -133,12 +175,13 @@ export function useLiveChatManager() {
             });
 
             console.log(`[LiveChatManager] ✅ ${persona.name} connected to LiveChat`);
-            ElMessage.success(`${persona.name} joined the conversation`);
+            toast.info(`${persona.name || 'AI Agent'} joined the conversation`);
         } catch (error) {
             console.error(`[LiveChatManager] Failed to connect ${persona.name}:`, error);
-            ElMessage.error(`Failed to connect ${persona.name} to LiveChat`);
+            toast.error(`Failed to connect ${persona.name} to LiveChat`);
         } finally {
             connectingIds.delete(personaId);
+            connectingIds.delete(archiveId);
         }
     };
 
@@ -149,7 +192,7 @@ export function useLiveChatManager() {
         try {
             connection.geminiLive.disconnect();
             delete connections[personaId];
-            ElMessage.info(`${connection.persona.name} left the conversation`);
+            toast.info(`${connection?.persona?.name || 'AI Agent'} left the conversation`);
         } catch (error) {
             console.error(`[LiveChatManager] Error disconnecting ${connection.persona.name}:`, error);
         }
@@ -177,23 +220,40 @@ export function useLiveChatManager() {
         });
     };
 
-    const syncConnections = async (guestSlotMap: any, allPersonas: any[], hostStream?: MediaStream, liveContext?: string, productIds?: string) => {
+    const syncConnections = async (guestSlotMap: any, allPersonas: any[], hostStream?: MediaStream, liveContext?: string, productIds?: string, forceReconnect: boolean = false) => {
         const currentInfluencerIds = new Set<string>();
         const sanitizeId = (id: string) => id.startsWith('guest_') ? id.replace('guest_', '') : id;
 
-        for (const [slotId, guestData] of Object.entries(guestSlotMap)) {
+        const slotMap = (guestSlotMap && Object.keys(guestSlotMap).length > 0) 
+            ? guestSlotMap 
+            : Object.fromEntries(allPersonas.map((p, idx) => [idx, p.uuid || p.id || p._id || p.entityId]));
+
+        for (const [slotId, guestData] of Object.entries(slotMap)) {
             let guestId = typeof guestData === 'string' ? guestData : (guestData as any)?.uuid || (guestData as any)?.id;
             
             if (!guestId || typeof guestId !== 'string') continue;
             guestId = sanitizeId(guestId);
             
-            const persona = allPersonas.find(p => p.uuid === guestId || p.id === guestId);
+            let persona = allPersonas.find(p => 
+                p.uuid === guestId || 
+                p.id === guestId || 
+                p._id === guestId || 
+                p.entityId === guestId ||
+                p.archiveId === guestId
+            );
+            if (!persona && allPersonas.length > 0) {
+                persona = allPersonas[0];
+            }
             if (!persona || (persona as any).isRealHuman) continue;
 
             currentInfluencerIds.add(guestId);
             const existingConnection = connections[guestId];
 
-            if (!existingConnection) {
+            if (!existingConnection || !existingConnection.isConnected || forceReconnect) {
+                if (existingConnection && (!existingConnection.isConnected || forceReconnect)) {
+                    console.log(`[LiveChatManager] Re-initializing WebSocket for AI persona: ${persona.name} (${guestId})`);
+                    disconnectInfluencer(guestId);
+                }
                 await connectInfluencer(guestId, persona, hostStream, liveContext, productIds);
             } else if (!existingConnection.isMicrophoneStarted && hostStream) {
                 try {

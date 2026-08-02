@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import axios from 'axios';
 import { Media } from '../models/Media.js';
-import { uploadToS3 } from '../utils/s3.js';
+import { uploadToS3, deleteFromS3 } from '../utils/s3.js';
 import { connectDB } from '../utils/db.js';
-import config from '../utils/config.js';
+import { configService } from '../utils/ConfigService.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { AdminSettings } from '../models/AdminSettings.js';
 import { Template } from '../models/Template.js';
@@ -26,33 +27,45 @@ const upload = multer({
 // router.use(authMiddleware);
 
 // Helper function to get media API settings
-async function getMediaSettings() {
-    await connectDB();
-    const settings = await AdminSettings.findOne();
-    return settings?.apiConfigs?.media || null;
-}
+// async function getMediaSettings() {
+//     await connectDB();
+//     return configService.mediaAPI;
+// }
 
 // ============================================================================
 // INTERNAL MEDIA UPLOAD/LIST/DELETE
 // ============================================================================
 
-// POST /api/media/upload - Upload file to S3
-router.post('/upload', authMiddleware, upload.single('file'), async (req: AuthRequest, res) => {
+// POST /api/media/upload - Upload file to active storage
+router.post('/upload', authMiddleware, upload.fields([{ name: 'file', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req: AuthRequest, res) => {
     try {
         await connectDB();
 
-        if (!req.file) {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+        const mainFile = files?.['file']?.[0];
+        const thumbnailFile = files?.['thumbnail']?.[0];
+
+        if (!mainFile) {
             return res.status(400).json({ success: false, data: null, error: 'No file uploaded' });
         }
 
         const purpose = req.body.purpose || 'general';
-        const size = req.file.size;
-        const fileName = req.file.originalname;
-        const contentType = req.file.mimetype;
+        const size = mainFile.size;
+        const fileName = mainFile.originalname;
+        const contentType = mainFile.mimetype;
 
-        // Upload to S3
+        // Upload main file to active storage
         const key = `${purpose === 'avatar' ? 'avatars' : 'media'}/${req.user!.userId}/${Date.now()}-${fileName}`;
-        const uploadResult = await uploadToS3(key, req.file.buffer, contentType);
+        const uploadResult = await uploadToS3(key, mainFile.buffer, contentType);
+
+        const metadata: Record<string, any> = {};
+
+        // Upload thumbnail if present
+        if (thumbnailFile) {
+            const thumbKey = `thumbnails/${req.user!.userId}/${Date.now()}-${thumbnailFile.originalname || 'thumb.jpg'}`;
+            const thumbUploadResult = await uploadToS3(thumbKey, thumbnailFile.buffer, thumbnailFile.mimetype);
+            metadata.thumbnail = thumbUploadResult.key;
+        }
 
         // Create Media record
         const media = await Media.create({
@@ -61,8 +74,9 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req: AuthRe
             fileName,
             contentType,
             size,
-            bucket: config.awsS3Bucket,
-            purpose
+            bucket: configService.aws?.bucketName,
+            purpose,
+            metadata
         });
 
         res.json({
@@ -149,8 +163,19 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
             return res.status(404).json({ success: false, data: null, error: 'Media not found' });
         }
 
-        // Delete from S3 (optional - could be done in background)
-        // await deleteFromS3(media.key);
+        // Delete main file from active cloud storage
+        if (media.key) {
+            await deleteFromS3(media.key).catch((err: any) => {
+                Logger.error(`Failed to delete file ${media.key} from cloud storage:`, err);
+            });
+        }
+
+        // Delete thumbnail from active cloud storage if it exists
+        if (media.metadata?.thumbnail) {
+            await deleteFromS3(media.metadata.thumbnail).catch((err: any) => {
+                Logger.error(`Failed to delete thumbnail ${media.metadata.thumbnail} from cloud storage:`, err);
+            });
+        }
 
         await media.deleteOne();
 
@@ -198,63 +223,32 @@ router.get('/proxy', async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, error: 'Invalid URL' });
         }
 
-        const response = await fetch(url);
-        if (!response.ok) {
-            return res.status(response.status).send(`Failed to fetch resource: ${response.statusText}`);
-        }
+        // Use Axios stream to bypass undici native fetch proxy failures and respect environmental proxy settings
+        const response = await axios.get(url, {
+            responseType: 'stream',
+            timeout: 15000,
+            validateStatus: () => true, // Forward any status code directly
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
 
         // Set Headers
         // Critical: Set CORP header to allow embedding in COEP environments
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         res.setHeader('Access-Control-Allow-Origin', '*');
 
+        // Forward status code
+        res.status(response.status);
+
         // Forward content type
-        const contentType = response.headers.get('content-type');
+        const contentType = response.headers['content-type'];
         if (contentType) {
-            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Type', String(contentType));
         }
 
         // Stream the response body
-        // @ts-ignore
-        if (response.body && typeof response.body.pipe === 'function') {
-            // Node-fetch style
-            (response.body as any).pipe(res);
-        } else if (response.body) {
-            // Web streams style (native fetch in Node 18+)
-            const reader = response.body.getReader();
-            const stream = new ReadableStream({
-                start(controller) {
-                    return pump();
-                    function pump(): any {
-                        return reader.read().then(({ done, value }) => {
-                            if (done) {
-                                controller.close();
-                                return;
-                            }
-                            controller.enqueue(value);
-                            // Write to express response
-                            res.write(value);
-                            return pump();
-                        });
-                    }
-                }
-            });
-            // Wait for stream to finish
-            await new Promise((resolve) => {
-                const check = setInterval(() => {
-                    // This is a bit hacky for native fetch streaming to express
-                    // Better to use buffer for now if small, or standard readable stream conversion
-                }, 100);
-                // Actually, the above manual read/write loop works
-                reader.closed.then(() => {
-                    res.end();
-                    resolve(true);
-                });
-            });
-        } else {
-            const buffer = await response.arrayBuffer();
-            res.send(Buffer.from(buffer));
-        }
+        response.data.pipe(res);
 
     } catch (error: any) {
         Logger.error('Proxy error:', error);
@@ -283,7 +277,7 @@ enum GiphyType {
 // GET /api/media/giphy/gifs
 router.get('/giphy/gifs', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const mediaSettings = await getMediaSettings();
+        const mediaSettings = configService.mediaAPI;
         const apiKey = mediaSettings?.giphy?.apiKey;
 
         if (!apiKey || !mediaSettings?.giphy?.enabled) {
@@ -365,7 +359,7 @@ router.get('/giphy/gifs', authMiddleware, async (req: AuthRequest, res: Response
 // GET /api/media/giphy/stickers
 router.get('/giphy/stickers', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const mediaSettings = await getMediaSettings();
+        const mediaSettings = configService.mediaAPI;
         const apiKey = mediaSettings?.giphy?.apiKey;
 
         if (!apiKey || !mediaSettings?.giphy?.enabled) {
@@ -446,7 +440,7 @@ router.get('/giphy/stickers', authMiddleware, async (req: AuthRequest, res: Resp
 // GET /api/media/giphy/emoji
 router.get('/giphy/emoji', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const mediaSettings = await getMediaSettings();
+        const mediaSettings = configService.mediaAPI;
         const apiKey = mediaSettings?.giphy?.apiKey;
 
         if (!apiKey || !mediaSettings?.giphy?.enabled) {
@@ -533,7 +527,7 @@ const PEXELS_API_BASE_URL = 'https://api.pexels.com/v1';
 // GET /api/media/pexels/images
 router.get('/pexels/images', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const mediaSettings = await getMediaSettings();
+        const mediaSettings = configService.mediaAPI;
         const apiKey = mediaSettings?.pexels?.apiKey;
 
         if (!apiKey || !mediaSettings?.pexels?.enabled) {
@@ -612,7 +606,7 @@ router.get('/pexels/images', authMiddleware, async (req: AuthRequest, res: Respo
 // GET /api/media/pexels/videos
 router.get('/pexels/videos', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const mediaSettings = await getMediaSettings();
+        const mediaSettings = configService.mediaAPI;
         const apiKey = mediaSettings?.pexels?.apiKey;
 
         if (!apiKey || !mediaSettings?.pexels?.enabled) {
@@ -696,7 +690,7 @@ const UNSPLASH_API_BASE_URL = 'https://api.unsplash.com';
 // GET /api/media/unsplash/images
 router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const mediaSettings = await getMediaSettings();
+        const mediaSettings = configService.mediaAPI;
         const apiKey = mediaSettings?.unsplash?.apiKey;
 
         if (!apiKey || !mediaSettings?.unsplash?.enabled) {
@@ -899,9 +893,9 @@ router.get('/unsplash/images', authMiddleware, async (req: AuthRequest, res: Res
 // YOUTUBE MUSIC APIs
 // ============================================================================
 
-import { YouTubeMusicService } from '../services/media/YouTubeMusicService.js';
-import { LyricsService, LyricsLine } from '../services/media/LyricsService.js';
-import { AudioExtractionService } from '../services/media/AudioExtractionService.js';
+import { YouTubeMusicService } from '../services/streaming/YouTubeMusicService.js';
+import { LyricsService, LyricsLine } from '../services/streaming/LyricsService.js';
+import { AudioExtractionService } from '../services/streaming/AudioExtractionService.js';
 
 import { Logger } from '../utils/Logger.js';
 

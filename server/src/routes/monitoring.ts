@@ -3,9 +3,10 @@ import { SystemLog } from '../models/SystemLog.js';
 import { SystemMetric } from '../models/SystemMetric.js';
 import { AdminSettings } from '../models/AdminSettings.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
-import { monitoringService } from '../services/monitoringService.js';
+import { monitoringService } from '../services/system/MonitoringService.js';
 import { connectDB } from '../utils/db.js';
 import { ClientLog } from '../models/ClientLog.js';
+import { configService } from '~/utils/ConfigService.js';
 
 const router = Router();
 
@@ -153,8 +154,7 @@ router.get('/logs', adminMiddleware, async (req: AuthRequest, res) => {
 router.get('/settings', adminMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
-        const settings = await AdminSettings.findOne();
-        res.json({ success: true, data: settings?.logSettings, error: null });
+        res.json({ success: true, data: configService.logs, error: null });
     } catch (error: any) {
         res.status(500).json({ success: false, data: null, error: error.message });
     }

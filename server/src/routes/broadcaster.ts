@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { broadcasterService } from '../services/BroadcasterService.js';
+import { broadcasterService } from '../services/streaming/BroadcasterService.js';
 
 const router = Router();
 

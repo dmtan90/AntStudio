@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import * as crypto from 'crypto';
-import { AIAccount } from '../models/AIAccount.js';
-import { AdminSettings } from '../models/AdminSettings.js';
+import { AIAccount, AIAccountProvider, AIAccountStatus, AIAccountType } from '../models/AIAccount.js';
 import { aiAccountManager } from '../utils/ai/AIAccountManager.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
 import { connectDB } from '../utils/db.js';
 
 import { Logger } from '../utils/Logger.js';
+import { configService } from '~/utils/ConfigService.js';
+import { Auth } from 'node_modules/firebase-admin/lib/auth/auth.js';
 
 const router = Router();
 
@@ -32,24 +33,23 @@ router.get('/', async (req: AuthRequest, res) => {
  */
 const getRedirectUri = async (req: any) => {
     // Check for manual override in settings first
-    const settings = await AdminSettings.findOne();
-    const override = settings?.apiConfigs?.oauth?.google?.redirectUriOverride;
+    const oauth = configService.oauth;
+    const override = oauth?.google?.redirectUri;
 
     if (override && override.startsWith('http')) {
         return override;
     }
 
-    const config = (await import('../utils/config.js')).default;
-    return `${config.public.baseUrl}/api/admin/ai/accounts/callback`;
+    return `${configService.domain}/platforms/callback/google?type=ai-account`;
 };
 
 /**
  * GET /api/admin/ai/accounts/redirect-uri
  * Returns the exact URI expected for Google OAuth configuration
  */
-router.get('/redirect-uri', async (req: AuthRequest, res) => {
-    res.json({ success: true, data: { redirectUri: await getRedirectUri(req) }, error: null });
-});
+// router.get('/redirect-uri', async (req: AuthRequest, res) => {
+//     res.json({ success: true, data: { redirectUri: await getRedirectUri(req) }, error: null });
+// });
 
 /**
  * GET /api/admin/ai/accounts/auth-url
@@ -77,18 +77,19 @@ router.get('/auth-url', async (req: AuthRequest, res) => {
 });
 
 /**
- * GET /api/admin/ai/accounts/callback
- * Handles Google OAuth redirect
+ * POST /api/admin/ai/accounts/callback
+ * Handles Google OAuth or Antigravity redirect
  */
-router.get('/callback', async (req: any, res) => {
-    const { code, state } = req.query;
+router.post('/callback', async (req: AuthRequest, res) => {
+    const { code, state, redirectUri } = req.body;
+    const origin = req.headers["origin"];
     if (!code) {
         return res.status(400).send('Authorization code is missing');
     }
 
     try {
         await connectDB();
-        const redirectUri = await getRedirectUri(req);
+        // const redirectUri = await getRedirectUri(req);
 
         // Decode state to check for Antigravity flag
         let isAntigravity = false;
@@ -112,15 +113,16 @@ router.get('/callback', async (req: any, res) => {
             await account.save();
         });
 
+        res.json({ success: true, data: account, error: null });
         // Redirect back to frontend admin panel
-        const config = (await import('../utils/config.js')).default;
-        res.redirect(`${config.public.baseUrl}/admin/ai-accounts?success=true`);
+        // const host = (origin && origin != configService.domain) ? origin : `${configService.domain}`;
+        // res.redirect(`${host}/admin/ai-accounts?success=true`);
     } catch (error: any) {
+        // const host = (origin && origin != configService.domain) ? origin : `${configService.domain}`;
         Logger.error('OAuth Callback Error:', error.message);
-        // res.status(500).send(`Authentication failed: ${error.message}`);
+        res.status(500).send(`OAuth Callback Error: ${error.message}`);
         // Redirect back to frontend admin panel
-        const config = (await import('../utils/config.js')).default;
-        res.redirect(`${config.public.baseUrl}/admin/ai-accounts?success=false&message=${error.message}`);
+        // res.redirect(`${host}/admin/ai-accounts?success=false&message=${error.message}`);
     }
 });
 
@@ -128,26 +130,26 @@ router.get('/callback', async (req: any, res) => {
  * POST /api/admin/ai/accounts/auth-callback
  * Legacy/Popup flow: Exchange authorization code for tokens and save account
  */
-router.post('/auth-callback', async (req: AuthRequest, res) => {
-    const { code, redirectUri } = req.body;
-    if (!code) {
-        return res.status(400).json({ success: false, data: null, error: 'Authorization code is required' });
-    }
+// router.post('/auth-callback', async (req: AuthRequest, res) => {
+//     const { code, redirectUri } = req.body;
+//     if (!code) {
+//         return res.status(400).json({ success: false, data: null, error: 'Authorization code is required' });
+//     }
 
-    try {
-        await connectDB();
-        const account = await aiAccountManager.exchangeCodeForTokens(code, redirectUri || 'postmessage');
+//     try {
+//         await connectDB();
+//         const account = await aiAccountManager.exchangeCodeForTokens(code, redirectUri || 'postmessage');
 
-        // Trigger background discovery of Project ID
-        aiAccountManager.discoverProjectId(account).catch(err => {
-            Logger.error(`[AIAccount API] Deferred discovery failed for ${account.email}:`, err.message);
-        });
+//         // Trigger background discovery of Project ID
+//         aiAccountManager.discoverProjectId(account).catch(err => {
+//             Logger.error(`[AIAccount API] Deferred discovery failed for ${account.email}:`, err.message);
+//         });
 
-        res.json({ success: true, data: account, error: null });
-    } catch (error: any) {
-        res.status(500).json({ success: false, data: null, error: error.message });
-    }
-});
+//         res.json({ success: true, data: account, error: null });
+//     } catch (error: any) {
+//         res.status(500).json({ success: false, data: null, error: error.message });
+//     }
+// });
 
 /**
  * POST /api/admin/ai/accounts/:id/sync
@@ -188,7 +190,7 @@ router.post('/:id/update-token', async (req: AuthRequest, res) => {
             return res.status(404).json({ success: false, data: null, error: 'Account not found' });
         }
 
-        if (account.accountType !== 'google-flow') {
+        if (account.accountType !== AIAccountProvider.GOOGLE_FLOW) {
             return res.status(400).json({ success: false, data: null, error: 'This endpoint is only for Google Flow accounts' });
         }
 
@@ -196,7 +198,7 @@ router.post('/:id/update-token', async (req: AuthRequest, res) => {
         account.flowST = flowST;
         account.flowAT = undefined; // Force fresh AT retrieval
         account.flowATExpiresAt = undefined;
-        account.status = 'ready';
+        account.status = AIAccountStatus.READY;
         await account.save();
 
         // Immediately sync to get a fresh AT and credits
@@ -291,33 +293,33 @@ router.post('/direct', async (req: AuthRequest, res) => {
     try {
         await connectDB();
         const { email, licenseKey, accessToken, accountType, providerId, flowST, flowAT } = req.body;
-        const finalAccountType = accountType || 'standard';
+        const finalAccountType = accountType || AIAccountType.STANDARD;
 
-        if (!email && finalAccountType !== 'google-flow') {
+        if (!email && finalAccountType !== AIAccountType.GOOGLE_FLOW) {
             return res.status(400).json({ success: false, data: null, error: 'Email is required' });
         }
 
         // Google Flow manual addition
-        if (finalAccountType === 'google-flow') {
+        if (finalAccountType === AIAccountType.GOOGLE_FLOW) {
             if (!flowST) {
                 return res.status(400).json({ success: false, data: null, error: 'Session Token (flowST) is required' });
             }
 
-            let account = await AIAccount.findOne({ flowST, accountType: 'google-flow' });
+            let account = await AIAccount.findOne({ flowST, accountType: AIAccountType.GOOGLE_FLOW });
             if (account) {
                 account.flowST = flowST;
                 account.flowAT = flowAT || account.flowAT;
                 account.email = email || account.email;
-                account.status = 'ready';
+                account.status = AIAccountStatus.READY;
                 await account.save();
             } else {
                 account = await AIAccount.create({
-                    email: email || 'pending@flow.google.com',
+                    email: email || 'example@gmail.com',
                     flowST,
                     flowAT,
-                    accountType: 'google-flow',
-                    providerId: 'google-flow',
-                    status: 'ready',
+                    accountType: AIAccountType.GOOGLE_FLOW,
+                    providerId: AIAccountProvider.GOOGLE,
+                    status: AIAccountStatus.READY,
                     isActive: true
                 });
             }
@@ -334,18 +336,13 @@ router.post('/direct', async (req: AuthRequest, res) => {
             return res.json({ success: true, data: account, error: null });
         }
 
-        // Standard manual entry (fallback or for other account types)
-        if (!licenseKey && finalAccountType !== '11labs-direct') {
-            return res.status(400).json({ success: false, data: null, error: 'License Key is required for this account type' });
-        }
-
         let account = await AIAccount.findOne({ email, accountType: finalAccountType });
 
         if (account) {
             account.licenseKey = licenseKey || account.licenseKey;
             account.accessToken = accessToken || account.accessToken;
             account.providerId = providerId || account.providerId;
-            account.status = 'ready';
+            account.status = AIAccountStatus.READY;
             await account.save();
         } else {
             account = await AIAccount.create({
@@ -353,8 +350,8 @@ router.post('/direct', async (req: AuthRequest, res) => {
                 licenseKey,
                 accessToken,
                 accountType: finalAccountType,
-                providerId: providerId || '11labs',
-                status: 'ready'
+                providerId: providerId || AIAccountProvider.GOOGLE,
+                status: AIAccountStatus.READY
             });
         }
 

@@ -3,7 +3,7 @@
     <!-- Header -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
       <div>
-        <h1 class="text-4xl font-black text-white tracking-tighter uppercase mb-2">
+        <h1 class="text-4xl font-black text-white tracking-tighter mb-2">
           {{ t('viral.header.viral') }} <span class="text-blue-500">{{ t('viral.header.syndication') }}</span> {{ t('viral.header.hub') }}
         </h1>
         <p class="text-gray-400 font-medium">{{ t('viral.subtitle') }}</p>

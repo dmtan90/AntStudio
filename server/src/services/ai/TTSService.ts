@@ -11,16 +11,18 @@ export class TTSService {
         provider: string;
         voiceId: string;
         language?: string;
+        speed?: number;
+        pitch?: number;
     }): Promise<{ media: { url: string; mimeType: string } }> {
-        const { text, provider, voiceId, language } = options;
+        const { text, provider, voiceId, language, speed, pitch } = options;
 
         switch (provider) {
             case 'google': {
-                return await aiManager.generateAudio(text, undefined, 'google', { voiceId, languageCode: language, providerId: "google" });
+                return await aiManager.generateAudio(text, undefined, 'google', { voiceId, languageCode: language, providerId: "google", speed, pitch });
             }
 
             case 'gemini': {
-                return await aiManager.generateAudio(text, undefined, 'google', { voiceId, language, providerId: "gemini" });
+                return await aiManager.generateAudio(text, undefined, 'google', { voiceId, language, providerId: "gemini", speed, pitch });
             }
 
             default:

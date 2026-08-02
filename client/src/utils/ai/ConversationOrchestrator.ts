@@ -21,7 +21,7 @@ export class ConversationOrchestrator {
     constructor() {
         this.silenceStart = Date.now();
 
-        // Phase 109: Listen for ShowRunner directives to shift segments proactively
+        // Listen for ShowRunner directives to shift segments proactively
         if (typeof window !== 'undefined') {
             window.addEventListener('showrunner:directive', async (e: Event) => {
                 const detail = (e as CustomEvent).detail;
@@ -33,7 +33,7 @@ export class ConversationOrchestrator {
                 this.setTopic(detail.directive);
                 if (detail.vibe) this.vibe = { mood: detail.vibe };
                 
-                // Phase 110: Auto-highlight product if provided in directive
+                // Auto-highlight product if provided in directive
                 if (detail.productContext && studioStore) {
                     console.log(`[Orchestrator] Auto-highlighting product from directive: ${detail.productContext.name}`);
                     studioStore.highlightProduct(detail.productContext.id || detail.productContext._id);
@@ -43,7 +43,7 @@ export class ConversationOrchestrator {
                 const guests = syntheticGuestManager.getGuests();
                 const isAnyoneSpeaking = guests.some(g => g.isSpeaking || g.isThinking) || this.floorHolder === 'human';
                 
-                // Phase 16: SaleRunner handles directives exclusively in sales context
+                // SaleRunner handles directives exclusively in sales context
                 if (studioStore.streamingContext === 'sales') {
                     console.log('[Orchestrator] Sales context: Skipping proactive turn trigger (delegated to SaleRunner)');
                     return;
@@ -56,7 +56,7 @@ export class ConversationOrchestrator {
                 }
             });
 
-            // Phase 25: Listen for audience intelligence signals to shift topic
+            // Listen for audience intelligence signals to shift topic
             window.addEventListener('audience:signal', (e: Event) => {
                 const signal = (e as CustomEvent).detail;
                 this.handleAudienceSignal(signal);
@@ -73,7 +73,7 @@ export class ConversationOrchestrator {
             const newTopic = `High audience intent detected: ${signal.reason}`;
             this.setTopic(newTopic);
             console.log(`[Orchestrator] INTENT PIVOT: Forcing ShowRunner segment pivot due to: ${signal.reason}`);
-            // Phase 25: Force the ShowRunner to pivot the narrative segment
+            // Force the ShowRunner to pivot the narrative segment
             neuralShowrunner.pivotSegment(signal.reason);
         }
     }
@@ -150,7 +150,7 @@ export class ConversationOrchestrator {
         const lastSpeaker = this.conversationHistory[this.conversationHistory.length - 1]?.speaker || 'No one';
         const otherAIs = guests.map(g => g.persona.name).join(', ');
         
-        // Phase 107: Sanitize history by stripping reasoning/planning blocks (**...)
+        // Sanitize history by stripping reasoning/planning blocks (**...)
         const historyText = this.conversationHistory
             .map(h => {
                 // Remove reasoning headers like **Crafting...** or **Initiating...**
@@ -174,7 +174,7 @@ export class ConversationOrchestrator {
         let selectedAI = null;
         let instruction = "";
 
-        // Phase 107: Context-Aware Topic Enforcement
+        // Context-Aware Topic Enforcement
         const { useStudioStore } = await import('@/stores/studio');
         const studioStore = useStudioStore();
         const isSalesMode = studioStore.streamingContext === 'sales';

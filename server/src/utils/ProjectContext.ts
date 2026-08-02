@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { Logger } from './Logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * ProjectContext Utility
@@ -9,17 +13,38 @@ import { Logger } from './Logger.js';
  */
 export class ProjectContext {
     private static instance: ProjectContext;
-    private rootPath: string;
 
-    private constructor() {
-        this.rootPath = process.cwd();
-    }
+    private constructor() {}
 
     public static getInstance() {
         if (!ProjectContext.instance) {
             ProjectContext.instance = new ProjectContext();
         }
         return ProjectContext.instance;
+    }
+
+    /**
+     * Resolves the candidate full path for a grounding file.
+     */
+    private resolveContextFilePath(fileName: string): string {
+        const candidatePaths = [
+            path.resolve(__dirname, 'prompts/context', fileName),
+            path.resolve(__dirname, '../prompts/context', fileName),
+            path.resolve(__dirname, '../../prompts/context', fileName),
+            path.resolve(process.cwd(), 'server/dist/prompts/context', fileName),
+            path.resolve(process.cwd(), 'server/src/prompts/context', fileName),
+            path.resolve(process.cwd(), 'prompts/context', fileName),
+            path.resolve(process.cwd(), 'server', fileName),
+            path.resolve(process.cwd(), fileName)
+        ];
+
+        for (const candidate of candidatePaths) {
+            if (fs.existsSync(candidate)) {
+                return candidate;
+            }
+        }
+
+        return path.resolve(__dirname, '../prompts/context', fileName);
     }
 
     /**
@@ -44,7 +69,7 @@ export class ProjectContext {
 
         try {
             // 1. actor_background.json
-            const actorPath = path.join(this.rootPath, 'actor_background.json');
+            const actorPath = this.resolveContextFilePath('actor_background.json');
             if (fs.existsSync(actorPath)) {
                 const data = JSON.parse(fs.readFileSync(actorPath, 'utf8'));
                 result.characters = data.character_lock || {};
@@ -53,19 +78,19 @@ export class ProjectContext {
             }
 
             // 2. film_script.txt
-            const scriptPath = path.join(this.rootPath, 'film_script.txt');
+            const scriptPath = this.resolveContextFilePath('film_script.txt');
             if (fs.existsSync(scriptPath)) {
                 result.technicalScript = fs.readFileSync(scriptPath, 'utf8');
             }
 
             // 3. analysis.json
-            const analysisPath = path.join(this.rootPath, 'analysis.json');
+            const analysisPath = this.resolveContextFilePath('analysis.json');
             if (fs.existsSync(analysisPath)) {
                 result.technicalAnalysis = JSON.parse(fs.readFileSync(analysisPath, 'utf8'));
             }
 
             // 4. scene.txt (Storyboard Gold Standard)
-            const storyboardPath = path.join(this.rootPath, 'scene.txt');
+            const storyboardPath = this.resolveContextFilePath('scene.txt');
             if (fs.existsSync(storyboardPath)) {
                 result.technicalStoryboard = fs.readFileSync(storyboardPath, 'utf8');
             }

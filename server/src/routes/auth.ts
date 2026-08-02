@@ -1,32 +1,23 @@
 import { Router } from 'express';
-import { User } from '../models/User.js';
+import { User, UserRole } from '../models/User.js';
 import { connectDB } from '../utils/db.js';
-import config from '../utils/config.js';
 import { generateToken } from '../utils/jwt.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { checkUserLimit } from '../middleware/licenseGating.js';
-import { emailService } from '../services/email.js';
-import { redisService } from '../services/RedisService.js';
+import { checkUserLimit } from '../middleware/LicenseGating.js';
+import { emailService } from '../services/system/EmailService.js';
+import { redisService } from '../services/system/RedisService.js';
 import crypto from 'crypto';
-import { AdminSettings } from '../models/AdminSettings.js';
-
+import { getGoogleLoginUrl, getGoogleUserInfo } from '~/utils/GoogleAuth.js';
+import { getFacebookLoginUrl, getFacebookUserInfo } from '~/utils/FacebookAuth.js';
+import { configService } from '../utils/ConfigService.js';
 import { Logger } from '../utils/Logger.js';
 
 const router = Router();
-
-const getDomain = async () => {
-    await connectDB();
-    const adminSettings = await AdminSettings.findOne();
-    const settings = adminSettings?.whitelabel;
-    const domain = adminSettings?.apiConfigs?.publicDomain;
-    return domain || process.env.PUBLIC_BASE_URL || 'https://localhost:3000';
-}
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
     try {
         await connectDB();
-
         const { email, password } = req.body;
 
         // Validation
@@ -90,7 +81,6 @@ router.post('/login', async (req, res) => {
 router.post('/register', checkUserLimit, async (req, res) => {
     try {
         await connectDB();
-
         const { email, password, name } = req.body;
 
         // Validation
@@ -108,12 +98,14 @@ router.post('/register', checkUserLimit, async (req, res) => {
             return res.status(409).json({ success: false, data: null, error: 'Email already registered' });
         }
 
+        const isSysAdmin = (await User.countDocuments()) === 0;
+
         // Create new user
         const user = await User.create({
             email: email.toLowerCase(),
             passwordHash: password,
             name,
-            role: 'user',
+            role: isSysAdmin ? UserRole.SYS_ADMIN : UserRole.USER,
             isActive: true
         });
 
@@ -171,7 +163,7 @@ router.post('/register-owner', async (req, res) => {
             email: email.toLowerCase(),
             passwordHash: password,
             name,
-            role: 'sys-admin',
+            role: UserRole.SYS_ADMIN,
             isActive: true,
             emailVerified: true
         });
@@ -186,7 +178,7 @@ router.post('/register-owner', async (req, res) => {
 // POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
     try {
-        await connectDB()
+        await connectDB();
         const { email } = req.body
 
         if (!email) {
@@ -219,7 +211,7 @@ router.post('/forgot-password', async (req, res) => {
 // POST /api/auth/reset-password
 router.post('/reset-password', async (req, res) => {
     try {
-        await connectDB()
+        await connectDB();
         const { token, newPassword } = req.body
 
         Logger.info('Reset password request:', 'Auth', { token, hasPassword: !!newPassword });
@@ -269,7 +261,6 @@ router.post('/reset-password', async (req, res) => {
 router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
-
         const cacheKey = `user:profile:${req.user!.userId}`;
 
         const user = await redisService.getOrSet(cacheKey, async () => {
@@ -297,13 +288,61 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
                         youtube: !!user.socialAccounts?.youtube,
                         facebook: !!user.socialAccounts?.facebook
                     },
-                    systemMode: config.systemMode
+                    systemMode: configService.systemMode
                 }
             }
         });
     } catch (error: any) {
         Logger.error('Get user error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to get user' });
+    }
+});
+
+// PUT /api/auth/profile
+router.put('/profile', authMiddleware, async (req: AuthRequest, res) => {
+    try {
+        await connectDB();
+        const { name, avatar, language } = req.body;
+
+        const user = await User.findById(req.user!.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, data: null, error: 'User not found' });
+        }
+
+        if (name !== undefined) user.name = name;
+        if (avatar !== undefined) user.avatar = avatar;
+        if (language !== undefined) user.language = language;
+
+        await user.save();
+
+        // Invalidate profile cache in Redis
+        const cacheKey = `user:profile:${req.user!.userId}`;
+        await redisService.del(cacheKey);
+
+        res.json({
+            success: true,
+            data: {
+                user: {
+                    id: user._id,
+                    email: user.email,
+                    name: user.name,
+                    role: user.role,
+                    avatar: user.avatar,
+                    subscription: user.subscription,
+                    credits: user.credits,
+                    emailVerified: user.emailVerified,
+                    language: user.language,
+                    socialAccounts: {
+                        youtube: !!user.socialAccounts?.youtube,
+                        facebook: !!user.socialAccounts?.facebook
+                    },
+                    systemMode: configService.systemMode
+                }
+            }
+        });
+    } catch (error: any) {
+        Logger.error('Update profile error:', error);
+        res.status(500).json({ success: false, data: null, error: error.message || 'Failed to update profile' });
     }
 });
 
@@ -341,7 +380,6 @@ router.post('/logout', (req, res) => {
 router.post('/change-password', authMiddleware, async (req: AuthRequest, res) => {
     try {
         await connectDB();
-
         const { currentPassword, newPassword } = req.body;
 
         if (!currentPassword || !newPassword) {
@@ -376,28 +414,26 @@ router.post('/change-password', authMiddleware, async (req: AuthRequest, res) =>
 
 // GET /api/auth/google - Initiate Google OAuth login
 router.get('/google', async (req, res) => {
-    const domain = await getDomain();
+    // const domain = await getDomain();
     try {
-        const { getGoogleLoginUrl } = await import('../utils/googleAuth.js');
         const url = await getGoogleLoginUrl();
         res.redirect(url);
     } catch (error: any) {
         Logger.error('Google OAuth initiation error:', error);
-        res.redirect(`${domain}/login?error=oauth_failed`);
+        res.redirect(`${configService.domain}/login?error=oauth_failed`);
     }
 });
 
 // GET /api/auth/google/callback - Handle Google OAuth callback
 router.get('/google/callback', async (req, res) => {
-    const domain = await getDomain();
+    // const domain = await getDomain();
     try {
         const { code } = req.query;
 
         if (!code) {
-            return res.redirect(`${domain}/login?error=oauth_failed`);
+            return res.redirect(`${configService.domain}/login?error=oauth_failed`);
         }
 
-        const { getGoogleUserInfo } = await import('../utils/googleAuth.js');
         const userInfo = await getGoogleUserInfo(code as string);
 
         // Find or create user
@@ -440,38 +476,36 @@ router.get('/google/callback', async (req, res) => {
             sameSite: 'lax'
         });
 
-        res.redirect(`${domain}/dashboard?token=${token}`);
+        res.redirect(`${configService.domain}/platforms/callback/google?token=${token}&type=login`);
     } catch (error: any) {
         Logger.error('Google OAuth callback error:', error);
-        res.redirect(`${domain}/login?error=oauth_failed`);
+        res.redirect(`${configService.domain}/login?error=oauth_failed`);
     }
 });
 
 // GET /api/auth/facebook - Initiate Facebook OAuth login
 router.get('/facebook', async (req, res) => {
-    const domain = await getDomain();
+    // const domain = await getDomain();
     try {
-        const { getFacebookLoginUrl } = await import('../utils/facebookAuth.js');
         const url = await getFacebookLoginUrl();
         res.redirect(url);
     } catch (error: any) {
         Logger.error('Facebook OAuth initiation error:', error);
-        res.redirect(`${domain}/login?error=oauth_failed`);
+        res.redirect(`${configService.domain}/login?error=oauth_failed`);
     }
 });
 
 // GET /api/auth/facebook/callback - Handle Facebook OAuth callback
 router.get('/facebook/callback', async (req, res) => {
-    const domain = await getDomain();
+    // const domain = configService.domain;
     try {
         await connectDB();
         const { code } = req.query;
 
         if (!code) {
-            return res.redirect(`${domain}/login?error=oauth_failed`);
+            return res.redirect(`${configService.domain}/login?error=oauth_failed`);
         }
 
-        const { getFacebookUserInfo } = await import('../utils/facebookAuth.js');
         const userInfo = await getFacebookUserInfo(code as string);
 
         // Find or create user
@@ -514,10 +548,10 @@ router.get('/facebook/callback', async (req, res) => {
             sameSite: 'lax'
         });
 
-        res.redirect(`${domain}/dashboard?token=${token}`);
+        res.redirect(`${configService.domain}/platforms/callback/facebook?token=${token}&type=login`);
     } catch (error: any) {
         Logger.error('Facebook OAuth callback error:', error);
-        res.redirect(`${domain}/login?error=oauth_failed`);
+        res.redirect(`${configService.domain}/login?error=oauth_failed`);
     }
 });
 
@@ -525,14 +559,15 @@ router.get('/facebook/callback', async (req, res) => {
 router.get('/oauth-config', async (req, res) => {
     try {
         await connectDB();
-        const { getAdminSettings } = await import('../models/AdminSettings.js');
-        const settings = await getAdminSettings();
+        
+        // const settings = await getAdminSettings();
+        const oauth = configService.oauth;
 
         res.json({
             success: true,
             data: {
-                google: settings?.apiConfigs?.oauth?.google?.enabled || false,
-                facebook: settings?.apiConfigs?.oauth?.facebook?.enabled || false
+                google: oauth?.google?.enabled || false,
+                facebook: oauth?.facebook?.enabled || false
             }
         });
     } catch (error: any) {
@@ -544,8 +579,7 @@ router.get('/oauth-config', async (req, res) => {
 // PATCH /api/auth/notification-settings
 router.patch('/notification-settings', authMiddleware, async (req: AuthRequest, res) => {
     try {
-        await connectDB()
-
+        await connectDB();
         const { taskCompletion, largeTaskReminder, email, push, inApp } = req.body
 
         const user = await User.findById(req.user!.userId)

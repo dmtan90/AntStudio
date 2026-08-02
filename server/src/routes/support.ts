@@ -3,6 +3,7 @@ import { SupportTicket } from '../models/SupportTicket.js';
 import { connectDB } from '../utils/db.js';
 import { authMiddleware, adminMiddleware, sysAdminMiddleware, AuthRequest } from '../middleware/auth.js';
 import { uploadToS3 } from '../utils/s3.js';
+import { UserRole } from '~/models/User.js';
 
 const router = Router();
 
@@ -49,7 +50,7 @@ router.post('/tickets/:id/messages', async (req: AuthRequest, res) => {
         if (!ticket) return res.status(404).json({ success: false, error: 'Ticket not found' });
 
         // Authorization: Specialist or Admin
-        const isAdmin = req.user!.role === 'admin' || req.user!.role === 'sys-admin';
+        const isAdmin = req.user!.role === UserRole.ADMIN || req.user!.role === UserRole.SYS_ADMIN;
         if (!isAdmin && ticket.userId.toString() !== req.user!.userId.toString()) {
             return res.status(403).json({ success: false, error: 'Access denied.' });
         }

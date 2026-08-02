@@ -472,7 +472,7 @@ function renderLoop(time: number = 0) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // 0. Base Layer: Virtual Background (Robustness Fix Phase 35)
+    // 0. Base Layer: Virtual Background
     if (visualSettings.background?.mode === 'virtual') {
         if (compositor.backgroundTexture && compositor.backgroundMetadata.width > 0) {
             const bgMeta = compositor.backgroundMetadata;
@@ -677,7 +677,7 @@ function renderLoop(time: number = 0) {
         sceneDirty = true;
     }
 
-    // Phase 33: Neural Singularity Aura Effect
+    // Neural Singularity Aura Effect
     if (hypeLevel > 0.5) {
         try { uiOverlay.drawSingularityAura(hypeLevel); } catch (e) { console.error('[RenderWorker] Singularity aura error:', e); }
         sceneDirty = true;
