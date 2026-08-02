@@ -92,6 +92,17 @@ To switch application language:
 
 ---
 
+## 🖥️ Electron Desktop Application (Windows, macOS, Linux)
+
+AntStudio is available as a native multi-platform desktop application:
+- **Windows**: `AntStudio-1.0.0-win.zip` / `AntStudio.exe` (includes `start-silent.bat` for background 24/7 streaming).
+- **macOS**: `AntStudio-1.0.0-mac.dmg` / `AntStudio.app` (Apple Silicon & Intel support).
+- **Linux**: `AntStudio-1.0.0.AppImage` / `.deb` (includes `start-silent.sh`).
+
+For detailed installation, configuration (`resources/.env.enc`), and headless mode instructions, view the [Desktop App User Guide](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/docs/user-guides/05-desktop-electron-app.md).
+
+---
+
 ## ❓ Troubleshooting & Support
 
 - **Server Connection Lost Banner**: If the Sale Studio displays `SERVER CONNECTION LOST! AUTO-RECONNECTING...`, the client is attempting to reconnect to the server's WebSocket gateway (`/socket.io`). Ensure your server is running on port `4000`.

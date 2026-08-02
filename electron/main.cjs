@@ -64,11 +64,9 @@ function loadEnvironment() {
 
 async function startBackendServer() {
   const PORT = process.env.PORT || 5000;
-  const SOCKET_PORT = process.env.SOCKET_PORT || 5001;
   const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
   console.log("[Electron] PORT: ", PORT);
-  console.log("[Electron] SOCKET_PORT: ", SOCKET_PORT);
   console.log("[Electron] BASE_URL: ", BASE_URL);
 
   // Set user data path for the in-process server
@@ -83,7 +81,6 @@ async function startBackendServer() {
     console.log('[Electron] Starting backend server in-process...');
     process.env.PORT = PORT.toString();
     process.env.NODE_ENV = 'production';
-    process.env.SOCKET_PORT = SOCKET_PORT.toString();
     process.env.BASE_URL = BASE_URL;
 
     // Load compiled ESM server

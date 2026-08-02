@@ -17,6 +17,11 @@ import { GeminiClient } from '~/integrations/ai/GeminiClient.js';
 import { Media } from '~/models/Media.js';
 import { aiAccountManager } from '~/utils/ai/AIAccountManager.js';
 import { AIAccountProvider } from '~/models/AIAccount.js';
+import { uploadToS3 } from '~/utils/s3.js';
+import { ServiceType } from '~/models/CreditUsage.js';
+import { AIServiceManager } from '~/utils/ai/AIServiceManager.js';
+import { aiGuestService } from '~/services/ai/AIGuestService.js';
+import { TTSService } from '~/services/ai/TTSService.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -167,7 +172,6 @@ router.post('/:entityId/digital-double', upload.single('photo'), async (req: Aut
 /**
  * POST /api/influencer/:entityId/model - Upload custom 3D Base Model
  */
-import { aiGuestService } from '../services/ai/AIGuestService.js';
 
 /**
  * POST /api/influencer/:entityId/interact/chat - Trigger chat reaction
@@ -284,9 +288,6 @@ router.get('/:entityId/analytics', async (req: AuthRequest, res: Response) => {
 /**
  * POST /api/influencer/:entityId/model - Upload custom 3D Base Model
  */
-import { uploadToS3 } from '../utils/s3.js';
-import { ServiceType } from '~/utils/CreditManager.js';
-import { AIServiceManager } from '~/utils/ai/AIServiceManager.js';
 
 router.post('/:entityId/model', upload.single('model'), async (req: AuthRequest, res: Response) => {
     try {
@@ -315,12 +316,6 @@ router.post('/:entityId/model', upload.single('model'), async (req: AuthRequest,
         res.status(500).json({ success: false, error: e.message });
     }
 });
-
-// import { AIModelType, getAdminSettings } from '../models/AdminSettings.js';
-// import { GoogleTTSProvider } from '../utils/ai/providers/GoogleTTSProvider.js';
-// import { GeminiClient } from '../integrations/ai/GeminiClient.js';
-// import { Media } from '~/models/Media.js';
-// import { AIAccountProvider } from '~/models/AIAccount.js';
 
 /**
  * GET /api/influencer/voices/:provider - Fetch dynamic voice list from provider
@@ -427,7 +422,7 @@ router.post('/voice-preview', async (req: AuthRequest, res: Response) => {
             });
         }
 
-        const { TTSService } = await import('../services/ai/TTSService.js');
+        
         const ttsService = new TTSService();
 
         const audioResult = await ttsService.generateSpeech({

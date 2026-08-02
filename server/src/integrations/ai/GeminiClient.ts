@@ -180,12 +180,49 @@ export class GeminiClient {
         return false;
     }
 
+    /**
+     * Dynamically resolve Google Cloud / Vertex AI location based on model ID.
+     * - Older 2.5 models (e.g. gemini-2.5-flash-image, gemini-live-2.5-flash-native-audio)
+     *   are regional models and require location 'us-central1' (or regional location, NOT 'global').
+     * - Newer 3.1 & 3.0 models (e.g. gemini-3.1-*, veo-3.1-*, lyria-*, narwhal)
+     *   require location 'global'.
+     */
+    public static resolveLocationForModel(modelId?: string, configuredLocation?: string): string {
+        const model = (modelId || '').toLowerCase();
+
+        // 1. 2.5 models require regional location ('us-central1')
+        if (model.includes('2.5') || model.includes('gemini-2.5')) {
+            const envLoc = process.env.GOOGLE_CLOUD_LOCATION || process.env.GCP_LOCATION;
+            return (envLoc && envLoc !== 'global') ? envLoc : 'us-central1';
+        }
+
+        // 2. 3.1 & 3.0 models require 'global' location
+        if (
+            model.includes('3.1') || 
+            model.includes('3.0') || 
+            model.includes('veo') || 
+            model.includes('lyria') || 
+            model.includes('narwhal')
+        ) {
+            return 'global';
+        }
+
+        // 3. Explicit location from provider/baseUrl if provided and valid
+        if (configuredLocation) {
+            return configuredLocation;
+        }
+
+        // 4. Fallback: process.env.GOOGLE_CLOUD_LOCATION -> 'global'
+        const envLoc = process.env.GOOGLE_CLOUD_LOCATION || process.env.GCP_LOCATION;
+        return envLoc || 'global';
+    }
+
     private async getGoogleGenAI(apiKey: string, baseUrl?: string): Promise<GoogleGenAI> {
         return new GoogleGenAI({ apiKey });
     }
 
-    private async getClientInstance(cred: any): Promise<GoogleGenAI> {
-        if (cred.googleGenAI) return cred.googleGenAI;
+    private async getClientInstance(cred: any, modelId?: string): Promise<GoogleGenAI> {
+        if (cred.googleGenAI && !modelId) return cred.googleGenAI;
 
         const apiKey = cred.apiKey || cred.provider?.apiKey || cred.account?.serviceKeys?.get('apiKey');
         const baseUrl = cred.provider?.baseUrl || cred.account?.serviceKeys?.get('baseUrl');
@@ -193,10 +230,7 @@ export class GeminiClient {
         if (cred.type === AIAccountProvider.GOOGLE_VERTEX) {
             const { project: parsedProject, location: parsedLocation } = this.parseVertexParams(baseUrl);
             const project = parsedProject || process.env.GOOGLE_CLOUD_PROJECT || undefined;
-            let location = parsedLocation || process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-            if (!location || location === 'global') {
-                location = 'us-central1';
-            }
+            const location = GeminiClient.resolveLocationForModel(modelId, parsedLocation);
             const hasADC = GeminiClient.detectADC();
 
             const clientOptions: any = {};
@@ -204,7 +238,7 @@ export class GeminiClient {
                 clientOptions.vertexai = true;
                 clientOptions.project = project;
                 clientOptions.location = location;
-                Logger.info(`[GeminiClient] Initializing Vertex AI client with ADC. Project: ${project}, Location: ${location}`, 'GeminiClient');
+                Logger.info(`[GeminiClient] Initializing Vertex AI client with ADC. Model: '${modelId || 'default'}', Project: ${project}, Location: ${location}`, 'GeminiClient');
 
                 const oldGeminiKey = process.env.GEMINI_API_KEY;
                 const oldGoogleKey = process.env.GOOGLE_API_KEY;
@@ -225,7 +259,7 @@ export class GeminiClient {
                     clientOptions.vertexai = true;
                     if (project) clientOptions.project = project;
                     if (location) clientOptions.location = location;
-                    Logger.info('[GeminiClient] Initializing Vertex AI client without apiKey (no ADC or API key found).', 'GeminiClient');
+                    Logger.info(`[GeminiClient] Initializing Vertex AI client without apiKey. Model: '${modelId || 'default'}', Project: ${project}, Location: ${location}`, 'GeminiClient');
                 }
                 return new GoogleGenAI(clientOptions);
             }
@@ -249,15 +283,9 @@ export class GeminiClient {
      * 
      * If the caller provided an explicit account or apiKey, only that is used.
      */
-    private async resolveCredentialsChain(modality: AIModelType): Promise<Array<{ type: AIAccountType; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any, keyFile?: string }>> {
+    private async resolveCredentialsChain(modality: AIModelType, modelId?: string): Promise<Array<{ type: AIAccountType; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any, keyFile?: string }>> {
         const chain: Array<{ type: AIAccountType; account?: IAIAccount; apiKey?: string; googleGenAI?: GoogleGenAI; provider?: any }> = [];
 
-        // If caller provided explicit credentials, use only those
-        // if (this.account) {
-        //     const t = this.account.accountType === 'antigravity' ? 'antigravity' as const : 'standard' as const;
-        //     chain.push({ type: t, account: this.account });
-        //     return chain;
-        // }
         let types = [];
         if(modality == AIModelType.TEXT){
             types = [AIAccountType.ANTIGRAVITY, AIAccountType.GOOGLE_VERTEX, AIAccountType.STANDARD, AIAccountType.OPENAI, AIAccountType.CUSTOM, AIAccountType.API_KEY];
@@ -299,7 +327,7 @@ export class GeminiClient {
                     if (p.isActive && p.supportedTypes.includes(modality)) {
                         if (p.id === AIAccountType.GOOGLE_VERTEX || p.id.includes(AIAccountType.GOOGLE_CLOUD)) {
                             if(p.supportedTypes.includes(modality)){
-                                const ai = await this.getClientInstance({ type: AIAccountType.GOOGLE_VERTEX, provider: p });
+                                const ai = await this.getClientInstance({ type: AIAccountType.GOOGLE_VERTEX, provider: p }, modelId);
                                 chain.push({ type: AIAccountType.GOOGLE_VERTEX, provider: p, googleGenAI: ai });
                             }
                         } else if (p.id === AIAccountType.OPENAI || p.id === AIAccountType.CUSTOM || p.baseUrl) {
@@ -314,7 +342,7 @@ export class GeminiClient {
         
         if(types.includes(AIAccountType.API_KEY)){
             if (this.apiKey) {
-                const ai = await this.getClientInstance({ type: AIAccountType.API_KEY, apiKey: this.apiKey });
+                const ai = await this.getClientInstance({ type: AIAccountType.API_KEY, apiKey: this.apiKey }, modelId);
                 chain.push({ type: AIAccountType.API_KEY, apiKey: this.apiKey, googleGenAI: ai });
             }
             
@@ -322,7 +350,7 @@ export class GeminiClient {
             try {
                 const { key } = await geminiPool.getOptimalClient();
                 if (key) {
-                    const ai = await this.getClientInstance({ type: AIAccountType.API_KEY, apiKey: key });
+                    const ai = await this.getClientInstance({ type: AIAccountType.API_KEY, apiKey: key }, modelId);
                     chain.push({ type: AIAccountType.API_KEY, apiKey: key, googleGenAI: ai });
                 }
             } catch (e) {
@@ -330,11 +358,14 @@ export class GeminiClient {
             }
         }
 
-        if (this.googleGenAI && !chain.some(c => c.googleGenAI === this.googleGenAI)) {
-            chain.push({ type: AIAccountType.GOOGLE_VERTEX, googleGenAI: this.googleGenAI });
+        if (!chain.some(c => c.type === AIAccountType.GOOGLE_VERTEX)) {
+            const ai = await this.getClientInstance({ type: AIAccountType.GOOGLE_VERTEX }, modelId);
+            if (ai) {
+                chain.push({ type: AIAccountType.GOOGLE_VERTEX, googleGenAI: ai });
+            }
         } else if (chain.length === 0 && GeminiClient.detectADC()) {
             const project = process.env.GOOGLE_CLOUD_PROJECT;
-            const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+            const location = GeminiClient.resolveLocationForModel(modelId);
             if (project) {
                 try {
                     const ai = new GoogleGenAI({ vertexai: true, project, location });
@@ -351,7 +382,7 @@ export class GeminiClient {
      * Fallback chain: Antigravity → Standard Google → API Key
      */
     public async generateContent(prompt: string | any[], modelId: string = EnvConfig.geminiModelTextAnalysis, options: any = {}) {
-        const chain = await this.resolveCredentialsChain(AIModelType.TEXT);
+        const chain = await this.resolveCredentialsChain(AIModelType.TEXT, modelId);
         const errors: string[] = [];
 
         for (const cred of chain) {
@@ -425,7 +456,7 @@ export class GeminiClient {
      */
     public async generateImage(prompt: string, modelId: string = EnvConfig.geminiModelImageGeneration, options: any = {}): Promise<{ url: string; mimeType: string } | null> {
         try{
-            const chain = await this.resolveCredentialsChain(AIModelType.IMAGE);
+            const chain = await this.resolveCredentialsChain(AIModelType.IMAGE, modelId);
             const errors: string[] = [];
 
             for (const cred of chain) {
@@ -513,7 +544,7 @@ export class GeminiClient {
      */
     public async generateVideo(prompt: string, modelId: string = EnvConfig.geminiModelVideoGeneration, options: any = {}): Promise<{ url?: string; mimeType?: string; sceneId?: string; statusUrl?: string; jobId?: string; status?: string } | null> {
         try{
-            const chain = await this.resolveCredentialsChain(AIModelType.VIDEO);
+            const chain = await this.resolveCredentialsChain(AIModelType.VIDEO, modelId);
             const errors: string[] = [];
 
             // Helper to resolve images for Veo API structure
@@ -762,7 +793,7 @@ export class GeminiClient {
      * Output: raw PCM16 24kHz mono → auto-wrapped in WAV header
      */
     public async generateAudio(text: string, voiceId: string = 'Puck', modelId: string = EnvConfig.geminiModelTTS, options: any = {}): Promise<{ url: string; mimeType: string }> {
-        const chain = await this.resolveCredentialsChain(AIModelType.AUDIO);
+        const chain = await this.resolveCredentialsChain(AIModelType.AUDIO, modelId);
         const errors: string[] = [];
 
         for (const cred of chain) {
@@ -885,7 +916,7 @@ export class GeminiClient {
      * Uses Interactions API to generate high-fidelity audio clips.
      */
     public async generateMusic(prompt: string, modelId: string = EnvConfig.geminiModelMusic, options: any = {}): Promise<{ url: string; mimeType: string }> {
-        const chain = await this.resolveCredentialsChain(AIModelType.MUSIC);
+        const chain = await this.resolveCredentialsChain(AIModelType.MUSIC, modelId);
         const errors: string[] = [];
 
         for (const cred of chain) {
@@ -999,8 +1030,8 @@ export class GeminiClient {
             onerror?: (err: any) => void;
             onclose?: (event: any) => void;
         }}){
-        const chain = await this.resolveCredentialsChain(AIModelType.VOICE);
         const model = config.model || EnvConfig.geminiModelVoice;
+        const chain = await this.resolveCredentialsChain(AIModelType.VOICE, model);
         
         // For Live API, find the first usable credential
         for (const cred of chain) {
@@ -1014,9 +1045,10 @@ export class GeminiClient {
                         Logger.info(`[GeminiClient] Vertex keyFile ${cred.keyFile} does not exist, skipping vertex cred`, 'GeminiClient');
                         continue;
                     }
-                    if (!cred.googleGenAI) continue;
+                    const aiClient = await this.getClientInstance(cred, model);
+                    if (!aiClient) continue;
 
-                    session = await (cred.googleGenAI as any).live.connect({
+                    session = await (aiClient as any).live.connect({
                         model: model,
                         config: {
                             systemInstruction: config.systemInstruction,

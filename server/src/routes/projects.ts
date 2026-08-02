@@ -33,7 +33,7 @@ import { buildCharacterSheetPrompt } from '../utils/PromptBuilder.js';
 import { promptService } from '../services/ai/PromptService.js';
 import { videoWorkflow } from '../services/ai/VideoWorkflow.js';
 import { GeminiClient } from '~/integrations/ai/GeminiClient.js';
-import { ServiceType } from '~/utils/CreditManager.js';
+import { ServiceType } from '~/models/CreditUsage.js';
 import { LicenseType } from '~/models/License.js';
 import { socketServer } from '../services/streaming/SocketServer.js';
 import { buildVeoVideoPrompt } from '../utils/PromptBuilder.js';

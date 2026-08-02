@@ -51,7 +51,12 @@ export function useLiveChatManager() {
             return;
         }
 
-        // Prevent duplicate connections if already connected
+        // Prevent duplicate connections if already connected or in-progress
+        if (connectingIds.has(personaId) || connectingIds.has(archiveId)) {
+            console.warn(`[LiveChatManager] ${persona.name} (${archiveId}) is already connecting, skipping duplicate connect.`);
+            return;
+        }
+
         const existingConn = Object.values(connections).find(c => c.archiveId === archiveId || c.personaId === personaId);
         if (existingConn?.isConnected) {
             console.warn(`[LiveChatManager] ${persona.name} (${archiveId}) is already connected, skipping duplicate connect.`);

@@ -74,6 +74,7 @@ client/package-lock.json
 server/package-lock.json
 electron/package-lock.json
 server/scripts/bin
-server/scripts/test_gmicloud_all_features.ts
-server/scripts/test_gmicloud_exact.ts
+server/scripts/test_*.ts
+server/scripts/service-*.ps1
+server/scripts/service-*.sh
 */*._

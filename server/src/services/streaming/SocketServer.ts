@@ -17,12 +17,6 @@ import { autoDirectorService } from '../ai/AutoDirectorService.js';
 import { Logger } from '../../utils/Logger.js';
 import { tiktokLiveService } from './TikTokLiveService.js';
 
-const SOCKET_PORT = process.env.SOCKET_PORT || 4001;
-
-/**
- * Unified Socket.io Server Manager for collaboration, gaming, and engagement.
- * Merged from legacy SocketService and SocketServer.
- */
 export class SocketServer {
     private io: Server | null = null;
     private userSockets: Map<string, Set<string>> = new Map(); // userId -> Set of socket IDs
@@ -46,8 +40,6 @@ export class SocketServer {
             return;
         }
 
-        // const port = Number(process.env.SOCKET_PORT || 4001);
-        // const socketHttpServer = createServer();
         this.io = new Server(httpServer, {
             allowEIO3: true,
             path: '/socket.io',
@@ -58,10 +50,6 @@ export class SocketServer {
             }
         });
         Logger.info(`🚀 [SocketServer] Socket.io attached directly to HTTP Server at /socket.io`, 'SocketServer');
-        // this.io.listen(Number(SOCKET_PORT));
-        // socketHttpServer.listen(port, '0.0.0.0', () => {
-        //     Logger.info(`🚀 [SocketServer] Standalone Socket.io running at /socket.io on port ${port}`, 'SocketServer');
-        // });
 
         this.setupAuthentication();
         this.setupHandlers();

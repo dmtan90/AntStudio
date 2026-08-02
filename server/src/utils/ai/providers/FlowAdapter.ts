@@ -191,7 +191,9 @@ export class FlowAdapter {
 
         if (type === AIModelType.IMAGE) {
             let imageModelName = 'IMAGEN_3_5';
-            if (modelId.includes('gemini-2.5-flash')) imageModelName = 'GEM_PIX';
+            // gemini-2.5-flash-image is not working on Flow right now
+            // move gemini-2.5 to gemini-3.1
+            if (modelId.includes('gemini-2.5-flash')) imageModelName = "NARWHAL";//'GEM_PIX';
             else if (modelId.includes('gemini-3.0-pro') || modelId.includes('gemini-3-pro') || modelId.includes('gemini-3-pro-image')) imageModelName = 'GEM_PIX_2';
             else if (modelId.includes('imagen-4.0')) imageModelName = 'IMAGEN_3_5';
             else if (modelId.includes('gemini-3.1-flash') || modelId.includes('narwhal')) imageModelName = 'NARWHAL';

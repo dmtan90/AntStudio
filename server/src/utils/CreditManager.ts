@@ -1,23 +1,9 @@
 import mongoose from 'mongoose';
-import { CreditTransactionType, CreditType, User } from '../models/User.js';
-import { Tenant, TenantType } from '../models/Tenant.js';
-import { CreditUsage } from '../models/CreditUsage.js';
+import { CreditTransactionType, CreditType, User } from '~/models/User.js';
+import { Tenant, TenantType } from '~/models/Tenant.js';
+import { CreditUsage, ServiceType } from '~/models/CreditUsage.js';
 import { Logger } from './Logger.js';
 import { configService } from './ConfigService.js';
-
-export enum ServiceType {
-    STREAMING = 'streaming',
-    AI_TRANSLATION = 'ai_translation',
-    FACE_SWAP = 'face_swap',
-    STORAGE = 'storage',
-    IMAGE = 'image',
-    AUDIO = 'audio',
-    VIDEO = 'video',
-    TEXT = 'text',
-    MARKETPLACE = 'marketplace',
-    CUSTOM = 'custom',
-    MUSIC = 'music'
-}
 
 /**
  * Utility to handle credit deductions and usage auditing.

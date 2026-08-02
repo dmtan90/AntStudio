@@ -12,7 +12,7 @@ import { socketServer } from '~/services/streaming/SocketServer.js';
 import { Logger } from '~/utils/Logger.js';
 import { configService } from '~/utils/ConfigService.js';
 import { deductCredits } from '~/utils/credits.js';
-import { ServiceType } from '~/utils/CreditManager.js';
+import { ServiceType } from '~/models/CreditUsage.js';
 
 const router = Router();
 

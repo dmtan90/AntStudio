@@ -13,7 +13,7 @@ import multer from 'multer';
 import axios from 'axios';
 
 import { Logger } from '../utils/Logger.js';
-import { ServiceType } from '~/utils/CreditManager.js';
+import { ServiceType } from '~/models/CreditUsage.js';
 import { CreditTransactionType } from '../models/User.js';
 
 const upload = multer({ storage: multer.memoryStorage() });

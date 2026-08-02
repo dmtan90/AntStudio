@@ -220,7 +220,7 @@ import PlatformSelector from '@/components/studio/modals/PlatformSelector.vue';
 import SaleWizard from '@/components/studio/dialogs/SaleWizard.vue';
 
 import { useUserStore } from '@/stores/user';
-import { useLiveChatManager } from '@/composables/studio/useLiveChatManager';
+import { useLiveChatManager, connections } from '@/composables/studio/useLiveChatManager';
 import { audioMixerService } from '@/utils/ai/AudioMixerService';
 import { saleRunner } from '@/utils/ai/SaleRunner';
 import router from '@/router';
@@ -526,9 +526,12 @@ const handleIncomingState = (e: any) => {
         // 🎯 Send script text over /api/live WebSocket so AI Streamer character speaks out loud with voice audio!
         if (scriptText && scriptText.trim().length > 0 && scriptText !== '...') {
             console.log(`🗣️ [SaleStudio] Triggering AI speech for ${persona.name || uuid}: "${scriptText.substring(0, 50)}..."`);
-            syntheticGuestManager.talk(uuid, scriptText).catch(err => {
-                console.warn(`[SaleStudio] AI speech trigger warning:`, err);
-            });
+            const conn = connections[uuid] || Object.values(connections)[0];
+            if (conn && conn.isConnected) {
+                conn.geminiLive.sendText(scriptText);
+            } else {
+                console.warn(`[SaleStudio] AI speech trigger skipped: Gemini Live connection not ready for ${persona.name || uuid}`);
+            }
         }
     }
 };

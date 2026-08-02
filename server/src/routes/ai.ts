@@ -58,7 +58,7 @@ import { videoWorkflow } from '../services/ai/VideoWorkflow.js';
 import { Logger } from '../utils/Logger.js';
 import { promptService } from '../services/ai/PromptService.js';
 import { AIModelCost, AIModelType } from '~/models/AdminSettings.js';
-import { ServiceType } from '~/utils/CreditManager.js';
+import { ServiceType } from '~/models/CreditUsage.js';
 import { LicenseType } from '~/models/License.js';
 
 const router = Router();

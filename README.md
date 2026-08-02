@@ -145,6 +145,8 @@ pnpm run dev:electron
 pnpm run build:electron
 ```
 
+For full installation, silent mode, and multi-platform troubleshooting guide, see the [Desktop App Guide](file:///d:/Workspace/Gits/CamHub/ams/AntStudio/docs/user-guides/05-desktop-electron-app.md).
+
 ### Option 3: Docker Compose
 
 ```bash

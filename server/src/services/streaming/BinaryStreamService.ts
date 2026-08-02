@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
-import { creditManager, ServiceType } from '../../utils/CreditManager.js';
+import { ServiceType } from '~/models/CreditUsage.js';
+import { creditManager } from '~/utils/CreditManager.js';
 import { getCreditCost } from '~/utils/credits.js';
 import { AIModelType } from '~/models/AdminSettings.js';
 

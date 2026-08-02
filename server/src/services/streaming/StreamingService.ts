@@ -11,7 +11,8 @@ import { User } from '~/models/User.js';
 import { GuestToken } from '~/models/GuestToken.js';
 import { StreamSessionModel } from '~/models/StreamSession.js';
 import { configService, EnvConfig } from '~/utils/ConfigService.js';
-import { creditManager, ServiceType } from '~/utils/CreditManager.js';
+import { ServiceType } from '~/models/CreditUsage.js';
+import { creditManager } from '~/utils/CreditManager.js';
 import { socketServer } from './SocketServer.js';
 import { liveSalesServiceV3 } from '../ai/LiveSalesServiceV3.js';
 

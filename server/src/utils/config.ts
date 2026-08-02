@@ -150,7 +150,6 @@ export const config = {
     //app port
     clientPort: process.env.CLIENT_PORT || '3000',
     serverPort: process.env.PORT || '5000',
-    socketPort: process.env.SOCKET_PORT || '5001',
 };
 
 export default config;

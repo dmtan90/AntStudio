@@ -1,5 +1,18 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { ServiceType } from '~/utils/CreditManager.js';
+
+export enum ServiceType {
+    STREAMING = 'streaming',
+    AI_TRANSLATION = 'ai_translation',
+    FACE_SWAP = 'face_swap',
+    STORAGE = 'storage',
+    IMAGE = 'image',
+    AUDIO = 'audio',
+    VIDEO = 'video',
+    TEXT = 'text',
+    MARKETPLACE = 'marketplace',
+    CUSTOM = 'custom',
+    MUSIC = 'music'
+}
 
 export interface ICreditUsage extends Document {
     tenantId: mongoose.Types.ObjectId;
