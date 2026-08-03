@@ -144,6 +144,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, layout: 'none' }
     },
     {
+        path: '/live/sales-v2',
+        name: 'live-sales-v2',
+        component: () => import('@/views/live/SaleStudioV2.vue'),
+        meta: { requiresAuth: true, layout: 'none' }
+    },
+    {
         path: '/embed/personal-shopper',
         name: 'embed-personal-shopper',
         component: () => import('@/views/embed/PersonalShopperWidget.vue'),

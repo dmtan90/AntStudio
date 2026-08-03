@@ -78,3 +78,4 @@ server/scripts/test_*.ts
 server/scripts/service-*.ps1
 server/scripts/service-*.sh
 */*._
+client/dist.zip

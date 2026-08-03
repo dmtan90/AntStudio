@@ -11,6 +11,7 @@ import App from './App.vue'
 import router from './router'
 import api from './utils/api.js'
 import { ErrorTracker, setupAxiosTracking } from './utils/ErrorTracker'
+import { unifiedWSClient } from './services/unified/UnifiedWSClient'
 
 // Import global styles
 import './assets/scss/main.scss'
@@ -72,5 +73,8 @@ setupAxiosTracking(api)
 //         console.error('[PWA] Service Worker registration failed:', e);
 //     }
 // });
+
+// Initialize single unified WebSocket connection at app startup
+unifiedWSClient.initConnection();
 
 app.mount('#app')

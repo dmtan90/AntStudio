@@ -78,6 +78,7 @@ import agentChatRouter from './routes/AgentChat.js';
 import googleAgentRouter from './routes/GoogleAgent.js';
 import { aiManager } from '~/utils/ai/AIServiceManager.js';
 import { ensurePlaywrightBrowsers } from '~/utils/PlaywrightHelper.js';
+import { unifiedOrchestrator } from './services/unified/UnifiedOrchestrator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -292,7 +293,7 @@ const startServer = async () => {
         LicenseService.start();
 
         // Initialize Streaming Service (NMS) - Async to prevent blocking startup
-        await streamingService.initialize();
+        // await streamingService.initialize();
 
         // Start Google Flow token synchronization service
         flowSyncService.start();
@@ -301,8 +302,11 @@ const startServer = async () => {
         const httpServer = createServer(app);
         socketServer.initialize(httpServer);
 
-        // Initialize Live WebSocket for Gemini Live API
-        initializeLiveWebSocket(httpServer);
+        // Initialize Unified Gateway Architecture (Single WS, Single FSM, Single NMS, RTMP Relay)
+        unifiedOrchestrator.initialize(socketServer.getIO()! || httpServer);
+
+        // Legacy Live WebSocket disabled to avoid conflicts with Unified Gateway
+        // initializeLiveWebSocket(httpServer);
 
         // Connect SocketServer to SystemLogger for real-time streaming
         Logger.setSocketServer(socketServer.getIO()!);
