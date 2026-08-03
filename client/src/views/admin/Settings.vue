@@ -201,12 +201,12 @@ const saveSettings = async () => {
 
 const addProvider = (known: any) => {
     const newProvider = {
-        id: known ? known.id : `custom_${Date.now()}`,
-        name: known ? known.name : 'New Core',
-        apiKey: '',
-        baseUrl: '',
+        id: known?.id || `custom_${Date.now()}`,
+        name: known?.name || 'Custom Provider',
+        apiKey: known?.apiKey || '',
+        baseUrl: known?.baseUrl || '',
         isActive: true,
-        supportedTypes: known ? [...known.supportedTypes] : ['text']
+        supportedTypes: known?.supportedTypes || ['text']
     };
     settings.value.aiSettings.providers.push(newProvider);
 };

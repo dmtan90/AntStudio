@@ -20,9 +20,9 @@
       </div>
     </div>
     <template #footer>
-      <button class="primary-btn w-full" @click="$emit('update:modelValue', false)">
+      <el-button class="w-full" size="large" type="primary" plan bg round @click="$emit('update:modelValue', false)">
         {{ t('common.save') }}
-      </button>
+      </el-button>
     </template>
   </el-dialog>
 </template>
@@ -44,6 +44,7 @@ const emit = defineEmits(['update:modelValue', 'toggle-platform']);
 const togglePlatform = (id: string) => {
   emit('toggle-platform', id);
 };
+
 </script>
 
 <style lang="postcss" scoped>

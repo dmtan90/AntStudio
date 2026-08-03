@@ -350,13 +350,13 @@
             </div>
         </div>
 
-        <div class="flex gap-4">
-           <button class="flex-1 h-12 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors" @click="setupLive">
+        <div class="flex gap-4 justify-center">
+           <el-button :loading="loading" :icon="Refresh" type="primary" plain round bg @click="setupLive">
               {{ t('platformCMS.dialogs.live.refresh') }}
-           </button>
-           <button class="flex-1 h-12 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-xs uppercase tracking-wide transition-colors shadow-lg shadow-red-600/20 flex items-center justify-center gap-2" @click="goLive">
-              <broadcast theme="outline" size="16" /> {{ t('platformCMS.dialogs.live.launch') }}
-           </button>
+           </el-button>
+           <el-button :loading="loading" :icon="Broadcast" type="danger" plain round bg @click="goLive">
+              {{ t('platformCMS.dialogs.live.launch') }}
+           </el-button>
         </div>
      </el-dialog>
   </div>
@@ -515,7 +515,7 @@ const setupLive = async () => {
 
 const goLive = () => {
    showLiveStreamDialog.value = false;
-   router.push({ name: 'live-studio', query: { platformId: accountId } });
+   router.push({ name: 'live-sales', query: { platformId: accountId } });
 }
 
 const copyToClipboard = (text: string) => {

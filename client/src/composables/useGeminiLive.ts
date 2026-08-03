@@ -111,12 +111,20 @@ export function useGeminiLive() {
         console.log('[GeminiLive] Connecting to Socket.io /live namespace');
         
         return new Promise((resolve, reject) => {
+            // Guard: ensure the promise is only settled once
+            let settled = false;
+            const settle = (fn: () => void) => {
+                if (settled) return;
+                settled = true;
+                fn();
+            };
+
             const timeoutId = setTimeout(() => {
                 if (socketRef.value) {
                     socketRef.value.disconnect();
                     socketRef.value = null;
                 }
-                reject(new Error('Connection timeout (30s)'));
+                settle(() => reject(new Error('Connection timeout (30s)')));
             }, 30000);
 
             const socketInstance = io(`${domain}/live`, {
@@ -168,7 +176,7 @@ export function useGeminiLive() {
                             toast.success(`Connected to ${archiveName.value || 'Influencer'}`);
                         }
                         
-                        resolve();
+                        settle(() => resolve());
                     }
                 } catch (error) {
                     console.error('[GeminiLive] Error parsing message:', error);
@@ -178,7 +186,7 @@ export function useGeminiLive() {
             socketInstance.on('connect_error', (error: any) => {
                 clearTimeout(timeoutId);
                 console.error('[GeminiLive] Socket.io connection error:', error);
-                reject(error);
+                settle(() => reject(error));
             });
 
             socketInstance.on('disconnect', (reason: string) => {
@@ -218,8 +226,12 @@ export function useGeminiLive() {
                      stopCamera();
                 }
 
-                if (!sessionId.value) {
-                    reject(new Error(`Socket.io disconnected before handshake: ${reason}`));
+                // Only reject during handshake phase on unexpected server-side disconnects.
+                // Never reject on 'io client disconnect' — that is an intentional client-side
+                // disconnect (e.g. the 30s timeout handler or a manual disconnect call) and
+                // the promise has already been settled by the timeout or connect_error path.
+                if (!sessionId.value && reason !== 'io client disconnect') {
+                    settle(() => reject(new Error(`Socket.io disconnected before handshake: ${reason}`)));
                 }
             });
         });

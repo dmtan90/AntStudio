@@ -41,6 +41,7 @@
     "productName": "AntStudio",
     "executableName": "AntStudio",
     "npmRebuild": false,
+    "afterPack": "electron/afterPack.cjs",
     "directories": {
       "output": "electron/dist"
     },
@@ -76,6 +77,14 @@
       {
         "from": "electron/start-silent.sh",
         "to": "start-silent.sh"
+      },
+      {
+        "from": "electron/install.bat",
+        "to": "install.bat"
+      },
+      {
+        "from": "electron/install.sh",
+        "to": "install.sh"
       }
     ],
     "extraResources": [

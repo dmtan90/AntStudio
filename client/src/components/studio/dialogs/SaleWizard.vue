@@ -37,36 +37,35 @@
                         </div>
                     </div>
                 </div>
-                <div v-loading="loading" class="w-full min-h-[100px] overflow-y-auto pr-2 custom-scrollbar">
+                <div v-loading="loading" class="flex min-h-[260px]">
                     <div v-if="personas.length === 0" class="flex flex-col items-center justify-center h-full text-white/20 border border-dashed border-white/5 rounded-[2rem]">
                         <Robot theme="outline" size="48" class="mb-4" />
                         <p class="text-sm font-bold uppercase tracking-widest">{{ $t('saleWizard.agents.empty') }}</p>
                         <p class="text-[10px] uppercase">{{ $t('saleWizard.agents.emptySub') }}</p>
                     </div>
                     <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <div v-for="persona in personas" :key="persona.uuid"
-                        class="persona-card group relative flex flex-col overflow-hidden rounded-[2rem] border cursor-pointer transition-all duration-500"
-                        :class="selectedPersonaUuids.includes(persona.uuid) 
-                        ? 'border-blue-500/60 shadow-[0_0_40px_rgba(59,130,246,0.3)] scale-[1.03]' 
-                        : 'border-white/5 hover:border-white/20'"
-                        @click="togglePersona(persona)">
-                        <div class="relative aspect-[4/5] overflow-hidden bg-[#0f0f1a]">
-                            <el-image
-                                :src="getFileUrl(persona.visual?.thumbnailUrl || persona.visual?.modelUrl || persona.avatarUrl)"
-                                class="h-full w-full transition-transform duration-700 group-hover:scale-110"
-                                fit="cover">
-                                <template #error>
-                                    <div class="flex h-full w-full items-center justify-center bg-white/5">
-                                        <Robot theme="outline" size="32" class="text-white/10" />
-                                    </div>
-                                </template>
-                            </el-image>
-                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                        
-                            <div v-if="selectedPersonaUuids.includes(persona.uuid)" 
-                                class="absolute top-3 right-3 z-10 h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center border-2 border-white shadow-lg">
-                                <CheckOne theme="outline" size="12" fill="#fff" />
-                            </div>
+                        <div v-for="persona in personas" :key="persona.uuid"
+                            class="persona-card group relative flex flex-col overflow-hidden rounded-[2rem] border cursor-pointer transition-all duration-500"
+                            :class="selectedPersonaUuids.includes(persona.uuid) 
+                                ? 'border-blue-500/60 shadow-[0_0_40px_rgba(59,130,246,0.3)] scale-[1.03]' 
+                                : 'border-white/5 hover:border-white/20'"
+                            @click="togglePersona(persona)">
+                            <div class="relative aspect-[4/5] overflow-hidden bg-[#0f0f1a]">
+                                <el-image
+                                    :src="getFileUrl(persona.visual?.thumbnailUrl || persona.visual?.modelUrl || persona.avatarUrl)"
+                                    class="h-full w-full transition-transform duration-700 group-hover:scale-110"
+                                    fit="cover">
+                                    <template #error>
+                                        <div class="flex h-full w-full items-center justify-center bg-white/5">
+                                            <Robot theme="outline" size="32" class="text-white/10" />
+                                        </div>
+                                    </template>
+                                </el-image>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                                <div v-if="selectedPersonaUuids.includes(persona.uuid)" 
+                                    class="absolute top-3 right-3 z-10 h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center border-2 border-white shadow-lg">
+                                    <CheckOne theme="outline" size="12" fill="#fff" />
+                                </div>
                             </div>
                             <div class="p-4 bg-black/40 backdrop-blur-xl border-t border-white/5">
                                 <h4 class="text-xs font-black text-white line-clamp-1 uppercase">{{ persona.name }}</h4>
@@ -94,23 +93,7 @@
                 </div>
             </div>
 
-            <!-- <div class="flex flex-col gap-4">
-                <div class="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
-                    <div>
-                        <div class="text-white font-medium">Auto (Smart) Mode</div>
-                        <div class="text-xs text-white/40">Automatically select and rank products by buyer intent</div>
-                    </div>
-                    <el-switch v-model="queueMode" active-value="auto" inactive-value="manual" />
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <el-input v-model="productSearch" placeholder="Search products..." class="studio-search flex-1">
-                        <template #prefix><Search theme="outline" size="14" /></template>
-                    </el-input>
-                </div>
-            </div> -->
-
-            <div class="grid min-h-[100px] grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 min-h-[340px]">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 min-h-[340px]">
                 <div v-for="product in paginatedProducts" :key="product._id"
                      @click="toggleProduct(product._id)"
                      :class="['p-3 rounded-xl border transition-all flex flex-col ', 

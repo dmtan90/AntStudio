@@ -602,10 +602,26 @@ export class StreamingService extends EventEmitter {
      * Initialize FFmpeg for WebSocket ingestion (Internal Relay)
      */
     private async initRelayFFmpeg(sessionId: string, session: StreamSession, targets: StreamTarget[], forceCpuCodec = false) {
-        if (!fs.existsSync(EnvConfig.ffmpegPath)) {
-            const errMsg = `FFmpeg executable binary not found on disk: ${EnvConfig.ffmpegPath}`;
-            Logger.error(`[StreamingService] ${errMsg}`, 'StreamingService');
-            throw new Error(errMsg);
+        const ffmpegBin = EnvConfig.ffmpegPath;
+        const isAbsolutePath = path.isAbsolute(ffmpegBin);
+        const existsOnDisk = isAbsolutePath && fs.existsSync(ffmpegBin);
+
+        if (!existsOnDisk) {
+            if (isAbsolutePath) {
+                // Absolute path given but file not found — hard fail immediately
+                const errMsg = `FFmpeg executable binary not found on disk: ${ffmpegBin}`;
+                Logger.error(`[StreamingService] ${errMsg}`, 'StreamingService');
+                throw new Error(errMsg);
+            }
+            // Bare command name (e.g. 'ffmpeg') — probe via version flag to confirm it's on PATH
+            try {
+                const { execSync } = await import('child_process');
+                execSync(`"${ffmpegBin}" -version`, { stdio: 'ignore', timeout: 5000 });
+            } catch {
+                const errMsg = `FFmpeg executable binary not found on disk: ${ffmpegBin}`;
+                Logger.error(`[StreamingService] ${errMsg}`, 'StreamingService');
+                throw new Error(errMsg);
+            }
         }
 
         // Re-create the input stream if we have a saved EBML header to recover from crashes / fallbacks

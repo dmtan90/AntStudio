@@ -99,7 +99,7 @@
 
                 <!-- Server Disconnected / Reconnecting Status Banner -->
                 <transition name="el-zoom-in-top">
-                    <div v-if="isReconnecting" class="absolute top-20 inset-x-6 z-40 flex items-center justify-between bg-amber-500/20 border border-amber-500/40 rounded-2xl px-6 py-3 backdrop-blur-xl shadow-2xl animate-pulse pointer-events-auto">
+                    <div v-if="isReconnecting" class="absolute top-20 right-5 z-40 flex flex-col items-center justify-between bg-amber-500/20 border border-amber-500/40 rounded-2xl px-6 py-3 backdrop-blur-xl shadow-2xl animate-pulse pointer-events-auto">
                         <div class="flex items-center gap-3">
                             <div class="h-3 w-3 rounded-full bg-amber-500 animate-ping"></div>
                             <span class="text-xs font-black uppercase tracking-wider text-amber-300">
@@ -748,6 +748,15 @@ const handleWizardComplete = async (data?: any) => {
 let canvasResizeObserver: ResizeObserver | null = null;
 
 onMounted(async () => {
+    // Auto-select if query param exists
+    const qPlatformId = route.query.platformId as string;
+    if (qPlatformId) {
+        if (availableAccounts.value.find(a => a._id === qPlatformId)) {
+            selectedPlatforms.value = [qPlatformId];
+            toast.success(t('studio.platformPreselected'));
+        }
+    }
+    
     // 1. Fetch products
     if (studioStore.featuredProducts.length === 0) {
         await studioStore.fetchCommerceProducts(true);

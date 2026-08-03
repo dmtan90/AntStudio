@@ -10,17 +10,12 @@ const isSilentMode = process.argv.includes('--silent') ||
                      process.argv.includes('--headless') ||
                      process.env.SILENT_MODE === 'true';
 
-// Disable hardware acceleration to prevent GPU process crashes on incompatible hardware
-// app.disableHardwareAcceleration();
-app.commandLine.appendSwitch('no-sandbox');
-// app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('disable-software-rasterizer');
-
 // When running in silent/headless mode on a Linux server (no X11 display),
 // tell Chromium to use its built-in headless mode so it does not try to
 // connect to an X server or Wayland compositor.
 if (isSilentMode) {
   app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('no-sandbox');          // Required for headless/root/container environments
   app.commandLine.appendSwitch('disable-gpu');
   app.commandLine.appendSwitch('disable-gpu-compositing');
   app.commandLine.appendSwitch('headless');

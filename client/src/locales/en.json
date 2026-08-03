@@ -5305,7 +5305,18 @@
       "sortBy": "Sort By",
       "newest": "Newest",
       "mostViews": "Most Views"
-    }
+    },
+    "toasts": {
+      "liveConfigured": "Live stream configured successfully",
+      "refreshed": "Stream settings refreshed",
+      "streamError": "Stream configuration error",
+      "failedToLoad": "Failed to load",
+      "failedToPublish": "Failed to publish"
+    },
+    "confirmDelete": "Are you sure you want to delete this video?",
+    "deleteVideo": "Delete video",
+    "publishVideo": "Publish video",
+    "postVideo": "Post video"
   },
   "platforms": {
     "status": {
@@ -6292,6 +6303,7 @@
     "poor": "Poor",
     "reconnecting": "Reconnecting...",
     "reconnectingMsg": "SERVER CONNECTION LOST! AUTO-RECONNECTING... (Attempt {attempt}/30)",
-    "pausedBannerSub": "STREAM PAUSED - WILL AUTO-RESUME WHEN SERVER IS BACK ONLINE"
+    "pausedBannerSub": "STREAM PAUSED - WILL AUTO-RESUME WHEN SERVER IS BACK ONLINE",
+    "platformPreselected": "Platform pre-selected"
   }
 }

@@ -6,12 +6,9 @@ echo "==================================================="
 echo "  Starting AntStudio in Silent Server Mode...      "
 echo "==================================================="
 
-# Electron requires --no-sandbox when running as root (UID 0)
-EXTRA_FLAGS=""
-if [ "$(id -u)" -eq 0 ]; then
-    echo "[INFO] Running as root, adding --no-sandbox flag..."
-    EXTRA_FLAGS="--no-sandbox"
-fi
+# --no-sandbox is required for Electron on most Linux server environments
+# (headless, containers, root, restricted namespaces, etc.)
+EXTRA_FLAGS="--no-sandbox"
 
 # Determine the executable path
 if [ -f "$DIR/AntStudio" ]; then

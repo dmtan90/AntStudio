@@ -1,7 +1,12 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import fs from 'fs';
+import { execSync } from 'child_process';
+
+// ESM-compatible require — works in both tsx (dev) and esbuild output (prod)
+const _require = createRequire(import.meta.url);
 
 // Handling __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -57,14 +62,28 @@ const resolveUnpackedPath = (binPath: string) => {
     return binPath;
 };
 
+// Helper to find a binary via the system PATH using `where` (Windows) or `which` (Unix).
+const findOnPath = (binaryName: string): string | null => {
+    try {
+        const cmd = process.platform === 'win32' ? `where ${binaryName}` : `which ${binaryName}`;
+        const result = execSync(cmd, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+        // `where` may return multiple lines; take the first one
+        const first = result.split(/\r?\n/)[0].trim();
+        if (first && fs.existsSync(first)) return first;
+    } catch {
+        // Binary not on PATH
+    }
+    return null;
+};
+
 // Safe ffmpeg/ffprobe path resolution.
 // @ffmpeg-installer/ffmpeg throws at import time if the binary doesn't exist at the
 // asar-internal path, so we resolve paths manually and handle asar.unpacked ourselves.
 const resolveFfmpegPath = (): string => {
     if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
     try {
-        // Dynamic import to avoid hard crash if binary not found inside asar
-        const installer = require('@ffmpeg-installer/ffmpeg');
+        // ESM-compatible require via createRequire
+        const installer = _require('@ffmpeg-installer/ffmpeg');
         return resolveUnpackedPath(installer.path);
     } catch {
         // Fallback: construct the unpacked path manually based on platform
@@ -76,14 +95,22 @@ const resolveFfmpegPath = (): string => {
             // Inside asar.unpacked (Electron packaged)
             path.join(__dirname, `../../../node_modules/@ffmpeg-installer/${platformKey}/${binaryName}`),
             path.join(__dirname, `../../../../app.asar.unpacked/node_modules/@ffmpeg-installer/${platformKey}/${binaryName}`),
-            // System-installed
+            // System-installed (Unix)
             '/usr/bin/ffmpeg',
             '/usr/local/bin/ffmpeg',
+            '/usr/local/ffmpeg/bin/ffmpeg',
+            // Common Windows install locations
+            'C:\\ffmpeg\\bin\\ffmpeg.exe',
+            'C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe',
+            'C:\\Program Files (x86)\\ffmpeg\\bin\\ffmpeg.exe',
         ];
         for (const candidate of candidates) {
             if (fs.existsSync(candidate)) return candidate;
         }
-        console.warn('[Config] ffmpeg binary not found in any candidate path.');
+        // Last resort: search system PATH
+        const onPath = findOnPath('ffmpeg');
+        if (onPath) return onPath;
+        console.warn('[Config] ffmpeg binary not found in any candidate path. Falling back to bare command name.');
         return 'ffmpeg'; // fallback to PATH
     }
 };
@@ -91,7 +118,7 @@ const resolveFfmpegPath = (): string => {
 const resolveFfprobePath = (): string => {
     if (process.env.FFPROBE_PATH) return process.env.FFPROBE_PATH;
     try {
-        const installer = require('@ffprobe-installer/ffprobe');
+        const installer = _require('@ffprobe-installer/ffprobe');
         return resolveUnpackedPath(installer.path);
     } catch {
         const platform = process.platform;
@@ -103,11 +130,17 @@ const resolveFfprobePath = (): string => {
             path.join(__dirname, `../../../../app.asar.unpacked/node_modules/@ffprobe-installer/${platformKey}/${binaryName}`),
             '/usr/bin/ffprobe',
             '/usr/local/bin/ffprobe',
+            '/usr/local/ffmpeg/bin/ffprobe',
+            'C:\\ffmpeg\\bin\\ffprobe.exe',
+            'C:\\Program Files\\ffmpeg\\bin\\ffprobe.exe',
+            'C:\\Program Files (x86)\\ffmpeg\\bin\\ffprobe.exe',
         ];
         for (const candidate of candidates) {
             if (fs.existsSync(candidate)) return candidate;
         }
-        console.warn('[Config] ffprobe binary not found in any candidate path.');
+        const onPath = findOnPath('ffprobe');
+        if (onPath) return onPath;
+        console.warn('[Config] ffprobe binary not found in any candidate path. Falling back to bare command name.');
         return 'ffprobe';
     }
 };
