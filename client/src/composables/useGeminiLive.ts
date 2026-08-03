@@ -200,8 +200,14 @@ export function useGeminiLive() {
                 stopAudioAnalysis();
                 stopPlayback();
                 
-                // Automatic Reconnection with Exponential Backoff
-                if (reason !== 'io client disconnect' && !manualDisconnect.value && reconnectAttempts.value < MAX_RECONNECT_ATTEMPTS) {
+                // Reconnect only on genuine transport failures.
+                // - 'io client disconnect': we called socket.disconnect() intentionally → no reconnect
+                // - 'io server disconnect': server kicked us (e.g. duplicate socket eviction, session end) → no reconnect
+                //   Reconnecting immediately after a server kick causes the server to kick the new socket
+                //   again, creating an infinite drop/reconnect loop (observed: 50+ reconnections in logs).
+                // - 'transport close' / 'transport error' / 'ping timeout': genuine network issue → reconnect
+                const intentionalDisconnect = reason === 'io client disconnect' || reason === 'io server disconnect';
+                if (!intentionalDisconnect && !manualDisconnect.value && reconnectAttempts.value < MAX_RECONNECT_ATTEMPTS) {
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000);
                     reconnectAttempts.value++;
                     
@@ -219,7 +225,7 @@ export function useGeminiLive() {
                             connect(lastConfig.value).catch(e => console.log('[GeminiLive] Reconnect backoff silent fail:', e));
                         }
                     }, delay);
-                } else if (reason !== 'io client disconnect') {
+                } else if (!intentionalDisconnect) {
                      console.error('[GeminiLive] Connection lost permanently or max attempts reached.');
                      toast.error('Influencer connection lost permanently.', { duration: 2000 });
                      stopMicrophone(); // Fully stop if we can't reconnect

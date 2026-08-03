@@ -314,17 +314,20 @@ watch(() => ({ ...liveChatConnections }), (conns) => {
 const guestPersonas = computed(() => activeGuests.value.map(g => ({ ...g.persona, uuid: g.uuid })));
 let syncTimer: any = null;
 const throttledSync = async () => {
+    // Only sync while live — avoid reconnecting after stream stop
+    if (!isLive?.value) return;
     if (syncTimer) clearTimeout(syncTimer);
     syncTimer = setTimeout(async () => {
+        if (!isLive?.value) return;
         const productIds = studioStore.liveProducts.map((p: any) => p._id || p.id).join(',');
         console.log(`[SaleStudio] Syncing Live Chat connections for ${guestPersonas.value.length} guests.`);
         await syncLiveChatConnections(studioStore.guestSlotMap, guestPersonas.value, undefined, 'sales', productIds);
     }, 200);
 };
 
-// Watchers for connection syncing
-watch(() => studioStore.guestSlotMap, throttledSync, { deep: true, immediate: true });
-watch(() => guestPersonas.value, throttledSync, { deep: true, immediate: true });
+// Watchers for connection syncing — only active while live
+watch(() => studioStore.guestSlotMap, throttledSync, { deep: true });
+watch(() => guestPersonas.value, throttledSync, { deep: true });
 
 // Dynamic overlay and pitch script spotlight watcher
 watch(() => studioStore.highlightedProduct, (product) => {
@@ -590,6 +593,10 @@ watch(isLive, (live) => {
     } else {
         saleRunner.stop();
         console.log("[SaleStudio] Livestream stopped. Stopping SaleRunner storyboard loop.");
+
+        // Disconnect all GeminiLive sessions so they stop receiving tool calls
+        disconnectAllLiveChat();
+        console.log("[SaleStudio] Disconnected all GeminiLive sessions.");
 
         // Reset all character video states to "idle" and clear TVC video overlay when live stream stops
         if (renderer) {
