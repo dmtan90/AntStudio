@@ -23,12 +23,23 @@ exports.default = async function afterPack(context) {
 
     console.log(`\n[afterPack] Setting executable permissions for ${platform} build in:\n  ${appOutDir}\n`);
 
-    // Patterns that must be executable
+    // Patterns that must be executable.
+    // Only target real executables — never data files (.plist, .pak, .css, .js, etc.)
     const executablePatterns = [
-        /\.sh$/,                    // all shell scripts
-        /AntStudio$/,               // main executable (case-sensitive Linux)
-        /antstudio$/,               // lowercase variant
-        /AntStudio\.app\//,         // macOS .app bundle contents
+        /\.sh$/,                                    // shell scripts
+        /\.py$/,                                    // python scripts
+        /\.dylib$/,                                 // macOS dynamic libraries
+        /\.so(\.\d+)*$/,                            // Linux shared libraries
+        /\.node$/,                                  // native Node addons
+        // Bare-name binaries (no extension) inside known binary locations
+        /[/\\](bin|lib|libexec|Helpers)[/\\][^./\\]+$/,
+        // macOS: the main app executable (same name as the .app, no extension)
+        /\.app\/Contents\/MacOS\/[^/]+$/,
+        // Electron helper executables inside Helpers/
+        /Helper[^/]*\.app\/Contents\/MacOS\/[^/]+$/,
+        // Top-level Linux/macOS main binary (no extension, exact app name)
+        /[/\\]AntStudio$/,
+        /[/\\]antstudio$/,
     ];
 
     /**
