@@ -48,6 +48,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install cairo pango jpeg giflib librsvg
+          # --break-system-packages required on macOS runners (PEP 668 externally-managed env)
+          pip3 install setuptools --break-system-packages
 
       - name: Install Dependencies
         shell: bash
