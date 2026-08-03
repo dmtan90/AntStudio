@@ -214,7 +214,7 @@
                         <pre v-if="expandedMeta.has(log._id)"
                             class="meta-block">{{ JSON.stringify(log.details, null, 2) }}</pre>
                     </div>
-                    <div v-if="!clientLogs.length" class="empty-state">{{ t('admin.monitoring.noClientErrors') }}</div>
+                    <div v-if="clientLogs.length == 0" class="empty-state">{{ t('admin.monitoring.noClientErrors') }}</div>
                 </div>
             </div>
 
@@ -306,7 +306,10 @@ const fetchLogs = async (silent = false) => {
             totalLogs.value = res.total;
         }
         if (clientRes) {
-            clientLogs.value = clientRes.logs;
+            clientLogs.value = clientRes.logs || clientRes;
+        }
+        else{
+            clientLogs.value = [];
         }
     } catch (e) {
         if (!silent) toast.error(t('admin.monitoring.toasts.loadLogsFailed'));
@@ -354,7 +357,7 @@ const setupSocket = () => {
 	let domain = window.location.origin;
 	domain = domain.replace("https:", "wss:").replace("http:", "ws:");
     socket.value = io(domain, {
-        path: '/api/socket.io',
+        path: '/socket.io',
         auth: { token }
     });
 

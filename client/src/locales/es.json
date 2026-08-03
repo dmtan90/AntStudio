@@ -82,7 +82,8 @@
       "back": "Atrás",
       "next": "Próximo",
       "gotIt": "Entiendo",
-      "skip": "Saltar"
+      "skip": "Saltar",
+      "step": "Step"
     },
     "creator": "Creador",
     "optional": "Opcional",
@@ -114,7 +115,9 @@
     "disconnect": "Desconectar",
     "returnDashboard": "Panel de devolución",
     "time": {
-      "justNow": "En este momento"
+      "justNow": "En este momento",
+      "minutesAgo": "Minutes Ago",
+      "hoursAgo": "Hours Ago"
     },
     "revoke": "Revocar",
     "noData": "Sin datos",
@@ -132,7 +135,8 @@
     "remove": "Eliminar",
     "generate": "Generar",
     "generateImage": "Generar imagen",
-    "generateVideo": "Generar vídeo"
+    "generateVideo": "Generar vídeo",
+    "aiProductionDesc": "AI Production Desc"
   },
   "dashboard": {
     "header": {
@@ -259,7 +263,7 @@
     },
     "editor": {
       "title": "Editor de vídeo",
-      "messagePlaceholder": "Ingresa tu mensaje, @ para mencionar...",
+      "messagePlaceholder": "Ingresa tu mensaje, {'@'} para mencionar...",
       "storyboard": {
         "title": "Guión gráfico",
         "keyElements": "Elementos clave",
@@ -481,7 +485,9 @@
         "addCaptionLine": "Agregar línea de título",
         "noCaptionsYet": "Aún no hay líneas de subtítulos para este segmento.",
         "captionsSaved": "Subtítulos guardados",
-        "transitions": "Transiciones"
+        "transitions": "Transiciones",
+        "addFirstCaption": "Add First Subtitle Line",
+        "batchStartSuccess": "Batch generation started"
       },
       "timeline": {
         "title": "Línea de tiempo",
@@ -547,7 +553,9 @@
         "regenVoiceover": "Voz en off de regeneración",
         "voiceVolume": "Volumen de voz",
         "voiceSpeed": "Velocidad de voz",
-        "regenCaptions": "Subtítulos de regeneración"
+        "regenCaptions": "Subtítulos de regeneración",
+        "notSupportedForTemplate": "No t supported for template found",
+        "bgmGenerated": "Bgm Generated"
       },
       "chatAssistant": "Asistente de IA",
       "video": {
@@ -627,7 +635,9 @@
             "slide": "Deslizar",
             "none": "Ninguno"
           }
-        }
+        },
+        "textPlaceholder": "Text Placeholder",
+        "subtitlePlaceholder": "Subtitle Placeholder"
       },
       "chat": {
         "attachFiles": "Adjuntar archivos",
@@ -701,7 +711,8 @@
       },
       "music": {
         "generated": "Se genera música de fondo."
-      }
+      },
+      "uploadSuccess": "Upload successfully successfully"
     },
     "recorder": {
       "title": "Grabadora",
@@ -718,7 +729,9 @@
         "camera": "Cámara",
         "cameraScreen": "Cámara y pantalla",
         "screen": "Pantalla",
-        "audio": "Audio"
+        "audio": "Audio",
+        "camScreen": "Cam Screen",
+        "whiteboard": "Whiteboard"
       },
       "overlay": {
         "aslZone": "Zona de captura ASL",
@@ -741,7 +754,10 @@
         "accessError": "Fallo estratégico: no se pudo acceder a la unidad de captura neuronal",
         "stopFirst": "Detener la grabación antes de cambiar de modo"
       },
-      "projectDefault": "Sesión neuronal"
+      "projectDefault": "Sesión neuronal",
+      "toasts": {
+        "micChangeDisabled": "Mic Change Disabled"
+      }
     },
     "new": {
       "title": "Comience la creación de su proyecto",
@@ -753,7 +769,8 @@
           "desc": "Comience con un proyecto en blanco.",
           "projectTitle": "Título del proyecto",
           "aspectRatio": "Relación de aspecto",
-          "creating": "Creando"
+          "creating": "Creando",
+          "projectTitlePlaceholder": "Project Title Placeholder"
         },
         "flow": "Flujo del proyecto",
         "template": "Plantilla heredada",
@@ -786,9 +803,14 @@
             "title": "Título",
             "desc": "Descripción",
             "voiceName": "Nombre de voz",
-            "startTraining": "Empezar a entrenar"
+            "startTraining": "Empezar a entrenar",
+            "voiceNamePlaceholder": "Voice Name Placeholder",
+            "uploadZone": "Upload Zone"
           },
-          "initializingEngine": "Inicializando el motor"
+          "initializingEngine": "Inicializando el motor",
+          "scriptPlaceholder": "Script Placeholder",
+          "searchVoices": "Search Voices",
+          "steps": "Steps"
         },
         "liveStream": {
           "title": "Título",
@@ -805,8 +827,12 @@
           "studioBtn": "Estudio Btn",
           "restreamBtn": "Retransmitir Btn",
           "toasts": {
-            "failed": "Fallido"
-          }
+            "failed": "Fallido",
+            "initializing": "Initializing",
+            "success": "Success"
+          },
+          "selectProject": "Select Project",
+          "loopMode": "Loop Mode"
         },
         "presentation": {
           "title": "Título",
@@ -816,7 +842,12 @@
           "uploadSlides": "Cargar diapositivas",
           "uploadPresentation": "Subir presentación",
           "support": "Apoyo",
-          "selectFile": "Seleccionar archivo"
+          "selectFile": "Seleccionar archivo",
+          "toasts": {
+            "processing": "Processing",
+            "success": "Success",
+            "failed": "Failed"
+          }
         },
         "productAds": {
           "source": "Fuente",
@@ -834,7 +865,9 @@
           "noVibes": "Sin vibraciones",
           "productImages": "Imágenes del producto",
           "selectTemplate": "Seleccionar plantilla",
-          "selectTemplateDesc": "Seleccionar descripción de plantilla"
+          "selectTemplateDesc": "Seleccionar descripción de plantilla",
+          "urlPlaceholder": "URL Placeholder",
+          "steps": "Steps"
         }
       },
       "flow": {
@@ -924,7 +957,8 @@
           "approveBtn": "Aprobar y crear proyecto"
         },
         "visualAssets": {
-          "summaryBar": "Barra de resumen"
+          "summaryBar": "Barra de resumen",
+          "visualAssetDesc": "Visual Asset Desc"
         },
         "visualPath": {
           "summaryBar": "Barra de resumen"
@@ -977,14 +1011,18 @@
         "saleStudio": {
           "label": "Estudio de ventas",
           "desc": "Promocione sus productos entre los clientes con agentes de IA."
+        },
+        "liveStream": {
+          "label": "Label",
+          "desc": "Description for live stream"
         }
       },
       "clonePrompt": "Quiero crear un video similar a este estilo: [Pegue URL aquí]. Requisitos:",
       "suggestions": {
         "marketing": "Cree un anuncio de marketing de 15 s para [Nombre del producto]",
         "script": "Escribir un guión de cortometraje sobre [Tema]",
-        "convert": "Convertir [@file] en un vídeo",
-        "clone": "Clonar estilo de [@reference]",
+        "convert": "Convertir [{'@'}file] en un vídeo",
+        "clone": "Clonar estilo de [{'@'}reference]",
         "presentation": "Presentación de MC para datos de informes."
       },
       "toasts": {
@@ -997,7 +1035,8 @@
       "projectPrefix": "Prefijo del proyecto",
       "characterRoster": "Personajes",
       "characterRosterDesc": "Tus personajes y personas",
-      "lockAndContinue": "Aprobar y continuar"
+      "lockAndContinue": "Aprobar y continuar",
+      "aiThinking": "AI Thinking"
     },
     "detail": {
       "duration": "Duración",
@@ -1107,7 +1146,23 @@
         "renderFailed": "No se pudo generar el video. Por favor inténtalo de nuevo.",
         "videoCaptured": "¡Video capturado con éxito!",
         "saving": "Ahorro...",
-        "hooksGenerated": "¡El título y la descripción del video se generaron exitosamente!"
+        "hooksGenerated": "¡El título y la descripción del video se generaron exitosamente!",
+        "saveFailed": "Failed to save",
+        "loadFailed": "Failed to load",
+        "voicePreviewFailed": "Failed to voice preview",
+        "scriptFailed": "Failed to script",
+        "renderAborted": "Render Aborted",
+        "saveSuccess": "Save successfully successfully",
+        "syndicationStarted": "Syndication Started",
+        "syndicationSuccess": "Syndication successfully successfully",
+        "syndicationFailed": "Failed to syndication",
+        "hookApplied": "Hook Applied",
+        "avatarUploaded": "Avatar Uploaded",
+        "voiceTrainingStarted": "Voice Training Started",
+        "enterScript": "Enter Script",
+        "videoGenerated": "Video Generated",
+        "generationFailed": "Failed to generation",
+        "videoSaved": "Video Saved"
       },
       "defaultScriptFallback": "¡Hola a todos! Estoy encantado de estar aquí ayudándote a crear contenido increíble con avatares de IA. Esta tecnología de renderizado del lado del cliente garantiza alta calidad y baja latencia para sus producciones.",
       "defaultTitlePrefix": "El título de tu vídeo",
@@ -1187,9 +1242,27 @@
         "selectPlatform": "Selecciona tu plataforma de streaming",
         "peakTimeSuccess": "Se ha establecido la hora pico {time}",
         "peakTimeFailed": "No se pudo alcanzar la hora pico",
-        "hooksFailed": "No se pudo generar el título y la descripción de las sugerencias"
+        "hooksFailed": "No se pudo generar el título y la descripción de las sugerencias",
+        "hooksSuccess": "Hooks successfully successfully"
       }
-    }
+    },
+    "studio": {
+      "toasts": {
+        "saveSuccess": "Save successfully successfully",
+        "saveFailed": "Failed to save",
+        "exporting": "Exporting",
+        "exportSuccess": "Export successfully successfully",
+        "exportFailed": "Failed to export"
+      },
+      "untitled": "Untitled"
+    },
+    "publish": {
+      "viewers": "Viewers",
+      "toasts": {
+        "vodSaving": "Vod Saving"
+      }
+    },
+    "momentImported": "Moment imported to Editor!"
   },
   "studio": {
     "quests": {
@@ -1202,7 +1275,10 @@
         "hype_train": "Hype Train: ¡Alcanza {target} mensajes/min!",
         "sentiment_surge": "Aumento de positividad: envía {target} vibraciones positivas.",
         "gift_goal": "Objetivo del regalo: ¡Recoger {target} tokens de apoyo!"
-      }
+      },
+      "label": "Label",
+      "timer": "Timer",
+      "progress": "Progress"
     },
     "audio": {
       "director": "Director de audio neuronal",
@@ -1284,7 +1360,51 @@
       "contextApplied": "Director de IA: contexto aplicado",
       "selectPlatform": "Selecciona tu plataforma de streaming",
       "aiDealTriggered": "Oferta activada",
-      "aiShowcase": "Director de IA: presentación del producto {name}"
+      "aiShowcase": "Director de IA: presentación del producto {name}",
+      "metadataSynced": "Metadata synced across platforms",
+      "questStarted": "Quest Started",
+      "backgroundUpdated": "Background Updated",
+      "screenShareStopped": "Screen Share Stopped",
+      "sharingScreen": "Sharing Screen",
+      "agentLeftSwarm": "Agent Left Swarm",
+      "agentScored": "Agent Scored",
+      "agentJoinedSwarm": "Agent Joined Swarm",
+      "agentConnectionFailed": "Failed to agent connection",
+      "aiProductionMode": "AI Production Mode",
+      "aiDirectorFX": "AI Director Fx",
+      "aiSponsorshipActive": "AI Sponsorship Active",
+      "cameraFocusAdjusted": "Camera Focus Adjusted",
+      "shoutout": "Shoutout",
+      "agentArchived": "Agent Archived",
+      "socialBondUpdated": "Social Bond Updated",
+      "questMaster": "Quest Master",
+      "speakerFocusShift": "Speaker Focus Shift",
+      "hypeEvent": "Hype Event",
+      "studioAtmosphere": "Studio Atmosphere",
+      "syndicatingHighlights": "Syndicating Highlights",
+      "aiViralMetadata": "AI Viral Metadata",
+      "aiAssemblingHighlights": "AI Assembling Highlights",
+      "generatingBackground": "Generating Background",
+      "backgroundFailed": "Failed to background",
+      "agentStoppedPerformance": "Agent Stopped Performance",
+      "preparingToSing": "Preparing To Sing",
+      "nowSinging": "No w singing found",
+      "failedToSing": "Failed To Sing",
+      "agentRoleReset": "Agent Role Reset",
+      "promotedToGM": "Promoted To Gm",
+      "musicSynced": "Music Synced",
+      "selectSongFirst": "Select Song First",
+      "emotionSet": "Emotion Set",
+      "productShowcase": "Product Showcase",
+      "visionEnabled": "Vision Enabled",
+      "visionDisabled": "Vision Disabled",
+      "aiViralMomentDetected": "AI Viral Moment Detected",
+      "aiAutoReframing": "AI Auto Reframing",
+      "syncingMetadata": "Syncing metadata with platforms...",
+      "recordingStarted": "Recording Started",
+      "pollStarted": "Poll Started",
+      "questionFeatured": "Question Featured",
+      "stopLiveFirst": "Stop Live First"
     },
     "title": "Transmisión sin título",
     "filters": {
@@ -1330,7 +1450,25 @@
       "likes": "Gustos",
       "shares": "Acciones",
       "sendMessagePlaceholder": "Enviar mensaje Marcador de posición",
-      "simulateInteraction": "Simular interacción"
+      "simulateInteraction": "Simular interacción",
+      "livePoll": "Live Poll",
+      "pollLeader": "Poll Leader",
+      "votes": "Votes",
+      "collectingVotes": "Collecting Votes",
+      "createPoll": "Create Poll",
+      "pollQuestion": "Poll Question",
+      "pollQuestionPlaceholder": "Poll Question Placeholder",
+      "pollOptions": "Poll Options",
+      "addOption": "Add Option",
+      "optionLabel": "Option Label",
+      "launchPoll": "Launch Poll",
+      "toast": {
+        "repliedAs": "Replied As",
+        "replyFailed": "Failed to reply",
+        "giftFailed": "Failed to gift",
+        "pollTriggered": "Poll Triggered",
+        "pollFailed": "Failed to poll"
+      }
     },
     "videoEditor": {
       "export": {
@@ -1523,7 +1661,8 @@
       "economy": "Economía",
       "chatVel": "Chat Vel",
       "hypeMeter": "Medidor de exageración",
-      "liveFeed": "Transmisión en vivo"
+      "liveFeed": "Transmisión en vivo",
+      "likes": "Likes"
     },
     "calendar": {
       "weekDays": {
@@ -1644,7 +1783,26 @@
           "zoom": "Zoom",
           "custom": "Costumbre",
           "wipe": "Limpiar"
-        }
+        },
+        "color": "Color",
+        "sceneManager": "Scene Manager",
+        "sceneManagerDesc": "Scene Manager Desc",
+        "availableScenes": "Available Scenes",
+        "customScenes": "Custom Scenes",
+        "createCustomScene": "Create Custom Scene",
+        "pipSettings": "Pip Settings",
+        "frameShape": "Frame Shape",
+        "cornerRadius": "Corner Radius",
+        "border": "Border",
+        "width": "Width",
+        "shadowGlow": "Shadow Glow",
+        "blurForce": "Blur Force",
+        "offsetX": "Offset X",
+        "offsetY": "Offset Y",
+        "switcherCore": "Switcher Core",
+        "multiCamLayout": "Multi Cam Layout",
+        "aiSmartSwitching": "AI Smart Switching",
+        "smartSwitchDesc": "Smart Switch Desc"
       },
       "guest": {
         "inviteGuest": "Invitar invitado",
@@ -1685,14 +1843,18 @@
         "rejected": "Rechazado",
         "waitingStatus": "Invitado esperando",
         "guestApproved": "Aprobado por invitados",
-        "guestRejected": "Invitado rechazado"
+        "guestRejected": "Invitado rechazado",
+        "invitationRejected": "Invitation Rejected"
       },
       "graphics": {
         "hostIdentity": "Nombre de host",
         "primaryName": "Nombre principal de transmisión",
         "placeholders": {
           "primaryName": "p.ej. AntStudio primer",
-          "subtitleRole": "p.ej. Presentador de noticias de IA"
+          "subtitleRole": "p.ej. Presentador de noticias de IA",
+          "specialist": "Specialist",
+          "tickerDefault": "Ticker Default",
+          "sponsorName": "Sponsor Name"
         },
         "subtitleRole": "Subtítulo / Función",
         "brandColor": "Color de la marca",
@@ -1716,7 +1878,16 @@
           "bottom-left": "Abajo a la izquierda",
           "bottom-right": "Abajo a la derecha"
         },
-        "statusMessage": "Mensaje de estado"
+        "statusMessage": "Mensaje de estado",
+        "guestIdentities": "Guest Identities",
+        "tickerText": "Ticker Text",
+        "uploadLogo": "Upload Logo",
+        "sponsorName": "Sponsor Name",
+        "selectImageError": "Failed to select image",
+        "imageSizeError": "Failed to image size",
+        "uploadSuccess": "Upload successfully successfully",
+        "uploadFailed": "Failed to upload",
+        "logoRemoved": "Logo Removed"
       },
       "linguistic": {
         "globalSync": "Sincronización global",
@@ -1726,7 +1897,10 @@
         "voiceCloneRelay": "Retransmisión de clonación de voz",
         "canvasSubtitles": "Subtítulos del lienzo",
         "burnInLiveText": "Grabar en texto en vivo",
-        "canvasSubtitlesDesc": "El texto transcrito se mostrará directamente en el lienzo de transmisión para los espectadores."
+        "canvasSubtitlesDesc": "El texto transcrito se mostrará directamente en el lienzo de transmisión para los espectadores.",
+        "cloningInProgress": "Cloning In Progress",
+        "liveTranscript": "Live Transcript",
+        "awaitingVoiceProcessing": "Awaiting Voice Processing"
       },
       "economy": {
         "storefrontSync": "Sincronización de escaparate",
@@ -1740,10 +1914,39 @@
         "flashSaleActive": "Venta flash activa",
         "endingIn": "Terminando en",
         "wallet": {
-          "balance": "Balance"
+          "balance": "Balance",
+          "myWallet": "My Wallet",
+          "topUp": "Top Up"
         },
         "giftCatalog": "Catálogo de regalos",
-        "powerups": "Potenciadores"
+        "powerups": "Potenciadores",
+        "insufficientCredits": "Insufficient Credits",
+        "title": "Economy",
+        "sentGift": "Sent Gift",
+        "effectDescription": "Effect Description",
+        "purchaseFailed": "Failed to purchase",
+        "creditsAdded": "Credits Added",
+        "addCreditsFailed": "Failed to add credits",
+        "inventoryDesc": "Inventory Desc",
+        "manageAiAssets": "AI Assets",
+        "syncStore": "Sync Store",
+        "featuredInventory": "Featured Inventory",
+        "readyToShowcase": "Ready To Showcase",
+        "inStock": "In Stock",
+        "clicks": "Clicks",
+        "noProducts": "No products found",
+        "flashSaleEngine": "Flash Sale Engine",
+        "aiDrivenFlashSale": "AI Driven Flash Sale",
+        "flashSaleDesc": "Flash Sale Desc",
+        "stopSale": "Stop Sale",
+        "triggerSale": "Trigger Sale",
+        "connectStore": "Connect Store",
+        "showcasingName": "Showcasing Name",
+        "hotDeal": "Hot Deal",
+        "flashSaleTriggered": "Flash Sale Triggered",
+        "flashSaleEnded": "Flash Sale Ended",
+        "credits": "Credits",
+        "simulatedTopUp": "Simulated Top Up"
       },
       "vibe": {
         "script": {
@@ -1789,7 +1992,9 @@
         "scriptReady": "Guión listo: {title}",
         "startProduction": "Iniciar producción",
         "generateScriptSuccess": "¡Secuencia de comandos generada exitosamente!",
-        "showrunnerActive": "¡ShowRunner activo! Siéntate y relájate."
+        "showrunnerActive": "¡ShowRunner activo! Siéntate y relájate.",
+        "generateScriptFailed": "Failed to generate script",
+        "startShowFailed": "Failed to start show"
       },
       "engagement": {
         "livePolls": "Encuestas en vivo",
@@ -1801,7 +2006,48 @@
         "question": "Pregunta",
         "questionPlaceholder": "Introduce tu pregunta",
         "options": "Opciones",
-        "launchPoll": "Lanzar encuesta"
+        "launchPoll": "Lanzar encuesta",
+        "optionPlaceholder": "Option Placeholder"
+      },
+      "analytics": {
+        "title": "Analytics",
+        "subtitle": "Subtitle",
+        "current": "Current",
+        "liveNow": "Live Now",
+        "peak": "Peak",
+        "maxAudience": "Max Audience",
+        "totalLikes": "Total Likes",
+        "growthVsLast": "Growth Vs Last",
+        "technicalPulse": "Technical Pulse",
+        "connectionStatus": "Connection Status",
+        "bitrate": "Bitrate",
+        "latency": "Latency",
+        "frameRate": "Frame Rate",
+        "packetLoss": "Packet Loss",
+        "engagementVelocity": "Engagement Velocity",
+        "chatActivity": "Chat Activity",
+        "msgsPerMin": "Msgs Per Min",
+        "shareVelocity": "Share Velocity",
+        "sharesCount": "Shares Count",
+        "platformDistribution": "Platform Distribution",
+        "viewersCount": "Viewers Count",
+        "positiveSentiment": "Positive Sentiment",
+        "likes": "Likes",
+        "aiIntelligence": "AI Intelligence",
+        "updateFrequency": "Update Frequency"
+      },
+      "filters": {
+        "smoothing": "Smoothing",
+        "brighten": "Brighten",
+        "denoise": "Denoise",
+        "slimming": "Slimming",
+        "eyeEnlarge": "Eye Enlarge",
+        "lensProfiles": "Lens Profiles",
+        "environmentSync": "Environment Sync",
+        "uploadEnvironment": "Upload Environment",
+        "chromaKeyEngine": "Chroma Key Engine",
+        "similarity": "Similarity",
+        "smoothness": "Smoothness"
       }
     },
     "tabs": {
@@ -1882,8 +2128,46 @@
         "filters": "Filtros",
         "branding": "Herrada",
         "overlays": "Superposiciones",
-        "accessibility": "Accesibilidad"
-      }
+        "accessibility": "Accesibilidad",
+        "stream": "Stream",
+        "beauty": "Beauty"
+      },
+      "stream": {
+        "quality": "Quality",
+        "recommendation": "Recommendation"
+      },
+      "beauty": {
+        "smoothing": "Smoothing",
+        "brightness": "Brightness",
+        "sharpen": "Sharpen",
+        "denoise": "Denoise",
+        "redEye": "Red Eye",
+        "redEyeDesc": "Red Eye Desc"
+      },
+      "background": {
+        "standard": "Standard",
+        "standardDesc": "Standard Desc",
+        "blur": "Blur",
+        "blurDesc": "Blur Desc",
+        "virtual": "Virtual",
+        "virtualDesc": "Virtual Desc",
+        "blurIntensity": "Blur Intensity",
+        "stageAssets": "Stage Assets"
+      },
+      "actions": {
+        "reset": "Reset",
+        "save": "Save"
+      },
+      "skinSmoothing": "Skin Smoothing",
+      "faceBrightening": "Face Brightening",
+      "sharpen": "Sharpen",
+      "denoise": "Denoise",
+      "intensity": "Intensity",
+      "assets": "Assets",
+      "keyColor": "Key Color",
+      "similarity": "Similarity",
+      "smoothness": "Smoothness",
+      "tickerContent": "Ticker Content"
     },
     "vibes": {
       "technoChill": "tecno relajado"
@@ -1896,7 +2180,15 @@
           "share": "Compartir",
           "download": "Descargar",
           "delete": "Borrar"
-        }
+        },
+        "saved": "Saved",
+        "save": "Save",
+        "publish": "Publish",
+        "loadingAccounts": "Loading Accounts",
+        "noAccounts": "No accounts found",
+        "connectAccounts": "Connect Accounts",
+        "videoTitle": "Video Title",
+        "publishSelected": "Publish Selected"
       }
     },
     "swarm": {
@@ -2044,7 +2336,8 @@
       "step4Tip": "Cambie esto para acceder a la personalización de voz profesional.",
       "generateTitle": "¡Genera tu vídeo!",
       "generateDesc": "¡Listo! Haga clic en \"Generar video\" y nuestra IA creará su video de avatar profesional en minutos.",
-      "generateTip": "Recibirás una notificación cuando tu video esté listo."
+      "generateTip": "Recibirás una notificación cuando tu video esté listo.",
+      "stageControlsDesc": "Control your microphone, camera, and streaming status from here. Start/stop recording, go live, or capture highlights with one click."
     },
     "virtual": {
       "aiSuffix": "AI"
@@ -2060,7 +2353,8 @@
       "vibe": "Onda",
       "ducking": "Agachado",
       "standby": "Apoyar",
-      "masterVol": "Volumen maestro"
+      "masterVol": "Volumen maestro",
+      "engaged": "Engaged"
     },
     "contextSelector": {
       "greeting": "¿Para qué contexto estás transmitiendo?",
@@ -2112,7 +2406,58 @@
     },
     "dashboard": {
       "directiveTitle": "Directivas"
-    }
+    },
+    "errors": {
+      "productNotFound": "Product Not Found"
+    },
+    "audience": {
+      "presenceGrid": "Presence Grid",
+      "vipsPresent": "Vips Present"
+    },
+    "directorNotes": {
+      "title": "Director Notes",
+      "rejected": "Rejected"
+    },
+    "overlays": {
+      "aiProduction": {
+        "title": "AI Production",
+        "rendering": "Rendering"
+      }
+    },
+    "synthesis": {
+      "title": "Synthesis",
+      "subtitle": "Subtitle",
+      "loading": "Loading",
+      "commercialSuccess": "Commercial successfully successfully",
+      "totalRevenue": "Total Revenue",
+      "orders": "Orders",
+      "conversion": "Conversion",
+      "units": "Units",
+      "growthStrategies": "Growth Strategies",
+      "viralClipHub": "Viral Clip Hub",
+      "copyHook": "Copy Hook",
+      "finalizeExport": "Finalize Export",
+      "toast": {
+        "copied": "Copied"
+      }
+    },
+    "layouts": {
+      "adminTitle": "AntStudio Admin",
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "payments": "Payments",
+      "systemSettings": "System Settings",
+      "backToSite": "Back to Site",
+      "adminControlPanel": "Admin Control Panel"
+    },
+    "logs": {
+      "cameraSwitch": "Camera Switch"
+    },
+    "autoEmotion": {
+      "enabled": "Auto-Emotion Enabled",
+      "disabled": "Auto-Emotion Disabled"
+    },
+    "platformPreselected": "Platform Preselected"
   },
   "subscription": {
     "title": "Suscripción y facturación",
@@ -2187,7 +2532,9 @@
           "paypal": {
             "title": "PayPal",
             "desc": "Pago seguro con PayPal"
-          }
+          },
+          "redirecting": "Redirecting",
+          "title": "Payment"
         },
         "save": "Venta de descuento 20%",
         "features": {
@@ -2209,7 +2556,9 @@
     "save": "Guardar perfil",
     "cancel": "Cancelar",
     "plan": "Plan",
-    "upgrade": "Mejora"
+    "upgrade": "Mejora",
+    "uploadSuccess": "Upload successfully successfully",
+    "uploadFailed": "Failed to upload"
   },
   "account": {
     "title": "Perfil de usuario",
@@ -2326,6 +2675,9 @@
         "load": "Carga del sistema",
         "cpuFulfillment": "Cumplimiento de CPU",
         "manage": "Administrar infraestructura"
+      },
+      "toasts": {
+        "denied": "Denied"
       }
     },
     "users": {
@@ -2360,7 +2712,9 @@
       "toasts": {
         "loadFailed": "No se pudieron cargar los usuarios",
         "statusUpdated": "Estado de usuario actualizado a {status}",
-        "updateFailed": "No se pudo actualizar el estado del usuario"
+        "updateFailed": "No se pudo actualizar el estado del usuario",
+        "userDeleted": "User Deleted",
+        "deleteFailed": "Failed to delete"
       },
       "deleteConfirm": {
         "message": "¿Estás seguro de que deseas eliminar este usuario?",
@@ -2454,7 +2808,8 @@
       "terminate": "Borrar",
       "confirmTerminate": "¿Está seguro de que desea cancelar la licencia {key}?",
       "toasts": {
-        "downlinkFailure": "No se pudo establecer el enlace descendente con el registro de la flota"
+        "downlinkFailure": "No se pudo establecer el enlace descendente con el registro de la flota",
+        "terminationSequence": "Termination Sequence"
       }
     },
     "financials": {
@@ -2498,7 +2853,10 @@
       "stability": "Estabilidad de la malla",
       "statusNominal": "Nominal",
       "noNodes": "No hay nodos de transmisión activos",
-      "noNodesDesc": "Implementar una nueva entidad de proyección en vivo desde el Estudio central para comenzar a transmitir."
+      "noNodesDesc": "Implementar una nueva entidad de proyección en vivo desde el Estudio central para comenzar a transmitir.",
+      "toasts": {
+        "pulseFailed": "Failed to pulse"
+      }
     },
     "infra": {
       "title": "Salud de la infraestructura",
@@ -2519,7 +2877,12 @@
       "liveHeartbeat": "Latido del corazón en vivo",
       "pulse": "Legumbres",
       "loadLabel": "Cargar etiqueta",
-      "waitingHeartbeat": "Esperando latido del corazón"
+      "waitingHeartbeat": "Esperando latido del corazón",
+      "toasts": {
+        "fetchFailed": "Failed to fetch",
+        "failoverInitiated": "Failover Initiated",
+        "integrityVerified": "Integrity Verified"
+      }
     },
     "monitoring": {
       "title": "Estación de monitoreo",
@@ -2559,7 +2922,16 @@
       "records": "Archivos",
       "noRecords": "Sin registros",
       "noClientErrors": "Sin errores de cliente",
-      "comingSoon": "Muy pronto"
+      "comingSoon": "Muy pronto",
+      "waitingEvents": "Waiting Events",
+      "searchKeywords": "Search Keywords",
+      "toasts": {
+        "loadLogsFailed": "Failed to load logs",
+        "exportSuccess": "Export successfully successfully",
+        "exportFailed": "Failed to export",
+        "saveSettingsFailed": "Failed to save settings"
+      },
+      "confirmClearLogs": "Confirm Clear Logs"
     },
     "logs": {
       "title": "Telemetría sin procesar",
@@ -2676,7 +3048,12 @@
         "syncCookiesFailed": "Error de sincronización: {error}",
         "applyConfig": "Aplicar configuración",
         "abort": "Cancelar",
-        "generateProtocol": "Generar protocolo"
+        "generateProtocol": "Generar protocolo",
+        "docRequired": "Doc Required",
+        "aiTemplateSuccess": "AI Template successfully successfully",
+        "aiTemplateFailed": "Failed to ai template",
+        "configStaged": "Config Staged",
+        "invalidHeaders": "Invalid Headers"
       },
       "ai": {
         "captchaService": "Red de resolución de captcha",
@@ -2731,7 +3108,10 @@
           "voice": "Voz",
           "agent": "Agente"
         },
-        "protocol": "Protocolo"
+        "protocol": "Protocolo",
+        "pasteKeys": "Paste Keys",
+        "protocolDesc": "Protocol Desc",
+        "docUrlPlaceholder": "Doc URL Placeholder"
       },
       "table": {
         "identity": "Identidad",
@@ -2874,6 +3254,10 @@
           "appLogo": "Sube el logotipo de tu aplicación. p.ej. AntStudio.png",
           "favicon": "Sube tu favicon. p.ej. AntStudio.ico",
           "logo": "Sube tu logotipo. p.ej. AntStudio.png"
+        },
+        "toasts": {
+          "uploadSuccess": "Upload successfully successfully",
+          "uploadFailed": "Failed to upload"
         }
       }
     },
@@ -2966,7 +3350,7 @@
       "provision": {
         "title": "Cuenta de provisión",
         "workEmail": "Dirección de correo electrónico del trabajo",
-        "placeholderEmail": "neo@matrix.io",
+        "placeholderEmail": "neo{'@'}matrix.io",
         "firstName": "Nombre de pila",
         "lastName": "Apellido",
         "accessLevel": "Autorización de nivel de acceso",
@@ -3051,7 +3435,19 @@
       "toast": {
         "enabled": "Activado",
         "disabled": "Desactivado",
-        "stRequired": "Se requiere token de sesión"
+        "stRequired": "Se requiere token de sesión",
+        "oauthFailed": "Failed to oauth",
+        "toggleFailed": "Failed to toggle",
+        "enterProjectId": "Enter Project ID",
+        "projectIdUpdated": "Project ID Updated",
+        "projectIdUpdateFailed": "Failed to project id update",
+        "loadFailed": "Failed to load",
+        "enterEmail": "Enter Email",
+        "integrating11Labs": "Integrating11 Labs",
+        "syncing": "Syncing",
+        "syncFailed": "Failed to sync",
+        "removeConfirm": "Remove Confirm",
+        "removeFailed": "Failed to remove"
       },
       "updateToken": "Actualizar ficha",
       "tokenExpiredHelp": "¿Cómo obtener el token de sesión de Google Flow?"
@@ -3115,7 +3511,8 @@
       "deleteConfirm": {
         "title": "Eliminar licencia",
         "confirm": "Confirmar",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "message": "Message"
       }
     },
     "release": {
@@ -3353,30 +3750,37 @@
         "options": {
           "aiVideo": {
             "label": "Generador de Guion a Video IA",
-            "desc": "Genere guiones gráficos completos, voces IA, música y subtítulos animados a partir de texto."
+            "desc": "Genere guiones gráficos completos, voces IA, música y subtítulos animados a partir de texto.",
+            "button": "Launch AI Engine"
           },
           "aiAvatar": {
             "label": "Avatares Digitales y Personas IA",
-            "desc": "Cree y personalice avatares 2D, modelos 3D VRM y clips de video Aidol con síntesis de voz Gemini."
+            "desc": "Cree y personalice avatares 2D, modelos 3D VRM y clips de video Aidol con síntesis de voz Gemini.",
+            "button": "Create AI Personas"
           },
           "productAds": {
             "label": "Asistente de Anuncios de Productos",
-            "desc": "Pegue la URL de cualquier producto para generar anuncios de video de alta conversión automáticamente."
+            "desc": "Pegue la URL de cualquier producto para generar anuncios de video de alta conversión automáticamente.",
+            "button": "Convert URL to Ad"
           },
           "saleStudio": {
             "label": "Studio de Ventas Autónomo 24/7",
-            "desc": "Transmita en vivo 24/7 con anfitriones IA, bucles de ofertas FSM, preguntas en vivo y códigos QR."
+            "desc": "Transmita en vivo 24/7 con anfitriones IA, bucles de ofertas FSM, preguntas en vivo y códigos QR.",
+            "button": "Open Sale Studio"
           },
           "record": {
             "label": "Grabador de Pantalla y Cámara",
-            "desc": "Capture cámara web, pantallas de escritorio, presentaciones y audio de estudio multipista."
+            "desc": "Capture cámara web, pantallas de escritorio, presentaciones y audio de estudio multipista.",
+            "button": "Start Recording"
           },
           "blank": {
             "label": "Studio de Línea de Tiempo Multipista",
-            "desc": "Editor de video completo con líneas de tiempo multipista de video/audio, transiciones y capas."
+            "desc": "Editor de video completo con líneas de tiempo multipista de video/audio, transiciones y capas.",
+            "button": "Open Timeline Studio"
           }
         }
-      }
+      },
+      "headline": "6 Specialized AI Video Production Workflows"
     },
     "metrics": {
       "uptime": "Disponibilidad del Stream",
@@ -3445,6 +3849,56 @@
         "conduct": {
           "title": "4. Conducta del usuario",
           "content": "Acepta no utilizar nuestra plataforma para generar o distribuir ningún contenido que sea ilegal, dañino o vulnere los derechos de otros."
+        }
+      }
+    },
+    "home": {
+      "hero": {
+        "tagline": "Tagline",
+        "start": "Start"
+      },
+      "intro": {
+        "title": "Intro",
+        "desc": "Description for intro"
+      },
+      "partners": {
+        "title": "Partners",
+        "collab": "Collab",
+        "desc": "Description for partners"
+      },
+      "gallery": {
+        "watchFilms": "Watch Films",
+        "zooBreak": "Zoo Break",
+        "microverse": "Microverse",
+        "windowSeat": "Window Seat",
+        "cottonSpace": "Cotton Space",
+        "giraffeRun": "Giraffe Run",
+        "sandWaves": "Sand Waves"
+      },
+      "pricing": {
+        "title": "Pricing",
+        "subtitle": "Subtitle",
+        "keepSimple": "Keep Simple",
+        "everythingFree": "Everything Free",
+        "creditsMonthly": "Credits Monthly",
+        "prioritySupport": "Priority Support",
+        "full4k": "Full4k",
+        "commercialRights": "Commercial Rights",
+        "getStarted": "Get Started"
+      },
+      "footer": {
+        "privacy": "Privacy",
+        "terms": "Terms"
+      },
+      "features": {
+        "consistent": {
+          "name": "Name"
+        },
+        "seamless": {
+          "name": "Name"
+        },
+        "cinematic": {
+          "name": "Name"
         }
       }
     }
@@ -3654,7 +4108,8 @@
         "visemeSynthesisStarted": "Generando hoja de sprites viseme...",
         "visemeSynthesisFailed": "No se pudo generar la hoja de sprites de viseme",
         "visemeSynthesisComplete": "Hoja de sprites de Viseme generada con éxito",
-        "voiceConfigMissing": "Selecciona primero tu voz de influencer"
+        "voiceConfigMissing": "Selecciona primero tu voz de influencer",
+        "videoSilentGenerated": "Video Silent Generated"
       },
       "emotions": {
         "happy": "Feliz",
@@ -3934,7 +4389,8 @@
         },
         "toasts": {
           "generateFailed": "La síntesis de IA falló.",
-          "generateSuccess": "Síntesis de IA con éxito."
+          "generateSuccess": "Síntesis de IA con éxito.",
+          "musicSynced": "Music Synced"
         },
         "skinType": "Tipo de piel",
         "hairType": "Tipo de cabello",
@@ -4025,7 +4481,9 @@
       "target": "Objetivo",
       "languages": "Idiomas",
       "lyricsLabel": "Etiqueta de letras",
-      "lyricsLanguages": "Letras Idiomas"
+      "lyricsLanguages": "Letras Idiomas",
+      "searchLanguage": "Search Language",
+      "lyricsLanguage": "Lyrics Language"
     },
     "voiceLibrary": {
       "title": "Biblioteca de voz",
@@ -4333,7 +4791,8 @@
       "errors": {
         "unsupportedUrl": "URL no admitida",
         "failed": "Fallido"
-      }
+      },
+      "connectingTo": "Connecting To"
     },
     "previewDialog": {
       "defaultAuthor": "Autor predeterminado",
@@ -4364,8 +4823,12 @@
         "desc": "Descripción",
         "priceLabel": "Etiqueta de precio",
         "feeLabel": "Etiqueta de tarifa",
-        "securityNote": "Nota de seguridad"
+        "securityNote": "Nota de seguridad",
+        "title": "Purchase"
       }
+    },
+    "toasts": {
+      "purchaseSuccess": "Purchase successfully successfully"
     }
   },
   "merchant": {
@@ -4621,7 +5084,8 @@
       "uploadSuccess": "Archivos cargados exitosamente.",
       "uploadFailed": "No se pudieron cargar los archivos."
     },
-    "confirmDelete": "¿Está seguro de que desea eliminar este archivo?"
+    "confirmDelete": "¿Está seguro de que desea eliminar este archivo?",
+    "deleteSuccess": "Delete successfully successfully"
   },
   "auth": {
     "login": {
@@ -4738,7 +5202,14 @@
       "current": "Actual",
       "new": "Nuevo",
       "confirm": "Confirmar",
-      "failed": "Fallido"
+      "failed": "Fallido",
+      "currentPlaceholder": "Current Placeholder",
+      "newPlaceholder": "New Placeholder",
+      "confirmPlaceholder": "Confirm Placeholder",
+      "fillAll": "Fill All",
+      "mismatch": "Mismatch",
+      "tooShort": "Too Short",
+      "success": "Success"
     }
   },
   "sidebar": {
@@ -4839,7 +5310,9 @@
       "activeEnvironment": "Entorno activo",
       "autoCamera": "Cámara automática",
       "status": {
-        "prod": "Pinchar"
+        "prod": "Pinchar",
+        "autoProducing": "Auto Producing",
+        "vfxActive": "Vfx Active"
       },
       "influencerLink": "Enlace de influencia",
       "activeVfx": "Efectos visuales activos",
@@ -4869,7 +5342,11 @@
       "reply": "Responder",
       "replyPlaceholder": "Marcador de posición de respuesta",
       "sending": "Envío",
-      "postReply": "Publicar respuesta"
+      "postReply": "Publicar respuesta",
+      "aiContext": {
+        "videoTitle": "Video Title",
+        "tone": "Tone"
+      }
     }
   },
   "support": {
@@ -4893,7 +5370,11 @@
       "dataAuthDesc": "Descripción de autenticación de datos",
       "cancel": "Cancelar",
       "transmitting": "Transmitiendo",
-      "submit": "Entregar"
+      "submit": "Entregar",
+      "subjectPlaceholder": "Subject Placeholder",
+      "sitrepPlaceholder": "Sitrep Placeholder",
+      "compiling": "Compiling",
+      "attached": "Attached"
     }
   },
   "pricing": {
@@ -4903,7 +5384,9 @@
     "perMonth": "Por mes",
     "features": {
       "prioritySupport": "Soporte prioritario",
-      "standardSupport": "Soporte estándar"
+      "standardSupport": "Soporte estándar",
+      "videosPerMonth": "Videos Per Month",
+      "storageLimit": "Storage Limit"
     },
     "getStarted": "Empezar",
     "subscribeNow": "Suscríbete ahora",
@@ -4911,7 +5394,10 @@
       "title": "Preguntas frecuentes",
       "a1": "¿Qué es AntStudio?",
       "a2": "¿Cómo creo un proyecto?",
-      "a3": "¿Cómo agrego personas de IA a mi proyecto?"
+      "a3": "¿Cómo agrego personas de IA a mi proyecto?",
+      "q1": "Q1",
+      "q2": "Q2",
+      "q3": "Q3"
     },
     "plans": {
       "free": "Gratis",
@@ -4935,13 +5421,15 @@
       "title": "Producto no encontrado",
       "desc": "El producto que buscas no existe.",
       "backHome": "De vuelta a casa"
-    }
+    },
+    "poweredBy": "Powered By"
   },
   "affiliate": {
     "title": "Programa de afiliados",
     "join": {
       "desc": "Únase a nuestro programa de afiliados y gane comisiones por cada cliente que refiera a AntStudio.",
-      "button": "Únete ahora"
+      "button": "Únete ahora",
+      "title": "Join"
     },
     "engine": {
       "title": "Motor de afiliados",
@@ -4949,7 +5437,8 @@
       "copy": "Copiar",
       "rate": "Tasa",
       "recurring": "Periódico",
-      "cookie": "Galleta"
+      "cookie": "Galleta",
+      "days": "Days"
     },
     "commissions": {
       "title": "Comisiones",
@@ -4967,7 +5456,14 @@
     },
     "tips": {
       "title": "Consejos",
-      "tip1": "Consejo1"
+      "tip1": "Consejo1",
+      "tip2": "Tip2"
+    },
+    "subtitle": "Subtitle",
+    "partnerBadge": "Partner Badge",
+    "toasts": {
+      "copySuccess": "Copy successfully successfully",
+      "noBalance": "No balance found"
     }
   },
   "analytics": {
@@ -4981,7 +5477,8 @@
       "avgWatchTime": "Tiempo promedio de visualización",
       "zeroTime": "Tiempo Cero",
       "stable": "Estable",
-      "commerceRevenue": "Ingresos del comercio"
+      "commerceRevenue": "Ingresos del comercio",
+      "vsAvg": "Vs Avg"
     },
     "heatmap": {
       "title": "Mapa de calor",
@@ -5008,12 +5505,16 @@
       "empty": "Vacío",
       "dialog": {
         "abort": "Cancelar",
-        "initialize": "Inicializar"
+        "initialize": "Inicializar",
+        "title": "Dialog",
+        "label": "Label",
+        "placeholder": "Placeholder"
       },
       "success": {
         "warning": "Advertencia",
         "copy": "Copiar",
-        "stored": "almacenado"
+        "stored": "almacenado",
+        "title": "Success"
       }
     },
     "webhooks": {
@@ -5023,17 +5524,29 @@
       "empty": "Vacío",
       "dialog": {
         "cancel": "Cancelar",
-        "establish": "Establecer"
+        "establish": "Establecer",
+        "title": "Dialog",
+        "urlLabel": "URL Label",
+        "urlPlaceholder": "URL Placeholder",
+        "eventsLabel": "Events Label"
       }
     },
     "headless": {
       "title": "Sin cabeza",
       "auth": "autenticación",
-      "verify": "Verificar"
+      "verify": "Verificar",
+      "verifyDesc": "Verify Desc"
     },
     "toasts": {
       "genFailed": "Generación fallida",
-      "webhookFailed": "Error en el webhook"
+      "webhookFailed": "Error en el webhook",
+      "syncFailed": "Failed to sync",
+      "revoked": "Revoked",
+      "revokeFailed": "Failed to revoke",
+      "webhookEstablished": "Webhook Established",
+      "webhookTerminated": "Webhook Terminated",
+      "terminateFailed": "Failed to terminate",
+      "copySuccess": "Copy successfully successfully"
     }
   },
   "guestRoom": {
@@ -5072,7 +5585,12 @@
       "unmuted": "no silenciado",
       "cameraOn": "Cámara encendida",
       "cameraOff": "Cámara apagada",
-      "hostApproved": "Aprobado por el anfitrión"
+      "hostApproved": "Aprobado por el anfitrión",
+      "kicked": "Kicked",
+      "mediaPermissionDenied": "Media Permission Denied",
+      "hostDeclined": "Host Declined",
+      "p2pFailed": "Failed to p2p",
+      "disconnected": "Disconnected"
     }
   },
   "joinOrg": {
@@ -5091,7 +5609,9 @@
       "validationFailed": "Validación fallida"
     },
     "toasts": {
-      "error": "Error"
+      "error": "Error",
+      "success": "Success",
+      "declined": "Declined"
     }
   },
   "licensePortal": {
@@ -5108,7 +5628,8 @@
     },
     "license": {
       "keyId": "Identificación de clave",
-      "units": "Unidades"
+      "units": "Unidades",
+      "expires": "Expires"
     },
     "empty": {
       "title": "Sin licencia"
@@ -5132,14 +5653,22 @@
       "popular": "Popular",
       "edgeUnits": "Unidades de borde",
       "usersPerUnit": "Usuarios por unidad",
-      "projectsPerUnit": "Proyectos por unidad"
+      "projectsPerUnit": "Proyectos por unidad",
+      "billed": "Billed",
+      "deployAction": "Deploy Action"
     },
     "toasts": {
       "checkoutFailed": "Pago fallido",
       "paymentFailed": "Pago fallido",
       "paymentExpired": "Pago vencido",
       "paymentVerificationFailed": "Error de verificación de pago",
-      "paymentProcessingError": "Error de procesamiento de pago"
+      "paymentProcessingError": "Error de procesamiento de pago",
+      "fetchLicensesFailed": "Failed to fetch licenses",
+      "initiateCheckout": "Initiate Checkout",
+      "renewing": "Renewing",
+      "renewalError": "Failed to renewal",
+      "paymentSuccess": "Payment successfully successfully",
+      "paymentCancelled": "Payment Cancelled"
     },
     "payment": {
       "gateway": "Puerta"
@@ -5160,6 +5689,12 @@
     "pairing": {
       "title": "Ingesta móvil",
       "desc": "Empareja tu dispositivo móvil con la habitación"
+    },
+    "toasts": {
+      "cameraRequired": "Camera Required",
+      "broadcastStarted": "Broadcast Started",
+      "switchingCamera": "Switching Camera",
+      "settingsInfo": "Settings Info"
     }
   },
   "organization": {
@@ -5174,13 +5709,15 @@
       "actions": {
         "modifyAccess": "Modificar acceso",
         "revoke": "Revocar"
-      }
+      },
+      "joined": "Joined"
     },
     "invitations": {
       "pending": "Pendiente",
       "status": {
         "pending": "Pendiente"
-      }
+      },
+      "expires": "Expires"
     },
     "sidebar": {
       "activeContext": "Contexto activo",
@@ -5200,15 +5737,47 @@
     },
     "dialogs": {
       "create": {
-        "submit": "Entregar"
+        "submit": "Entregar",
+        "title": "Create",
+        "fields": {
+          "name": "Name",
+          "slug": "Slug",
+          "description": "Description for fields"
+        },
+        "placeholders": {
+          "name": "Name",
+          "slug": "Slug",
+          "description": "Description for placeholders"
+        }
       },
       "invite": {
-        "submit": "Entregar"
+        "submit": "Entregar",
+        "title": "Invite",
+        "fields": {
+          "email": "Email",
+          "role": "Role"
+        },
+        "placeholders": {
+          "email": "Email",
+          "role": "Role"
+        }
       }
+    },
+    "subtitle": "Subtitle",
+    "roles": {
+      "producer": "Producer",
+      "editor": "Editor",
+      "synthesizer": "Synthesizer"
+    },
+    "toasts": {
+      "switched": "Switched",
+      "actionExecuted": "Action Executed"
     }
   },
   "paymentSuccess": {
-    "viewSubscription": "Ver suscripción"
+    "viewSubscription": "Ver suscripción",
+    "title": "Payment successfully",
+    "subtitle": "Subtitle"
   },
   "platformCallback": {
     "waitDesc": "Conectándose a su plataforma...",
@@ -5220,11 +5789,17 @@
     "service": "Servicio",
     "errors": {
       "paymentCancelled": "Pago cancelado",
-      "exchangeFailed": "Error de intercambio"
+      "exchangeFailed": "Error de intercambio",
+      "missingCode": "Missing Code",
+      "unknownPlatform": "Unknown Platform"
     },
     "connecting": "Conectando...",
     "connected": "Conectado",
-    "disconnected": "Desconectado"
+    "disconnected": "Desconectado",
+    "toasts": {
+      "aiLinked": "AI Linked",
+      "paymentSuccess": "Payment successfully successfully"
+    }
   },
   "platformCMS": {
     "header": {
@@ -5298,7 +5873,18 @@
       "sortBy": "Ordenar por",
       "newest": "El más nuevo",
       "mostViews": "Más vistas"
-    }
+    },
+    "toasts": {
+      "liveConfigured": "Live stream configured successfully",
+      "refreshed": "Stream settings refreshed",
+      "streamError": "Stream configuration error",
+      "failedToLoad": "Failed to load",
+      "failedToPublish": "Failed to publish"
+    },
+    "confirmDelete": "Are you sure you want to delete this video?",
+    "deleteVideo": "Delete video",
+    "publishVideo": "Publish video",
+    "postVideo": "Post video"
   },
   "platforms": {
     "status": {
@@ -5389,7 +5975,14 @@
       "hostEnabledCam": "Cámara habilitada para host",
       "hostDisabledCam": "Cámara deshabilitada del anfitrión",
       "cameraActive": "Cámara activa",
-      "cameraInactive": "Cámara inactiva"
+      "cameraInactive": "Cámara inactiva",
+      "cameraRequired": "Camera Required",
+      "invalidSession": "Invalid Session",
+      "broadcastLive": "Broadcast Live",
+      "hostDeclined": "Host Declined",
+      "signalingDisconnected": "Signaling Disconnected",
+      "removedByHost": "Removed By Host",
+      "sessionStopped": "Session Stopped"
     }
   },
   "viral": {
@@ -5457,6 +6050,10 @@
       "success": "Éxito",
       "failed": "Fallido",
       "pending": "Pendiente"
+    },
+    "toasts": {
+      "hookPromoted": "Hook Promoted",
+      "scheduled": "Scheduled"
     }
   },
   "videoEditor": {
@@ -5591,7 +6188,16 @@
       "addSuccess": "La imagen ha sido agregada a la mesa de trabajo.",
       "addError": "Se produjo un error al agregar la imagen.",
       "loadError": "No se pudo cargar el recurso de imagen",
-      "noImagesFound": "No se encontraron imágenes"
+      "noImagesFound": "No se encontraron imágenes",
+      "addImageError": "Failed to add image",
+      "replaceImageLoading": "Replace Image Loading",
+      "replaceImageSuccess": "Replace Image successfully successfully",
+      "replaceImageError": "Failed to replace image",
+      "addImageLoading": "Add Image Loading",
+      "addImageSuccess": "Add Image successfully successfully",
+      "uploadLoading": "Upload Loading",
+      "uploadSuccess": "Upload successfully successfully",
+      "uploadError": "Failed to upload"
     },
     "video": {
       "title": "Vídeos",
@@ -5614,7 +6220,13 @@
       "addSuccess": "El vídeo ha sido añadido a la mesa de trabajo.",
       "addError": "Se produjo un error al agregar el video.",
       "loadError": "No se pudo cargar el recurso de video",
-      "videoLabel": "Video"
+      "videoLabel": "Video",
+      "noVideosFound": "No videos found found",
+      "replaceVideoLoading": "Replace Video Loading",
+      "replaceVideoSuccess": "Replace Video successfully successfully",
+      "replaceVideoError": "Failed to replace video",
+      "addVideoLoading": "Add Video Loading",
+      "addVideoSuccess": "Add Video successfully successfully"
     },
     "recorder": {
       "title": "Grabadora",
@@ -5650,7 +6262,11 @@
       "delete": "Eliminar capa",
       "unnamed": "Capa sin nombre",
       "noLayers": "Sin capas",
-      "emptyStateDesc": "Agregue elementos para comenzar"
+      "emptyStateDesc": "Agregue elementos para comenzar",
+      "hideLayer": "Hide Layer",
+      "showLayer": "Show Layer",
+      "unlockLayer": "Unlock Layer",
+      "lockLayer": "Lock Layer"
     },
     "element": {
       "title": "Elementos",
@@ -5798,7 +6414,31 @@
       "addLoading": "El recurso de audio se está cargando...",
       "addSuccess": "El recurso de audio se ha agregado a la mesa de trabajo.",
       "addError": "Se produjo un error al agregar el recurso de audio.",
-      "loadError": "No se pudo cargar el recurso de audio"
+      "loadError": "No se pudo cargar el recurso de audio",
+      "mix": "Mix",
+      "enhancingAi": "Enhancing AI",
+      "enhancedSuccess": "Enhanced successfully successfully",
+      "enhancedFailed": "Failed to enhanced",
+      "equalizer": "Equalizer",
+      "low": "Low",
+      "mid": "Mid",
+      "high": "High",
+      "dynamics": "Dynamics",
+      "threshold": "Threshold",
+      "ratio": "Ratio",
+      "automation": "Automation",
+      "addKey": "Add Key",
+      "noKeyframes": "No keyframes found",
+      "voiceEnhancement": "Voice Enhancement",
+      "studioVoice": "Studio Voice",
+      "clarityAutoLevel": "Clarity Auto Level",
+      "processing": "Processing",
+      "cleanAiDenoise": "Clean AI Denoise",
+      "gateThreshold": "Gate Threshold",
+      "reverb": "Reverb",
+      "echoDelay": "Echo Delay",
+      "delayTime": "Delay Time",
+      "feedback": "Feedback"
     },
     "upload": {
       "title": "Subidas",
@@ -5822,7 +6462,10 @@
       "addVideoError": "Se produjo un error al agregar el recurso de video.",
       "addAudioLoading": "El recurso de audio se está cargando...",
       "addAudioSuccess": "El recurso de audio se ha agregado a la mesa de trabajo.",
-      "addAudioError": "Se produjo un error al agregar el recurso de audio."
+      "addAudioError": "Se produjo un error al agregar el recurso de audio.",
+      "imageAddError": "Failed to image add",
+      "videoAddError": "Failed to video add",
+      "audioAddError": "Failed to audio add"
     },
     "arrange": {
       "title": "Arreglar",
@@ -6028,7 +6671,9 @@
     "fill": {
       "title": "Llenar",
       "solid": "Sólido",
-      "gradient": "Gradiente"
+      "gradient": "Gradiente",
+      "color": "Color",
+      "mode": "Mode"
     },
     "filters": {
       "title": "Filtros",
@@ -6155,6 +6800,9 @@
       "timeLimit": "Límite de tiempo",
       "toggleTimeline": "Alternar panel de línea de tiempo",
       "timeline": "Línea de tiempo"
+    },
+    "elements": {
+      "noSceneElements": "No scene elements found"
     }
   },
   "ai": {
@@ -6282,6 +6930,10 @@
     "networkStatus": "Red WebRTC",
     "excellent": "Excelente",
     "good": "Bien",
-    "poor": "Pobre"
+    "poor": "Pobre",
+    "reconnecting": "Reconnecting...",
+    "reconnectingMsg": "SERVER CONNECTION LOST! AUTO-RECONNECTING... (Attempt {attempt}/30)",
+    "pausedBannerSub": "STREAM PAUSED - WILL AUTO-RESUME WHEN SERVER IS BACK ONLINE",
+    "platformPreselected": "Platform pre-selected"
   }
 }

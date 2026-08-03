@@ -82,7 +82,8 @@
       "back": "Back",
       "next": "Next",
       "gotIt": "Got It",
-      "skip": "Skip"
+      "skip": "Skip",
+      "step": "Step"
     },
     "creator": "Creator",
     "optional": "Optional",
@@ -114,7 +115,9 @@
     "disconnect": "Disconnect",
     "returnDashboard": "Return Dashboard",
     "time": {
-      "justNow": "Just Now"
+      "justNow": "Just Now",
+      "minutesAgo": "Minutes Ago",
+      "hoursAgo": "Hours Ago"
     },
     "revoke": "Revoke",
     "noData": "No Data",
@@ -132,7 +135,8 @@
     "remove": "Remove",
     "generate": "Generate",
     "generateImage": "Generate Image",
-    "generateVideo": "Generate Video"
+    "generateVideo": "Generate Video",
+    "aiProductionDesc": "AI Production Desc"
   },
   "dashboard": {
     "header": {
@@ -259,7 +263,7 @@
     },
     "editor": {
       "title": "Video Editor",
-      "messagePlaceholder": "Enter your message, @ to mention...",
+      "messagePlaceholder": "Enter your message, {'@'} to mention...",
       "storyboard": {
         "title": "Storyboard",
         "keyElements": "Key Elements",
@@ -481,7 +485,9 @@
         "addCaptionLine": "Add Caption Line",
         "noCaptionsYet": "No subtitle lines for this segment yet.",
         "captionsSaved": "Captions Saved",
-        "transitions": "Transitions"
+        "transitions": "Transitions",
+        "addFirstCaption": "Add First Subtitle Line",
+        "batchStartSuccess": "Batch generation started"
       },
       "timeline": {
         "title": "Timeline",
@@ -547,7 +553,9 @@
         "regenVoiceover": "Regen Voiceover",
         "voiceVolume": "Voice Volume",
         "voiceSpeed": "Voice Speed",
-        "regenCaptions": "Regen Captions"
+        "regenCaptions": "Regen Captions",
+        "notSupportedForTemplate": "No t supported for template found",
+        "bgmGenerated": "Bgm Generated"
       },
       "chatAssistant": "AI Assistant",
       "video": {
@@ -627,7 +635,9 @@
             "slide": "Slide",
             "none": "None"
           }
-        }
+        },
+        "textPlaceholder": "Text Placeholder",
+        "subtitlePlaceholder": "Subtitle Placeholder"
       },
       "chat": {
         "attachFiles": "Attach files",
@@ -701,7 +711,8 @@
       },
       "music": {
         "generated": "Background music is generated"
-      }
+      },
+      "uploadSuccess": "Upload successfully successfully"
     },
     "recorder": {
       "title": "Recorder",
@@ -718,7 +729,9 @@
         "camera": "Camera",
         "cameraScreen": "Camera & Screen",
         "screen": "Screen",
-        "audio": "Audio"
+        "audio": "Audio",
+        "camScreen": "Cam Screen",
+        "whiteboard": "Whiteboard"
       },
       "overlay": {
         "aslZone": "ASL Capture Zone",
@@ -741,7 +754,10 @@
         "accessError": "Strategic Failure: Could not access neural capture unit",
         "stopFirst": "Stop recording before switching modes"
       },
-      "projectDefault": "Neural Session"
+      "projectDefault": "Neural Session",
+      "toasts": {
+        "micChangeDisabled": "Mic Change Disabled"
+      }
     },
     "new": {
       "title": "Start Your Project Creation",
@@ -753,7 +769,8 @@
           "desc": "Start with a blank project.",
           "projectTitle": "Project Title",
           "aspectRatio": "Aspect Ratio",
-          "creating": "Creating"
+          "creating": "Creating",
+          "projectTitlePlaceholder": "Project Title Placeholder"
         },
         "flow": "Project Flow",
         "template": "Legacy Template",
@@ -786,9 +803,14 @@
             "title": "Title",
             "desc": "Description",
             "voiceName": "Voice Name",
-            "startTraining": "Start Training"
+            "startTraining": "Start Training",
+            "voiceNamePlaceholder": "Voice Name Placeholder",
+            "uploadZone": "Upload Zone"
           },
-          "initializingEngine": "Initializing Engine"
+          "initializingEngine": "Initializing Engine",
+          "scriptPlaceholder": "Script Placeholder",
+          "searchVoices": "Search Voices",
+          "steps": "Steps"
         },
         "liveStream": {
           "title": "Title",
@@ -805,8 +827,12 @@
           "studioBtn": "Studio Btn",
           "restreamBtn": "Restream Btn",
           "toasts": {
-            "failed": "Failed"
-          }
+            "failed": "Failed",
+            "initializing": "Initializing",
+            "success": "Success"
+          },
+          "selectProject": "Select Project",
+          "loopMode": "Loop Mode"
         },
         "presentation": {
           "title": "Title",
@@ -816,7 +842,12 @@
           "uploadSlides": "Upload Slides",
           "uploadPresentation": "Upload Presentation",
           "support": "Support",
-          "selectFile": "Select File"
+          "selectFile": "Select File",
+          "toasts": {
+            "processing": "Processing",
+            "success": "Success",
+            "failed": "Failed"
+          }
         },
         "productAds": {
           "source": "Source",
@@ -834,7 +865,9 @@
           "noVibes": "No Vibes",
           "productImages": "Product Images",
           "selectTemplate": "Select Template",
-          "selectTemplateDesc": "Select Template Desc"
+          "selectTemplateDesc": "Select Template Desc",
+          "urlPlaceholder": "URL Placeholder",
+          "steps": "Steps"
         }
       },
       "flow": {
@@ -924,7 +957,8 @@
           "approveBtn": "Approve & Create Project"
         },
         "visualAssets": {
-          "summaryBar": "Summary Bar"
+          "summaryBar": "Summary Bar",
+          "visualAssetDesc": "Visual Asset Desc"
         },
         "visualPath": {
           "summaryBar": "Summary Bar"
@@ -977,14 +1011,18 @@
         "saleStudio": {
           "label": "Sales Studio",
           "desc": "Promote your products to the customers with AI agents."
+        },
+        "liveStream": {
+          "label": "Label",
+          "desc": "Description for live stream"
         }
       },
       "clonePrompt": "I want to create a video similar to this style: [Paste URL here]. Requirements: ",
       "suggestions": {
         "marketing": "Create a 15s marketing ad for [Product Name]",
         "script": "Write a short film script about [Topic]",
-        "convert": "Convert [@file] into a video",
-        "clone": "Clone style from [@reference]",
+        "convert": "Convert [{'@'}file] into a video",
+        "clone": "Clone style from [{'@'}reference]",
         "presentation": "MC presentation for report data"
       },
       "toasts": {
@@ -997,7 +1035,8 @@
       "projectPrefix": "Project Prefix",
       "characterRoster": "Characters",
       "characterRosterDesc": "Your characters and personas",
-      "lockAndContinue": "Approve and Continue"
+      "lockAndContinue": "Approve and Continue",
+      "aiThinking": "AI Thinking"
     },
     "detail": {
       "duration": "Duration",
@@ -1107,7 +1146,23 @@
         "renderFailed": "Failed to generate video. Please try again.",
         "videoCaptured": "Video captured successfully!",
         "saving": "Saving...",
-        "hooksGenerated": "Video title and description are generated successfully!"
+        "hooksGenerated": "Video title and description are generated successfully!",
+        "saveFailed": "Failed to save",
+        "loadFailed": "Failed to load",
+        "voicePreviewFailed": "Failed to voice preview",
+        "scriptFailed": "Failed to script",
+        "renderAborted": "Render Aborted",
+        "saveSuccess": "Save successfully successfully",
+        "syndicationStarted": "Syndication Started",
+        "syndicationSuccess": "Syndication successfully successfully",
+        "syndicationFailed": "Failed to syndication",
+        "hookApplied": "Hook Applied",
+        "avatarUploaded": "Avatar Uploaded",
+        "voiceTrainingStarted": "Voice Training Started",
+        "enterScript": "Enter Script",
+        "videoGenerated": "Video Generated",
+        "generationFailed": "Failed to generation",
+        "videoSaved": "Video Saved"
       },
       "defaultScriptFallback": "Hello everyone! I'm thrilled to be here helping you create amazing content with AI Avatars. This client-side rendering technology ensures high quality and low latency for your productions.",
       "defaultTitlePrefix": "Your video title",
@@ -1187,9 +1242,27 @@
         "selectPlatform": "Select your streaming platform",
         "peakTimeSuccess": "Peak time {time} has been set",
         "peakTimeFailed": "Failed to peak time",
-        "hooksFailed": "Failed to generate suggestions title and description"
+        "hooksFailed": "Failed to generate suggestions title and description",
+        "hooksSuccess": "Hooks successfully successfully"
       }
-    }
+    },
+    "studio": {
+      "toasts": {
+        "saveSuccess": "Save successfully successfully",
+        "saveFailed": "Failed to save",
+        "exporting": "Exporting",
+        "exportSuccess": "Export successfully successfully",
+        "exportFailed": "Failed to export"
+      },
+      "untitled": "Untitled"
+    },
+    "publish": {
+      "viewers": "Viewers",
+      "toasts": {
+        "vodSaving": "Vod Saving"
+      }
+    },
+    "momentImported": "Moment imported to Editor!"
   },
   "studio": {
     "quests": {
@@ -1202,7 +1275,10 @@
         "hype_train": "Hype Train: Reach {target} messages/min!",
         "sentiment_surge": "Positivity Surge: Send {target} positive vibes!",
         "gift_goal": "Gift Goal: Collect {target} support tokens!"
-      }
+      },
+      "label": "Label",
+      "timer": "Timer",
+      "progress": "Progress"
     },
     "audio": {
       "director": "Neural Audio Director",
@@ -1284,7 +1360,51 @@
       "contextApplied": "AI Director: Context applied",
       "selectPlatform": "Select your streaming platform",
       "aiDealTriggered": "Deal Triggered",
-      "aiShowcase": "AI Director: Showcasing product {name}"
+      "aiShowcase": "AI Director: Showcasing product {name}",
+      "metadataSynced": "Metadata synced across platforms",
+      "questStarted": "Quest Started",
+      "backgroundUpdated": "Background Updated",
+      "screenShareStopped": "Screen Share Stopped",
+      "sharingScreen": "Sharing Screen",
+      "agentLeftSwarm": "Agent Left Swarm",
+      "agentScored": "Agent Scored",
+      "agentJoinedSwarm": "Agent Joined Swarm",
+      "agentConnectionFailed": "Failed to agent connection",
+      "aiProductionMode": "AI Production Mode",
+      "aiDirectorFX": "AI Director Fx",
+      "aiSponsorshipActive": "AI Sponsorship Active",
+      "cameraFocusAdjusted": "Camera Focus Adjusted",
+      "shoutout": "Shoutout",
+      "agentArchived": "Agent Archived",
+      "socialBondUpdated": "Social Bond Updated",
+      "questMaster": "Quest Master",
+      "speakerFocusShift": "Speaker Focus Shift",
+      "hypeEvent": "Hype Event",
+      "studioAtmosphere": "Studio Atmosphere",
+      "syndicatingHighlights": "Syndicating Highlights",
+      "aiViralMetadata": "AI Viral Metadata",
+      "aiAssemblingHighlights": "AI Assembling Highlights",
+      "generatingBackground": "Generating Background",
+      "backgroundFailed": "Failed to background",
+      "agentStoppedPerformance": "Agent Stopped Performance",
+      "preparingToSing": "Preparing To Sing",
+      "nowSinging": "No w singing found",
+      "failedToSing": "Failed To Sing",
+      "agentRoleReset": "Agent Role Reset",
+      "promotedToGM": "Promoted To Gm",
+      "musicSynced": "Music Synced",
+      "selectSongFirst": "Select Song First",
+      "emotionSet": "Emotion Set",
+      "productShowcase": "Product Showcase",
+      "visionEnabled": "Vision Enabled",
+      "visionDisabled": "Vision Disabled",
+      "aiViralMomentDetected": "AI Viral Moment Detected",
+      "aiAutoReframing": "AI Auto Reframing",
+      "syncingMetadata": "Syncing metadata with platforms...",
+      "recordingStarted": "Recording Started",
+      "pollStarted": "Poll Started",
+      "questionFeatured": "Question Featured",
+      "stopLiveFirst": "Stop Live First"
     },
     "title": "Untitled Stream",
     "filters": {
@@ -1330,7 +1450,25 @@
       "likes": "Likes",
       "shares": "Shares",
       "sendMessagePlaceholder": "Send Message Placeholder",
-      "simulateInteraction": "Simulate Interaction"
+      "simulateInteraction": "Simulate Interaction",
+      "livePoll": "Live Poll",
+      "pollLeader": "Poll Leader",
+      "votes": "Votes",
+      "collectingVotes": "Collecting Votes",
+      "createPoll": "Create Poll",
+      "pollQuestion": "Poll Question",
+      "pollQuestionPlaceholder": "Poll Question Placeholder",
+      "pollOptions": "Poll Options",
+      "addOption": "Add Option",
+      "optionLabel": "Option Label",
+      "launchPoll": "Launch Poll",
+      "toast": {
+        "repliedAs": "Replied As",
+        "replyFailed": "Failed to reply",
+        "giftFailed": "Failed to gift",
+        "pollTriggered": "Poll Triggered",
+        "pollFailed": "Failed to poll"
+      }
     },
     "videoEditor": {
       "export": {
@@ -1523,7 +1661,8 @@
       "economy": "Economy",
       "chatVel": "Chat Vel",
       "hypeMeter": "Hype Meter",
-      "liveFeed": "Live Feed"
+      "liveFeed": "Live Feed",
+      "likes": "Likes"
     },
     "calendar": {
       "weekDays": {
@@ -1644,7 +1783,26 @@
           "zoom": "Zoom",
           "custom": "Custom",
           "wipe": "Wipe"
-        }
+        },
+        "color": "Color",
+        "sceneManager": "Scene Manager",
+        "sceneManagerDesc": "Scene Manager Desc",
+        "availableScenes": "Available Scenes",
+        "customScenes": "Custom Scenes",
+        "createCustomScene": "Create Custom Scene",
+        "pipSettings": "Pip Settings",
+        "frameShape": "Frame Shape",
+        "cornerRadius": "Corner Radius",
+        "border": "Border",
+        "width": "Width",
+        "shadowGlow": "Shadow Glow",
+        "blurForce": "Blur Force",
+        "offsetX": "Offset X",
+        "offsetY": "Offset Y",
+        "switcherCore": "Switcher Core",
+        "multiCamLayout": "Multi Cam Layout",
+        "aiSmartSwitching": "AI Smart Switching",
+        "smartSwitchDesc": "Smart Switch Desc"
       },
       "guest": {
         "inviteGuest": "Invite Guest",
@@ -1685,14 +1843,18 @@
         "rejected": "Rejected",
         "waitingStatus": "Guest Waiting",
         "guestApproved": "Guest Approved",
-        "guestRejected": "Guest Rejected"
+        "guestRejected": "Guest Rejected",
+        "invitationRejected": "Invitation Rejected"
       },
       "graphics": {
         "hostIdentity": "Host name",
         "primaryName": "Broadcast Primary Name",
         "placeholders": {
           "primaryName": "e.g. AntStudio Prime",
-          "subtitleRole": "e.g. AI News Anchor"
+          "subtitleRole": "e.g. AI News Anchor",
+          "specialist": "Specialist",
+          "tickerDefault": "Ticker Default",
+          "sponsorName": "Sponsor Name"
         },
         "subtitleRole": "Sub-Title / Role",
         "brandColor": "Brand Color",
@@ -1716,7 +1878,16 @@
           "bottom-left": "Bottom Left",
           "bottom-right": "Bottom Right"
         },
-        "statusMessage": "Status Message"
+        "statusMessage": "Status Message",
+        "guestIdentities": "Guest Identities",
+        "tickerText": "Ticker Text",
+        "uploadLogo": "Upload Logo",
+        "sponsorName": "Sponsor Name",
+        "selectImageError": "Failed to select image",
+        "imageSizeError": "Failed to image size",
+        "uploadSuccess": "Upload successfully successfully",
+        "uploadFailed": "Failed to upload",
+        "logoRemoved": "Logo Removed"
       },
       "linguistic": {
         "globalSync": "Global Sync",
@@ -1726,7 +1897,10 @@
         "voiceCloneRelay": "Voice Clone Relay",
         "canvasSubtitles": "Canvas Subtitles",
         "burnInLiveText": "Burn In Live Text",
-        "canvasSubtitlesDesc": "Transcribed text will render directly on the broadcast canvas for viewers."
+        "canvasSubtitlesDesc": "Transcribed text will render directly on the broadcast canvas for viewers.",
+        "cloningInProgress": "Cloning In Progress",
+        "liveTranscript": "Live Transcript",
+        "awaitingVoiceProcessing": "Awaiting Voice Processing"
       },
       "economy": {
         "storefrontSync": "Storefront Sync",
@@ -1740,10 +1914,39 @@
         "flashSaleActive": "Flash Sale Active",
         "endingIn": "Ending In",
         "wallet": {
-          "balance": "Balance"
+          "balance": "Balance",
+          "myWallet": "My Wallet",
+          "topUp": "Top Up"
         },
         "giftCatalog": "Gift Catalog",
-        "powerups": "Powerups"
+        "powerups": "Powerups",
+        "insufficientCredits": "Insufficient Credits",
+        "title": "Economy",
+        "sentGift": "Sent Gift",
+        "effectDescription": "Effect Description",
+        "purchaseFailed": "Failed to purchase",
+        "creditsAdded": "Credits Added",
+        "addCreditsFailed": "Failed to add credits",
+        "inventoryDesc": "Inventory Desc",
+        "manageAiAssets": "AI Assets",
+        "syncStore": "Sync Store",
+        "featuredInventory": "Featured Inventory",
+        "readyToShowcase": "Ready To Showcase",
+        "inStock": "In Stock",
+        "clicks": "Clicks",
+        "noProducts": "No products found",
+        "flashSaleEngine": "Flash Sale Engine",
+        "aiDrivenFlashSale": "AI Driven Flash Sale",
+        "flashSaleDesc": "Flash Sale Desc",
+        "stopSale": "Stop Sale",
+        "triggerSale": "Trigger Sale",
+        "connectStore": "Connect Store",
+        "showcasingName": "Showcasing Name",
+        "hotDeal": "Hot Deal",
+        "flashSaleTriggered": "Flash Sale Triggered",
+        "flashSaleEnded": "Flash Sale Ended",
+        "credits": "Credits",
+        "simulatedTopUp": "Simulated Top Up"
       },
       "vibe": {
         "script": {
@@ -1789,7 +1992,9 @@
         "scriptReady": "Script Ready: {title}",
         "startProduction": "Start Production",
         "generateScriptSuccess": "Script generated successfully!",
-        "showrunnerActive": "ShowRunner Active! Sit back and relax."
+        "showrunnerActive": "ShowRunner Active! Sit back and relax.",
+        "generateScriptFailed": "Failed to generate script",
+        "startShowFailed": "Failed to start show"
       },
       "engagement": {
         "livePolls": "Live Polls",
@@ -1801,7 +2006,48 @@
         "question": "Question",
         "questionPlaceholder": "Input your question",
         "options": "Options",
-        "launchPoll": "Launch Poll"
+        "launchPoll": "Launch Poll",
+        "optionPlaceholder": "Option Placeholder"
+      },
+      "analytics": {
+        "title": "Analytics",
+        "subtitle": "Subtitle",
+        "current": "Current",
+        "liveNow": "Live Now",
+        "peak": "Peak",
+        "maxAudience": "Max Audience",
+        "totalLikes": "Total Likes",
+        "growthVsLast": "Growth Vs Last",
+        "technicalPulse": "Technical Pulse",
+        "connectionStatus": "Connection Status",
+        "bitrate": "Bitrate",
+        "latency": "Latency",
+        "frameRate": "Frame Rate",
+        "packetLoss": "Packet Loss",
+        "engagementVelocity": "Engagement Velocity",
+        "chatActivity": "Chat Activity",
+        "msgsPerMin": "Msgs Per Min",
+        "shareVelocity": "Share Velocity",
+        "sharesCount": "Shares Count",
+        "platformDistribution": "Platform Distribution",
+        "viewersCount": "Viewers Count",
+        "positiveSentiment": "Positive Sentiment",
+        "likes": "Likes",
+        "aiIntelligence": "AI Intelligence",
+        "updateFrequency": "Update Frequency"
+      },
+      "filters": {
+        "smoothing": "Smoothing",
+        "brighten": "Brighten",
+        "denoise": "Denoise",
+        "slimming": "Slimming",
+        "eyeEnlarge": "Eye Enlarge",
+        "lensProfiles": "Lens Profiles",
+        "environmentSync": "Environment Sync",
+        "uploadEnvironment": "Upload Environment",
+        "chromaKeyEngine": "Chroma Key Engine",
+        "similarity": "Similarity",
+        "smoothness": "Smoothness"
       }
     },
     "tabs": {
@@ -1882,8 +2128,46 @@
         "filters": "Filters",
         "branding": "Branding",
         "overlays": "Overlays",
-        "accessibility": "Accessibility"
-      }
+        "accessibility": "Accessibility",
+        "stream": "Stream",
+        "beauty": "Beauty"
+      },
+      "stream": {
+        "quality": "Quality",
+        "recommendation": "Recommendation"
+      },
+      "beauty": {
+        "smoothing": "Smoothing",
+        "brightness": "Brightness",
+        "sharpen": "Sharpen",
+        "denoise": "Denoise",
+        "redEye": "Red Eye",
+        "redEyeDesc": "Red Eye Desc"
+      },
+      "background": {
+        "standard": "Standard",
+        "standardDesc": "Standard Desc",
+        "blur": "Blur",
+        "blurDesc": "Blur Desc",
+        "virtual": "Virtual",
+        "virtualDesc": "Virtual Desc",
+        "blurIntensity": "Blur Intensity",
+        "stageAssets": "Stage Assets"
+      },
+      "actions": {
+        "reset": "Reset",
+        "save": "Save"
+      },
+      "skinSmoothing": "Skin Smoothing",
+      "faceBrightening": "Face Brightening",
+      "sharpen": "Sharpen",
+      "denoise": "Denoise",
+      "intensity": "Intensity",
+      "assets": "Assets",
+      "keyColor": "Key Color",
+      "similarity": "Similarity",
+      "smoothness": "Smoothness",
+      "tickerContent": "Ticker Content"
     },
     "vibes": {
       "technoChill": "Techno Chill"
@@ -1896,7 +2180,15 @@
           "share": "Share",
           "download": "Download",
           "delete": "Delete"
-        }
+        },
+        "saved": "Saved",
+        "save": "Save",
+        "publish": "Publish",
+        "loadingAccounts": "Loading Accounts",
+        "noAccounts": "No accounts found",
+        "connectAccounts": "Connect Accounts",
+        "videoTitle": "Video Title",
+        "publishSelected": "Publish Selected"
       }
     },
     "swarm": {
@@ -2044,7 +2336,8 @@
       "step4Tip": "Toggle this to access professional voice customization.",
       "generateTitle": "Generate Your Video!",
       "generateDesc": "All set! Click \"Generate Video\" and our AI will create your professional avatar video in minutes.",
-      "generateTip": "You'll be notified when your video is ready."
+      "generateTip": "You'll be notified when your video is ready.",
+      "stageControlsDesc": "Control your microphone, camera, and streaming status from here. Start/stop recording, go live, or capture highlights with one click."
     },
     "virtual": {
       "aiSuffix": "AI"
@@ -2060,7 +2353,8 @@
       "vibe": "Vibe",
       "ducking": "Ducking",
       "standby": "Standby",
-      "masterVol": "Master Volume"
+      "masterVol": "Master Volume",
+      "engaged": "Engaged"
     },
     "contextSelector": {
       "greeting": "Which context are you streaming for?",
@@ -2112,7 +2406,58 @@
     },
     "dashboard": {
       "directiveTitle": "Directives"
-    }
+    },
+    "errors": {
+      "productNotFound": "Product Not Found"
+    },
+    "audience": {
+      "presenceGrid": "Presence Grid",
+      "vipsPresent": "Vips Present"
+    },
+    "directorNotes": {
+      "title": "Director Notes",
+      "rejected": "Rejected"
+    },
+    "overlays": {
+      "aiProduction": {
+        "title": "AI Production",
+        "rendering": "Rendering"
+      }
+    },
+    "synthesis": {
+      "title": "Synthesis",
+      "subtitle": "Subtitle",
+      "loading": "Loading",
+      "commercialSuccess": "Commercial successfully successfully",
+      "totalRevenue": "Total Revenue",
+      "orders": "Orders",
+      "conversion": "Conversion",
+      "units": "Units",
+      "growthStrategies": "Growth Strategies",
+      "viralClipHub": "Viral Clip Hub",
+      "copyHook": "Copy Hook",
+      "finalizeExport": "Finalize Export",
+      "toast": {
+        "copied": "Copied"
+      }
+    },
+    "layouts": {
+      "adminTitle": "AntStudio Admin",
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "payments": "Payments",
+      "systemSettings": "System Settings",
+      "backToSite": "Back to Site",
+      "adminControlPanel": "Admin Control Panel"
+    },
+    "logs": {
+      "cameraSwitch": "Camera Switch"
+    },
+    "autoEmotion": {
+      "enabled": "Auto-Emotion Enabled",
+      "disabled": "Auto-Emotion Disabled"
+    },
+    "platformPreselected": "Platform Preselected"
   },
   "subscription": {
     "title": "Subscription & Billing",
@@ -2187,7 +2532,9 @@
           "paypal": {
             "title": "PayPal",
             "desc": "Secure payment with PayPal"
-          }
+          },
+          "redirecting": "Redirecting",
+          "title": "Payment"
         },
         "save": "Sale Off 20%",
         "features": {
@@ -2209,7 +2556,9 @@
     "save": "Save Profile",
     "cancel": "Cancel",
     "plan": "Plan",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "uploadSuccess": "Upload successfully successfully",
+    "uploadFailed": "Failed to upload"
   },
   "account": {
     "title": "User Profile",
@@ -2326,6 +2675,9 @@
         "load": "System Load",
         "cpuFulfillment": "CPU Fulfillment",
         "manage": "Manage Infrastructure"
+      },
+      "toasts": {
+        "denied": "Denied"
       }
     },
     "users": {
@@ -2360,7 +2712,9 @@
       "toasts": {
         "loadFailed": "Failed to load users",
         "statusUpdated": "User status updated to {status}",
-        "updateFailed": "Failed to update user status"
+        "updateFailed": "Failed to update user status",
+        "userDeleted": "User Deleted",
+        "deleteFailed": "Failed to delete"
       },
       "deleteConfirm": {
         "message": "Are you sure you want to delete this user?",
@@ -2454,7 +2808,8 @@
       "terminate": "Delete",
       "confirmTerminate": "Are you sure you want to terminate license {key}?",
       "toasts": {
-        "downlinkFailure": "Failed to establish downlink with fleet registry"
+        "downlinkFailure": "Failed to establish downlink with fleet registry",
+        "terminationSequence": "Termination Sequence"
       }
     },
     "financials": {
@@ -2498,7 +2853,10 @@
       "stability": "Mesh Stability",
       "statusNominal": "Nominal",
       "noNodes": "No Active Streaming Nodes",
-      "noNodesDesc": "Deploy a new live projection entity from the central Studio to begin broadcasting."
+      "noNodesDesc": "Deploy a new live projection entity from the central Studio to begin broadcasting.",
+      "toasts": {
+        "pulseFailed": "Failed to pulse"
+      }
     },
     "infra": {
       "title": "Infrastructure Health",
@@ -2519,7 +2877,12 @@
       "liveHeartbeat": "Live Heartbeat",
       "pulse": "Pulse",
       "loadLabel": "Load Label",
-      "waitingHeartbeat": "Waiting Heartbeat"
+      "waitingHeartbeat": "Waiting Heartbeat",
+      "toasts": {
+        "fetchFailed": "Failed to fetch",
+        "failoverInitiated": "Failover Initiated",
+        "integrityVerified": "Integrity Verified"
+      }
     },
     "monitoring": {
       "title": "Monitoring Station",
@@ -2559,7 +2922,16 @@
       "records": "Records",
       "noRecords": "No Records",
       "noClientErrors": "No Client Errors",
-      "comingSoon": "Coming Soon"
+      "comingSoon": "Coming Soon",
+      "waitingEvents": "Waiting Events",
+      "searchKeywords": "Search Keywords",
+      "toasts": {
+        "loadLogsFailed": "Failed to load logs",
+        "exportSuccess": "Export successfully successfully",
+        "exportFailed": "Failed to export",
+        "saveSettingsFailed": "Failed to save settings"
+      },
+      "confirmClearLogs": "Confirm Clear Logs"
     },
     "logs": {
       "title": "Raw Telemetry",
@@ -2676,7 +3048,12 @@
         "syncCookiesFailed": "Synchronization failed: {error}",
         "applyConfig": "Apply Config",
         "abort": "Cancel",
-        "generateProtocol": "Generate Protocol"
+        "generateProtocol": "Generate Protocol",
+        "docRequired": "Doc Required",
+        "aiTemplateSuccess": "AI Template successfully successfully",
+        "aiTemplateFailed": "Failed to ai template",
+        "configStaged": "Config Staged",
+        "invalidHeaders": "Invalid Headers"
       },
       "ai": {
         "captchaService": "Captcha Resolution Network",
@@ -2731,7 +3108,10 @@
           "voice": "Voice",
           "agent": "Agent"
         },
-        "protocol": "Protocol"
+        "protocol": "Protocol",
+        "pasteKeys": "Paste Keys",
+        "protocolDesc": "Protocol Desc",
+        "docUrlPlaceholder": "Doc URL Placeholder"
       },
       "table": {
         "identity": "Identity",
@@ -2874,6 +3254,10 @@
           "appLogo": "Upload your app logo. e.g. AntStudio.png",
           "favicon": "Upload your favicon. e.g. AntStudio.ico",
           "logo": "Upload your logo. e.g. AntStudio.png"
+        },
+        "toasts": {
+          "uploadSuccess": "Upload successfully successfully",
+          "uploadFailed": "Failed to upload"
         }
       }
     },
@@ -2966,7 +3350,7 @@
       "provision": {
         "title": "Provision Account",
         "workEmail": "Work Email Address",
-        "placeholderEmail": "neo@matrix.io",
+        "placeholderEmail": "neo{'@'}matrix.io",
         "firstName": "First Name",
         "lastName": "Last Name",
         "accessLevel": "Access Level Clearance",
@@ -3051,7 +3435,19 @@
       "toast": {
         "enabled": "Enabled",
         "disabled": "Disabled",
-        "stRequired": "Session token is required"
+        "stRequired": "Session token is required",
+        "oauthFailed": "Failed to oauth",
+        "toggleFailed": "Failed to toggle",
+        "enterProjectId": "Enter Project ID",
+        "projectIdUpdated": "Project ID Updated",
+        "projectIdUpdateFailed": "Failed to project id update",
+        "loadFailed": "Failed to load",
+        "enterEmail": "Enter Email",
+        "integrating11Labs": "Integrating11 Labs",
+        "syncing": "Syncing",
+        "syncFailed": "Failed to sync",
+        "removeConfirm": "Remove Confirm",
+        "removeFailed": "Failed to remove"
       },
       "updateToken": "Update Token",
       "tokenExpiredHelp": "How to get Google Flow session token?"
@@ -3115,7 +3511,8 @@
       "deleteConfirm": {
         "title": "Delete License",
         "confirm": "Confirm",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "message": "Message"
       }
     },
     "release": {
@@ -3454,6 +3851,56 @@
           "content": "You agree not to use our platform to generate or distribute any content that is illegal, harmful, or violates the rights of others."
         }
       }
+    },
+    "home": {
+      "hero": {
+        "tagline": "Tagline",
+        "start": "Start"
+      },
+      "intro": {
+        "title": "Intro",
+        "desc": "Description for intro"
+      },
+      "partners": {
+        "title": "Partners",
+        "collab": "Collab",
+        "desc": "Description for partners"
+      },
+      "gallery": {
+        "watchFilms": "Watch Films",
+        "zooBreak": "Zoo Break",
+        "microverse": "Microverse",
+        "windowSeat": "Window Seat",
+        "cottonSpace": "Cotton Space",
+        "giraffeRun": "Giraffe Run",
+        "sandWaves": "Sand Waves"
+      },
+      "pricing": {
+        "title": "Pricing",
+        "subtitle": "Subtitle",
+        "keepSimple": "Keep Simple",
+        "everythingFree": "Everything Free",
+        "creditsMonthly": "Credits Monthly",
+        "prioritySupport": "Priority Support",
+        "full4k": "Full4k",
+        "commercialRights": "Commercial Rights",
+        "getStarted": "Get Started"
+      },
+      "footer": {
+        "privacy": "Privacy",
+        "terms": "Terms"
+      },
+      "features": {
+        "consistent": {
+          "name": "Name"
+        },
+        "seamless": {
+          "name": "Name"
+        },
+        "cinematic": {
+          "name": "Name"
+        }
+      }
     }
   },
   "influencers": {
@@ -3661,7 +4108,8 @@
         "visemeSynthesisStarted": "Generating viseme spritesheet...",
         "visemeSynthesisFailed": "Failed to generate viseme spritesheet",
         "visemeSynthesisComplete": "Viseme spritesheet generated successfully",
-        "voiceConfigMissing": "Select your influencer voice first"
+        "voiceConfigMissing": "Select your influencer voice first",
+        "videoSilentGenerated": "Video Silent Generated"
       },
       "emotions": {
         "happy": "Happy",
@@ -3941,7 +4389,8 @@
         },
         "toasts": {
           "generateFailed": "AI Synthesis failed.",
-          "generateSuccess": "AI Synthesis successfully."
+          "generateSuccess": "AI Synthesis successfully.",
+          "musicSynced": "Music Synced"
         },
         "skinType": "Skin Type",
         "hairType": "Hair Type",
@@ -4032,7 +4481,9 @@
       "target": "Target",
       "languages": "Languages",
       "lyricsLabel": "Lyrics Label",
-      "lyricsLanguages": "Lyrics Languages"
+      "lyricsLanguages": "Lyrics Languages",
+      "searchLanguage": "Search Language",
+      "lyricsLanguage": "Lyrics Language"
     },
     "voiceLibrary": {
       "title": "Voice Library",
@@ -4340,7 +4791,8 @@
       "errors": {
         "unsupportedUrl": "Unsupported Url",
         "failed": "Failed"
-      }
+      },
+      "connectingTo": "Connecting To"
     },
     "previewDialog": {
       "defaultAuthor": "Default Author",
@@ -4371,8 +4823,12 @@
         "desc": "Description",
         "priceLabel": "Price Label",
         "feeLabel": "Fee Label",
-        "securityNote": "Security Note"
+        "securityNote": "Security Note",
+        "title": "Purchase"
       }
+    },
+    "toasts": {
+      "purchaseSuccess": "Purchase successfully successfully"
     }
   },
   "merchant": {
@@ -4628,7 +5084,8 @@
       "uploadSuccess": "Files uploaded successfully.",
       "uploadFailed": "Failed to upload files."
     },
-    "confirmDelete": "Are you sure you want to delete this file?"
+    "confirmDelete": "Are you sure you want to delete this file?",
+    "deleteSuccess": "Delete successfully successfully"
   },
   "auth": {
     "login": {
@@ -4745,7 +5202,14 @@
       "current": "Current",
       "new": "New",
       "confirm": "Confirm",
-      "failed": "Failed"
+      "failed": "Failed",
+      "currentPlaceholder": "Current Placeholder",
+      "newPlaceholder": "New Placeholder",
+      "confirmPlaceholder": "Confirm Placeholder",
+      "fillAll": "Fill All",
+      "mismatch": "Mismatch",
+      "tooShort": "Too Short",
+      "success": "Success"
     }
   },
   "sidebar": {
@@ -4846,7 +5310,9 @@
       "activeEnvironment": "Active Environment",
       "autoCamera": "Auto Camera",
       "status": {
-        "prod": "Prod"
+        "prod": "Prod",
+        "autoProducing": "Auto Producing",
+        "vfxActive": "Vfx Active"
       },
       "influencerLink": "Influencer Link",
       "activeVfx": "Active Vfx",
@@ -4876,7 +5342,11 @@
       "reply": "Reply",
       "replyPlaceholder": "Reply Placeholder",
       "sending": "Sending",
-      "postReply": "Post Reply"
+      "postReply": "Post Reply",
+      "aiContext": {
+        "videoTitle": "Video Title",
+        "tone": "Tone"
+      }
     }
   },
   "support": {
@@ -4900,7 +5370,11 @@
       "dataAuthDesc": "Data Auth Desc",
       "cancel": "Cancel",
       "transmitting": "Transmitting",
-      "submit": "Submit"
+      "submit": "Submit",
+      "subjectPlaceholder": "Subject Placeholder",
+      "sitrepPlaceholder": "Sitrep Placeholder",
+      "compiling": "Compiling",
+      "attached": "Attached"
     }
   },
   "pricing": {
@@ -4910,7 +5384,9 @@
     "perMonth": "Per Month",
     "features": {
       "prioritySupport": "Priority Support",
-      "standardSupport": "Standard Support"
+      "standardSupport": "Standard Support",
+      "videosPerMonth": "Videos Per Month",
+      "storageLimit": "Storage Limit"
     },
     "getStarted": "Get Started",
     "subscribeNow": "Subscribe Now",
@@ -4918,7 +5394,10 @@
       "title": "Frequently Asked Questions",
       "a1": "What is AntStudio?",
       "a2": "How do I create a project?",
-      "a3": "How do I add AI personas to my project?"
+      "a3": "How do I add AI personas to my project?",
+      "q1": "Q1",
+      "q2": "Q2",
+      "q3": "Q3"
     },
     "plans": {
       "free": "Free",
@@ -4942,13 +5421,15 @@
       "title": "Product not found",
       "desc": "The product you are looking for does not exist.",
       "backHome": "Back Home"
-    }
+    },
+    "poweredBy": "Powered By"
   },
   "affiliate": {
     "title": "Affiliate Program",
     "join": {
       "desc": "Join our affiliate program and earn commissions for every customer you refer to AntStudio.",
-      "button": "Join Now"
+      "button": "Join Now",
+      "title": "Join"
     },
     "engine": {
       "title": "Affiliate Engine",
@@ -4956,7 +5437,8 @@
       "copy": "Copy",
       "rate": "Rate",
       "recurring": "Recurring",
-      "cookie": "Cookie"
+      "cookie": "Cookie",
+      "days": "Days"
     },
     "commissions": {
       "title": "Commissions",
@@ -4974,7 +5456,14 @@
     },
     "tips": {
       "title": "Tips",
-      "tip1": "Tip1"
+      "tip1": "Tip1",
+      "tip2": "Tip2"
+    },
+    "subtitle": "Subtitle",
+    "partnerBadge": "Partner Badge",
+    "toasts": {
+      "copySuccess": "Copy successfully successfully",
+      "noBalance": "No balance found"
     }
   },
   "analytics": {
@@ -4988,7 +5477,8 @@
       "avgWatchTime": "Avg Watch Time",
       "zeroTime": "Zero Time",
       "stable": "Stable",
-      "commerceRevenue": "Commerce Revenue"
+      "commerceRevenue": "Commerce Revenue",
+      "vsAvg": "Vs Avg"
     },
     "heatmap": {
       "title": "Heatmap",
@@ -5015,12 +5505,16 @@
       "empty": "Empty",
       "dialog": {
         "abort": "Cancel",
-        "initialize": "Initialize"
+        "initialize": "Initialize",
+        "title": "Dialog",
+        "label": "Label",
+        "placeholder": "Placeholder"
       },
       "success": {
         "warning": "Warning",
         "copy": "Copy",
-        "stored": "Stored"
+        "stored": "Stored",
+        "title": "Success"
       }
     },
     "webhooks": {
@@ -5030,17 +5524,29 @@
       "empty": "Empty",
       "dialog": {
         "cancel": "Cancel",
-        "establish": "Establish"
+        "establish": "Establish",
+        "title": "Dialog",
+        "urlLabel": "URL Label",
+        "urlPlaceholder": "URL Placeholder",
+        "eventsLabel": "Events Label"
       }
     },
     "headless": {
       "title": "Headless",
       "auth": "Auth",
-      "verify": "Verify"
+      "verify": "Verify",
+      "verifyDesc": "Verify Desc"
     },
     "toasts": {
       "genFailed": "Gen Failed",
-      "webhookFailed": "Webhook Failed"
+      "webhookFailed": "Webhook Failed",
+      "syncFailed": "Failed to sync",
+      "revoked": "Revoked",
+      "revokeFailed": "Failed to revoke",
+      "webhookEstablished": "Webhook Established",
+      "webhookTerminated": "Webhook Terminated",
+      "terminateFailed": "Failed to terminate",
+      "copySuccess": "Copy successfully successfully"
     }
   },
   "guestRoom": {
@@ -5079,7 +5585,12 @@
       "unmuted": "Unmuted",
       "cameraOn": "Camera On",
       "cameraOff": "Camera Off",
-      "hostApproved": "Host Approved"
+      "hostApproved": "Host Approved",
+      "kicked": "Kicked",
+      "mediaPermissionDenied": "Media Permission Denied",
+      "hostDeclined": "Host Declined",
+      "p2pFailed": "Failed to p2p",
+      "disconnected": "Disconnected"
     }
   },
   "joinOrg": {
@@ -5098,7 +5609,9 @@
       "validationFailed": "Validation Failed"
     },
     "toasts": {
-      "error": "Error"
+      "error": "Error",
+      "success": "Success",
+      "declined": "Declined"
     }
   },
   "licensePortal": {
@@ -5115,7 +5628,8 @@
     },
     "license": {
       "keyId": "Key Id",
-      "units": "Units"
+      "units": "Units",
+      "expires": "Expires"
     },
     "empty": {
       "title": "No License"
@@ -5139,14 +5653,22 @@
       "popular": "Popular",
       "edgeUnits": "Edge Units",
       "usersPerUnit": "Users Per Unit",
-      "projectsPerUnit": "Projects Per Unit"
+      "projectsPerUnit": "Projects Per Unit",
+      "billed": "Billed",
+      "deployAction": "Deploy Action"
     },
     "toasts": {
       "checkoutFailed": "Checkout Failed",
       "paymentFailed": "Payment Failed",
       "paymentExpired": "Payment Expired",
       "paymentVerificationFailed": "Payment Verification Failed",
-      "paymentProcessingError": "Payment Processing Error"
+      "paymentProcessingError": "Payment Processing Error",
+      "fetchLicensesFailed": "Failed to fetch licenses",
+      "initiateCheckout": "Initiate Checkout",
+      "renewing": "Renewing",
+      "renewalError": "Failed to renewal",
+      "paymentSuccess": "Payment successfully successfully",
+      "paymentCancelled": "Payment Cancelled"
     },
     "payment": {
       "gateway": "Gateway"
@@ -5167,6 +5689,12 @@
     "pairing": {
       "title": "Mobile Ingest",
       "desc": "Pair your mobile device to the room"
+    },
+    "toasts": {
+      "cameraRequired": "Camera Required",
+      "broadcastStarted": "Broadcast Started",
+      "switchingCamera": "Switching Camera",
+      "settingsInfo": "Settings Info"
     }
   },
   "organization": {
@@ -5181,13 +5709,15 @@
       "actions": {
         "modifyAccess": "Modify Access",
         "revoke": "Revoke"
-      }
+      },
+      "joined": "Joined"
     },
     "invitations": {
       "pending": "Pending",
       "status": {
         "pending": "Pending"
-      }
+      },
+      "expires": "Expires"
     },
     "sidebar": {
       "activeContext": "Active Context",
@@ -5207,15 +5737,47 @@
     },
     "dialogs": {
       "create": {
-        "submit": "Submit"
+        "submit": "Submit",
+        "title": "Create",
+        "fields": {
+          "name": "Name",
+          "slug": "Slug",
+          "description": "Description for fields"
+        },
+        "placeholders": {
+          "name": "Name",
+          "slug": "Slug",
+          "description": "Description for placeholders"
+        }
       },
       "invite": {
-        "submit": "Submit"
+        "submit": "Submit",
+        "title": "Invite",
+        "fields": {
+          "email": "Email",
+          "role": "Role"
+        },
+        "placeholders": {
+          "email": "Email",
+          "role": "Role"
+        }
       }
+    },
+    "subtitle": "Subtitle",
+    "roles": {
+      "producer": "Producer",
+      "editor": "Editor",
+      "synthesizer": "Synthesizer"
+    },
+    "toasts": {
+      "switched": "Switched",
+      "actionExecuted": "Action Executed"
     }
   },
   "paymentSuccess": {
-    "viewSubscription": "View Subscription"
+    "viewSubscription": "View Subscription",
+    "title": "Payment successfully",
+    "subtitle": "Subtitle"
   },
   "platformCallback": {
     "waitDesc": "Connecting to your platform...",
@@ -5227,11 +5789,17 @@
     "service": "Service",
     "errors": {
       "paymentCancelled": "Payment Cancelled",
-      "exchangeFailed": "Exchange Failed"
+      "exchangeFailed": "Exchange Failed",
+      "missingCode": "Missing Code",
+      "unknownPlatform": "Unknown Platform"
     },
     "connecting": "Connecting...",
     "connected": "Connected",
-    "disconnected": "Disconnected"
+    "disconnected": "Disconnected",
+    "toasts": {
+      "aiLinked": "AI Linked",
+      "paymentSuccess": "Payment successfully successfully"
+    }
   },
   "platformCMS": {
     "header": {
@@ -5407,7 +5975,14 @@
       "hostEnabledCam": "Host Enabled Cam",
       "hostDisabledCam": "Host Disabled Cam",
       "cameraActive": "Camera Active",
-      "cameraInactive": "Camera Inactive"
+      "cameraInactive": "Camera Inactive",
+      "cameraRequired": "Camera Required",
+      "invalidSession": "Invalid Session",
+      "broadcastLive": "Broadcast Live",
+      "hostDeclined": "Host Declined",
+      "signalingDisconnected": "Signaling Disconnected",
+      "removedByHost": "Removed By Host",
+      "sessionStopped": "Session Stopped"
     }
   },
   "viral": {
@@ -5475,6 +6050,10 @@
       "success": "Success",
       "failed": "Failed",
       "pending": "Pending"
+    },
+    "toasts": {
+      "hookPromoted": "Hook Promoted",
+      "scheduled": "Scheduled"
     }
   },
   "videoEditor": {
@@ -5609,7 +6188,16 @@
       "addSuccess": "The image has been added to artboard",
       "addError": "Ran into an error while adding the image",
       "loadError": "Failed to load image asset",
-      "noImagesFound": "No Images Found"
+      "noImagesFound": "No Images Found",
+      "addImageError": "Failed to add image",
+      "replaceImageLoading": "Replace Image Loading",
+      "replaceImageSuccess": "Replace Image successfully successfully",
+      "replaceImageError": "Failed to replace image",
+      "addImageLoading": "Add Image Loading",
+      "addImageSuccess": "Add Image successfully successfully",
+      "uploadLoading": "Upload Loading",
+      "uploadSuccess": "Upload successfully successfully",
+      "uploadError": "Failed to upload"
     },
     "video": {
       "title": "Videos",
@@ -5632,7 +6220,13 @@
       "addSuccess": "The video has been added to artboard",
       "addError": "Ran into an error while adding the video",
       "loadError": "Failed to load video asset",
-      "videoLabel": "Video"
+      "videoLabel": "Video",
+      "noVideosFound": "No videos found found",
+      "replaceVideoLoading": "Replace Video Loading",
+      "replaceVideoSuccess": "Replace Video successfully successfully",
+      "replaceVideoError": "Failed to replace video",
+      "addVideoLoading": "Add Video Loading",
+      "addVideoSuccess": "Add Video successfully successfully"
     },
     "recorder": {
       "title": "Recorder",
@@ -5668,7 +6262,11 @@
       "delete": "Delete Layer",
       "unnamed": "Unnamed Layer",
       "noLayers": "No Layers",
-      "emptyStateDesc": "Add elements to get started"
+      "emptyStateDesc": "Add elements to get started",
+      "hideLayer": "Hide Layer",
+      "showLayer": "Show Layer",
+      "unlockLayer": "Unlock Layer",
+      "lockLayer": "Lock Layer"
     },
     "element": {
       "title": "Elements",
@@ -5816,7 +6414,31 @@
       "addLoading": "The audio asset is being loaded...",
       "addSuccess": "The audio asset has been added to artboard",
       "addError": "Ran into an error adding the audio asset",
-      "loadError": "Failed to load audio asset"
+      "loadError": "Failed to load audio asset",
+      "mix": "Mix",
+      "enhancingAi": "Enhancing AI",
+      "enhancedSuccess": "Enhanced successfully successfully",
+      "enhancedFailed": "Failed to enhanced",
+      "equalizer": "Equalizer",
+      "low": "Low",
+      "mid": "Mid",
+      "high": "High",
+      "dynamics": "Dynamics",
+      "threshold": "Threshold",
+      "ratio": "Ratio",
+      "automation": "Automation",
+      "addKey": "Add Key",
+      "noKeyframes": "No keyframes found",
+      "voiceEnhancement": "Voice Enhancement",
+      "studioVoice": "Studio Voice",
+      "clarityAutoLevel": "Clarity Auto Level",
+      "processing": "Processing",
+      "cleanAiDenoise": "Clean AI Denoise",
+      "gateThreshold": "Gate Threshold",
+      "reverb": "Reverb",
+      "echoDelay": "Echo Delay",
+      "delayTime": "Delay Time",
+      "feedback": "Feedback"
     },
     "upload": {
       "title": "Uploads",
@@ -5840,7 +6462,10 @@
       "addVideoError": "Ran into an error adding the video asset",
       "addAudioLoading": "The audio asset is being loaded...",
       "addAudioSuccess": "The audio asset has been added to artboard",
-      "addAudioError": "Ran into an error adding the audio asset"
+      "addAudioError": "Ran into an error adding the audio asset",
+      "imageAddError": "Failed to image add",
+      "videoAddError": "Failed to video add",
+      "audioAddError": "Failed to audio add"
     },
     "arrange": {
       "title": "Arrange",
@@ -6046,7 +6671,9 @@
     "fill": {
       "title": "Fill",
       "solid": "Solid",
-      "gradient": "Gradient"
+      "gradient": "Gradient",
+      "color": "Color",
+      "mode": "Mode"
     },
     "filters": {
       "title": "Filters",
@@ -6173,6 +6800,9 @@
       "timeLimit": "Time Limit",
       "toggleTimeline": "Toggle Timeline Panel",
       "timeline": "Timeline"
+    },
+    "elements": {
+      "noSceneElements": "No scene elements found"
     }
   },
   "ai": {

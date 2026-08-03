@@ -37,7 +37,7 @@ export function useAutoDirector() {
     const connect = () => {
         if (!authStore.token) return;
         const endpoint = window.location.origin;
-        console.log(`[useAutoDirector] Connecting to ${endpoint} with path /api/socket.io`);
+        console.log(`[useAutoDirector] Connecting to ${endpoint} with path /socket.io`);
         socket.value = io(endpoint, {
 			//allowEIO3: true, // Enables compatibility with Socket.IO v2 clients
 			path: '/socket.io',

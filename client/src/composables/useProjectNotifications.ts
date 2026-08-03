@@ -12,7 +12,7 @@ export function useProjectNotifications(projectId: string) {
     const connect = () => {
         if (!userStore.token) return;
         const endpoint = window.location.origin;
-        console.log(`[useProjectNotifications] Connecting to ${endpoint} with path /api/socket.io`);
+        console.log(`[useProjectNotifications] Connecting to ${endpoint} with path /socket.io`);
         socket = io(endpoint, {
 			//allowEIO3: true, // Enables compatibility with Socket.IO v2 clients
 			path: '/socket.io',

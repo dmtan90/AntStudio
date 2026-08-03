@@ -82,7 +82,8 @@
       "back": "戻る",
       "next": "次",
       "gotIt": "わかった",
-      "skip": "スキップ"
+      "skip": "スキップ",
+      "step": "Step"
     },
     "creator": "クリエイター",
     "optional": "オプション",
@@ -114,7 +115,9 @@
     "disconnect": "切断する",
     "returnDashboard": "ダッシュボードに戻る",
     "time": {
-      "justNow": "ちょうど今"
+      "justNow": "ちょうど今",
+      "minutesAgo": "Minutes Ago",
+      "hoursAgo": "Hours Ago"
     },
     "revoke": "取り消す",
     "noData": "データなし",
@@ -132,7 +135,8 @@
     "remove": "取り除く",
     "generate": "生成する",
     "generateImage": "画像の生成",
-    "generateVideo": "ビデオの生成"
+    "generateVideo": "ビデオの生成",
+    "aiProductionDesc": "AI Production Desc"
   },
   "dashboard": {
     "header": {
@@ -259,7 +263,7 @@
     },
     "editor": {
       "title": "ビデオエディター",
-      "messagePlaceholder": "Enter your message, @ to mention...",
+      "messagePlaceholder": "Enter your message, {'@'} to mention...",
       "storyboard": {
         "title": "絵コンテ",
         "keyElements": "主要な要素",
@@ -481,7 +485,9 @@
         "addCaptionLine": "キャプション行を追加する",
         "noCaptionsYet": "このセグメントにはまだ字幕行がありません。",
         "captionsSaved": "キャプションが保存されました",
-        "transitions": "トランジション"
+        "transitions": "トランジション",
+        "addFirstCaption": "Add First Subtitle Line",
+        "batchStartSuccess": "Batch generation started"
       },
       "timeline": {
         "title": "タイムライン",
@@ -547,7 +553,9 @@
         "regenVoiceover": "リジェネのナレーション",
         "voiceVolume": "声の大きさ",
         "voiceSpeed": "音声速度",
-        "regenCaptions": "キャプションを再生成する"
+        "regenCaptions": "キャプションを再生成する",
+        "notSupportedForTemplate": "No t supported for template found",
+        "bgmGenerated": "Bgm Generated"
       },
       "chatAssistant": "AIアシスタント",
       "video": {
@@ -627,7 +635,9 @@
             "slide": "スライド",
             "none": "なし"
           }
-        }
+        },
+        "textPlaceholder": "Text Placeholder",
+        "subtitlePlaceholder": "Subtitle Placeholder"
       },
       "chat": {
         "attachFiles": "ファイルを添付する",
@@ -701,7 +711,8 @@
       },
       "music": {
         "generated": "BGMが生成される"
-      }
+      },
+      "uploadSuccess": "Upload successfully successfully"
     },
     "recorder": {
       "title": "レコーダー",
@@ -718,7 +729,9 @@
         "camera": "カメラ",
         "cameraScreen": "カメラとスクリーン",
         "screen": "画面",
-        "audio": "オーディオ"
+        "audio": "オーディオ",
+        "camScreen": "Cam Screen",
+        "whiteboard": "Whiteboard"
       },
       "overlay": {
         "aslZone": "ASL キャプチャーゾーン",
@@ -741,7 +754,10 @@
         "accessError": "戦略的失敗: ニューラル キャプチャ ユニットにアクセスできませんでした",
         "stopFirst": "モードを切り替える前に録画を停止してください"
       },
-      "projectDefault": "ニューラルセッション"
+      "projectDefault": "ニューラルセッション",
+      "toasts": {
+        "micChangeDisabled": "Mic Change Disabled"
+      }
     },
     "new": {
       "title": "プロジェクトの作成を開始する",
@@ -753,7 +769,8 @@
           "desc": "空のプロジェクトから始めます。",
           "projectTitle": "プロジェクトタイトル",
           "aspectRatio": "アスペクト比",
-          "creating": "作成"
+          "creating": "作成",
+          "projectTitlePlaceholder": "Project Title Placeholder"
         },
         "flow": "プロジェクトの流れ",
         "template": "従来のテンプレート",
@@ -786,9 +803,14 @@
             "title": "タイトル",
             "desc": "説明",
             "voiceName": "ボイスネーム",
-            "startTraining": "トレーニングを開始する"
+            "startTraining": "トレーニングを開始する",
+            "voiceNamePlaceholder": "Voice Name Placeholder",
+            "uploadZone": "Upload Zone"
           },
-          "initializingEngine": "エンジンを初期化しています"
+          "initializingEngine": "エンジンを初期化しています",
+          "scriptPlaceholder": "Script Placeholder",
+          "searchVoices": "Search Voices",
+          "steps": "Steps"
         },
         "liveStream": {
           "title": "タイトル",
@@ -805,8 +827,12 @@
           "studioBtn": "スタジオボタン",
           "restreamBtn": "リストリームボタン",
           "toasts": {
-            "failed": "失敗した"
-          }
+            "failed": "失敗した",
+            "initializing": "Initializing",
+            "success": "Success"
+          },
+          "selectProject": "Select Project",
+          "loopMode": "Loop Mode"
         },
         "presentation": {
           "title": "タイトル",
@@ -816,7 +842,12 @@
           "uploadSlides": "スライドをアップロードする",
           "uploadPresentation": "プレゼンテーションをアップロードする",
           "support": "サポート",
-          "selectFile": "ファイルの選択"
+          "selectFile": "ファイルの選択",
+          "toasts": {
+            "processing": "Processing",
+            "success": "Success",
+            "failed": "Failed"
+          }
         },
         "productAds": {
           "source": "ソース",
@@ -834,7 +865,9 @@
           "noVibes": "ノーバイブス",
           "productImages": "製品画像",
           "selectTemplate": "テンプレートの選択",
-          "selectTemplateDesc": "テンプレートの説明を選択"
+          "selectTemplateDesc": "テンプレートの説明を選択",
+          "urlPlaceholder": "URL Placeholder",
+          "steps": "Steps"
         }
       },
       "flow": {
@@ -924,7 +957,8 @@
           "approveBtn": "プロジェクトの承認と作成"
         },
         "visualAssets": {
-          "summaryBar": "サマリーバー"
+          "summaryBar": "サマリーバー",
+          "visualAssetDesc": "Visual Asset Desc"
         },
         "visualPath": {
           "summaryBar": "サマリーバー"
@@ -977,14 +1011,18 @@
         "saleStudio": {
           "label": "販売スタジオ",
           "desc": "AI エージェントを使用して顧客に製品を宣伝します。"
+        },
+        "liveStream": {
+          "label": "Label",
+          "desc": "Description for live stream"
         }
       },
       "clonePrompt": "このスタイルに似たビデオを作成したいと考えています: [ここに URL を貼り付け]。要件：",
       "suggestions": {
         "marketing": "[製品名] の 15 秒マーケティング広告を作成します",
         "script": "[トピック] についての短編映画の脚本を書いてください",
-        "convert": "[@file] をビデオに変換します",
-        "clone": "[@reference] からスタイルをクローンします",
+        "convert": "[{'@'}file] をビデオに変換します",
+        "clone": "[{'@'}reference] からスタイルをクローンします",
         "presentation": "レポートデータのMCプレゼンテーション"
       },
       "toasts": {
@@ -997,7 +1035,8 @@
       "projectPrefix": "プロジェクトの接頭辞",
       "characterRoster": "キャラクター",
       "characterRosterDesc": "あなたのキャラクターとペルソナ",
-      "lockAndContinue": "承認して続行"
+      "lockAndContinue": "承認して続行",
+      "aiThinking": "AI Thinking"
     },
     "detail": {
       "duration": "間隔",
@@ -1107,7 +1146,23 @@
         "renderFailed": "ビデオの生成に失敗しました。もう一度試してください。",
         "videoCaptured": "ビデオのキャプチャに成功しました!",
         "saving": "保存中...",
-        "hooksGenerated": "動画のタイトルと説明が正常に生成されました。"
+        "hooksGenerated": "動画のタイトルと説明が正常に生成されました。",
+        "saveFailed": "Failed to save",
+        "loadFailed": "Failed to load",
+        "voicePreviewFailed": "Failed to voice preview",
+        "scriptFailed": "Failed to script",
+        "renderAborted": "Render Aborted",
+        "saveSuccess": "Save successfully successfully",
+        "syndicationStarted": "Syndication Started",
+        "syndicationSuccess": "Syndication successfully successfully",
+        "syndicationFailed": "Failed to syndication",
+        "hookApplied": "Hook Applied",
+        "avatarUploaded": "Avatar Uploaded",
+        "voiceTrainingStarted": "Voice Training Started",
+        "enterScript": "Enter Script",
+        "videoGenerated": "Video Generated",
+        "generationFailed": "Failed to generation",
+        "videoSaved": "Video Saved"
       },
       "defaultScriptFallback": "こんにちは、みんな！ AI アバターを使用した素晴らしいコンテンツの作成をお手伝いできることを嬉しく思います。このクライアント側のレンダリング テクノロジーにより、制作物の高品質と低遅延が保証されます。",
       "defaultTitlePrefix": "Your video title",
@@ -1187,9 +1242,27 @@
         "selectPlatform": "ストリーミング プラットフォームを選択してください",
         "peakTimeSuccess": "ピーク時間{time}が設定されました",
         "peakTimeFailed": "ピークタイムに間に合わなかった",
-        "hooksFailed": "提案のタイトルと説明を生成できませんでした"
+        "hooksFailed": "提案のタイトルと説明を生成できませんでした",
+        "hooksSuccess": "Hooks successfully successfully"
       }
-    }
+    },
+    "studio": {
+      "toasts": {
+        "saveSuccess": "Save successfully successfully",
+        "saveFailed": "Failed to save",
+        "exporting": "Exporting",
+        "exportSuccess": "Export successfully successfully",
+        "exportFailed": "Failed to export"
+      },
+      "untitled": "Untitled"
+    },
+    "publish": {
+      "viewers": "Viewers",
+      "toasts": {
+        "vodSaving": "Vod Saving"
+      }
+    },
+    "momentImported": "Moment imported to Editor!"
   },
   "studio": {
     "quests": {
@@ -1202,7 +1275,10 @@
         "hype_train": "ハイプ トレイン: 1 分あたり {target} メッセージを達成!",
         "sentiment_surge": "ポジティブ サージ: {target} のポジティブな雰囲気を送りましょう!",
         "gift_goal": "ギフト目標: {target} サポート トークンを集めましょう!"
-      }
+      },
+      "label": "Label",
+      "timer": "Timer",
+      "progress": "Progress"
     },
     "audio": {
       "director": "ニューラルオーディオディレクター",
@@ -1284,7 +1360,51 @@
       "contextApplied": "AI ディレクター: コンテキストが適用されました",
       "selectPlatform": "ストリーミング プラットフォームを選択してください",
       "aiDealTriggered": "取引がトリガーされました",
-      "aiShowcase": "AI ディレクター: 製品 {name} を紹介します"
+      "aiShowcase": "AI ディレクター: 製品 {name} を紹介します",
+      "metadataSynced": "Metadata synced across platforms",
+      "questStarted": "Quest Started",
+      "backgroundUpdated": "Background Updated",
+      "screenShareStopped": "Screen Share Stopped",
+      "sharingScreen": "Sharing Screen",
+      "agentLeftSwarm": "Agent Left Swarm",
+      "agentScored": "Agent Scored",
+      "agentJoinedSwarm": "Agent Joined Swarm",
+      "agentConnectionFailed": "Failed to agent connection",
+      "aiProductionMode": "AI Production Mode",
+      "aiDirectorFX": "AI Director Fx",
+      "aiSponsorshipActive": "AI Sponsorship Active",
+      "cameraFocusAdjusted": "Camera Focus Adjusted",
+      "shoutout": "Shoutout",
+      "agentArchived": "Agent Archived",
+      "socialBondUpdated": "Social Bond Updated",
+      "questMaster": "Quest Master",
+      "speakerFocusShift": "Speaker Focus Shift",
+      "hypeEvent": "Hype Event",
+      "studioAtmosphere": "Studio Atmosphere",
+      "syndicatingHighlights": "Syndicating Highlights",
+      "aiViralMetadata": "AI Viral Metadata",
+      "aiAssemblingHighlights": "AI Assembling Highlights",
+      "generatingBackground": "Generating Background",
+      "backgroundFailed": "Failed to background",
+      "agentStoppedPerformance": "Agent Stopped Performance",
+      "preparingToSing": "Preparing To Sing",
+      "nowSinging": "No w singing found",
+      "failedToSing": "Failed To Sing",
+      "agentRoleReset": "Agent Role Reset",
+      "promotedToGM": "Promoted To Gm",
+      "musicSynced": "Music Synced",
+      "selectSongFirst": "Select Song First",
+      "emotionSet": "Emotion Set",
+      "productShowcase": "Product Showcase",
+      "visionEnabled": "Vision Enabled",
+      "visionDisabled": "Vision Disabled",
+      "aiViralMomentDetected": "AI Viral Moment Detected",
+      "aiAutoReframing": "AI Auto Reframing",
+      "syncingMetadata": "Syncing metadata with platforms...",
+      "recordingStarted": "Recording Started",
+      "pollStarted": "Poll Started",
+      "questionFeatured": "Question Featured",
+      "stopLiveFirst": "Stop Live First"
     },
     "title": "無題のストリーム",
     "filters": {
@@ -1330,7 +1450,25 @@
       "likes": "いいね！",
       "shares": "株式",
       "sendMessagePlaceholder": "メッセージのプレースホルダーを送信",
-      "simulateInteraction": "インタラクションをシミュレートする"
+      "simulateInteraction": "インタラクションをシミュレートする",
+      "livePoll": "Live Poll",
+      "pollLeader": "Poll Leader",
+      "votes": "Votes",
+      "collectingVotes": "Collecting Votes",
+      "createPoll": "Create Poll",
+      "pollQuestion": "Poll Question",
+      "pollQuestionPlaceholder": "Poll Question Placeholder",
+      "pollOptions": "Poll Options",
+      "addOption": "Add Option",
+      "optionLabel": "Option Label",
+      "launchPoll": "Launch Poll",
+      "toast": {
+        "repliedAs": "Replied As",
+        "replyFailed": "Failed to reply",
+        "giftFailed": "Failed to gift",
+        "pollTriggered": "Poll Triggered",
+        "pollFailed": "Failed to poll"
+      }
     },
     "videoEditor": {
       "export": {
@@ -1523,7 +1661,8 @@
       "economy": "経済",
       "chatVel": "チャットベル",
       "hypeMeter": "ハイプメーター",
-      "liveFeed": "ライブフィード"
+      "liveFeed": "ライブフィード",
+      "likes": "Likes"
     },
     "calendar": {
       "weekDays": {
@@ -1644,7 +1783,26 @@
           "zoom": "ズーム",
           "custom": "カスタム",
           "wipe": "ワイプ"
-        }
+        },
+        "color": "Color",
+        "sceneManager": "Scene Manager",
+        "sceneManagerDesc": "Scene Manager Desc",
+        "availableScenes": "Available Scenes",
+        "customScenes": "Custom Scenes",
+        "createCustomScene": "Create Custom Scene",
+        "pipSettings": "Pip Settings",
+        "frameShape": "Frame Shape",
+        "cornerRadius": "Corner Radius",
+        "border": "Border",
+        "width": "Width",
+        "shadowGlow": "Shadow Glow",
+        "blurForce": "Blur Force",
+        "offsetX": "Offset X",
+        "offsetY": "Offset Y",
+        "switcherCore": "Switcher Core",
+        "multiCamLayout": "Multi Cam Layout",
+        "aiSmartSwitching": "AI Smart Switching",
+        "smartSwitchDesc": "Smart Switch Desc"
       },
       "guest": {
         "inviteGuest": "ゲストを招待する",
@@ -1685,14 +1843,18 @@
         "rejected": "拒否されました",
         "waitingStatus": "ゲスト待機中",
         "guestApproved": "ゲストが承認しました",
-        "guestRejected": "ゲストが拒否されました"
+        "guestRejected": "ゲストが拒否されました",
+        "invitationRejected": "Invitation Rejected"
       },
       "graphics": {
         "hostIdentity": "ホスト名",
         "primaryName": "ブロードキャストプライマリ名",
         "placeholders": {
           "primaryName": "例えばAntStudio プライム",
-          "subtitleRole": "例えばAIニュースアンカー"
+          "subtitleRole": "例えばAIニュースアンカー",
+          "specialist": "Specialist",
+          "tickerDefault": "Ticker Default",
+          "sponsorName": "Sponsor Name"
         },
         "subtitleRole": "サブタイトル/役割",
         "brandColor": "ブランドカラー",
@@ -1716,7 +1878,16 @@
           "bottom-left": "左下",
           "bottom-right": "右下"
         },
-        "statusMessage": "ステータスメッセージ"
+        "statusMessage": "ステータスメッセージ",
+        "guestIdentities": "Guest Identities",
+        "tickerText": "Ticker Text",
+        "uploadLogo": "Upload Logo",
+        "sponsorName": "Sponsor Name",
+        "selectImageError": "Failed to select image",
+        "imageSizeError": "Failed to image size",
+        "uploadSuccess": "Upload successfully successfully",
+        "uploadFailed": "Failed to upload",
+        "logoRemoved": "Logo Removed"
       },
       "linguistic": {
         "globalSync": "グローバル同期",
@@ -1726,7 +1897,10 @@
         "voiceCloneRelay": "ボイスクローンリレー",
         "canvasSubtitles": "キャンバスの字幕",
         "burnInLiveText": "ライブテキストの書き込み",
-        "canvasSubtitlesDesc": "転写されたテキストは、視聴者のブロードキャスト キャンバス上に直接レンダリングされます。"
+        "canvasSubtitlesDesc": "転写されたテキストは、視聴者のブロードキャスト キャンバス上に直接レンダリングされます。",
+        "cloningInProgress": "Cloning In Progress",
+        "liveTranscript": "Live Transcript",
+        "awaitingVoiceProcessing": "Awaiting Voice Processing"
       },
       "economy": {
         "storefrontSync": "店頭同期",
@@ -1740,10 +1914,39 @@
         "flashSaleActive": "フラッシュセールが開催中",
         "endingIn": "で終わる",
         "wallet": {
-          "balance": "バランス"
+          "balance": "バランス",
+          "myWallet": "My Wallet",
+          "topUp": "Top Up"
         },
         "giftCatalog": "ギフトカタログ",
-        "powerups": "パワーアップ"
+        "powerups": "パワーアップ",
+        "insufficientCredits": "Insufficient Credits",
+        "title": "Economy",
+        "sentGift": "Sent Gift",
+        "effectDescription": "Effect Description",
+        "purchaseFailed": "Failed to purchase",
+        "creditsAdded": "Credits Added",
+        "addCreditsFailed": "Failed to add credits",
+        "inventoryDesc": "Inventory Desc",
+        "manageAiAssets": "AI Assets",
+        "syncStore": "Sync Store",
+        "featuredInventory": "Featured Inventory",
+        "readyToShowcase": "Ready To Showcase",
+        "inStock": "In Stock",
+        "clicks": "Clicks",
+        "noProducts": "No products found",
+        "flashSaleEngine": "Flash Sale Engine",
+        "aiDrivenFlashSale": "AI Driven Flash Sale",
+        "flashSaleDesc": "Flash Sale Desc",
+        "stopSale": "Stop Sale",
+        "triggerSale": "Trigger Sale",
+        "connectStore": "Connect Store",
+        "showcasingName": "Showcasing Name",
+        "hotDeal": "Hot Deal",
+        "flashSaleTriggered": "Flash Sale Triggered",
+        "flashSaleEnded": "Flash Sale Ended",
+        "credits": "Credits",
+        "simulatedTopUp": "Simulated Top Up"
       },
       "vibe": {
         "script": {
@@ -1789,7 +1992,9 @@
         "scriptReady": "スクリプトの準備完了: {title}",
         "startProduction": "生産開始",
         "generateScriptSuccess": "スクリプトが正常に生成されました。",
-        "showrunnerActive": "ショーランナーアクティブ!座ってリラックスしてください。"
+        "showrunnerActive": "ショーランナーアクティブ!座ってリラックスしてください。",
+        "generateScriptFailed": "Failed to generate script",
+        "startShowFailed": "Failed to start show"
       },
       "engagement": {
         "livePolls": "ライブ投票",
@@ -1801,7 +2006,48 @@
         "question": "質問",
         "questionPlaceholder": "質問を入力してください",
         "options": "オプション",
-        "launchPoll": "投票を開始する"
+        "launchPoll": "投票を開始する",
+        "optionPlaceholder": "Option Placeholder"
+      },
+      "analytics": {
+        "title": "Analytics",
+        "subtitle": "Subtitle",
+        "current": "Current",
+        "liveNow": "Live Now",
+        "peak": "Peak",
+        "maxAudience": "Max Audience",
+        "totalLikes": "Total Likes",
+        "growthVsLast": "Growth Vs Last",
+        "technicalPulse": "Technical Pulse",
+        "connectionStatus": "Connection Status",
+        "bitrate": "Bitrate",
+        "latency": "Latency",
+        "frameRate": "Frame Rate",
+        "packetLoss": "Packet Loss",
+        "engagementVelocity": "Engagement Velocity",
+        "chatActivity": "Chat Activity",
+        "msgsPerMin": "Msgs Per Min",
+        "shareVelocity": "Share Velocity",
+        "sharesCount": "Shares Count",
+        "platformDistribution": "Platform Distribution",
+        "viewersCount": "Viewers Count",
+        "positiveSentiment": "Positive Sentiment",
+        "likes": "Likes",
+        "aiIntelligence": "AI Intelligence",
+        "updateFrequency": "Update Frequency"
+      },
+      "filters": {
+        "smoothing": "Smoothing",
+        "brighten": "Brighten",
+        "denoise": "Denoise",
+        "slimming": "Slimming",
+        "eyeEnlarge": "Eye Enlarge",
+        "lensProfiles": "Lens Profiles",
+        "environmentSync": "Environment Sync",
+        "uploadEnvironment": "Upload Environment",
+        "chromaKeyEngine": "Chroma Key Engine",
+        "similarity": "Similarity",
+        "smoothness": "Smoothness"
       }
     },
     "tabs": {
@@ -1882,8 +2128,46 @@
         "filters": "フィルター",
         "branding": "ブランディング",
         "overlays": "オーバーレイ",
-        "accessibility": "アクセシビリティ"
-      }
+        "accessibility": "アクセシビリティ",
+        "stream": "Stream",
+        "beauty": "Beauty"
+      },
+      "stream": {
+        "quality": "Quality",
+        "recommendation": "Recommendation"
+      },
+      "beauty": {
+        "smoothing": "Smoothing",
+        "brightness": "Brightness",
+        "sharpen": "Sharpen",
+        "denoise": "Denoise",
+        "redEye": "Red Eye",
+        "redEyeDesc": "Red Eye Desc"
+      },
+      "background": {
+        "standard": "Standard",
+        "standardDesc": "Standard Desc",
+        "blur": "Blur",
+        "blurDesc": "Blur Desc",
+        "virtual": "Virtual",
+        "virtualDesc": "Virtual Desc",
+        "blurIntensity": "Blur Intensity",
+        "stageAssets": "Stage Assets"
+      },
+      "actions": {
+        "reset": "Reset",
+        "save": "Save"
+      },
+      "skinSmoothing": "Skin Smoothing",
+      "faceBrightening": "Face Brightening",
+      "sharpen": "Sharpen",
+      "denoise": "Denoise",
+      "intensity": "Intensity",
+      "assets": "Assets",
+      "keyColor": "Key Color",
+      "similarity": "Similarity",
+      "smoothness": "Smoothness",
+      "tickerContent": "Ticker Content"
     },
     "vibes": {
       "technoChill": "テクノチル"
@@ -1896,7 +2180,15 @@
           "share": "共有",
           "download": "ダウンロード",
           "delete": "消去"
-        }
+        },
+        "saved": "Saved",
+        "save": "Save",
+        "publish": "Publish",
+        "loadingAccounts": "Loading Accounts",
+        "noAccounts": "No accounts found",
+        "connectAccounts": "Connect Accounts",
+        "videoTitle": "Video Title",
+        "publishSelected": "Publish Selected"
       }
     },
     "swarm": {
@@ -2044,7 +2336,8 @@
       "step4Tip": "これを切り替えると、プロフェッショナルな音声カスタマイズにアクセスできます。",
       "generateTitle": "ビデオを生成しましょう！",
       "generateDesc": "準備完了です！ 「ビデオを生成」をクリックすると、AI が数分でプロのアバター ビデオを作成します。",
-      "generateTip": "ビデオの準備ができたら通知が届きます。"
+      "generateTip": "ビデオの準備ができたら通知が届きます。",
+      "stageControlsDesc": "Control your microphone, camera, and streaming status from here. Start/stop recording, go live, or capture highlights with one click."
     },
     "virtual": {
       "aiSuffix": "AI"
@@ -2060,7 +2353,8 @@
       "vibe": "バイブ",
       "ducking": "ダッキング",
       "standby": "待機する",
-      "masterVol": "マスターボリューム"
+      "masterVol": "マスターボリューム",
+      "engaged": "Engaged"
     },
     "contextSelector": {
       "greeting": "どのコンテキストでストリーミングしていますか?",
@@ -2112,7 +2406,58 @@
     },
     "dashboard": {
       "directiveTitle": "指令"
-    }
+    },
+    "errors": {
+      "productNotFound": "Product Not Found"
+    },
+    "audience": {
+      "presenceGrid": "Presence Grid",
+      "vipsPresent": "Vips Present"
+    },
+    "directorNotes": {
+      "title": "Director Notes",
+      "rejected": "Rejected"
+    },
+    "overlays": {
+      "aiProduction": {
+        "title": "AI Production",
+        "rendering": "Rendering"
+      }
+    },
+    "synthesis": {
+      "title": "Synthesis",
+      "subtitle": "Subtitle",
+      "loading": "Loading",
+      "commercialSuccess": "Commercial successfully successfully",
+      "totalRevenue": "Total Revenue",
+      "orders": "Orders",
+      "conversion": "Conversion",
+      "units": "Units",
+      "growthStrategies": "Growth Strategies",
+      "viralClipHub": "Viral Clip Hub",
+      "copyHook": "Copy Hook",
+      "finalizeExport": "Finalize Export",
+      "toast": {
+        "copied": "Copied"
+      }
+    },
+    "layouts": {
+      "adminTitle": "AntStudio Admin",
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "payments": "Payments",
+      "systemSettings": "System Settings",
+      "backToSite": "Back to Site",
+      "adminControlPanel": "Admin Control Panel"
+    },
+    "logs": {
+      "cameraSwitch": "Camera Switch"
+    },
+    "autoEmotion": {
+      "enabled": "Auto-Emotion Enabled",
+      "disabled": "Auto-Emotion Disabled"
+    },
+    "platformPreselected": "Platform Preselected"
   },
   "subscription": {
     "title": "サブスクリプションと請求",
@@ -2187,7 +2532,9 @@
           "paypal": {
             "title": "ペイパル",
             "desc": "PayPal による安全な支払い"
-          }
+          },
+          "redirecting": "Redirecting",
+          "title": "Payment"
         },
         "save": "セール 20% オフ",
         "features": {
@@ -2209,7 +2556,9 @@
     "save": "プロファイルの保存",
     "cancel": "キャンセル",
     "plan": "プラン",
-    "upgrade": "アップグレード"
+    "upgrade": "アップグレード",
+    "uploadSuccess": "Upload successfully successfully",
+    "uploadFailed": "Failed to upload"
   },
   "account": {
     "title": "ユーザープロフィール",
@@ -2326,6 +2675,9 @@
         "load": "システム負荷",
         "cpuFulfillment": "CPUのフルフィルメント",
         "manage": "インフラストラクチャの管理"
+      },
+      "toasts": {
+        "denied": "Denied"
       }
     },
     "users": {
@@ -2360,7 +2712,9 @@
       "toasts": {
         "loadFailed": "ユーザーのロードに失敗しました",
         "statusUpdated": "ユーザーステータスが{status}_に更新されました",
-        "updateFailed": "ユーザーステータスの更新に失敗しました"
+        "updateFailed": "ユーザーステータスの更新に失敗しました",
+        "userDeleted": "User Deleted",
+        "deleteFailed": "Failed to delete"
       },
       "deleteConfirm": {
         "message": "このユーザーを削除してもよろしいですか?",
@@ -2454,7 +2808,8 @@
       "terminate": "消去",
       "confirmTerminate": "ライセンス {key} を終了してもよろしいですか?",
       "toasts": {
-        "downlinkFailure": "フリート レジストリとのダウンリンクを確立できませんでした"
+        "downlinkFailure": "フリート レジストリとのダウンリンクを確立できませんでした",
+        "terminationSequence": "Termination Sequence"
       }
     },
     "financials": {
@@ -2498,7 +2853,10 @@
       "stability": "メッシュの安定性",
       "statusNominal": "公称",
       "noNodes": "アクティブなストリーミング ノードがありません",
-      "noNodesDesc": "中央のスタジオから新しいライブ プロジェクション エンティティをデプロイしてブロードキャストを開始します。"
+      "noNodesDesc": "中央のスタジオから新しいライブ プロジェクション エンティティをデプロイしてブロードキャストを開始します。",
+      "toasts": {
+        "pulseFailed": "Failed to pulse"
+      }
     },
     "infra": {
       "title": "インフラストラクチャの健全性",
@@ -2519,7 +2877,12 @@
       "liveHeartbeat": "ライブハートビート",
       "pulse": "脈",
       "loadLabel": "ロードラベル",
-      "waitingHeartbeat": "ハートビートを待っています"
+      "waitingHeartbeat": "ハートビートを待っています",
+      "toasts": {
+        "fetchFailed": "Failed to fetch",
+        "failoverInitiated": "Failover Initiated",
+        "integrityVerified": "Integrity Verified"
+      }
     },
     "monitoring": {
       "title": "監視ステーション",
@@ -2559,7 +2922,16 @@
       "records": "記録",
       "noRecords": "記録がありません",
       "noClientErrors": "クライアントエラーなし",
-      "comingSoon": "近日公開"
+      "comingSoon": "近日公開",
+      "waitingEvents": "Waiting Events",
+      "searchKeywords": "Search Keywords",
+      "toasts": {
+        "loadLogsFailed": "Failed to load logs",
+        "exportSuccess": "Export successfully successfully",
+        "exportFailed": "Failed to export",
+        "saveSettingsFailed": "Failed to save settings"
+      },
+      "confirmClearLogs": "Confirm Clear Logs"
     },
     "logs": {
       "title": "生のテレメトリ",
@@ -2676,7 +3048,12 @@
         "syncCookiesFailed": "同期に失敗しました: {error}",
         "applyConfig": "構成の適用",
         "abort": "キャンセル",
-        "generateProtocol": "プロトコルの生成"
+        "generateProtocol": "プロトコルの生成",
+        "docRequired": "Doc Required",
+        "aiTemplateSuccess": "AI Template successfully successfully",
+        "aiTemplateFailed": "Failed to ai template",
+        "configStaged": "Config Staged",
+        "invalidHeaders": "Invalid Headers"
       },
       "ai": {
         "captchaService": "キャプチャ解決ネットワーク",
@@ -2731,7 +3108,10 @@
           "voice": "声",
           "agent": "エージェント"
         },
-        "protocol": "プロトコル"
+        "protocol": "プロトコル",
+        "pasteKeys": "Paste Keys",
+        "protocolDesc": "Protocol Desc",
+        "docUrlPlaceholder": "Doc URL Placeholder"
       },
       "table": {
         "identity": "身元",
@@ -2874,6 +3254,10 @@
           "appLogo": "アプリのロゴをアップロードします。例えばAntStudio.png",
           "favicon": "ファビコンをアップロードします。例えばAntStudio.ico",
           "logo": "ロゴをアップロードします。例えばAntStudio.png"
+        },
+        "toasts": {
+          "uploadSuccess": "Upload successfully successfully",
+          "uploadFailed": "Failed to upload"
         }
       }
     },
@@ -2966,7 +3350,7 @@
       "provision": {
         "title": "アカウントのプロビジョニング",
         "workEmail": "仕事用メールアドレス",
-        "placeholderEmail": "neo@matrix.io",
+        "placeholderEmail": "neo{'@'}matrix.io",
         "firstName": "ファーストネーム",
         "lastName": "苗字",
         "accessLevel": "アクセスレベルクリアランス",
@@ -3051,7 +3435,19 @@
       "toast": {
         "enabled": "有効",
         "disabled": "無効",
-        "stRequired": "セッショントークンが必要です"
+        "stRequired": "セッショントークンが必要です",
+        "oauthFailed": "Failed to oauth",
+        "toggleFailed": "Failed to toggle",
+        "enterProjectId": "Enter Project ID",
+        "projectIdUpdated": "Project ID Updated",
+        "projectIdUpdateFailed": "Failed to project id update",
+        "loadFailed": "Failed to load",
+        "enterEmail": "Enter Email",
+        "integrating11Labs": "Integrating11 Labs",
+        "syncing": "Syncing",
+        "syncFailed": "Failed to sync",
+        "removeConfirm": "Remove Confirm",
+        "removeFailed": "Failed to remove"
       },
       "updateToken": "トークンの更新",
       "tokenExpiredHelp": "Google Flowセッショントークンを取得するにはどうすればよいですか?"
@@ -3115,7 +3511,8 @@
       "deleteConfirm": {
         "title": "ライセンスの削除",
         "confirm": "確認する",
-        "cancel": "キャンセル"
+        "cancel": "キャンセル",
+        "message": "Message"
       }
     },
     "release": {
@@ -3353,30 +3750,37 @@
         "options": {
           "aiVideo": {
             "label": "台本ペースト AI 動画生成",
-            "desc": "テキストプロンプトから絵コンテ、AI ナレーション、BGM、動的字幕を自動生成します。"
+            "desc": "テキストプロンプトから絵コンテ、AI ナレーション、BGM、動的字幕を自動生成します。",
+            "button": "Launch AI Engine"
           },
           "aiAvatar": {
             "label": "AI デジタルアバター＆ペルソナ",
-            "desc": "Gemini 音声合成とリップシンクを備えた 2D 写真、3D VRM、Aidol 動画アバターを制作。"
+            "desc": "Gemini 音声合成とリップシンクを備えた 2D 写真、3D VRM、Aidol 動画アバターを制作。",
+            "button": "Create AI Personas"
           },
           "productAds": {
             "label": "EC 商品 URL 動画広告ウィザード",
-            "desc": "商品ページの URL を貼り付けるだけで、売上に直結する動画広告を自動生成します。"
+            "desc": "商品ページの URL を貼り付けるだけで、売上に直結する動画広告を自動生成します。",
+            "button": "Convert URL to Ad"
           },
           "saleStudio": {
             "label": "24/7 自律型セールススタジオ",
-            "desc": "AI アバター、FSM 商品ピッチループ、リアルタイム Q&A、QR コードで 24 時間ライブ配信。"
+            "desc": "AI アバター、FSM 商品ピッチループ、リアルタイム Q&A、QR コードで 24 時間ライブ配信。",
+            "button": "Open Sale Studio"
           },
           "record": {
             "label": "画面＆カメラ録画スタジオ",
-            "desc": "Web カメラ、デスクトップ画面、プレゼンテーション、マルチトラック音声の録画に対応。"
+            "desc": "Web カメラ、デスクトップ画面、プレゼンテーション、マルチトラック音声の録画に対応。",
+            "button": "Start Recording"
           },
           "blank": {
             "label": "マルチトラックタイムラインスタジオ",
-            "desc": "マルチトラックの動画/音声タイムライン、トランジション、オーバーレイを備えた動画編集。"
+            "desc": "マルチトラックの動画/音声タイムライン、トランジション、オーバーレイを備えた動画編集。",
+            "button": "Open Timeline Studio"
           }
         }
-      }
+      },
+      "headline": "6 Specialized AI Video Production Workflows"
     },
     "metrics": {
       "uptime": "配信稼働率",
@@ -3445,6 +3849,56 @@
         "conduct": {
           "title": "4. ユーザーの行動規範",
           "content": "違法、有害、または他者の権利を侵害するコンテンツを生成または配布するために当社プラットフォームを利用しないことに同意するものとします。"
+        }
+      }
+    },
+    "home": {
+      "hero": {
+        "tagline": "Tagline",
+        "start": "Start"
+      },
+      "intro": {
+        "title": "Intro",
+        "desc": "Description for intro"
+      },
+      "partners": {
+        "title": "Partners",
+        "collab": "Collab",
+        "desc": "Description for partners"
+      },
+      "gallery": {
+        "watchFilms": "Watch Films",
+        "zooBreak": "Zoo Break",
+        "microverse": "Microverse",
+        "windowSeat": "Window Seat",
+        "cottonSpace": "Cotton Space",
+        "giraffeRun": "Giraffe Run",
+        "sandWaves": "Sand Waves"
+      },
+      "pricing": {
+        "title": "Pricing",
+        "subtitle": "Subtitle",
+        "keepSimple": "Keep Simple",
+        "everythingFree": "Everything Free",
+        "creditsMonthly": "Credits Monthly",
+        "prioritySupport": "Priority Support",
+        "full4k": "Full4k",
+        "commercialRights": "Commercial Rights",
+        "getStarted": "Get Started"
+      },
+      "footer": {
+        "privacy": "Privacy",
+        "terms": "Terms"
+      },
+      "features": {
+        "consistent": {
+          "name": "Name"
+        },
+        "seamless": {
+          "name": "Name"
+        },
+        "cinematic": {
+          "name": "Name"
         }
       }
     }
@@ -3654,7 +4108,8 @@
         "visemeSynthesisStarted": "口形素スプライトシートを生成しています...",
         "visemeSynthesisFailed": "口形素スプライトシートの生成に失敗しました",
         "visemeSynthesisComplete": "口形素スプライトシートが正常に生成されました",
-        "voiceConfigMissing": "最初にインフルエンサーの声を選択してください"
+        "voiceConfigMissing": "最初にインフルエンサーの声を選択してください",
+        "videoSilentGenerated": "Video Silent Generated"
       },
       "emotions": {
         "happy": "ハッピー",
@@ -3934,7 +4389,8 @@
         },
         "toasts": {
           "generateFailed": "AI合成に失敗しました。",
-          "generateSuccess": "AI合成に成功しました。"
+          "generateSuccess": "AI合成に成功しました。",
+          "musicSynced": "Music Synced"
         },
         "skinType": "肌タイプ",
         "hairType": "髪の種類",
@@ -4025,7 +4481,9 @@
       "target": "ターゲット",
       "languages": "言語",
       "lyricsLabel": "歌詞レーベル",
-      "lyricsLanguages": "歌詞の言語"
+      "lyricsLanguages": "歌詞の言語",
+      "searchLanguage": "Search Language",
+      "lyricsLanguage": "Lyrics Language"
     },
     "voiceLibrary": {
       "title": "音声ライブラリ",
@@ -4333,7 +4791,8 @@
       "errors": {
         "unsupportedUrl": "サポートされていない URL",
         "failed": "失敗した"
-      }
+      },
+      "connectingTo": "Connecting To"
     },
     "previewDialog": {
       "defaultAuthor": "デフォルトの作成者",
@@ -4364,8 +4823,12 @@
         "desc": "説明",
         "priceLabel": "価格ラベル",
         "feeLabel": "料金ラベル",
-        "securityNote": "セキュリティに関する注意事項"
+        "securityNote": "セキュリティに関する注意事項",
+        "title": "Purchase"
       }
+    },
+    "toasts": {
+      "purchaseSuccess": "Purchase successfully successfully"
     }
   },
   "merchant": {
@@ -4621,7 +5084,8 @@
       "uploadSuccess": "ファイルは正常にアップロードされました。",
       "uploadFailed": "ファイルのアップロードに失敗しました。"
     },
-    "confirmDelete": "このファイルを削除してもよろしいですか?"
+    "confirmDelete": "このファイルを削除してもよろしいですか?",
+    "deleteSuccess": "Delete successfully successfully"
   },
   "auth": {
     "login": {
@@ -4738,7 +5202,14 @@
       "current": "現在",
       "new": "新しい",
       "confirm": "確認する",
-      "failed": "失敗した"
+      "failed": "失敗した",
+      "currentPlaceholder": "Current Placeholder",
+      "newPlaceholder": "New Placeholder",
+      "confirmPlaceholder": "Confirm Placeholder",
+      "fillAll": "Fill All",
+      "mismatch": "Mismatch",
+      "tooShort": "Too Short",
+      "success": "Success"
     }
   },
   "sidebar": {
@@ -4839,7 +5310,9 @@
       "activeEnvironment": "アクティブな環境",
       "autoCamera": "オートカメラ",
       "status": {
-        "prod": "製品"
+        "prod": "製品",
+        "autoProducing": "Auto Producing",
+        "vfxActive": "Vfx Active"
       },
       "influencerLink": "インフルエンサーリンク",
       "activeVfx": "アクティブVFX",
@@ -4869,7 +5342,11 @@
       "reply": "返事",
       "replyPlaceholder": "返信プレースホルダー",
       "sending": "送信中",
-      "postReply": "返信を投稿する"
+      "postReply": "返信を投稿する",
+      "aiContext": {
+        "videoTitle": "Video Title",
+        "tone": "Tone"
+      }
     }
   },
   "support": {
@@ -4893,7 +5370,11 @@
       "dataAuthDesc": "データ認証の説明",
       "cancel": "キャンセル",
       "transmitting": "送信中",
-      "submit": "提出する"
+      "submit": "提出する",
+      "subjectPlaceholder": "Subject Placeholder",
+      "sitrepPlaceholder": "Sitrep Placeholder",
+      "compiling": "Compiling",
+      "attached": "Attached"
     }
   },
   "pricing": {
@@ -4903,7 +5384,9 @@
     "perMonth": "月あたり",
     "features": {
       "prioritySupport": "優先サポート",
-      "standardSupport": "標準サポート"
+      "standardSupport": "標準サポート",
+      "videosPerMonth": "Videos Per Month",
+      "storageLimit": "Storage Limit"
     },
     "getStarted": "始めましょう",
     "subscribeNow": "今すぐ購読する",
@@ -4911,7 +5394,10 @@
       "title": "よくある質問",
       "a1": "AntStudioとは何ですか?",
       "a2": "プロジェクトを作成するにはどうすればよいですか?",
-      "a3": "AI ペルソナをプロジェクトに追加するにはどうすればよいですか?"
+      "a3": "AI ペルソナをプロジェクトに追加するにはどうすればよいですか?",
+      "q1": "Q1",
+      "q2": "Q2",
+      "q3": "Q3"
     },
     "plans": {
       "free": "無料",
@@ -4935,13 +5421,15 @@
       "title": "製品が見つかりません",
       "desc": "お探しの商品は存在しません。",
       "backHome": "ホームに戻る"
-    }
+    },
+    "poweredBy": "Powered By"
   },
   "affiliate": {
     "title": "アフィリエイト プログラム",
     "join": {
       "desc": "アフィリエイト プログラムに参加すると、AntStudio を紹介する顧客ごとにコミッションを獲得できます。",
-      "button": "今すぐ参加"
+      "button": "今すぐ参加",
+      "title": "Join"
     },
     "engine": {
       "title": "アフィリエイト エンジン",
@@ -4949,7 +5437,8 @@
       "copy": "コピー",
       "rate": "レート",
       "recurring": "繰り返し発生する",
-      "cookie": "クッキー"
+      "cookie": "クッキー",
+      "days": "Days"
     },
     "commissions": {
       "title": "手数料",
@@ -4967,7 +5456,14 @@
     },
     "tips": {
       "title": "ヒント",
-      "tip1": "ヒント1"
+      "tip1": "ヒント1",
+      "tip2": "Tip2"
+    },
+    "subtitle": "Subtitle",
+    "partnerBadge": "Partner Badge",
+    "toasts": {
+      "copySuccess": "Copy successfully successfully",
+      "noBalance": "No balance found"
     }
   },
   "analytics": {
@@ -4981,7 +5477,8 @@
       "avgWatchTime": "平均視聴時間",
       "zeroTime": "ゼロタイム",
       "stable": "安定した",
-      "commerceRevenue": "商業収入"
+      "commerceRevenue": "商業収入",
+      "vsAvg": "Vs Avg"
     },
     "heatmap": {
       "title": "ヒートマップ",
@@ -5008,12 +5505,16 @@
       "empty": "空の",
       "dialog": {
         "abort": "キャンセル",
-        "initialize": "初期化する"
+        "initialize": "初期化する",
+        "title": "Dialog",
+        "label": "Label",
+        "placeholder": "Placeholder"
       },
       "success": {
         "warning": "警告",
         "copy": "コピー",
-        "stored": "保存済み"
+        "stored": "保存済み",
+        "title": "Success"
       }
     },
     "webhooks": {
@@ -5023,17 +5524,29 @@
       "empty": "空の",
       "dialog": {
         "cancel": "キャンセル",
-        "establish": "確立する"
+        "establish": "確立する",
+        "title": "Dialog",
+        "urlLabel": "URL Label",
+        "urlPlaceholder": "URL Placeholder",
+        "eventsLabel": "Events Label"
       }
     },
     "headless": {
       "title": "ヘッドレス",
       "auth": "認証",
-      "verify": "確認する"
+      "verify": "確認する",
+      "verifyDesc": "Verify Desc"
     },
     "toasts": {
       "genFailed": "生成に失敗しました",
-      "webhookFailed": "Webhook が失敗しました"
+      "webhookFailed": "Webhook が失敗しました",
+      "syncFailed": "Failed to sync",
+      "revoked": "Revoked",
+      "revokeFailed": "Failed to revoke",
+      "webhookEstablished": "Webhook Established",
+      "webhookTerminated": "Webhook Terminated",
+      "terminateFailed": "Failed to terminate",
+      "copySuccess": "Copy successfully successfully"
     }
   },
   "guestRoom": {
@@ -5072,7 +5585,12 @@
       "unmuted": "ミュート解除",
       "cameraOn": "カメラオン",
       "cameraOff": "カメラオフ",
-      "hostApproved": "ホストの承認済み"
+      "hostApproved": "ホストの承認済み",
+      "kicked": "Kicked",
+      "mediaPermissionDenied": "Media Permission Denied",
+      "hostDeclined": "Host Declined",
+      "p2pFailed": "Failed to p2p",
+      "disconnected": "Disconnected"
     }
   },
   "joinOrg": {
@@ -5091,7 +5609,9 @@
       "validationFailed": "検証に失敗しました"
     },
     "toasts": {
-      "error": "エラー"
+      "error": "エラー",
+      "success": "Success",
+      "declined": "Declined"
     }
   },
   "licensePortal": {
@@ -5108,7 +5628,8 @@
     },
     "license": {
       "keyId": "キーID",
-      "units": "単位"
+      "units": "単位",
+      "expires": "Expires"
     },
     "empty": {
       "title": "ライセンスなし"
@@ -5132,14 +5653,22 @@
       "popular": "人気のある",
       "edgeUnits": "エッジユニット",
       "usersPerUnit": "ユニットあたりのユーザー数",
-      "projectsPerUnit": "単位当たりのプロジェクト数"
+      "projectsPerUnit": "単位当たりのプロジェクト数",
+      "billed": "Billed",
+      "deployAction": "Deploy Action"
     },
     "toasts": {
       "checkoutFailed": "チェックアウトに失敗しました",
       "paymentFailed": "支払いに失敗しました",
       "paymentExpired": "支払い期限が切れました",
       "paymentVerificationFailed": "支払いの検証に失敗しました",
-      "paymentProcessingError": "支払い処理エラー"
+      "paymentProcessingError": "支払い処理エラー",
+      "fetchLicensesFailed": "Failed to fetch licenses",
+      "initiateCheckout": "Initiate Checkout",
+      "renewing": "Renewing",
+      "renewalError": "Failed to renewal",
+      "paymentSuccess": "Payment successfully successfully",
+      "paymentCancelled": "Payment Cancelled"
     },
     "payment": {
       "gateway": "ゲートウェイ"
@@ -5160,6 +5689,12 @@
     "pairing": {
       "title": "モバイルインジェスト",
       "desc": "モバイルデバイスを部屋にペアリングする"
+    },
+    "toasts": {
+      "cameraRequired": "Camera Required",
+      "broadcastStarted": "Broadcast Started",
+      "switchingCamera": "Switching Camera",
+      "settingsInfo": "Settings Info"
     }
   },
   "organization": {
@@ -5174,13 +5709,15 @@
       "actions": {
         "modifyAccess": "アクセス権の変更",
         "revoke": "取り消す"
-      }
+      },
+      "joined": "Joined"
     },
     "invitations": {
       "pending": "保留中",
       "status": {
         "pending": "保留中"
-      }
+      },
+      "expires": "Expires"
     },
     "sidebar": {
       "activeContext": "アクティブなコンテキスト",
@@ -5200,15 +5737,47 @@
     },
     "dialogs": {
       "create": {
-        "submit": "提出する"
+        "submit": "提出する",
+        "title": "Create",
+        "fields": {
+          "name": "Name",
+          "slug": "Slug",
+          "description": "Description for fields"
+        },
+        "placeholders": {
+          "name": "Name",
+          "slug": "Slug",
+          "description": "Description for placeholders"
+        }
       },
       "invite": {
-        "submit": "提出する"
+        "submit": "提出する",
+        "title": "Invite",
+        "fields": {
+          "email": "Email",
+          "role": "Role"
+        },
+        "placeholders": {
+          "email": "Email",
+          "role": "Role"
+        }
       }
+    },
+    "subtitle": "Subtitle",
+    "roles": {
+      "producer": "Producer",
+      "editor": "Editor",
+      "synthesizer": "Synthesizer"
+    },
+    "toasts": {
+      "switched": "Switched",
+      "actionExecuted": "Action Executed"
     }
   },
   "paymentSuccess": {
-    "viewSubscription": "サブスクリプションを見る"
+    "viewSubscription": "サブスクリプションを見る",
+    "title": "Payment successfully",
+    "subtitle": "Subtitle"
   },
   "platformCallback": {
     "waitDesc": "プラットフォームに接続しています...",
@@ -5220,11 +5789,17 @@
     "service": "サービス",
     "errors": {
       "paymentCancelled": "支払いがキャンセルされました",
-      "exchangeFailed": "交換に失敗しました"
+      "exchangeFailed": "交換に失敗しました",
+      "missingCode": "Missing Code",
+      "unknownPlatform": "Unknown Platform"
     },
     "connecting": "接続中...",
     "connected": "接続済み",
-    "disconnected": "切断されました"
+    "disconnected": "切断されました",
+    "toasts": {
+      "aiLinked": "AI Linked",
+      "paymentSuccess": "Payment successfully successfully"
+    }
   },
   "platformCMS": {
     "header": {
@@ -5298,7 +5873,18 @@
       "sortBy": "並べ替え",
       "newest": "最新",
       "mostViews": "最も多くのビュー"
-    }
+    },
+    "toasts": {
+      "liveConfigured": "Live stream configured successfully",
+      "refreshed": "Stream settings refreshed",
+      "streamError": "Stream configuration error",
+      "failedToLoad": "Failed to load",
+      "failedToPublish": "Failed to publish"
+    },
+    "confirmDelete": "Are you sure you want to delete this video?",
+    "deleteVideo": "Delete video",
+    "publishVideo": "Publish video",
+    "postVideo": "Post video"
   },
   "platforms": {
     "status": {
@@ -5389,7 +5975,14 @@
       "hostEnabledCam": "ホスト対応カメラ",
       "hostDisabledCam": "ホストが無効になっているカメラ",
       "cameraActive": "カメラがアクティブです",
-      "cameraInactive": "カメラが非アクティブ"
+      "cameraInactive": "カメラが非アクティブ",
+      "cameraRequired": "Camera Required",
+      "invalidSession": "Invalid Session",
+      "broadcastLive": "Broadcast Live",
+      "hostDeclined": "Host Declined",
+      "signalingDisconnected": "Signaling Disconnected",
+      "removedByHost": "Removed By Host",
+      "sessionStopped": "Session Stopped"
     }
   },
   "viral": {
@@ -5457,6 +6050,10 @@
       "success": "成功",
       "failed": "失敗した",
       "pending": "保留中"
+    },
+    "toasts": {
+      "hookPromoted": "Hook Promoted",
+      "scheduled": "Scheduled"
     }
   },
   "videoEditor": {
@@ -5591,7 +6188,16 @@
       "addSuccess": "画像がアートボードに追加されました",
       "addError": "画像の追加中にエラーが発生しました",
       "loadError": "画像アセットのロードに失敗しました",
-      "noImagesFound": "画像が見つかりません"
+      "noImagesFound": "画像が見つかりません",
+      "addImageError": "Failed to add image",
+      "replaceImageLoading": "Replace Image Loading",
+      "replaceImageSuccess": "Replace Image successfully successfully",
+      "replaceImageError": "Failed to replace image",
+      "addImageLoading": "Add Image Loading",
+      "addImageSuccess": "Add Image successfully successfully",
+      "uploadLoading": "Upload Loading",
+      "uploadSuccess": "Upload successfully successfully",
+      "uploadError": "Failed to upload"
     },
     "video": {
       "title": "動画",
@@ -5614,7 +6220,13 @@
       "addSuccess": "動画がアートボードに追加されました",
       "addError": "ビデオの追加中にエラーが発生しました",
       "loadError": "ビデオアセットのロードに失敗しました",
-      "videoLabel": "ビデオ"
+      "videoLabel": "ビデオ",
+      "noVideosFound": "No videos found found",
+      "replaceVideoLoading": "Replace Video Loading",
+      "replaceVideoSuccess": "Replace Video successfully successfully",
+      "replaceVideoError": "Failed to replace video",
+      "addVideoLoading": "Add Video Loading",
+      "addVideoSuccess": "Add Video successfully successfully"
     },
     "recorder": {
       "title": "レコーダー",
@@ -5650,7 +6262,11 @@
       "delete": "レイヤーの削除",
       "unnamed": "名前のないレイヤー",
       "noLayers": "レイヤーなし",
-      "emptyStateDesc": "開始するには要素を追加してください"
+      "emptyStateDesc": "開始するには要素を追加してください",
+      "hideLayer": "Hide Layer",
+      "showLayer": "Show Layer",
+      "unlockLayer": "Unlock Layer",
+      "lockLayer": "Lock Layer"
     },
     "element": {
       "title": "要素",
@@ -5798,7 +6414,31 @@
       "addLoading": "オーディオ アセットをロード中です...",
       "addSuccess": "オーディオ アセットがアートボードに追加されました",
       "addError": "オーディオアセットの追加中にエラーが発生しました",
-      "loadError": "オーディオアセットのロードに失敗しました"
+      "loadError": "オーディオアセットのロードに失敗しました",
+      "mix": "Mix",
+      "enhancingAi": "Enhancing AI",
+      "enhancedSuccess": "Enhanced successfully successfully",
+      "enhancedFailed": "Failed to enhanced",
+      "equalizer": "Equalizer",
+      "low": "Low",
+      "mid": "Mid",
+      "high": "High",
+      "dynamics": "Dynamics",
+      "threshold": "Threshold",
+      "ratio": "Ratio",
+      "automation": "Automation",
+      "addKey": "Add Key",
+      "noKeyframes": "No keyframes found",
+      "voiceEnhancement": "Voice Enhancement",
+      "studioVoice": "Studio Voice",
+      "clarityAutoLevel": "Clarity Auto Level",
+      "processing": "Processing",
+      "cleanAiDenoise": "Clean AI Denoise",
+      "gateThreshold": "Gate Threshold",
+      "reverb": "Reverb",
+      "echoDelay": "Echo Delay",
+      "delayTime": "Delay Time",
+      "feedback": "Feedback"
     },
     "upload": {
       "title": "アップロード",
@@ -5822,7 +6462,10 @@
       "addVideoError": "ビデオアセットの追加中にエラーが発生しました",
       "addAudioLoading": "オーディオ アセットをロード中です...",
       "addAudioSuccess": "オーディオ アセットがアートボードに追加されました",
-      "addAudioError": "オーディオアセットの追加中にエラーが発生しました"
+      "addAudioError": "オーディオアセットの追加中にエラーが発生しました",
+      "imageAddError": "Failed to image add",
+      "videoAddError": "Failed to video add",
+      "audioAddError": "Failed to audio add"
     },
     "arrange": {
       "title": "整える",
@@ -6028,7 +6671,9 @@
     "fill": {
       "title": "埋める",
       "solid": "固体",
-      "gradient": "勾配"
+      "gradient": "勾配",
+      "color": "Color",
+      "mode": "Mode"
     },
     "filters": {
       "title": "フィルター",
@@ -6155,6 +6800,9 @@
       "timeLimit": "期限",
       "toggleTimeline": "タイムラインパネルの切り替え",
       "timeline": "タイムライン"
+    },
+    "elements": {
+      "noSceneElements": "No scene elements found"
     }
   },
   "ai": {
@@ -6282,6 +6930,10 @@
     "networkStatus": "WebRTC ネットワーク",
     "excellent": "素晴らしい",
     "good": "良い",
-    "poor": "貧しい"
+    "poor": "貧しい",
+    "reconnecting": "Reconnecting...",
+    "reconnectingMsg": "SERVER CONNECTION LOST! AUTO-RECONNECTING... (Attempt {attempt}/30)",
+    "pausedBannerSub": "STREAM PAUSED - WILL AUTO-RESUME WHEN SERVER IS BACK ONLINE",
+    "platformPreselected": "Platform pre-selected"
   }
 }

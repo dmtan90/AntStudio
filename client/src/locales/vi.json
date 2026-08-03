@@ -82,7 +82,8 @@
       "back": "Mặt sau",
       "next": "Kế tiếp",
       "gotIt": "Hiểu rồi",
-      "skip": "Nhảy"
+      "skip": "Nhảy",
+      "step": "Step"
     },
     "creator": "Người sáng tạo",
     "optional": "Không bắt buộc",
@@ -114,7 +115,9 @@
     "disconnect": "Ngắt kết nối",
     "returnDashboard": "Trang tổng quan trả lại",
     "time": {
-      "justNow": "Ngay bây giờ"
+      "justNow": "Ngay bây giờ",
+      "minutesAgo": "Minutes Ago",
+      "hoursAgo": "Hours Ago"
     },
     "revoke": "Thu hồi",
     "noData": "Không có dữ liệu",
@@ -132,7 +135,8 @@
     "remove": "Di dời",
     "generate": "Phát ra",
     "generateImage": "Tạo hình ảnh",
-    "generateVideo": "Tạo Video"
+    "generateVideo": "Tạo Video",
+    "aiProductionDesc": "AI Production Desc"
   },
   "dashboard": {
     "header": {
@@ -259,7 +263,7 @@
     },
     "editor": {
       "title": "Trình chỉnh sửa video",
-      "messagePlaceholder": "Nhập tin nhắn của bạn, @ để đề cập đến...",
+      "messagePlaceholder": "Nhập tin nhắn của bạn, {'@'} để đề cập đến...",
       "storyboard": {
         "title": "Bảng phân cảnh",
         "keyElements": "Các yếu tố chính",
@@ -481,7 +485,9 @@
         "addCaptionLine": "Thêm dòng chú thích",
         "noCaptionsYet": "Chưa có dòng phụ đề cho đoạn này.",
         "captionsSaved": "Đã lưu phụ đề",
-        "transitions": "Chuyển tiếp"
+        "transitions": "Chuyển tiếp",
+        "addFirstCaption": "Add First Subtitle Line",
+        "batchStartSuccess": "Batch generation started"
       },
       "timeline": {
         "title": "Dòng thời gian",
@@ -547,7 +553,9 @@
         "regenVoiceover": "Lồng tiếng Regen",
         "voiceVolume": "Âm lượng giọng nói",
         "voiceSpeed": "Tốc độ giọng nói",
-        "regenCaptions": "Chú thích Regen"
+        "regenCaptions": "Chú thích Regen",
+        "notSupportedForTemplate": "No t supported for template found",
+        "bgmGenerated": "Bgm Generated"
       },
       "chatAssistant": "Trợ lý AI",
       "video": {
@@ -627,7 +635,9 @@
             "slide": "Cầu trượt",
             "none": "Không có"
           }
-        }
+        },
+        "textPlaceholder": "Text Placeholder",
+        "subtitlePlaceholder": "Subtitle Placeholder"
       },
       "chat": {
         "attachFiles": "Đính kèm tập tin",
@@ -701,7 +711,8 @@
       },
       "music": {
         "generated": "Nhạc nền được tạo"
-      }
+      },
+      "uploadSuccess": "Upload successfully successfully"
     },
     "recorder": {
       "title": "Máy ghi âm",
@@ -718,7 +729,9 @@
         "camera": "Máy ảnh",
         "cameraScreen": "Máy ảnh & Màn hình",
         "screen": "Màn hình",
-        "audio": "Âm thanh"
+        "audio": "Âm thanh",
+        "camScreen": "Cam Screen",
+        "whiteboard": "Whiteboard"
       },
       "overlay": {
         "aslZone": "Vùng chụp ASL",
@@ -741,7 +754,10 @@
         "accessError": "Thất bại chiến lược: Không thể truy cập vào đơn vị thu thập thần kinh",
         "stopFirst": "Dừng ghi trước khi chuyển chế độ"
       },
-      "projectDefault": "Phiên thần kinh"
+      "projectDefault": "Phiên thần kinh",
+      "toasts": {
+        "micChangeDisabled": "Mic Change Disabled"
+      }
     },
     "new": {
       "title": "Bắt đầu tạo dự án của bạn",
@@ -753,7 +769,8 @@
           "desc": "Bắt đầu với một dự án trống.",
           "projectTitle": "Tên dự án",
           "aspectRatio": "Tỷ lệ khung hình",
-          "creating": "Tạo"
+          "creating": "Tạo",
+          "projectTitlePlaceholder": "Project Title Placeholder"
         },
         "flow": "Luồng dự án",
         "template": "Mẫu kế thừa",
@@ -786,9 +803,14 @@
             "title": "Tiêu đề",
             "desc": "Sự miêu tả",
             "voiceName": "Tên giọng nói",
-            "startTraining": "Bắt đầu đào tạo"
+            "startTraining": "Bắt đầu đào tạo",
+            "voiceNamePlaceholder": "Voice Name Placeholder",
+            "uploadZone": "Upload Zone"
           },
-          "initializingEngine": "Công cụ khởi tạo"
+          "initializingEngine": "Công cụ khởi tạo",
+          "scriptPlaceholder": "Script Placeholder",
+          "searchVoices": "Search Voices",
+          "steps": "Steps"
         },
         "liveStream": {
           "title": "Tiêu đề",
@@ -805,8 +827,12 @@
           "studioBtn": "Studio Btn",
           "restreamBtn": "Phát lại Btn",
           "toasts": {
-            "failed": "Thất bại"
-          }
+            "failed": "Thất bại",
+            "initializing": "Initializing",
+            "success": "Success"
+          },
+          "selectProject": "Select Project",
+          "loopMode": "Loop Mode"
         },
         "presentation": {
           "title": "Tiêu đề",
@@ -816,7 +842,12 @@
           "uploadSlides": "Tải lên slide",
           "uploadPresentation": "Tải lên bản trình bày",
           "support": "Ủng hộ",
-          "selectFile": "Chọn tệp"
+          "selectFile": "Chọn tệp",
+          "toasts": {
+            "processing": "Processing",
+            "success": "Success",
+            "failed": "Failed"
+          }
         },
         "productAds": {
           "source": "Nguồn",
@@ -834,7 +865,9 @@
           "noVibes": "Không có rung cảm",
           "productImages": "Hình ảnh sản phẩm",
           "selectTemplate": "Chọn mẫu",
-          "selectTemplateDesc": "Chọn mô tả mẫu"
+          "selectTemplateDesc": "Chọn mô tả mẫu",
+          "urlPlaceholder": "URL Placeholder",
+          "steps": "Steps"
         }
       },
       "flow": {
@@ -924,7 +957,8 @@
           "approveBtn": "Phê duyệt và tạo dự án"
         },
         "visualAssets": {
-          "summaryBar": "Thanh tóm tắt"
+          "summaryBar": "Thanh tóm tắt",
+          "visualAssetDesc": "Visual Asset Desc"
         },
         "visualPath": {
           "summaryBar": "Thanh tóm tắt"
@@ -977,14 +1011,18 @@
         "saleStudio": {
           "label": "Studio bán hàng",
           "desc": "Quảng bá sản phẩm của bạn tới khách hàng bằng các tác nhân AI."
+        },
+        "liveStream": {
+          "label": "Label",
+          "desc": "Description for live stream"
         }
       },
       "clonePrompt": "Tôi muốn tạo một video tương tự như phong cách này: [Dán URL vào đây]. Yêu cầu:",
       "suggestions": {
         "marketing": "Tạo quảng cáo tiếp thị 15s cho [Tên sản phẩm]",
         "script": "Viết kịch bản phim ngắn về [Chủ đề]",
-        "convert": "Chuyển đổi [@file] thành video",
-        "clone": "Sao chép kiểu từ [@reference]",
+        "convert": "Chuyển đổi [{'@'}file] thành video",
+        "clone": "Sao chép kiểu từ [{'@'}reference]",
         "presentation": "MC trình bày dữ liệu báo cáo"
       },
       "toasts": {
@@ -997,7 +1035,8 @@
       "projectPrefix": "Tiền tố dự án",
       "characterRoster": "nhân vật",
       "characterRosterDesc": "Nhân vật và tính cách của bạn",
-      "lockAndContinue": "Phê duyệt và tiếp tục"
+      "lockAndContinue": "Phê duyệt và tiếp tục",
+      "aiThinking": "AI Thinking"
     },
     "detail": {
       "duration": "Khoảng thời gian",
@@ -1107,7 +1146,23 @@
         "renderFailed": "Không tạo được video. Vui lòng thử lại.",
         "videoCaptured": "Đã quay video thành công!",
         "saving": "Đang lưu...",
-        "hooksGenerated": "Tiêu đề và mô tả video được tạo thành công!"
+        "hooksGenerated": "Tiêu đề và mô tả video được tạo thành công!",
+        "saveFailed": "Failed to save",
+        "loadFailed": "Failed to load",
+        "voicePreviewFailed": "Failed to voice preview",
+        "scriptFailed": "Failed to script",
+        "renderAborted": "Render Aborted",
+        "saveSuccess": "Save successfully successfully",
+        "syndicationStarted": "Syndication Started",
+        "syndicationSuccess": "Syndication successfully successfully",
+        "syndicationFailed": "Failed to syndication",
+        "hookApplied": "Hook Applied",
+        "avatarUploaded": "Avatar Uploaded",
+        "voiceTrainingStarted": "Voice Training Started",
+        "enterScript": "Enter Script",
+        "videoGenerated": "Video Generated",
+        "generationFailed": "Failed to generation",
+        "videoSaved": "Video Saved"
       },
       "defaultScriptFallback": "Xin chào tất cả mọi người! Tôi rất vui khi được ở đây để giúp bạn tạo nội dung tuyệt vời bằng Hình đại diện AI. Công nghệ kết xuất phía máy khách này đảm bảo chất lượng cao và độ trễ thấp cho sản phẩm của bạn.",
       "defaultTitlePrefix": "Tiêu đề video của bạn",
@@ -1187,9 +1242,27 @@
         "selectPlatform": "Chọn nền tảng phát trực tuyến của bạn",
         "peakTimeSuccess": "Giờ cao điểm {time} đã được ấn định",
         "peakTimeFailed": "Không đạt được thời gian cao điểm",
-        "hooksFailed": "Không tạo được tiêu đề và mô tả đề xuất"
+        "hooksFailed": "Không tạo được tiêu đề và mô tả đề xuất",
+        "hooksSuccess": "Hooks successfully successfully"
       }
-    }
+    },
+    "studio": {
+      "toasts": {
+        "saveSuccess": "Save successfully successfully",
+        "saveFailed": "Failed to save",
+        "exporting": "Exporting",
+        "exportSuccess": "Export successfully successfully",
+        "exportFailed": "Failed to export"
+      },
+      "untitled": "Untitled"
+    },
+    "publish": {
+      "viewers": "Viewers",
+      "toasts": {
+        "vodSaving": "Vod Saving"
+      }
+    },
+    "momentImported": "Moment imported to Editor!"
   },
   "studio": {
     "quests": {
@@ -1202,7 +1275,10 @@
         "hype_train": "Chuyến tàu cường điệu: Tiếp cận {target} tin nhắn/phút!",
         "sentiment_surge": "Sự gia tăng tích cực: Gửi {target} cảm xúc tích cực!",
         "gift_goal": "Mục tiêu quà tặng: Thu thập {target} mã thông báo hỗ trợ!"
-      }
+      },
+      "label": "Label",
+      "timer": "Timer",
+      "progress": "Progress"
     },
     "audio": {
       "director": "Giám đốc âm thanh thần kinh",
@@ -1284,7 +1360,51 @@
       "contextApplied": "Giám đốc AI: Áp dụng bối cảnh",
       "selectPlatform": "Chọn nền tảng phát trực tuyến của bạn",
       "aiDealTriggered": "Giao dịch đã được kích hoạt",
-      "aiShowcase": "Giám đốc AI: Trưng bày sản phẩm {name}"
+      "aiShowcase": "Giám đốc AI: Trưng bày sản phẩm {name}",
+      "metadataSynced": "Metadata synced across platforms",
+      "questStarted": "Quest Started",
+      "backgroundUpdated": "Background Updated",
+      "screenShareStopped": "Screen Share Stopped",
+      "sharingScreen": "Sharing Screen",
+      "agentLeftSwarm": "Agent Left Swarm",
+      "agentScored": "Agent Scored",
+      "agentJoinedSwarm": "Agent Joined Swarm",
+      "agentConnectionFailed": "Failed to agent connection",
+      "aiProductionMode": "AI Production Mode",
+      "aiDirectorFX": "AI Director Fx",
+      "aiSponsorshipActive": "AI Sponsorship Active",
+      "cameraFocusAdjusted": "Camera Focus Adjusted",
+      "shoutout": "Shoutout",
+      "agentArchived": "Agent Archived",
+      "socialBondUpdated": "Social Bond Updated",
+      "questMaster": "Quest Master",
+      "speakerFocusShift": "Speaker Focus Shift",
+      "hypeEvent": "Hype Event",
+      "studioAtmosphere": "Studio Atmosphere",
+      "syndicatingHighlights": "Syndicating Highlights",
+      "aiViralMetadata": "AI Viral Metadata",
+      "aiAssemblingHighlights": "AI Assembling Highlights",
+      "generatingBackground": "Generating Background",
+      "backgroundFailed": "Failed to background",
+      "agentStoppedPerformance": "Agent Stopped Performance",
+      "preparingToSing": "Preparing To Sing",
+      "nowSinging": "No w singing found",
+      "failedToSing": "Failed To Sing",
+      "agentRoleReset": "Agent Role Reset",
+      "promotedToGM": "Promoted To Gm",
+      "musicSynced": "Music Synced",
+      "selectSongFirst": "Select Song First",
+      "emotionSet": "Emotion Set",
+      "productShowcase": "Product Showcase",
+      "visionEnabled": "Vision Enabled",
+      "visionDisabled": "Vision Disabled",
+      "aiViralMomentDetected": "AI Viral Moment Detected",
+      "aiAutoReframing": "AI Auto Reframing",
+      "syncingMetadata": "Syncing metadata with platforms...",
+      "recordingStarted": "Recording Started",
+      "pollStarted": "Poll Started",
+      "questionFeatured": "Question Featured",
+      "stopLiveFirst": "Stop Live First"
     },
     "title": "Luồng không có tiêu đề",
     "filters": {
@@ -1330,7 +1450,25 @@
       "likes": "Lượt thích",
       "shares": "Chia sẻ",
       "sendMessagePlaceholder": "Gửi tin nhắn giữ chỗ",
-      "simulateInteraction": "Mô phỏng tương tác"
+      "simulateInteraction": "Mô phỏng tương tác",
+      "livePoll": "Live Poll",
+      "pollLeader": "Poll Leader",
+      "votes": "Votes",
+      "collectingVotes": "Collecting Votes",
+      "createPoll": "Create Poll",
+      "pollQuestion": "Poll Question",
+      "pollQuestionPlaceholder": "Poll Question Placeholder",
+      "pollOptions": "Poll Options",
+      "addOption": "Add Option",
+      "optionLabel": "Option Label",
+      "launchPoll": "Launch Poll",
+      "toast": {
+        "repliedAs": "Replied As",
+        "replyFailed": "Failed to reply",
+        "giftFailed": "Failed to gift",
+        "pollTriggered": "Poll Triggered",
+        "pollFailed": "Failed to poll"
+      }
     },
     "videoEditor": {
       "export": {
@@ -1523,7 +1661,8 @@
       "economy": "Kinh tế",
       "chatVel": "Trò chuyện Vel",
       "hypeMeter": "Máy đo cường điệu",
-      "liveFeed": "Nguồn cấp dữ liệu trực tiếp"
+      "liveFeed": "Nguồn cấp dữ liệu trực tiếp",
+      "likes": "Likes"
     },
     "calendar": {
       "weekDays": {
@@ -1644,7 +1783,26 @@
           "zoom": "Phóng",
           "custom": "Phong tục",
           "wipe": "Lau đi"
-        }
+        },
+        "color": "Color",
+        "sceneManager": "Scene Manager",
+        "sceneManagerDesc": "Scene Manager Desc",
+        "availableScenes": "Available Scenes",
+        "customScenes": "Custom Scenes",
+        "createCustomScene": "Create Custom Scene",
+        "pipSettings": "Pip Settings",
+        "frameShape": "Frame Shape",
+        "cornerRadius": "Corner Radius",
+        "border": "Border",
+        "width": "Width",
+        "shadowGlow": "Shadow Glow",
+        "blurForce": "Blur Force",
+        "offsetX": "Offset X",
+        "offsetY": "Offset Y",
+        "switcherCore": "Switcher Core",
+        "multiCamLayout": "Multi Cam Layout",
+        "aiSmartSwitching": "AI Smart Switching",
+        "smartSwitchDesc": "Smart Switch Desc"
       },
       "guest": {
         "inviteGuest": "Mời khách",
@@ -1685,14 +1843,18 @@
         "rejected": "Vật bị loại bỏ",
         "waitingStatus": "Khách Đang Chờ",
         "guestApproved": "Khách đã được phê duyệt",
-        "guestRejected": "Khách bị từ chối"
+        "guestRejected": "Khách bị từ chối",
+        "invitationRejected": "Invitation Rejected"
       },
       "graphics": {
         "hostIdentity": "Tên máy chủ",
         "primaryName": "Tên chính phát sóng",
         "placeholders": {
           "primaryName": "ví dụ. AntStudio Prime",
-          "subtitleRole": "ví dụ. Người dẫn tin tức AI"
+          "subtitleRole": "ví dụ. Người dẫn tin tức AI",
+          "specialist": "Specialist",
+          "tickerDefault": "Ticker Default",
+          "sponsorName": "Sponsor Name"
         },
         "subtitleRole": "Tiêu đề phụ / Vai trò",
         "brandColor": "Màu thương hiệu",
@@ -1716,7 +1878,16 @@
           "bottom-left": "Dưới cùng bên trái",
           "bottom-right": "Dưới cùng bên phải"
         },
-        "statusMessage": "Thông báo trạng thái"
+        "statusMessage": "Thông báo trạng thái",
+        "guestIdentities": "Guest Identities",
+        "tickerText": "Ticker Text",
+        "uploadLogo": "Upload Logo",
+        "sponsorName": "Sponsor Name",
+        "selectImageError": "Failed to select image",
+        "imageSizeError": "Failed to image size",
+        "uploadSuccess": "Upload successfully successfully",
+        "uploadFailed": "Failed to upload",
+        "logoRemoved": "Logo Removed"
       },
       "linguistic": {
         "globalSync": "Đồng bộ hóa toàn cầu",
@@ -1726,7 +1897,10 @@
         "voiceCloneRelay": "Chuyển tiếp bản sao giọng nói",
         "canvasSubtitles": "Phụ đề canvas",
         "burnInLiveText": "Ghi vào văn bản trực tiếp",
-        "canvasSubtitlesDesc": "Văn bản được chép lại sẽ hiển thị trực tiếp trên khung phát sóng cho người xem."
+        "canvasSubtitlesDesc": "Văn bản được chép lại sẽ hiển thị trực tiếp trên khung phát sóng cho người xem.",
+        "cloningInProgress": "Cloning In Progress",
+        "liveTranscript": "Live Transcript",
+        "awaitingVoiceProcessing": "Awaiting Voice Processing"
       },
       "economy": {
         "storefrontSync": "Đồng bộ hóa mặt tiền cửa hàng",
@@ -1740,10 +1914,39 @@
         "flashSaleActive": "Giảm giá chớp nhoáng đang hoạt động",
         "endingIn": "Kết thúc bằng",
         "wallet": {
-          "balance": "Sự cân bằng"
+          "balance": "Sự cân bằng",
+          "myWallet": "My Wallet",
+          "topUp": "Top Up"
         },
         "giftCatalog": "Danh mục quà tặng",
-        "powerups": "Tăng sức mạnh"
+        "powerups": "Tăng sức mạnh",
+        "insufficientCredits": "Insufficient Credits",
+        "title": "Economy",
+        "sentGift": "Sent Gift",
+        "effectDescription": "Effect Description",
+        "purchaseFailed": "Failed to purchase",
+        "creditsAdded": "Credits Added",
+        "addCreditsFailed": "Failed to add credits",
+        "inventoryDesc": "Inventory Desc",
+        "manageAiAssets": "AI Assets",
+        "syncStore": "Sync Store",
+        "featuredInventory": "Featured Inventory",
+        "readyToShowcase": "Ready To Showcase",
+        "inStock": "In Stock",
+        "clicks": "Clicks",
+        "noProducts": "No products found",
+        "flashSaleEngine": "Flash Sale Engine",
+        "aiDrivenFlashSale": "AI Driven Flash Sale",
+        "flashSaleDesc": "Flash Sale Desc",
+        "stopSale": "Stop Sale",
+        "triggerSale": "Trigger Sale",
+        "connectStore": "Connect Store",
+        "showcasingName": "Showcasing Name",
+        "hotDeal": "Hot Deal",
+        "flashSaleTriggered": "Flash Sale Triggered",
+        "flashSaleEnded": "Flash Sale Ended",
+        "credits": "Credits",
+        "simulatedTopUp": "Simulated Top Up"
       },
       "vibe": {
         "script": {
@@ -1789,7 +1992,9 @@
         "scriptReady": "Tập lệnh đã sẵn sàng: {title}",
         "startProduction": "Bắt đầu sản xuất",
         "generateScriptSuccess": "Tập lệnh được tạo thành công!",
-        "showrunnerActive": "ShowRunner đang hoạt động! Hãy ngồi lại và thư giãn."
+        "showrunnerActive": "ShowRunner đang hoạt động! Hãy ngồi lại và thư giãn.",
+        "generateScriptFailed": "Failed to generate script",
+        "startShowFailed": "Failed to start show"
       },
       "engagement": {
         "livePolls": "Cuộc thăm dò trực tiếp",
@@ -1801,7 +2006,48 @@
         "question": "Câu hỏi",
         "questionPlaceholder": "Nhập câu hỏi của bạn",
         "options": "Tùy chọn",
-        "launchPoll": "Khởi động cuộc thăm dò ý kiến"
+        "launchPoll": "Khởi động cuộc thăm dò ý kiến",
+        "optionPlaceholder": "Option Placeholder"
+      },
+      "analytics": {
+        "title": "Analytics",
+        "subtitle": "Subtitle",
+        "current": "Current",
+        "liveNow": "Live Now",
+        "peak": "Peak",
+        "maxAudience": "Max Audience",
+        "totalLikes": "Total Likes",
+        "growthVsLast": "Growth Vs Last",
+        "technicalPulse": "Technical Pulse",
+        "connectionStatus": "Connection Status",
+        "bitrate": "Bitrate",
+        "latency": "Latency",
+        "frameRate": "Frame Rate",
+        "packetLoss": "Packet Loss",
+        "engagementVelocity": "Engagement Velocity",
+        "chatActivity": "Chat Activity",
+        "msgsPerMin": "Msgs Per Min",
+        "shareVelocity": "Share Velocity",
+        "sharesCount": "Shares Count",
+        "platformDistribution": "Platform Distribution",
+        "viewersCount": "Viewers Count",
+        "positiveSentiment": "Positive Sentiment",
+        "likes": "Likes",
+        "aiIntelligence": "AI Intelligence",
+        "updateFrequency": "Update Frequency"
+      },
+      "filters": {
+        "smoothing": "Smoothing",
+        "brighten": "Brighten",
+        "denoise": "Denoise",
+        "slimming": "Slimming",
+        "eyeEnlarge": "Eye Enlarge",
+        "lensProfiles": "Lens Profiles",
+        "environmentSync": "Environment Sync",
+        "uploadEnvironment": "Upload Environment",
+        "chromaKeyEngine": "Chroma Key Engine",
+        "similarity": "Similarity",
+        "smoothness": "Smoothness"
       }
     },
     "tabs": {
@@ -1882,8 +2128,46 @@
         "filters": "Bộ lọc",
         "branding": "Xây dựng thương hiệu",
         "overlays": "Lớp phủ",
-        "accessibility": "Khả năng tiếp cận"
-      }
+        "accessibility": "Khả năng tiếp cận",
+        "stream": "Stream",
+        "beauty": "Beauty"
+      },
+      "stream": {
+        "quality": "Quality",
+        "recommendation": "Recommendation"
+      },
+      "beauty": {
+        "smoothing": "Smoothing",
+        "brightness": "Brightness",
+        "sharpen": "Sharpen",
+        "denoise": "Denoise",
+        "redEye": "Red Eye",
+        "redEyeDesc": "Red Eye Desc"
+      },
+      "background": {
+        "standard": "Standard",
+        "standardDesc": "Standard Desc",
+        "blur": "Blur",
+        "blurDesc": "Blur Desc",
+        "virtual": "Virtual",
+        "virtualDesc": "Virtual Desc",
+        "blurIntensity": "Blur Intensity",
+        "stageAssets": "Stage Assets"
+      },
+      "actions": {
+        "reset": "Reset",
+        "save": "Save"
+      },
+      "skinSmoothing": "Skin Smoothing",
+      "faceBrightening": "Face Brightening",
+      "sharpen": "Sharpen",
+      "denoise": "Denoise",
+      "intensity": "Intensity",
+      "assets": "Assets",
+      "keyColor": "Key Color",
+      "similarity": "Similarity",
+      "smoothness": "Smoothness",
+      "tickerContent": "Ticker Content"
     },
     "vibes": {
       "technoChill": "Techno Chill"
@@ -1896,7 +2180,15 @@
           "share": "Chia sẻ",
           "download": "Tải xuống",
           "delete": "Xóa bỏ"
-        }
+        },
+        "saved": "Saved",
+        "save": "Save",
+        "publish": "Publish",
+        "loadingAccounts": "Loading Accounts",
+        "noAccounts": "No accounts found",
+        "connectAccounts": "Connect Accounts",
+        "videoTitle": "Video Title",
+        "publishSelected": "Publish Selected"
       }
     },
     "swarm": {
@@ -2044,7 +2336,8 @@
       "step4Tip": "Chuyển đổi tùy chọn này để truy cập tùy chỉnh giọng nói chuyên nghiệp.",
       "generateTitle": "Tạo video của bạn!",
       "generateDesc": "Đã hoàn tất! Nhấp vào \"Tạo video\" và AI của chúng tôi sẽ tạo video hình đại diện chuyên nghiệp cho bạn sau vài phút.",
-      "generateTip": "Bạn sẽ được thông báo khi video của bạn đã sẵn sàng."
+      "generateTip": "Bạn sẽ được thông báo khi video của bạn đã sẵn sàng.",
+      "stageControlsDesc": "Control your microphone, camera, and streaming status from here. Start/stop recording, go live, or capture highlights with one click."
     },
     "virtual": {
       "aiSuffix": "trí tuệ nhân tạo"
@@ -2060,7 +2353,8 @@
       "vibe": "Rung cảm",
       "ducking": "cúi xuống",
       "standby": "Chế độ chờ",
-      "masterVol": "Khối lượng chính"
+      "masterVol": "Khối lượng chính",
+      "engaged": "Engaged"
     },
     "contextSelector": {
       "greeting": "Bạn đang phát trực tuyến cho bối cảnh nào?",
@@ -2112,7 +2406,58 @@
     },
     "dashboard": {
       "directiveTitle": "Chỉ thị"
-    }
+    },
+    "errors": {
+      "productNotFound": "Product Not Found"
+    },
+    "audience": {
+      "presenceGrid": "Presence Grid",
+      "vipsPresent": "Vips Present"
+    },
+    "directorNotes": {
+      "title": "Director Notes",
+      "rejected": "Rejected"
+    },
+    "overlays": {
+      "aiProduction": {
+        "title": "AI Production",
+        "rendering": "Rendering"
+      }
+    },
+    "synthesis": {
+      "title": "Synthesis",
+      "subtitle": "Subtitle",
+      "loading": "Loading",
+      "commercialSuccess": "Commercial successfully successfully",
+      "totalRevenue": "Total Revenue",
+      "orders": "Orders",
+      "conversion": "Conversion",
+      "units": "Units",
+      "growthStrategies": "Growth Strategies",
+      "viralClipHub": "Viral Clip Hub",
+      "copyHook": "Copy Hook",
+      "finalizeExport": "Finalize Export",
+      "toast": {
+        "copied": "Copied"
+      }
+    },
+    "layouts": {
+      "adminTitle": "AntStudio Admin",
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "payments": "Payments",
+      "systemSettings": "System Settings",
+      "backToSite": "Back to Site",
+      "adminControlPanel": "Admin Control Panel"
+    },
+    "logs": {
+      "cameraSwitch": "Camera Switch"
+    },
+    "autoEmotion": {
+      "enabled": "Auto-Emotion Enabled",
+      "disabled": "Auto-Emotion Disabled"
+    },
+    "platformPreselected": "Platform Preselected"
   },
   "subscription": {
     "title": "Đăng ký & Thanh toán",
@@ -2187,7 +2532,9 @@
           "paypal": {
             "title": "PayPal",
             "desc": "Thanh toán an toàn với PayPal"
-          }
+          },
+          "redirecting": "Redirecting",
+          "title": "Payment"
         },
         "save": "Giảm giá 20%",
         "features": {
@@ -2209,7 +2556,9 @@
     "save": "Lưu hồ sơ",
     "cancel": "Hủy bỏ",
     "plan": "Kế hoạch",
-    "upgrade": "Nâng cấp"
+    "upgrade": "Nâng cấp",
+    "uploadSuccess": "Upload successfully successfully",
+    "uploadFailed": "Failed to upload"
   },
   "account": {
     "title": "Hồ sơ người dùng",
@@ -2326,6 +2675,9 @@
         "load": "Tải hệ thống",
         "cpuFulfillment": "Hoàn thành CPU",
         "manage": "Quản lý cơ sở hạ tầng"
+      },
+      "toasts": {
+        "denied": "Denied"
       }
     },
     "users": {
@@ -2360,7 +2712,9 @@
       "toasts": {
         "loadFailed": "Không tải được người dùng",
         "statusUpdated": "Trạng thái người dùng đã được cập nhật thành {status}",
-        "updateFailed": "Không thể cập nhật trạng thái người dùng"
+        "updateFailed": "Không thể cập nhật trạng thái người dùng",
+        "userDeleted": "User Deleted",
+        "deleteFailed": "Failed to delete"
       },
       "deleteConfirm": {
         "message": "Bạn có chắc chắn muốn xóa người dùng này?",
@@ -2454,7 +2808,8 @@
       "terminate": "Xóa bỏ",
       "confirmTerminate": "Bạn có chắc chắn muốn chấm dứt giấy phép {key} không?",
       "toasts": {
-        "downlinkFailure": "Không thể thiết lập đường xuống với cơ quan đăng ký nhóm"
+        "downlinkFailure": "Không thể thiết lập đường xuống với cơ quan đăng ký nhóm",
+        "terminationSequence": "Termination Sequence"
       }
     },
     "financials": {
@@ -2498,7 +2853,10 @@
       "stability": "Độ ổn định của lưới",
       "statusNominal": "danh nghĩa",
       "noNodes": "Không có nút phát trực tuyến đang hoạt động",
-      "noNodesDesc": "Triển khai một thực thể chiếu trực tiếp mới từ Studio trung tâm để bắt đầu phát sóng."
+      "noNodesDesc": "Triển khai một thực thể chiếu trực tiếp mới từ Studio trung tâm để bắt đầu phát sóng.",
+      "toasts": {
+        "pulseFailed": "Failed to pulse"
+      }
     },
     "infra": {
       "title": "Sức khỏe cơ sở hạ tầng",
@@ -2519,7 +2877,12 @@
       "liveHeartbeat": "Nhịp tim trực tiếp",
       "pulse": "Xung",
       "loadLabel": "Tải nhãn",
-      "waitingHeartbeat": "Nhịp tim chờ đợi"
+      "waitingHeartbeat": "Nhịp tim chờ đợi",
+      "toasts": {
+        "fetchFailed": "Failed to fetch",
+        "failoverInitiated": "Failover Initiated",
+        "integrityVerified": "Integrity Verified"
+      }
     },
     "monitoring": {
       "title": "Trạm giám sát",
@@ -2559,7 +2922,16 @@
       "records": "Hồ sơ",
       "noRecords": "Không có hồ sơ",
       "noClientErrors": "Không có lỗi máy khách",
-      "comingSoon": "Sắp ra mắt"
+      "comingSoon": "Sắp ra mắt",
+      "waitingEvents": "Đang chờ sự kiện...",
+      "searchKeywords": "Tìm kiếm từ khóa...",
+      "toasts": {
+        "loadLogsFailed": "Tải nhật ký thất bại",
+        "exportSuccess": "Xuất dữ liệu thành công",
+        "exportFailed": "Xuất dữ liệu thất bại",
+        "saveSettingsFailed": "Lưu cài đặt thất bại"
+      },
+      "confirmClearLogs": "Xác nhận xóa nhật ký"
     },
     "logs": {
       "title": "Từ xa thô",
@@ -2676,7 +3048,12 @@
         "syncCookiesFailed": "Đồng bộ hóa không thành công: {error}",
         "applyConfig": "Áp dụng cấu hình",
         "abort": "Hủy bỏ",
-        "generateProtocol": "Tạo giao thức"
+        "generateProtocol": "Tạo giao thức",
+        "docRequired": "Doc Required",
+        "aiTemplateSuccess": "AI Template successfully successfully",
+        "aiTemplateFailed": "Failed to ai template",
+        "configStaged": "Config Staged",
+        "invalidHeaders": "Invalid Headers"
       },
       "ai": {
         "captchaService": "Mạng phân giải Captcha",
@@ -2731,7 +3108,10 @@
           "voice": "Tiếng nói",
           "agent": "Đại lý"
         },
-        "protocol": "Giao thức"
+        "protocol": "Giao thức",
+        "pasteKeys": "Paste Keys",
+        "protocolDesc": "Protocol Desc",
+        "docUrlPlaceholder": "Doc URL Placeholder"
       },
       "table": {
         "identity": "Danh tính",
@@ -2874,6 +3254,10 @@
           "appLogo": "Tải lên logo ứng dụng của bạn. ví dụ. AntStudio.png",
           "favicon": "Tải lên favicon của bạn. ví dụ. AntStudio.ico",
           "logo": "Tải lên logo của bạn. ví dụ. AntStudio.png"
+        },
+        "toasts": {
+          "uploadSuccess": "Upload successfully successfully",
+          "uploadFailed": "Failed to upload"
         }
       }
     },
@@ -2966,7 +3350,7 @@
       "provision": {
         "title": "Tài khoản cung cấp",
         "workEmail": "Địa chỉ Email Cơ quan",
-        "placeholderEmail": "neo@matrix.io",
+        "placeholderEmail": "neo{'@'}matrix.io",
         "firstName": "Tên",
         "lastName": "Họ",
         "accessLevel": "Giải phóng mặt bằng cấp độ truy cập",
@@ -3051,7 +3435,19 @@
       "toast": {
         "enabled": "Đã bật",
         "disabled": "Tàn tật",
-        "stRequired": "Mã thông báo phiên là bắt buộc"
+        "stRequired": "Mã thông báo phiên là bắt buộc",
+        "oauthFailed": "Failed to oauth",
+        "toggleFailed": "Failed to toggle",
+        "enterProjectId": "Enter Project ID",
+        "projectIdUpdated": "Project ID Updated",
+        "projectIdUpdateFailed": "Failed to project id update",
+        "loadFailed": "Failed to load",
+        "enterEmail": "Enter Email",
+        "integrating11Labs": "Integrating11 Labs",
+        "syncing": "Syncing",
+        "syncFailed": "Failed to sync",
+        "removeConfirm": "Remove Confirm",
+        "removeFailed": "Failed to remove"
       },
       "updateToken": "Cập nhật mã thông báo",
       "tokenExpiredHelp": "Làm cách nào để nhận mã thông báo phiên Google Flow?"
@@ -3115,7 +3511,8 @@
       "deleteConfirm": {
         "title": "Xóa giấy phép",
         "confirm": "Xác nhận",
-        "cancel": "Hủy bỏ"
+        "cancel": "Hủy bỏ",
+        "message": "Message"
       }
     },
     "release": {
@@ -3353,30 +3750,37 @@
         "options": {
           "aiVideo": {
             "label": "Tạo Video Từ Kịch Bản (AI Engine)",
-            "desc": "Tự động tạo kịch bản hình ảnh, lồng tiếng AI, nhạc nền và phụ đề động từ gợi ý văn bản."
+            "desc": "Tự động tạo kịch bản hình ảnh, lồng tiếng AI, nhạc nền và phụ đề động từ gợi ý văn bản.",
+            "button": "Launch AI Engine"
           },
           "aiAvatar": {
             "label": "Nhân Vật Digital & Avatar AI",
-            "desc": "Tạo & tùy chỉnh avatar 2D, mô hình 3D VRM và clip video Aidol với tổng hợp giọng nói & nhép môi Gemini."
+            "desc": "Tạo & tùy chỉnh avatar 2D, mô hình 3D VRM và clip video Aidol với tổng hợp giọng nói & nhép môi Gemini.",
+            "button": "Create AI Personas"
           },
           "productAds": {
             "label": "Tạo Quảng Cáo Sản Phẩm Từ URL",
-            "desc": "Dán URL trang sản phẩm bất kỳ để tạo video quảng cáo bán hàng với kịch bản, giọng nói và hiệu ứng tự động."
+            "desc": "Dán URL trang sản phẩm bất kỳ để tạo video quảng cáo bán hàng với kịch bản, giọng nói và hiệu ứng tự động.",
+            "button": "Convert URL to Ad"
           },
           "saleStudio": {
             "label": "Phòng Studio Bán Hàng 24/7",
-            "desc": "Phát sóng livestream thương mại tự động 24/7 với MC AI thông minh, chuỗi giới thiệu sản phẩm FSM và mã QR."
+            "desc": "Phát sóng livestream thương mại tự động 24/7 với MC AI thông minh, chuỗi giới thiệu sản phẩm FSM và mã QR.",
+            "button": "Open Sale Studio"
           },
           "record": {
             "label": "Studio Ghi Màn Hình & Camera",
-            "desc": "Ghi hình webcam, màn hình máy tính, bài thuyết trình và âm thanh studio đa luồng chuyên nghiệp."
+            "desc": "Ghi hình webcam, màn hình máy tính, bài thuyết trình và âm thanh studio đa luồng chuyên nghiệp.",
+            "button": "Start Recording"
           },
           "blank": {
             "label": "Studio Biên Tập Multi-Track & Canvas",
-            "desc": "Trình biên tập video đa luồng với timeline chuyên nghiệp, hiệu ứng chuyển cảnh và lớp phủ động."
+            "desc": "Trình biên tập video đa luồng với timeline chuyên nghiệp, hiệu ứng chuyển cảnh và lớp phủ động.",
+            "button": "Open Timeline Studio"
           }
         }
-      }
+      },
+      "headline": "6 Specialized AI Video Production Workflows"
     },
     "metrics": {
       "uptime": "Thời Gian Hoạt Động Stream",
@@ -3445,6 +3849,56 @@
         "conduct": {
           "title": "4. Quy tắc ứng xử của người dùng",
           "content": "Bạn đồng ý không sử dụng nền tảng của chúng tôi để tạo hoặc phân phối bất kỳ nội dung nào bất hợp pháp, có hại hoặc vi phạm quyền của người khác."
+        }
+      }
+    },
+    "home": {
+      "hero": {
+        "tagline": "Tagline",
+        "start": "Start"
+      },
+      "intro": {
+        "title": "Intro",
+        "desc": "Description for intro"
+      },
+      "partners": {
+        "title": "Partners",
+        "collab": "Collab",
+        "desc": "Description for partners"
+      },
+      "gallery": {
+        "watchFilms": "Watch Films",
+        "zooBreak": "Zoo Break",
+        "microverse": "Microverse",
+        "windowSeat": "Window Seat",
+        "cottonSpace": "Cotton Space",
+        "giraffeRun": "Giraffe Run",
+        "sandWaves": "Sand Waves"
+      },
+      "pricing": {
+        "title": "Pricing",
+        "subtitle": "Subtitle",
+        "keepSimple": "Keep Simple",
+        "everythingFree": "Everything Free",
+        "creditsMonthly": "Credits Monthly",
+        "prioritySupport": "Priority Support",
+        "full4k": "Full4k",
+        "commercialRights": "Commercial Rights",
+        "getStarted": "Get Started"
+      },
+      "footer": {
+        "privacy": "Privacy",
+        "terms": "Terms"
+      },
+      "features": {
+        "consistent": {
+          "name": "Name"
+        },
+        "seamless": {
+          "name": "Name"
+        },
+        "cinematic": {
+          "name": "Name"
         }
       }
     }
@@ -3654,7 +4108,8 @@
         "visemeSynthesisStarted": "Đang tạo bảng tính viseme...",
         "visemeSynthesisFailed": "Không thể tạo bảng sprite viseme",
         "visemeSynthesisComplete": "Bảng sprite Viseme được tạo thành công",
-        "voiceConfigMissing": "Chọn giọng nói có ảnh hưởng của bạn trước"
+        "voiceConfigMissing": "Chọn giọng nói có ảnh hưởng của bạn trước",
+        "videoSilentGenerated": "Video Silent Generated"
       },
       "emotions": {
         "happy": "Vui mừng",
@@ -3934,7 +4389,8 @@
         },
         "toasts": {
           "generateFailed": "Tổng hợp AI không thành công.",
-          "generateSuccess": "Tổng hợp AI thành công."
+          "generateSuccess": "Tổng hợp AI thành công.",
+          "musicSynced": "Music Synced"
         },
         "skinType": "Loại da",
         "hairType": "Kiểu tóc",
@@ -4025,7 +4481,9 @@
       "target": "Mục tiêu",
       "languages": "Ngôn ngữ",
       "lyricsLabel": "Nhãn lời bài hát",
-      "lyricsLanguages": "Lời bài hát Ngôn ngữ"
+      "lyricsLanguages": "Lời bài hát Ngôn ngữ",
+      "searchLanguage": "Search Language",
+      "lyricsLanguage": "Lyrics Language"
     },
     "voiceLibrary": {
       "title": "Thư viện giọng nói",
@@ -4333,7 +4791,8 @@
       "errors": {
         "unsupportedUrl": "Url không được hỗ trợ",
         "failed": "Thất bại"
-      }
+      },
+      "connectingTo": "Connecting To"
     },
     "previewDialog": {
       "defaultAuthor": "Tác giả mặc định",
@@ -4364,8 +4823,12 @@
         "desc": "Sự miêu tả",
         "priceLabel": "Nhãn giá",
         "feeLabel": "Nhãn phí",
-        "securityNote": "Lưu ý bảo mật"
+        "securityNote": "Lưu ý bảo mật",
+        "title": "Purchase"
       }
+    },
+    "toasts": {
+      "purchaseSuccess": "Purchase successfully successfully"
     }
   },
   "merchant": {
@@ -4621,7 +5084,8 @@
       "uploadSuccess": "Các tập tin được tải lên thành công.",
       "uploadFailed": "Không thể tải tập tin lên."
     },
-    "confirmDelete": "Bạn có chắc chắn muốn xóa tập tin này?"
+    "confirmDelete": "Bạn có chắc chắn muốn xóa tập tin này?",
+    "deleteSuccess": "Delete successfully successfully"
   },
   "auth": {
     "login": {
@@ -4738,7 +5202,14 @@
       "current": "Hiện hành",
       "new": "Mới",
       "confirm": "Xác nhận",
-      "failed": "Thất bại"
+      "failed": "Thất bại",
+      "currentPlaceholder": "Current Placeholder",
+      "newPlaceholder": "New Placeholder",
+      "confirmPlaceholder": "Confirm Placeholder",
+      "fillAll": "Fill All",
+      "mismatch": "Mismatch",
+      "tooShort": "Too Short",
+      "success": "Success"
     }
   },
   "sidebar": {
@@ -4839,7 +5310,9 @@
       "activeEnvironment": "Môi trường hoạt động",
       "autoCamera": "Máy ảnh tự động",
       "status": {
-        "prod": "sản phẩm"
+        "prod": "sản phẩm",
+        "autoProducing": "Auto Producing",
+        "vfxActive": "Vfx Active"
       },
       "influencerLink": "Liên kết người ảnh hưởng",
       "activeVfx": "Vfx đang hoạt động",
@@ -4869,7 +5342,11 @@
       "reply": "Hồi đáp",
       "replyPlaceholder": "Phần giữ chỗ trả lời",
       "sending": "Đang gửi",
-      "postReply": "Gửi trả lời"
+      "postReply": "Gửi trả lời",
+      "aiContext": {
+        "videoTitle": "Video Title",
+        "tone": "Tone"
+      }
     }
   },
   "support": {
@@ -4893,7 +5370,11 @@
       "dataAuthDesc": "Mô tả xác thực dữ liệu",
       "cancel": "Hủy bỏ",
       "transmitting": "truyền tải",
-      "submit": "Nộp"
+      "submit": "Nộp",
+      "subjectPlaceholder": "Subject Placeholder",
+      "sitrepPlaceholder": "Sitrep Placeholder",
+      "compiling": "Compiling",
+      "attached": "Attached"
     }
   },
   "pricing": {
@@ -4903,7 +5384,9 @@
     "perMonth": "mỗi tháng",
     "features": {
       "prioritySupport": "Hỗ trợ ưu tiên",
-      "standardSupport": "Hỗ trợ tiêu chuẩn"
+      "standardSupport": "Hỗ trợ tiêu chuẩn",
+      "videosPerMonth": "Videos Per Month",
+      "storageLimit": "Storage Limit"
     },
     "getStarted": "Bắt đầu",
     "subscribeNow": "Đăng ký ngay",
@@ -4911,7 +5394,10 @@
       "title": "Câu hỏi thường gặp",
       "a1": "AntStudio là gì?",
       "a2": "Làm cách nào để tạo một dự án?",
-      "a3": "Làm cách nào để thêm nhân vật AI vào dự án của tôi?"
+      "a3": "Làm cách nào để thêm nhân vật AI vào dự án của tôi?",
+      "q1": "Q1",
+      "q2": "Q2",
+      "q3": "Q3"
     },
     "plans": {
       "free": "Miễn phí",
@@ -4935,13 +5421,15 @@
       "title": "Không tìm thấy sản phẩm",
       "desc": "Sản phẩm bạn đang tìm kiếm không tồn tại.",
       "backHome": "Trở về nhà"
-    }
+    },
+    "poweredBy": "Powered By"
   },
   "affiliate": {
     "title": "Chương trình liên kết",
     "join": {
       "desc": "Tham gia chương trình liên kết của chúng tôi và kiếm tiền hoa hồng cho mỗi khách hàng mà bạn giới thiệu đến AntStudio.",
-      "button": "Tham gia ngay"
+      "button": "Tham gia ngay",
+      "title": "Join"
     },
     "engine": {
       "title": "Công cụ liên kết",
@@ -4949,7 +5437,8 @@
       "copy": "Sao chép",
       "rate": "Tỷ lệ",
       "recurring": "Định kỳ",
-      "cookie": "bánh quy"
+      "cookie": "bánh quy",
+      "days": "Days"
     },
     "commissions": {
       "title": "Hoa hồng",
@@ -4967,7 +5456,14 @@
     },
     "tips": {
       "title": "Mẹo",
-      "tip1": "Mẹo1"
+      "tip1": "Mẹo1",
+      "tip2": "Tip2"
+    },
+    "subtitle": "Subtitle",
+    "partnerBadge": "Partner Badge",
+    "toasts": {
+      "copySuccess": "Copy successfully successfully",
+      "noBalance": "No balance found"
     }
   },
   "analytics": {
@@ -4981,7 +5477,8 @@
       "avgWatchTime": "Thời gian xem trung bình",
       "zeroTime": "Không có thời gian",
       "stable": "Ổn định",
-      "commerceRevenue": "Doanh thu thương mại"
+      "commerceRevenue": "Doanh thu thương mại",
+      "vsAvg": "Vs Avg"
     },
     "heatmap": {
       "title": "Bản đồ nhiệt",
@@ -5008,12 +5505,16 @@
       "empty": "Trống",
       "dialog": {
         "abort": "Hủy bỏ",
-        "initialize": "Khởi tạo"
+        "initialize": "Khởi tạo",
+        "title": "Dialog",
+        "label": "Label",
+        "placeholder": "Placeholder"
       },
       "success": {
         "warning": "Cảnh báo",
         "copy": "Sao chép",
-        "stored": "Đã lưu trữ"
+        "stored": "Đã lưu trữ",
+        "title": "Success"
       }
     },
     "webhooks": {
@@ -5023,17 +5524,29 @@
       "empty": "Trống",
       "dialog": {
         "cancel": "Hủy bỏ",
-        "establish": "Thành lập"
+        "establish": "Thành lập",
+        "title": "Dialog",
+        "urlLabel": "URL Label",
+        "urlPlaceholder": "URL Placeholder",
+        "eventsLabel": "Events Label"
       }
     },
     "headless": {
       "title": "Không đầu",
       "auth": "Xác thực",
-      "verify": "Xác minh"
+      "verify": "Xác minh",
+      "verifyDesc": "Verify Desc"
     },
     "toasts": {
       "genFailed": "Gen thất bại",
-      "webhookFailed": "Webhook không thành công"
+      "webhookFailed": "Webhook không thành công",
+      "syncFailed": "Failed to sync",
+      "revoked": "Revoked",
+      "revokeFailed": "Failed to revoke",
+      "webhookEstablished": "Webhook Established",
+      "webhookTerminated": "Webhook Terminated",
+      "terminateFailed": "Failed to terminate",
+      "copySuccess": "Copy successfully successfully"
     }
   },
   "guestRoom": {
@@ -5072,7 +5585,12 @@
       "unmuted": "Đã bật tiếng",
       "cameraOn": "Máy ảnh đang bật",
       "cameraOff": "Tắt máy ảnh",
-      "hostApproved": "Máy chủ đã được phê duyệt"
+      "hostApproved": "Máy chủ đã được phê duyệt",
+      "kicked": "Kicked",
+      "mediaPermissionDenied": "Media Permission Denied",
+      "hostDeclined": "Host Declined",
+      "p2pFailed": "Failed to p2p",
+      "disconnected": "Disconnected"
     }
   },
   "joinOrg": {
@@ -5091,7 +5609,9 @@
       "validationFailed": "Xác thực không thành công"
     },
     "toasts": {
-      "error": "Lỗi"
+      "error": "Lỗi",
+      "success": "Success",
+      "declined": "Declined"
     }
   },
   "licensePortal": {
@@ -5108,7 +5628,8 @@
     },
     "license": {
       "keyId": "Mã khóa",
-      "units": "Đơn vị"
+      "units": "Đơn vị",
+      "expires": "Expires"
     },
     "empty": {
       "title": "Không có giấy phép"
@@ -5132,14 +5653,22 @@
       "popular": "Phổ biến",
       "edgeUnits": "Đơn vị cạnh",
       "usersPerUnit": "Người dùng trên mỗi đơn vị",
-      "projectsPerUnit": "Dự án mỗi đơn vị"
+      "projectsPerUnit": "Dự án mỗi đơn vị",
+      "billed": "Billed",
+      "deployAction": "Deploy Action"
     },
     "toasts": {
       "checkoutFailed": "Thanh toán không thành công",
       "paymentFailed": "Thanh toán không thành công",
       "paymentExpired": "Thanh toán đã hết hạn",
       "paymentVerificationFailed": "Xác minh thanh toán không thành công",
-      "paymentProcessingError": "Lỗi xử lý thanh toán"
+      "paymentProcessingError": "Lỗi xử lý thanh toán",
+      "fetchLicensesFailed": "Failed to fetch licenses",
+      "initiateCheckout": "Initiate Checkout",
+      "renewing": "Renewing",
+      "renewalError": "Failed to renewal",
+      "paymentSuccess": "Payment successfully successfully",
+      "paymentCancelled": "Payment Cancelled"
     },
     "payment": {
       "gateway": "Cổng vào"
@@ -5160,6 +5689,12 @@
     "pairing": {
       "title": "Nhập trên thiết bị di động",
       "desc": "Ghép nối thiết bị di động của bạn với phòng"
+    },
+    "toasts": {
+      "cameraRequired": "Camera Required",
+      "broadcastStarted": "Broadcast Started",
+      "switchingCamera": "Switching Camera",
+      "settingsInfo": "Settings Info"
     }
   },
   "organization": {
@@ -5174,13 +5709,15 @@
       "actions": {
         "modifyAccess": "Sửa đổi quyền truy cập",
         "revoke": "Thu hồi"
-      }
+      },
+      "joined": "Joined"
     },
     "invitations": {
       "pending": "Chưa giải quyết",
       "status": {
         "pending": "Chưa giải quyết"
-      }
+      },
+      "expires": "Expires"
     },
     "sidebar": {
       "activeContext": "Bối cảnh hoạt động",
@@ -5200,15 +5737,47 @@
     },
     "dialogs": {
       "create": {
-        "submit": "Nộp"
+        "submit": "Nộp",
+        "title": "Create",
+        "fields": {
+          "name": "Name",
+          "slug": "Slug",
+          "description": "Description for fields"
+        },
+        "placeholders": {
+          "name": "Name",
+          "slug": "Slug",
+          "description": "Description for placeholders"
+        }
       },
       "invite": {
-        "submit": "Nộp"
+        "submit": "Nộp",
+        "title": "Invite",
+        "fields": {
+          "email": "Email",
+          "role": "Role"
+        },
+        "placeholders": {
+          "email": "Email",
+          "role": "Role"
+        }
       }
+    },
+    "subtitle": "Subtitle",
+    "roles": {
+      "producer": "Producer",
+      "editor": "Editor",
+      "synthesizer": "Synthesizer"
+    },
+    "toasts": {
+      "switched": "Switched",
+      "actionExecuted": "Action Executed"
     }
   },
   "paymentSuccess": {
-    "viewSubscription": "Xem đăng ký"
+    "viewSubscription": "Xem đăng ký",
+    "title": "Payment successfully",
+    "subtitle": "Subtitle"
   },
   "platformCallback": {
     "waitDesc": "Đang kết nối với nền tảng của bạn...",
@@ -5220,11 +5789,17 @@
     "service": "Dịch vụ",
     "errors": {
       "paymentCancelled": "Thanh toán đã bị hủy",
-      "exchangeFailed": "Trao đổi không thành công"
+      "exchangeFailed": "Trao đổi không thành công",
+      "missingCode": "Missing Code",
+      "unknownPlatform": "Unknown Platform"
     },
     "connecting": "Đang kết nối...",
     "connected": "Đã kết nối",
-    "disconnected": "Đã ngắt kết nối"
+    "disconnected": "Đã ngắt kết nối",
+    "toasts": {
+      "aiLinked": "AI Linked",
+      "paymentSuccess": "Payment successfully successfully"
+    }
   },
   "platformCMS": {
     "header": {
@@ -5298,7 +5873,18 @@
       "sortBy": "Sắp xếp theo",
       "newest": "Mới nhất",
       "mostViews": "Nhiều lượt xem nhất"
-    }
+    },
+    "toasts": {
+      "liveConfigured": "Live stream configured successfully",
+      "refreshed": "Stream settings refreshed",
+      "streamError": "Stream configuration error",
+      "failedToLoad": "Failed to load",
+      "failedToPublish": "Failed to publish"
+    },
+    "confirmDelete": "Are you sure you want to delete this video?",
+    "deleteVideo": "Delete video",
+    "publishVideo": "Publish video",
+    "postVideo": "Post video"
   },
   "platforms": {
     "status": {
@@ -5389,7 +5975,14 @@
       "hostEnabledCam": "Cam kích hoạt máy chủ",
       "hostDisabledCam": "Máy chủ bị vô hiệu hóa Cam",
       "cameraActive": "Máy ảnh đang hoạt động",
-      "cameraInactive": "Máy ảnh không hoạt động"
+      "cameraInactive": "Máy ảnh không hoạt động",
+      "cameraRequired": "Camera Required",
+      "invalidSession": "Invalid Session",
+      "broadcastLive": "Broadcast Live",
+      "hostDeclined": "Host Declined",
+      "signalingDisconnected": "Signaling Disconnected",
+      "removedByHost": "Removed By Host",
+      "sessionStopped": "Session Stopped"
     }
   },
   "viral": {
@@ -5457,6 +6050,10 @@
       "success": "Thành công",
       "failed": "Thất bại",
       "pending": "Chưa giải quyết"
+    },
+    "toasts": {
+      "hookPromoted": "Hook Promoted",
+      "scheduled": "Scheduled"
     }
   },
   "videoEditor": {
@@ -5591,7 +6188,16 @@
       "addSuccess": "Hình ảnh đã được thêm vào artboard",
       "addError": "Đã xảy ra lỗi khi thêm hình ảnh",
       "loadError": "Không tải được nội dung hình ảnh",
-      "noImagesFound": "Không tìm thấy hình ảnh nào"
+      "noImagesFound": "Không tìm thấy hình ảnh nào",
+      "addImageError": "Failed to add image",
+      "replaceImageLoading": "Replace Image Loading",
+      "replaceImageSuccess": "Replace Image successfully successfully",
+      "replaceImageError": "Failed to replace image",
+      "addImageLoading": "Add Image Loading",
+      "addImageSuccess": "Add Image successfully successfully",
+      "uploadLoading": "Upload Loading",
+      "uploadSuccess": "Upload successfully successfully",
+      "uploadError": "Failed to upload"
     },
     "video": {
       "title": "Video",
@@ -5614,7 +6220,13 @@
       "addSuccess": "Video đã được thêm vào artboard",
       "addError": "Đã xảy ra lỗi khi thêm video",
       "loadError": "Không tải được nội dung video",
-      "videoLabel": "Băng hình"
+      "videoLabel": "Băng hình",
+      "noVideosFound": "No videos found found",
+      "replaceVideoLoading": "Replace Video Loading",
+      "replaceVideoSuccess": "Replace Video successfully successfully",
+      "replaceVideoError": "Failed to replace video",
+      "addVideoLoading": "Add Video Loading",
+      "addVideoSuccess": "Add Video successfully successfully"
     },
     "recorder": {
       "title": "Máy ghi âm",
@@ -5650,7 +6262,11 @@
       "delete": "Xóa lớp",
       "unnamed": "Lớp chưa đặt tên",
       "noLayers": "Không có lớp",
-      "emptyStateDesc": "Thêm các yếu tố để bắt đầu"
+      "emptyStateDesc": "Thêm các yếu tố để bắt đầu",
+      "hideLayer": "Hide Layer",
+      "showLayer": "Show Layer",
+      "unlockLayer": "Unlock Layer",
+      "lockLayer": "Lock Layer"
     },
     "element": {
       "title": "Yếu tố",
@@ -5798,7 +6414,31 @@
       "addLoading": "Nội dung âm thanh đang được tải...",
       "addSuccess": "Nội dung âm thanh đã được thêm vào artboard",
       "addError": "Đã xảy ra lỗi khi thêm nội dung âm thanh",
-      "loadError": "Không tải được nội dung âm thanh"
+      "loadError": "Không tải được nội dung âm thanh",
+      "mix": "Mix",
+      "enhancingAi": "Enhancing AI",
+      "enhancedSuccess": "Enhanced successfully successfully",
+      "enhancedFailed": "Failed to enhanced",
+      "equalizer": "Equalizer",
+      "low": "Low",
+      "mid": "Mid",
+      "high": "High",
+      "dynamics": "Dynamics",
+      "threshold": "Threshold",
+      "ratio": "Ratio",
+      "automation": "Automation",
+      "addKey": "Add Key",
+      "noKeyframes": "No keyframes found",
+      "voiceEnhancement": "Voice Enhancement",
+      "studioVoice": "Studio Voice",
+      "clarityAutoLevel": "Clarity Auto Level",
+      "processing": "Processing",
+      "cleanAiDenoise": "Clean AI Denoise",
+      "gateThreshold": "Gate Threshold",
+      "reverb": "Reverb",
+      "echoDelay": "Echo Delay",
+      "delayTime": "Delay Time",
+      "feedback": "Feedback"
     },
     "upload": {
       "title": "Tải lên",
@@ -5822,7 +6462,10 @@
       "addVideoError": "Đã xảy ra lỗi khi thêm nội dung video",
       "addAudioLoading": "Nội dung âm thanh đang được tải...",
       "addAudioSuccess": "Nội dung âm thanh đã được thêm vào artboard",
-      "addAudioError": "Đã xảy ra lỗi khi thêm nội dung âm thanh"
+      "addAudioError": "Đã xảy ra lỗi khi thêm nội dung âm thanh",
+      "imageAddError": "Failed to image add",
+      "videoAddError": "Failed to video add",
+      "audioAddError": "Failed to audio add"
     },
     "arrange": {
       "title": "Sắp xếp",
@@ -6028,7 +6671,9 @@
     "fill": {
       "title": "Đổ đầy",
       "solid": "Chất rắn",
-      "gradient": "Độ dốc"
+      "gradient": "Độ dốc",
+      "color": "Color",
+      "mode": "Mode"
     },
     "filters": {
       "title": "Bộ lọc",
@@ -6155,6 +6800,9 @@
       "timeLimit": "Giới hạn thời gian",
       "toggleTimeline": "Chuyển đổi bảng điều khiển dòng thời gian",
       "timeline": "Dòng thời gian"
+    },
+    "elements": {
+      "noSceneElements": "No scene elements found"
     }
   },
   "ai": {
@@ -6282,6 +6930,10 @@
     "networkStatus": "Mạng WebRTC",
     "excellent": "Xuất sắc",
     "good": "Tốt",
-    "poor": "Nghèo"
+    "poor": "Nghèo",
+    "reconnecting": "Reconnecting...",
+    "reconnectingMsg": "SERVER CONNECTION LOST! AUTO-RECONNECTING... (Attempt {attempt}/30)",
+    "pausedBannerSub": "STREAM PAUSED - WILL AUTO-RESUME WHEN SERVER IS BACK ONLINE",
+    "platformPreselected": "Platform pre-selected"
   }
 }

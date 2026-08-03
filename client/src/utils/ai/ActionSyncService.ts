@@ -36,7 +36,7 @@ export class ActionSyncService {
 
         this.roomId = roomId;
         const endpoint = window.location.origin || (window.location.protocol + '//' + window.location.host);
-        console.log(`[ActionSync] Connecting to ${endpoint} with path /api/socket.io`);
+        console.log(`[ActionSync] Connecting to ${endpoint} with path /socket.io`);
 
         const persistentGuestId = this.getOrCreatePersistentId();
         this.socket = io(endpoint, {
