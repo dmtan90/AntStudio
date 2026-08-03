@@ -48,8 +48,6 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install cairo pango jpeg giflib librsvg
-          # Python 3.12+ removed distutils; setuptools re-provides it for node-gyp
-          pip3 install setuptools
 
       - name: Install Dependencies
         shell: bash
