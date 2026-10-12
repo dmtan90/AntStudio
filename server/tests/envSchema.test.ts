@@ -39,7 +39,7 @@ describe('validateEnv', () => {
     });
 
     it('defaults to S3 storage when STORAGE_PROVIDER is unset', () => {
-        const { STORAGE_PROVIDER, ...rest } = valid;
+        const { STORAGE_PROVIDER: _unused, ...rest } = valid;
         expect(validateEnv(rest)).toContain('S3 storage is enabled but AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY are not set');
     });
 });

@@ -362,7 +362,7 @@ const onSystemLog = (log: any) => {
     }
 
     // Auto scroll
-    nextTick(() => {
+    void nextTick(() => {
         if (realtimeLogArea.value) {
             realtimeLogArea.value.scrollTop = realtimeLogArea.value.scrollHeight;
         }

@@ -18,7 +18,7 @@ export function useProjectNotifications(projectId: string) {
                     }
                 }
             });
-            projectStore.fetchProject(projectId);
+            void projectStore.fetchProject(projectId);
         } else if (data.type === 'montage_ready') {
             toast.success('AI Montage is ready!', {
                 description: 'Gemini has finished producing your recap video.',
@@ -30,9 +30,9 @@ export function useProjectNotifications(projectId: string) {
                     }
                 }
             });
-            projectStore.fetchProject(projectId);
+            void projectStore.fetchProject(projectId);
         } else if (data.type === 'segment_video_ready') {
-            projectStore.fetchProject(projectId);
+            void projectStore.fetchProject(projectId);
         } else if (data.type === 'segment_video_failed') {
             toast.error(`Video generation failed for segment ${data.segmentOrder}`);
         }

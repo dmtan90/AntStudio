@@ -47,7 +47,7 @@ export async function loadLocaleMessages(locale: string): Promise<void> {
 
 // Components switch language by assigning `locale.value` directly; load messages whenever it changes
 // (vue-i18n falls back to English until they arrive).
-watch(i18n.global.locale, (locale) => { loadLocaleMessages(locale as string); });
+watch(i18n.global.locale, (locale) => { void loadLocaleMessages(locale as string); });
 
 /** Resolves once the startup locale is loaded; main.ts waits on it before mounting. */
 export const i18nReady = loadLocaleMessages(initialLocale);

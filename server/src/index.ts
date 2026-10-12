@@ -375,7 +375,7 @@ const shutdown = async (signal: string) => {
         await closeBrowserPool();
         await new Promise<void>((resolve) => {
             const io = socketServer.getIO();
-            if (io) io.close(() => resolve()); else resolve();
+            if (io) void io.close(() => resolve()); else resolve();
         });
         const mongoose = (await import('mongoose')).default;
         await mongoose.disconnect();
@@ -386,8 +386,8 @@ const shutdown = async (signal: string) => {
     }
 };
 
-process.on('SIGTERM', () => { shutdown('SIGTERM'); });
-process.on('SIGINT', () => { shutdown('SIGINT'); });
+process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
+process.on('SIGINT', () => { void shutdown('SIGINT'); });
 
 process.on('unhandledRejection', (reason, promise) => {
     Logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`, 'GlobalErrorHandler');

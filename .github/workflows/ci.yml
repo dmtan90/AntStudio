@@ -48,3 +48,31 @@ jobs:
 
       - name: Bundle server
         run: pnpm --filter server build
+
+  lint:
+    name: Lint changed lines
+    # Incremental adoption: only problems on lines changed by the PR fail the build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm (version from package.json "packageManager")
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build genblaze (server types depend on it)
+        run: pnpm --filter genblaze build
+
+      - name: ESLint (changed lines only)
+        run: pnpm run lint:changed origin/${{ github.base_ref }}

@@ -119,14 +119,14 @@ export class SocketServer {
                             const allowedRoom = await this.resolveRoomAccess(socket.data.user, String(roomId));
                             if (allowedRoom) {
                                 socket.data.roomId = allowedRoom;
-                                socket.join(allowedRoom);
+                                void socket.join(allowedRoom);
                             }
                         }
 
                         // User tracking logic
                         const userId = user._id.toString();
                         socket.join(`user:${userId}`);
-                        if (isAdmin) socket.join(ADMIN_LOG_ROOM);
+                        if (isAdmin) void socket.join(ADMIN_LOG_ROOM);
                         if (!this.userSockets.has(userId)) {
                             this.userSockets.set(userId, new Set());
                         }
@@ -266,8 +266,8 @@ export class SocketServer {
                         socket.emit('room:denied', { roomId: payload.roomId });
                         return;
                     }
-                    if (roomId && roomId !== allowedRoom) socket.leave(roomId);
-                    socket.join(allowedRoom);
+                    if (roomId && roomId !== allowedRoom) void socket.leave(roomId);
+                    void socket.join(allowedRoom);
                     roomId = allowedRoom;
                     socket.data.roomId = allowedRoom;
                     Logger.info(`👤 User ${user?.name || 'Guest'} joined/switched to Room: ${roomId}`, 'SocketServer');

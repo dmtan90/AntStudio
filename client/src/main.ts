@@ -65,4 +65,4 @@ setupAxiosTracking(api)
 // });
 
 // Mount once the saved locale's messages are loaded (avoids an English flash)
-i18nReady.finally(() => app.mount('#app'))
+void i18nReady.finally(() => app.mount('#app'))

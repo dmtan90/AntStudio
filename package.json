@@ -28,7 +28,9 @@
     "build:electron:mac": "node electron/build.cjs --target=mac",
     "build:electron:all": "node electron/build.cjs --target=all",
     "build:genblaze": "pnpm --filter genblaze build",
-    "install:all": "pnpm install"
+    "install:all": "pnpm install",
+    "lint": "eslint server/src client/src",
+    "lint:changed": "node scripts/lint-changed.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
@@ -38,7 +40,12 @@
     "concurrently": "^8.2.2",
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
-    "vite-plugin-pwa": "^1.2.0"
+    "eslint": "^9.39.5",
+    "eslint-plugin-vue": "^10.11.1",
+    "globals": "^16.5.0",
+    "typescript-eslint": "^8.71.1",
+    "vite-plugin-pwa": "^1.2.0",
+    "vue-eslint-parser": "^10.4.1"
   },
   "build": {
     "appId": "com.antstudio.app",
@@ -60,7 +67,9 @@
       {
         "from": "electron/server-deps/node_modules",
         "to": "node_modules",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "asarUnpack": [
@@ -95,12 +104,16 @@
       {
         "from": "electron/.env.enc",
         "to": ".env.enc",
-        "filter": ["*"]
+        "filter": [
+          "*"
+        ]
       },
       {
         "from": ".env.electron",
         "to": ".env",
-        "filter": ["*"]
+        "filter": [
+          "*"
+        ]
       },
       {
         "from": "client/dist",
