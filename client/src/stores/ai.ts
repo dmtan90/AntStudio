@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/utils/api'
 import { toast } from 'vue-sonner'
+import { generateVideoJob } from '@/utils/videoJobs'
 const GENERATE_ASSET_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 
 export const useAIStore = defineStore('ai', () => {
@@ -47,10 +48,8 @@ export const useAIStore = defineStore('ai', () => {
     }) {
         loading.value = true
         try {
-            const res: any = await api.post('/ai/generate-video', payload, {
-                timeout: GENERATE_ASSET_TIMEOUT
-            });
-            return res.data?.data || res.data
+            // Runs as a background job on the server; resolves with { media, url, jobId } when done
+            return await generateVideoJob(payload)
         } catch (error: any) {
             toast.error('Failed to start video generation: ' + (error.response?.data?.error || error.message))
             throw error

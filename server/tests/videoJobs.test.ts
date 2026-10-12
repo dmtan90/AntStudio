@@ -139,6 +139,16 @@ describe('POST /generate-video without Redis (in-process)', () => {
         expect(m.generateVideo).not.toHaveBeenCalled();
     });
 
+    it('keeps the job when /video-status already created the media entry (duplicate key)', async () => {
+        const winner = { _id: 'from-status-route' };
+        m.mediaCreate.mockRejectedValueOnce(Object.assign(new Error('E11000 duplicate key'), { code: 11000 }));
+        m.mediaFindOne.mockResolvedValueOnce(null).mockResolvedValueOnce(winner as any);
+        const res = await call('post', '/generate-video', { body: { prompt: 'a cat' } });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data.media).toBe(winner);
+        expect(m.refundUserCredits).not.toHaveBeenCalled();
+    });
+
     it('async: true answers 202 at once and finishes in the background', async () => {
         const res = await call('post', '/generate-video', { body: { prompt: 'a cat', async: true } });
         expect(res.statusCode).toBe(202);

@@ -79,20 +79,7 @@ export async function runVideoJob(jobId: string, data: VideoJobData): Promise<Vi
         });
 
         await connectDB();
-        let media = await Media.findOne({ $or: [{ 'metadata.jobId': jobId }, { key: url }] });
-        if (!media) {
-            media = await Media.create({
-                userId: data.userId,
-                key: url,
-                fileName: `AI Video - ${jobId}`,
-                contentType: 'video/mp4',
-                size: 0,
-                bucket: configService.bucketName,
-                purpose: 'ai-video',
-                metadata: { jobId, status: 'completed', prompt: data.prompt }
-            });
-        }
-        return { jobId, url, media };
+        return { jobId, url, media: await recordVideoMedia(jobId, url, data) };
     } catch (error: any) {
         const refunded = await refundUserCredits(data.userId, ServiceType.VIDEO, data.creditAmount, data.creditDescription)
             .catch((refundError: any) => {
@@ -100,6 +87,33 @@ export async function runVideoJob(jobId: string, data: VideoJobData): Promise<Vi
                 return false;
             });
         if (refunded) Logger.info(`[VideoJobs] Refunded ${data.creditAmount} credits for failed job ${jobId}`, 'VideoJobs');
+        throw error;
+    }
+}
+
+/**
+ * Finds or creates the library entry for the video. GET /video-status can create the same entry
+ * while this job is finishing (in-process mode); the unique key index then rejects one of the two
+ * inserts, and the loser reads the winner's document instead of failing the (already paid) job.
+ */
+async function recordVideoMedia(jobId: string, url: string, data: VideoJobData) {
+    const filter = { $or: [{ 'metadata.jobId': jobId }, { key: url }] };
+    const existing = await Media.findOne(filter);
+    if (existing) return existing;
+    try {
+        return await Media.create({
+            userId: data.userId,
+            key: url,
+            fileName: `AI Video - ${jobId}`,
+            contentType: 'video/mp4',
+            size: 0,
+            bucket: configService.bucketName,
+            purpose: 'ai-video',
+            metadata: { jobId, status: 'completed', prompt: data.prompt }
+        });
+    } catch (error: any) {
+        const winner = error?.code === 11000 ? await Media.findOne(filter) : null;
+        if (winner) return winner;
         throw error;
     }
 }

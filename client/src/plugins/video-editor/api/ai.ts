@@ -1,6 +1,7 @@
 import { api } from "video-editor/config/api";
 import { type EditorProduct, type EditorBrand } from "video-editor/schema/adapter";
 import { useQuery } from "@tanstack/vue-query";
+import { generateVideoJob } from "@/utils/videoJobs";
 
 // Use relative path to proxy to our local backend
 // const baseQuery = "/ai";
@@ -133,8 +134,8 @@ async function generateVoice(params: GenerateVoiceParams) {
 }
 
 async function generateVideo(params: GenerateVideoParams) {
-  const res = await api.post<{ success: boolean; data: { media: any; url: string } }>(`/ai/generate-video`, params);
-  return res.data?.data ?? res.data;
+  // Runs as a background job on the server; resolves with { media, url, jobId } when done
+  return generateVideoJob(params);
 }
 
 async function generateMusic(params: GenerateMusicParams) {
