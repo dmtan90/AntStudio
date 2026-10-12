@@ -7,7 +7,8 @@ export default defineConfig({
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),
             '~': fileURLToPath(new URL('./src', import.meta.url)),
-            'video-editor': fileURLToPath(new URL('./src/plugins/video-editor', import.meta.url))
+            'video-editor': fileURLToPath(new URL('./src/plugins/video-editor', import.meta.url)),
+            'audio-visual': fileURLToPath(new URL('./src/plugins/video-editor/plugins/audio-visual', import.meta.url))
         }
     },
     test: {
