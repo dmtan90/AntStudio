@@ -97,10 +97,13 @@ onMounted(() => {
   userStore.fetchProfile()
   uiStore.fetchAppConfig()
   
-  // Pre-initialize AI engines to shift CPU load to startup instead of active usage
-  import('@/utils/ai/LiveAIEngine').then(({ liveAIEngine }) => {
-    liveAIEngine.initialize();
-  });
+  // Pre-initialize the MediaPipe AI engine for signed-in users (studio features) once the
+  // browser is idle, so visitors on the landing/login pages don't download the models.
+  if (userStore.token) {
+    const warmUp = () => import('@/utils/ai/LiveAIEngine').then(({ liveAIEngine }) => liveAIEngine.initialize()).catch(() => {});
+    if ('requestIdleCallback' in window) window.requestIdleCallback(warmUp, { timeout: 5000 });
+    else setTimeout(warmUp, 2000);
+  }
 
   // console.log("handleOAuttCallback");
 

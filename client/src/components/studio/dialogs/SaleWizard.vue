@@ -21,7 +21,7 @@
             }) }}
           </p>
         </div>
-        <el-button @click="emit('close')" circle plain bg icon="Close" />
+        <el-button @click="emit('close')" circle plain bg :icon="ElCloseIcon" />
       </div>
 
       <!-- Content -->
@@ -142,7 +142,7 @@
                 </div>
                 <div class="flex items-center gap-3 ">
                     <el-button @click="generateVideos()" :disabled="loading" type="primary"
-                        plain round icon="MagicStick" :loading="loading">
+                        plain round :icon="MagicStick" :loading="loading">
                     {{ loading ? $t('saleWizard.videos.generating') : $t('saleWizard.videos.generate') }}
                     </el-button>
                 </div>
@@ -469,7 +469,7 @@
             <el-icon class="el-icon--right"><ArrowRight /></el-icon>
         </el-button>
         
-        <el-button v-else size="large" type="danger" round icon="VideoCamera"
+        <el-button v-else size="large" type="danger" round :icon="VideoCamera"
             @click="startLive" 
             :disabled="!configState.platforms || configState.platforms.length == 0" >
             {{ $t('saleWizard.buttons.goLive') }}
@@ -481,6 +481,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
+import { Close as ElCloseIcon, MagicStick, VideoCamera } from '@element-plus/icons-vue';
 import { useI18n } from 'vue-i18n';
 import { useStudioStore, type Product } from '@/stores/studio';
 import { useMediaStore } from '@/stores/media';

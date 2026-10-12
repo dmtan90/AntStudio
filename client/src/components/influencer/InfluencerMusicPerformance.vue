@@ -71,7 +71,7 @@
         <!-- Lyrics Toggle -->
         <el-button
           @click="showLyrics = !showLyrics"
-          :icon="showLyrics ? 'View' : 'PreviewClose'"
+          :icon="showLyrics ? PreviewOpen : PreviewClose"
           circle
           :type="showLyrics ? 'primary' : 'default'"
         />
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { PreviewOpen, PreviewClose } from '@icon-park/vue-next';
 import { useI18n } from 'vue-i18n';
 import InfluencerViewer from './InfluencerViewer.vue';
 import LyricsOverlay from '../studio/overlays/LyricsOverlay.vue';

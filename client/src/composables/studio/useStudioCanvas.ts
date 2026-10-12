@@ -653,7 +653,8 @@ export function useStudioCanvas(
             const requiresAI = ['static', 'image', 'video'].includes(currentModelType.value);
 
             if (requiresAI) {
-                // await liveAIEngine.initialize();
+                // Idempotent: reuses the engine if App.vue already warmed it up
+                await liveAIEngine.initialize().catch(err => console.warn('[Studio Canvas] AI Engine init failed:', err));
                 console.log(`[Studio Canvas] AI Engine initialized for modelType: ${currentModelType.value}`);
 
                 // --- LATENCY FIX: Worker-to-Worker Direct Channel ---

@@ -1,6 +1,5 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { Toaster } from 'vue-sonner'
 import VueFlags from '@singleway/vueflags'
@@ -35,13 +34,8 @@ app.use(createPinia())
 // Vue Router
 app.use(router)
 
-// Element Plus
-app.use(ElementPlus)
-import * as ElementPlusIconsVue from '@element-plus/icons-vue';
-// Register Element Plus icons
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component);
-}
+// Element Plus components and directives (v-loading) are imported on demand by
+// unplugin-vue-components' ElementPlusResolver; icons are imported where used.
 
 import i18n, { i18nReady } from './i18n'
 app.use(i18n)

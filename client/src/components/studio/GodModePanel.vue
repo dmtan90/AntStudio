@@ -18,7 +18,7 @@
         </div>
         <div class="flex gap-2">
           <button class="h-6 w-6 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center text-white/40" @click="isMinimized = !isMinimized">
-            <component :is="isMinimized ? 'FullScreen' : 'Minus'" theme="outline" size="12" />
+            <component :is="isMinimized ? FullScreen : Minus" theme="outline" size="12" />
           </button>
         </div>
       </div>

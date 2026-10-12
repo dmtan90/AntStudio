@@ -60,7 +60,7 @@
                 
                     <!-- LIVE Indicators & Settings -->
                     <div class="flex items-center gap-3 pointer-events-auto">
-                        <el-button icon="Setting" type="primary" size="large"
+                        <el-button :icon="ElSettingIcon" type="primary" size="large"
                             plain round 
                             @click="showWizard = true" 
                             v-if="!isLive">
@@ -89,7 +89,7 @@
                                 <span class="text-[9px] font-black uppercase tracking-widest text-white">{{ $t('saleStudio.liveMode') }}</span>
                             </div>
                         </div>
-                        <el-button v-if="!isLive" icon="Close" type="danger" size="large"
+                        <el-button v-if="!isLive" :icon="ElCloseIcon" type="danger" size="large"
                             plain round 
                             @click="handleExit">
                             {{ $t('saleStudio.exit') }}
@@ -205,6 +205,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
+import { Close as ElCloseIcon, Setting as ElSettingIcon } from '@element-plus/icons-vue';
 import { useStudioStore } from '@/stores/studio';
 import * as PIXI from 'pixi.js';
 import { useSaleRenderer } from '@/composables/studio/useSaleRenderer';

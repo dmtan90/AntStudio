@@ -35,7 +35,7 @@
 
         <el-button
           @click="showLyrics = !showLyrics"
-          :icon="showLyrics ? 'View' : 'PreviewClose'"
+          :icon="showLyrics ? PreviewOpen : PreviewClose"
           circle
           text
           size="small"
@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useAudioVisualizer } from '@/composables/useAudioVisualizer';
-import { Play, PauseOne, Close } from '@icon-park/vue-next';
+import { Play, PauseOne, Close, PreviewOpen, PreviewClose } from '@icon-park/vue-next';
 import { audioMixerService } from '@/utils/ai/AudioMixerService';
 
 const props = defineProps<{
