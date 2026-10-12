@@ -86,13 +86,14 @@ if [ "$DEPLOY_MODE" == "1" ]; then
 
     # Build and Push Backend
     echo -e "${BLUE}[3/5] Building & Pushing Backend Server to Artifact Registry...${NC}"
-    gcloud builds submit ./server \
-        --tag="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/antstudio-server:latest"
+    # Images build from the repo root because the server depends on the genblaze workspace package
+    gcloud builds submit . --config=cloudbuild.yaml \
+        --substitutions="_DOCKERFILE=server/Dockerfile,_IMAGE=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/antstudio-server:latest"
 
     # Build and Push Frontend Client
     echo -e "${BLUE}[4/5] Building & Pushing Frontend Client to Artifact Registry...${NC}"
-    gcloud builds submit ./client \
-        --tag="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/antstudio-client:latest"
+    gcloud builds submit . --config=cloudbuild.yaml \
+        --substitutions="_DOCKERFILE=client/Dockerfile,_IMAGE=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/antstudio-client:latest"
 
     # Deploy Serverless Backend to Cloud Run
     echo -e "${BLUE}[5/5] Deploying Backend Server to Google Cloud Run...${NC}"
@@ -114,7 +115,7 @@ if [ "$DEPLOY_MODE" == "1" ]; then
         --platform=managed \
         --region="$REGION" \
         --allow-unauthenticated \
-        --set-env-vars="VITE_API_BASE_URL=${BACKEND_URL}" \
+        --set-env-vars="API_UPSTREAM=${BACKEND_URL}" \
         --port=80
 
     CLIENT_URL=$(gcloud run services describe antstudio-client --platform=managed --region="$REGION" --format='value(status.url)')

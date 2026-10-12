@@ -125,11 +125,25 @@ function createWindow(serverUrl) {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
-      allowRunningInsecureContent: true,
+      sandbox: true,
+      // Same-origin policy stays on: the renderer talks to the local server, and external
+      // media goes through /api/media/proxy, so there's no need to disable web security.
+      allowRunningInsecureContent: false,
       experimentalFeatures: true,
-      webSecurity: false,
+      webSecurity: true,
       autoHideMenuBar: true // Hides the menu bar until 'Alt' is pressed
     }
+  });
+
+  // Keep the app window on the app origin; anything else opens in the system browser
+  const appOrigin = new URL(serverUrl).origin;
+  const devOrigin = process.env.VITE_DEV_SERVER_URL ? new URL(process.env.VITE_DEV_SERVER_URL).origin : null;
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    let origin = '';
+    try { origin = new URL(url).origin; } catch { /* invalid URL */ }
+    if (origin === appOrigin || (devOrigin && origin === devOrigin)) return;
+    event.preventDefault();
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
   });
 
   if (process.env.NODE_ENV === "development") {
@@ -152,7 +166,11 @@ function createWindow(serverUrl) {
       shell.openExternal(url);
       return { action: 'deny' };
     }
-    return { action: 'allow' };
+    // Blank popups (used for in-app preview windows) are fine; file:, javascript: and custom schemes are not
+    if (url === 'about:blank' || url === '') {
+      return { action: 'allow' };
+    }
+    return { action: 'deny' };
   });
 
   mainWindow.on('closed', () => {

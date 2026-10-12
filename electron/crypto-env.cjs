@@ -20,7 +20,6 @@ function encryptEnvFile(inputPath, outputPath) {
     console.warn(`[CryptoEnv] Source file not found: ${inputPath}`);
     return false;
   }
-  console.log(`encryptEnvFile with APP_SECRET: ${APP_SECRET} , SALT :${SALT} , ALGORITHM :${ALGORITHM}`);
   const content = fs.readFileSync(inputPath, 'utf8');
   const iv = crypto.randomBytes(16);
   const key = getDerivedKey();

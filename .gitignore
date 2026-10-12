@@ -51,8 +51,12 @@ logs
 !.env.example
 !.env.electron
 !electron/.env.enc
-pnpm-lock.yaml
+# pnpm-lock.yaml is committed: CI and Docker install with --frozen-lockfile
 .vscode/settings.json
+*.zip
+.venv/
+*.pem
+*service-account*.json
 server/build_log_utf8.txt
 server/build_log_v2.txt
 server/build_log.txt

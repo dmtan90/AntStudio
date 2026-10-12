@@ -1,59 +1,59 @@
+# Build context: repository root (the server depends on the genblaze workspace package).
+#   docker build -f server/Dockerfile .
 # ==========================================
 # BUILD STAGE
 # ==========================================
-FROM node:18-slim AS builder
+FROM node:22-bookworm-slim AS builder
 
-# Install build dependencies for canvas/native modules if needed
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    build-essential \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libjpeg-dev \
-    libgif-dev \
-    librsvg2-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
+RUN corepack enable
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+# Manifests first for layer caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY genblaze/package.json genblaze/
+COPY server/package.json server/
+COPY client/package.json client/
 
-COPY . .
-RUN npm run build
+# Only the server and its workspace dependencies; scripts skipped (no browser/yt-dlp downloads)
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter "server..."
+
+COPY genblaze/ genblaze/
+COPY server/ server/
+RUN pnpm --filter server build
 
 # ==========================================
 # PRODUCTION STAGE
 # ==========================================
-FROM node:18-slim
+FROM node:22-bookworm-slim
 
-# Install runtime dependencies (FFmpeg, Canvas libs)
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    libcairo2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libjpeg62-turbo \
-    libgif7 \
-    librsvg2-2 \
+# FFmpeg fallback binary + CA certs for outbound HTTPS
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Security: Run as non-root
-RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
-USER nodejs
+# pnpm's node_modules are symlinked into /app/node_modules/.pnpm, so keep the same layout
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/genblaze ./genblaze
+COPY --from=builder --chown=node:node /app/server/node_modules ./server/node_modules
+COPY --from=builder --chown=node:node /app/server/package.json ./server/package.json
+COPY --from=builder --chown=node:node /app/server/dist ./server/dist
+COPY --from=builder --chown=node:node /app/server/bin ./server/bin
 
-COPY --from=builder /app/package*.json ./
-RUN npm install --production
+WORKDIR /app/server
+RUN mkdir -p uploads logs tmp && chown -R node:node uploads logs tmp
 
-COPY --from=builder /app/dist ./dist
-# Re-copy source files if needed for dynamic imports (though build should handle it)
+# Security: run as the image's unprivileged user
+USER node
 
-EXPOSE 4000
 ENV NODE_ENV=production
 ENV PORT=4000
+EXPOSE 4000 1935
+
+HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
+    CMD node -e "fetch('http://localhost:'+(process.env.PORT||4000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "dist/index.js"]

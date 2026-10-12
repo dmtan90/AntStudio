@@ -1,0 +1,24 @@
+# Build context is the repo root (pnpm workspace). Keep it small and secret-free.
+**/node_modules
+**/dist
+**/dist-*
+**/*.zip
+**/logs
+**/tmp
+**/uploads
+.git
+.github
+.idea
+.vscode
+.venv
+.agents
+ams
+backup
+docs
+electron
+standalone
+**/.env
+**/.env.*
+!.env.example
+**/*.pem
+**/*service-account*.json

@@ -4,6 +4,10 @@
   "description": "AntStudio Video Creation Platform",
   "author": "AntStudio Team",
   "private": true,
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=20.19"
+  },
   "main": "electron/main.cjs",
   "scripts": {
     "dev:client": "pnpm --filter client dev",

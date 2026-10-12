@@ -1,44 +1,32 @@
-# Build Stage
+# Build context: repository root (pnpm workspace).
+#   docker build -f client/Dockerfile .
 # ==========================================
 # BUILD STAGE
 # ==========================================
-FROM node:18-slim AS builder
+FROM node:22-bookworm-slim AS builder
+RUN corepack enable
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY genblaze/package.json genblaze/
+COPY server/package.json server/
+COPY client/package.json client/
+RUN pnpm install --frozen-lockfile --ignore-scripts --filter "client..."
 
-COPY . .
-RUN npm run build
+COPY client/ client/
+RUN pnpm --filter client build
 
 # ==========================================
 # PRODUCTION STAGE (NGINX)
 # ==========================================
 FROM nginx:stable-alpine
 
-# Copy built assets from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Custom Nginx configuration for Vue Router (SPA)
-RUN printf 'server {\n\
-    listen 80;\n\
-    server_name localhost;\n\
-    location / {\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-    try_files $uri $uri/ /index.html;\n\
-    }\n\
-    error_page 500 502 503 504 /50x.html;\n\
-    location = /50x.html {\n\
-    root /usr/share/nginx/html;\n\
-    }\n\
-    }' > /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/client/dist /usr/share/nginx/html
+# Container config (port 80, proxies API/WebSocket to API_UPSTREAM), rendered at startup.
+# client/nginx.conf is the host-level TLS config used outside Docker.
+COPY client/nginx.docker.conf.template /etc/nginx/templates/default.conf.template
+ENV API_UPSTREAM=http://antstudio-server:4000
 
 EXPOSE 80
 
