@@ -4,18 +4,43 @@ import { Logger } from '../utils/Logger.js';
 import { configService } from '../utils/ConfigService.js';
 import { StorageFactory } from '../services/storage/StorageFactory.js';
 import axios from 'axios';
+import path from 'path';
+import { LocalStorageAdapter } from '../services/storage/LocalStorageAdapter.js';
+import { authorizeStorageRequest, normalizeStorageKey } from '../utils/storageAccess.js';
+import { userCanAccessProject } from '../utils/projectAccess.js';
 
 const router = Router();
 
-// GET /api/s3/* - Proxy files with authentication based on active storage provider
+// GET /api/s3/* - Proxy stored files from the active storage provider.
+// Access is checked per key prefix (see utils/storageAccess.ts); the auth cookie set at login
+// lets <img>/<video> tags authenticate without headers.
 router.get('/*', async (req: AuthRequest, res: Response) => {
     try {
-        const key = req.params[0];
-        if (!key) return res.status(400).json({ success: false, data: null, error: 'File key is required' });
+        const rawKey = req.params[0];
+        if (!rawKey) return res.status(400).json({ success: false, data: null, error: 'File key is required' });
 
-        const decodedKey = decodeURIComponent(key);
-        // const activeProvider = configService.storage.activeProvider;
+        const decodedKey = normalizeStorageKey(rawKey);
+        if (!decodedKey) return res.status(400).json({ success: false, data: null, error: 'Invalid file key' });
+
+        const { status, decision } = await authorizeStorageRequest(req, decodedKey, 'api/s3');
+        if (status) {
+            return res.status(status).json({ success: false, data: null, error: status === 401 ? 'Sign in to access this file' : 'You do not have access to this file' });
+        }
+        // Private files must not be stored by shared caches (CDNs/proxies)
+        const cacheControl = !decision || decision.isPublic ? 'public, max-age=3600' : 'private, max-age=3600';
+
         const adapter = await StorageFactory.getActiveAdapter();
+
+        // Local storage: stream from disk instead of making an HTTP request back to our own /uploads
+        if (adapter instanceof LocalStorageAdapter) {
+            const stream = await adapter.getFileStream(decodedKey).catch(() => null);
+            if (!stream) return res.status(404).json({ success: false, data: null, error: 'File not found' });
+            res.type(path.extname(decodedKey) || 'application/octet-stream');
+            res.setHeader('Cache-Control', cacheControl);
+            stream.on('error', () => res.destroy());
+            return stream.pipe(res);
+        }
+
         const url = await adapter.getFileUrl(decodedKey);
 
         const response = await axios.get(url, { responseType: 'stream' }).catch(err => {
@@ -30,7 +55,7 @@ router.get('/*', async (req: AuthRequest, res: Response) => {
 
         if (contentType) res.setHeader('Content-Type', String(contentType));
         if (contentLength) res.setHeader('Content-Length', String(contentLength));
-        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Cache-Control', cacheControl);
 
         response.data.pipe(res);
     } catch (error: any) {
@@ -43,11 +68,17 @@ router.get('/*', async (req: AuthRequest, res: Response) => {
 router.post('/presigned-upload', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { projectId, contentType, extension } = req.body;
-        if (!projectId) return res.status(400).json({ success: false, error: 'projectId is required' });
+        if (typeof projectId !== 'string' || !projectId) return res.status(400).json({ success: false, error: 'projectId is required' });
+        // Only people with access to the project may write into its storage folder
+        if (!(await userCanAccessProject(req.user!.userId, projectId))) {
+            return res.status(403).json({ success: false, error: 'You do not have access to this project' });
+        }
 
         const storage = await StorageFactory.getActiveAdapter();
         const timestamp = Date.now();
-        const key = `projects/${projectId}/renders/video_${timestamp}.${extension || 'mp4'}`;
+        // Client-supplied extension is part of the key: allow only a plain alphanumeric extension
+        const safeExtension = typeof extension === 'string' && /^[a-z0-9]{1,8}$/i.test(extension) ? extension : 'mp4';
+        const key = `projects/${projectId}/renders/video_${timestamp}.${safeExtension}`;
 
         const uploadUrl = await storage.getUploadUrl(key, contentType || 'video/mp4', 3600);
 

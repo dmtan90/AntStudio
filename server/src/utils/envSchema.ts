@@ -22,6 +22,7 @@ const envSchema = z.object({
     AWS_S3_ENDPOINT: optionalUrl,
     SYSTEM_MODE: z.enum(['master', 'edge']).optional(),
     STORAGE_PROVIDER: z.enum(['s3', 'b2', 'drive', 'local']).optional(),
+    STORAGE_ACCESS_MODE: z.enum(['off', 'report', 'enforce']).optional(),
     SMTP_SECURE: z.enum(['true', 'false']).optional(),
     STRIPE_SECRET_KEY: z.string().regex(/^(sk|rk)_(test|live)_/, 'must be a Stripe secret key (sk_...)').optional(),
     STRIPE_WEBHOOK_SECRET: z.string().regex(/^whsec_/, 'must start with whsec_').optional()

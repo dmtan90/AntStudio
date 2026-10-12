@@ -44,6 +44,7 @@ import commerceRouter from './routes/commerce.js';
 import monitoringRouter from './routes/monitoring.js';
 import { monitoringService } from './services/system/MonitoringService.js';
 import { Logger } from './utils/Logger.js';
+import { authorizeStorageRequest, normalizeStorageKey } from './utils/storageAccess.js';
 import { authMiddleware } from './middleware/auth.js';
 import { apiKeyAuthMiddleware } from './middleware/ApiKeyAuth.js';
 import { tenantMiddleware } from './middleware/tenant.js';
@@ -135,7 +136,19 @@ const publicPath = isPkg
     : path.join(__dirname, '../../public');
 
 app.use(express.static(publicPath));
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+// Local-storage files: same per-key access rules as /api/s3 (utils/storageAccess.ts)
+app.use('/uploads', async (req, res, next) => {
+    try {
+        const key = normalizeStorageKey(req.path.replace(/^\//, ''));
+        if (!key) return res.status(400).json({ success: false, error: 'Invalid file path' });
+        const { status, decision } = await authorizeStorageRequest(req, key, 'uploads');
+        if (status) return res.status(status).json({ success: false, error: status === 401 ? 'Sign in to access this file' : 'You do not have access to this file' });
+        if (decision && !decision.isPublic) res.setHeader('Cache-Control', 'private, max-age=3600');
+        next();
+    } catch (err) {
+        next(err);
+    }
+}, express.static(path.resolve(process.cwd(), 'uploads'), { cacheControl: false }));
 app.use(express.static(clientDistPath));
 app.use(apiKeyAuthMiddleware);
 
