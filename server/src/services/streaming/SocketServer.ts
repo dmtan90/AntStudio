@@ -1,7 +1,8 @@
 import { Server, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { verifyToken } from '../../utils/jwt.js';
-import { User } from '../../models/User.js';
+import { User, UserRole } from '../../models/User.js';
+import { userCanAccessProject } from '../../utils/projectAccess.js';
 import { BinaryStreamService } from './BinaryStreamService.js';
 import { streamingService } from './StreamingService.js';
 import { StreamSessionModel } from '../../models/StreamSession.js';
@@ -14,7 +15,7 @@ import { gamificationService } from './GamificationService.js';
 import { virtualEconomyService } from './VirtualEconomyService.js';
 import { analyticsService } from './AnalyticsService.js';
 import { autoDirectorService } from '../ai/AutoDirectorService.js';
-import { Logger } from '../../utils/Logger.js';
+import { Logger, ADMIN_LOG_ROOM } from '../../utils/Logger.js';
 import { tiktokLiveService } from './TikTokLiveService.js';
 
 export class SocketServer {
@@ -81,22 +82,28 @@ export class SocketServer {
                 const decoded = verifyToken(token as string);
                 if (decoded) {
                     const user = await User.findById(decoded.userId);
-                    if (user) {
+                    if (user && user.isActive !== false) {
+                        const isAdmin = user.role === UserRole.ADMIN || user.role === UserRole.SYS_ADMIN;
                         socket.data.user = {
                             id: user._id.toString(),
                             name: user.name,
                             avatar: user.avatar,
                             role: 'host',
-                            email: user.email
+                            email: user.email,
+                            isAdmin
                         };
                         if (roomId) {
-                            socket.data.roomId = roomId;
-                            socket.join(roomId);
+                            const allowedRoom = await this.resolveRoomAccess(socket.data.user, String(roomId));
+                            if (allowedRoom) {
+                                socket.data.roomId = allowedRoom;
+                                socket.join(allowedRoom);
+                            }
                         }
-                        
+
                         // User tracking logic
                         const userId = user._id.toString();
                         socket.join(`user:${userId}`);
+                        if (isAdmin) socket.join(ADMIN_LOG_ROOM);
                         if (!this.userSockets.has(userId)) {
                             this.userSockets.set(userId, new Set());
                         }
@@ -118,13 +125,17 @@ export class SocketServer {
                 if (guestInfo) {
                     const { sessionId } = guestInfo;
                     const displayName = socket.handshake.auth.displayName || 'Guest';
-                    const persistentGuestId = socket.handshake.auth.persistentGuestId;
+                    // Client-supplied IDs are namespaced so a guest can never claim a real user's
+                    // `user:<id>` room (user IDs are Mongo ObjectIds).
+                    const rawGuestId = String(socket.handshake.auth.persistentGuestId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+                    const guestId = `guest_${rawGuestId || socket.id}`;
 
                     socket.data.user = {
-                        id: persistentGuestId || socket.id,
+                        id: guestId,
                         name: displayName,
                         role: 'guest',
-                        isAnonymous: true
+                        isAnonymous: true,
+                        guestSessionId: sessionId
                     };
                     socket.data.roomId = sessionId;
                     socket.join(sessionId);
@@ -147,6 +158,45 @@ export class SocketServer {
                 next(new Error('Authentication error'));
             }
         });
+    }
+
+    /**
+     * Decides which room a socket may join for a requested room ID.
+     * Returns the room to actually join, or null if access is denied.
+     * - Guests are confined to the session their guest token was issued for.
+     * - `user:*` rooms are private; `admin*` rooms are joined only via role checks.
+     * - `*_global` fallback rooms are scoped per user so users don't see each other's events.
+     * - Stream sessions and projects require ownership, collaboration or org membership.
+     */
+    private async resolveRoomAccess(user: any, requestedRoom: string): Promise<string | null> {
+        const room = requestedRoom.trim();
+        if (!room || room.length > 200 || !user) return null;
+
+        if (user.role === 'guest') {
+            return room === user.guestSessionId ? room : null;
+        }
+        if (user.isAdmin) return room;
+
+        if (room.startsWith('user:')) return room === `user:${user.id}` ? room : null;
+        if (room.startsWith('admin')) return null;
+        if (room.endsWith('_global')) return `${room}:${user.id}`;
+
+        try {
+            const liveSession = streamingService.getSessionStatus(room);
+            if (liveSession) return liveSession.userId === user.id ? room : null;
+
+            const storedSession = await StreamSessionModel.findOne({ sessionId: room }).select('userId').lean();
+            if (storedSession) return storedSession.userId === user.id ? room : null;
+
+            const projectAccess = await userCanAccessProject(user.id, room);
+            if (projectAccess !== null) return projectAccess ? room : null;
+        } catch (err: any) {
+            Logger.warn(`[SocketServer] Room access check failed for ${room}: ${err.message}`, 'SocketServer');
+            return null;
+        }
+
+        Logger.warn(`[SocketServer] Denied join to unknown room "${room}" for user ${user.id}`, 'SocketServer');
+        return null;
     }
 
     /**
@@ -186,10 +236,17 @@ export class SocketServer {
             }
 
             // Room join / switch listener
-            socket.on('room:join', (payload: { roomId: string }) => {
-                if (payload?.roomId) {
-                    socket.join(payload.roomId);
-                    roomId = payload.roomId;
+            socket.on('room:join', async (payload: { roomId: string }) => {
+                if (payload?.roomId && user) {
+                    const allowedRoom = await this.resolveRoomAccess(user, String(payload.roomId));
+                    if (!allowedRoom) {
+                        socket.emit('room:denied', { roomId: payload.roomId });
+                        return;
+                    }
+                    if (roomId && roomId !== allowedRoom) socket.leave(roomId);
+                    socket.join(allowedRoom);
+                    roomId = allowedRoom;
+                    socket.data.roomId = allowedRoom;
                     Logger.info(`👤 User ${user?.name || 'Guest'} joined/switched to Room: ${roomId}`, 'SocketServer');
                     if (user) this.broadcastRoomUsers(roomId);
                 }
@@ -223,6 +280,12 @@ export class SocketServer {
             });
 
             socket.on('stream:relay', (payload: { sessionId: string, chunk: Buffer }) => {
+                // Only the session owner may feed media into its relay
+                const relaySession = payload?.sessionId ? streamingService.getSessionStatus(payload.sessionId) : undefined;
+                if (!relaySession || !user || (relaySession.userId !== user.id && !user.isAdmin)) {
+                    socket.emit('stream:error', { sessionId: payload?.sessionId, reason: 'Not authorized for this session.' });
+                    return;
+                }
                 const success = streamingService.ingestRelayChunk(payload.sessionId, payload.chunk);
                 if (success === false) {
                      socket.emit('stream:error', { sessionId: payload.sessionId, reason: 'Relay ingestion failed (FFmpeg crashed or session not found).' });

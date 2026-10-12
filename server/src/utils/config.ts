@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import fs from 'fs';
 import { execSync } from 'child_process';
+import crypto from 'crypto';
 
 // ESM-compatible require — works in both tsx (dev) and esbuild output (prod)
 const _require = createRequire(import.meta.url);
@@ -145,6 +146,15 @@ const resolveFfprobePath = (): string => {
     }
 };
 
+// Never fall back to a guessable constant. If JWT_SECRET is unset or weak, use a
+// random per-process secret so tokens cannot be forged (sessions reset on restart).
+const resolveJwtSecret = (): string => {
+    const secret = process.env.JWT_SECRET;
+    if (secret && secret.length >= 32 && secret !== 'fallback-secret') return secret;
+    console.warn('[Config] JWT_SECRET is missing or shorter than 32 chars. Using a random per-process secret; set JWT_SECRET to keep sessions across restarts.');
+    return crypto.randomBytes(48).toString('hex');
+};
+
 export const config = {
     // Registry & Business Mode
     systemMode: process.env.SYSTEM_MODE || 'edge', // 'master' or 'edge'
@@ -152,7 +162,7 @@ export const config = {
 
     // Private keys
     mongodbUri: process.env.MONGODB_URI,
-    jwtSecret: process.env.JWT_SECRET || 'fallback-secret',
+    jwtSecret: resolveJwtSecret(),
     
     // Storage config
     storageProvider: process.env.STORAGE_PROVIDER || 's3',//b2 or drive

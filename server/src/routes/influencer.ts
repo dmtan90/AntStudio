@@ -23,7 +23,8 @@ import { AIServiceManager } from '~/utils/ai/AIServiceManager.js';
 import { aiGuestService } from '~/services/ai/AIGuestService.js';
 import { TTSService } from '~/services/ai/TTSService.js';
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Buffered in memory: photos and avatar models (VRM/Live2D bundles)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024, files: 1 } });
 
 const router = express.Router();
 

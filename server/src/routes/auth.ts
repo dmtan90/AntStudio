@@ -187,9 +187,8 @@ router.post('/forgot-password', async (req, res) => {
 
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            // Check security best practices: maybe don't reveal user doesn't exist? 
-            // For now, let's keep it simple or vague.
-            return res.status(404).json({ success: false, data: null, error: 'User not found' });
+            // Same response as the success path so the endpoint can't be used to enumerate accounts
+            return res.json({ success: true, data: { message: 'Password reset email sent' } });
         }
 
         // Generate token
@@ -214,9 +213,7 @@ router.post('/reset-password', async (req, res) => {
         await connectDB();
         const { token, newPassword } = req.body
 
-        Logger.info('Reset password request:', 'Auth', { token, hasPassword: !!newPassword });
-
-        if (!token || !newPassword) {
+        if (typeof token !== 'string' || typeof newPassword !== 'string' || !token || !newPassword) {
             Logger.info('Missing token or password', 'Auth', {});
             return res.status(400).json({ success: false, data: null, error: 'Token and new password are required' })
         }
@@ -232,14 +229,7 @@ router.post('/reset-password', async (req, res) => {
         })
 
         if (!user) {
-            Logger.info('User not found or token expired for token:', 'Auth', { token });
-            // Let's debug why: check if token exists but expired
-            const debugUser = await User.findOne({ resetPasswordToken: token });
-            if (debugUser) {
-                Logger.info('Token exists but expired. Expires:', 'Auth', { expires: debugUser.resetPasswordExpires, now: new Date() });
-            } else {
-                Logger.info('Token does not exist in DB', 'Auth', {});
-            }
+            Logger.info('Password reset rejected: invalid or expired token', 'Auth');
             return res.status(400).json({ success: false, data: null, error: 'Invalid or expired token' })
         }
 

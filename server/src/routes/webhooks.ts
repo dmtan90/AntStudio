@@ -1,13 +1,25 @@
 import express from 'express';
+import crypto from 'crypto';
+import { configService } from '../utils/ConfigService.js';
 import { Logger } from '../utils/Logger.js';
 import { StreamSessionModel } from '../models/StreamSession.js';
 import { socketServer } from '../services/streaming/SocketServer.js';
 
 const router = express.Router();
 
-// Configuration for Facebook Webhook
-// This should ideally be in env vars, but using a fallback for development
-const FB_VERIFY_TOKEN = process.env.FB_WEBHOOK_VERIFY_TOKEN || 'antstudio_fb_webhook_secret';
+// Configuration for Facebook Webhook. No default: a token published in source would let anyone
+// register this endpoint as their own app's webhook.
+const FB_VERIFY_TOKEN = process.env.FB_WEBHOOK_VERIFY_TOKEN;
+
+/** Verifies Meta's X-Hub-Signature-256 header (HMAC-SHA256 of the raw body with the app secret). */
+function isValidFacebookSignature(req: any): boolean {
+    const appSecret = configService.oauth?.facebook?.appSecret;
+    const header = String(req.headers['x-hub-signature-256'] || '');
+    if (!appSecret || !req.rawBody || !header.startsWith('sha256=')) return false;
+    const expected = Buffer.from('sha256=' + crypto.createHmac('sha256', appSecret).update(req.rawBody).digest('hex'));
+    const received = Buffer.from(header);
+    return expected.length === received.length && crypto.timingSafeEqual(expected, received);
+}
 
 /**
  * Facebook Webhook Verification Endpoin 
@@ -19,7 +31,7 @@ router.get('/facebook', (req, res) => {
     const challenge = req.query['hub.challenge'];
 
     if (mode && token) {
-        if (mode === 'subscribe' && token === FB_VERIFY_TOKEN) {
+        if (mode === 'subscribe' && FB_VERIFY_TOKEN && token === FB_VERIFY_TOKEN) {
             Logger.info('FACEBOOK_WEBHOOK_VERIFIED', 'Webhooks');
             res.status(200).send(challenge);
         } else {
@@ -35,6 +47,12 @@ router.get('/facebook', (req, res) => {
  * Receives real-time updates for page feed (comments, reactions, etc.)
  */
 router.post('/facebook', async (req, res) => {
+    // Reject forged deliveries: unsigned comments would be injected into live AI sales sessions
+    if (!isValidFacebookSignature(req)) {
+        Logger.warn('[Facebook Webhook] Rejected delivery with missing/invalid signature', 'Webhooks');
+        return res.sendStatus(401);
+    }
+
     const body = req.body;
 
     // Acknowledge receipt immediately to avoid Facebook retries/timeouts

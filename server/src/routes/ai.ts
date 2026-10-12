@@ -62,7 +62,8 @@ import { ServiceType } from '~/models/CreditUsage.js';
 import { LicenseType } from '~/models/License.js';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+// Buffered in memory: cap size so a single request can't exhaust the heap
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024, files: 5 } });
 
 // Middleware for auth & license
 router.use(authMiddleware);

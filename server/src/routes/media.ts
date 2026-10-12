@@ -9,6 +9,9 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { AdminSettings } from '../models/AdminSettings.js';
 import { Template } from '../models/Template.js';
 import { StorageFactory } from '../services/storage/StorageFactory.js';
+import { assertPublicHttpUrl, safeHttpAgent, safeHttpsAgent } from '../utils/ssrfGuard.js';
+
+const PROXY_MAX_BYTES = 512 * 1024 * 1024;
 
 // Define the file filter function to update the filename encoding
 const fileFilter = (req: AuthRequest, file: any, callback: any) => {
@@ -20,8 +23,9 @@ const fileFilter = (req: AuthRequest, file: any, callback: any) => {
 const router = Router();
 const upload = multer({
     fileFilter, storage: multer.memoryStorage(),
-    limits: { fileSize: 2048 * 1024 * 1024 }
-}); // 2GB limit
+    // Buffered in memory (storage adapters take Buffers); keep well below the heap size
+    limits: { fileSize: 1024 * 1024 * 1024, files: 2 }
+}); // 1GB limit
 
 // All media routes require authentication
 // router.use(authMiddleware);
@@ -213,41 +217,62 @@ router.get('/proxy', async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, error: 'URL parameter is required' });
         }
 
-        // Validate URL (basic security)
+        // SSRF guard: public http(s) hosts only (agents re-check every DNS lookup, including redirects)
         try {
-            const parsedUrl = new URL(url);
-            if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-                return res.status(400).json({ success: false, error: 'Invalid URL protocol' });
-            }
-        } catch (e) {
-            return res.status(400).json({ success: false, error: 'Invalid URL' });
+            await assertPublicHttpUrl(url);
+        } catch (e: any) {
+            return res.status(400).json({ success: false, error: e.message });
         }
 
         // Use Axios stream to bypass undici native fetch proxy failures and respect environmental proxy settings
         const response = await axios.get(url, {
             responseType: 'stream',
             timeout: 15000,
+            maxRedirects: 5,
+            maxContentLength: PROXY_MAX_BYTES,
+            httpAgent: safeHttpAgent,
+            httpsAgent: safeHttpsAgent,
             validateStatus: () => true, // Forward any status code directly
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
         });
 
+        // Never serve markup from our origin (would be XSS on the app domain)
+        const contentType = String(response.headers['content-type'] || '');
+        if (/text\/html|application\/xhtml\+xml/i.test(contentType)) {
+            response.data.destroy();
+            return res.status(415).json({ success: false, error: 'Unsupported content type' });
+        }
+        const declaredLength = Number(response.headers['content-length'] || 0);
+        if (declaredLength > PROXY_MAX_BYTES) {
+            response.data.destroy();
+            return res.status(413).json({ success: false, error: 'Remote file too large' });
+        }
+
         // Set Headers
         // Critical: Set CORP header to allow embedding in COEP environments
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'");
 
         // Forward status code
         res.status(response.status);
 
         // Forward content type
-        const contentType = response.headers['content-type'];
         if (contentType) {
-            res.setHeader('Content-Type', String(contentType));
+            res.setHeader('Content-Type', contentType);
         }
 
-        // Stream the response body
+        // Stream the response body, aborting if it exceeds the size cap
+        let streamedBytes = 0;
+        response.data.on('data', (chunk: Buffer) => {
+            streamedBytes += chunk.length;
+            if (streamedBytes > PROXY_MAX_BYTES) response.data.destroy(new Error('Proxy size limit exceeded'));
+        });
+        response.data.on('error', () => res.destroy());
+        res.on('close', () => response.data.destroy());
         response.data.pipe(res);
 
     } catch (error: any) {

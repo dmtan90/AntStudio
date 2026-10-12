@@ -29,6 +29,18 @@ import si from 'systeminformation';
 
 const RTMP_PORT = process.env.RTMP_PORT || 1935;
 
+// NMS stream auth: every publish/play must carry ?sign=<exp>-<md5(streamPath-exp-secret)>.
+// Only this process knows the secret, so only our own FFmpeg encoder/relays can publish or play.
+const NMS_AUTH_SECRET = crypto.randomBytes(32).toString('hex');
+const NMS_SIGN_TTL_SECONDS = 30 * 24 * 60 * 60;
+
+/** Builds a signed local RTMP URL for a stream path like "/live/<sessionId>". */
+function signedLocalRtmpUrl(streamPath: string): string {
+    const exp = Math.floor(Date.now() / 1000) + NMS_SIGN_TTL_SECONDS;
+    const hash = crypto.createHash('md5').update(`${streamPath}-${exp}-${NMS_AUTH_SECRET}`).digest('hex');
+    return `rtmp://localhost:${RTMP_PORT}${streamPath}?sign=${exp}-${hash}`;
+}
+
 export interface StreamTarget {
     url: string;      // RTMP Base URL
     key: string;      // Stream Key
@@ -100,6 +112,11 @@ export class StreamingService extends EventEmitter {
                 port: 8000,
                 allow_origin: '*'
             },
+            auth: {
+                play: true,
+                publish: true,
+                secret: NMS_AUTH_SECRET
+            },
             relay: {
                 ffmpeg: FFMPEG_BIN,
                 tasks: [
@@ -156,7 +173,6 @@ export class StreamingService extends EventEmitter {
                         }
 
                         // Local Input URL (RTMP Loopback)
-                        const inputUrl = `rtmp://localhost:${RTMP_PORT}${cleanPath}`;
 
                         session.targets.forEach((target, index) => {
                             const baseUrl = target.url.replace(/\/$/, '');
@@ -173,6 +189,8 @@ export class StreamingService extends EventEmitter {
 
                                 Logger.info(`[NMS-Relay] Spawning/Respawning Relay Process ${index + 1}: ${sessionId} -> ${target.platform} (URL: ${remoteUrl})`, 'StreamingService');
                                 
+                                // Signed per spawn so respawns never reuse an expired signature
+                                const inputUrl = signedLocalRtmpUrl(cleanPath);
                                 const relayCommand = ffmpeg(inputUrl)
                                     .inputOptions([
                                         '-fflags +genpts+igndts+nobuffer',
@@ -647,7 +665,7 @@ export class StreamingService extends EventEmitter {
 
         // Determine output: Push to local NMS first
         // Determine output: Push to local NMS first
-        const localRtmpUrl = `rtmp://localhost:${RTMP_PORT}/live/${sessionId}`;
+        const localRtmpUrl = signedLocalRtmpUrl(`/live/${sessionId}`);
 
         // Hardware Acceleration Check (Phase 92) - Cross Platform & Hardware Aware
         const videoCodec = forceCpuCodec ? 'libx264' : await this.getOptimalVideoCodec();
@@ -1000,6 +1018,18 @@ export class StreamingService extends EventEmitter {
     /**
      * Stop a restreaming session and deduct credits based on duration.
      */
+    /**
+     * Stops every active session (kills ingest/relay FFmpeg processes) so nothing is orphaned
+     * when the server process exits.
+     */
+    public async shutdown() {
+        const sessionIds = Array.from(this.sessions.keys());
+        if (sessionIds.length > 0) {
+            Logger.info(`[StreamingService] Shutting down ${sessionIds.length} active session(s)`, 'StreamingService');
+        }
+        await Promise.allSettled(sessionIds.map(id => this.stopRestream(id)));
+    }
+
     public async stopRestream(sessionId: string) {
         const session = this.sessions.get(sessionId);
         if (session) {

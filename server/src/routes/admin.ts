@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { User } from '../models/User.js';
+import { User, UserRole } from '../models/User.js';
 import { connectDB } from '../utils/db.js';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth.js';
 import { Project } from '../models/Project.js';
@@ -69,13 +69,31 @@ router.get('/users/:id', async (req, res) => {
 });
 
 // PUT /api/admin/users/:id - Update user
-router.put('/users/:id', async (req, res) => {
+router.put('/users/:id', async (req: AuthRequest, res) => {
     try {
         await connectDB();
 
+        // Credentials/identity can't be written through this endpoint (raw writes would also skip password hashing)
+        const PROTECTED_FIELDS = ['_id', 'passwordHash', 'password', 'resetPasswordToken', 'resetPasswordExpires', 'createdAt', 'updatedAt', '__v'];
+        const updates: Record<string, any> = {};
+        for (const [key, value] of Object.entries(req.body || {})) {
+            if (key.startsWith('$') || PROTECTED_FIELDS.includes(key.split('.')[0])) continue;
+            updates[key] = value;
+        }
+
+        // Only SYS_ADMIN may grant admin roles or modify another SYS_ADMIN account
+        const isSysAdmin = req.user!.role === UserRole.SYS_ADMIN;
+        if (!isSysAdmin) {
+            const target = await User.findById(req.params.id).select('role');
+            const grantsAdmin = 'role' in updates && [UserRole.ADMIN, UserRole.SYS_ADMIN].includes(updates.role);
+            if (target?.role === UserRole.SYS_ADMIN || grantsAdmin) {
+                return res.status(403).json({ success: false, data: null, error: 'Only a system admin can change admin roles' });
+            }
+        }
+
         const user = await User.findByIdAndUpdate(
             req.params.id,
-            { $set: req.body },
+            { $set: updates },
             { new: true, runValidators: true }
         );
 
