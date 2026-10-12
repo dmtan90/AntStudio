@@ -8,7 +8,7 @@ import { User } from '../models/User.js';
 import { AnalyticsEvent } from '../models/AnalyticsEvent.js';
 import { commerceSyncService } from '../services/streaming/CommerceSyncService.js';
 import { generateJSON } from '../utils/AIGenerator.js';
-import { chromium } from 'playwright';
+import { withBrowserContext } from '../utils/browserPool.js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { assertPublicHttpUrl, safeHttpAgent, safeHttpsAgent } from '../utils/ssrfGuard.js';
@@ -130,7 +130,6 @@ router.use(authMiddleware);
 
 // POST /api/commerce/extract-product - Extract product info from URL via Gemini
 router.post('/extract-product', async (req: AuthRequest, res: Response) => {
-    let browser;
     try {
         const { url } = req.body;
         if (typeof url !== 'string' || !url) return res.status(400).json({ success: false, error: 'URL is required' });
@@ -144,33 +143,33 @@ router.post('/extract-product', async (req: AuthRequest, res: Response) => {
 
         let html = '';
         try {
-            Logger.info(`[ProductExtractor] Launching Playwright to render page`);
-            browser = await chromium.launch({ headless: true });
-            const context = await browser.newContext({
+            Logger.info(`[ProductExtractor] Rendering page with the shared browser pool`);
+            html = await withBrowserContext(async (context) => {
+                const page = await context.newPage();
+            
+                // Abort image and media requests to speed up extraction, and block any
+                // request (redirects, XHR, iframes) that targets a non-public host
+                const hostVerdicts = new Map<string, Promise<boolean>>();
+                await page.route('**/*', async (route) => {
+                    const request = route.request();
+                    if (['image', 'media', 'font'].includes(request.resourceType())) {
+                        return route.abort();
+                    }
+                    let host = '';
+                    try { host = new URL(request.url()).host; } catch { return route.abort(); }
+                    if (!hostVerdicts.has(host)) {
+                        hostVerdicts.set(host, assertPublicHttpUrl(request.url()).then(() => true, () => false));
+                    }
+                    return (await hostVerdicts.get(host)) ? route.continue() : route.abort();
+                });
+
+                await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+                await page.waitForTimeout(2000); // Allow extra time for SPAs to render
+                return page.content();
+            }, {
                 userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
                 viewport: { width: 1280, height: 800 }
             });
-            const page = await context.newPage();
-            
-            // Abort image and media requests to speed up extraction, and block any
-            // request (redirects, XHR, iframes) that targets a non-public host
-            const hostVerdicts = new Map<string, Promise<boolean>>();
-            await page.route('**/*', async (route) => {
-                const request = route.request();
-                if (['image', 'media', 'font'].includes(request.resourceType())) {
-                    return route.abort();
-                }
-                let host = '';
-                try { host = new URL(request.url()).host; } catch { return route.abort(); }
-                if (!hostVerdicts.has(host)) {
-                    hostVerdicts.set(host, assertPublicHttpUrl(request.url()).then(() => true, () => false));
-                }
-                return (await hostVerdicts.get(host)) ? route.continue() : route.abort();
-            });
-
-            await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-            await page.waitForTimeout(2000); // Allow extra time for SPAs to render
-            html = await page.content();
         } catch (playwrightErr: any) {
             Logger.warn(`[ProductExtractor] Playwright failed: ${playwrightErr.message}. Falling back to axios.`);
             try {
@@ -188,10 +187,6 @@ router.post('/extract-product', async (req: AuthRequest, res: Response) => {
             } catch (axiosErr: any) {
                 Logger.error(`[ProductExtractor] Axios fallback failed: ${axiosErr.message}`);
                 throw new Error(`Failed to fetch product page: ${axiosErr.message}`);
-            }
-        } finally {
-            if (browser) {
-                await browser.close();
             }
         }
 

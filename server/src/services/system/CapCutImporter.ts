@@ -9,7 +9,12 @@ import { Logger } from '../../utils/Logger.js';
 export class CapCutImporter {
     async importTemplate(capcutUrl: string): Promise<any> {
         const templateId = this.extractTemplateId(capcutUrl);
-        if (!templateId) {
+
+        // The page is rendered server-side, so only allow CapCut's own hosts (SSRF)
+        let host = '';
+        try { host = new URL(capcutUrl).hostname; } catch { /* invalid URL */ }
+        const isCapCutHost = ['capcut.com', 'capcut.net', 'capcut.cn'].some(d => host === d || host.endsWith(`.${d}`));
+        if (!templateId || !isCapCutHost) {
             throw new Error('Invalid CapCut URL');
         }
 

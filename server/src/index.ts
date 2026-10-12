@@ -371,6 +371,8 @@ const shutdown = async (signal: string) => {
     try {
         activeHttpServer?.close();
         await streamingService.shutdown();
+        const { closeBrowserPool } = await import('./utils/browserPool.js');
+        await closeBrowserPool();
         await new Promise<void>((resolve) => {
             const io = socketServer.getIO();
             if (io) io.close(() => resolve()); else resolve();

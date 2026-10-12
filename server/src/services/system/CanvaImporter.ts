@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { withBrowserContext } from '../../utils/browserPool.js';
 
 import { Logger } from '../../utils/Logger.js';
 
@@ -16,7 +16,10 @@ export class CanvaImporter {
     async importDesign(canvaUrl: string): Promise<any> {
         const designId = this.extractDesignId(canvaUrl);
 
-        if (!designId) {
+        // The page is rendered server-side, so only allow Canva's own hosts (SSRF)
+        let host = '';
+        try { host = new URL(canvaUrl).hostname; } catch { /* invalid URL */ }
+        if (!designId || !(host === 'canva.com' || host.endsWith('.canva.com'))) {
             throw new Error('Invalid Canva URL');
         }
 
@@ -30,32 +33,29 @@ export class CanvaImporter {
         };
 
         try {
-            const browser = await chromium.launch({ headless: true });
-            const page = await browser.newPage();
-            // Use a real user agent
-            await page.setExtraHTTPHeaders({
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
-            });
+            // Shared browser pool: the context is always closed, even if navigation fails
+            const scraped = await withBrowserContext(async (context) => {
+                const page = await context.newPage();
+                await page.goto(canvaUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+                return page.evaluate(() => {
+                    const title = document.querySelector('h1')?.innerText ||
+                        document.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
+                        document.title;
+                    const description = document.querySelector('meta[name="description"]')?.getAttribute('content') ||
+                        document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
+                    const thumbnail = document.querySelector('meta[property="og:image"]')?.getAttribute('content') ||
+                        document.querySelector('link[rel="image_src"]')?.getAttribute('href') || '';
 
-            await page.goto(canvaUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-
-            const scraped = await page.evaluate(() => {
-                const title = document.querySelector('h1')?.innerText ||
-                    document.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
-                    document.title;
-                const description = document.querySelector('meta[name="description"]')?.getAttribute('content') ||
-                    document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
-                const thumbnail = document.querySelector('meta[property="og:image"]')?.getAttribute('content') ||
-                    document.querySelector('link[rel="image_src"]')?.getAttribute('href') || '';
-
-                return { title, description, thumbnail };
+                    return { title, description, thumbnail };
+                });
+            }, {
+                // Use a real user agent
+                userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
             });
 
             if (scraped.title) metadata.title = scraped.title;
             if (scraped.description) metadata.description = scraped.description;
             if (scraped.thumbnail) metadata.thumbnail = scraped.thumbnail;
-
-            await browser.close();
         } catch (e: any) {
             Logger.warn(`[CanvaImporter] Metadata scrape failed: ${e.message}`);
         }

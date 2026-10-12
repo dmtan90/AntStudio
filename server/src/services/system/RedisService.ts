@@ -2,6 +2,23 @@ import { Redis } from 'ioredis';
 import { Logger } from '../../utils/Logger.js';
 import { NodeHeartbeat } from '../../models/NodeHeartbeat.js';
 
+/** True when Redis was explicitly configured (REDIS_URI or REDIS_HOST). */
+export function isRedisConfigured(): boolean {
+    return !!(process.env.REDIS_URI || process.env.REDIS_HOST);
+}
+
+/** Creates an ioredis client from REDIS_URI or REDIS_HOST/PORT/PASSWORD/DB. */
+export function createRedisClient(): Redis {
+    if (process.env.REDIS_URI) return new Redis(process.env.REDIS_URI);
+    return new Redis({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD || undefined,
+        db: parseInt(process.env.REDIS_DB || '0'),
+        retryStrategy: (times: number) => Math.min(times * 50, 2000)
+    });
+}
+
 /**
  * Service to manage distributed state across the AntStudio cluster.
  */
@@ -17,26 +34,7 @@ export class RedisService {
 
     public async connect() {
         try {
-            const host = process.env.REDIS_HOST || 'localhost';
-            const port = parseInt(process.env.REDIS_PORT || '6379');
-            const password = process.env.REDIS_PASSWORD || undefined;
-            const db = parseInt(process.env.REDIS_DB || '0');
-            const redisUri = process.env.REDIS_URI;
-
-            if (redisUri) {
-                this.client = new Redis(redisUri);
-            } else {
-                this.client = new Redis({
-                    host,
-                    port,
-                    password,
-                    db,
-                    retryStrategy: (times: number) => {
-                        const delay = Math.min(times * 50, 2000);
-                        return delay;
-                    }
-                });
-            }
+            this.client = createRedisClient();
 
             this.client.on('error', (err: any) => {
                 // Log only once per disconnect to avoid spam

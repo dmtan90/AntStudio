@@ -1,4 +1,6 @@
 import { Server, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createRedisClient, isRedisConfigured } from '../system/RedisService.js';
 import { Server as HTTPServer } from 'http';
 import { verifyToken } from '../../utils/jwt.js';
 import { User, UserRole } from '../../models/User.js';
@@ -52,10 +54,31 @@ export class SocketServer {
         });
         Logger.info(`🚀 [SocketServer] Socket.io attached directly to HTTP Server at /socket.io`, 'SocketServer');
 
+        this.attachRedisAdapter();
         this.setupAuthentication();
         this.setupHandlers();
         this.setupServiceListeners();
     }
+    /**
+     * With Redis configured, broadcasts and room operations (io.to(room).emit, fetchSockets)
+     * reach sockets connected to every server instance, which is required to run more than one
+     * instance behind a load balancer (with sticky sessions for the polling transport).
+     */
+    private attachRedisAdapter() {
+        if (!this.io || !isRedisConfigured()) return;
+        try {
+            const pubClient = createRedisClient();
+            const subClient = pubClient.duplicate();
+            const onError = (err: Error) => Logger.warn(`[SocketServer] Redis adapter connection error: ${err.message}`, 'SocketServer');
+            pubClient.on('error', onError);
+            subClient.on('error', onError);
+            this.io.adapter(createAdapter(pubClient, subClient));
+            Logger.info('[SocketServer] Redis adapter enabled for multi-instance Socket.IO', 'SocketServer');
+        } catch (err: any) {
+            Logger.error(`[SocketServer] Failed to enable Redis adapter, using in-memory adapter: ${err.message}`, 'SocketServer');
+        }
+    }
+
     /**
      * Get the underlying socket.io server instance.
      */
