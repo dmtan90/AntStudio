@@ -117,7 +117,8 @@ export function createShowActions(ctx: StudioContext) {
             }));
 
             // Real-time B-Roll Trigger
-            VisualConceptService.processDialogue(step.dialogue, studioVibe.value);
+            VisualConceptService.processDialogue(step.dialogue, studioVibe.value)
+                .catch(err => console.warn('[ShowRunner] B-roll trigger failed:', err));
         }
 
         // 2. Handle Actions
@@ -161,7 +162,7 @@ export function createShowActions(ctx: StudioContext) {
                     }));
                     break;
                 case 'assemble_highlights':
-                    import('vue-sonner').then(({ toast }) => {
+                    void import('vue-sonner').then(({ toast }) => {
                         toast.info("ShowRunner is assembling live highlights!");
                     });
                     break;
