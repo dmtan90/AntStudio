@@ -135,3 +135,7 @@ const fileFilter = (req: AuthRequest, file: any, callback: any) => {
 
 
 export const upload = multer({ fileFilter, storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
+
+// For routes that only store the file: written to a temp file and streamed to storage.
+// Handlers must delete req.file.path when done.
+export const diskUpload = multer({ fileFilter, storage: multer.diskStorage({ destination: os.tmpdir() }), limits: { fileSize: 500 * 1024 * 1024 } });

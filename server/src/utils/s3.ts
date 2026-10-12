@@ -25,6 +25,26 @@ export const uploadToS3 = async (
     }
 };
 
+/**
+ * Streams a file from local disk to the active storage provider (same local-disk fallback as uploadToS3).
+ * Use for large uploads written to a temp file, so the file is never fully loaded into memory.
+ */
+export const uploadFileFromPath = async (
+    key: string,
+    filePath: string,
+    contentType: string = 'application/octet-stream'
+) => {
+    try {
+        const adapter = await StorageFactory.getActiveAdapter();
+        const result = await adapter.uploadFromPath(key, filePath, contentType);
+        return { key: result.key, url: result.url };
+    } catch (error: any) {
+        Logger.warn(`[Storage] Primary cloud storage upload failed (${error?.message || error}). Falling back to local disk storage...`, 'uploadFileFromPath');
+        const result = await LocalStorageAdapter.getInstance().uploadFromPath(key, filePath, contentType);
+        return { key: result.key, url: result.url };
+    }
+};
+
 export const getFromS3 = async (key: string) => {
     try {
         const adapter = await StorageFactory.getActiveAdapter();

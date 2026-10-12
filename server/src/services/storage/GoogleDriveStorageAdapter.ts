@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { drive, drive_v3 } from '@googleapis/drive';
 import { GoogleAuth } from 'google-auth-library';
 import { IStorageAdapter } from './StorageAdapter.js';
@@ -49,6 +50,15 @@ export class GoogleDriveStorageAdapter implements IStorageAdapter {
     }
 
     async uploadFile(key: string, body: Buffer | Uint8Array | string, contentType: string = 'application/octet-stream'): Promise<{ key: string, url: string }> {
+        return this.createPublicFile(key, typeof body === 'string' ? body : Buffer.from(body), contentType);
+    }
+
+    /** Streams a file from disk to Drive (the googleapis client accepts a readable stream body). */
+    async uploadFromPath(key: string, filePath: string, contentType: string = 'application/octet-stream'): Promise<{ key: string, url: string }> {
+        return this.createPublicFile(key, fs.createReadStream(filePath), contentType);
+    }
+
+    private async createPublicFile(key: string, mediaBody: string | Buffer | NodeJS.ReadableStream, contentType: string): Promise<{ key: string, url: string }> {
         if(!this.drive){
             throw new Error('Google Drive is not configured properly.');
         }
@@ -60,7 +70,7 @@ export class GoogleDriveStorageAdapter implements IStorageAdapter {
 
         const media = {
             mimeType: contentType,
-            body: typeof body === 'string' ? body : Buffer.from(body),
+            body: mediaBody,
         };
 
         const file = await this.drive.files.create({

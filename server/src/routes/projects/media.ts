@@ -1,6 +1,7 @@
 // Voiceover, captions & visual assets (moved verbatim from routes/projects.ts).
 // Mounted by routes/projects.ts after authMiddleware.
 import { Router } from 'express';
+import fs from 'fs';
 import { Response } from 'express';
 import { connectDB } from '../../utils/db.js';
 import { Project } from '../../models/Project.js';
@@ -10,7 +11,7 @@ import { generateImage } from '../../utils/AIGenerator.js';
 import { rbacMiddleware } from '../../middleware/rbac.js';
 import { Permission } from '../../utils/permissions.js';
 import { licenseGating } from '../../middleware/LicenseGating.js';
-import { uploadToS3, S3KeyGenerator } from '../../utils/s3.js';
+import { uploadToS3, uploadFileFromPath, S3KeyGenerator } from '../../utils/s3.js';
 import { StorageFactory } from '../../services/storage/StorageFactory.js';
 import { configService } from '../../utils/ConfigService.js';
 import { aiManager } from '../../utils/ai/AIServiceManager.js';
@@ -19,7 +20,8 @@ import { LicenseType } from '~/models/License.js';
 import { buildVeoVideoPrompt } from '../../utils/PromptBuilder.js';
 import { getFileBuffer } from '../../utils/AIGenerator.js';
 import { autoCaptionService } from '../../services/ai/AutoCaptionService.js';
-import { upload } from './shared.js';
+import { diskUpload } from './shared.js';
+import { safeKeyFileName } from '../media/shared.js';
 
 const router = Router();
 
@@ -572,7 +574,7 @@ router.post('/:id/assets/generate', licenseGating(LicenseType.TRIAL), rbacMiddle
 router.post('/:id/assets/upload',
     licenseGating(LicenseType.TRIAL),
     rbacMiddleware(Permission.PROJECT_EDIT),
-    upload.single('file'),
+    diskUpload.single('file'),
     async (req: any, res: Response) => {
         try {
             await connectDB();
@@ -586,8 +588,8 @@ router.post('/:id/assets/upload',
             if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
 
             const file = req.file;
-            const s3Key = `projects/${projectId}/assets/${Date.now()}_${file.originalname}`;
-            const uploadResult = await uploadToS3(s3Key, file.buffer, file.mimetype);
+            const s3Key = `projects/${projectId}/assets/${Date.now()}_${safeKeyFileName(file.originalname)}`;
+            const uploadResult = await uploadFileFromPath(s3Key, file.path, file.mimetype);
 
             // Update Project Assets
             const entityType = req.body.entityType; // 'character', 'segment'
@@ -652,6 +654,8 @@ router.post('/:id/assets/upload',
         } catch (error: any) {
             Logger.error('Asset upload error:', error);
             res.status(500).json({ success: false, error: error.message });
+        } finally {
+            if (req.file?.path) await fs.promises.unlink(req.file.path).catch(() => {});
         }
     });
 

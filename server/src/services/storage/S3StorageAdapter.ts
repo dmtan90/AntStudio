@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { IStorageAdapter } from './StorageAdapter.js';
@@ -64,6 +65,27 @@ export class S3StorageAdapter implements IStorageAdapter {
             url = `${configService.aws.endpoint}/${this.bucket}/${key}`;
         }
 
+        return { key, url };
+    }
+
+    async uploadFromPath(key: string, filePath: string, contentType: string = 'application/octet-stream'): Promise<{ key: string, url: string }> {
+        if(!this.client){
+            throw new Error('S3 is not configured properly.');
+        }
+        // A stream body needs an explicit length for a single PutObject (up to 5GB)
+        const { size } = await fs.promises.stat(filePath);
+        await this.client.send(new PutObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            Body: fs.createReadStream(filePath),
+            ContentLength: size,
+            ContentType: contentType
+        }));
+
+        let url = `https://${this.bucket}.s3.${configService.aws.region}.amazonaws.com/${key}`;
+        if (configService.aws.endpoint) {
+            url = `${configService.aws.endpoint}/${this.bucket}/${key}`;
+        }
         return { key, url };
     }
 

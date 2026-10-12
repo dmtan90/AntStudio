@@ -65,7 +65,11 @@ describe('checkStorageAccess', () => {
         expect(m.canAccessProject).toHaveBeenCalledWith('alice', 'p1');
     });
 
-    it.each(['media', 'influencer', 'users'])('restricts %s/<userId>/ to that user', async (prefix) => {
+    it('serves media-library avatars publicly', async () => {
+        await expect(checkStorageAccess('avatars/bob/123-me.png', null)).resolves.toMatchObject({ allowed: true, isPublic: true });
+    });
+
+    it.each(['media', 'influencer', 'users', 'thumbnails'])('restricts %s/<userId>/ to that user', async (prefix) => {
         await expect(checkStorageAccess(`${prefix}/alice/file.png`, alice)).resolves.toMatchObject({ allowed: true, isPublic: false });
         await expect(checkStorageAccess(`${prefix}/bob/file.png`, alice)).resolves.toMatchObject({ allowed: false, reason: 'not-owner' });
     });

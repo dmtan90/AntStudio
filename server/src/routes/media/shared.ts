@@ -1,5 +1,7 @@
 // Helpers and constants shared by the media feature routers (moved from media.ts).
 import multer from 'multer';
+import fs from 'fs';
+import os from 'os';
 import { AuthRequest } from '../../middleware/auth.js';
 
 export const PROXY_MAX_BYTES = 512 * 1024 * 1024;
@@ -11,11 +13,23 @@ export const fileFilter = (req: AuthRequest, file: any, callback: any) => {
     callback(null, true); // Accept the file
 };
 
+// Written to a temp file and streamed to storage, so large files never sit in memory.
+// Route handlers must delete the temp files (see removeTempUploads).
 export const upload = multer({
-    fileFilter, storage: multer.memoryStorage(),
-    // Buffered in memory (storage adapters take Buffers); keep well below the heap size
+    fileFilter, storage: multer.diskStorage({ destination: os.tmpdir() }),
     limits: { fileSize: 1024 * 1024 * 1024, files: 2 }
 }); // 1GB limit
+
+/** Deletes multer temp files once a request is done with them (errors ignored). */
+export const removeTempUploads = async (files: Array<Express.Multer.File | undefined>) => {
+    await Promise.all(files.filter(Boolean).map(f => fs.promises.unlink(f!.path).catch(() => {})));
+};
+
+/** Keeps a client file name safe for use inside a storage key (no path separators or traversal). */
+export const safeKeyFileName = (name: string) => {
+    const base = (name || 'file').split(/[\\/]/).pop()!.replace(/[^\w.\- ]+/g, '_').replace(/^\.+/, '').trim();
+    return (base || 'file').slice(0, 120);
+};
 
 // ============================================================================
 // EXTERNAL APIS (GIPHY, PEXELS, UNSPLASH)

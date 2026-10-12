@@ -10,6 +10,12 @@ export interface IStorageAdapter {
     uploadFile(key: string, body: Buffer | Uint8Array | string, contentType?: string): Promise<{ key: string, url: string }>;
 
     /**
+     * Uploads a file from local disk by streaming it, without loading it into memory.
+     * Used for large uploads that multer writes to a temp file.
+     */
+    uploadFromPath(key: string, filePath: string, contentType?: string): Promise<{ key: string, url: string }>;
+
+    /**
      * Retrieves a direct or signed URL for a file.
      */
     getFileUrl(key: string, expiresIn?: number): Promise<string>;

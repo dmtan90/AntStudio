@@ -1,4 +1,4 @@
-import { B2Client, BufferSource } from '@backblaze-labs/b2-sdk';
+import { B2Client, BufferSource, FileSource } from '@backblaze-labs/b2-sdk';
 import { IStorageAdapter } from './StorageAdapter.js';
 import { configService } from '../../utils/ConfigService.js';
 import { Logger } from '../../utils/Logger.js';
@@ -102,6 +102,25 @@ export class B2StorageAdapter implements IStorageAdapter {
             });
         }
 
+        const url = await this.getFileUrl(key);
+        return { key, url };
+    }
+
+    public async uploadFromPath(key: string, filePath: string, contentType: string = 'application/octet-stream'): Promise<{ key: string; url: string }> {
+        // FileSource reads ranges from disk, so large files are never fully buffered
+        const upload = async () => (await this.getBucket()).upload({
+            fileName: key,
+            source: await FileSource.fromPath(filePath),
+            contentType: contentType,
+        });
+        try {
+            await upload();
+        } catch (err: any) {
+            Logger.warn(`[B2StorageAdapter] Upload attempt failed: ${err.message}. Re-authorizing B2 client and retrying...`, 'B2StorageAdapter');
+            this.isInitialized = false;
+            this.authPromise = null;
+            await upload();
+        }
         const url = await this.getFileUrl(key);
         return { key, url };
     }

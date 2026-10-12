@@ -11,8 +11,8 @@ import { Logger } from './Logger.js';
  * Files are addressed by predictable keys (projects/<id>/..., media/<userId>/...), so they must not be
  * readable by anyone who can guess a key. Rules are per key prefix:
  *   projects/<projectId>/...           project owner, collaborator or org member
- *   users/<userId>/avatar.*            public (avatars are shown to teammates, guests and viewers)
- *   users|media|influencer/<userId>/   that user
+ *   users/<userId>/avatar.*, avatars/  public (avatars are shown to teammates, guests and viewers)
+ *   users|media|influencer|thumbnails/<userId>/   that user
  *   highlights/<sessionId>/...         owner of the stream session
  *   anything else (temp, music, ...)   any signed-in user
  * Admins can read everything.
@@ -73,6 +73,10 @@ export async function checkStorageAccess(key: string, user: StorageUser | null):
     if (prefix === 'users' && owner && rest.length === 1 && /^avatar\.\w+$/.test(rest[0])) {
         return decision(true, 'public-avatar', true);
     }
+    // Media-library uploads with purpose 'avatar' (avatars/<userId>/...)
+    if (prefix === 'avatars' && owner && rest.length >= 1) {
+        return decision(true, 'public-avatar', true);
+    }
     if (!user) return decision(false, 'not-signed-in');
     if (user.isAdmin) return decision(true, 'admin');
 
@@ -84,6 +88,7 @@ export async function checkStorageAccess(key: string, user: StorageUser | null):
         case 'users':
         case 'media':
         case 'influencer':
+        case 'thumbnails':
             return owner === user.id ? decision(true, 'owner') : decision(false, 'not-owner');
         case 'highlights': {
             const session = owner ? await StreamSessionModel.findOne({ sessionId: owner }).select('userId').lean() : null;

@@ -62,6 +62,15 @@ export class LocalStorageAdapter implements IStorageAdapter {
         return { key, url };
     }
 
+    public async uploadFromPath(key: string, filePath: string, contentType: string = 'application/octet-stream'): Promise<{ key: string; url: string }> {
+        const target = this.resolveKey(key);
+        await fs.promises.mkdir(path.dirname(target), { recursive: true });
+        await fs.promises.copyFile(filePath, target);
+        const url = await this.getFileUrl(key);
+        Logger.info(`[LocalStorageAdapter] Saved file locally: ${key}`);
+        return { key, url };
+    }
+
     public async getFileUrl(key: string, expiresIn?: number): Promise<string> {
         const domain = configService.domain || 'http://localhost:4000';
         return `${domain}/uploads/${key}`;

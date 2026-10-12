@@ -2,13 +2,13 @@
 // Mounted by media.ts.
 import { Router } from 'express';
 import { Media } from '../../models/Media.js';
-import { uploadToS3, deleteFromS3 } from '../../utils/s3.js';
+import { uploadFileFromPath, deleteFromS3 } from '../../utils/s3.js';
 import { connectDB } from '../../utils/db.js';
 import { configService } from '../../utils/ConfigService.js';
 import { authMiddleware, AuthRequest } from '../../middleware/auth.js';
 import { StorageFactory } from '../../services/storage/StorageFactory.js';
 import { Logger } from '../../utils/Logger.js';
-import { upload } from './shared.js';
+import { upload, removeTempUploads, safeKeyFileName } from './shared.js';
 
 const router = Router();
 
@@ -27,12 +27,11 @@ const router = Router();
 
 // POST /api/media/upload - Upload file to active storage
 router.post('/upload', authMiddleware, upload.fields([{ name: 'file', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]), async (req: AuthRequest, res) => {
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const mainFile = files?.['file']?.[0];
+    const thumbnailFile = files?.['thumbnail']?.[0];
     try {
         await connectDB();
-
-        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-        const mainFile = files?.['file']?.[0];
-        const thumbnailFile = files?.['thumbnail']?.[0];
 
         if (!mainFile) {
             return res.status(400).json({ success: false, data: null, error: 'No file uploaded' });
@@ -43,16 +42,16 @@ router.post('/upload', authMiddleware, upload.fields([{ name: 'file', maxCount: 
         const fileName = mainFile.originalname;
         const contentType = mainFile.mimetype;
 
-        // Upload main file to active storage
-        const key = `${purpose === 'avatar' ? 'avatars' : 'media'}/${req.user!.userId}/${Date.now()}-${fileName}`;
-        const uploadResult = await uploadToS3(key, mainFile.buffer, contentType);
+        // Stream the temp file to active storage (the client file name is sanitized for the key)
+        const key = `${purpose === 'avatar' ? 'avatars' : 'media'}/${req.user!.userId}/${Date.now()}-${safeKeyFileName(fileName)}`;
+        const uploadResult = await uploadFileFromPath(key, mainFile.path, contentType);
 
         const metadata: Record<string, any> = {};
 
         // Upload thumbnail if present
         if (thumbnailFile) {
-            const thumbKey = `thumbnails/${req.user!.userId}/${Date.now()}-${thumbnailFile.originalname || 'thumb.jpg'}`;
-            const thumbUploadResult = await uploadToS3(thumbKey, thumbnailFile.buffer, thumbnailFile.mimetype);
+            const thumbKey = `thumbnails/${req.user!.userId}/${Date.now()}-${safeKeyFileName(thumbnailFile.originalname || 'thumb.jpg')}`;
+            const thumbUploadResult = await uploadFileFromPath(thumbKey, thumbnailFile.path, thumbnailFile.mimetype);
             metadata.thumbnail = thumbUploadResult.key;
         }
 
@@ -79,6 +78,8 @@ router.post('/upload', authMiddleware, upload.fields([{ name: 'file', maxCount: 
     } catch (error: any) {
         Logger.error('Upload error:', error);
         res.status(500).json({ success: false, data: null, error: error.message || 'Failed to upload media' });
+    } finally {
+        await removeTempUploads([mainFile, thumbnailFile]);
     }
 });
 
