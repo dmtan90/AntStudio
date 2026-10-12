@@ -11,7 +11,11 @@ vi.mock('../src/utils/ConfigService.js', () => ({ configService: { logs: { reten
 let tmpDir: string;
 let Logger: any;
 const logFile = () => path.join(tmpDir, 'logs', 'antstudio-system.log');
-const flush = () => new Promise((resolve) => setTimeout(resolve, 50));
+// Stream writes are buffered: wait for the content instead of a fixed delay (slow CI machines)
+const readWhenReady = async (file: string, pattern: RegExp) => {
+    await vi.waitFor(() => expect(fs.existsSync(file) && fs.readFileSync(file, 'utf8')).toMatch(pattern), { timeout: 5000 });
+    return fs.readFileSync(file, 'utf8');
+};
 
 beforeAll(async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'antstudio-logs-'));
@@ -29,9 +33,8 @@ describe('Logger file output', () => {
     it('appends formatted lines to the current log file', async () => {
         await Logger.info('first line', 'Test');
         await Logger.info('second line', 'Test');
-        await flush();
 
-        const content = fs.readFileSync(logFile(), 'utf8');
+        const content = await readWhenReady(logFile(), /second line/);
         expect(content).toMatch(/\[INFO\] \[Test\] first line/);
         expect(content).toMatch(/\[INFO\] \[Test\] second line/);
     });
@@ -45,14 +48,14 @@ describe('Logger file output', () => {
 
         // Concurrent writes during the rotation must all land in the new file
         await Promise.all([Logger.info('after rollover A', 'Test'), Logger.info('after rollover B', 'Test')]);
-        await flush();
 
         const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
         const dd = String(yesterday.getDate()).padStart(2, '0');
         const rotated = path.join(tmpDir, 'logs', `antstudio-system-${mm}-${dd}-${yesterday.getFullYear()}.log`);
 
-        expect(fs.readFileSync(rotated, 'utf8')).toMatch(/first line/);
-        const current = fs.readFileSync(logFile(), 'utf8');
+        await readWhenReady(rotated, /first line/);
+        await readWhenReady(logFile(), /after rollover A/);
+        const current = await readWhenReady(logFile(), /after rollover B/);
         expect(current).toMatch(/after rollover A/);
         expect(current).toMatch(/after rollover B/);
         expect(current).not.toMatch(/first line/);

@@ -1,7 +1,6 @@
 // Live studio AI (guests, producer, performance) (moved verbatim from routes/ai.ts).
 // Mounted by ai.ts after its router-level middleware.
 import { Router } from 'express';
-import { Response } from 'express';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../../middleware/auth.js';
 import { aiPerformanceService } from '../../services/ai/AIPerformanceService.js';
 import { styleABTestingEngine } from '../../services/ai/StyleABTestingEngine.js';
@@ -17,12 +16,24 @@ const router = Router();
 // ============================================================================
 
 /**
- * POST /api/ai/guest/talk - Generate personality-driven response
+ * POST /api/ai/guest/talk - Generate personality-driven response.
+ * With `type: 'gift' | 'chat'` (top-level or in `context`) it generates a reaction to a viewer
+ * gift/chat instead; that variant used to be a second, shadowed registration of this path.
  */
 router.post('/guest/talk', async (req: AuthRequest, res) => {
     try {
         const { entityId, prompt, context } = req.body;
         const userId = req.user!.userId;
+        const type = req.body.type || context?.type;
+
+        if (type === 'gift' || type === 'chat') {
+            if (!entityId) return res.status(400).json({ success: false, error: 'entityId is required' });
+            const userName = req.body.userName || context?.userName || 'Someone';
+            const result = type === 'gift'
+                ? await aiGuestService.generateGiftReaction(userId, entityId, userName, req.body.giftName || context?.giftName, req.body.amount || context?.amount)
+                : await aiGuestService.generateChatReaction(userId, entityId, userName, req.body.content || context?.content || prompt);
+            return res.json({ success: true, data: result });
+        }
 
         if (!entityId || !prompt) {
             return res.status(400).json({ success: false, error: 'EntityId and Prompt are required' });
@@ -107,69 +118,6 @@ router.post('/performance/optimize/start', authMiddleware, adminMiddleware, asyn
         styleABTestingEngine.startOptimization(projectId, initialStyle, candidates);
         res.json({ success: true, message: 'Autonomous optimization cycle engaged' });
     } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// ============================================================================
-// AI GUEST / INFLUENCER INTERACTION
-// ============================================================================
-
-/**
- * POST /api/ai/guest/talk
- * Generate personality-driven dialogue for an AI guest.
- */
-router.post('/guest/talk', async (req: AuthRequest, res: Response) => {
-    try {
-        const { entityId, prompt, context } = req.body;
-        const userId = req.user!.userId;
-
-        // Extract from context if nested (for frontend compatibility)
-        const type = req.body.type || context?.type;
-        const userName = req.body.userName || context?.userName || 'Someone';
-        const giftName = req.body.giftName || context?.giftName;
-        const amount = req.body.amount || context?.amount;
-        const content = req.body.content || context?.content || prompt;
-
-        if (!entityId) return res.status(400).json({ success: false, error: 'entityId is required' });
-
-        let result;
-        if (type === 'gift') {
-            result = await aiGuestService.generateGiftReaction(userId, entityId, userName, giftName, amount);
-        } else if (type === 'chat') {
-            result = await aiGuestService.generateChatReaction(userId, entityId, userName, content);
-        } else {
-            result = await aiGuestService.generateGuestDialogue(userId, entityId, prompt, context);
-        }
-
-        res.json({ success: true, data: result });
-    } catch (error: any) {
-        Logger.error('[AI/Guest] Talk Error:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-/**
- * POST /api/ai/guest/tts
- * Generate TTS audio for an AI guest.
- */
-router.post('/guest/tts', async (req: AuthRequest, res: Response) => {
-    try {
-        const { text, voiceId, provider, language } = req.body;
-        const userId = req.user!.userId;
-
-        if (!text) return res.status(400).json({ success: false, error: 'text is required' });
-
-        const audioResult = await ttsService.generateSpeech({
-            text,
-            provider: provider || 'google',
-            voiceId: voiceId || 'en-US-Neural2-F',
-            language: language || 'en-US'
-        });
-
-        res.json({ success: true, data: { url: audioResult.media.url } });
-    } catch (error: any) {
-        Logger.error('[AI/Guest] TTS Error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
