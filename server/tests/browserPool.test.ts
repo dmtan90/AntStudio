@@ -29,7 +29,6 @@ const deferred = () => {
     const promise = new Promise<void>(r => { resolve = r; });
     return { promise, resolve };
 };
-const tick = () => new Promise(r => setTimeout(r, 0));
 
 beforeEach(async () => {
     await closeBrowserPool();
@@ -51,19 +50,23 @@ describe('browserPool', () => {
     it('caps concurrent contexts and queues the rest', async () => {
         const gates = [deferred(), deferred(), deferred()];
         const runs = gates.map((gate, i) => withBrowserContext(async () => { await gate.promise; return i; }));
-        await tick(); await tick();
+        try {
+            // Wait on conditions rather than a fixed number of ticks (the mocked dynamic import is async)
+            await vi.waitFor(() => expect(state.contexts).toHaveLength(2));
+            expect(getBrowserPoolStats()).toMatchObject({ active: 2, waiting: 1 });
 
-        expect(getBrowserPoolStats()).toMatchObject({ active: 2, waiting: 1 });
-        expect(state.contexts).toHaveLength(2);
+            gates[0].resolve();
+            await runs[0];
+            await vi.waitFor(() => expect(state.contexts).toHaveLength(3)); // queued task started after a slot freed
 
-        gates[0].resolve();
-        await runs[0];
-        await tick(); await tick();
-        expect(state.contexts).toHaveLength(3); // queued task started after a slot freed
-
-        gates[1].resolve(); gates[2].resolve();
-        await expect(Promise.all(runs)).resolves.toEqual([0, 1, 2]);
-        expect(getBrowserPoolStats()).toMatchObject({ active: 0, waiting: 0 });
+            gates[1].resolve(); gates[2].resolve();
+            await expect(Promise.all(runs)).resolves.toEqual([0, 1, 2]);
+            expect(getBrowserPoolStats()).toMatchObject({ active: 0, waiting: 0 });
+        } finally {
+            // Never leave slots held for later tests, even if an assertion failed
+            gates.forEach(g => g.resolve());
+            await Promise.allSettled(runs);
+        }
     });
 
     it('closes the context and frees the slot when the task throws', async () => {

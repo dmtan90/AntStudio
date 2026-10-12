@@ -536,9 +536,11 @@ router.post('/presentation/analyze', upload.single('file'), async (req: AuthRequ
 });
 
 /**
- * POST /api/ai/generate-caption - Generate social media captions
+ * POST /api/ai/generate-social-caption - Generate social media captions for a viral moment.
+ * This used to be registered as a second '/generate-caption' route, which was shadowed by the
+ * image-caption route above, so viral syndication always fell back to its default caption.
  */
-router.post('/generate-caption', async (req: AuthRequest, res: Response) => {
+router.post('/generate-social-caption', async (req: AuthRequest, res: Response) => {
     try {
         const { moment, description, context, platforms } = req.body;
         const prompt = await promptService.get('studio/caption_gen', {

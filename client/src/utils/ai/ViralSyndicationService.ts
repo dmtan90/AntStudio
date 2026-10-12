@@ -82,7 +82,7 @@ export class ViralSyndicationService {
         let caption = `🔥 ${moment.reason} ${hashtags}`;
         try {
             const api = (await import('@/utils/api')).default;
-            const res: any = await api.post('/ai/generate-caption', {
+            const res: any = await api.post('/ai/generate-social-caption', {
                 moment: moment.reason,
                 description: moment.description,
                 context: ctx,
