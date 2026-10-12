@@ -1,6 +1,6 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { io, Socket } from 'socket.io-client';
-import { useUserStore } from '@/stores/user';
+import type { Socket } from 'socket.io-client';
+import { openNamespaceSocket } from '@/utils/appSocket';
 
 interface UserPresence {
     userId: string;
@@ -14,18 +14,13 @@ export function useCollaboration(projectId: string) {
     const socket = ref<Socket | null>(null);
     const activeUsers = ref<UserPresence[]>([]);
     const isConnected = ref(false);
-    const authStore = useUserStore();
 
     const connect = () => {
-        if (!authStore.token || !projectId) return;
-        const endpoint = window.location.origin;
-        console.log(`[useCollaboration] Connecting to ${endpoint} with path /socket.io`);
-        socket.value = io(endpoint, {
-			//allowEIO3: true, // Enables compatibility with Socket.IO v2 clients
-            path: '/socket.io/collaboration',
-            auth: { token: authStore.token },
-            transports: ['websocket']
-        });
+        if (!projectId) return;
+        // The server serves collaboration as the /collaboration namespace on the default
+        // /socket.io path (the old '/socket.io/collaboration' path never connected)
+        socket.value = openNamespaceSocket('/collaboration');
+        if (!socket.value) return;
 
         socket.value.on('connect', () => {
             console.log('✅ Connected to collaboration server');

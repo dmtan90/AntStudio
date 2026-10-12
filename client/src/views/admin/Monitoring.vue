@@ -149,8 +149,8 @@
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-[10px] font-black opacity-40 uppercase tracking-widest">{{ t('admin.monitoring.liveEngineStream') }}</span>
                         <div class="flex items-center gap-2">
-                            <div class="status-dot" :class="{ online: socket && socket.connected }"></div>
-                            <span class="text-[9px] opacity-60">{{ socket && socket.connected ? t('admin.monitoring.connected') :
+                            <div class="status-dot" :class="{ online: socketConnected }"></div>
+                            <span class="text-[9px] opacity-60">{{ socketConnected ? t('admin.monitoring.connected') :
                                 t('admin.monitoring.connecting') }}</span>
                         </div>
                     </div>
@@ -237,7 +237,7 @@ import { useI18n } from 'vue-i18n';
 import { SettingConfig, Delete, Cpu, Memory, FolderOpen, Connection, Loading, Terminal, Help } from '@icon-park/vue-next';
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { io } from 'socket.io-client';
+import { useAppSocket } from '@/utils/appSocket';
 import { useUserStore } from '@/stores/user';
 import { useAdminStore } from '@/stores/admin';
 import { toast } from 'vue-sonner';
@@ -270,7 +270,6 @@ const logFilter = reactive({ level: 'all', search: '', page: 1 });
 const settings = reactive({ emailNotificationsEnabled: false, notificationEmail: '', minNotificationLevel: 'error', retentionDays: 30 });
 const realtimeLogs = ref('');
 const realtimeLogArea = ref<HTMLTextAreaElement | null>(null);
-const socket = ref<any>(null);
 
 // Intervals
 const authStore = useUserStore();
@@ -351,39 +350,27 @@ const clearLogs = async () => {
     } catch (e) { }
 };
 
-const setupSocket = () => {
-    const token = authStore.token;
-    if (!token) return;
-	let domain = window.location.origin;
-	domain = domain.replace("https:", "wss:").replace("http:", "ws:");
-    socket.value = io(domain, {
-        path: '/socket.io',
-        auth: { token }
-    });
+const onSystemLog = (log: any) => {
+    const timestamp = new Date(log.timestamp).toLocaleTimeString();
+    const line = `[${timestamp}] [${log.level.toUpperCase()}] [${log.source}] ${log.message}\n`;
+    realtimeLogs.value += line;
 
-    socket.value.on('connect', () => {
-        console.log('Monitoring socket connected');
-    });
+    // Keep last 500 lines
+    const lines = realtimeLogs.value.split('\n');
+    if (lines.length > 500) {
+        realtimeLogs.value = lines.slice(-500).join('\n');
+    }
 
-    socket.value.on('system-log', (log: any) => {
-        const timestamp = new Date(log.timestamp).toLocaleTimeString();
-        const line = `[${timestamp}] [${log.level.toUpperCase()}] [${log.source}] ${log.message}\n`;
-        realtimeLogs.value += line;
-
-        // Keep last 500 lines
-        const lines = realtimeLogs.value.split('\n');
-        if (lines.length > 500) {
-            realtimeLogs.value = lines.slice(-500).join('\n');
+    // Auto scroll
+    nextTick(() => {
+        if (realtimeLogArea.value) {
+            realtimeLogArea.value.scrollTop = realtimeLogArea.value.scrollHeight;
         }
-
-        // Auto scroll
-        nextTick(() => {
-            if (realtimeLogArea.value) {
-                realtimeLogArea.value.scrollTop = realtimeLogArea.value.scrollHeight;
-            }
-        });
     });
 };
+
+// Shared app connection (admins receive system-log); handler removed on unmount
+const { connected: socketConnected } = useAppSocket({ 'system-log': onSystemLog });
 
 const debounceFetchLogs = () => {
     clearTimeout(debounceTimer);
@@ -473,13 +460,11 @@ onMounted(() => {
     fetchHistory();
     fetchLogs();
     fetchSettings();
-    setupSocket();
     if (autoRefresh.value) startPolling();
 });
 
 onUnmounted(() => {
     stopPolling();
-    if (socket.value) socket.value.disconnect();
 });
 </script>
 

@@ -1,19 +1,16 @@
-import { ref, onMounted, onUnmounted } from 'vue';
-import { io, Socket } from 'socket.io-client';
-import { useUserStore } from '@/stores/user';
+import { ref, onUnmounted } from 'vue';
+import { useAppSocket } from '@/utils/appSocket';
 import { vad } from '@/utils/audio/VoiceActivityDetector';
 import { toast } from 'vue-sonner';
 
 export function useAutoDirector() {
-    const socket = ref<Socket | null>(null);
     const isAutoDirectorEnabled = ref(false);
     const activeCamera = ref<string>('host'); // 'host' | 'screen' | 'wide' | 'guest_ID'
-    const authStore = useUserStore();
 
     // VAD Handlers (Hoisted or defined first)
     const handleVadLevel = (e: CustomEvent) => {
-        if (socket.value && isAutoDirectorEnabled.value) {
-            socket.value.emit('director:voice_activity', { level: e.detail.level });
+        if (socket && isAutoDirectorEnabled.value) {
+            socket.emit('director:voice_activity', { level: e.detail.level });
         }
     };
 
@@ -34,31 +31,18 @@ export function useAutoDirector() {
         }
     };
 
-    const connect = () => {
-        if (!authStore.token) return;
-        const endpoint = window.location.origin;
-        console.log(`[useAutoDirector] Connecting to ${endpoint} with path /socket.io`);
-        socket.value = io(endpoint, {
-			//allowEIO3: true, // Enables compatibility with Socket.IO v2 clients
-			path: '/socket.io',
-            auth: { token: authStore.token },
-            transports: ['websocket']
-        });
-
-        socket.value.on('connect', () => {
-            console.log('✅ Connected to Studio Director');
-        });
-
-        socket.value.on('director:cut', (data: { target: string, reason: string }) => {
-            console.log(`🎬 Director Cut: ${data.target} (${data.reason})`);
-            activeCamera.value = data.target;
-            window.dispatchEvent(new CustomEvent('director:cut', { detail: data }));
-        });
+    const onDirectorCut = (data: { target: string, reason: string }) => {
+        console.log(`🎬 Director Cut: ${data.target} (${data.reason})`);
+        activeCamera.value = data.target;
+        window.dispatchEvent(new CustomEvent('director:cut', { detail: data }));
     };
+
+    // Shared app connection; handlers are removed automatically on unmount
+    const { socket } = useAppSocket({ 'director:cut': onDirectorCut });
 
     const toggleDirector = (enabled: boolean) => {
         isAutoDirectorEnabled.value = enabled;
-        socket.value?.emit('director:toggle_mode', { enabled });
+        socket?.emit('director:toggle_mode', { enabled });
         
         if (enabled) {
             startVAD();
@@ -69,13 +53,10 @@ export function useAutoDirector() {
         }
     };
 
-    onMounted(() => {
-        connect();
-    });
-
     onUnmounted(() => {
         stopVAD();
-        socket.value?.disconnect();
+        // The shared socket outlives this component, so explicitly turn the director off
+        if (isAutoDirectorEnabled.value) socket?.emit('director:toggle_mode', { enabled: false });
     });
 
     return {

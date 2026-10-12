@@ -14,7 +14,7 @@ import { audienceInteractionService } from '../ai/AudienceInteractionService.js'
 import { gamificationService } from './GamificationService.js';
 import { virtualEconomyService } from './VirtualEconomyService.js';
 import { analyticsService } from './AnalyticsService.js';
-import { autoDirectorService } from '../ai/AutoDirectorService.js';
+import { autoDirectorService, type DirectorCut } from '../ai/AutoDirectorService.js';
 import { Logger, ADMIN_LOG_ROOM } from '../../utils/Logger.js';
 import { tiktokLiveService } from './TikTokLiveService.js';
 
@@ -334,11 +334,11 @@ export class SocketServer {
 
             // AI Director Controls
             socket.on('director:voice_activity', (data: { level: number }) => {
-                if (user?.id) autoDirectorService.handleVoiceActivity(user.id, data.level);
+                if (user?.id) autoDirectorService.handleVoiceActivity(user.id, user.id, data.level);
             });
 
             socket.on('director:toggle_mode', (data: { enabled: boolean }) => {
-                if (user?.id) autoDirectorService.toggleDirector(data.enabled);
+                if (user?.id) autoDirectorService.toggleDirector(user.id, !!data?.enabled);
             });
 
             // Economy
@@ -573,8 +573,10 @@ export class SocketServer {
         if (!this.io) return;
 
         // Auto-Director Cut Handover
-        autoDirectorService.on('cut', (payload) => {
-            this.io?.emit('director:cut', payload);
+        // Only the studio owner's sockets receive their director cuts
+        autoDirectorService.on('cut', (cut: DirectorCut) => {
+            const { ownerId, ...payload } = cut;
+            this.io?.to(`user:${ownerId}`).emit('director:cut', payload);
         });
 
         // Gemini Live & Quests
