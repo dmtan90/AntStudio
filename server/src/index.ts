@@ -317,6 +317,10 @@ const startServer = async () => {
         const { redisService } = await import('./services/system/RedisService.js');
         await redisService.connect();
 
+        // AI video job worker (only when Redis is configured; see VideoJobService)
+        const { startVideoWorker } = await import('./services/ai/VideoJobService.js');
+        await startVideoWorker();
+
         // Start Monitoring Service
         monitoringService.startMonitoring();
 
@@ -386,6 +390,8 @@ const shutdown = async (signal: string) => {
         await streamingService.shutdown();
         const { closeBrowserPool } = await import('./utils/browserPool.js');
         await closeBrowserPool();
+        const { closeVideoJobs } = await import('./services/ai/VideoJobService.js');
+        await closeVideoJobs();
         await new Promise<void>((resolve) => {
             const io = socketServer.getIO();
             if (io) void io.close(() => resolve()); else resolve();

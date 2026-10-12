@@ -9,7 +9,10 @@ import { AuthRequest } from '../../middleware/auth.js';
 import { Media } from '../../models/Media.js';
 import { connectDB } from '../../utils/db.js';
 import { configService } from '../../utils/ConfigService.js';
-import { deductCredits, getCreditCost } from '../../utils/credits.js';
+import { deductCredits, getCreditCost, refundUserCredits } from '../../utils/credits.js';
+import {
+    VideoJobData, isVideoQueueEnabled, newVideoJobId, enqueueVideoJob, waitForVideoJob, runVideoJob, getQueuedVideoJobStatus
+} from '../../services/ai/VideoJobService.js';
 import { Logger } from '../../utils/Logger.js';
 import { promptService } from '../../services/ai/PromptService.js';
 import { AIModelCost, AIModelType } from '~/models/AdminSettings.js';
@@ -229,46 +232,44 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
         }
 
         const userId = req.user!.userId;
-        const { url, jobId: returnedJobId } = await generateVideo({
+        const jobId = newVideoJobId();
+        const jobData: VideoJobData = {
+            userId,
             prompt,
             duration: effectiveDuration,
             aspectRatio: aspectRatio || '16:9',
-            imageStart: imageStart,
-            imageEnd: imageEnd,
-            characterImages: characterImages,
-            metadata: {
-                projectId: userId,
-                filename: req.body.filename || `gen_vid_${Date.now()}`
+            imageStart,
+            imageEnd,
+            characterImages,
+            filename: req.body.filename || `gen_vid_${Date.now()}`,
+            creditAmount,
+            creditDescription: deductionDescription
+        };
+        const respondAsync = req.body.async === true;
+
+        if (isVideoQueueEnabled()) {
+            let job;
+            try {
+                job = await enqueueVideoJob(jobId, jobData);
+            } catch (queueError) {
+                await refundUserCredits(userId, ServiceType.VIDEO, creditAmount, deductionDescription);
+                throw queueError;
             }
-        });
-
-        const jobId = returnedJobId || `gen-fallback-${Date.now()}`;
-        const existingMedia = await Media.findOne({
-            $or: [
-                { 'metadata.jobId': jobId },
-                { 'key': url }
-            ]
-        });
-
-        let media = existingMedia;
-        if (!media) {
-            media = await Media.create({
-                userId,
-                key: url,
-                fileName: `AI Video - ${jobId}`,
-                contentType: 'video/mp4',
-                size: 0,
-                bucket: configService.bucketName, // Consistent with images
-                purpose: 'ai-video',
-                metadata: {
-                    jobId,
-                    status: 'completed',
-                    prompt
-                }
-            });
+            if (respondAsync) {
+                return res.status(202).json({ success: true, data: { jobId, status: 'pending' } });
+            }
+            const { media, url } = await waitForVideoJob(job);
+            return res.json({ success: true, data: { media, url, jobId } });
         }
 
-        return res.json({ success: true, data: { media, url } });
+        if (respondAsync) {
+            // No queue: generate in this process and report through /video-status
+            runVideoJob(jobId, jobData).catch((error: any) => Logger.error(`Video generation ${jobId} failed: ${error?.message}`));
+            return res.status(202).json({ success: true, data: { jobId, status: 'pending' } });
+        }
+
+        const { media, url } = await runVideoJob(jobId, jobData);
+        return res.json({ success: true, data: { media, url, jobId } });
     } catch (error: any) {
         Logger.error('Video generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate video' });
@@ -281,6 +282,11 @@ router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
         await connectDB();
         const { jobId } = req.params;
         const userId = req.user!.userId;
+
+        if (isVideoQueueEnabled()) {
+            const queued = await getQueuedVideoJobStatus(jobId, userId);
+            if (queued) return res.json({ success: true, data: queued });
+        }
 
         const status = await checkVideoStatus(jobId);
 

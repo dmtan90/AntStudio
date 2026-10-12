@@ -86,6 +86,18 @@ export const deductUserCredits = async (userId: string, serviceType: ServiceType
 export const deductCredits = deductUserCredits;
 
 /**
+ * Gives back credits taken by deductUserCredits when the paid task fails.
+ * Mirrors its bypass rules, so nothing is refunded when nothing was deducted.
+ */
+export const refundUserCredits = async (userId: string, serviceType: ServiceType, amount: number, description: string) => {
+    if (amount <= 0 || !await isCreditModeEnabled()) return false;
+    const user = await User.findById(userId).select('role').lean();
+    if (!user || user.role === UserRole.SYS_ADMIN) return false;
+    await creditManager.refundCredits(userId, serviceType, amount, description);
+    return true;
+};
+
+/**
  * Checks if a user has enough credits without deducting.
  */
 export const hasSufficientCredits = async (userId: string, amount: number) => {

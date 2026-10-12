@@ -1,4 +1,4 @@
-import { Redis } from 'ioredis';
+import { Redis, RedisOptions } from 'ioredis';
 import { Logger } from '../../utils/Logger.js';
 import { NodeHeartbeat } from '../../models/NodeHeartbeat.js';
 
@@ -17,6 +17,32 @@ export function createRedisClient(): Redis {
         db: parseInt(process.env.REDIS_DB || '0'),
         retryStrategy: (times: number) => Math.min(times * 50, 2000)
     });
+}
+
+/**
+ * Plain connection options for libraries that open their own connections. BullMQ bundles its own
+ * ioredis version and needs maxRetriesPerRequest: null for its blocking commands.
+ */
+export function getRedisConnectionOptions(): RedisOptions {
+    if (process.env.REDIS_URI) {
+        const url = new URL(process.env.REDIS_URI);
+        return {
+            host: url.hostname,
+            port: parseInt(url.port || '6379'),
+            username: url.username ? decodeURIComponent(url.username) : undefined,
+            password: url.password ? decodeURIComponent(url.password) : undefined,
+            db: parseInt(url.pathname.slice(1) || '0'),
+            tls: url.protocol === 'rediss:' ? {} : undefined,
+            maxRetriesPerRequest: null
+        };
+    }
+    return {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD || undefined,
+        db: parseInt(process.env.REDIS_DB || '0'),
+        maxRetriesPerRequest: null
+    };
 }
 
 /**
