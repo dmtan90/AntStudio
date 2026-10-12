@@ -77,7 +77,16 @@ export interface StreamSession {
     hasStartedFSM?: boolean;
     startEncoderWatchdog?: () => void;
     encoderWatchdogTimer?: any;
+    /** Set once stopRestream begins, so process exit handlers don't restart or re-stop the session */
+    isStopping?: boolean;
+    /** Relays to external platforms were spawned (they respawn themselves while the session is live) */
+    relaysStarted?: boolean;
+    /** Pending stop after the local publisher disconnected (cleared if it publishes again) */
+    publishGraceTimer?: any;
 }
+
+// How long a live session may stay without a local RTMP publisher before it is stopped
+const PUBLISH_GRACE_MS = 30_000;
 
 import { EventEmitter } from 'events';
 
@@ -157,6 +166,13 @@ export class StreamingService extends EventEmitter {
                 const session = this.sessions.get(sessionId);
                 
                 if (session) {
+                    // Publisher is back (e.g. encoder restarted with a fallback codec): cancel the pending stop
+                    if (session.publishGraceTimer) {
+                        clearTimeout(session.publishGraceTimer);
+                        session.publishGraceTimer = null;
+                        Logger.info(`[NMS-Relay] Publisher reconnected for ${sessionId}; cancelled pending stop`, 'StreamingService');
+                    }
+
                     if (session.fsmOptions && !session.hasStartedFSM) {
                         session.hasStartedFSM = true;
                         this.checkAndStartAutonomousFSM(sessionId, session.fsmOptions).catch(e => {
@@ -164,7 +180,12 @@ export class StreamingService extends EventEmitter {
                         });
                     }
 
-                    if (session.targets && session.targets.length > 0) {
+                    if (session.relaysStarted) {
+                        // Existing relays respawn on their own and reattach to the new publisher;
+                        // spawning another set would push every target twice
+                        Logger.info(`[NMS-Relay] Relays already running for ${sessionId}; not spawning duplicates`, 'StreamingService');
+                    } else if (session.targets && session.targets.length > 0) {
+                        session.relaysStarted = true;
                         Logger.info(`[NMS-Relay] Stream detected for session ${sessionId}. Starting DIRECT FFmpeg push to ${session.targets.length} targets.`, 'StreamingService', JSON.stringify(session.targets));
                         
                         // Initialize relay array if needed
@@ -260,20 +281,25 @@ export class StreamingService extends EventEmitter {
             }
         });
 
-        this.nms.on('donePublish', (id: string, StreamPath: string, _args: any) => {
-            Logger.info(`[NMS-Relay] Stream donePublish triggered for path: ${StreamPath}`, 'StreamingService');
-            if (!StreamPath || typeof StreamPath !== 'string') return;
-            const parts = StreamPath.split('/');
-            const sessionId = parts[parts.length - 1];
-            if (sessionId) {
-                const session = this.sessions.get(sessionId);
-                if (session) {
-                    session.status = 'stopped';
-                    this.stopRestream(sessionId).catch(err => {
-                        Logger.warn(`[NMS-Relay] Error stopping stream on donePublish for ${sessionId}: ${err}`);
-                    });
-                }
-            }
+        // node-media-server 4.x passes a session object; older versions passed (id, streamPath, args)
+        this.nms.on('donePublish', (idOrSession: any, legacyStreamPath?: string) => {
+            const streamPath: string | undefined = typeof idOrSession === 'object' ? idOrSession?.streamPath : legacyStreamPath;
+            if (!streamPath || typeof streamPath !== 'string') return;
+            const sessionId = streamPath.split('?')[0].split('/').pop();
+            const session = sessionId ? this.sessions.get(sessionId) : undefined;
+            if (!sessionId || !session || session.isStopping || session.status !== 'live') return;
+
+            // Don't stop immediately: the encoder may be restarting (codec fallback) and will publish again
+            Logger.info(`[NMS-Relay] Publisher left ${sessionId}; stopping in ${PUBLISH_GRACE_MS / 1000}s unless it reconnects`, 'StreamingService');
+            if (session.publishGraceTimer) clearTimeout(session.publishGraceTimer);
+            session.publishGraceTimer = setTimeout(() => {
+                session.publishGraceTimer = null;
+                if (!this.sessions.has(sessionId) || session.isStopping) return;
+                Logger.warn(`[NMS-Relay] No publisher for ${sessionId} after ${PUBLISH_GRACE_MS / 1000}s; stopping session`, 'StreamingService');
+                this.stopRestream(sessionId).catch(err => {
+                    Logger.warn(`[NMS-Relay] Error stopping stream ${sessionId} after publisher left: ${err}`, 'StreamingService');
+                });
+            }, PUBLISH_GRACE_MS);
         });
 
         Logger.info(`Node Media Server initialized on port ${RTMP_PORT} (RTMP) and 8000 (HTTP)`, 'StreamingService');
@@ -795,6 +821,8 @@ export class StreamingService extends EventEmitter {
                 clearTimeout(session.encoderWatchdogTimer);
                 session.encoderWatchdogTimer = null;
             }
+            // Killed by stopRestream: don't treat it as a startup failure and restart the encoder
+            if (session.isStopping || !this.sessions.has(sessionId)) return;
 
             const isStartupFailure = (session as any).isRestarting || !session.startTime || (Date.now() - session.startTime.getTime() < 15000);
             if (isStartupFailure && videoCodec !== 'libx264') {
@@ -831,8 +859,13 @@ export class StreamingService extends EventEmitter {
                 session.encoderWatchdogTimer = null;
             }
             Logger.info(`Relay FFmpeg stream ended: ${sessionId}`, 'StreamingService');
+            if (session.isStopping) return;
             session.status = 'stopped';
             this.emit('session:stopped', { sessionId, reason: 'Stream ended cleanly', status: 'stopped' });
+            // Finalize: stop relays/FSM, deduct streaming credits, mark the DB record stopped
+            this.stopRestream(sessionId).catch(err => {
+                Logger.warn(`[Relay] Error finalizing ended stream ${sessionId}: ${err}`, 'StreamingService');
+            });
         });
 
         // Use command.run() to start, but we don't need the return value as a process here
@@ -1033,6 +1066,14 @@ export class StreamingService extends EventEmitter {
     public async stopRestream(sessionId: string) {
         const session = this.sessions.get(sessionId);
         if (session) {
+            // Idempotent: process exit handlers and timers may race to stop the same session
+            if (session.isStopping) return;
+            session.isStopping = true;
+            if (session.publishGraceTimer) {
+                clearTimeout(session.publishGraceTimer);
+                session.publishGraceTimer = null;
+            }
+
             // 0. Disarm any pending encoder watchdog to prevent ghost fallback triggers
             if (session.encoderWatchdogTimer) {
                 clearTimeout(session.encoderWatchdogTimer);
