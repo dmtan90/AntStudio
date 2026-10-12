@@ -4,7 +4,6 @@ import { Router } from 'express';
 import { Response } from 'express';
 import { connectDB } from '../../utils/db.js';
 import { Project } from '../../models/Project.js';
-import { Media } from '../../models/Media.js';
 import { Logger } from '../../utils/Logger.js';
 import { WebhookService } from '../../services/system/WebhookService.js';
 import { AuthRequest } from '../../middleware/auth.js';
@@ -67,7 +66,7 @@ router.post('/:id/stream', rbacMiddleware(Permission.STREAM_START), async (req: 
         if (!broadcast || !broadcast.streamId) throw new Error("Failed to create stream source on Ant Media Server");
         await antMediaService.startStreamSource(broadcast.streamId, amsConfig);
 
-        WebhookService.dispatch(req.user!.userId, 'stream.started', {
+        void WebhookService.dispatch(req.user!.userId, 'stream.started', {
             projectId: project._id,
             streamId: broadcast.streamId,
             name: project.title

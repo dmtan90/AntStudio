@@ -545,7 +545,8 @@ router.post('/:id/storyboard/generate-assets', licenseGating(LicenseType.TRIAL),
             }
         };
 
-        generateBatch(); // Non-blocking
+        // Non-blocking; errors outside the per-segment try/catch must not become unhandled rejections
+        generateBatch().catch(err => Logger.error('[Storyboard] Batch asset generation failed:', 'Projects', err));
 
         res.json({ success: true, message: 'Batch generation started' });
     } catch (error: any) {

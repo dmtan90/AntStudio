@@ -115,7 +115,7 @@ router.get('/:id', async (req: any, res: Response) => {
         }
 
         // Track view asynchronously
-        AnalyticsService.trackView(req.params.id);
+        void AnalyticsService.trackView(req.params.id);
 
         res.json({ success: true, data: { project } });
     } catch (error: any) {
