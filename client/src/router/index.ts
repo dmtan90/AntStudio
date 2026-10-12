@@ -395,7 +395,6 @@ router.beforeEach(async (to, from, next) => {
     const isAdmin = userStore.user?.role === 'admin'
     const isSysAdmin = userStore.user?.role === 'sys-admin'
     if (to.meta.requiresAuth && !isAuthenticated) {
-        console.log("token", to.query.token, "path", to.path);
         // Feature: Allow Guest Access to Studio with token
         if (to.path === '/live/studio' && to.query.token) {
             next()

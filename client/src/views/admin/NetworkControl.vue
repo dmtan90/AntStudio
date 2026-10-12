@@ -154,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Earth, Peoples, More, Terminal } from '@icon-park/vue-next';
 
 import { toast } from 'vue-sonner';
@@ -197,9 +197,15 @@ const formatUptime = (seconds: number) => {
     return `${h}h ${m}m`;
 };
 
+let snapshotTimer: ReturnType<typeof setInterval> | null = null;
+
 onMounted(() => {
     fetchSnapshots();
-    setInterval(fetchSnapshots, 5000);
+    snapshotTimer = setInterval(fetchSnapshots, 5000);
+});
+
+onUnmounted(() => {
+    if (snapshotTimer) clearInterval(snapshotTimer);
 });
 </script>
 

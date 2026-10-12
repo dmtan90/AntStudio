@@ -1,25 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/utils/api.js'
-import { useI18n } from 'vue-i18n';
+import i18n from '@/i18n';
 import { toast } from 'vue-sonner'
 
 export const useUserStore = defineStore('user', () => {
-    const { t } = useI18n()
+    const t = i18n.global.t
     const user = ref<any>(null)
     const creditLogs = ref<any[]>([])
     const token = ref<string | null>(localStorage.getItem('auth-token'))
 
-    // URL Token Absorption (OAuth Support)
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get('token');
+    // Guest/invite links carry a session token in the URL (e.g. /live/studio?token=...).
+    // Keep it in memory only for this tab: persisting it would let any crafted link replace the
+    // stored login (session fixation). OAuth logins persist via PlatformCallback -> setToken().
+    const urlToken = new URLSearchParams(window.location.search).get('token');
     if (urlToken && !token.value) {
         token.value = urlToken;
-        localStorage.setItem('auth-token', urlToken);
-        // Clean up URL
-        const url = new URL(window.location.href);
-        url.searchParams.delete('token');
-        window.history.replaceState({}, '', url.toString());
     }
     const isAuthenticated = computed(() => !!user.value)
     const isInitialized = ref(false)

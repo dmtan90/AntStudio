@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/utils/api.js'
-import { useI18n } from 'vue-i18n';
+import i18n from '@/i18n';
 import { toast } from 'vue-sonner'
 const GENERATE_ASSET_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 export const useProjectStore = defineStore('project', () => {
-    const { t } = useI18n()
+    const t = i18n.global.t
 
     // State
     const projects = ref<any[]>([])

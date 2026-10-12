@@ -8,13 +8,14 @@
 	  </el-image>
       <span class="brand-name">{{ uiStore.appName }}</span>
     </div>
-    <div class="bubble-body" v-html="content"></div>
+    <div class="bubble-body" v-html="sanitizeHtml(content)"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useUIStore } from '@/stores/ui'
 import { getFileUrl } from '@/utils/api'
+import { sanitizeHtml } from '@/utils/sanitizeHtml'
 defineProps<{
   content?: string
 }>()

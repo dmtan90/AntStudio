@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Robot, ChartLine } from '@icon-park/vue-next';
 import { Line } from 'vue-chartjs';
@@ -108,9 +108,15 @@ const toggleOptimization = async () => {
     }
 };
 
+let insightsTimer: ReturnType<typeof setInterval> | null = null;
+
 onMounted(() => {
     fetchInsights();
-    setInterval(fetchInsights, 10000);
+    insightsTimer = setInterval(fetchInsights, 10000);
+});
+
+onUnmounted(() => {
+    if (insightsTimer) clearInterval(insightsTimer);
 });
 
 // Chart Configuration

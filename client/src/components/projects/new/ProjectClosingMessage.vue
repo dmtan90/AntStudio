@@ -3,7 +3,7 @@
     <div 
       v-if="msg.result.closingMessage" 
       class="ai-bubble closing-text animate-up" 
-      v-html="msg.result.closingMessage" 
+      v-html="sanitizeHtml(msg.result.closingMessage)"
       style="animation-delay: 0.3s"
     ></div>
 
@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 const { t } = useI18n()
 import GButton from '@/components/ui/GButton.vue'
 
