@@ -1,6 +1,4 @@
 import { createApp } from 'vue'
-import * as PIXI from 'pixi.js'
-(window as any).PIXI = PIXI
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -21,14 +19,13 @@ import { VueQueryPlugin } from '@tanstack/vue-query'
 import { DraggablePlugin } from '@braks/revue-draggable'
 import 'vue-color/style.css'
 import 'vue-sonner/style.css'
-import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import 'video-editor/styles/global.css'
 import 'video-editor/styles/element-plus.css'
-import 'video-editor/fabric/initialize'
 import { queryClient } from 'video-editor/config/queryClient'
-import { loadFFmpeg } from 'video-editor/plugins/editor';
-loadFFmpeg();
+// Heavy editor runtime (fabric, ffmpeg.wasm, PIXI) is loaded by the routes that need it:
+// fabric classes via video-editor/store/editor, ffmpeg in the Editor constructor,
+// window.PIXI via utils/pixiGlobal (Live2D).
 
 const app = createApp(App)
 
@@ -46,7 +43,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);
 }
 
-import i18n from './i18n'
+import i18n, { i18nReady } from './i18n'
 app.use(i18n)
 
 // Vue Flags
@@ -73,4 +70,5 @@ setupAxiosTracking(api)
 //     }
 // });
 
-app.mount('#app')
+// Mount once the saved locale's messages are loaded (avoids an English flash)
+i18nReady.finally(() => app.mount('#app'))

@@ -1,5 +1,6 @@
 import { Server as SocketServer, Socket } from 'socket.io';
 import { verifyToken } from '../../utils/jwt.js';
+import { userCanAccessProject } from '../../utils/projectAccess.js';
 
 import { Logger } from '../../utils/Logger.js';
 
@@ -72,6 +73,7 @@ export class CollaborationService {
 
         // Typing indicator for comments
         socket.on('comment:typing', (data: { projectId: string; isTyping: boolean }) => {
+            if (!socket.rooms.has(`project:${data?.projectId}`)) return;
             socket.to(`project:${data.projectId}`).emit('user:typing', {
                 userId: socket.data.userId,
                 userName: socket.data.userName,
@@ -85,7 +87,12 @@ export class CollaborationService {
         });
     }
 
-    private joinProject(socket: Socket, projectId: string) {
+    private async joinProject(socket: Socket, projectId: string) {
+        const allowed = await userCanAccessProject(socket.data.userId, String(projectId)).catch(() => false);
+        if (!allowed) {
+            socket.emit('project:denied', { projectId });
+            return;
+        }
         socket.join(`project:${projectId}`);
 
         if (!this.projectRooms.has(projectId)) {
@@ -139,6 +146,7 @@ export class CollaborationService {
     }
 
     private broadcastEdit(socket: Socket, data: { projectId: string; changes: any }) {
+        if (!socket.rooms.has(`project:${data?.projectId}`)) return;
         socket.to(`project:${data.projectId}`).emit('project:update', {
             userId: socket.data.userId,
             userName: socket.data.userName,

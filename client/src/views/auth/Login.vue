@@ -150,8 +150,10 @@ const handleLogin = async () => {
     toast.success(t('auth.login.toasts.success'))
 
     // Redirect to intended page or dashboard
+    // Only follow same-app relative paths (blocks //evil.com and absolute URLs)
     const redirectPath = route.query.redirect as string
-    router.push(redirectPath || '/dashboard')
+    const isSafeRedirect = typeof redirectPath === 'string' && redirectPath.startsWith('/') && !redirectPath.startsWith('//') && !redirectPath.startsWith('/\\')
+    router.push(isSafeRedirect ? redirectPath : '/dashboard')
   } catch (error: any) {
     toast.error(error.response?.data?.error || error.response?.data?.message || t('auth.login.toasts.failed'))
   } finally {

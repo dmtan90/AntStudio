@@ -2,6 +2,7 @@ import { ref, nextTick } from 'vue'
 import { toast } from 'vue-sonner'
 import { useProjectStore } from '@/stores/project'
 import { useI18n } from 'vue-i18n';
+import { escapeHtml } from '@/utils/sanitizeHtml'
 
 export function useProjectChat(projectId: string, chatContainerRef: any) {
     const projectStore = useProjectStore()
@@ -16,7 +17,7 @@ export function useProjectChat(projectId: string, chatContainerRef: any) {
 
     const formatContent = (text: string) => {
         if (!text) return ''
-        return text.replace(/\n/g, '<br/>')
+        return escapeHtml(text).replace(/\n/g, '<br/>')
     }
 
     const scrollToBottom = () => {

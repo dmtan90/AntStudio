@@ -16,7 +16,8 @@ import { Logger } from '../utils/Logger.js';
 import { ServiceType } from '~/models/CreditUsage.js';
 import { CreditTransactionType } from '../models/User.js';
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Buffered in memory: presentation imports
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024, files: 1 } });
 
 const router = Router();
 

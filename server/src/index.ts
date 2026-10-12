@@ -112,12 +112,13 @@ app.use((req, res, next) => {
 app.use(express.json({
     limit: '50mb',
     verify: (req: any, res, buf) => {
-        if (req.originalUrl.startsWith('/api/payment/webhook')) {
-            req.rawBody = buf.toString();
+        // Raw bytes are needed for webhook signature verification (Stripe, Facebook)
+        if (req.originalUrl.startsWith('/api/payment/webhook') || req.originalUrl.startsWith('/api/webhooks/')) {
+            req.rawBody = Buffer.from(buf);
         }
     }
 }));
-app.use(express.urlencoded({ extended: true, limit: '1024mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // NoSQL Injection Protection
 app.use(mongoSanitize());
@@ -151,6 +152,52 @@ app.use(referralMiddleware);
 app.get(['/health', '/api/health'], (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Rate Limiting — must be registered before the routers, otherwise matched routes never reach it.
+// Relies on `trust proxy` + X-Forwarded-For from the reverse proxy for per-client IPs.
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 1000, // Limit each IP to 1000 requests per window
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    // Asset fetches (images/video thumbnails) are high-volume GETs; don't let them exhaust the API budget
+    skip: (req) => req.method === 'GET' && /^\/(s3|media\/proxy)(\/|\?|$)/.test(req.path),
+    message: { success: false, error: 'Too many requests, please try again later.' }
+});
+
+// Brute-force protection: only failed logins count
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    skipSuccessfulRequests: true,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { success: false, error: 'Too many failed login attempts, please try again later.' }
+});
+
+// Account creation / recovery endpoints (spam + email abuse)
+const accountLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    limit: 20,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { success: false, error: 'Too many attempts, please try again in an hour.' }
+});
+
+// AI generation (cost control); status polling GETs are not counted
+const aiLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    limit: 600,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    skip: (req) => req.method === 'GET',
+    message: { success: false, error: 'AI generation limit reached, please try again later.' }
+});
+
+app.use('/api/', globalLimiter);
+app.use('/api/auth/login', loginLimiter);
+app.use(['/api/auth/register', '/api/auth/register-owner', '/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/change-password'], accountLimiter);
+app.use('/api/ai/', aiLimiter);
 
 // API Routes
 app.use('/api/auth', authRouter);
@@ -202,38 +249,6 @@ app.use('/api/economy', economyRouter);
 app.use('/api/gamification', gamificationRouter);
 app.use('/api/agent', agentChatRouter);
 app.use('/api/google-agent', googleAgentRouter);
-
-// Rate Limiting
-const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 1000, // Limit each IP to 1000 requests per window
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    message: { error: 'Too many requests, please try again later.' }
-});
-
-const authLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    limit: 20, // Limit each IP to 20 auth requests per hour
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    message: { error: 'Too many authentication attempts, please try again in an hour.' }
-});
-
-const aiLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    limit: 50, // Limit each IP to 50 AI generations per hour
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-    message: { error: 'AI generation limit reached, please try again in an hour.' }
-});
-
-// Apply global rate limit
-app.use('/api/', globalLimiter);
-
-// Specific limiters
-app.use('/api/auth/', authLimiter);
-app.use('/api/ai/', aiLimiter);
 
 // SPA Handling: Redirect all non-API 404s to index.html
 app.get('*', (req, res) => {
@@ -299,6 +314,7 @@ const startServer = async () => {
 
         // Create main HTTP Server and attach Socket.io directly to it
         const httpServer = createServer(app);
+        activeHttpServer = httpServer;
         socketServer.initialize(httpServer);
 
         // Initialize Live WebSocket for Gemini Live API
@@ -330,6 +346,39 @@ const startServer = async () => {
         process.exit(1);
     }
 };
+
+let activeHttpServer: ReturnType<typeof createServer> | null = null;
+let isShuttingDown = false;
+
+/**
+ * Graceful shutdown: stop taking traffic, kill streaming child processes (FFmpeg relays/encoders),
+ * close sockets and DB connections, then exit. Forced exit after a timeout.
+ */
+const shutdown = async (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    Logger.info(`[Shutdown] Received ${signal}, shutting down gracefully...`, 'System');
+    const forceExit = setTimeout(() => process.exit(1), 15000);
+    forceExit.unref();
+
+    try {
+        activeHttpServer?.close();
+        await streamingService.shutdown();
+        await new Promise<void>((resolve) => {
+            const io = socketServer.getIO();
+            if (io) io.close(() => resolve()); else resolve();
+        });
+        const mongoose = (await import('mongoose')).default;
+        await mongoose.disconnect();
+    } catch (err: any) {
+        Logger.error(`[Shutdown] Error during shutdown: ${err?.message}`, 'System');
+    } finally {
+        process.exit(0);
+    }
+};
+
+process.on('SIGTERM', () => { shutdown('SIGTERM'); });
+process.on('SIGINT', () => { shutdown('SIGINT'); });
 
 process.on('unhandledRejection', (reason, promise) => {
     Logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`, 'GlobalErrorHandler');

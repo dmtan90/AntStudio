@@ -8,16 +8,7 @@ const api = axios.create({
 // Request interceptor: attach auth token
 api.interceptors.request.use(
     (config) => {
-        let token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth-token') : null
-
-        // Feature: Automatically use token from URL if on any page (OAuth/Guest support)
-        if (!token && typeof window !== 'undefined') {
-            const params = new URLSearchParams(window.location.search)
-            token = params.get('token')
-            if (token && typeof localStorage !== 'undefined') {
-                localStorage.setItem('auth-token', token)
-            }
-        }
+        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth-token') : null
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`

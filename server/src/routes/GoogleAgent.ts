@@ -1,21 +1,39 @@
 import { Router, Request, Response } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { socketServer } from '../services/streaming/SocketServer.js';
 import { StreamSessionModel } from '../models/StreamSession.js';
 import { Logger } from '../utils/Logger.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { userCanAccessProject } from '../utils/projectAccess.js';
 
 const router = Router();
+
+// Public widget endpoint: each init spends Gemini/TTS credits, so throttle per IP
+const shopperInitLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 30,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { success: false, error: 'Too many shopper sessions, please try again later.' }
+});
+
+const SHOPPER_SESSION_ID = /^shop_[a-z0-9]{6,32}$/;
 
 /**
  * POST /api/google-agent/action
  * Triggers real-time live studio action from Google Agent via Socket.io
  */
-router.post('/action', async (req: Request, res: Response) => {
+router.post('/action', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { action, projectId, payload } = req.body;
         Logger.info(`[GoogleAgent] Received action: ${action} for project: ${projectId}`);
 
-        if (!action || !projectId) {
-            return res.status(400).json({ success: false, error: 'Missing action or projectId' });
+        if (typeof action !== 'string' || typeof projectId !== 'string' || !/^[a-z0-9_:-]{1,64}$/i.test(action)) {
+            return res.status(400).json({ success: false, error: 'Missing or invalid action/projectId' });
+        }
+
+        if (!(await userCanAccessProject(req.user!.userId, projectId))) {
+            return res.status(403).json({ success: false, error: 'Not authorized for this project' });
         }
 
         // Find active stream session for the project
@@ -46,7 +64,7 @@ router.post('/action', async (req: Request, res: Response) => {
  * POST /api/google-agent/sync-all
  * Mock sync-all for agent store sync
  */
-router.post('/sync-all', async (req: Request, res: Response) => {
+router.post('/sync-all', authMiddleware, async (req: Request, res: Response) => {
     try {
         const { projectId } = req.body;
         Logger.info(`[GoogleAgent] Sync all requested for project: ${projectId}`);
@@ -63,17 +81,21 @@ router.post('/sync-all', async (req: Request, res: Response) => {
  * POST /api/google-agent/shopper/init
  * Initializes localized virtual personal shopper sessions for widgets
  */
-router.post('/shopper/init', async (req: Request, res: Response) => {
+router.post('/shopper/init', shopperInitLimiter, async (req: Request, res: Response) => {
     try {
         const { productId, langCode, sessionId } = req.body;
-        if (!productId) {
+        if (typeof productId !== 'string' || !productId) {
             return res.status(400).json({ success: false, error: 'Missing productId' });
         }
+        // Only accept widget-style shopper IDs so a caller can't overwrite a live sales session's context
+        const shopperSessionId = typeof sessionId === 'string' && SHOPPER_SESSION_ID.test(sessionId)
+            ? sessionId
+            : 'shop_' + Math.random().toString(36).substring(2, 12);
         const { liveSalesServiceV3 } = await import('../services/ai/LiveSalesServiceV3.js');
         const sessionInfo = await liveSalesServiceV3.initShopperSession(
-            sessionId || 'shop_' + Math.random().toString(36).substring(2, 12),
+            shopperSessionId,
             productId,
-            langCode || 'en'
+            typeof langCode === 'string' ? langCode : 'en'
         );
         return res.json({
             success: true,

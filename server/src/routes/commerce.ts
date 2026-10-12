@@ -11,6 +11,7 @@ import { generateJSON } from '../utils/AIGenerator.js';
 import { chromium } from 'playwright';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { assertPublicHttpUrl, safeHttpAgent, safeHttpsAgent } from '../utils/ssrfGuard.js';
 
 import { Logger } from '../utils/Logger.js';
 
@@ -132,7 +133,12 @@ router.post('/extract-product', async (req: AuthRequest, res: Response) => {
     let browser;
     try {
         const { url } = req.body;
-        if (!url) return res.status(400).json({ success: false, error: 'URL is required' });
+        if (typeof url !== 'string' || !url) return res.status(400).json({ success: false, error: 'URL is required' });
+        try {
+            await assertPublicHttpUrl(url);
+        } catch (e: any) {
+            return res.status(400).json({ success: false, error: e.message });
+        }
 
         Logger.info(`[ProductExtractor] Extracting product from URL: ${url}`);
 
@@ -146,14 +152,20 @@ router.post('/extract-product', async (req: AuthRequest, res: Response) => {
             });
             const page = await context.newPage();
             
-            // Abort image and media requests to speed up extraction
-            await page.route('**/*', (route) => {
-                const type = route.request().resourceType();
-                if (['image', 'media', 'font'].includes(type)) {
-                    route.abort();
-                } else {
-                    route.continue();
+            // Abort image and media requests to speed up extraction, and block any
+            // request (redirects, XHR, iframes) that targets a non-public host
+            const hostVerdicts = new Map<string, Promise<boolean>>();
+            await page.route('**/*', async (route) => {
+                const request = route.request();
+                if (['image', 'media', 'font'].includes(request.resourceType())) {
+                    return route.abort();
                 }
+                let host = '';
+                try { host = new URL(request.url()).host; } catch { return route.abort(); }
+                if (!hostVerdicts.has(host)) {
+                    hostVerdicts.set(host, assertPublicHttpUrl(request.url()).then(() => true, () => false));
+                }
+                return (await hostVerdicts.get(host)) ? route.continue() : route.abort();
             });
 
             await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
@@ -167,7 +179,10 @@ router.post('/extract-product', async (req: AuthRequest, res: Response) => {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                     },
-                    timeout: 10000
+                    timeout: 10000,
+                    maxContentLength: 10 * 1024 * 1024,
+                    httpAgent: safeHttpAgent,
+                    httpsAgent: safeHttpsAgent
                 });
                 html = axiosRes.data;
             } catch (axiosErr: any) {

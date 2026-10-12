@@ -397,6 +397,14 @@ import GeneralOverlay from '@/components/studio/overlays/GeneralOverlay.vue';
 import PostShowOverlay from '@/components/studio/overlays/PostShowOverlay.vue';
 import { useMediaStore } from '@/stores/media';
 
+// Window listeners registered after setup (in callbacks/async flows) can't use useEventListener's
+// auto-cleanup, so track them here and remove them all on unmount.
+const windowListenerCleanups: Array<() => void> = [];
+function addWindowListener(type: string, handler: (e: any) => void) {
+   window.addEventListener(type, handler);
+   windowListenerCleanups.push(() => window.removeEventListener(type, handler));
+}
+
 const router = useRouter();
 const route = useRoute();
 // Stores
@@ -2019,7 +2027,7 @@ const triggerCollectiveReaction = (gesture: string) => {
         syntheticGuestManager.triggerGesture(guest.persona.uuid, gesture);
     });
 
-    window.addEventListener('show:b_roll_generated', (e: any) => {
+    addWindowListener('show:b_roll_generated', (e: any) => {
         const asset = e.detail;
         studioStore.bRollLibrary.push(asset);
         bRollTopic.value = asset.topic;
@@ -2032,7 +2040,7 @@ const triggerCollectiveReaction = (gesture: string) => {
 
     const currentParticleType = ref<string | null>(null);
 
-    window.addEventListener('show:atmosphere_shift', (e: any) => {
+    addWindowListener('show:atmosphere_shift', (e: any) => {
         const { mood } = e.detail;
         
         // Always update the store vibe
@@ -2050,8 +2058,8 @@ const triggerCollectiveReaction = (gesture: string) => {
     });
 
     // RPG Quest Listeners
-    window.addEventListener('quest:start', () => neuralAudioDirector.playSFX('ui_swoosh'));
-    window.addEventListener('quest:success', () => neuralAudioDirector.playSFX('react_gift'));
+    addWindowListener('quest:start', () => neuralAudioDirector.playSFX('ui_swoosh'));
+    addWindowListener('quest:success', () => neuralAudioDirector.playSFX('react_gift'));
 
 
     // Live Subtitles (CapCut Style)
@@ -2067,7 +2075,7 @@ const triggerCollectiveReaction = (gesture: string) => {
         }
     });
 
-    window.addEventListener('show:caption_update', (e: any) => {
+    addWindowListener('show:caption_update', (e: any) => {
         postToWorker('update-caption', e.detail);
     });
 };
@@ -2623,7 +2631,7 @@ const startPerformanceTracking = () => {
 // Chat handling
 onMounted(() => {
    startPerformanceTracking();
-   window.addEventListener('studio:chat', (e: any) => {
+   addWindowListener('studio:chat', (e: any) => {
       const comment = e.detail;
       const msg = {
         id: comment.id,
@@ -2965,7 +2973,7 @@ onMounted(async () => {
    (studioStore as any).currentProjectId = route.params.id as string;
    window.addEventListener('keydown', handleKeyPress);
    // Handle AI Producer Actions
-    window.addEventListener('producer:action', (e: any) => {
+    addWindowListener('producer:action', (e: any) => {
        const { type, payload } = e.detail;
        if (type === 'switch_scene' && payload.actionPayload) {
           studioStore.switchScene(payload.actionPayload);
@@ -2984,7 +2992,7 @@ onMounted(async () => {
     });
 
    // Handle Autonomous Style Switches
-    window.addEventListener('style:switch', (e: any) => {
+    addWindowListener('style:switch', (e: any) => {
         const { style } = e.detail;
         studioMood.value = style;
         toast.success(`Autonomous Style Switch: ${style.toUpperCase()}`, {
@@ -3055,7 +3063,7 @@ onMounted(async () => {
             role: 'guest'
          };
 
-         window.addEventListener('guest:control', (e: any) => {
+         addWindowListener('guest:control', (e: any) => {
             const { action, value } = e.detail;
             if (action === 'audio') {
                micOn.value = value;
@@ -3067,7 +3075,7 @@ onMounted(async () => {
             }
          });
 
-         window.addEventListener('guest:approved', (e: any) => {
+         addWindowListener('guest:approved', (e: any) => {
             const perms = e.detail.permissions;
             if (perms) {
                 micOn.value = perms.micEnabled;
@@ -3249,6 +3257,7 @@ onUnmounted(() => {
    if (visionTimer) clearInterval(visionTimer);
    if (demoInterval) clearInterval(demoInterval);
    
+   windowListenerCleanups.splice(0).forEach(remove => remove());
    window.removeEventListener('keydown', handleKeyPress);
    window.removeEventListener('director:cut', handleDirectorCut);
    window.removeEventListener('economy:gift', handleGiftEvent);

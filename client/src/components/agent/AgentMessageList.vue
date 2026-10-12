@@ -54,6 +54,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { useAntStudioAgent } from '@/composables/useAntStudioAgent';
 import { useUserStore } from '@/stores/user';
 import AgentProductCarousel from './AgentProductCarousel.vue';
+import { escapeHtml } from '@/utils/sanitizeHtml';
 import { storeToRefs } from 'pinia';
 
 const { messages, isOpen } = useAntStudioAgent();
@@ -114,7 +115,8 @@ function cleanMessageContent(text: string): string {
 
 // Simple markdown-like rendering
 function renderMarkdown(rawText: string): string {
-  const text = cleanMessageContent(rawText);
+  // Escape first: message text is AI/user-controlled and must never be interpreted as HTML
+  const text = escapeHtml(cleanMessageContent(rawText));
   return text
     // Bold
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -130,9 +132,7 @@ function renderMarkdown(rawText: string): string {
     .replace(/^[-*] (.*)$/gm, '<li>$1</li>')
     .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
     // Line breaks
-    .replace(/\n/g, '<br>')
-    // Escape potential XSS in code blocks
-    .replace(/<code>(.*?)<\/code>/g, (_, c) => `<code>${c.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>`);
+    .replace(/\n/g, '<br>');
 }
 
 // ─── AI Product Table Parser ─────────────────

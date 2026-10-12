@@ -1,3 +1,5 @@
+// Registers custom fabric classes used when converting templates
+import "video-editor/fabric/initialize";
 import type { EditorTemplate, EditorTemplatePage } from 'video-editor/types/editor';
 import { nanoid } from 'nanoid';
 import { defaultFont } from 'video-editor/constants/fonts';

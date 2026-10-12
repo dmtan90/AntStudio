@@ -4,6 +4,7 @@ import { User } from '~/models/User.js';
 import { LicensePackage } from '~/models/LicensePackage.js';
 import { getAdminSettings } from '~/models/AdminSettings.js';
 import { configService } from '~/utils/ConfigService.js';
+import { claimTransactionCompletion } from './FulfillmentService.js';
 
 class StripeService {
     private stripe: Stripe | null = null;
@@ -133,14 +134,21 @@ class StripeService {
         const session = await this.stripe.checkout.sessions.retrieve(sessionId);
 
         if (session.payment_status === 'paid') {
-            const tx = await Transaction.findOne({ gatewayTransactionId: sessionId });
-            if (tx && tx.status !== TransactionStatus.COMPLETED) {
-                tx.status = TransactionStatus.COMPLETED;
-                await tx.save();
-                return tx;
-            }
+            // Atomic: only one of redirect / verify / webhook gets the transaction back
+            return claimTransactionCompletion(sessionId);
         }
         return null;
+    }
+
+    /**
+     * Verifies a webhook delivery's signature and returns the parsed event.
+     * Throws if the webhook secret isn't configured or the signature is invalid.
+     */
+    constructWebhookEvent(rawBody: Buffer | string, signature: string): Stripe.Event {
+        if (!this.stripe) throw new Error('Stripe gateway not configured.');
+        const secret = configService.stripe.webhookSecret;
+        if (!secret) throw new Error('Stripe webhook secret not configured.');
+        return this.stripe.webhooks.constructEvent(rawBody, signature, secret);
     }
 }
 

@@ -82,10 +82,11 @@ echo [2/5] Creating Google Artifact Registry Repository [%REPOSITORY%]...
 call gcloud artifacts repositories create "%REPOSITORY%" --repository-format=docker --location="%REGION%" --description="AntStudio Docker Images"
 
 echo [3/5] Building ^& Pushing Backend Server to Artifact Registry...
-call gcloud builds submit ./server --tag="%REGION%-docker.pkg.dev/%PROJECT_ID%/%REPOSITORY%/antstudio-server:latest"
+REM Images build from the repo root because the server depends on the genblaze workspace package
+call gcloud builds submit . --config=cloudbuild.yaml --substitutions="_DOCKERFILE=server/Dockerfile,_IMAGE=%REGION%-docker.pkg.dev/%PROJECT_ID%/%REPOSITORY%/antstudio-server:latest"
 
 echo [4/5] Building ^& Pushing Frontend Client to Artifact Registry...
-call gcloud builds submit ./client --tag="%REGION%-docker.pkg.dev/%PROJECT_ID%/%REPOSITORY%/antstudio-client:latest"
+call gcloud builds submit . --config=cloudbuild.yaml --substitutions="_DOCKERFILE=client/Dockerfile,_IMAGE=%REGION%-docker.pkg.dev/%PROJECT_ID%/%REPOSITORY%/antstudio-client:latest"
 
 echo [5/5] Deploying Backend Server to Google Cloud Run...
 call gcloud run deploy antstudio-server --image="%REGION%-docker.pkg.dev/%PROJECT_ID%/%REPOSITORY%/antstudio-server:latest" --platform=managed --region="%REGION%" --allow-unauthenticated --set-env-vars="!ENV_VARS!" --port=4000
@@ -94,7 +95,7 @@ REM Get Cloud Run Backend URL
 for /f "tokens=*" %%i in ('gcloud run services describe antstudio-server --platform=managed --region="%REGION%" --format="value(status.url)"') do set BACKEND_URL=%%i
 
 echo [5/5] Deploying Frontend Client to Google Cloud Run...
-call gcloud run deploy antstudio-client --image="%REGION%-docker.pkg.dev/%PROJECT_ID%/%REPOSITORY%/antstudio-client:latest" --platform=managed --region="%REGION%" --allow-unauthenticated --set-env-vars="VITE_API_BASE_URL=%BACKEND_URL%" --port=80
+call gcloud run deploy antstudio-client --image="%REGION%-docker.pkg.dev/%PROJECT_ID%/%REPOSITORY%/antstudio-client:latest" --platform=managed --region="%REGION%" --allow-unauthenticated --set-env-vars="API_UPSTREAM=%BACKEND_URL%" --port=80
 
 for /f "tokens=*" %%i in ('gcloud run services describe antstudio-client --platform=managed --region="%REGION%" --format="value(status.url)"') do set CLIENT_URL=%%i
 

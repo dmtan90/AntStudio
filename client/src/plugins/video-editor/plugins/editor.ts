@@ -148,6 +148,8 @@ export class Editor {
 
     this.exporting = ExportProgress.None;
     this.ffmpeg = markRaw(getFFmpeg());
+    // Load the ~30MB ffmpeg.wasm core only once an editor exists (not on every app boot)
+    loadFFmpeg().catch(() => { /* logged in loadFFmpeg; retried on next call */ });
     this.progress = { capture: 0, compile: 0, upload: 0 };
 
     this.file = "";

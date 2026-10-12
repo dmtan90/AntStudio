@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, reactive, computed, onMounted, onUnmounted, watch, type Ref } from 'vue';
 import { useLocalStorage } from '@/composables/useLocalStorage';
 import api from '@/utils/api';
-import { useI18n } from 'vue-i18n';
+import i18n from '@/i18n';
 import { ActionSyncService } from '@/utils/ai/ActionSyncService';
 import { VisualConceptService } from '@/utils/ai/VisualConceptService';
 import { toast } from 'vue-sonner';
@@ -497,7 +497,7 @@ const SCENE_PRESETS: Scene[] = [
 // ============================================
 
 export const useStudioStore = defineStore('studio', () => {
-    const { t } = useI18n();
+    const t = i18n.global.t
     // ============================================
     // State
     // ============================================
@@ -1565,9 +1565,8 @@ export const useStudioStore = defineStore('studio', () => {
             userProgress.value.xp += activeQuest.value.rewardXp;
             
             // Wire i18n for quest completion toast
-            const i18n = useI18n();
-            toast.success(i18n.t('studio.quests.success'), {
-                description: i18n.t('studio.quests.rewardUnlocked', { reward: `${activeQuest.value.rewardXp} XP` })
+            toast.success(t('studio.quests.success'), {
+                description: t('studio.quests.rewardUnlocked', { reward: `${activeQuest.value.rewardXp} XP` })
             });
 
             // Auto-clear quest display after 15 seconds

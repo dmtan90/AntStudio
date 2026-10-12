@@ -32,9 +32,12 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
             return res.status(401).json({ success: false, data: null, error: 'User not found or inactive' });
         }
 
+        // Role and email come from the DB, not the token, so a demotion takes effect immediately
         req.user = {
             ...decoded,
-            id: decoded.userId
+            id: decoded.userId,
+            email: user.email,
+            role: user.role
         } as any;
 
         next();

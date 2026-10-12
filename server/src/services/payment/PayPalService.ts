@@ -3,6 +3,7 @@ import { Transaction, TransactionGateway, TransactionStatus, TransactionType } f
 import { User } from '~/models/User.js';
 import { LicensePackage } from '~/models/LicensePackage.js';
 import { configService } from '~/utils/ConfigService.js';
+import { claimTransactionCompletion } from './FulfillmentService.js';
 
 import { Logger } from '~/utils/Logger.js';
 import { getAdminSettings } from '~/models/AdminSettings.js';
@@ -178,12 +179,8 @@ class PayPalService {
         });
 
         if (response.data.status === 'COMPLETED') {
-            const tx = await Transaction.findOne({ gatewayTransactionId: orderId });
-            if (tx && tx.status !== TransactionStatus.COMPLETED) {
-                tx.status = TransactionStatus.COMPLETED;
-                await tx.save();
-                return tx;
-            }
+            // Atomic: only one caller gets the transaction back for fulfillment
+            return claimTransactionCompletion(orderId);
         }
         return null;
     }

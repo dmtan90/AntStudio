@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==========================================
   # DATABASE (MongoDB)
@@ -8,14 +6,14 @@ services:
     image: mongo:6
     container_name: antstudio-mongo
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    # Not published to the host: only reachable on the compose network.
+    # To inspect locally, temporarily add: ports: ["127.0.0.1:27017:27017"]
     volumes:
       - mongo_data:/data/db
     networks:
       - antstudio-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,27 +25,26 @@ services:
     container_name: antstudio-server
     restart: unless-stopped
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: server/Dockerfile
     ports:
       - "${PORT:-4000}:${PORT:-4000}"
-      - "1935:1935" # RTMP Stream Ingest Port
+      - "1935:1935" # RTMP ingest (publish/play require a server-signed URL)
     env_file:
       - .env
     environment:
       - NODE_ENV=production
       - PORT=${PORT:-4000}
       - MONGODB_URI=${DOCKER_MONGODB_URI:-mongodb://mongo:27017/antstudio}
+    volumes:
+      - uploads_data:/app/server/uploads
+      - logs_data:/app/server/logs
     depends_on:
       mongo:
         condition: service_healthy
     networks:
       - antstudio-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    stop_grace_period: 20s # time for graceful shutdown (FFmpeg relays, sockets)
 
   # ==========================================
   # FRONTEND CLIENT (Vue 3 + Nginx SPA)
@@ -56,8 +53,8 @@ services:
     container_name: antstudio-client
     restart: unless-stopped
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: client/Dockerfile
     ports:
       - "3000:80"
     depends_on:
@@ -71,3 +68,5 @@ networks:
 
 volumes:
   mongo_data:
+  uploads_data:
+  logs_data:

@@ -1,3 +1,5 @@
+// Registers custom fabric classes (video, gif, audio, charts...) before any canvas is built
+import "video-editor/fabric/initialize";
 import { toRaw, markRaw } from "vue"
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { defineStore } from 'pinia';

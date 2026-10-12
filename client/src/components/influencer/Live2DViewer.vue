@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, onActivated, onDeactivated, shallowRef } from 'vue';
 import * as PIXI from 'pixi.js';
+import '@/utils/pixiGlobal'; // must precede pixi-live2d-display-advanced
 import { Live2DModel, ZipLoader } from 'pixi-live2d-display-advanced';
 import JSZip from 'jszip';
 import { AtmosphereManager, ParticleType } from '@/utils/ai/AtmosphereManager';

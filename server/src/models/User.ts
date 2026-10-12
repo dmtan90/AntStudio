@@ -235,7 +235,16 @@ const UserSchema = new Schema<IUser>(
         }
     },
     {
-        timestamps: true
+        timestamps: true,
+        // Never serialize credentials into API responses
+        toJSON: {
+            transform: (_doc: any, ret: any) => {
+                delete ret.passwordHash;
+                delete ret.resetPasswordToken;
+                delete ret.resetPasswordExpires;
+                return ret;
+            }
+        }
     }
 )
 

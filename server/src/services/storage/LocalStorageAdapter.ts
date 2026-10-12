@@ -24,12 +24,24 @@ export class LocalStorageAdapter implements IStorageAdapter {
 
     public destroy(): void {}
 
+    /**
+     * Maps a storage key to a path inside the upload directory.
+     * Keys can contain user-supplied file names, so reject anything that escapes uploadDir.
+     */
+    private resolveKey(key: string): string {
+        const filePath = path.resolve(this.uploadDir, String(key).replace(/^[\\/]+/, ''));
+        if (filePath !== this.uploadDir && !filePath.startsWith(this.uploadDir + path.sep)) {
+            throw new Error(`Invalid storage key: ${key}`);
+        }
+        return filePath;
+    }
+
     public async uploadFile(
         key: string,
         body: Buffer | Uint8Array | string,
         contentType: string = 'application/octet-stream'
     ): Promise<{ key: string; url: string }> {
-        const filePath = path.join(this.uploadDir, key);
+        const filePath = this.resolveKey(key);
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -56,21 +68,22 @@ export class LocalStorageAdapter implements IStorageAdapter {
     }
 
     public async deleteFile(key: string): Promise<void> {
-        const filePath = path.join(this.uploadDir, key);
+        const filePath = this.resolveKey(key);
         if (fs.existsSync(filePath)) {
             await fs.promises.unlink(filePath);
         }
     }
 
     public async deleteFolder(prefix: string): Promise<void> {
-        const folderPath = path.join(this.uploadDir, prefix);
+        const folderPath = this.resolveKey(prefix);
+        if (folderPath === this.uploadDir) throw new Error('Refusing to delete the upload root');
         if (fs.existsSync(folderPath)) {
             await fs.promises.rm(folderPath, { recursive: true, force: true });
         }
     }
 
     public async exists(key: string): Promise<boolean> {
-        const filePath = path.join(this.uploadDir, key);
+        const filePath = this.resolveKey(key);
         return fs.existsSync(filePath);
     }
 
@@ -79,7 +92,7 @@ export class LocalStorageAdapter implements IStorageAdapter {
     }
 
     public async getFileStream(key: string): Promise<any> {
-        const filePath = path.join(this.uploadDir, key);
+        const filePath = this.resolveKey(key);
         if (!fs.existsSync(filePath)) {
             throw new Error(`Local file not found: ${key}`);
         }

@@ -7,6 +7,8 @@ import path from 'path';
 import os from 'os';
 import { Server } from 'socket.io';
 
+export const ADMIN_LOG_ROOM = 'admin:system-logs';
+
 class LoggerClass {
     private static instance: LoggerClass;
     private levels = ['debug', 'info', 'warn', 'error'];
@@ -172,7 +174,8 @@ class LoggerClass {
             }
 
             if (this.io) {
-                this.io.emit('system-log', {
+                // Only admins (joined to ADMIN_LOG_ROOM by SocketServer after a DB role check) receive logs
+                this.io.to(ADMIN_LOG_ROOM).emit('system-log', {
                     level,
                     message: finalMessage,
                     source: finalSource,

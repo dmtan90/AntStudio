@@ -1,0 +1,8 @@
+# Builds one image from the repo root (pnpm workspace) with a given Dockerfile.
+# Usage: gcloud builds submit . --config=cloudbuild.yaml \
+#          --substitutions=_DOCKERFILE=server/Dockerfile,_IMAGE=<region>-docker.pkg.dev/<project>/<repo>/antstudio-server:<tag>
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '-f', '${_DOCKERFILE}', '-t', '${_IMAGE}', '.']
+images:
+  - '${_IMAGE}'

@@ -36,6 +36,7 @@ export interface FSMStateContext {
 
 export class LiveSalesServiceV3 {
     private activeFSMLoops = new Map<string, NodeJS.Timeout>();
+    private ticksInFlight = new Set<string>();
     private sessionContexts = new Map<string, FSMStateContext>();
 
     /**
@@ -84,7 +85,7 @@ export class LiveSalesServiceV3 {
         // Trigger the initial tick immediately in the background to bypass startup delay
         Promise.resolve().then(async () => {
             try {
-                await this.processFSMTick(sessionId, influencerId);
+                await this.runExclusiveTick(sessionId, influencerId);
             } catch (err: any) {
                 Logger.error(`Initial FSM Tick error for session ${sessionId}: ${err.message}`, 'LiveSalesServiceV3');
             }
@@ -119,13 +120,28 @@ export class LiveSalesServiceV3 {
                     }
                 }
 
-                await this.processFSMTick(sessionId, influencerId);
+                await this.runExclusiveTick(sessionId, influencerId);
             } catch (err: any) {
                 Logger.error(`FSM Tick error for session ${sessionId}: ${err.message}`, 'LiveSalesServiceV3');
             }
         }, 8000); // 8-second evaluation interval
 
         this.activeFSMLoops.set(sessionId, loop);
+    }
+
+    /**
+     * Runs one FSM tick unless the previous one for this session is still in flight.
+     * Gemini/TTS calls can take longer than the 8s interval; overlapping ticks would
+     * double-speak and race on the session context.
+     */
+    private async runExclusiveTick(sessionId: string, influencerId: string) {
+        if (this.ticksInFlight.has(sessionId)) return;
+        this.ticksInFlight.add(sessionId);
+        try {
+            await this.processFSMTick(sessionId, influencerId);
+        } finally {
+            this.ticksInFlight.delete(sessionId);
+        }
     }
 
     /**

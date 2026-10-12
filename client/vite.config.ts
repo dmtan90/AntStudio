@@ -187,7 +187,29 @@ export default defineConfig({
         sourcemap: false,
         minify: 'esbuild',
         cssMinify: true,
-        target: 'esnext'
+        target: 'esnext',
+        rollupOptions: {
+            output: {
+                // Heavy libraries get stable, separately cached chunks that load only with the routes using them
+                manualChunks(id: string) {
+                    // Rollup pulls a manual chunk's unassigned dependencies into that chunk, so shared
+                    // runtime pieces get their own chunks; otherwise Vue/helpers end up inside e.g. vendor-charts
+                    // and every page has to load it.
+                    if (id.includes('commonjsHelpers')) return 'vendor-runtime'
+                    if (!id.includes('node_modules')) return undefined
+                    if (/[\\/]node_modules[\\/](vue|@vue|vue-router|pinia|vue-i18n|@intlify)[\\/]/.test(id)) return 'vendor-vue'
+                    if (/[\\/]node_modules[\\/](three|@pixiv)[\\/]/.test(id)) return 'vendor-three'
+                    if (/[\\/]node_modules[\\/](pixi\.js|@pixi|pixi-live2d-display-advanced)[\\/]/.test(id)) return 'vendor-pixi'
+                    if (/[\\/]node_modules[\\/]fabric[\\/]/.test(id)) return 'vendor-fabric'
+                    if (/[\\/]node_modules[\\/]@ffmpeg[\\/]/.test(id)) return 'vendor-ffmpeg'
+                    if (/[\\/]node_modules[\\/](@huggingface|onnxruntime-web|onnxruntime-common)[\\/]/.test(id)) return 'vendor-transformers'
+                    if (/[\\/]node_modules[\\/]@mediapipe[\\/]/.test(id)) return 'vendor-mediapipe'
+                    if (/[\\/]node_modules[\\/]tesseract\.js[\\/]/.test(id)) return 'vendor-tesseract'
+                    if (/[\\/]node_modules[\\/](chart\.js|vue-chartjs)[\\/]/.test(id)) return 'vendor-charts'
+                    return undefined
+                }
+            }
+        }
     },
     optimizeDeps: {
         exclude: ['mediabunny', '@ffmpeg/ffmpeg', '@ffmpeg/util', '@huggingface/transformers', '@mediapipe/tasks-vision']

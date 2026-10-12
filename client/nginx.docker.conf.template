@@ -1,0 +1,54 @@
+# Nginx template for the client container. The official nginx image renders this with envsubst
+# (only defined env vars are substituted): API_UPSTREAM = backend base URL, e.g.
+# http://antstudio-server:4000 (compose) or the Cloud Run server URL.
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript application/wasm;
+
+    # Same cross-origin isolation the Node server sets (SharedArrayBuffer for ffmpeg.wasm)
+    add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+    add_header Cross-Origin-Embedder-Policy "require-corp" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # API, uploads and Socket.IO go to the backend service
+    location ~ ^/(api|uploads|socket\.io)/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        # Upstream host (Cloud Run routes by Host); the app builds absolute URLs from BASE_URL, not Host
+        proxy_set_header Host $proxy_host;
+        proxy_ssl_server_name on;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+        client_max_body_size 1024M;
+    }
+
+    location = /health {
+        proxy_pass ${API_UPSTREAM};
+    }
+
+    # Hashed build assets can be cached aggressively
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+        add_header Cross-Origin-Embedder-Policy "require-corp" always;
+        try_files $uri =404;
+    }
+
+    # SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

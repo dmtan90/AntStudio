@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { SettingTwo, VoiceOne, VoiceOff, CameraTwo, ConnectionPoint } from '@icon-park/vue-next';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
@@ -96,6 +96,8 @@ const micMuted = ref(false);
 const paired = ref(false);
 const remoteCommand = ref('');
 const cameraPreview = ref<HTMLVideoElement | null>(null);
+let cameraStream: MediaStream | null = null;
+let initTimer: ReturnType<typeof setTimeout> | null = null;
 
 const initSession = () => {
     // Mock pairing from URL param
@@ -108,6 +110,7 @@ const initSession = () => {
 const startCamera = async () => {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: true });
+        cameraStream = stream;
         if (cameraPreview.value) cameraPreview.value.srcObject = stream;
     } catch (e) {
         toast.error(t('mobileIngest.toasts.cameraRequired'));
@@ -134,7 +137,14 @@ const toggleSettings = () => {
 };
 
 onMounted(() => {
-    setTimeout(initSession, 1000);
+    initTimer = setTimeout(initSession, 1000);
+});
+
+// Release camera/mic when leaving the page (otherwise the device stays on)
+onUnmounted(() => {
+    if (initTimer) clearTimeout(initTimer);
+    cameraStream?.getTracks().forEach(track => track.stop());
+    cameraStream = null;
 });
 </script>
 

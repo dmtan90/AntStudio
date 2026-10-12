@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
         cb(null, `rec-${Date.now()}${path.extname(file.originalname)}`);
     }
 });
-const upload = multer({ storage });
+const upload = multer({ storage, limits: { fileSize: 4 * 1024 * 1024 * 1024, files: 1 } });
 
 const router = Router();
 

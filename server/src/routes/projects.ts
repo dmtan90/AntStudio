@@ -287,9 +287,16 @@ router.get('/:id', async (req: any, res: Response) => {
 router.put('/:id', rbacMiddleware(Permission.PROJECT_EDIT), async (req: any, res: Response) => {
     try {
         await connectDB();
+        // Ownership/sharing fields can't be changed through a generic update
+        const PROTECTED_FIELDS = ['_id', 'userId', 'organizationId', 'collaborators', 'createdAt', 'updatedAt', '__v'];
+        const updates: Record<string, any> = {};
+        for (const [key, value] of Object.entries(req.body || {})) {
+            if (key.startsWith('$') || PROTECTED_FIELDS.includes(key.split('.')[0])) continue;
+            updates[key] = value;
+        }
         const project = await Project.findOneAndUpdate(
             { _id: req.params.id, userId: req.user!.userId },
-            { $set: req.body },
+            { $set: updates },
             { new: true, runValidators: true }
         );
         if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
