@@ -293,6 +293,13 @@ const startServer = async () => {
         const { envManager } = await import('./utils/EnvironmentManager.js');
         await envManager.initialize();
 
+        // Report misconfiguration once, after DB overrides are applied
+        const { validateEnv } = await import('./utils/envSchema.js');
+        const envWarnings = validateEnv();
+        if (envWarnings.length > 0) {
+            Logger.warn(`[Config] ${envWarnings.length} configuration issue(s):\n  - ${envWarnings.join('\n  - ')}`, 'System');
+        }
+
         // Initialize Redis cache (Optional - continues without cache if unavailable)
         const { redisService } = await import('./services/system/RedisService.js');
         await redisService.connect();

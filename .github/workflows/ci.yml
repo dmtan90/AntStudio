@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   typecheck:
-    name: Typecheck & build
+    name: Typecheck, test & build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +39,12 @@ jobs:
 
       - name: Typecheck client
         run: pnpm --filter client exec vue-tsc --noEmit
+
+      - name: Unit tests (server)
+        run: pnpm --filter server test
+
+      - name: Unit tests (client)
+        run: pnpm --filter client test
 
       - name: Bundle server
         run: pnpm --filter server build

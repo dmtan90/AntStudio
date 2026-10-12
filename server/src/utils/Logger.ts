@@ -15,6 +15,11 @@ class LoggerClass {
     private logDir!: string;
     private currentLogFile!: string;
     private io: Server | null = null;
+    // Buffered, non-blocking file output; rotated when the calendar day changes
+    private logStream: fs.WriteStream | null = null;
+    private logStreamDay = '';
+    private lastCleanupAt = 0;
+    private rotating: Promise<void> | null = null;
 
     private constructor() {
         this.initPaths();
@@ -209,53 +214,80 @@ class LoggerClass {
         }
     }
 
+    private static dayKey(date: Date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    private rotatedPathFor(dayKey: string) {
+        const [yyyy, mm, dd] = dayKey.split('-');
+        return path.join(this.logDir, `antstudio-system-${mm}-${dd}-${yyyy}.log`);
+    }
+
+    private openLogStream(today: string) {
+        this.ensureLogDir();
+        // A file left over from a previous day (e.g. after a restart) is rotated before reuse
+        try {
+            const stats = fs.statSync(this.currentLogFile);
+            const fileDay = LoggerClass.dayKey(stats.mtime);
+            if (fileDay !== today && stats.size > 0) {
+                fs.renameSync(this.currentLogFile, this.rotatedPathFor(fileDay));
+            }
+        } catch {
+            // No current file yet
+        }
+        this.logStream = fs.createWriteStream(this.currentLogFile, { flags: 'a', encoding: 'utf8' });
+        this.logStream.on('error', (err) => {
+            console.error('File logging error:', err);
+            this.logStream = null; // reopened on next write
+        });
+        this.logStreamDay = today;
+    }
+
     private async rotateAndWrite(logString: string) {
         try {
-            this.ensureLogDir();
-            if (!fs.existsSync(this.currentLogFile)) {
-                fs.writeFileSync(this.currentLogFile, '', 'utf8');
+            // Concurrent log calls wait for an in-progress rotation instead of racing it
+            if (this.rotating) await this.rotating;
+            const today = LoggerClass.dayKey(new Date());
+            if (this.logStream && this.logStreamDay !== today) {
+                const finished = this.logStream;
+                const previousDay = this.logStreamDay;
+                this.logStream = null;
+                // Rename only after the old stream has flushed and closed its file
+                this.rotating = new Promise<void>((resolve) => {
+                    finished.end(() => {
+                        fs.promises.rename(this.currentLogFile, this.rotatedPathFor(previousDay))
+                            .catch(() => {})
+                            .finally(() => resolve());
+                    });
+                }).finally(() => { this.rotating = null; });
+                await this.rotating;
             }
-
-            const stats = fs.statSync(this.currentLogFile);
-            const today = new Date();
-            const fileDate = stats.birthtime;
-
-            if (fileDate.getDate() !== today.getDate() ||
-                fileDate.getMonth() !== today.getMonth() ||
-                fileDate.getFullYear() !== today.getFullYear()) {
-
-                const mm = String(fileDate.getMonth() + 1).padStart(2, '0');
-                const dd = String(fileDate.getDate()).padStart(2, '0');
-                const yyyy = fileDate.getFullYear();
-                const rotatedPath = path.join(this.logDir, `antstudio-system-${mm}-${dd}-${yyyy}.log`);
-
-                fs.renameSync(this.currentLogFile, rotatedPath);
-                fs.writeFileSync(this.currentLogFile, '', 'utf8');
-            }
-
-            fs.appendFileSync(this.currentLogFile, logString, 'utf8');
+            // openLogStream is synchronous, so waiters resuming after a rotation can't open twice
+            if (!this.logStream) this.openLogStream(today);
+            this.logStream!.write(logString);
         } catch (err) {
             console.error('File logging error:', err);
         }
     }
 
     private cleanupOldLogs(retentionDays: number) {
-        try {
-            const files = fs.readdirSync(this.logDir);
-            const now = Date.now();
-            const maxAge = retentionDays * 24 * 60 * 60 * 1000;
+        // At most once an hour, fully async (this runs on every log call)
+        const now = Date.now();
+        if (now - this.lastCleanupAt < 60 * 60 * 1000) return;
+        this.lastCleanupAt = now;
+        const maxAge = retentionDays * 24 * 60 * 60 * 1000;
 
-            files.forEach(file => {
-                if (file === 'antstudio-system.log') return;
+        (async () => {
+            const files = await fs.promises.readdir(this.logDir);
+            for (const file of files) {
+                if (file === 'antstudio-system.log') continue;
                 const filePath = path.join(this.logDir, file);
-                const stats = fs.statSync(filePath);
+                const stats = await fs.promises.stat(filePath);
                 if (now - stats.mtimeMs > maxAge) {
-                    fs.unlinkSync(filePath);
+                    await fs.promises.unlink(filePath);
                 }
-            });
-        } catch (err) {
-            console.error('Log cleanup error:', err);
-        }
+            }
+        })().catch((err) => console.error('Log cleanup error:', err));
     }
 
     private async sendErrorNotification(log: any) {
