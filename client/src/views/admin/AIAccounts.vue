@@ -215,14 +215,15 @@
               {{ t('admin.aiAccounts.howToGetToken') || 'How to obtain tokens' }}
             </p>
             <p class="text-[11px] text-gray-400 leading-relaxed">
-              Open <a href="https://labs.google/fx/vi/tools/flow" target="_blank" class="text-blue-400 underline italic">Labs Flow</a>, 
-              open DevTools (F12) -> Application -> Cookies -> URL Labs -> Find <b>__Secure-next-auth.session-token</b>.
+              Open <a href="https://flow.google.com" target="_blank" class="text-blue-400 underline italic">flow.google.com</a> signed in,
+              then export <b>all cookies</b> of the page (a cookie-export extension, JSON or <i>name=value; ...</i> header).
+              They must include <b>OSID</b> and the <b>.google.com</b> account cookies (SID, HSID, SSID, APISID, SAPISID).
             </p>
           </div>
 
           <div class="space-y-2">
-            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 pl-1">{{ t('admin.aiAccounts.sessionToken') || 'Session Token (flowST)' }}</label>
-            <el-input v-model="newFlowAccount.flowST" type="textarea" :rows="3" placeholder="Paste __Secure-next-auth.session-token here..." class="glass-input no-border" />
+            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 pl-1">Google cookies (flowST)</label>
+            <el-input v-model="newFlowAccount.flowST" type="textarea" :rows="3" placeholder="Paste the exported flow.google.com cookies here..." class="glass-input no-border" />
           </div>
 
           <div class="space-y-2">
@@ -252,14 +253,15 @@
               {{ t('admin.aiAccounts.tokenExpiredHelp') || 'Session token expired' }}
             </p>
             <p class="text-[11px] text-gray-400 leading-relaxed">
-              Open <a href="https://labs.google/fx/signin" target="_blank" class="text-blue-400 underline italic">Labs Flow</a>,
-              open DevTools (F12) → Application → Cookies → <b>__Secure-next-auth.session-token</b>. Copy and paste the value below.
+              Open <a href="https://flow.google.com" target="_blank" class="text-blue-400 underline italic">flow.google.com</a> signed in with this account,
+              export <b>all cookies</b> of the page (JSON or <i>name=value; ...</i>) and paste them below.
+              The old <i>__Secure-next-auth.session-token</i> no longer works.
             </p>
           </div>
 
           <div class="space-y-1">
-            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 pl-1">{{ t('admin.aiAccounts.sessionToken') || 'New Session Token (flowST)' }}</label>
-            <el-input v-model="updateTokenData.flowST" type="textarea" :rows="4" placeholder="Paste __Secure-next-auth.session-token here..." class="glass-input no-border" />
+            <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 pl-1">Google cookies (flowST)</label>
+            <el-input v-model="updateTokenData.flowST" type="textarea" :rows="4" placeholder="Paste the exported flow.google.com cookies here..." class="glass-input no-border" />
           </div>
         </div>
 

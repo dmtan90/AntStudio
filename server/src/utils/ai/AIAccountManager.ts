@@ -415,8 +415,8 @@ export class AIAccountManager {
         if (account.accountType !== AIAccountType.GOOGLE_FLOW) return false;
         Logger.info(`[AIAccountManager] Syncing Google Flow account: ${account.email}`);
         try {
-            await flowSyncService.refreshAccountTokens(account);
-            return true;
+            // false when the Google cookies are missing, incomplete or rejected by flow.google.com
+            return await flowSyncService.refreshAccountTokens(account);
         } catch (err: any) {
             Logger.error(`[AIAccountManager] Sync failed for ${account.email}: ${err.message}`);
             return false;

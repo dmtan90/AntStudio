@@ -1,24 +1,127 @@
 import axios from 'axios';
-import { IAIAccount, AIAccount } from '../../../models/AIAccount.js';
-import { captchaService } from '../CaptchaService.js';
-import { Logger } from '../../Logger.js';
-import { v4 as uuidv4 } from 'uuid';
-import { getFromS3 } from '~/utils/s3.js';
 import { Readable } from 'stream';
+import { IAIAccount } from '../../../models/AIAccount.js';
 import { AIModelType } from '~/models/AdminSettings.js';
+import { getFromS3 } from '~/utils/s3.js';
+import { captchaService } from '../CaptchaService.js';
+import { flowSyncService, flowRequestContext, FLOW_FRONTEND_ACCESS_TOKEN } from '../FlowSyncService.js';
+import {
+    flowFrontendClient, flowBrowserHeaders, FlowRpcError, FlowVideoMode, FlowVideoOperation, FlowVideoSubmission,
+    FLOW_ORIGIN, FLOW_DEFAULT_USER_AGENT, FLOW_OPERATION_ID_PATTERN
+} from './FlowFrontendClient.js';
+import { Logger } from '../../Logger.js';
+
+/**
+ * Google Flow adapter (flow.google.com).
+ *
+ * The old Labs tRPC / aisandbox-pa REST endpoints are retired; every call goes through the Flow
+ * frontend batchexecute RPCs (see FlowFrontendClient), authenticated by the account's Google
+ * cookies (`account.flowST`). Ported from openvideo/apps/shine (FlowAdapter) without its external
+ * "Flow Worker" fast path.
+ */
+
+/**
+ * Image model keys sent in ogiZ0b, captured from the flow.google.com UI (2026-10).
+ * NARWHAL and IMAGEN_3_5 now answer NOT_FOUND.
+ */
+const FLOW_IMAGE_MODELS = {
+    pro: 'GEM_PIX_2',       // Nano Banana Pro
+    lite: 'HARBOR_SEAL',    // Nano Banana 2 Lite
+    standard: 'BELUGA',     // Nano Banana 2.1 (Flow's default, 0 credits)
+};
+/** Used when the requested model answers NOT_FOUND */
+const FALLBACK_IMAGE_MODEL = FLOW_IMAGE_MODELS.standard;
+/** How long a model that answered NOT_FOUND is skipped before being tried again */
+const UNAVAILABLE_MODEL_TTL_MS = 6 * 60 * 60 * 1000;
+
+export interface FlowOmniVideoOptions {
+    aspectRatio?: string;
+    durationSeconds?: number;
+    referenceImages?: any[];
+    resolution?: string;
+    async?: boolean;
+}
+
+type FlowVideoParams = {
+    prompt: string;
+    modelKey: string;
+    aspectRatio: string;
+    mode: FlowVideoMode;
+    referenceMediaIds?: string[];
+    startMediaId?: string;
+    endMediaId?: string;
+    videoMediaId?: string;
+    sourceMediaName?: string;
+    resolution?: string;
+};
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export class FlowAdapter {
-    private apiBaseUrl = 'https://aisandbox-pa.googleapis.com/v1';
+    private unavailableImageModels = new Map<string, number>();
 
-    constructor() {}
+    /** reCAPTCHA rejections are transient and worth retrying with a fresh token */
+    private isRetryableCaptchaError(msg: string): boolean {
+        return /recaptcha|UNUSUAL_ACTIVITY/i.test(msg || '');
+    }
+
+    /** Error message plus the Flow RPC code (e.g. PUBLIC_ERROR_UNUSUAL_ACTIVITY), which the retry checks match on */
+    private errorText(error: any): string {
+        const message = error?.message || String(error);
+        return error instanceof FlowRpcError && error.code && !message.includes(error.code) ? `${message} (${error.code})` : message;
+    }
+
+    /** UNUSUAL_ACTIVITY_TOO_MUCH_TRAFFIC means the account is being rate limited: back off longer */
+    private captchaRetryDelayMs(msg: string): number {
+        return /TOO_MUCH_TRAFFIC/i.test(msg || '') ? 20_000 : 5_000;
+    }
+
+    /** Expired cookies: try cookies an admin pasted since this account was loaded, once per request */
+    private async recoverFromAuthError(account: IAIAccount, error: unknown, alreadyTried: boolean): Promise<boolean> {
+        if (alreadyTried || !(error instanceof FlowRpcError && error.isAuthError)) return false;
+        return flowSyncService.recoverAccountCookies(account);
+    }
+
+    /** gRPC NOT_FOUND: unknown model key, media id or project */
+    private isNotFoundError(error: unknown): boolean {
+        return error instanceof FlowRpcError && error.isNotFound;
+    }
+
+    /**
+     * reCAPTCHA scores a token against the browser that solved it; the solver must use the same
+     * User-Agent as the Flow requests or Google answers PUBLIC_ERROR_UNUSUAL_ACTIVITY.
+     */
+    private captchaUserAgent(account: IAIAccount): string {
+        return flowRequestContext(account).userAgent || FLOW_DEFAULT_USER_AGENT;
+    }
+
+    private async solveCaptcha(account: IAIAccount, projectId: string, action: 'IMAGE_GENERATION' | 'VIDEO_GENERATION' | 'UPLOAD_IMAGE'): Promise<string> {
+        const token = await captchaService.solve({
+            projectId,
+            action,
+            tokenId: String(account._id),
+            userAgent: this.captchaUserAgent(account)
+        });
+        if (!token) throw new Error(`Failed to obtain reCAPTCHA token for Flow (${action})`);
+        return token;
+    }
+
+    private resolveAvailableImageModel(model: string): string {
+        const until = this.unavailableImageModels.get(model);
+        if (until && until > Date.now()) {
+            return FALLBACK_IMAGE_MODEL;
+        }
+        this.unavailableImageModels.delete(model);
+        return model;
+    }
 
     /**
      * Map common ratio strings to Google Flow enum values
      */
-    private mapAspectRatio(type: 'image' | 'video', ratio: string): string {
+    private mapAspectRatio(type: AIModelType.IMAGE | AIModelType.VIDEO, ratio: string): string {
         const cleanRatio = ratio.trim().toLowerCase();
 
-        if (type === 'image') {
+        if (type === AIModelType.IMAGE) {
             const imageMap: Record<string, string> = {
                 '16:9': 'IMAGE_ASPECT_RATIO_LANDSCAPE',
                 '9:16': 'IMAGE_ASPECT_RATIO_PORTRAIT',
@@ -30,148 +133,80 @@ export class FlowAdapter {
                 'square': 'IMAGE_ASPECT_RATIO_SQUARE'
             };
             return imageMap[cleanRatio] || ratio; // Fallback to original if already enum or unknown
-        } else {
-            const videoMap: Record<string, string> = {
-                '16:9': 'VIDEO_ASPECT_RATIO_LANDSCAPE',
-                '9:16': 'VIDEO_ASPECT_RATIO_PORTRAIT',
-                'landscape': 'VIDEO_ASPECT_RATIO_LANDSCAPE',
-                'portrait': 'VIDEO_ASPECT_RATIO_PORTRAIT'
-            };
-            return videoMap[cleanRatio] || ratio;
         }
+        const videoMap: Record<string, string> = {
+            '16:9': 'VIDEO_ASPECT_RATIO_LANDSCAPE',
+            '9:16': 'VIDEO_ASPECT_RATIO_PORTRAIT',
+            'landscape': 'VIDEO_ASPECT_RATIO_LANDSCAPE',
+            'portrait': 'VIDEO_ASPECT_RATIO_PORTRAIT'
+        };
+        return videoMap[cleanRatio] || ratio;
     }
 
     /**
      * Upload an image to Google Flow to get a mediaId
      */
     public async uploadMedia(account: IAIAccount, buffer: Buffer, mimeType: string, projectId: string): Promise<string> {
-        const url = `${this.apiBaseUrl}/flow/uploadImage`;
-        const userAgent = account.lastFingerprint?.get('user_agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36';
-        
-        const headers = {
-            'authorization': `Bearer ${account.flowAT}`,
-            'Content-Type': 'application/json',
-            'User-Agent': userAgent,
-            'x-browser-channel': 'stable',
-            'Referer': 'https://labs.google/fx/tools/flow',
-            'Origin': 'https://labs.google',
-        };
-
-        const sessionId = Math.random().toString().slice(2, 17);
-        const ext = mimeType.split('/')[1] || 'png';
-        const fileName = `upload_${Date.now()}.${ext}`;
-
-        const payload = {
-            clientContext: {
-                projectId: projectId,
-                sessionId: sessionId,
-                tool: 'PINHOLE'
-            },
-            fileName: fileName,
-            imageBytes: buffer.toString('base64'),
-            isHidden: false,
-            isUserUploaded: true,
-            mimeType: mimeType || 'image/png'
-        };
-
         try {
             Logger.info(`[FlowAdapter] Uploading media to Flow... (${buffer.length} bytes, mime: ${mimeType})`);
-            const response = await axios.post(url, payload, { headers });
-            
-            Logger.info(`[FlowAdapter] Media uploaded successfully. Response: ${JSON.stringify(response.data)}`);
-            const mediaName = response.data.media?.name || response.data.name || response.data.mediaId;
-            if (!mediaName) {
-                Logger.info(`[FlowAdapter] No media name in response. Data: ${JSON.stringify(response.data)}`);
-                throw new Error('No mediaId returned from upload');
-            }
-            
-            const cleanMediaId = mediaName.includes('/media/') ? mediaName.split('/media/')[1] : mediaName;
-            Logger.info(`[FlowAdapter] Media uploaded successfully. MediaId: ${cleanMediaId}`);
-            return cleanMediaId;
+            const recaptchaToken = await this.solveCaptcha(account, projectId, 'UPLOAD_IMAGE');
+            return await flowFrontendClient.uploadImage(flowRequestContext(account), projectId, buffer, mimeType, recaptchaToken);
         } catch (error: any) {
-            const msg = error.response?.data?.error?.message || error.message;
-            Logger.error(`[FlowAdapter] uploadMedia failed: ${msg}`);
-            throw new Error(`Flow Upload Failed: ${msg}`);
+            Logger.error(`[FlowAdapter] uploadMedia failed: ${error.message}`);
+            throw new Error(`Flow Upload Failed: ${error.message}`);
+        }
+    }
+
+    /** Bytes and mime type of a URL, data URI or storage key. */
+    private async loadMedia(input: string): Promise<{ buffer: Buffer; mimeType: string } | undefined> {
+        try {
+            if (input.startsWith('https://') || input.startsWith('http://')) {
+                const response = await axios.get(input, { responseType: 'arraybuffer', timeout: 60_000 });
+                return { buffer: Buffer.from(response.data), mimeType: String(response.headers['content-type'] || 'image/png') };
+            }
+            if (input.startsWith('data:')) {
+                const [header, data] = input.split(',');
+                return { buffer: Buffer.from(data, 'base64'), mimeType: header.split(':')[1].split(';')[0] };
+            }
+            // Storage key
+            const stream = await getFromS3(input) as Readable;
+            const chunks: Buffer[] = [];
+            for await (const chunk of stream) {
+                chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+            }
+            let mimeType = 'image/png';
+            if (input.endsWith('.jpg') || input.endsWith('.jpeg')) mimeType = 'image/jpeg';
+            else if (input.endsWith('.webp')) mimeType = 'image/webp';
+            else if (input.endsWith('.mp4')) mimeType = 'video/mp4';
+            return { buffer: Buffer.concat(chunks), mimeType };
+        } catch (err: any) {
+            Logger.warn(`[FlowAdapter] Failed to resolve reference media: ${err.message}`, 'FlowAdapter');
+            return undefined;
         }
     }
 
     /**
-     * Resolve media input: if it's a URL or base64, upload it first.
+     * Resolve media input to a Flow media id: reuse Flow ids / URLs, upload anything else.
      */
     private async resolveMediaInput(account: IAIAccount, input: any, projectId: string): Promise<string> {
-        const resolveToVeoMedia = async (input: any) => {
-            if (!input) return undefined;
-            if (typeof input !== 'string') return input; // Already resolved or object
+        if (typeof input !== 'string') return input;
 
-            try {
-                let buffer: Buffer;
-                let mimeType = 'image/png';
-
-                if (input.startsWith('https://') || input.startsWith('http://')) {
-                    const response = await axios.get(input, { responseType: 'arraybuffer' });
-                    buffer = Buffer.from(response.data);
-                    mimeType = String(response.headers['content-type'] || 'image/png');
-                } else {
-                    // Assume S3 Key
-                    const s3Stream = await getFromS3(input) as Readable;
-                    const chunks = [];
-                    for await (const chunk of s3Stream) {
-                        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-                    }
-                    buffer = Buffer.concat(chunks);
-                    
-                    if (input.endsWith('.jpg') || input.endsWith('.jpeg')) mimeType = 'image/jpeg';
-                    else if (input.endsWith('.webp')) mimeType = 'image/webp';
-                    else if (input.endsWith('.mp4')) mimeType = 'video/mp4';
-                }
-
-                Logger.info(`[FlowAdapter] Resolved media reference ${input} to ${buffer.length} bytes, mime: ${mimeType}`, 'FlowAdapter');
-
-                return {
-                    mediaBytes: buffer.toString('base64'),
-                    mimeType
-                };
-            } catch (err: any) {
-                Logger.warn(`[FlowAdapter] Failed to resolve reference media ${input}: ${err.message}`, 'FlowAdapter');
-                return undefined;
-            }
-        };
-
-        Logger.info(`[FlowAdapter] Resolving media input: ${input}`, 'FlowAdapter');
-
-        // If it's already a Flow mediaId string (projects/.../media/...)
-        if (typeof input === 'string' && input.startsWith('projects/') && input.includes('/media/')) {
+        // Legacy Flow media name (projects/.../media/...)
+        if (input.startsWith('projects/') && input.includes('/media/')) {
             return input.split('/media/')[1];
         }
 
-        const data = await resolveToVeoMedia(input);
-        if (data) {
-            const buffer = Buffer.from(data.mediaBytes, 'base64');
-            return await this.uploadMedia(account, buffer, data.mimeType, projectId);
+        // Media generated by Flow: a signed flow-content URL or a bare media id is reused as-is.
+        // Extend / upsample require the source video's Flow media id, it cannot be re-uploaded.
+        const flowContentId = input.match(new RegExp(`^https://flow-content\\.google/(?:image|video)/(${FLOW_OPERATION_ID_PATTERN})`, 'i'))?.[1];
+        if (flowContentId) return flowContentId;
+        if (new RegExp(`^${FLOW_OPERATION_ID_PATTERN}$`, 'i').test(input)) return input;
+
+        const media = await this.loadMedia(input);
+        if (media) {
+            return this.uploadMedia(account, media.buffer, media.mimeType, projectId);
         }
-
         return input;
-        
-        // // If it's already a Flow mediaId string (projects/.../media/...)
-        // if (typeof input === 'string' && input.startsWith('projects/') && input.includes('/media/')) {
-        //     return input;
-        // }
-
-        // const inputStr = typeof input === 'string' ? input : (input.url || input.data || input.mediaId);
-        // if (!inputStr) throw new Error('Invalid media input');
-        
-        // if (inputStr.startsWith('projects/') && inputStr.includes('/media/')) return inputStr;
-
-        // // Otherwise, download/get buffer and upload
-        // const { getFileBuffer } = await import('../../AIGenerator.js');
-        // const buffer = await getFileBuffer(inputStr);
-        // let mimeType = inputStr.startsWith('data:') ? inputStr.split(';')[0].split(':')[1] : 'image/png';
-        
-        // // Improve mimeType for S3 keys
-        // if (inputStr.endsWith('.jpg') || inputStr.endsWith('.jpeg')) mimeType = 'image/jpeg';
-        // else if (inputStr.endsWith('.webp')) mimeType = 'image/webp';
-        
-        // return await this.uploadMedia(account, buffer, mimeType, projectId);
     }
 
     /**
@@ -180,299 +215,303 @@ export class FlowAdapter {
     private resolveModelSettings(type: AIModelType.IMAGE | AIModelType.VIDEO, modelId: string, config: any = {}) {
         const rawRatio = config.aspectRatio || (type === AIModelType.IMAGE ? 'IMAGE_ASPECT_RATIO_LANDSCAPE' : 'VIDEO_ASPECT_RATIO_LANDSCAPE');
         const ratio = this.mapAspectRatio(type, rawRatio);
-        
-        // Better portrait detection: check if it's the PORTRAIT enum OR if the raw ratio is 9:16 or 3:4
-        const isPortrait = ratio.includes('PORTRAIT') || 
-                          rawRatio === '9:16' || 
-                          rawRatio === '3:4' || 
+
+        const isPortrait = ratio.includes('PORTRAIT') ||
+                          rawRatio === '9:16' ||
+                          rawRatio === '3:4' ||
                           modelId.includes('portrait');
-        
-        const imageCount = (config.imageInputs || config.referenceImages || []).length;
 
         if (type === AIModelType.IMAGE) {
-            let imageModelName = 'IMAGEN_3_5';
-            // gemini-2.5-flash-image is not working on Flow right now
-            // move gemini-2.5 to gemini-3.1
-            if (modelId.includes('gemini-2.5-flash')) imageModelName = "NARWHAL";//'GEM_PIX';
-            else if (modelId.includes('gemini-3.0-pro') || modelId.includes('gemini-3-pro') || modelId.includes('gemini-3-pro-image')) imageModelName = 'GEM_PIX_2';
-            else if (modelId.includes('imagen-4.0')) imageModelName = 'IMAGEN_3_5';
-            else if (modelId.includes('gemini-3.1-flash') || modelId.includes('narwhal')) imageModelName = 'NARWHAL';
+            // Flow no longer serves Imagen or NARWHAL; gemini-2.5 / 3.1 / imagen requests use the standard model
+            let imageModelName = FLOW_IMAGE_MODELS.standard;
+            if (modelId.includes('lite')) imageModelName = FLOW_IMAGE_MODELS.lite;
+            else if (modelId.includes('gemini-3.0-pro') || modelId.includes('gemini-3-pro')) imageModelName = FLOW_IMAGE_MODELS.pro;
 
-            let upsample = null;
+            let upsample: string | null = null;
             if (modelId.includes('-2k')) upsample = 'UPSAMPLE_IMAGE_RESOLUTION_2K';
             else if (modelId.includes('-4k')) upsample = 'UPSAMPLE_IMAGE_RESOLUTION_4K';
 
-            return { imageModelName, aspectRatio: ratio, upsample };
-        } else {
-            // Video mapping
-            let videoType: 't2v' | 'i2v' | 'r2v' | 'extend' | 'upsample' = 't2v';
-            
-            // Collect all potential images
-            const images = config.imageInputs || config.referenceImages || [];
-            const hasStartEnd = !!(config.imageStart || config.imageEnd || config.image);
-            const hasCharacters = !!(config.characterImages && config.characterImages.length > 0);
-
-            let prefix = 'veo_3_1';
-            if(modelId.includes('veo-3.0')){
-                prefix = "veo_3_0";
-            }
-            else if(modelId.includes('veo-3.1')){
-                prefix = "veo_3_1";
-            }
-            else if(modelId.includes('veo-2.0')){
-                prefix = "veo_2_0";
-            }
-            else if(modelId.includes('veo-2.1')){
-                prefix = "veo_2_1";
-            }
-
-            if (config.mode === 'extend' || config.videoType === 'extend' || modelId.includes('extend')) {
-                videoType = 'extend';
-            } else if (config.mode === 'upsample' || config.videoType === 'upsample' || modelId.includes('upsample') || modelId.includes('upsampler')) {
-                videoType = 'upsample';
-            } else if (hasCharacters || (images.length > 0)) {
-                videoType = 'r2v';
-            } else if (hasStartEnd || images.length >= 1) {
-                videoType = (config.mode === 'r2v') ? 'r2v' : 'i2v';
-            }
-
-            let videoModelKey = `${prefix}_t2v_fast_landscape`;
-            if (videoType === 'extend') {
-                videoModelKey = isPortrait ? `${prefix}_extend_portrait` : `${prefix}_extend`;
-            } else if (videoType === 'upsample') {
-                const resolution = config.resolution || 'VIDEO_RESOLUTION_4K';
-                videoModelKey = resolution === 'VIDEO_RESOLUTION_1080P' ? `${prefix}_upsampler_1080p` : `${prefix}_upsampler_4k`;
-            } else if (prefix === 'veo_2_0') {
-                if (videoType === 't2v') {
-                    videoModelKey = isPortrait ? `${prefix}_t2v_portrait` : `${prefix}_t2v_landscape`;
-                } else if (videoType === 'i2v') {
-                    videoModelKey = isPortrait ? `${prefix}_i2v_portrait` : `${prefix}_i2v_landscape`;
-                }
-            } else if (prefix === 'veo_2_1') {
-                if (videoType === 't2v') {
-                    videoModelKey = isPortrait ? `${prefix}_fast_d_15_t2v_portrait` : `${prefix}_fast_d_15_t2v_landscape`;
-                } else if (videoType === 'i2v') {
-                    videoModelKey = isPortrait ? `${prefix}_fast_d_15_i2v_portrait` : `${prefix}_fast_d_15_i2v_landscape`;
-                }
-            } else {//3.0/3.1
-                if (videoType === 't2v') {
-                    videoModelKey = isPortrait ? `${prefix}_t2v_fast_portrait` : `${prefix}_t2v_fast`;
-                } else if (videoType === 'i2v') {
-                    videoModelKey = isPortrait ? `${prefix}_i2v_s_fast_portrait_fl` : `${prefix}_i2v_s_fast_fl`;
-                } else if (videoType === 'r2v') {
-                    videoModelKey = isPortrait ?    `${prefix}_r2v_fast_portrait` : `${prefix}_r2v_fast_landscape`;
-                }
-            }
-
-            return { videoModelKey, aspectRatio: ratio, videoType, resolution: config.resolution || 'VIDEO_RESOLUTION_1080P' };
+            return { imageModelName, aspectRatio: ratio, upsample } as any;
         }
-    }
 
-    private getSessionId(){
-        return ';' + new Date().getTime();
+        // Video mapping
+        let videoType: 't2v' | 'i2v' | 'r2v' | 'extend' | 'upsample' = 't2v';
+
+        const images = config.imageInputs || config.referenceImages || [];
+        const hasStart = (config.imageStart || config.image);
+        const hasStartEnd = (hasStart && config.imageEnd);
+        const hasCharacters = !!(config.characterImages?.length || config.characterReferences?.length);
+
+        let prefix = 'veo_3_1';
+        if (modelId.includes('veo-3.0')) prefix = 'veo_3_0';
+        else if (modelId.includes('veo-3.1')) prefix = 'veo_3_1';
+        else if (modelId.includes('veo-2.0')) prefix = 'veo_2_0';
+        else if (modelId.includes('veo-2.1')) prefix = 'veo_2_1';
+
+        if (config.mode === 'extend' || config.videoType === 'extend' || modelId.includes('extend')) {
+            videoType = 'extend';
+        } else if (config.mode === 'upsample' || config.videoType === 'upsample' || modelId.includes('upsample') || modelId.includes('upsampler')) {
+            videoType = 'upsample';
+        } else if (hasStartEnd || (hasStart && !hasCharacters)) {
+            videoType = 'i2v';
+        } else if (hasCharacters || images.length > 0) {
+            videoType = 'r2v';
+        }
+
+        let videoModelKey = `${prefix}_t2v_fast_landscape`;
+        if (videoType === 'extend') {
+            videoModelKey = isPortrait ? `${prefix}_extend_portrait` : `${prefix}_extend_landscape`;
+        } else if (videoType === 'upsample') {
+            // 1080p by default: 4K upscale needs a higher Flow tier than PRO (it shows "Upgrade" in the UI)
+            const resolution = config.resolution || 'VIDEO_RESOLUTION_1080P';
+            videoModelKey = String(resolution).toUpperCase().includes('4K') ? `${prefix}_upsampler_4k` : `${prefix}_upsampler_1080p`;
+        } else if (prefix === 'veo_2_0') {
+            if (videoType === 't2v') videoModelKey = isPortrait ? `${prefix}_t2v_portrait` : `${prefix}_t2v_landscape`;
+            else if (videoType === 'i2v') videoModelKey = isPortrait ? `${prefix}_i2v_portrait` : `${prefix}_i2v_landscape`;
+        } else if (prefix === 'veo_2_1') {
+            if (videoType === 't2v') videoModelKey = isPortrait ? `${prefix}_fast_d_15_t2v_portrait` : `${prefix}_fast_d_15_t2v_landscape`;
+            else if (videoType === 'i2v') videoModelKey = isPortrait ? `${prefix}_fast_d_15_i2v_portrait` : `${prefix}_fast_d_15_i2v_landscape`;
+        } else { // 3.0 / 3.1
+            if (videoType === 't2v') videoModelKey = isPortrait ? `${prefix}_t2v_fast_portrait` : `${prefix}_t2v_fast`;
+            else if (videoType === 'i2v') videoModelKey = isPortrait ? `${prefix}_i2v_s_fast_portrait_fl` : `${prefix}_i2v_s_fast_fl`;
+            else if (videoType === 'r2v') videoModelKey = isPortrait ? `${prefix}_r2v_fast_portrait` : `${prefix}_r2v_fast_landscape`;
+        }
+
+        return { videoModelKey, aspectRatio: ratio, videoType, resolution: config.resolution || 'VIDEO_RESOLUTION_1080P' };
     }
 
     /**
-     * Generate image using Google Flow
+     * Make sure the account's cookies were validated on flow.google.com (accounts stored by the
+     * legacy Labs flow were not) and that it has a Flow project.
      */
-    public async generateImage(account: IAIAccount, prompt: string, modelName: string, config: any = {}) {
-        const { flowSyncService } = await import('../FlowSyncService.js');
+    private async prepareAccount(account: IAIAccount, config: any = {}): Promise<string> {
         try {
-            // await flowSyncService.refreshAccountTokens(account);
-            // Reload fresh account from DB to use the newly saved token
-            const freshAccount = await AIAccount.findById((account as any)._id);
-            if (freshAccount && freshAccount.flowAT) {
-                account = freshAccount;
+            if (account.flowAT !== FLOW_FRONTEND_ACCESS_TOKEN) {
+                await flowSyncService.refreshAccountTokens(account);
             }
-        } catch (refreshErr: any) {
-            Logger.warn(`[FlowAdapter] Token refresh failed, using existing token: ${refreshErr.message}`);
-        }
-        
-        if (!account.flowAT) {
-            await flowSyncService.refreshAccountTokens(account);
-            // throw new Error('Flow Access Token (AT) is missing for this account');
-        }
-
-        let projectId = account.projectId || config.projectId;
-        if (!projectId) {
-            Logger.info(`[FlowAdapter] Project ID missing for ${account.email}, attempting to resolve...`);
-            projectId = await flowSyncService.ensureProject(account);
-        }
-
-        // 1. Resolve inputs (upload if necessary)
-        const imageInputs = [];
-        if (config.imageInputs && config.imageInputs.length > 0) {
-            for (const img of config.imageInputs) {
-                const mediaId = await this.resolveMediaInput(account, img, projectId);
-                imageInputs.push({
-                    name: mediaId,
-                    imageInputType: 'IMAGE_INPUT_TYPE_REFERENCE'
-                });
+            if (!account.projectId) {
+                account.projectId = config.projectId || await flowSyncService.ensureProject(account);
             }
+        } catch (err: any) {
+            Logger.warn(`[FlowAdapter] Account preparation failed, using existing cookies: ${err.message}`);
         }
+        if (!account.projectId) throw new Error('Flow Project ID not found');
+        return account.projectId;
+    }
 
-        // 2. Resolve model settings
-        const settings = this.resolveModelSettings(AIModelType.IMAGE, modelName, { ...config, imageInputs });
-        Logger.info(`[FlowAdapter] Resolved model settings: ${JSON.stringify(settings)}`);
+    private async createFlowProject(account: IAIAccount, projectId: string): Promise<string> {
+        Logger.warn(`[FlowAdapter] Project ${projectId} not found. Creating fresh project on flow.google.com...`);
+        try {
+            return await flowSyncService.createNewProject(account);
+        } catch (pErr: any) {
+            throw new Error(`Flow project creation failed: ${pErr.message}`);
+        }
+    }
 
-        let retry = 5;
-        while(retry > 0){
-            try{
-                // 3. Get reCAPTCHA token
-                const recaptchaToken = await captchaService.solve({
-                    projectId: projectId,
-                    action: 'IMAGE_GENERATION',
-                    tokenId: (account as any)._id
-                });
+    /**
+     * Signed flow-content URLs expire and need the browser identity, so keep the bytes when we can
+     * (AIServiceManager would otherwise refetch the URL without these headers).
+     */
+    private async downloadMedia(url: string, account: IAIAccount, kind: 'image' | 'video'): Promise<Buffer | undefined> {
+        try {
+            const res = await axios.get(url, {
+                responseType: 'arraybuffer',
+                timeout: kind === 'video' ? 180_000 : 60_000,
+                headers: {
+                    ...flowBrowserHeaders(flowRequestContext(account)),
+                    'Accept': kind === 'video' ? '*/*' : 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                    'Referer': `${FLOW_ORIGIN}/`,
+                    'sec-fetch-dest': kind,
+                    'sec-fetch-mode': 'cors',
+                    'sec-fetch-site': 'same-origin',
+                },
+            });
+            return Buffer.from(res.data);
+        } catch (err: any) {
+            Logger.warn(`[FlowAdapter] Failed to download Flow ${kind}, returning URL only: ${err.message}`);
+            return undefined;
+        }
+    }
 
-                if (!recaptchaToken) {
-                    throw new Error('Failed to obtain reCAPTCHA token for Flow generation');
+    /**
+     * Upscale a generated image (SPrCad). Returns a URL or base64 bytes, or null to keep the base resolution.
+     */
+    private async upsampleImage(account: IAIAccount, projectId: string, mediaId: string, resolution: string): Promise<string | null> {
+        const ctx = flowRequestContext(account);
+        const maxAttempts = 4;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                const token = await this.solveCaptcha(account, projectId, 'IMAGE_GENERATION');
+                return await flowFrontendClient.upsampleImage(ctx, projectId, mediaId, resolution, token) || null;
+            } catch (err: any) {
+                if (attempt < maxAttempts && this.isRetryableCaptchaError(err.message)) {
+                    Logger.info(`[FlowAdapter] Upsample reCAPTCHA rejected (${err.message}), retrying in ${this.captchaRetryDelayMs(err.message) / 1000}s...`);
+                    await sleep(this.captchaRetryDelayMs(err.message));
+                    continue;
                 }
-
-                // 4. Prepare request
-                const sessionId = this.getSessionId();//Math.random().toString().slice(2, 17);
-                const url = `${this.apiBaseUrl}/projects/${projectId}/flowMedia:batchGenerateImages`;
-                const clientContext = {
-                    recaptchaContext: {
-                        token: recaptchaToken,
-                        applicationType: "RECAPTCHA_APPLICATION_TYPE_WEB"
-                    },
-                    sessionId: sessionId,
-                    projectId: projectId,
-                    tool: 'PINHOLE'
-                };
-
-                const requestData: any = {
-                    clientContext: clientContext,
-                    seed: Math.floor(Math.random() * 99999) + 1,
-                    imageModelName: settings.imageModelName,
-                    imageAspectRatio: settings.aspectRatio,
-                    structuredPrompt: {
-                        parts: [{
-                            text: prompt
-                        }]
-                    },
-                };
-
-                if (imageInputs.length > 0) {
-                    requestData.imageInputs = imageInputs;
-                }
-
-                const payload: any = {
-                    clientContext: clientContext,
-                    mediaGenerationContext: {
-                        batchId: uuidv4()
-                    },
-                    useNewMedia: true,
-                    requests: [requestData]
-                };
-
-                if (settings.upsample) {
-                    payload.requests[0].upsampleImageResolution = settings.upsample;
-                }
-
-                const userAgent = account.lastFingerprint?.get('user_agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36';
-                const headers: any = {
-                    'authorization': `Bearer ${account.flowAT}`,
-                    'Content-Type': 'application/json',
-                    'User-Agent': userAgent,
-                    'x-browser-channel': 'stable',
-                    'Referer': 'https://labs.google/fx/tools/flow',
-                    'Origin': 'https://labs.google',
-                };
-
-                if (account.lastFingerprint) {
-                    const fp = account.lastFingerprint;
-                    if (fp.get('sec_ch_ua')) headers['sec-ch-ua'] = fp.get('sec_ch_ua');
-                    if (fp.get('sec_ch_ua_mobile')) headers['sec-ch-ua-mobile'] = fp.get('sec_ch_ua_mobile');
-                    if (fp.get('sec_ch_ua_platform')) headers['sec-ch-ua-platform'] = fp.get('sec_ch_ua_platform');
-                    if (fp.get('accept_language')) headers['Accept-Language'] = fp.get('accept_language');
-                }
-
-                Logger.info(`[FlowAdapter] [generateImage] targetURL: ${url}`);
-
-                const response = await axios.post(url, payload, { headers });
-            
-                // Search for image in the response payload
-                // Google may return it in `data.media`, `data.results`, or `data.requests[0].media`
-                let imageBytes = null;
-                let fifeUrl = null;
-
-                if (response.data.media?.[0]?.image?.imageBytes) {
-                    imageBytes = response.data.media[0].image.imageBytes;
-                } else if (response.data.results?.[0]?.image?.imageBytes) {
-                    imageBytes = response.data.results[0].image.imageBytes;
-                } else if (response.data.media?.[0]?.image?.generatedImage?.fifeUrl) {
-                    fifeUrl = response.data.media[0].image.generatedImage.fifeUrl;
-                }
-
-                // Ignore reCAPTCHA evaluation failed
-                retry = 0;
-
-                if (imageBytes) {
-                    return {
-                        buffer: Buffer.from(imageBytes, 'base64'),
-                        mimeType: 'image/png'
-                    };
-                }
-
-                if (fifeUrl) {
-                    return {
-                        url: fifeUrl,
-                        mimeType: 'image/jpeg'
-                    };
-                }
-
-                const mediaName = response.data.media?.[0]?.name || response.data.name;
-                if (mediaName && mediaName.includes('operations/')) {
-                    Logger.info(`[FlowAdapter] Image generation is async, polling operation: ${mediaName}`);
-                    return await this.pollMedia(account, projectId, mediaName, AIModelType.IMAGE);
-                }
-
-                Logger.error(`[FlowAdapter] Response did not contain inline image bytes or operation: ${JSON.stringify(response.data).substring(0, 300)}...`);
-                throw new Error('Flow API Error: No image returned from generation');
-            }catch(error: any){
-                const msg = error.response?.data?.error?.message || error.message;
-                // Logger.error(`[FlowAdapter] generateImage failed: ${msg}`);
-                if(msg != "reCAPTCHA evaluation failed"){
-                    throw new Error(`Flow Image Generation Failed: ${msg}`);
-                }
-                Logger.info(`[FlowAdapter] reCAPTCHA evaluation failed. Retrying in 5s...`);
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                retry--;
+                Logger.warn(`[FlowAdapter] Image upsample failed, returning base resolution: ${err.message}`);
+                return null;
             }
         }
         return null;
     }
 
     /**
+     * Generate image using Google Flow
+     */
+    public async generateImage(account: IAIAccount, prompt: string, modelName: string, config: any = {}) {
+        let projectId = await this.prepareAccount(account, config);
+
+        // 1. Resolve reference images (upload if necessary)
+        const referenceMediaIds: string[] = [];
+        const refInputs = [...(config.imageInputs || []), ...(config.referenceImages || [])].filter(Boolean);
+        for (const img of refInputs) {
+            referenceMediaIds.push(await this.resolveMediaInput(account, img, projectId));
+        }
+
+        // 2. Resolve model settings
+        const settings: any = this.resolveModelSettings(AIModelType.IMAGE, modelName || '', { ...config, imageInputs: referenceMediaIds });
+        Logger.info(`[FlowAdapter] Resolved image settings: ${JSON.stringify(settings)}`);
+
+        let ctx = flowRequestContext(account);
+        let authRecovered = false;
+        let imageModel = this.resolveAvailableImageModel(settings.imageModelName);
+        // Model that answered NOT_FOUND; only blacklisted once the fallback proves the project is fine
+        let suspectedUnavailableModel: string | undefined;
+        let projectRecreated = false;
+        let lastError: unknown;
+        for (let attempt = 1; attempt <= 5; attempt++) {
+            try {
+                const recaptchaToken = await this.solveCaptcha(account, projectId, 'IMAGE_GENERATION');
+
+                Logger.info(`[FlowAdapter] [generateImage] rpc=ogiZ0b project=${projectId} model=${imageModel}`);
+                const media = await flowFrontendClient.generateImage(ctx, {
+                    projectId,
+                    prompt,
+                    modelName: imageModel,
+                    aspectRatio: settings.aspectRatio,
+                    recaptchaToken,
+                    referenceMediaIds,
+                });
+
+                let url = media[0].url;
+                let buffer: Buffer | undefined;
+
+                // Optional upscale (SPrCad)
+                if (settings.upsample) {
+                    const upsampled = await this.upsampleImage(account, projectId, media[0].mediaId, settings.upsample);
+                    if (upsampled?.startsWith('https://')) {
+                        url = upsampled;
+                    } else if (upsampled) {
+                        buffer = Buffer.from(upsampled, 'base64');
+                    }
+                }
+
+                if (suspectedUnavailableModel) {
+                    this.unavailableImageModels.set(suspectedUnavailableModel, Date.now() + UNAVAILABLE_MODEL_TTL_MS);
+                }
+
+                buffer = buffer || await this.downloadMedia(url, account, 'image');
+                return { buffer, url, mediaId: media[0].mediaId, mimeType: 'image/jpeg' };
+            } catch (error: any) {
+                lastError = error;
+                const msg = this.errorText(error);
+                if (await this.recoverFromAuthError(account, error, authRecovered)) {
+                    authRecovered = true;
+                    ctx = flowRequestContext(account);
+                    continue;
+                }
+                if (this.isNotFoundError(error)) {
+                    // NOT_FOUND on ogiZ0b mostly means the model key is not served. Fall back to a
+                    // known-good model before suspecting the project.
+                    if (imageModel !== FALLBACK_IMAGE_MODEL) {
+                        Logger.warn(`[FlowAdapter] Image model ${imageModel} answered NOT_FOUND, retrying with ${FALLBACK_IMAGE_MODEL}`);
+                        suspectedUnavailableModel = imageModel;
+                        imageModel = FALLBACK_IMAGE_MODEL;
+                        continue;
+                    }
+                    if (!projectRecreated && referenceMediaIds.length === 0) {
+                        projectRecreated = true;
+                        // The project was the problem, not the requested model
+                        if (suspectedUnavailableModel) imageModel = suspectedUnavailableModel;
+                        suspectedUnavailableModel = undefined;
+                        projectId = await this.createFlowProject(account, projectId);
+                        continue;
+                    }
+                }
+                if (!this.isRetryableCaptchaError(msg) || attempt >= 5) {
+                    throw new Error(`Flow Image Generation Failed: ${msg}`);
+                }
+                Logger.info(`[FlowAdapter] reCAPTCHA rejected (${msg}). Retrying in ${this.captchaRetryDelayMs(msg) / 1000}s...`);
+                await sleep(this.captchaRetryDelayMs(msg));
+            }
+        }
+        throw new Error(`Flow Image Generation Failed: ${(lastError as any)?.message || 'retries exhausted'}`);
+    }
+
+    /**
+     * Submit a video RPC with reCAPTCHA / project-recovery retries and wait for the result.
+     */
+    private async submitVideo(account: IAIAccount, projectId: string, params: FlowVideoParams, options: { async?: boolean; label: string }): Promise<any> {
+        let ctx = flowRequestContext(account);
+        let authRecovered = false;
+        const hasMediaInputs = !!(params.referenceMediaIds?.length || params.startMediaId || params.videoMediaId);
+        let projectRecreated = false;
+        let lastError: unknown;
+        let submission: FlowVideoSubmission | undefined;
+
+        // Retries cover the submission only: once Flow accepted the job, resubmitting would spend credits twice
+        for (let attempt = 1; attempt <= 5 && !submission; attempt++) {
+            try {
+                const recaptchaToken = await this.solveCaptcha(account, projectId, 'VIDEO_GENERATION');
+                Logger.info(`[FlowAdapter] [${options.label}] mode=${params.mode} model=${params.modelKey} project=${projectId}`);
+                submission = await flowFrontendClient.generateVideo(ctx, { ...params, projectId, recaptchaToken });
+            } catch (error: any) {
+                lastError = error;
+                const msg = this.errorText(error);
+                if (await this.recoverFromAuthError(account, error, authRecovered)) {
+                    authRecovered = true;
+                    ctx = flowRequestContext(account);
+                    continue;
+                }
+                // Media ids belong to the current project, so a fresh project cannot help those requests
+                if (this.isNotFoundError(error) && !projectRecreated && !hasMediaInputs) {
+                    projectRecreated = true;
+                    projectId = await this.createFlowProject(account, projectId);
+                    continue;
+                }
+                if (msg.includes('MODEL_ACCESS_DENIED') || !this.isRetryableCaptchaError(msg) || attempt >= 5) {
+                    throw new Error(`Flow Video Generation Failed: ${msg}`);
+                }
+                Logger.info(`[FlowAdapter] reCAPTCHA rejected (${msg}). Retrying in ${this.captchaRetryDelayMs(msg) / 1000}s...`);
+                await sleep(this.captchaRetryDelayMs(msg));
+            }
+        }
+        if (!submission) {
+            throw new Error(`Flow Video Generation Failed: ${(lastError as any)?.message || 'retries exhausted'}`);
+        }
+
+        if (submission.videoUrl) {
+            const mediaId = submission.videoUrl.match(new RegExp(`/video/(${FLOW_OPERATION_ID_PATTERN})`, 'i'))?.[1];
+            return { url: submission.videoUrl, mediaId, mimeType: 'video/mp4', buffer: await this.downloadMedia(submission.videoUrl, account, 'video') };
+        }
+
+        const operationName = submission.operations[0].name;
+        Logger.info(`[FlowAdapter] Generation submitted. Operation: ${operationName}`);
+
+        if (options.async === true) {
+            return { jobId: operationName, status: 'pending' };
+        }
+
+        // Upscaling runs much longer than generation (up to ~30 minutes)
+        return this.pollVideo(account, submission.operations, params.mode === 'upsample' ? 180 : 18);
+    }
+
+    /**
      * Generate video using Google Flow (Veo)
      */
     public async generateVideo(account: IAIAccount, prompt: string, modelName: string, config: any = {}) {
-        const { flowSyncService } = await import('../FlowSyncService.js');
-        try {
-            // await flowSyncService.refreshAccountTokens(account);
-            // Reload fresh account from DB to use the newly saved token
-            const freshAccount = await AIAccount.findById((account as any)._id);
-            if (freshAccount && freshAccount.flowAT) {
-                account = freshAccount;
-            }
-        } catch (refreshErr: any) {
-            Logger.warn(`[FlowAdapter] Token refresh failed, using existing token: ${refreshErr.message}`);
-        }
-        
-        if (!account.flowAT) {
-            await flowSyncService.refreshAccountTokens(account);
-        }
-
-        let projectId = account.projectId || config.projectId;
-        if (!projectId) {
-            Logger.info(`[FlowAdapter] Project ID missing for ${account.email}, attempting to resolve...`);
-            projectId = await flowSyncService.ensureProject(account);
-        }
-
-        // 1. Resolve inputs (upload if necessary)
-        // Combine all potential sources into a unified reference pool
+        modelName = modelName || '';
         const rawImages = [
             ...(config.imageInputs || []),
             ...(config.referenceImages || []),
@@ -481,275 +520,195 @@ export class FlowAdapter {
             config.imageStart,
             config.imageEnd,
             config.image
-        ].filter(img => !!img);
+        ].filter(Boolean);
 
-        // Deduplicate and resolve
-        const uniqueImages = [...new Set(rawImages)];
-        const resolvedMediaIds = [];
-        for (const img of uniqueImages.slice(0, 3)) { // API Limit is 3
-            resolvedMediaIds.push(await this.resolveMediaInput(account, img, projectId));
+        // Omni Flash (model family "abra")
+        if (modelName.toLowerCase().includes('omni') || modelName.toLowerCase().includes('abra')) {
+            return this.generateOmniVideo(account, prompt, {
+                aspectRatio: config.aspectRatio,
+                durationSeconds: config.durationSeconds || config.duration,
+                referenceImages: rawImages,
+                resolution: config.resolution,
+                async: config.async,
+            });
         }
 
-        // Collect and resolve potential video references (for extend/upsample)
-        const rawVideos = [
-            config.videoInput,
-            config.referenceVideo,
-            config.video
-        ].filter(v => !!v);
+        const projectId = await this.prepareAccount(account, config);
 
-        const uniqueVideos = [...new Set(rawVideos)];
-        const resolvedVideoIds = [];
-        for (const vid of uniqueVideos) {
-            resolvedVideoIds.push(await this.resolveMediaInput(account, vid, projectId));
-        }
+        // Source video for extend / upsample
+        const sourceVideo = config.videoInput || config.referenceVideo || config.video;
+        const videoMediaId = sourceVideo ? await this.resolveMediaInput(account, sourceVideo, projectId) : undefined;
 
-        // 2. Resolve model settings
-        const settings = this.resolveModelSettings(AIModelType.VIDEO, modelName, { ...config, imageInputs: resolvedMediaIds });
+        const settings: any = this.resolveModelSettings(AIModelType.VIDEO, modelName, { ...config, imageInputs: rawImages });
         Logger.info(`[FlowAdapter] generateVideo settings: ${JSON.stringify(settings)}`);
 
-        let retry = 5;
-        while(retry > 0){
-            try{
-                // 3. Get reCAPTCHA token
-                const recaptchaToken = await captchaService.solve({
-                    projectId: projectId,
-                    action: 'VIDEO_GENERATION',
-                    tokenId: (account as any)._id
-                });
-
-                if (!recaptchaToken) {
-                    throw new Error('Failed to obtain reCAPTCHA token for Flow generation');
-                }
-
-                // 4. Prepare request
-                const sessionId = this.getSessionId();//Math.random().toString().slice(2, 17);
-                const sceneId = uuidv4();
-                
-                // Select URL based on video type and image count
-                let url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoText`;
-                if (settings.videoType === 'i2v') {
-                    if (resolvedMediaIds.length === 1) {
-                        url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoStartImage`;
-                    } else {
-                        url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoStartAndEndImage`;
-                    }
-                } else if (settings.videoType === 'r2v') {
-                    url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoReferenceImages`;
-                } else if (settings.videoType === 'extend') {
-                    url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoExtendVideo`;
-                } else if (settings.videoType === 'upsample') {
-                    url = `${this.apiBaseUrl}/video:batchAsyncGenerateVideoUpsampleVideo`;
-                }
-
-                const clientContext = {
-                    recaptchaContext: {
-                        token: recaptchaToken,
-                        applicationType: "RECAPTCHA_APPLICATION_TYPE_WEB"
-                    },
-                    sessionId: sessionId,
-                    projectId: projectId,
-                    tool: 'PINHOLE',
-                    userPaygateTier: config.userPaygateTier || "PAYGATE_TIER_ZERO" //"PAYGATE_TIER_ONE" || "PAYGATE_TIER_ZERO"
-                };
-
-                const requests: any = {
-                    aspectRatio: settings.aspectRatio,
-                    seed: Math.floor(Math.random() * 99999) + 1,
-                    videoModelKey: settings.videoModelKey,
-                    metadata: {
-                        sceneId: sceneId
-                    }
-                };
-
-                if (settings.videoType !== 'upsample') {
-                    requests.textInput = {
-                        structuredPrompt: {
-                            parts: [{
-                                text: prompt
-                            }]
-                        }
-                    };
-                }
-
-                if (settings.videoType === 'i2v') {
-                    requests.startImage = resolvedMediaIds[0] ? { mediaId: resolvedMediaIds[0] } : undefined;
-                    requests.endImage = resolvedMediaIds[1] ? { mediaId: resolvedMediaIds[1] } : undefined;
-                } else if (settings.videoType === 'r2v') {
-                    if(resolvedMediaIds.length > 0){
-                        requests.referenceImages = resolvedMediaIds.map(id => ({
-                            mediaId: id,
-                            imageUsageType: 'IMAGE_USAGE_TYPE_ASSET'
-                        }));
-                    }
-                } else if (settings.videoType === 'extend') {
-                    const videoMediaId = resolvedVideoIds[0];
-                    if (!videoMediaId) {
-                        throw new Error('Extend mode requires a source video reference (videoInput, referenceVideo, or video)');
-                    }
-                    requests.videoInput = {
-                        mediaId: videoMediaId
-                    };
-                } else if (settings.videoType === 'upsample') {
-                    const videoMediaId = resolvedVideoIds[0];
-                    if (!videoMediaId) {
-                        throw new Error('Upsample mode requires a source video reference (videoInput, referenceVideo, or video)');
-                    }
-                    requests.videoInput = {
-                        mediaId: videoMediaId
-                    };
-                    requests.resolution = settings.resolution;
-                }
-
-                const payload: any = {
-                    clientContext: clientContext,
-                    requests: [requests],
-                    useV2ModelConfig: true,
-                    mediaGenerationContext: {
-                        batchId: uuidv4()
-                    }
-                };
-
-                const userAgent = account.lastFingerprint?.get('user_agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36';
-                const headers: any = {
-                    'authorization': `Bearer ${account.flowAT}`,
-                    'Content-Type': 'application/json',
-                    'User-Agent': userAgent,
-                    'x-browser-channel': 'stable',
-                    'Referer': 'https://labs.google/fx/tools/flow',
-                    'Origin': 'https://labs.google',
-                };
-
-                // Add fingerprint headers if available
-                if (account.lastFingerprint) {
-                    const fp = account.lastFingerprint;
-                    if (fp.get('sec_ch_ua')) headers['sec-ch-ua'] = fp.get('sec_ch_ua');
-                    if (fp.get('sec_ch_ua_mobile')) headers['sec-ch-ua-mobile'] = fp.get('sec_ch_ua_mobile');
-                    if (fp.get('sec_ch_ua_platform')) headers['sec-ch-ua-platform'] = fp.get('sec_ch_ua_platform');
-                }
-
-                Logger.info(`[FlowAdapter] [generateVideo] targetURL: ${url}`);
-                // Logger.info(`[FlowAdapter] [generateVideo] payload: ${JSON.stringify(payload, null, 2)}`);
-                const response = await axios.post(url, payload, { headers });
-                
-                const mediaName = response.data.name || 
-                                response.data.operation?.name || 
-                                response.data.results?.[0]?.name ||
-                                response.data.media?.[0]?.name;
-
-                if (!mediaName) {
-                    Logger.info(`[FlowAdapter] [generateVideo] No mediaName. Full response: ${JSON.stringify(response.data)}`);
-                    throw new Error('Flow API Error: No operation name returned');
-                }
-
-                Logger.info(`[FlowAdapter] Generation submitted. Operation: ${mediaName}`);
-
-                if (config.async === true) {
-                    return { jobId: mediaName, status: 'pending' };
-                }
-
-                //ignore reCAPTCHA evaluation failed
-                retry = 0;
-
-                return await this.pollMedia(account, projectId, mediaName, AIModelType.VIDEO);
-            }catch(error: any){
-                const msg = error.response?.data?.error?.message || error.message;
-                // Logger.error(`[FlowAdapter] generateVideo failed: ${msg}`, 'FlowAdapter', error.response?.data);
-                if(msg.includes("Resource has been exhausted")){
-                    await flowSyncService.refreshAccountTokens(account);
-                }
-                if(msg != "reCAPTCHA evaluation failed"){
-                    throw new Error(`Flow Video Generation Failed: ${msg}`);
-                }
-                Logger.info(`[FlowAdapter] reCAPTCHA evaluation failed. Retrying in 5s...`);
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                retry--;
+        // Map the video type to a Flow frontend RPC mode and upload only the images that mode uses.
+        // Start / end frames are taken from their own fields, never from their position in rawImages.
+        let mode: FlowVideoMode = 'text';
+        let startMediaId: string | undefined;
+        let endMediaId: string | undefined;
+        const referenceMediaIds: string[] = [];
+        if (settings.videoType === 'i2v') {
+            const startInput = config.imageStart || config.image || rawImages[0];
+            if (!startInput) throw new Error('Image-to-video requires a start frame (imageStart)');
+            startMediaId = await this.resolveMediaInput(account, startInput, projectId);
+            if (config.imageEnd) {
+                endMediaId = await this.resolveMediaInput(account, config.imageEnd, projectId);
             }
+            mode = endMediaId ? 'start_end' : 'start';
+        } else if (settings.videoType === 'r2v') {
+            for (const img of [...new Set(rawImages)].slice(0, 3)) { // Flow limits references to 3
+                referenceMediaIds.push(await this.resolveMediaInput(account, img, projectId));
+            }
+            mode = 'references';
+        } else if (settings.videoType === 'extend' || settings.videoType === 'upsample') {
+            if (!videoMediaId) {
+                throw new Error(`${settings.videoType === 'extend' ? 'Extend' : 'Upsample'} mode requires a source video reference (videoInput, referenceVideo, or video)`);
+            }
+            mode = settings.videoType;
         }
-        return null;
+
+        const sourceMediaName = mode === 'upsample' && videoMediaId
+            ? await this.resolveVideoMediaName(account, projectId, videoMediaId)
+            : undefined;
+
+        return this.submitVideo(account, projectId, {
+            prompt: mode === 'upsample' ? '' : prompt,
+            modelKey: settings.videoModelKey,
+            aspectRatio: settings.aspectRatio,
+            mode,
+            referenceMediaIds: mode === 'references' ? referenceMediaIds : undefined,
+            startMediaId,
+            endMediaId,
+            videoMediaId,
+            sourceMediaName,
+            resolution: mode === 'upsample' ? settings.resolution : undefined,
+        }, { async: config.async, label: 'generateVideo' });
     }
 
     /**
-     * Poll for media generation results
+     * A finished video is addressed by its generation (operation) id, but p0UkFb also wants the
+     * media name, which only the jwpduf status record exposes ([operationId, projectId, mediaName]).
      */
-    private async pollMedia(account: IAIAccount, projectId: string, mediaName: string, type: AIModelType.IMAGE | AIModelType.VIDEO): Promise<any> {
-        const url = type === AIModelType.VIDEO 
-            ? `${this.apiBaseUrl}/video:batchCheckAsyncVideoGenerationStatus`
-            : `${this.apiBaseUrl}/projects/${projectId}/${mediaName}`;
+    private async resolveVideoMediaName(account: IAIAccount, projectId: string, videoMediaId: string): Promise<string | undefined> {
+        try {
+            const [record] = await flowFrontendClient.checkVideoStatus(flowRequestContext(account), [{
+                name: videoMediaId,
+                mediaName: '',
+                projectId,
+                status: 'MEDIA_GENERATION_STATUS_ACTIVE',
+            }]);
+            const mediaName = record?.mediaName && record.mediaName !== videoMediaId ? record.mediaName : undefined;
+            Logger.info(`[FlowAdapter] Upsample source ${videoMediaId} -> mediaName=${mediaName || '(none)'}`);
+            return mediaName;
+        } catch (err: any) {
+            Logger.warn(`[FlowAdapter] Could not resolve media name of ${videoMediaId}: ${err.message}`);
+            return undefined;
+        }
+    }
 
-        const headers = {
-            'Authorization': `Bearer ${account.flowAT}`,
-            'User-Agent': account.lastFingerprint?.get('user_agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
-            'Content-Type': 'application/json',
-            'Origin': 'https://labs.google',
-            'Referer': 'https://labs.google/fx/tools/flow',
-        };
+    /**
+     * Omni Flash video generation (model family "abra").
+     * Text-only prompts use YhhmEf + abra_t2v_{n}s, reference images use MZZa6b + abra_r2v_{n}s.
+     */
+    public async generateOmniVideo(account: IAIAccount, prompt: string, options: FlowOmniVideoOptions): Promise<any> {
+        const projectId = await this.prepareAccount(account, options);
 
-        const maxPolls = 18; // 3 minutes
-        let pollCount = 0;
-        let results = null;
+        const uniqueImages = [...new Set((options.referenceImages || []).filter(Boolean))];
+        const resolvedMediaIds: string[] = [];
+        for (const img of uniqueImages.slice(0, 3)) { // Flow limits to 3 references
+            resolvedMediaIds.push(await this.resolveMediaInput(account, img, projectId));
+        }
 
-        while (pollCount < maxPolls) {
+        // Flow supports 4/6/8/10 second Omni clips; snap to the nearest one
+        const requested = Number(options.durationSeconds) || 8;
+        const seconds = [4, 6, 8, 10].reduce((best, s) => Math.abs(s - requested) < Math.abs(best - requested) ? s : best, 8);
+        const hasReferences = resolvedMediaIds.length > 0;
+        const modelKey = hasReferences ? `abra_r2v_${seconds}s` : `abra_t2v_${seconds}s`;
+        const aspectRatio = this.mapAspectRatio(AIModelType.VIDEO, options.aspectRatio || 'VIDEO_ASPECT_RATIO_LANDSCAPE');
+
+        return this.submitVideo(account, projectId, {
+            prompt,
+            modelKey,
+            aspectRatio,
+            mode: hasReferences ? 'references' : 'text',
+            referenceMediaIds: resolvedMediaIds,
+        }, { async: options.async, label: 'generateOmniVideo' });
+    }
+
+    /**
+     * Poll video operations (jwpduf) until a signed video URL is available
+     */
+    private async pollVideo(account: IAIAccount, operations: FlowVideoOperation[], maxPolls = 18): Promise<any> {
+        let ctx = flowRequestContext(account);
+        let authRecovered = false;
+        // maxPolls x 10s: 18 = 3 minutes
+        let current = operations;
+
+        await sleep(5000);
+
+        for (let pollCount = 0; pollCount < maxPolls; pollCount++) {
             try {
-                if (type === AIModelType.VIDEO) {
-                    const payload = {
-                        operations: [{ operation: { name: mediaName } }] // FIXED PAYLOAD FORMAT
-                    };
-                    const response = await axios.post(url, payload, { headers });
-                    Logger.info(`[FlowAdapter] [pollMedia] response: ${JSON.stringify(response.data)}`);
-                    const opResult = response.data.operations?.[0]?.operation || {};
-                    const status = response.data.operations?.[0]?.status || "";
-
-                    if(status === 'MEDIA_GENERATION_STATUS_ACTIVE'){
-                        //continue polling
-                    }
-                    else if(status === 'MEDIA_GENERATION_STATUS_FAILED'){
-                        throw new Error(opResult.error?.message || 'Video generation failed');
-                    }
-                    else if(status === 'MEDIA_GENERATION_STATUS_SUCCESSFUL'){
-                        const videoUri = opResult.metadata?.video?.fifeUrl;// || opResult.response?.media?.[0]?.video?.uri;
-                        if (videoUri) {
-                            Logger.info(`[FlowAdapter] Video completed: ${mediaName}`);
-                            results = { url: videoUri, mimeType: 'video/mp4' };
+                current = await flowFrontendClient.checkVideoStatus(ctx, current);
+                Logger.info(`[FlowAdapter] [pollVideo] [${pollCount + 1}/${maxPolls}] status=${current[0]?.status}`);
+                const done = current.find(op => op.status === 'MEDIA_GENERATION_STATUS_SUCCESSFUL' && op.videoUrl);
+                if (done) {
+                    let url = done.videoUrl!;
+                    // Upscaled videos come back without a signature; as29s exchanges the id for a signed URL
+                    if (!url.includes('?')) {
+                        try {
+                            url = await flowFrontendClient.getMediaUrl(ctx, done.name, done.projectId || undefined, done.name) || url;
+                        } catch (err: any) {
+                            Logger.warn(`[FlowAdapter] Could not sign video URL for ${done.name}: ${err.message}`);
                         }
-                        break
                     }
-                    // if (opResult.status) {
-                    //     if (opResult.error) throw new Error(opResult.error.message || 'Video generation failed');
-                        
-                    //     const videoUri = opResult.response?.video?.uri || opResult.response?.media?.[0]?.video?.uri;
-                    //     if (videoUri) {
-                    //         Logger.info(`[FlowAdapter] Video completed: ${mediaName}`);
-                    //         return { url: videoUri, mimeType: 'video/mp4' };
-                    //     }
-                    // }
-                } else {
-                    const response = await axios.get(url, { headers });
-                    const data = response.data;
-
-                    if (data.done || data.state === 'SUCCEEDED') {
-                        const result = data.media?.[0] || data.results?.[0] || data.response?.results?.[0];
-                        if (result?.image?.imageBytes) {
-                            results = { buffer: Buffer.from(result.image.imageBytes, 'base64'), mimeType: 'image/png' };
-                        }
-                        if (result?.image?.generatedImage?.fifeUrl) {
-                            results = { url: result.image.generatedImage.fifeUrl, mimeType: 'image/jpeg' };
-                        }
-                        break;
-                    }
-                    if (data.error || (data.state === 'FAILED')) throw new Error(data.error?.message || 'Generation failed');
+                    Logger.info(`[FlowAdapter] Video completed: ${done.name}`);
+                    // The operation id doubles as the Flow media id used by extend / upsample
+                    return { url, mediaId: done.name, mimeType: 'video/mp4', buffer: await this.downloadMedia(url, account, 'video') };
+                }
+                const failed = current.find(op => op.status === 'MEDIA_GENERATION_STATUS_FAILED');
+                if (failed && current.every(op => op.status === 'MEDIA_GENERATION_STATUS_FAILED')) {
+                    throw new Error(`Video generation failed: ${failed.errorCode || 'unknown error'}`);
                 }
             } catch (err: any) {
-                Logger.warn(`[FlowAdapter] Polling attempt ${pollCount + 1} failed: ${err.message}`);
-                break
+                // Cookies rotated while the job runs: keep polling the same job with the fresh copy
+                if (await this.recoverFromAuthError(account, err, authRecovered)) {
+                    authRecovered = true;
+                    ctx = flowRequestContext(account);
+                    continue;
+                }
+                if (err.message?.includes('Video generation failed') || (err instanceof FlowRpcError && err.isAuthError)) {
+                    throw err;
+                }
+                Logger.warn(`[FlowAdapter] Polling attempt ${pollCount + 1} notice: ${err.message}`);
             }
 
-            pollCount++;
-            await new Promise(resolve => setTimeout(resolve, 10000));
+            await sleep(10000);
         }
-        if(results){
-            return results;
+        throw new Error('Flow video generation timed out');
+    }
+
+    /**
+     * Resolve the signed flow-content URL of a generated media (as29s)
+     */
+    public async getMediaUrlRedirect(account: IAIAccount, mediaName: string, projectId?: string): Promise<string | null> {
+        const normalizedMediaName = (mediaName || '').trim();
+        if (!normalizedMediaName) return null;
+        try {
+            const url = await flowFrontendClient.getMediaUrl(flowRequestContext(account), normalizedMediaName, projectId || account.projectId);
+            return url || null;
+        } catch (err: any) {
+            Logger.warn(`[FlowAdapter] getMediaUrlRedirect failed for ${mediaName}: ${err.message}`);
+            return null;
         }
-        throw new Error(`${type} generation failed.`);
+    }
+
+    /**
+     * Text generation through Flow is no longer available: the aisandbox-pa `flow:generateContent`
+     * endpoint was retired with the move to flow.google.com. Callers fall back to other providers.
+     */
+    public async generateContent(): Promise<string | null> {
+        throw new Error('Flow generateContent Failed: text generation is not available on flow.google.com');
     }
 }
 

@@ -8,8 +8,21 @@ import { connectDB } from '../utils/db.js';
 import { Logger } from '../utils/Logger.js';
 import { configService } from '~/utils/ConfigService.js';
 import { Auth } from 'node_modules/firebase-admin/lib/auth/auth.js';
+import { missingFlowCookies } from '../utils/ai/providers/FlowFrontendClient.js';
 
 const router = Router();
+
+/**
+ * Google Flow accounts authenticate with the account's Google cookies on flow.google.com (the old
+ * next-auth session token no longer works). `flowST` must hold all cookies of flow.google.com
+ * (a "Cookie:" header string or a browser cookie JSON export). Returns an error message or null.
+ */
+function flowCookieError(flowST: string): string | null {
+    const missing = missingFlowCookies(flowST);
+    if (missing.length === 0) return null;
+    return `Google cookies are incomplete, missing: ${missing.join(', ')}. `
+        + 'Open flow.google.com while signed in, export all cookies (including .google.com) and paste them here.';
+}
 
 // All routes require admin authentication
 router.use(authMiddleware, adminMiddleware);
@@ -182,7 +195,11 @@ router.post('/:id/update-token', async (req: AuthRequest, res) => {
         const { flowST } = req.body;
 
         if (!flowST) {
-            return res.status(400).json({ success: false, data: null, error: 'Session token (flowST) is required' });
+            return res.status(400).json({ success: false, data: null, error: 'Google cookies (flowST) are required' });
+        }
+        const cookieError = flowCookieError(flowST);
+        if (cookieError) {
+            return res.status(400).json({ success: false, data: null, error: cookieError });
         }
 
         const account = await AIAccount.findById(req.params.id);
@@ -302,10 +319,17 @@ router.post('/direct', async (req: AuthRequest, res) => {
         // Google Flow manual addition
         if (finalAccountType === AIAccountType.GOOGLE_FLOW) {
             if (!flowST) {
-                return res.status(400).json({ success: false, data: null, error: 'Session Token (flowST) is required' });
+                return res.status(400).json({ success: false, data: null, error: 'Google cookies (flowST) are required' });
+            }
+            const cookieError = flowCookieError(flowST);
+            if (cookieError) {
+                return res.status(400).json({ success: false, data: null, error: cookieError });
             }
 
-            let account = await AIAccount.findOne({ flowST, accountType: AIAccountType.GOOGLE_FLOW });
+            // flow.google.com does not expose the account email, so match on the one the admin entered
+            let account = await AIAccount.findOne(email
+                ? { email, accountType: AIAccountType.GOOGLE_FLOW }
+                : { flowST, accountType: AIAccountType.GOOGLE_FLOW });
             if (account) {
                 account.flowST = flowST;
                 account.flowAT = flowAT || account.flowAT;

@@ -216,6 +216,9 @@ export const config = {
     geminiApiKey: process.env.GEMINI_API_KEY,
     geminiApiKeys: process.env.GEMINI_API_KEYS,
     geminiModelTextAnalysis: process.env.GEMINI_MODEL_TEXT_ANALYSIS || 'gemini-3.1-flash-lite',
+    // Antigravity text model: "auto" (follow the requested Gemini model, else the newest flash-tiered
+    // model the gateway offers), a family such as "flash-tiered" / "pro-high", or an exact id
+    antigravityModel: process.env.ANTIGRAVITY_MODEL || 'auto',
     geminiModelImageGeneration: process.env.GEMINI_MODEL_IMAGE_GENERATION || 'gemini-3.1-flash-lite-image',
     geminiModelVideoGeneration: process.env.GEMINI_MODEL_VIDEO_GENERATION || 'veo-3.1-generate-preview',
     geminiModelTTS: process.env.GEMINI_MODEL_TTS || 'gemini-3.1-flash-tts-preview',
