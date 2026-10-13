@@ -9,7 +9,8 @@
         "prebuild": "pnpm --filter genblaze build",
         "build": "node -e \"require('fs-extra').removeSync('dist')\" && npx esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm \"--banner:js=import { createRequire as __esbuild_createRequire } from 'module'; import { fileURLToPath as __esbuild_fileURLToPath } from 'url'; import { dirname as __esbuild_dirname } from 'path'; const require = __esbuild_createRequire(import.meta.url); const __filename = __esbuild_fileURLToPath(import.meta.url); const __dirname = __esbuild_dirname(__filename);\" --outfile=dist/index.js --alias:canvas=@napi-rs/canvas --external:@napi-rs/canvas --external:@napi-rs/canvas-* --external:playwright --external:playwright-core --external:chromium-bidi* --external:@ffmpeg-installer/* --external:@ffprobe-installer/* --external:fsevents && node -e \"require('fs-extra').copySync('src/prompts', 'dist/prompts')\"",
         "start": "node dist/index.js",
-        "test": "vitest run"
+        "test": "vitest run",
+        "smoke:ai": "tsx src/tools/ai-smoke.ts"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.966.0",

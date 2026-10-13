@@ -82,3 +82,5 @@ server/scripts/test_*.ts
 server/scripts/service-*.ps1
 server/scripts/service-*.sh
 */*._
+# AI smoke test output (server/src/tools/ai-smoke.ts)
+ai-smoke-out/
