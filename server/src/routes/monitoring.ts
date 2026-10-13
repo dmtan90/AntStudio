@@ -7,6 +7,7 @@ import { monitoringService } from '../services/system/MonitoringService.js';
 import { connectDB } from '../utils/db.js';
 import { ClientLog } from '../models/ClientLog.js';
 import { configService } from '~/utils/ConfigService.js';
+import { escapeRegExp } from '../utils/escapeRegExp.js';
 
 const router = Router();
 
@@ -133,8 +134,8 @@ router.get('/logs', adminMiddleware, async (req: AuthRequest, res) => {
         if (source && source !== 'all') query.source = source;
         if (search) {
             query.$or = [
-                { message: { $regex: search, $options: 'i' } },
-                { source: { $regex: search, $options: 'i' } }
+                { message: { $regex: escapeRegExp(search), $options: 'i' } },
+                { source: { $regex: escapeRegExp(search), $options: 'i' } }
             ];
         }
 

@@ -15,6 +15,7 @@ import axios from 'axios';
 import { Logger } from '../utils/Logger.js';
 import { ServiceType } from '~/models/CreditUsage.js';
 import { CreditTransactionType } from '../models/User.js';
+import { escapeRegExp } from '../utils/escapeRegExp.js';
 
 // Buffered in memory: presentation imports
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024, files: 1 } });
@@ -261,9 +262,9 @@ router.get('/templates', authMiddleware, async (req: AuthRequest, res) => {
         if (search) {
             // Using a simple regex search if text index isn't available or for partial matches
             filter.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { category: { $regex: search, $options: 'i' } },
-                { tags: { $in: [new RegExp(search as string, 'i')] } }
+                { name: { $regex: escapeRegExp(search), $options: 'i' } },
+                { category: { $regex: escapeRegExp(search), $options: 'i' } },
+                { tags: { $in: [new RegExp(escapeRegExp(search), 'i')] } }
             ];
         }
 

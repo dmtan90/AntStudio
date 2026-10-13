@@ -9,6 +9,7 @@ import { aiManager } from '../utils/ai/AIServiceManager.js';
 import { LicenseService } from '../services/system/LicenseService.js';
 
 import { Logger } from '../utils/Logger.js';
+import { escapeRegExp } from '../utils/escapeRegExp.js';
 
 const router = Router();
 
@@ -27,8 +28,8 @@ router.get('/users', async (req: AuthRequest, res) => {
         const filter: any = {};
         if (search) {
             filter.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { email: { $regex: search, $options: 'i' } }
+                { name: { $regex: escapeRegExp(search), $options: 'i' } },
+                { email: { $regex: escapeRegExp(search), $options: 'i' } }
             ];
         }
 

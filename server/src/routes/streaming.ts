@@ -8,6 +8,8 @@ import { connectDB } from '~/utils/db.js';
 import { PlatformAuthService } from '~/services/system/PlatformAuthService.js';
 import { highlightService } from '~/services/streaming/HighlightService.js';
 import { socketServer } from '~/services/streaming/SocketServer.js';
+import { StreamSessionModel } from '~/models/StreamSession.js';
+import { UserRole } from '~/models/User.js';
 
 import { Logger } from '~/utils/Logger.js';
 import { configService } from '~/utils/ConfigService.js';
@@ -33,6 +35,31 @@ router.get('/guest/validate/:token', async (req, res) => {
 
 // All following routes require authentication
 router.use(authMiddleware);
+
+/**
+ * Whether the caller may act on a stream session: its owner or an admin. Sessions live in memory on
+ * the node that runs them, so the owner is looked up in MongoDB when this node does not know it.
+ */
+async function checkSessionAccess(req: AuthRequest, sessionId: string): Promise<'ok' | 'forbidden' | 'not_found'> {
+    let ownerId: string | undefined = streamingService.getSessionStatus(sessionId)?.userId;
+    if (!ownerId) {
+        await connectDB();
+        const stored = await StreamSessionModel.findOne({ sessionId }).select('userId').lean();
+        ownerId = stored?.userId;
+    }
+    if (!ownerId) return 'not_found';
+    const isAdmin = req.user?.role === UserRole.ADMIN || req.user?.role === UserRole.SYS_ADMIN;
+    return String(ownerId) === String(req.user?.userId) || isAdmin ? 'ok' : 'forbidden';
+}
+
+/** Responds 403/404 and returns false when the caller may not use the session. */
+async function requireSessionAccess(req: AuthRequest, res: any, sessionId: string): Promise<boolean> {
+    const access = await checkSessionAccess(req, sessionId);
+    if (access === 'ok') return true;
+    if (access === 'forbidden') res.status(403).json({ success: false, error: 'Unauthorized' });
+    else res.status(404).json({ success: false, error: 'Session not found' });
+    return false;
+}
 
 /**
  * POST /api/streaming/start
@@ -178,6 +205,11 @@ router.post('/stop/:sessionId', async (req: AuthRequest, res) => {
         const { sessionId } = req.params;
         if (!sessionId) return res.status(400).json({ success: false, error: 'Session ID required' });
 
+        // Unknown sessions keep the previous idempotent "stopped" answer; other users' sessions are refused
+        if (await checkSessionAccess(req, sessionId) === 'forbidden') {
+            return res.status(403).json({ success: false, error: 'Unauthorized' });
+        }
+
         streamingService.stopRestream(sessionId);
         res.json({ success: true, data: { status: 'stopped' }, error: null });
     } catch (error: any) {
@@ -207,6 +239,7 @@ router.get('/status/:id', (req: AuthRequest, res) => {
 router.post('/status/:id/highlight', async (req: AuthRequest, res) => {
     try {
         const sessionId = req.params.id;
+        if (!await requireSessionAccess(req, res, sessionId)) return;
         const { description, importance } = req.body;
         const result = await highlightService.captureHighlight(sessionId);
 
@@ -260,6 +293,7 @@ router.get('/status/:id/shadow', async (req: AuthRequest, res) => {
         const session = streamingService.getSessionStatus(sessionId);
 
         if (!session) return res.status(404).json({ success: false, error: 'Session not found' });
+        if (!await requireSessionAccess(req, res, sessionId)) return;
 
         // Simulate multi-platform engagement data
         const platforms = session.targets.map(t => t.platform);
@@ -283,6 +317,7 @@ router.get('/status/:id/shadow', async (req: AuthRequest, res) => {
 router.get('/status/:id/infra', async (req: AuthRequest, res) => {
     try {
         const sessionId = req.params.id;
+        if (!await requireSessionAccess(req, res, sessionId)) return;
         let redisData = await redisService.getSession(sessionId);
 
         // If not in Redis, check local (might be single-node mode)
@@ -345,6 +380,8 @@ router.post('/invite', async (req: AuthRequest, res) => {
     try {
         const { sessionId } = req.body;
         if (!sessionId) return res.status(400).json({ success: false, error: 'Session ID required' });
+        // Only the host can invite guests into their session
+        if (!await requireSessionAccess(req, res, sessionId)) return;
 
         const token = await streamingService.generateGuestToken(sessionId);
         // Return only the token and a short URL. The client builds the link using its dynamic origin.

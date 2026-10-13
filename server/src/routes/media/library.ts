@@ -9,6 +9,7 @@ import { authMiddleware, AuthRequest } from '../../middleware/auth.js';
 import { StorageFactory } from '../../services/storage/StorageFactory.js';
 import { Logger } from '../../utils/Logger.js';
 import { upload, removeTempUploads, safeKeyFileName } from './shared.js';
+import { escapeRegExp } from '../../utils/escapeRegExp.js';
 
 const router = Router();
 
@@ -104,11 +105,11 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
         }
 
         if (search) {
-            filter.fileName = { $regex: new RegExp(search, 'i') };
+            filter.fileName = { $regex: new RegExp(escapeRegExp(search), 'i') };
         }
 
         if (contentType) {
-            filter.contentType = { $regex: new RegExp(`^${contentType}`, 'i') };
+            filter.contentType = { $regex: new RegExp(`^${escapeRegExp(contentType)}`, 'i') };
         }
 
         const skip = (page - 1) * limit;

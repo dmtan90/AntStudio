@@ -12,6 +12,7 @@ import { Permission } from '../../utils/permissions.js';
 import { checkProjectLimit, licenseGating } from '../../middleware/LicenseGating.js';
 import { AnalyticsService } from '../../services/streaming/ProjectAnalyticsService.js';
 import { LicenseType } from '~/models/License.js';
+import { escapeRegExp } from '../../utils/escapeRegExp.js';
 
 const router = Router();
 
@@ -39,8 +40,8 @@ router.get('/',
             if (status) filter.status = status;
             if (search) {
                 filter.$or = [
-                    { title: { $regex: search, $options: 'i' } },
-                    { description: { $regex: search, $options: 'i' } }
+                    { title: { $regex: escapeRegExp(search), $options: 'i' } },
+                    { description: { $regex: escapeRegExp(search), $options: 'i' } }
                 ];
             }
 

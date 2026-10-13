@@ -10,6 +10,7 @@ import mongoose from 'mongoose';
 import { clippingEngine } from '../services/ai/ClippingEngine.js';
 
 import { Logger } from '../utils/Logger.js';
+import { escapeRegExp } from '../utils/escapeRegExp.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,7 +46,7 @@ router.get('/list', authMiddleware, async (req: AuthRequest, res) => {
         }
 
         if (search) {
-            filter.title = { $regex: new RegExp(search, 'i') };
+            filter.title = { $regex: new RegExp(escapeRegExp(search), 'i') };
         }
 
         const total = await Project.countDocuments(filter);
@@ -96,28 +97,36 @@ router.post('/upload-recording', authMiddleware, upload.single('video'), async (
 
         if (!videoFile) return res.status(400).json({ success: false, error: 'No video file provided' });
 
-        // Associate with project as a viral asset
-        const project = await Project.findOne({
+        // Associate with project as a viral asset (by id, or by title as typed: escaped so the
+        // input is matched literally instead of being run as a regular expression)
+        const lookup = String(projectId || '');
+        const project = lookup ? await Project.findOne({
             $or: [
-                { _id: (mongoose.Types.ObjectId.isValid(projectId) ? projectId : new mongoose.Types.ObjectId()) },
-                { title: { $regex: new RegExp(projectId, 'i') } }
+                { _id: (mongoose.Types.ObjectId.isValid(lookup) ? lookup : new mongoose.Types.ObjectId()) },
+                { title: { $regex: new RegExp(escapeRegExp(lookup), 'i') } }
             ],
             userId: req.user!.userId
-        });
+        }) : null;
 
-        if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
+        if (!project) {
+            fs.rm(videoFile.path, { force: true }, () => {});
+            return res.status(404).json({ success: false, error: 'Project not found' });
+        }
 
         // Log receipt
         Logger.info(`🎬 Received recording for project ${project.title}: ${videoFile.path}`);
 
-        // Asynchronously trigger Clipping Engine (Phase 7)
+        // Asynchronously trigger Clipping Engine (Phase 7). The recording is only needed for clipping,
+        // so it is deleted afterwards (recordings used to pile up in tmp/recordings).
         clippingEngine.processRecording({
             videoPath: videoFile.path,
             projectId: project._id.toString(),
             userId: req.user!.userId
-        });
+        })
+            .catch((error: any) => Logger.error(`Clipping failed for ${videoFile.filename}: ${error?.message}`))
+            .finally(() => fs.rm(videoFile.path, { force: true }, () => {}));
 
-        res.json({ success: true, data: { status: 'queued', filePath: videoFile.path } });
+        res.json({ success: true, data: { status: 'queued', fileName: videoFile.filename } });
     } catch (error: any) {
         Logger.error('Upload recording error:', error);
         res.status(500).json({ success: false, error: error.message });

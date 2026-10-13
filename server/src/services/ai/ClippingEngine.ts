@@ -32,8 +32,17 @@ export class ClippingEngine {
     /**
      * Processes a recording to extract viral segments.
      */
-    public async processRecording(config: { videoPath: string, projectId: string, userId: string }) {
-        const { videoPath, projectId, userId } = config;
+    public processRecording(config: { videoPath: string, projectId: string, userId: string }): Promise<void> {
+        // One recording at a time per server: each runs FFmpeg over a potentially long file
+        const run = this.pending.then(() => this.processOne(config));
+        this.pending = run.catch(() => {});
+        return run;
+    }
+
+    private pending: Promise<void> = Promise.resolve();
+
+    private async processOne(config: { videoPath: string, projectId: string, userId: string }) {
+        const { videoPath, projectId } = config;
 
         try {
             Logger.info(`✂️ [ClippingEngine] Processing recording for Project: ${projectId}`, 'ClippingEngine');
@@ -51,7 +60,7 @@ export class ClippingEngine {
             const project = await Project.findById(projectId);
             if (!project) throw new Error('Project not found');
 
-            const clipTasks = segments.map(async (seg, idx) => {
+            const clipTasks = segments.map((seg, idx) => async () => {
                 const clipName = `clip_${projectId}_${Date.now()}_${idx}.mp4`;
                 const tempOutputPath = path.join(path.dirname(videoPath), clipName);
 
@@ -89,7 +98,8 @@ export class ClippingEngine {
                                 }, { new: true });
 
                                 // 4. Trigger Syndication using the real asset ID
-                                const newAsset = updatedProject?.visualAssets?.find(a => a.name === seg.title) as any;
+                                // The asset just pushed is the last one with this name (titles can repeat)
+                                const newAsset = [...(updatedProject?.visualAssets || [])].reverse().find(a => a.name === seg.title) as any;
                                 if (newAsset && newAsset._id) {
                                     socialSyndicationService.createAutonomousDraft(projectId, newAsset._id.toString(), seg.title, seg.description)
                                         .catch((err: any) => Logger.error(`Draft creation failed for clip ${clipName}: ${err.message}`, 'ClippingEngine'));
@@ -105,14 +115,25 @@ export class ClippingEngine {
                         })
                         .on('error', (err: any) => {
                             Logger.error(`FFmpeg clipping error for ${clipName}: ${err.message}`, 'ClippingEngine');
+                            fs.rm(tempOutputPath, { force: true }, () => {});
                             reject(err);
                         })
                         .run();
                 });
             });
 
-            await Promise.all(clipTasks);
-            Logger.info(`✅ [ClippingEngine] Generated ${segments.length} viral clips for ${projectId}`, 'ClippingEngine');
+            // Clip one segment at a time (they used to run all at once, one FFmpeg process per
+            // segment); a failed clip does not stop the others
+            let created = 0;
+            for (const clip of clipTasks) {
+                try {
+                    await clip();
+                    created++;
+                } catch {
+                    // already logged
+                }
+            }
+            Logger.info(`✅ [ClippingEngine] Generated ${created}/${segments.length} viral clips for ${projectId}`, 'ClippingEngine');
 
         } catch (error: any) {
             Logger.error(`❌ [ClippingEngine] Processing failed: ${error.message}`, 'ClippingEngine');
