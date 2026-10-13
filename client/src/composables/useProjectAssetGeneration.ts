@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 import { useProjectStore } from '@/stores/project'
 import { useI18n } from 'vue-i18n';
+import { waitForVideoJob } from '@/utils/videoJobs'
 
 export function useProjectAssetGeneration(projectId: string) {
     const projectStore = useProjectStore()
@@ -140,13 +141,20 @@ export function useProjectAssetGeneration(projectId: string) {
         const id = `video-${seg.order}`
         generatingStates.value[id] = true
         try {
+            // The server answers with a jobId at once; the video is generated in the background
             const res = await projectStore.generateAsset(projectId, {
                 segmentOrder: seg.order,
                 type: 'video',
+                async: true,
                 options: { aspectRatio: projectStore.currentProject?.aspectRatio }
             })
 
-            const data = res.data || res
+            let data = res.data || res
+            if (data.jobId && !data.url) {
+                if (!seg.generatedVideo) seg.generatedVideo = {}
+                seg.generatedVideo.status = 'generating'
+                data = await waitForVideoJob(data.jobId)
+            }
 
             if (data.url) {
                 if (!seg.generatedVideo) seg.generatedVideo = {}

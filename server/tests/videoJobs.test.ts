@@ -7,7 +7,12 @@ const m = vi.hoisted(() => ({
     refundUserCredits: vi.fn(async () => true),
     mediaFindOne: vi.fn(async () => null),
     mediaCreate: vi.fn(async (doc: any) => ({ _id: 'media1', ...doc })),
-    emitToUser: vi.fn()
+    emitToUser: vi.fn(),
+    emitProjectUpdate: vi.fn(),
+    projectUpdateOne: vi.fn(async () => ({ modifiedCount: 1 })),
+    managerGenerateVideo: vi.fn(async () => ({ buffer: Buffer.from('MP4'), mimeType: 'video/mp4' })),
+    uploadToS3: vi.fn(async (key: string) => ({ key })),
+    enqueueFails: false
 }));
 
 /** In-memory stand-in for BullMQ: jobs run on the registered worker processor on the next tick. */
@@ -49,8 +54,10 @@ const bull = vi.hoisted(() => {
         jobs,
         handlers,
         Queue: class {
-            async add(_name: string, data: any, opts: any) {
-                const job = new FakeJob(opts.jobId, data);
+            async add(name: string, data: any, opts: any) {
+                if (m.enqueueFails) throw new Error('ECONNREFUSED');
+                const job: any = new FakeJob(opts.jobId, data);
+                job.name = name;
                 jobs.set(job.id, job);
                 setTimeout(() => void job.run(), 0);
                 return job;
@@ -81,7 +88,13 @@ vi.mock('../src/services/system/RedisService.js', () => ({
     isRedisConfigured: () => !!process.env.REDIS_HOST,
     getRedisConnectionOptions: () => ({})
 }));
-vi.mock('../src/services/streaming/SocketServer.js', () => ({ socketServer: { emitToUser: m.emitToUser } }));
+vi.mock('../src/services/streaming/SocketServer.js', () => ({ socketServer: { emitToUser: m.emitToUser, emitProjectUpdate: m.emitProjectUpdate } }));
+vi.mock('../src/models/Project.js', () => ({ Project: { updateOne: m.projectUpdateOne } }));
+vi.mock('../src/utils/ai/AIServiceManager.js', () => ({ aiManager: { generateVideo: m.managerGenerateVideo } }));
+vi.mock('../src/utils/s3.js', () => ({
+    uploadToS3: m.uploadToS3,
+    S3KeyGenerator: { sceneVideo: (p: string, o: number) => `projects/${p}/scenes/${o}.mp4`, asset: (p: string) => `projects/${p}/assets/x.mp4` }
+}));
 vi.mock('../src/utils/ConfigService.js', () => ({ configService: { bucketName: 'bucket' } }));
 vi.mock('../src/utils/db.js', () => ({ connectDB: vi.fn(async () => {}) }));
 vi.mock('../src/utils/Logger.js', () => ({ Logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
@@ -91,7 +104,7 @@ vi.mock('../src/services/ai/PromptService.js', () => ({ promptService: {} }));
 vi.mock('../src/routes/ai/shared.js', () => ({ upload: { single: () => vi.fn(), fields: () => vi.fn() } }));
 
 const { default: mediaRouter } = await import('../src/routes/ai/media.js');
-const { startVideoWorker, closeVideoJobs } = await import('../src/services/ai/VideoJobService.js');
+const { startVideoWorker, closeVideoJobs, dispatchVideoJob, getVideoJobStatus } = await import('../src/services/ai/VideoJobService.js');
 
 async function call(method: 'post' | 'get', path: string, { body = {}, params = {}, userId = 'alice' }: any = {}) {
     const layer = mediaRouter.stack.find((l: any) => l.route?.path === path && l.route.methods[method]);
@@ -106,7 +119,8 @@ async function call(method: 'post' | 'get', path: string, { body = {}, params = 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
 beforeEach(() => {
-    Object.values(m).forEach(fn => fn.mockClear());
+    Object.values(m).forEach((fn: any) => fn.mockClear?.());
+    m.enqueueFails = false;
     m.generateVideo.mockReset().mockImplementation(async (opts: any) => ({ url: `projects/${opts.metadata.projectId}/videos/${opts.metadata.filename}.mp4`, jobId: opts.metadata.jobId }));
     bull.jobs.clear();
 });
@@ -153,7 +167,12 @@ describe('POST /generate-video without Redis (in-process)', () => {
         const res = await call('post', '/generate-video', { body: { prompt: 'a cat', async: true } });
         expect(res.statusCode).toBe(202);
         expect(res.body.data).toEqual({ jobId: expect.stringMatching(/^vid-/), status: 'pending' });
-        await vi.waitFor(() => expect(m.mediaCreate).toHaveBeenCalled());
+        await vi.waitFor(async () => {
+            const status = await call('get', '/video-status/:jobId', { params: { jobId: res.body.data.jobId } });
+            expect(status.body.data).toMatchObject({ status: 'completed', videoUrl: expect.stringContaining('projects/alice/videos/'), media: expect.any(Object) });
+        });
+        const stranger = await call('get', '/video-status/:jobId', { params: { jobId: res.body.data.jobId }, userId: 'mallory' });
+        expect(stranger.body.data.status).toBe('not_found');
     });
 });
 
@@ -211,6 +230,54 @@ describe('POST /generate-video with Redis (BullMQ)', () => {
         const res = await call('post', '/generate-video', { body: { prompt: 'a dog' } });
         expect(res.statusCode).toBe(500);
         expect(res.body.error).toBe('quota exceeded');
+    });
+});
+
+describe('segment video jobs', () => {
+    const segmentJob = (overrides: any = {}) => ({
+        userId: 'alice', projectId: 'p1', segmentOrder: 3, segmentDuration: 6, prompt: 'scene 3',
+        options: { aspectRatio: '16:9', duration: 6 }, addToAssets: true, assetName: 'Scene 3', description: 'scene 3',
+        ...overrides
+    });
+
+    it('stores the video on the segment with a targeted update (no full project save)', async () => {
+        const result = await dispatchVideoJob('segment', 'vid-seg-1', segmentJob(), { wait: true });
+
+        expect(result).toEqual({ jobId: 'vid-seg-1', url: 'projects/p1/scenes/3.mp4', media: null });
+        expect(m.managerGenerateVideo).toHaveBeenCalledWith('scene 3', undefined, undefined, { aspectRatio: '16:9', duration: 6 });
+        const [filter, update] = m.projectUpdateOne.mock.calls[0] as any[];
+        expect(filter).toEqual({ _id: 'p1', 'storyboard.segments.order': 3 });
+        expect(update.$set['storyboard.segments.$.generatedVideo']).toMatchObject({ s3Key: 'projects/p1/scenes/3.mp4', status: 'completed', duration: 6 });
+        expect(update.$push.visualAssets).toMatchObject({ name: 'Scene 3', type: 'video', s3Key: 'projects/p1/scenes/3.mp4' });
+        expect(m.emitProjectUpdate).toHaveBeenCalledWith('alice', 'p1', { type: 'segment_video_ready', segmentOrder: 3, jobId: 'vid-seg-1' });
+    });
+
+    it('marks the segment failed and notifies the editor when generation fails', async () => {
+        m.managerGenerateVideo.mockRejectedValueOnce(new Error('safety filter'));
+        await expect(dispatchVideoJob('segment', 'vid-seg-2', segmentJob({ addToAssets: false }), { wait: true })).rejects.toThrow('safety filter');
+
+        const [, update] = m.projectUpdateOne.mock.calls[0] as any[];
+        expect(update.$set['storyboard.segments.$.generatedVideo']).toMatchObject({ status: 'failed' });
+        expect(m.emitProjectUpdate).toHaveBeenCalledWith('alice', 'p1', expect.objectContaining({ type: 'segment_video_failed', segmentOrder: 3 }));
+        expect(m.emitToUser).toHaveBeenCalledWith('alice', 'ai:video-job', { jobId: 'vid-seg-2', status: 'failed', error: 'safety filter' });
+        expect(await getVideoJobStatus('vid-seg-2', 'alice')).toMatchObject({ status: 'failed', error: 'safety filter' });
+    });
+
+    it('runs segment jobs on the queue worker when Redis is configured', async () => {
+        process.env.REDIS_HOST = 'redis';
+        await startVideoWorker();
+        expect(await dispatchVideoJob('segment', 'vid-seg-3', segmentJob(), { wait: false })).toBeNull();
+        expect((bull.jobs.get('vid-seg-3') as any).name).toBe('segment');
+        await vi.waitFor(() => expect(m.emitProjectUpdate).toHaveBeenCalledWith('alice', 'p1', expect.objectContaining({ type: 'segment_video_ready' })));
+        expect(m.generateVideo).not.toHaveBeenCalled(); // the generic generator is not used for segments
+    });
+
+    it('falls back to this process when Redis cannot take the job', async () => {
+        process.env.REDIS_HOST = 'redis';
+        m.enqueueFails = true;
+        const result = await dispatchVideoJob('segment', 'vid-seg-4', segmentJob(), { wait: true });
+        expect(result?.url).toBe('projects/p1/scenes/3.mp4');
+        expect(bull.jobs.size).toBe(0);
     });
 });
 

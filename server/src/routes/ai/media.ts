@@ -9,10 +9,8 @@ import { AuthRequest } from '../../middleware/auth.js';
 import { Media } from '../../models/Media.js';
 import { connectDB } from '../../utils/db.js';
 import { configService } from '../../utils/ConfigService.js';
-import { deductCredits, getCreditCost, refundUserCredits } from '../../utils/credits.js';
-import {
-    VideoJobData, isVideoQueueEnabled, newVideoJobId, enqueueVideoJob, waitForVideoJob, runVideoJob, getQueuedVideoJobStatus
-} from '../../services/ai/VideoJobService.js';
+import { deductCredits, getCreditCost } from '../../utils/credits.js';
+import { VideoJobData, newVideoJobId, dispatchVideoJob, getVideoJobStatus } from '../../services/ai/VideoJobService.js';
 import { Logger } from '../../utils/Logger.js';
 import { promptService } from '../../services/ai/PromptService.js';
 import { AIModelCost, AIModelType } from '~/models/AdminSettings.js';
@@ -245,31 +243,10 @@ router.post('/generate-video', async (req: AuthRequest, res) => {
             creditAmount,
             creditDescription: deductionDescription
         };
-        const respondAsync = req.body.async === true;
-
-        if (isVideoQueueEnabled()) {
-            let job;
-            try {
-                job = await enqueueVideoJob(jobId, jobData);
-            } catch (queueError) {
-                await refundUserCredits(userId, ServiceType.VIDEO, creditAmount, deductionDescription);
-                throw queueError;
-            }
-            if (respondAsync) {
-                return res.status(202).json({ success: true, data: { jobId, status: 'pending' } });
-            }
-            const { media, url } = await waitForVideoJob(job);
-            return res.json({ success: true, data: { media, url, jobId } });
-        }
-
-        if (respondAsync) {
-            // No queue: generate in this process and report through /video-status
-            runVideoJob(jobId, jobData).catch((error: any) => Logger.error(`Video generation ${jobId} failed: ${error?.message}`));
-            return res.status(202).json({ success: true, data: { jobId, status: 'pending' } });
-        }
-
-        const { media, url } = await runVideoJob(jobId, jobData);
-        return res.json({ success: true, data: { media, url, jobId } });
+        // async: true answers at once; progress via /video-status and the ai:video-job socket event
+        const result = await dispatchVideoJob('generate', jobId, jobData, { wait: req.body.async !== true });
+        if (!result) return res.status(202).json({ success: true, data: { jobId, status: 'pending' } });
+        return res.json({ success: true, data: { media: result.media, url: result.url, jobId } });
     } catch (error: any) {
         Logger.error('Video generation error:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to generate video' });
@@ -283,10 +260,8 @@ router.get('/video-status/:jobId', async (req: AuthRequest, res) => {
         const { jobId } = req.params;
         const userId = req.user!.userId;
 
-        if (isVideoQueueEnabled()) {
-            const queued = await getQueuedVideoJobStatus(jobId, userId);
-            if (queued) return res.json({ success: true, data: queued });
-        }
+        const tracked = await getVideoJobStatus(jobId, userId);
+        if (tracked) return res.json({ success: true, data: tracked });
 
         const status = await checkVideoStatus(jobId);
 

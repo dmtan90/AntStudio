@@ -11,7 +11,8 @@ import { rbacMiddleware } from '../../middleware/rbac.js';
 import { Permission } from '../../utils/permissions.js';
 import { licenseGating } from '../../middleware/LicenseGating.js';
 import { hasSufficientCredits, deductCredits, getCreditCost } from '../../utils/credits.js';
-import { uploadToS3, S3KeyGenerator } from '../../utils/s3.js';
+import { newVideoJobId, dispatchVideoJob, isVideoQueueEnabled } from '../../services/ai/VideoJobService.js';
+import { setSegmentVideo } from '../../services/ai/SegmentVideoJob.js';
 import { AIModelType } from '../../models/AdminSettings.js';
 import { aiManager } from '../../utils/ai/AIServiceManager.js';
 import { projectContext } from '../../utils/ProjectContext.js';
@@ -488,16 +489,17 @@ router.post('/:id/storyboard/generate-assets', licenseGating(LicenseType.TRIAL),
         // const mgr = AIServiceManager.getInstance();
         // await mgr.initialize();
 
-        // Start batch generation in background
+        // Start batch generation in background. With the video queue every segment becomes a queued job
+        // (run in parallel up to the worker concurrency); without it they are generated one by one here.
+        const userId = req.user!.userId;
+        const waitForEach = !isVideoQueueEnabled();
         const generateBatch = async () => {
             for (const segment of project.storyboard!.segments as any[]) {
+                // Skip if already generating or completed
+                if (segment.generatedVideo?.status === 'completed' || segment.generatedVideo?.status === 'generating') continue;
+                let dispatched = false;
                 try {
-                    // Skip if already generating or completed
-                    if (segment.generatedVideo?.status === 'completed' || segment.generatedVideo?.status === 'generating') continue;
-
-                    segment.generatedVideo = { s3Key: '', status: 'generating', generatedAt: new Date() };
-                    project.markModified('storyboard');
-                    await project.save();
+                    await setSegmentVideo(projectId, segment.order, { s3Key: '', status: 'generating', generatedAt: new Date() });
 
                     const allCharacters = project.scriptAnalysis?.characters || [];
                     // const { buildVeoVideoPrompt } = await import('../utils/PromptBuilder.js');
@@ -509,35 +511,27 @@ router.post('/:id/storyboard/generate-assets', licenseGating(LicenseType.TRIAL),
                         async (p) => await aiManager.generateText(p, undefined)
                     );
 
-                    const result = await aiManager.generateVideo(videoPrompt, undefined, undefined, {
-                        aspectRatio: project.aspectRatio || '16:9',
-                        duration: segment.duration || 5,
-                        imageStart: segment.sceneImage
-                    });
-
-                    // const { uploadToS3 } = await import('../utils/s3.js');
-                    const s3Key = S3KeyGenerator.sceneVideo(projectId, segment.order);
-                    await uploadToS3(s3Key, result.buffer, result.mimeType || 'video/mp4');
-
-                    segment.generatedVideo = { s3Key, status: 'completed', generatedAt: new Date(), duration: segment.duration };
-                    project.markModified('storyboard');
-                    await project.save();
-                    
-                    // const { socketServer } = await import('../services/streaming/SocketServer.js');
-                    socketServer.emitProjectUpdate(req.user!.userId, projectId, {
-                        type: 'segment_video_ready',
-                        segmentOrder: segment.order
-                    });
-                    
-                    Logger.info(`[BatchGen] Completed segment ${segment.order} for project ${projectId}`);
+                    // The job stores the result and emits segment_video_ready / segment_video_failed
+                    dispatched = true;
+                    await dispatchVideoJob('segment', newVideoJobId(), {
+                        userId,
+                        projectId: String(projectId),
+                        segmentOrder: segment.order,
+                        segmentDuration: segment.duration,
+                        prompt: videoPrompt,
+                        options: {
+                            aspectRatio: project.aspectRatio || '16:9',
+                            duration: segment.duration || 5,
+                            imageStart: segment.sceneImage
+                        },
+                        addToAssets: false
+                    }, { wait: waitForEach });
+                    Logger.info(`[BatchGen] ${waitForEach ? 'Completed' : 'Queued'} segment ${segment.order} for project ${projectId}`);
                 } catch (err: any) {
                     Logger.error(`[BatchGen] Failed segment ${segment.order}:`, err.message);
-                    segment.generatedVideo = { s3Key: '', status: 'failed', generatedAt: new Date() };
-                    project.markModified('storyboard');
-                    await project.save();
-
-                    // const { socketServer } = await import('../services/streaming/SocketServer.js');
-                    socketServer.emitProjectUpdate(req.user!.userId, projectId, {
+                    if (dispatched) continue; // the job already marked the segment failed and notified
+                    await setSegmentVideo(projectId, segment.order, { s3Key: '', status: 'failed', generatedAt: new Date() });
+                    socketServer.emitProjectUpdate(userId, projectId, {
                         type: 'segment_video_failed',
                         segmentOrder: segment.order
                     });

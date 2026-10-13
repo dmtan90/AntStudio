@@ -9,9 +9,11 @@ import { connectDB } from '../../utils/db.js';
 import { Logger } from '../../utils/Logger.js';
 import { isRedisConfigured, getRedisConnectionOptions } from '../system/RedisService.js';
 import { socketServer } from '../streaming/SocketServer.js';
+import { runSegmentVideoJob, SegmentVideoJobData } from './SegmentVideoJob.js';
 
 /**
- * AI video generation jobs (POST /api/ai/generate-video).
+ * AI video generation jobs: POST /api/ai/generate-video ('generate') and storyboard/project videos
+ * ('segment', see SegmentVideoJob.ts).
  *
  * Without Redis the video is generated inside the request, as before. When Redis is configured the
  * job goes through a BullMQ queue instead, so generation is bounded by worker concurrency, survives
@@ -47,11 +49,12 @@ export interface VideoJobResult {
 export type VideoJobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 const QUEUE_NAME = 'ai-video';
-const JOB_NAME = 'generate';
+export type VideoJobName = 'generate' | 'segment';
+type AnyVideoJobData = VideoJobData | SegmentVideoJobData;
 
-let queue: Queue<VideoJobData, VideoJobResult> | null = null;
+let queue: Queue<AnyVideoJobData, VideoJobResult> | null = null;
 let queueEvents: QueueEvents | null = null;
-let worker: Worker<VideoJobData, VideoJobResult> | null = null;
+let worker: Worker<AnyVideoJobData, VideoJobResult> | null = null;
 
 export function isVideoQueueEnabled(): boolean {
     return isRedisConfigured() && (process.env.VIDEO_QUEUE || '').toLowerCase() !== 'off';
@@ -118,10 +121,10 @@ async function recordVideoMedia(jobId: string, url: string, data: VideoJobData) 
     }
 }
 
-async function getQueue(): Promise<Queue<VideoJobData, VideoJobResult>> {
+async function getQueue(): Promise<Queue<AnyVideoJobData, VideoJobResult>> {
     if (!queue) {
         const { Queue } = await import('bullmq');
-        queue = new Queue<VideoJobData, VideoJobResult>(QUEUE_NAME, { connection: getRedisConnectionOptions() as any });
+        queue = new Queue<AnyVideoJobData, VideoJobResult>(QUEUE_NAME, { connection: getRedisConnectionOptions() as any });
     }
     return queue;
 }
@@ -135,9 +138,9 @@ async function getQueueEvents(): Promise<QueueEvents> {
     return queueEvents;
 }
 
-export async function enqueueVideoJob(jobId: string, data: VideoJobData): Promise<Job<VideoJobData, VideoJobResult>> {
+export async function enqueueVideoJob(jobId: string, data: AnyVideoJobData, name: VideoJobName = 'generate'): Promise<Job<AnyVideoJobData, VideoJobResult>> {
     const q = await getQueue();
-    return q.add(JOB_NAME, data, {
+    return q.add(name, data, {
         jobId,
         // Each attempt costs provider money, so a failed generation is not retried automatically
         attempts: 1,
@@ -147,7 +150,7 @@ export async function enqueueVideoJob(jobId: string, data: VideoJobData): Promis
 }
 
 /** Resolves with the job result once a worker has finished it; rejects with the failure reason. */
-export async function waitForVideoJob(job: Job<VideoJobData, VideoJobResult>): Promise<VideoJobResult> {
+export async function waitForVideoJob(job: Job<AnyVideoJobData, VideoJobResult>): Promise<VideoJobResult> {
     return job.waitUntilFinished(await getQueueEvents());
 }
 
@@ -184,15 +187,86 @@ function notify(userId: string, payload: Record<string, any>) {
     }
 }
 
+function runNamedJob(name: VideoJobName, jobId: string, data: AnyVideoJobData): Promise<VideoJobResult> {
+    return name === 'segment'
+        ? runSegmentVideoJob(jobId, data as SegmentVideoJobData)
+        : runVideoJob(jobId, data as VideoJobData);
+}
+
+// Jobs run in this process (no queue), kept for /video-status for an hour after they finish
+interface LocalJob { userId: string; status: VideoJobStatus; result?: VideoJobResult; error?: string; finishedAt?: number }
+const localJobs = new Map<string, LocalJob>();
+const LOCAL_JOB_TTL_MS = 60 * 60 * 1000;
+
+function runLocally(name: VideoJobName, jobId: string, data: AnyVideoJobData): Promise<VideoJobResult> {
+    const now = Date.now();
+    for (const [id, job] of localJobs) {
+        if (job.finishedAt && now - job.finishedAt > LOCAL_JOB_TTL_MS) localJobs.delete(id);
+    }
+    const entry: LocalJob = { userId: data.userId, status: 'processing' };
+    localJobs.set(jobId, entry);
+    notify(data.userId, { jobId, status: 'processing' });
+
+    return runNamedJob(name, jobId, data).then(
+        (result) => {
+            Object.assign(entry, { status: 'completed', result, finishedAt: Date.now() });
+            notify(data.userId, { jobId, status: 'completed', url: result.url, media: result.media });
+            return result;
+        },
+        (error: any) => {
+            Object.assign(entry, { status: 'failed', error: error?.message, finishedAt: Date.now() });
+            notify(data.userId, { jobId, status: 'failed', error: error?.message });
+            throw error;
+        }
+    );
+}
+
+/**
+ * Starts a video job: on the queue when it is enabled (falling back to this process if Redis cannot
+ * take the job), otherwise in this process. With `wait` it resolves with the result (or rejects with
+ * the failure); without it, it resolves with null as soon as the job is accepted.
+ */
+export async function dispatchVideoJob(name: VideoJobName, jobId: string, data: AnyVideoJobData, { wait }: { wait: boolean }): Promise<VideoJobResult | null> {
+    if (isVideoQueueEnabled()) {
+        let job: Job<AnyVideoJobData, VideoJobResult> | null = null;
+        try {
+            job = await enqueueVideoJob(jobId, data, name);
+        } catch (error: any) {
+            Logger.warn(`[VideoJobs] Could not enqueue ${jobId} (${error?.message}); generating in this process`, 'VideoJobs');
+        }
+        if (job) return wait ? waitForVideoJob(job) : null;
+    }
+    const running = runLocally(name, jobId, data);
+    if (wait) return running;
+    running.catch((error: any) => Logger.error(`[VideoJobs] ${name} job ${jobId} failed: ${error?.message}`, 'VideoJobs'));
+    return null;
+}
+
+/** Status of a job started by dispatchVideoJob, or null when unknown (or owned by another user). */
+export async function getVideoJobStatus(jobId: string, userId: string) {
+    const local = localJobs.get(jobId);
+    if (local) {
+        if (local.userId !== userId) return null;
+        return {
+            jobId,
+            status: local.status,
+            videoUrl: local.result?.url,
+            media: local.result?.media,
+            error: local.error
+        };
+    }
+    return isVideoQueueEnabled() ? getQueuedVideoJobStatus(jobId, userId) : null;
+}
+
 /** Starts the worker on this node unless VIDEO_WORKER=off. Safe to call more than once. */
 export async function startVideoWorker(): Promise<void> {
     if (worker || !isVideoQueueEnabled() || (process.env.VIDEO_WORKER || '').toLowerCase() === 'off') return;
     const { Worker } = await import('bullmq');
     const concurrency = Math.max(1, parseInt(process.env.VIDEO_WORKER_CONCURRENCY || '2') || 2);
 
-    worker = new Worker<VideoJobData, VideoJobResult>(QUEUE_NAME, async (job) => {
+    worker = new Worker<AnyVideoJobData, VideoJobResult>(QUEUE_NAME, async (job) => {
         notify(job.data.userId, { jobId: job.id, status: 'processing' });
-        return runVideoJob(job.id!, job.data);
+        return runNamedJob(job.name as VideoJobName, job.id!, job.data);
     }, { connection: getRedisConnectionOptions() as any, concurrency });
 
     worker.on('completed', (job, result) => {
